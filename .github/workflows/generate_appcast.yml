@@ -32,13 +32,15 @@ jobs:
         run: |
           brew install jq
 
-      # - name: Download Sparkle tools
-      #  run: |
-      #    SPARKLE_VERSION="2.6.3"
-      #    curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
-      #    tar -xf sparkle.tar.xz
-      #    sudo cp Sparkle-${SPARKLE_VERSION}/bin/generate_appcast /usr/local/bin/
-      #    chmod +x /usr/local/bin/generate_appcast
+      - name: Download Sparkle tools
+        run: |
+          SPARKLE_VERSION="2.6.3"
+          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
+          tar -xf sparkle.tar.xz
+          sudo cp Sparkle-${SPARKLE_VERSION}/bin/generate_appcast /usr/local/bin/
+          sudo cp Sparkle-${SPARKLE_VERSION}/bin/sign_update /usr/local/bin/
+          chmod +x /usr/local/bin/generate_appcast
+          chmod +x /usr/local/bin/sign_update
 
       - name: Prepare private key
         run: |
@@ -66,28 +68,37 @@ jobs:
             echo "No releases to process"
             exit 0
           fi
+          mkdir -p updates/dmg
           while IFS= read -r tag; do
             if [ -z "$tag" ]; then continue; fi
             echo "Processing release $tag"
-            # For testing, skip DMG download since none exist yet
-            # gh release download "$tag" --pattern "Lighthouse-osx-*.dmg" --dir updates/
-            # Get release body and create HTML notes
-            RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" | jq -r '.body')
-            NOTES_FILE="updates/Lighthouse-osx-${tag}.html"
-            if [ "$RELEASE_BODY" != "null" ] && [ -n "$RELEASE_BODY" ]; then
-              echo "$RELEASE_BODY" | pandoc -f markdown -t html > "$NOTES_FILE"
+            DMG_NAME="Lighthouse-osx-${tag}.dmg"
+            # Check if DMG exists for this release
+            if gh release view "$tag" --json assets --jq ".assets[].name" | grep -q "^${DMG_NAME}$"; then
+              echo "DMG found for $tag, downloading..."
+              gh release download "$tag" --pattern "${DMG_NAME}" --dir updates/dmg/
+              # Sign the DMG
+              sign_update updates/dmg/"${DMG_NAME}" private_key.pem
+              # Get release body and create HTML notes
+              RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" | jq -r '.body')
+              NOTES_FILE="updates/Lighthouse-osx-${tag}.html"
+              if [ "$RELEASE_BODY" != "null" ] && [ -n "$RELEASE_BODY" ]; then
+                echo "$RELEASE_BODY" | pandoc -f markdown -t html > "$NOTES_FILE"
+              else
+                echo "<p>No release notes available.</p>" > "$NOTES_FILE"
+              fi
             else
-              echo "<p>No release notes available.</p>" > "$NOTES_FILE"
+              echo "No DMG found for $tag, skipping..."
             fi
           done < release_tags.txt
 
-      - name: Generate appcast (testing mode)
+      - name: Generate appcast
         run: |
           if [ ! -f release_tags.txt ]; then
             echo "No releases to process"
             exit 0
           fi
-          # For testing without DMGs, generate basic appcast XML
+          # Generate appcast XML with real data
           cat > appcast.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -98,16 +109,18 @@ jobs:
           EOF
           
           while IFS= read -r tag; do
-            RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
-            TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
-            PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
-            BODY_HTML=$(cat "updates/Lighthouse-osx-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
-            URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/Lighthouse-osx-${tag}.dmg"
-            # Dummy signature for testing
-            SIGNATURE="dummy_signature"
-            LENGTH="12345678"
-            
-            cat >> appcast.xml << EOF
+            DMG_NAME="Lighthouse-osx-${tag}.dmg"
+            DMG_PATH="updates/dmg/${DMG_NAME}"
+            if [ -f "$DMG_PATH" ]; then
+              RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
+              TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
+              PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
+              BODY_HTML=$(cat "updates/Lighthouse-osx-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
+              URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${DMG_NAME}"
+              SIGNATURE=$(sign_update "$DMG_PATH" private_key.pem 2>/dev/null)
+              LENGTH=$(stat -f%z "$DMG_PATH")
+              
+              cat >> appcast.xml << EOF
               <item>
                 <title>$TITLE</title>
                 <sparkle:version>$tag</sparkle:version>
@@ -117,6 +130,7 @@ jobs:
                 <enclosure url="$URL" sparkle:version="$tag" sparkle:edSignature="$SIGNATURE" length="$LENGTH" type="application/octet-stream"/>
               </item>
           EOF
+            fi
           done < release_tags.txt
           
           cat >> appcast.xml << 'EOF'
