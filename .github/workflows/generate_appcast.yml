@@ -72,7 +72,7 @@ jobs:
             # For testing, skip DMG download since none exist yet
             # gh release download "$tag" --pattern "Lighthouse-osx-*.dmg" --dir updates/
             # Get release body and create HTML notes
-            RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" --jq -r .body)
+            RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" | jq -r '.body')
             NOTES_FILE="updates/Lighthouse-osx-${tag}.html"
             if [ "$RELEASE_BODY" != "null" ] && [ -n "$RELEASE_BODY" ]; then
               echo "$RELEASE_BODY" | pandoc -f markdown -t html > "$NOTES_FILE"
