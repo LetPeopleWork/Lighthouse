@@ -1,14 +1,61 @@
 name: Generate Appcast
 
 on:
-  release:
-    types: [published]
+  schedule:
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
-  appcast:
-    runs-on: macos-latest
+  check-release:
+    runs-on: ubuntu-latest
     if: github.repository == 'LetPeopleWork/Lighthouse'
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      release_tags: ${{ steps.tags.outputs.release_tags }}
+      latest_tag: ${{ steps.tags.outputs.latest_tag }}
+
+    steps:
+      - name: Check whether appcast already exists
+        id: check
+        run: |
+          URL="https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/appcast.xml"
+          echo "Checking $URL"
+          # If the resource exists, quit early to save macOS runner time
+          if curl --head --silent --fail "$URL" >/dev/null; then
+            echo "Appcast already exists — nothing to do"
+            echo "proceed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Appcast not found — proceeding"
+          echo "proceed=true" >> $GITHUB_OUTPUT
+
+      - name: Install jq
+        if: steps.check.outputs.proceed == 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Get latest releases
+        id: tags
+        if: steps.check.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get latest 5 non-prerelease tags as comma-separated list
+          RELEASE_TAGS=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/LetPeopleWork/Lighthouse/releases | jq -r '.[] | select(.prerelease==false) | .tag_name' | head -5 | paste -sd ',' -)
+          if [ -z "$RELEASE_TAGS" ] || [ "$RELEASE_TAGS" = "," ]; then
+            echo "No non-prerelease releases found, skipping"
+            echo "release_tags=" >> $GITHUB_OUTPUT
+            echo "latest_tag=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          LATEST_TAG=$(echo "$RELEASE_TAGS" | cut -d',' -f1)
+          echo "release_tags=$RELEASE_TAGS" >> $GITHUB_OUTPUT
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+  appcast:
+    needs: check-release
+    runs-on: macos-latest
+    if: github.repository == 'LetPeopleWork/Lighthouse' && needs.check-release.outputs.proceed == 'true'
 
     permissions:
       contents: write
@@ -20,17 +67,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare release tags
+        run: |
+          mkdir -p updates
+          echo "${{ needs.check-release.outputs.release_tags }}" | tr ',' '\n' > release_tags.txt
+          echo "LATEST_TAG=${{ needs.check-release.outputs.latest_tag }}" >> $GITHUB_ENV
+          cat release_tags.txt
+
       - name: Install GitHub CLI
         run: |
           brew install gh
 
+      - name: Install jq
+        run: |
+          brew install jq      
+
+      - name: Get latest releases
+        run: |
+          mkdir -p updates
+          # release_tags.txt already provided by 'check-release' job
+          if [ ! -s release_tags.txt ]; then
+            echo "No non-prerelease releases found, skipping appcast generation"
+            exit 0
+          fi
+
       - name: Install Pandoc
         run: |
           brew install pandoc
-
-      - name: Install jq
-        run: |
-          brew install jq
 
       - name: Install Sparkle
         run: |
@@ -52,21 +115,6 @@ jobs:
             echo "Could not find Sparkle tools"
             exit 1
           fi
-
-      - name: Get latest releases
-        run: |
-          mkdir -p updates
-          # Get latest 5 non-prerelease tags
-          RELEASE_TAGS=$(gh api repos/LetPeopleWork/Lighthouse/releases --jq '.[] | select(.prerelease == false) | .tag_name' | head -5)
-          if [ -z "$RELEASE_TAGS" ]; then
-            echo "No non-prerelease releases found, skipping appcast generation"
-            exit 0
-          fi
-          echo "$RELEASE_TAGS" > release_tags.txt
-          LATEST_TAG=$(echo "$RELEASE_TAGS" | head -1)
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
-          cat release_tags.txt
 
       - name: Download DMGs and create notes
         run: |
