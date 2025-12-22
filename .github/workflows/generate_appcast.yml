@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'LetPeopleWork/Lighthouse'
     outputs:
-      proceed: ${{ steps.check.outputs.proceed }}
+      proceed: ${{ steps.tags.outputs.proceed }}
       release_tags: ${{ steps.tags.outputs.release_tags }}
       latest_tag: ${{ steps.tags.outputs.latest_tag }}
 
@@ -46,15 +46,39 @@ jobs:
         run: |
           # Get latest 5 non-prerelease tags as comma-separated list
           RELEASE_TAGS=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/LetPeopleWork/Lighthouse/releases | jq -r '.[] | select(.prerelease==false) | .tag_name' | head -5 | paste -sd ',' -)
+
           if [ -z "$RELEASE_TAGS" ] || [ "$RELEASE_TAGS" = "," ]; then
             echo "No non-prerelease releases found, skipping"
             echo "release_tags=" >> $GITHUB_OUTPUT
             echo "latest_tag=" >> $GITHUB_OUTPUT
+            echo "proceed=false" >> $GITHUB_OUTPUT
             exit 0
           fi
+
           LATEST_TAG=$(echo "$RELEASE_TAGS" | cut -d',' -f1)
+
+          # Check whether any of the latest tags have a .dmg asset; if not, we don't need to create appcast
+          FOUND_DMG="false"
+          for TAG in $(echo "$RELEASE_TAGS" | tr ',' '\n'); do
+            ASSET_NAMES=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/LetPeopleWork/Lighthouse/releases/tags/$TAG | jq -r '.assets[].name // empty') || true
+            if echo "$ASSET_NAMES" | grep -Ei '\.dmg$' >/dev/null; then
+              echo "Found DMG for tag: $TAG"
+              FOUND_DMG="true"
+              break
+            fi
+          done
+
+          if [ "$FOUND_DMG" != "true" ]; then
+            echo "No DMG assets found for latest releases; nothing to do"
+            echo "release_tags=" >> $GITHUB_OUTPUT
+            echo "latest_tag=" >> $GITHUB_OUTPUT
+            echo "proceed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           echo "release_tags=$RELEASE_TAGS" >> $GITHUB_OUTPUT
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "proceed=true" >> $GITHUB_OUTPUT
 
   appcast:
     needs: check-release
