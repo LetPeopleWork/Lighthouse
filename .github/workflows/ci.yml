@@ -26,34 +26,40 @@ on:
 jobs:
   changes:
     uses: ./.github/workflows/ci_changes.yml
+    name: Detect Changes
 
   backend:
     needs: changes
     uses: ./.github/workflows/ci_backend.yml
+    name: Verify Backend
     with:
       backend: ${{ needs.changes.outputs.backend }}
 
   frontend:
     needs: changes
     uses: ./.github/workflows/ci_frontend.yml
+    name: Verify Frontend
     with:
       frontend: ${{ needs.changes.outputs.frontend }}
 
   e2e:
     needs: changes
     uses: ./.github/workflows/ci_e2e.yml
+    name: Verify End to End Tests
     with:
       e2e: ${{ needs.changes.outputs.e2e }}
 
   tag:
     needs: [frontend, backend, e2e]
     uses: ./.github/workflows/ci_tag.yml
+    name: Tag Version
     permissions:
       contents: write
 
   packageapp:
     needs: tag
     uses: ./.github/workflows/ci_packageapp.yml
+    name: Package App
     permissions:
       actions: write
     with:
@@ -63,6 +69,7 @@ jobs:
   docker:
     needs: tag
     uses: ./.github/workflows/ci_docker.yml
+    name: Build and Push Docker Image
     permissions:
       packages: write
     with:
@@ -72,13 +79,16 @@ jobs:
   verifysqlite:
     needs: [packageapp, tag]
     uses: ./.github/workflows/ci_verifysqlite.yml
+    name: Verify SQLite Linux Build
     permissions:
       actions: read
     with:
       version: ${{ needs.tag.outputs.version }}
+      
   verifypostgres:
     needs: [packageapp, tag]
     uses: ./.github/workflows/ci_verifypostgres.yml
+    name: Verify Postgres Linux Build
     permissions:
       actions: read
     with:
@@ -88,6 +98,7 @@ jobs:
   codesign-macos:
     needs: tag
     uses: ./.github/workflows/ci_codesign-macos.yml
+    name: Code Sign macOS App
     permissions:
       actions: write
     with:
@@ -97,6 +108,7 @@ jobs:
   verifymacos:
     needs: [codesign-macos, tag]
     uses: ./.github/workflows/ci_verifymacos.yml
+    name: Verify macOS App
     permissions:
       actions: read
     with:
@@ -107,6 +119,7 @@ jobs:
   codesign-windows:
     needs: [tag, verifysqlite, verifypostgres]
     uses: ./.github/workflows/ci_codesign-windows.yml
+    name: Code Sign Windows App
     permissions:
       actions: write
     with:
@@ -115,6 +128,7 @@ jobs:
   verifywindows:
     needs: [codesign-windows, tag]
     uses: ./.github/workflows/ci_verifywindows.yml
+    name: Verify Windows App
     permissions:
       actions: read
     with:
@@ -123,6 +137,7 @@ jobs:
   release:
     needs: [tag, docker, verifymacos, verifywindows]
     uses: ./.github/workflows/ci_release.yml
+    name: Release
     permissions:
       contents: write
       packages: write
