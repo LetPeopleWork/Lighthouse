@@ -37,8 +37,8 @@ jobs:
           SPARKLE_VERSION="2.6.3"
           curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
           tar -xf sparkle.tar.xz
-          sudo cp Sparkle-${SPARKLE_VERSION}/bin/generate_appcast /usr/local/bin/
-          sudo cp Sparkle-${SPARKLE_VERSION}/bin/sign_update /usr/local/bin/
+          sudo cp $(find . -name generate_appcast) /usr/local/bin/
+          sudo cp $(find . -name sign_update) /usr/local/bin/
           chmod +x /usr/local/bin/generate_appcast
           chmod +x /usr/local/bin/sign_update
 
