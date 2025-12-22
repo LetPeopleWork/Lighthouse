@@ -15,168 +15,168 @@ jobs:
     runs-on: macos-latest
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
-      steps:
-        - name: Download signed DMG
-          uses: actions/download-artifact@v4
-          with:
-            name: Lighthouse-osx-${{ inputs.version }}
-            path: ./publish
+    steps:
+      - name: Download signed DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-osx-${{ inputs.version }}
+          path: ./publish
 
-        - name: Verify DMG signature
-          run: |
-            DMG_FILE="./publish/Lighthouse-${{ inputs.version }}.dmg"
-            if [ ! -f "$DMG_FILE" ]; then
-              echo "Error: DMG not found at $DMG_FILE"
-              ls -la ./publish/
-              exit 1
-            fi
-
-            echo "Verifying DMG signature..."
-            codesign --verify --deep --strict --verbose=4 "$DMG_FILE"
-            codesign -dvvv "$DMG_FILE" || true
-            
-            echo "Verifying notarization staple..."
-            xcrun stapler validate "$DMG_FILE"
-            
-            echo "Checking if DMG would pass Gatekeeper..."
-            spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG_FILE"
-
-        - name: Mount DMG and verify contents
-          run: |
-            DMG_FILE="./publish/Lighthouse-${{ inputs.version }}.dmg"
-            
-            echo "Mounting DMG..."
-            MOUNT_OUTPUT=$(hdiutil attach "$DMG_FILE" -nobrowse)
-            MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep Volumes | sed 's/.*\/Volumes/\/Volumes/')
-            
-            echo "Mounted at: $MOUNT_DIR"
-            ls -la "$MOUNT_DIR"
-            
-            APP_PATH="$MOUNT_DIR/Lighthouse.app"
-            if [ ! -d "$APP_PATH" ]; then
-              echo "Error: Lighthouse.app not found in DMG"
-              exit 1
-            fi
-            
-            echo "Verifying app bundle signature..."
-            codesign --verify --verbose=4 "$APP_PATH"
-            codesign -dvvv "$APP_PATH" || true
-            
-            echo "Checking if app would pass Gatekeeper..."
-            spctl --assess --type execute --verbose=4 "$APP_PATH"
-            
-            # Store mount dir for later steps
-            echo "MOUNT_DIR=$MOUNT_DIR" >> $GITHUB_ENV
-            echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
-
-        - name: Retrieve notarization info
-          env:
-            APPLE_ID: ${{ secrets.APPLE_ID }}
-            APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          run: |
-            SUBMISSION_ID="${{ inputs.submission_id }}"
-            echo "Using submission id: $SUBMISSION_ID"
-
-            if [ -z "$SUBMISSION_ID" ]; then
-              echo "Error: submission id missing"
-              exit 1
-            fi
-
-            xcrun notarytool info "$SUBMISSION_ID" \
-              --apple-id "$APPLE_ID" \
-              --password "$APPLE_APP_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" \
-              --output-format json > notarization-info.json
-
-            cat notarization-info.json
-
-            STATUS=$(cat notarization-info.json | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
-            echo "Notarization status: $STATUS"
-            if [ "$STATUS" != "Accepted" ]; then
-              echo "Error: Notarization status is not Accepted"
-              exit 1
-            fi
-
-        - name: Install app to Applications folder
-          run: |
-            echo "Installing Lighthouse.app to Applications..."
-            cp -R "$APP_PATH" /Applications/Lighthouse.app
-            ls -la /Applications/Lighthouse.app
-
-        - name: Unmount DMG
-          if: always()
-          run: |
-            if [ -n "$MOUNT_DIR" ]; then
-              hdiutil detach "$MOUNT_DIR" || true
-            fi
-
-        - name: Run Lighthouse
-          run: |
-            echo "Starting Lighthouse..."
-            ./Lighthouse > lighthouse.log 2>&1 &
-          working-directory: /Applications/Lighthouse.app/Contents/MacOS
-
-        - name: Wait for Lighthouse to start
-          run: |
-            end=$((SECONDS+30))
-            while [ $SECONDS -lt $end ]; do
-              if curl --silent --fail --insecure https://localhost:5001; then
-                echo "Service is up!"
-                exit 0
-              fi
-              sleep 1
-            done
-            echo "Timeout waiting for service"
+      - name: Verify DMG signature
+        run: |
+          DMG_FILE="./publish/Lighthouse-${{ inputs.version }}.dmg"
+          if [ ! -f "$DMG_FILE" ]; then
+            echo "Error: DMG not found at $DMG_FILE"
+            ls -la ./publish/
             exit 1
-            cat lighthouse.log
-          working-directory: /Applications/Lighthouse.app/Contents/MacOS
+          fi
+
+          echo "Verifying DMG signature..."
+          codesign --verify --deep --strict --verbose=4 "$DMG_FILE"
+          codesign -dvvv "$DMG_FILE" || true
+          
+          echo "Verifying notarization staple..."
+          xcrun stapler validate "$DMG_FILE"
+          
+          echo "Checking if DMG would pass Gatekeeper..."
+          spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG_FILE"
+
+      - name: Mount DMG and verify contents
+        run: |
+          DMG_FILE="./publish/Lighthouse-${{ inputs.version }}.dmg"
+          
+          echo "Mounting DMG..."
+          MOUNT_OUTPUT=$(hdiutil attach "$DMG_FILE" -nobrowse)
+          MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep Volumes | sed 's/.*\/Volumes/\/Volumes/')
+          
+          echo "Mounted at: $MOUNT_DIR"
+          ls -la "$MOUNT_DIR"
+          
+          APP_PATH="$MOUNT_DIR/Lighthouse.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: Lighthouse.app not found in DMG"
+            exit 1
+          fi
+          
+          echo "Verifying app bundle signature..."
+          codesign --verify --verbose=4 "$APP_PATH"
+          codesign -dvvv "$APP_PATH" || true
+          
+          echo "Checking if app would pass Gatekeeper..."
+          spctl --assess --type execute --verbose=4 "$APP_PATH"
+          
+          # Store mount dir for later steps
+          echo "MOUNT_DIR=$MOUNT_DIR" >> $GITHUB_ENV
+          echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
+
+      - name: Retrieve notarization info
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          SUBMISSION_ID="${{ inputs.submission_id }}"
+          echo "Using submission id: $SUBMISSION_ID"
+
+          if [ -z "$SUBMISSION_ID" ]; then
+            echo "Error: submission id missing"
+            exit 1
+          fi
+
+          xcrun notarytool info "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --output-format json > notarization-info.json
+
+          cat notarization-info.json
+
+          STATUS=$(cat notarization-info.json | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Notarization status: $STATUS"
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Error: Notarization status is not Accepted"
+            exit 1
+          fi
+
+      - name: Install app to Applications folder
+        run: |
+          echo "Installing Lighthouse.app to Applications..."
+          cp -R "$APP_PATH" /Applications/Lighthouse.app
+          ls -la /Applications/Lighthouse.app
+
+      - name: Unmount DMG
+        if: always()
+        run: |
+          if [ -n "$MOUNT_DIR" ]; then
+            hdiutil detach "$MOUNT_DIR" || true
+          fi
+
+      - name: Run Lighthouse
+        run: |
+          echo "Starting Lighthouse..."
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: /Applications/Lighthouse.app/Contents/MacOS
+
+      - name: Wait for Lighthouse to start
+        run: |
+          end=$((SECONDS+30))
+          while [ $SECONDS -lt $end ]; do
+            if curl --silent --fail --insecure https://localhost:5001; then
+              echo "Service is up!"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Timeout waiting for service"
+          exit 1
+          cat lighthouse.log
+        working-directory: /Applications/Lighthouse.app/Contents/MacOS
 
 
-        - name: Verify log files
-          if: always()
-          run: |
-            LOG_DIR="$HOME/Library/Logs/Lighthouse"
-            echo "Checking for log files in: $LOG_DIR"
-            if [ ! -d "$LOG_DIR" ]; then
-              echo "Error: Log directory $LOG_DIR does not exist"
-              exit 1
-            fi
-            
-            LOG_FILES=$(ls -la "$LOG_DIR"/*.txt 2>/dev/null | wc -l)
-            if [ "$LOG_FILES" -eq 0 ]; then
-              echo "Error: No log files found in $LOG_DIR"
-              ls -la "$LOG_DIR"
-              exit 1
-            fi
-            
-            echo "Found $LOG_FILES log file(s) in $LOG_DIR"
+      - name: Verify log files
+        if: always()
+        run: |
+          LOG_DIR="$HOME/Library/Logs/Lighthouse"
+          echo "Checking for log files in: $LOG_DIR"
+          if [ ! -d "$LOG_DIR" ]; then
+            echo "Error: Log directory $LOG_DIR does not exist"
+            exit 1
+          fi
+          
+          LOG_FILES=$(ls -la "$LOG_DIR"/*.txt 2>/dev/null | wc -l)
+          if [ "$LOG_FILES" -eq 0 ]; then
+            echo "Error: No log files found in $LOG_DIR"
             ls -la "$LOG_DIR"
+            exit 1
+          fi
+          
+          echo "Found $LOG_FILES log file(s) in $LOG_DIR"
+          ls -la "$LOG_DIR"
 
-            for logfile in "$LOG_DIR"/*.txt; do
-              if [ -f "$logfile" ]; then
-                echo "=== Contents of $logfile ==="
-                cat "$logfile"
-                echo ""
-              fi
-            done
-
-
-        - name: Verify database exists in correct directory
-          run: |
-            DB_DIR="$HOME/Library/Application Support/Lighthouse"
-            DB_FILE="$DB_DIR/LighthouseAppContext.db"
-            echo "Checking for database at: $DB_FILE"
-            if [ ! -d "$DB_DIR" ]; then
-              echo "Error: Database directory $DB_DIR does not exist"
-              exit 1
+          for logfile in "$LOG_DIR"/*.txt; do
+            if [ -f "$logfile" ]; then
+              echo "=== Contents of $logfile ==="
+              cat "$logfile"
+              echo ""
             fi
-            
-            if [ ! -f "$DB_FILE" ]; then
-              echo "Error: Database file $DB_FILE does not exist"
-              ls -la "$DB_DIR"
-              exit 1
-            fi
-            
-            echo "Database file found: $DB_FILE"
+          done
+
+
+      - name: Verify database exists in correct directory
+        run: |
+          DB_DIR="$HOME/Library/Application Support/Lighthouse"
+          DB_FILE="$DB_DIR/LighthouseAppContext.db"
+          echo "Checking for database at: $DB_FILE"
+          if [ ! -d "$DB_DIR" ]; then
+            echo "Error: Database directory $DB_DIR does not exist"
+            exit 1
+          fi
+          
+          if [ ! -f "$DB_FILE" ]; then
+            echo "Error: Database file $DB_FILE does not exist"
             ls -la "$DB_DIR"
+            exit 1
+          fi
+          
+          echo "Database file found: $DB_FILE"
+          ls -la "$DB_DIR"
