@@ -44,7 +44,7 @@ jobs:
         echo "Changed files:"
         git diff --name-only $base_ref HEAD
 
-        github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.yml && echo 'true' || echo 'false')
+        github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.*\.yml && echo 'true' || echo 'false')
         backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
         frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
         e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
