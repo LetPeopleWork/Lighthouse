@@ -421,3 +421,4 @@ Lighthouse.Backend/Lighthouse.Backend/DB_Backup/*
 
 Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json
 tools/codesign/actions-runner/*
+agent-output/*
