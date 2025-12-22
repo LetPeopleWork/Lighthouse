@@ -80,7 +80,7 @@ jobs:
               gh release download "$tag" --pattern "$ASSET_NAME" --dir updates/dmg/
               DMG_PATH="updates/dmg/$ASSET_NAME"
               # Sign the DMG
-              sign_update "$DMG_PATH" private_key.pem
+              arch -x86_64 sign_update "$DMG_PATH" private_key.pem
 
               # Get release body and create HTML notes (one notes file per tag)
               RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" | jq -r '.body')
