@@ -16,6 +16,10 @@ import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
+import PortfolioFeatureWipQuickSetting from "../../../components/Common/QuickSettings/PortfolioFeatureWipQuickSetting";
+import SleQuickSetting from "../../../components/Common/QuickSettings/SleQuickSetting";
+import SystemWipQuickSetting from "../../../components/Common/QuickSettings/SystemWipQuickSetting";
+import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
@@ -223,6 +227,52 @@ const PortfolioDetail: React.FC = () => {
 												/>
 											</Stack>
 										</Stack>
+									}
+									quickSettingsContent={
+										<QuickSettingsBar>
+											<SleQuickSetting
+												probability={
+													portfolio.serviceLevelExpectationProbability
+												}
+												range={portfolio.serviceLevelExpectationRange}
+												onSave={async (probability, range) => {
+													const settings =
+														await portfolioService.getPortfolioSettings(
+															portfolio.id,
+														);
+													settings.serviceLevelExpectationProbability =
+														probability;
+													settings.serviceLevelExpectationRange = range;
+													await portfolioService.updatePortfolio(settings);
+													await fetchPortfolio();
+												}}
+												disabled={!canUpdatePortfolioData}
+											/>
+											<SystemWipQuickSetting
+												wipLimit={portfolio.systemWIPLimit}
+												onSave={async (systemWip) => {
+													const settings =
+														await portfolioService.getPortfolioSettings(
+															portfolio.id,
+														);
+													settings.systemWIPLimit = systemWip;
+													await portfolioService.updatePortfolio(settings);
+													await fetchPortfolio();
+												}}
+												disabled={!canUpdatePortfolioData}
+											/>
+											<PortfolioFeatureWipQuickSetting
+												teams={involvedTeams}
+												onSave={async (teamId, featureWip) => {
+													const settings =
+														await teamService.getTeamSettings(teamId);
+													settings.featureWIP = featureWip;
+													await teamService.updateTeam(settings);
+													await fetchPortfolio();
+												}}
+												disabled={!canUpdatePortfolioData}
+											/>
+										</QuickSettingsBar>
 									}
 									centerContent={
 										<Tabs

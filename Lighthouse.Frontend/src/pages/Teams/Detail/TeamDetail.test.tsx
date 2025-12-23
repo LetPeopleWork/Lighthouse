@@ -59,6 +59,11 @@ const mockTeam = {
 	lastUpdated: new Date().toISOString(),
 	throughputStartDate: new Date("2024-01-01"),
 	throughputEndDate: new Date("2024-01-31"),
+	serviceLevelExpectationProbability: 85,
+	serviceLevelExpectationRange: 10,
+	systemWIPLimit: 0,
+	featureWip: 1,
+	useFixedDatesForThroughput: false,
 };
 
 // Mock react-router-dom params
@@ -80,6 +85,20 @@ const renderTeamDetail = () => {
 
 	// Configure specific mock behavior for the tests
 	mockTeamService.getTeam = vi.fn().mockResolvedValue(mockTeam);
+	mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+		id: 1,
+		name: "Test Team",
+		featureWIP: 1,
+		automaticallyAdjustFeatureWIP: false,
+		throughputHistory: 30,
+		useFixedDatesForThroughput: false,
+		throughputHistoryStartDate: new Date("2024-01-01"),
+		throughputHistoryEndDate: new Date("2024-01-31"),
+		serviceLevelExpectationProbability: 85,
+		serviceLevelExpectationRange: 10,
+		systemWIPLimit: 0,
+	});
+	mockTeamService.updateTeam = vi.fn().mockResolvedValue(undefined);
 	mockTeamService.updateTeamData = vi.fn();
 	mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
 	mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
