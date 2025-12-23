@@ -233,14 +233,14 @@ namespace Lighthouse.Backend.API
                 .ToList();
         }
 
-        private List<ProjectSettingDto> GetProjects(IEnumerable<int> exportedWorkTrackingSystemIds)
+        private List<PortfolioSettingDto> GetProjects(IEnumerable<int> exportedWorkTrackingSystemIds)
         {
             var projects = projectRepo.GetAll()
                 .Where(p => exportedWorkTrackingSystemIds.Contains(p.WorkTrackingSystemConnectionId));
 
 
             return projects
-                .Select(p => new ProjectSettingDto(p))
+                .Select(p => new PortfolioSettingDto(p))
                 .ToList();
         }
     }

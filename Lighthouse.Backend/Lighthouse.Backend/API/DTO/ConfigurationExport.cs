@@ -6,6 +6,6 @@
 
         public List<TeamSettingDto> Teams { get; set; } = [];
 
-        public List<ProjectSettingDto> Projects { get; set; } = [];
+        public List<PortfolioSettingDto> Projects { get; set; } = [];
     }
 }

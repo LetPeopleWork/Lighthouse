@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)}";
+            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.DoneItemsCutoffDays)}";
             var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
 
             foreach (var issue in issues)
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery, project.DoneItemsCutoffDays);
             var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
             return await CreateFeaturesFromIssues(project, issues);
         }
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
 
-            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery)} AND ({team.WorkItemQuery})";
+            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery, team.DoneItemsCutoffDays)} AND ({team.WorkItemQuery})";
             var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
 
             var issueKeys = issues.Select(x => x.Key).ToList();
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
 
-                var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
+                var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.DoneItemsCutoffDays);
                 var issues = await GetIssuesByQuery(team, workItemsQuery, team.ParentOverrideField, 10);
                 var totalItems = issues.Count();
 
@@ -166,14 +166,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        public async Task<bool> ValidateProjectSettings(Portfolio project)
+        public async Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
         {
             try
             {
-                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.WorkItemQuery);
 
-                var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
-                var issues = await GetIssuesByQuery(project, query, null, 10);
+                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.WorkItemQuery, portfolio.DoneItemsCutoffDays);
+                var issues = await GetIssuesByQuery(portfolio, query, null, 10);
                 var totalFeatures = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             catch (Exception exception)
             {
-                logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", project.Name);
+                logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
                 return false;
             }
         }
@@ -617,12 +617,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issues;
         }
 
-        private static string PrepareQuery(IEnumerable<string> includedWorkItemTypes, IEnumerable<string> includedStates, string query)
+        private static string PrepareQuery(IEnumerable<string> includedWorkItemTypes, IEnumerable<string> includedStates, string query, int cutOffDays)
         {
             var workItemsQuery = PrepareGenericQuery(includedWorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
             var stateQuery = PrepareGenericQuery(includedStates, JiraFieldNames.StatusFieldName, "OR", "=");
-            var jql = $"({query}) {workItemsQuery} {stateQuery} ";
+            var cutoffDateFilter = PrepareCutoffDateFilter(cutOffDays);
+            var jql = $"({query}) {workItemsQuery} {stateQuery} {cutoffDateFilter}";
             return jql;
+        }
+
+        private static string PrepareCutoffDateFilter(int cutOffDays)
+        {
+            if (cutOffDays <= 0)
+            {
+                return string.Empty;
+            }
+
+            var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
+            var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
+
+            return $"AND (resolved IS EMPTY OR resolved >= '{cutoffDateString}') ";
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

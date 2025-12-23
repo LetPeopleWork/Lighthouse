@@ -110,9 +110,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return ValidateCsv(team);
         }
 
-        public Task<bool> ValidateProjectSettings(Portfolio project)
+        public Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
         {
-            return ValidateCsv(project);
+            return ValidateCsv(portfolio);
         }
 
         private Task<bool> ValidateCsv(IWorkItemQueryOwner owner)

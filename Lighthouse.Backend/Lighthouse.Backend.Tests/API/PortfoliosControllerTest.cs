@@ -179,8 +179,8 @@ namespace Lighthouse.Backend.Tests.API
                 var okObjectResult = result.Result as OkObjectResult;
                 Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
 
-                Assert.That(okObjectResult.Value, Is.InstanceOf<ProjectSettingDto>());
-                var projectSettingDto = okObjectResult.Value as ProjectSettingDto;
+                Assert.That(okObjectResult.Value, Is.InstanceOf<PortfolioSettingDto>());
+                var projectSettingDto = okObjectResult.Value as PortfolioSettingDto;
 
                 Assert.That(projectSettingDto.Id, Is.EqualTo(project.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(project.Name));
@@ -214,7 +214,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task CreateProject_GivenNewProjectSettings_CreatesProjectAsync()
         {
-            var newProjectSettings = new ProjectSettingDto
+            var newProjectSettings = new PortfolioSettingDto
             {
                 Name = "New Project",
                 WorkItemTypes = new List<string> { "Bug", "Feature" },
@@ -246,8 +246,8 @@ namespace Lighthouse.Backend.Tests.API
                 var okObjectResult = result.Result as OkObjectResult;
                 Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
 
-                Assert.That(okObjectResult.Value, Is.InstanceOf<ProjectSettingDto>());
-                var projectSettingDto = okObjectResult.Value as ProjectSettingDto;
+                Assert.That(okObjectResult.Value, Is.InstanceOf<PortfolioSettingDto>());
+                var projectSettingDto = okObjectResult.Value as PortfolioSettingDto;
 
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepoMock.Setup(x => x.GetById(132)).Returns(existingProject);
             teamRepoMock.Setup(x => x.GetById(42)).Returns(existingTeam);
 
-            var updatedProjectSettings = new ProjectSettingDto
+            var updatedProjectSettings = new PortfolioSettingDto
             {
                 Id = 132,
                 Name = "Updated Project",
@@ -322,8 +322,8 @@ namespace Lighthouse.Backend.Tests.API
                 var okObjectResult = result.Result as OkObjectResult;
                 Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
 
-                Assert.That(okObjectResult.Value, Is.InstanceOf<ProjectSettingDto>());
-                var projectSettingDto = okObjectResult.Value as ProjectSettingDto;
+                Assert.That(okObjectResult.Value, Is.InstanceOf<PortfolioSettingDto>());
+                var projectSettingDto = okObjectResult.Value as PortfolioSettingDto;
 
                 Assert.That(projectSettingDto.Id, Is.EqualTo(updatedProjectSettings.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
@@ -364,7 +364,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var result = await subject.UpdateProject(1, new ProjectSettingDto());
+            var result = await subject.UpdateProject(1, new PortfolioSettingDto());
 
             using (Assert.EnterMultipleScope())
             {
@@ -382,12 +382,12 @@ namespace Lighthouse.Backend.Tests.API
         public async Task ValidateTeamSettings_GivenTeamSettings_ReturnsResultFromWorkItemService(bool expectedResult)
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
-            var projectSettings = new ProjectSettingDto { WorkTrackingSystemConnectionId = 1886 };
+            var projectSettings = new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1886 };
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateProjectSettings(It.IsAny<Portfolio>())).ReturnsAsync(expectedResult);
+            workTrackingConnectorServiceMock.Setup(x => x.ValidatePortfolioSettings(It.IsAny<Portfolio>())).ReturnsAsync(expectedResult);
 
             var subject = CreateSubject();
 
@@ -409,7 +409,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task ValidateTeamSettings_WorkTrackingSystemNotFound_ReturnsNotFound()
         {
-            var projectSettings = new ProjectSettingDto { WorkTrackingSystemConnectionId = 1886 };
+            var projectSettings = new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1886 };
 
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns((WorkTrackingSystemConnection)null);
 

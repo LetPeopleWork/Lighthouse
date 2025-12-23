@@ -320,6 +320,9 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("DoneItemsCutoffDays")
+                        .HasColumnType("INTEGER");
+
                     b.PrimitiveCollection<string>("DoneStates")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -413,6 +416,9 @@ namespace Lighthouse.Backend.Migrations
                     b.PrimitiveCollection<string>("DoingStates")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("DoneItemsCutoffDays")
+                        .HasColumnType("INTEGER");
 
                     b.PrimitiveCollection<string>("DoneStates")
                         .IsRequired()

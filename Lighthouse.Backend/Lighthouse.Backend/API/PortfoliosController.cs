@@ -91,102 +91,103 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("{id}/settings")]
-        public ActionResult<ProjectSettingDto> GetProjectSettings(int id)
+        public ActionResult<PortfolioSettingDto> GetProjectSettings(int id)
         {
             return this.GetEntityByIdAnExecuteAction(projectRepository, id, project =>
             {
-                var projectSettingDto = new ProjectSettingDto(project);
+                var projectSettingDto = new PortfolioSettingDto(project);
                 return projectSettingDto;
             });
         }
 
         [HttpPut("{id}")]
         [LicenseGuard(CheckProjectConstraint = true)]
-        public async Task<ActionResult<ProjectSettingDto>> UpdateProject(int id, ProjectSettingDto projectSetting)
+        public async Task<ActionResult<PortfolioSettingDto>> UpdateProject(int id, PortfolioSettingDto portfolioSetting)
         {
             return await this.GetEntityByIdAnExecuteAction(projectRepository, id, async project =>
             {
-                SyncProjectWithProjectSettings(project, projectSetting);
+                SyncProjectWithProjectSettings(project, portfolioSetting);
 
                 projectRepository.Update(project);
                 await projectRepository.Save();
 
-                var updatedProjectSettingDto = new ProjectSettingDto(project);
+                var updatedProjectSettingDto = new PortfolioSettingDto(project);
                 return updatedProjectSettingDto;
             });
         }
 
         [HttpPost]
         [LicenseGuard(CheckProjectConstraint = true, ProjectLimitOverride = 0)]
-        public async Task<ActionResult<ProjectSettingDto>> CreateProject(ProjectSettingDto projectSetting)
+        public async Task<ActionResult<PortfolioSettingDto>> CreateProject(PortfolioSettingDto portfolioSetting)
         {
-            projectSetting.Id = 0;
+            portfolioSetting.Id = 0;
 
             var newProject = new Portfolio();
-            SyncProjectWithProjectSettings(newProject, projectSetting);
+            SyncProjectWithProjectSettings(newProject, portfolioSetting);
 
             projectRepository.Add(newProject);
             await projectRepository.Save();
 
-            var projectSettingDto = new ProjectSettingDto(newProject);
+            var projectSettingDto = new PortfolioSettingDto(newProject);
             return Ok(projectSettingDto);
         }
 
         [HttpPost("validate")]
         [LicenseGuard(CheckProjectConstraint = true)]
-        public async Task<ActionResult<bool>> ValidateProjectSettings(ProjectSettingDto projectSettingDto)
+        public async Task<ActionResult<bool>> ValidateProjectSettings(PortfolioSettingDto portfolioSettingDto)
         {
-            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, projectSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
+            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, portfolioSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
             {
                 var project = new Portfolio { WorkTrackingSystemConnection = workTrackingSystem };
-                SyncProjectWithProjectSettings(project, projectSettingDto);
+                SyncProjectWithProjectSettings(project, portfolioSettingDto);
 
                 var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-                var result = await workItemService.ValidateProjectSettings(project);
+                var result = await workItemService.ValidatePortfolioSettings(project);
 
                 return result;
             });
         }
 
-        private void SyncProjectWithProjectSettings(Portfolio project, ProjectSettingDto projectSetting)
+        private void SyncProjectWithProjectSettings(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
-            project.Name = projectSetting.Name;
-            project.WorkItemTypes = projectSetting.WorkItemTypes;
-            project.WorkItemQuery = projectSetting.WorkItemQuery;
-            project.UnparentedItemsQuery = projectSetting.UnparentedItemsQuery?.Trim();
+            project.Name = portfolioSetting.Name;
+            project.WorkItemTypes = portfolioSetting.WorkItemTypes;
+            project.WorkItemQuery = portfolioSetting.WorkItemQuery;
+            project.UnparentedItemsQuery = portfolioSetting.UnparentedItemsQuery?.Trim();
 
-            project.UsePercentileToCalculateDefaultAmountOfWorkItems = projectSetting.UsePercentileToCalculateDefaultAmountOfWorkItems;
-            project.DefaultAmountOfWorkItemsPerFeature = projectSetting.DefaultAmountOfWorkItemsPerFeature;
-            project.DefaultWorkItemPercentile = projectSetting.DefaultWorkItemPercentile;
-            project.PercentileHistoryInDays = projectSetting.PercentileHistoryInDays;
-            project.SizeEstimateField = projectSetting.SizeEstimateField;
-            project.OverrideRealChildCountStates = projectSetting.OverrideRealChildCountStates;
+            project.UsePercentileToCalculateDefaultAmountOfWorkItems = portfolioSetting.UsePercentileToCalculateDefaultAmountOfWorkItems;
+            project.DefaultAmountOfWorkItemsPerFeature = portfolioSetting.DefaultAmountOfWorkItemsPerFeature;
+            project.DefaultWorkItemPercentile = portfolioSetting.DefaultWorkItemPercentile;
+            project.PercentileHistoryInDays = portfolioSetting.PercentileHistoryInDays;
+            project.SizeEstimateField = portfolioSetting.SizeEstimateField;
+            project.OverrideRealChildCountStates = portfolioSetting.OverrideRealChildCountStates;
+            project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;
 
-            project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
-            project.Tags = projectSetting.Tags;
-            project.FeatureOwnerField = projectSetting.FeatureOwnerField;
-            project.SystemWIPLimit = projectSetting.SystemWIPLimit;
+            project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
+            project.Tags = portfolioSetting.Tags;
+            project.FeatureOwnerField = portfolioSetting.FeatureOwnerField;
+            project.SystemWIPLimit = portfolioSetting.SystemWIPLimit;
 
-            project.ParentOverrideField = projectSetting.ParentOverrideField;
+            project.ParentOverrideField = portfolioSetting.ParentOverrideField;
 
-            SyncStates(project, projectSetting);
-            SyncTeams(project, projectSetting);
-            SyncServiceLevelExpectation(project, projectSetting);
-            SyncBlockedItems(project, projectSetting);
+            SyncStates(project, portfolioSetting);
+            SyncTeams(project, portfolioSetting);
+            SyncServiceLevelExpectation(project, portfolioSetting);
+            SyncBlockedItems(project, portfolioSetting);
         }
 
-        private static void SyncStates(Portfolio project, ProjectSettingDto projectSetting)
+        private static void SyncStates(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
-            project.ToDoStates = TrimListEntries(projectSetting.ToDoStates);
-            project.DoingStates = TrimListEntries(projectSetting.DoingStates);
-            project.DoneStates = TrimListEntries(projectSetting.DoneStates);
+            project.ToDoStates = TrimListEntries(portfolioSetting.ToDoStates);
+            project.DoingStates = TrimListEntries(portfolioSetting.DoingStates);
+            project.DoneStates = TrimListEntries(portfolioSetting.DoneStates);
         }
 
-        private static void SyncBlockedItems(Portfolio project, ProjectSettingDto projectSetting)
+        private static void SyncBlockedItems(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
-            project.BlockedStates = TrimListEntries(projectSetting.BlockedStates);
-            project.BlockedTags = projectSetting.BlockedTags;
+            project.BlockedStates = TrimListEntries(portfolioSetting.BlockedStates);
+            project.BlockedTags = portfolioSetting.BlockedTags;
         }
 
         private static List<string> TrimListEntries(List<string> list)
@@ -194,10 +195,10 @@ namespace Lighthouse.Backend.API
             return list.Select(s => s.Trim()).ToList();
         }
 
-        private void SyncTeams(Portfolio project, ProjectSettingDto projectSetting)
+        private void SyncTeams(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
             var teams = new List<Team>();
-            foreach (var teamDto in projectSetting.InvolvedTeams)
+            foreach (var teamDto in portfolioSetting.InvolvedTeams)
             {
                 var team = teamRepository.GetById(teamDto.Id);
                 if (team != null)
@@ -209,16 +210,16 @@ namespace Lighthouse.Backend.API
             project.UpdateTeams(teams);
 
             project.OwningTeam = null;
-            if (projectSetting.OwningTeam != null)
+            if (portfolioSetting.OwningTeam != null)
             {
-                project.OwningTeam = teamRepository.GetById(projectSetting.OwningTeam.Id);
+                project.OwningTeam = teamRepository.GetById(portfolioSetting.OwningTeam.Id);
             }
         }
 
-        private static void SyncServiceLevelExpectation(Portfolio project, ProjectSettingDto projectSetting)
+        private static void SyncServiceLevelExpectation(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
-            project.ServiceLevelExpectationProbability = projectSetting.ServiceLevelExpectationProbability;
-            project.ServiceLevelExpectationRange = projectSetting.ServiceLevelExpectationRange;
+            project.ServiceLevelExpectationProbability = portfolioSetting.ServiceLevelExpectationProbability;
+            project.ServiceLevelExpectationRange = portfolioSetting.ServiceLevelExpectationRange;
         }
     }
 }

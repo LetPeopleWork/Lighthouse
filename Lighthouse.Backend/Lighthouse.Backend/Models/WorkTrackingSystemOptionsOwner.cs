@@ -40,6 +40,8 @@ namespace Lighthouse.Backend.Models
 
         public List<string> BlockedTags { get; set; } = [];
 
+        public abstract int DoneItemsCutoffDays { get; set; }
+
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
 
         public StateCategories MapStateToStateCategory(string state)

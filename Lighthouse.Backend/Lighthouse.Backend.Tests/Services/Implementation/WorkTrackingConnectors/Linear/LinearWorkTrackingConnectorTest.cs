@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var project = CreateProject();
 
-            var isValid = await subject.ValidateProjectSettings(project);
+            var isValid = await subject.ValidatePortfolioSettings(project);
 
             Assert.That(isValid, Is.True);
         }
@@ -231,7 +231,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreateProject();
             project.WorkItemQuery = projectName;
 
-            var isValid = await subject.ValidateProjectSettings(project);
+            var isValid = await subject.ValidatePortfolioSettings(project);
 
             Assert.That(isValid, Is.False);
         }

@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.API.DTO
 
             FeatureWIP = team.FeatureWIP;
             AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
+            DoneItemsCutoffDays = team.DoneItemsCutoffDays;
         }
 
         [JsonRequired]
@@ -37,5 +38,8 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
+
+        [JsonRequired]
+        public int DoneItemsCutoffDays { get; set; }
     }
 }

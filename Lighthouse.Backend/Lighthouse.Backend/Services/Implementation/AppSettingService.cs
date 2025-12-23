@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return teamSettings;
         }
 
-        public ProjectSettingDto GetDefaultProjectSettings()
+        public PortfolioSettingDto GetDefaultProjectSettings()
         {
             var workItemTypes = GetListByKey(AppSettingKeys.ProjectSettingWorkItemTypes);
 
@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var overrideRealChildCountStates = GetListByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
 
-            var projectSettings = new ProjectSettingDto
+            var projectSettings = new PortfolioSettingDto
             {
                 Name = GetSettingByKey(AppSettingKeys.ProjectSettingName).Value,
                 WorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery).Value,

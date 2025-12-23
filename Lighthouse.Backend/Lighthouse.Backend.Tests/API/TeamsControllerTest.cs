@@ -55,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Projects, Has.Count.EqualTo(0));
                 Assert.That(result.Features, Has.Count.EqualTo(0));
             }
-            ;
         }
 
         [Test]
@@ -79,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Projects, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(1));
             }
-            ;
         }
 
         [Test]
@@ -104,7 +102,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Projects, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(2));
             }
-            ;
         }
 
         [Test]
@@ -134,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Projects, Has.Count.EqualTo(2));
                 Assert.That(result.Features, Has.Count.EqualTo(3));
             }
-            ;
         }
 
         [Test]
@@ -173,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(team1Results.Features, Has.Count.EqualTo(2));
                 Assert.That(team2Results.Features, Has.Count.EqualTo(1));
             }
-            ;
         }
 
         [Test]
@@ -226,7 +221,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(returnedTeamDto.Projects, Has.Count.EqualTo(2));
                 Assert.That(returnedTeamDto.Features, Has.Count.EqualTo(3));
             }
-            ;
         }
 
         [Test]
@@ -243,7 +237,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -287,7 +280,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(team.SystemWIPLimit));
             }
-            ;
         }
 
         [Test]
@@ -304,7 +296,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -367,7 +358,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.BlockedTags, Contains.Item("Waiting"));
                 Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
             }
-            ;
         }
 
         [Test]
@@ -472,7 +462,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.BlockedStates, Contains.Item("Waiting for Peter"));
                 Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
             }
-            ;
         }
 
         [Test]
@@ -653,7 +642,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -674,7 +662,6 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
             }
-            ;
         }
 
         [Test]
@@ -692,7 +679,6 @@ namespace Lighthouse.Backend.Tests.API
                 var value = notFoundObjectResult.Value;
                 Assert.That(value, Is.Null);
             }
-            ;
         }
 
         [Test]
@@ -713,7 +699,6 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
             }
-            ;
         }
 
         [Test]
@@ -743,7 +728,6 @@ namespace Lighthouse.Backend.Tests.API
                 var value = okObjectResult.Value;
                 Assert.That(value, Is.EqualTo(expectedResult));
             }
-            ;
         }
 
         [Test]
@@ -764,7 +748,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundObjectResult = response.Result as NotFoundResult;
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         private Team CreateTeam(int id, string name)

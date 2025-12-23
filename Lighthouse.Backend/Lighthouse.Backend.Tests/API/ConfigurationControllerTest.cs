@@ -340,7 +340,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
                 Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -387,7 +387,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) { Id = 0 } },
                 Teams = new List<TeamSettingDto> { new TeamSettingDto(team) { Id = 1 } },
-                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) { Id = 0 } },
+                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) { Id = 0 } },
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -431,7 +431,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
                 Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<ProjectSettingDto>(),
+                Projects = new List<PortfolioSettingDto>(),
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -470,7 +470,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
                 Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<ProjectSettingDto>(),
+                Projects = new List<PortfolioSettingDto>(),
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -504,7 +504,7 @@ namespace Lighthouse.Backend.Tests.API
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -545,7 +545,7 @@ namespace Lighthouse.Backend.Tests.API
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -586,7 +586,7 @@ namespace Lighthouse.Backend.Tests.API
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
             };
 
             var response = subject.ValidateConfiguration(configuration);

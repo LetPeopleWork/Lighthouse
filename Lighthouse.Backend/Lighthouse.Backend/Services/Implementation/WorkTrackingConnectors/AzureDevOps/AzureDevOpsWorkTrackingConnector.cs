@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.ParentOverrideField ?? string.Empty)}";
+            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.ParentOverrideField ?? string.Empty, team.DoneItemsCutoffDays)}";
 
             var adoWorkItems = await FetchAdoWorkItemsByQuery(team, workItemQuery, team.ParentOverrideField ?? string.Empty);
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery, project.ParentOverrideField ?? string.Empty);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery, project.ParentOverrideField ?? string.Empty, project.DoneItemsCutoffDays);
             var features = await GetFeaturesForProjectByQuery(project, query);
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
-            var workItemsQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery, team.ParentOverrideField ?? string.Empty)} AND {team.WorkItemQuery}";
+            var workItemsQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery, team.ParentOverrideField ?? string.Empty, team.DoneItemsCutoffDays)} AND {team.WorkItemQuery}";
 
             var matchingWorkItems = await GetWorkItemReferencesByQuery(witClient, workItemsQuery);
 
@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
 
-                var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
+                var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, string.Empty, team.DoneItemsCutoffDays);
                 var witClient = GetClientService(team.WorkTrackingSystemConnection);
                 var workItems = await GetWorkItemReferencesByQuery(witClient, query);
 
@@ -177,15 +177,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        public async Task<bool> ValidateProjectSettings(Portfolio project)
+        public async Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
         {
             try
             {
-                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.WorkItemQuery);
 
-                var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
+                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.WorkItemQuery, string.Empty, portfolio.DoneItemsCutoffDays);
 
-                var workItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty);
+                var workItems = await FetchAdoWorkItemsByQuery(portfolio, query, portfolio.SizeEstimateField ?? string.Empty, portfolio.FeatureOwnerField ?? string.Empty);
                 var workItemCount = workItems.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
@@ -194,7 +194,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
             catch (Exception exception)
             {
-                logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", project.Name);
+                logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
                 return false;
             }
         }
@@ -554,16 +554,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private static string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> includedStates,
-            string query)
-        {
-            return PrepareQuery(includedWorkItemTypes, includedStates, query, string.Empty);
-        }
-
-        private static string PrepareQuery(
-            IEnumerable<string> includedWorkItemTypes,
-            IEnumerable<string> includedStates,
             string query,
-            string extraField)
+            string extraField,
+            int cutOffDays)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(includedWorkItemTypes);
             var stateQuery = PrepareStateQuery(includedStates);
@@ -574,11 +567,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 extraFieldsQuery = $", [{extraField}]";
             }
 
+            var cutoffDateFilter = PrepareCutoffDateFilter(cutOffDays);
+
             var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{extraFieldsQuery} FROM WorkItems WHERE ({query}) " +
                 $"{workItemsQuery} " +
-                $"{stateQuery}";
+                $"{stateQuery} " +
+                $"{cutoffDateFilter}";
 
             return wiql;
+        }
+
+        private static string PrepareCutoffDateFilter(int cutOffDays)
+        {
+            if (cutOffDays <= 0)
+            {
+                return string.Empty;
+            }
+            
+            var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
+            
+            var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
+
+            return $"AND ([{AzureDevOpsFieldNames.ClosedDate}] = '' OR [{AzureDevOpsFieldNames.ClosedDate}] >= '{cutoffDateString}') ";
         }
 
         private static string PrepareWorkItemTypeQuery(IEnumerable<string> workItemTypes)

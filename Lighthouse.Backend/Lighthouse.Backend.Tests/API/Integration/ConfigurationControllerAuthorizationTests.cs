@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto>(),
                 Teams = new List<TeamSettingDto>(),
-                Projects = new List<ProjectSettingDto>(),
+                Projects = new List<PortfolioSettingDto>(),
             };
 
             var response = await Client.PostAsJsonAsync("/api/configuration/validate", payload);

@@ -16,6 +16,8 @@
 
         public int ThroughputHistory { get; set; } = 30;
 
+        public override int DoneItemsCutoffDays { get; set; } = 180;
+
         public List<Portfolio> Portfolios { get; } = [];
 
         public List<WorkItem> WorkItems { get; } = [];

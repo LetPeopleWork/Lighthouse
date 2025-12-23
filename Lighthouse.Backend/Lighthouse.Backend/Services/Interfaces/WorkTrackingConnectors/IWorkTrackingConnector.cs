@@ -24,6 +24,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         Task<bool> ValidateTeamSettings(Team team);
 
-        Task<bool> ValidateProjectSettings(Portfolio project);
+        Task<bool> ValidatePortfolioSettings(Portfolio portfolio);
     }
 }

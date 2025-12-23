@@ -176,22 +176,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        public async Task<bool> ValidateProjectSettings(Portfolio project)
+        public async Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
         {
             try
             {
-                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.WorkItemQuery);
 
-                var issues = await GetIssuesForProject(project);
+                var issues = await GetIssuesForProject(portfolio);
 
-                logger.LogInformation("Found {TotalIssues} issues for project {ProjectName}",
-                    issues.Count, project.Name);
+                logger.LogInformation("Found {TotalIssues} issues for portfolio {ProjectName}",
+                    issues.Count, portfolio.Name);
 
                 return issues.Count > 0;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during Validation of Project Settings for Project {ProjectName}", project.Name);
+                logger.LogError(ex, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
                 return false;
             }
         }

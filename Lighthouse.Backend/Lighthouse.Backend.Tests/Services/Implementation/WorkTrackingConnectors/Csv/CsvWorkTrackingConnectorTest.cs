@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
-            var isValid = await subject.ValidateProjectSettings(project);
+            var isValid = await subject.ValidatePortfolioSettings(project);
 
             Assert.That(isValid, Is.EqualTo(expectedResult));
         }

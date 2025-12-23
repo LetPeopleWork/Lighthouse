@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.API
         }
 
 	[HttpGet("DefaultProjectSettings")]
-	public ActionResult<ProjectSettingDto> GetDefaultProjectSettings()
+	public ActionResult<PortfolioSettingDto> GetDefaultProjectSettings()
 	{
 		var settings = appSettingService.GetDefaultProjectSettings();
 		return Ok(settings);

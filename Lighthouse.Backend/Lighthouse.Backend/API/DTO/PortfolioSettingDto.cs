@@ -3,33 +3,33 @@ using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
-    public class ProjectSettingDto : SettingsOwnerDtoBase
+    public class PortfolioSettingDto : SettingsOwnerDtoBase
     {
-        public ProjectSettingDto() : base()
+        public PortfolioSettingDto() : base()
         {            
         }
 
-        public ProjectSettingDto(Portfolio project) : base(project)
+        public PortfolioSettingDto(Portfolio portfolio) : base(portfolio)
         {
-            UnparentedItemsQuery = project.UnparentedItemsQuery;
+            UnparentedItemsQuery = portfolio.UnparentedItemsQuery;
 
-            UsePercentileToCalculateDefaultAmountOfWorkItems = project.UsePercentileToCalculateDefaultAmountOfWorkItems;
-            DefaultAmountOfWorkItemsPerFeature = project.DefaultAmountOfWorkItemsPerFeature;
-            DefaultWorkItemPercentile = project.DefaultWorkItemPercentile;
-            PercentileHistoryInDays = project.PercentileHistoryInDays;
-            SizeEstimateField = project.SizeEstimateField;
-            OverrideRealChildCountStates = project.OverrideRealChildCountStates;
-            DoneItemsCutoffDays = project.DoneItemsCutoffDays;
+            UsePercentileToCalculateDefaultAmountOfWorkItems = portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems;
+            DefaultAmountOfWorkItemsPerFeature = portfolio.DefaultAmountOfWorkItemsPerFeature;
+            DefaultWorkItemPercentile = portfolio.DefaultWorkItemPercentile;
+            PercentileHistoryInDays = portfolio.PercentileHistoryInDays;
+            SizeEstimateField = portfolio.SizeEstimateField;
+            OverrideRealChildCountStates = portfolio.OverrideRealChildCountStates;
+            DoneItemsCutoffDays = portfolio.DoneItemsCutoffDays;
 
-            InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
+            InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos());
 
-            if (project.OwningTeam != null)
+            if (portfolio.OwningTeam != null)
             {
-                var owningTeam = project.OwningTeam;
+                var owningTeam = portfolio.OwningTeam;
                 OwningTeam = new EntityReferenceDto(owningTeam.Id, owningTeam.Name);
             }
 
-            FeatureOwnerField = project.FeatureOwnerField;
+            FeatureOwnerField = portfolio.FeatureOwnerField;
         }
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];

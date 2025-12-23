@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupProjects(1);
 
-            var projectSetting = new ProjectSettingDto();
+            var projectSetting = new PortfolioSettingDto();
             var response = await Client.PostAsJsonAsync("/api/projects", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupProjects(0);
 
-            var projectSetting = new ProjectSettingDto();
+            var projectSetting = new PortfolioSettingDto();
             var response = await Client.PostAsJsonAsync("/api/projects", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupProjects(2);
 
-            var projectSetting = new ProjectSettingDto();
+            var projectSetting = new PortfolioSettingDto();
             var response = await Client.PutAsJsonAsync("/api/projects/123", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupProjects(1);
 
-            var projectSetting = new ProjectSettingDto();
+            var projectSetting = new PortfolioSettingDto();
             var response = await Client.PutAsJsonAsync("/api/projects/123", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupProjects(2);
 
-            var projectSetting = new ProjectSettingDto();
+            var projectSetting = new PortfolioSettingDto();
             var response = await Client.PostAsJsonAsync("/api/projects/validate", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupProjects(1);
 
-            var projectSetting = new ProjectSettingDto();
+            var projectSetting = new PortfolioSettingDto();
             var response = await Client.PostAsJsonAsync("/api/projects/validate", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();

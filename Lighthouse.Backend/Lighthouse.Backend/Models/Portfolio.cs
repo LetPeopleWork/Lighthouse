@@ -26,6 +26,8 @@
 
         public int DefaultWorkItemPercentile { get; set; } = 85;
 
+        public override int DoneItemsCutoffDays { get; set; } = 365;
+
         public List<string> OverrideRealChildCountStates { get; set; } = new List<string>();
 
         public void UpdateFeatures(IEnumerable<Feature> features)

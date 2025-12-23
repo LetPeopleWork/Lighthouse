@@ -64,7 +64,7 @@
             }
         }
 
-        private void InitializeProjects(IEnumerable<ProjectSettingDto> projects)
+        private void InitializeProjects(IEnumerable<PortfolioSettingDto> projects)
         {
             foreach (var project in projects)
             {

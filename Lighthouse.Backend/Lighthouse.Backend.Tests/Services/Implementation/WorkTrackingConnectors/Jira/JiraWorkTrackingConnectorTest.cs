@@ -35,6 +35,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(matchingItems.Count(), Is.EqualTo(2));
         }
+        
+        [Test]
+        [TestCase(0, 1)]
+        [TestCase(10, 0)]
+        [TestCase(5500, 1)]
+        public async Task GetWorkItemsForTeam_CutOffDateSet_SkipsItemsIfBeyondCutOff(int cutOffDays, int expectedItems)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+            
+            team.DoneItemsCutoffDays =  cutOffDays;
+
+            var actualItems = await subject.GetWorkItemsForTeam(team);
+
+            Assert.That(actualItems.ToList(), Has.Count.EqualTo(expectedItems));
+        }
 
         [Test]
         public async Task GetWorkItemsForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
@@ -45,6 +61,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.UseFixedDatesForThroughput = true;
             team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
             var closedItems = await subject.GetWorkItemsForTeam(team);
 
@@ -82,12 +101,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_UseParentOverride_SetsParentRelationCorrect()
         {
             var subject = CreateSubject();
-            var project = CreateProject("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Story");
-            project.ParentOverrideField = "cf[10038]";
+            var portfolio = CreatePortfolio("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+            portfolio.ParentOverrideField = "cf[10038]";
 
-            var workItems = await subject.GetFeaturesForProject(project);
+            var workItems = await subject.GetFeaturesForProject(portfolio);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
 
             Assert.That(workItem.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"));
@@ -175,12 +194,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_LabelDoesNotExist_ReturnsNoItems()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND labels = \"NotExistingLabel\"");
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"NotExistingLabel\"");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Story");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
 
-            var itemsByTag = await subject.GetFeaturesForProject(project);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -189,12 +208,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_ReturnsCorrectAmountOfItems()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = \"LGHTHSDMO\" AND labels = \"Phoenix\"");
+            var portfolio = CreatePortfolio($"project = \"LGHTHSDMO\" AND labels = \"Phoenix\"");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Epic");
-
-            var itemsByTag = await subject.GetFeaturesForProject(project);
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Epic");
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
+            
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(4));
         }
@@ -204,12 +226,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_TagExists_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND labels = \"ExistingLabel\"");
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"ExistingLabel\"");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Story");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
 
-            var itemsByTag = await subject.GetFeaturesForProject(project);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(2));
         }
@@ -218,12 +240,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND labels = \"ExistingLabel\"");
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"ExistingLabel\"");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Bug");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Bug");
 
-            var itemsByTag = await subject.GetFeaturesForProject(project);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -232,26 +254,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_ItemIsClosed_ReturnsItem()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Story");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var actualItems = await subject.GetFeaturesForProject(project);
+            var actualItems = await subject.GetFeaturesForProject(portfolio);
 
             Assert.That(actualItems, Has.Count.EqualTo(1));
+        }   
+        
+        [Test]
+        [TestCase(0, 1)]
+        [TestCase(10, 0)]
+        [TestCase(5500, 1)]
+        public async Task GetFeaturesForProject_CutOffDateSet_SkipsItemsIfBeyondCutOff(int cutOffDays, int expectedItems)
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+            
+            portfolio.DoneItemsCutoffDays =  cutOffDays;
+
+            var actualItems = await subject.GetFeaturesForProject(portfolio);
+
+            Assert.That(actualItems, Has.Count.EqualTo(expectedItems));
         }
 
         [Test]
         public async Task GetFeaturesForProject_ReturnsCorrectFeatureProperties()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND issueKey = PROJ-18");
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-18");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Story");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == "PROJ-18");
 
             using (Assert.EnterMultipleScope())
@@ -261,21 +305,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.State, Is.EqualTo("In Progress"));
                 Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
                 Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
-            };
+            }
         }
 
         [Test]
         public async Task WorkTrackingSystemContainsTrailingSlash_IgnoresInUrl()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND issueKey = PROJ-18");
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-18");
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Story");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
 
-            project.WorkTrackingSystemConnection.Options[0].Value = "https://letpeoplework.atlassian.net/";
+            portfolio.WorkTrackingSystemConnection.Options[0].Value = "https://letpeoplework.atlassian.net/";
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == "PROJ-18");
 
             Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
@@ -285,9 +329,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_ReturnsCorrectStartedDateBasedOnStateMapping()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-21");
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == "PROJ-21");
 
             using (Assert.EnterMultipleScope())
@@ -296,43 +340,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
 
                 Assert.That(feature.ClosedDate.HasValue, Is.False);
-            };
+            }
         }
 
         [Test]
         public async Task GetFeaturesForProject_ReturnsCorrectClosedDateBasedOnStateMapping()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
-            project.DoingStates.Remove("In Progress");
-            project.DoneStates.Add("In Progress");
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-21");
+            portfolio.DoingStates.Remove("In Progress");
+            portfolio.DoneStates.Add("In Progress");
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == "PROJ-21");
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.ClosedDate.HasValue, Is.True);
                 Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
-            };
+            }
         }
 
         [Test]
         public async Task GetFeaturesForProject_ClosedDateButNoStartedDate_SetsStartedDateToClosedDate()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
-            project.DoingStates.Clear();
-            project.DoneStates.Clear();
-            project.DoneStates.Add("In Progress");
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-21");
+            portfolio.DoingStates.Clear();
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("In Progress");
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == "PROJ-21");
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
-            };
+            }
         }
 
         [Test]
@@ -345,10 +392,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var project = CreateProject($"project = LGHTHSDMO AND issuekey = {issueKey}");
-            project.SizeEstimateField = fieldName;
+            var portfolio = CreatePortfolio($"project = LGHTHSDMO AND issuekey = {issueKey}");
+            portfolio.SizeEstimateField = fieldName;
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == issueKey);
 
             Assert.That(feature.EstimatedSize, Is.EqualTo(expectedEstimatedSize));
@@ -365,10 +412,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var project = CreateProject($"project = LGHTHSDMO AND issuekey = {issueKey}");
-            project.FeatureOwnerField = fieldName;
+            var portfolio = CreatePortfolio($"project = LGHTHSDMO AND issuekey = {issueKey}");
+            portfolio.FeatureOwnerField = fieldName;
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == issueKey);
             
             Assert.That(feature.OwningTeam, Contains.Substring(expectedFeatureOwnerFieldValue));
@@ -378,9 +425,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_GetsLabelsAndStoresAsTag()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = PROJ AND key = PROJ-7");
+            var portfolio = CreatePortfolio($"project = PROJ AND key = PROJ-7");
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == "PROJ-7");
 
             using (Assert.EnterMultipleScope())
@@ -395,9 +442,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetParentFeaturesDetails_ReturnsCorrectDetails()
         {
             var subject = CreateSubject();
-            var project = CreateProject($"project = LGHTHSDMO");
+            var portfolio = CreatePortfolio($"project = LGHTHSDMO");
 
-            var parentItems = await subject.GetParentFeaturesDetails(project, ["LGHTHSDMO-2377"]);
+            var parentItems = await subject.GetParentFeaturesDetails(portfolio, ["LGHTHSDMO-2377"]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -407,7 +454,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(parentItem.ReferenceId, Is.EqualTo("LGHTHSDMO-2377"));
                 Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
                 Assert.That(parentItem.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/LGHTHSDMO-2377"));
-            };
+            }
         }
 
         [Test]
@@ -417,6 +464,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateTeam($"project = PROJ");
             team.WorkItemTypes.Clear();
             team.WorkItemTypes.AddRange(["Story", "Bug"]);
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
             var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "labels = \"LabelOfItemThatIsClosed\"");
 
@@ -604,11 +654,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task ValidateProjectSettings_ValidConnectionSettings_ReturnsTrueIfFeaturesAreFound(string query, bool expectedValue)
         {
             var team = CreateTeam("project = LGHTHSDMO");
-            var project = CreateProject(query, team);
+            var portfolio = CreatePortfolio(query, team);
 
             var subject = CreateSubject();
 
-            var isValid = await subject.ValidateProjectSettings(project);
+            var isValid = await subject.ValidatePortfolioSettings(portfolio);
 
             Assert.That(isValid, Is.EqualTo(expectedValue));
         }
@@ -616,7 +666,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateProjectSettings_InvalidConnectionSettings_ReturnsFalse()
         {
-            var project = CreateProject("project = LGHTHSDMO");
+            var portfolio = CreatePortfolio("project = LGHTHSDMO");
             var subject = CreateSubject();
 
             var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
@@ -626,9 +676,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = "JennifferAniston", IsSecret = true },
                 ]);
 
-            project.WorkTrackingSystemConnection = connectionSetting;
+            portfolio.WorkTrackingSystemConnection = connectionSetting;
 
-            var isValid = await subject.ValidateProjectSettings(project);
+            var isValid = await subject.ValidatePortfolioSettings(portfolio);
 
             Assert.That(isValid, Is.False);
         }
@@ -661,32 +711,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private Portfolio CreateProject(string query, params Team[] teams)
+        private Portfolio CreatePortfolio(string query, params Team[] teams)
         {
-            var project = new Portfolio
+            var portfolio = new Portfolio
             {
                 Name = "TestProject",
                 WorkItemQuery = query,
             };
 
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Epic");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Epic");
 
-            project.DoneStates.Clear();
-            project.DoneStates.Add("Done");
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("Done");
 
-            project.DoingStates.Clear();
-            project.DoingStates.Add("In Progress");
+            portfolio.DoingStates.Clear();
+            portfolio.DoingStates.Add("In Progress");
 
-            project.ToDoStates.Clear();
-            project.ToDoStates.Add("To Do");
+            portfolio.ToDoStates.Clear();
+            portfolio.ToDoStates.Add("To Do");
 
-            project.UpdateTeams(teams);
+            portfolio.UpdateTeams(teams);
 
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
-            project.WorkTrackingSystemConnection = workTrackingSystemConnection;
+            portfolio.WorkTrackingSystemConnection = workTrackingSystemConnection;
 
-            return project;
+            return portfolio;
         }
 
         private WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()

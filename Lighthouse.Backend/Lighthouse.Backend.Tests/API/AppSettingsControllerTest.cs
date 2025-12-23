@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetDefaultProjectSettings_ReturnsSettings()
         {
-            var settings = new ProjectSettingDto();
+            var settings = new PortfolioSettingDto();
             appSettingServiceMock.Setup(x => x.GetDefaultProjectSettings()).Returns(settings);
 
             var subject = CreateSubject();

@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.CreatedDate.HasValue, Is.True);
                 Assert.That(issue.CreatedDate?.Date, Is.EqualTo(new DateTime(2024, 4, 7, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.CreatedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
         [Test]
@@ -235,7 +235,7 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 Assert.That(issue.StartedDate.HasValue, Is.False);
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            };
+            }
         }
 
         [Test]
@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            };
+            }
         }
 
         [Test]
@@ -286,7 +286,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
         [Test]
@@ -311,7 +311,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            };
+            }
         }
 
         [Test]
@@ -324,7 +324,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 AddChangelogEntries(json, new JsonArray
                 {
                     CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item started
-                    CreateChangelogEntry("Implementation", "Backlog", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item moved to ToDo
+                    CreateChangelogEntry("Implementation", "Backlog", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item moved to To Do
                     CreateChangelogEntry("Backlog", "Verification", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))  // // <-- Item moved back to Doing
                 });
             });
@@ -337,7 +337,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            };
+            }
         }
 
         [Test]
@@ -366,7 +366,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
         [Test]
@@ -395,7 +395,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
         [Test]
@@ -427,7 +427,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
         [Test]
@@ -451,7 +451,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            };
+            }
         }
 
         [Test]
@@ -478,7 +478,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
         [Test]
@@ -504,10 +504,10 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            };
+            }
         }
 
-        private void AddChangelogEntries(JsonNode jsonNode, JsonArray changelogEntries)
+        private static void AddChangelogEntries(JsonNode jsonNode, JsonArray changelogEntries)
         {
             var changelog = jsonNode[JiraFieldNames.ChangelogFieldName];
             changelog["total"] = changelogEntries.Count;
@@ -515,7 +515,7 @@ namespace Lighthouse.Backend.Tests.Factories
             changelog[JiraFieldNames.HistoriesFieldName] = changelogEntries;
         }
 
-        private JsonObject CreateChangelogEntry(string fromState, string toState, DateTime dateTime)
+        private static JsonObject CreateChangelogEntry(string fromState, string toState, DateTime dateTime)
         {
             var changelogEntry = new JsonObject
             {
@@ -554,6 +554,7 @@ namespace Lighthouse.Backend.Tests.Factories
         private class TestWorkItemQueryOwner : WorkTrackingSystemOptionsOwner
         {
             public override List<string> WorkItemTypes { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public override int DoneItemsCutoffDays { get; set; } = 180;
         }
     }
 }

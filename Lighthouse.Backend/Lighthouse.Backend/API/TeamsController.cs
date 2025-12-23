@@ -219,6 +219,7 @@ namespace Lighthouse.Backend.API
             team.WorkItemTypes = teamSetting.WorkItemTypes;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
             team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
+            team.DoneItemsCutoffDays = teamSetting.DoneItemsCutoffDays;
             team.Tags = teamSetting.Tags;
             team.SystemWIPLimit = teamSetting.SystemWIPLimit;
 

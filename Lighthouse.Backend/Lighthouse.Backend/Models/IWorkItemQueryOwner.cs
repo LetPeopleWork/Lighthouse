@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Models
         
         List<string> BlockedTags { get; set; }
 
+        int DoneItemsCutoffDays { get; set; }
+
         StateCategories MapStateToStateCategory(string state);
     }
 }
