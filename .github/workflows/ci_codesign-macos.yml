@@ -355,6 +355,21 @@ jobs:
 
             echo "✓ App bundle signed and verified successfully"
 
+        - name: Create app bundle zip
+          run: |
+            APP_DIR="./publish/Lighthouse.app"
+            ZIP_NAME="Lighthouse-${{ inputs.version }}.app.zip"
+            ZIP_PATH="./publish/$ZIP_NAME"
+            
+            # Use ditto to preserve code signatures and extended attributes
+            echo "Creating zip with ditto..."
+            cd ./publish
+            ditto -c -k --keepParent "Lighthouse.app" "$ZIP_NAME"
+            cd ..
+            
+            echo "App bundle zip created at $ZIP_PATH"
+            ls -lh "$ZIP_PATH"
+
         - name: Create DMG
           run: |
             APP_DIR="./publish/Lighthouse.app"
@@ -472,6 +487,12 @@ jobs:
               cat notarization-log.json
               echo "======================="
             fi
+
+        - name: Upload signed app bundle zip artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: Lighthouse-osx-app-${{ inputs.version }}
+            path: ./publish/Lighthouse-${{ inputs.version }}.app.zip
 
         - name: Upload signed DMG artifact
           uses: actions/upload-artifact@v4

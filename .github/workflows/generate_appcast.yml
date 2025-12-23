@@ -57,19 +57,19 @@ jobs:
 
           LATEST_TAG=$(echo "$RELEASE_TAGS" | cut -d',' -f1)
 
-          # Check whether any of the latest tags have a .dmg asset; if not, we don't need to create appcast
-          FOUND_DMG="false"
+          # Check whether any of the latest tags have a .app.zip asset; if not, we don't need to create appcast
+          FOUND_APP="false"
           for TAG in $(echo "$RELEASE_TAGS" | tr ',' '\n'); do
             ASSET_NAMES=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/LetPeopleWork/Lighthouse/releases/tags/$TAG | jq -r '.assets[].name // empty') || true
-            if echo "$ASSET_NAMES" | grep -Ei '\.dmg$' >/dev/null; then
-              echo "Found DMG for tag: $TAG"
-              FOUND_DMG="true"
+            if echo "$ASSET_NAMES" | grep -Ei '\.app\.zip$' >/dev/null; then
+              echo "Found .app.zip for tag: $TAG"
+              FOUND_APP="true"
               break
             fi
           done
 
-          if [ "$FOUND_DMG" != "true" ]; then
-            echo "No DMG assets found for latest releases; nothing to do"
+          if [ "$FOUND_APP" != "true" ]; then
+            echo "No .app.zip assets found for latest releases; nothing to do"
             echo "release_tags=" >> $GITHUB_OUTPUT
             echo "latest_tag=" >> $GITHUB_OUTPUT
             echo "proceed=false" >> $GITHUB_OUTPUT
@@ -144,11 +144,11 @@ jobs:
             exit 1
           fi
 
-      - name: Download DMGs and create notes
+      - name: Download app bundles and create notes
         run: |
           # Helper: EdDSA (Sparkle 2) signing
           get_signature() {
-            local dmg="$1"
+            local zip_file="$1"
             # Sparkle 2 expects a 32-byte seed (Base64 encoded).
             # If the secret is 64 bytes (seed + public key), we extract the first 32 bytes.
             local seed=$(python3 -c "import base64; import sys; data = base64.b64decode(sys.argv[1].strip()); print(base64.b64encode(data[:32]).decode())" "${{ secrets.SPARKLE_PRIVATE_KEY }}")
@@ -156,16 +156,16 @@ jobs:
             # Run sign_update using stdin for the key to avoid keychain issues in CI
             # -p: only print the signature
             # --ed-key-file -: read key from stdin
-            local sig=$(echo "$seed" | sign_update -p --ed-key-file - "$dmg" 2>/dev/null | tr -d '\n\r ')
+            local sig=$(echo "$seed" | sign_update -p --ed-key-file - "$zip_file" 2>/dev/null | tr -d '\n\r ')
             
             if [[ -n "$sig" && "$sig" =~ ^[A-Za-z0-9+/=]{80,90}$ ]]; then
               echo "$sig"
               return 0
             fi
             
-            echo "ERROR: sign_update failed to produce a valid signature for $dmg" >&2
+            echo "ERROR: sign_update failed to produce a valid signature for $zip_file" >&2
             # Debug: show actual output without suppression
-            echo "$seed" | sign_update --ed-key-file - "$dmg" || true
+            echo "$seed" | sign_update --ed-key-file - "$zip_file" || true
             return 1
           }
 
@@ -173,20 +173,20 @@ jobs:
             echo "No releases to process"
             exit 0
           fi
-          mkdir -p updates/dmg
-          rm -f updates/dmg/manifest.csv
+          mkdir -p updates/app
+          rm -f updates/app/manifest.csv
           while IFS= read -r tag; do
             if [ -z "$tag" ]; then continue; fi
             echo "Processing release $tag"
-            # Find any DMG asset for this release (be flexible with naming)
-            ASSET_NAME=$(gh release view "$tag" --json assets --jq '.assets[].name' | grep -E '\.dmg$' | head -1)
+            # Find any .app.zip asset for this release
+            ASSET_NAME=$(gh release view "$tag" --json assets --jq '.assets[].name' | grep -E '\.app\.zip$' | head -1)
             if [ -n "$ASSET_NAME" ]; then
-              echo "DMG found for $tag: $ASSET_NAME, downloading..."
-              gh release download "$tag" --pattern "$ASSET_NAME" --dir updates/dmg/
-              DMG_PATH="updates/dmg/$ASSET_NAME"
-              # Sign the DMG (try native then Rosetta)
-              if ! get_signature "$DMG_PATH" >/dev/null; then
-                echo "Signing failed for $DMG_PATH"
+              echo "App bundle zip found for $tag: $ASSET_NAME, downloading..."
+              gh release download "$tag" --pattern "$ASSET_NAME" --dir updates/app/
+              ZIP_PATH="updates/app/$ASSET_NAME"
+              # Sign the zip
+              if ! get_signature "$ZIP_PATH" >/dev/null; then
+                echo "Signing failed for $ZIP_PATH"
                 exit 1
               fi
 
@@ -200,9 +200,9 @@ jobs:
               fi
 
               # Record mapping of tag -> asset name for later appcast generation
-              echo "${tag},${ASSET_NAME}" >> updates/dmg/manifest.csv
+              echo "${tag},${ASSET_NAME}" >> updates/app/manifest.csv
             else
-              echo "No DMG found for $tag, skipping..."
+              echo "No .app.zip found for $tag, skipping..."
             fi
           done < release_tags.txt
 
@@ -210,19 +210,19 @@ jobs:
         run: |
           # Helper: EdDSA (Sparkle 2) signing
           get_signature() {
-            local dmg="$1"
+            local zip_file="$1"
             # Sparkle 2 expects a 32-byte seed (Base64 encoded).
             local seed=$(python3 -c "import base64; import sys; data = base64.b64decode(sys.argv[1].strip()); print(base64.b64encode(data[:32]).decode())" "${{ secrets.SPARKLE_PRIVATE_KEY }}")
             
             # Run sign_update using stdin for the key to avoid keychain issues in CI
-            local sig=$(echo "$seed" | sign_update -p --ed-key-file - "$dmg" 2>/dev/null | tr -d '\n\r ')
+            local sig=$(echo "$seed" | sign_update -p --ed-key-file - "$zip_file" 2>/dev/null | tr -d '\n\r ')
             
             if [[ -n "$sig" && "$sig" =~ ^[A-Za-z0-9+/=]{80,90}$ ]]; then
               echo "$sig"
               return 0
             fi
             
-            echo "ERROR: sign_update failed to produce a valid signature for $dmg" >&2
+            echo "ERROR: sign_update failed to produce a valid signature for $zip_file" >&2
             return 1
           }
 
@@ -241,22 +241,22 @@ jobs:
           EOF
           
           # Use manifest mapping (tag -> asset) if available
-          if [ -f updates/dmg/manifest.csv ]; then
+          if [ -f updates/app/manifest.csv ]; then
             while IFS=, read -r tag asset; do
               if [ -z "$tag" ] || [ -z "$asset" ]; then continue; fi
-              DMG_PATH="updates/dmg/${asset}"
-              if [ -f "$DMG_PATH" ]; then
+              ZIP_PATH="updates/app/${asset}"
+              if [ -f "$ZIP_PATH" ]; then
                 RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
                 TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
                 URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${asset}"
-                SIGNATURE=$(get_signature "$DMG_PATH")
+                SIGNATURE=$(get_signature "$ZIP_PATH")
                 if [ -z "$SIGNATURE" ]; then
-                  echo "Failed to get signature for $DMG_PATH"
+                  echo "Failed to get signature for $ZIP_PATH"
                   exit 1
                 fi
-                LENGTH=$(stat -f%z "$DMG_PATH")
+                LENGTH=$(stat -f%z "$ZIP_PATH")
                 
                 cat >> appcast.xml << EOF
                 <item>
@@ -269,25 +269,25 @@ jobs:
                 </item>
           EOF
               fi
-            done < updates/dmg/manifest.csv
+            done < updates/app/manifest.csv
           else
-            # Fallback: look for dmg files matching tag in updates/dmg/
+            # Fallback: look for zip files matching tag in updates/app/
             while IFS= read -r tag; do
               if [ -z "$tag" ]; then continue; fi
-              DMG_PATH=$(ls updates/dmg/*"${tag}"*.dmg 2>/dev/null | head -1)
-              if [ -f "$DMG_PATH" ]; then
-                ASSET=$(basename "$DMG_PATH")
+              ZIP_PATH=$(ls updates/app/*"${tag}"*.app.zip 2>/dev/null | head -1)
+              if [ -f "$ZIP_PATH" ]; then
+                ASSET=$(basename "$ZIP_PATH")
                 RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
                 TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
                 URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${ASSET}"
-                SIGNATURE=$(get_signature "$DMG_PATH")
+                SIGNATURE=$(get_signature "$ZIP_PATH")
                 if [ -z "$SIGNATURE" ]; then
-                  echo "Failed to get signature for $DMG_PATH"
+                  echo "Failed to get signature for $ZIP_PATH"
                   exit 1
                 fi
-                LENGTH=$(stat -f%z "$DMG_PATH")
+                LENGTH=$(stat -f%z "$ZIP_PATH")
                 
                 cat >> appcast.xml << EOF
                 <item>
