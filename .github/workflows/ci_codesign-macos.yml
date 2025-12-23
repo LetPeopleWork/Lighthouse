@@ -171,6 +171,23 @@ jobs:
             cat > "$MACOS_DIR/LighthouseLauncher" << 'LAUNCHER_EOF'
             #!/bin/bash
             SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+            LOCKFILE="/tmp/lighthouse.lock"
+            
+            # Check if Lighthouse is already running
+            if [ -f "$LOCKFILE" ]; then
+                PID=$(cat "$LOCKFILE")
+                if ps -p "$PID" > /dev/null 2>&1; then
+                    # Process is running, bring Terminal to front
+                    osascript -e 'tell application "Terminal" to activate' 2>/dev/null
+                    
+                    # Show a notification
+                    osascript -e 'display notification "Lighthouse is already running. The Terminal window has been brought to front." with title "Lighthouse"' 2>/dev/null
+                    exit 0
+                else
+                    # Stale lock file, remove it
+                    rm -f "$LOCKFILE"
+                fi
+            fi
             
             # Escape arguments for passing through osascript
             ARGS=""
@@ -182,7 +199,7 @@ jobs:
             
             # Open Terminal and run the app with arguments
             osascript -e 'tell application "Terminal"
-                do script "cd \"'"$SCRIPT_DIR"'\" && ./Lighthouse'"$ARGS"'; echo \"\nLighthouse has stopped. Press any key to close...\"; read -n 1; exit"
+                do script "cd \"'"$SCRIPT_DIR"'\" && echo $$ > /tmp/lighthouse.lock && ./Lighthouse'"$ARGS"'; rm -f /tmp/lighthouse.lock; echo \"\nLighthouse has stopped. Press any key to close...\"; read -n 1; exit"
                 activate
             end tell'
             LAUNCHER_EOF
