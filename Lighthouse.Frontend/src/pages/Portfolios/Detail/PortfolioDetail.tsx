@@ -237,26 +237,28 @@ const PortfolioDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<Tooltip 
-											title={updatePortfolioDataTooltip || `Refresh ${featuresTerm}`} 
+										<Tooltip
+											title={
+												updatePortfolioDataTooltip || `Refresh ${featuresTerm}`
+											}
 											arrow
 										>
-										<span>
-											<IconButton
-												aria-label={`Refresh ${featuresTerm}`}
-												onClick={onRefreshFeatures}
-												disabled={
-													!canUpdatePortfolioData || isPortfolioUpdating
-												}
-												color="primary"
-											>
-												{isPortfolioUpdating ? (
-													<CircularProgress size={24} />
-												) : (
-													<RefreshIcon />
-												)}
-											</IconButton>
-										</span>
+											<span>
+												<IconButton
+													aria-label={`Refresh ${featuresTerm}`}
+													onClick={onRefreshFeatures}
+													disabled={
+														!canUpdatePortfolioData || isPortfolioUpdating
+													}
+													color="primary"
+												>
+													{isPortfolioUpdating ? (
+														<CircularProgress size={24} />
+													) : (
+														<RefreshIcon />
+													)}
+												</IconButton>
+											</span>
 										</Tooltip>
 									}
 								/>

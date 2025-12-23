@@ -190,8 +190,8 @@ const TeamDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<Tooltip 
-											title={updateTeamDataTooltip || `Update ${teamTerm} Data`} 
+										<Tooltip
+											title={updateTeamDataTooltip || `Update ${teamTerm} Data`}
 											arrow
 										>
 											<span>

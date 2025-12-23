@@ -8,6 +8,8 @@ interface DetailHeaderProps {
 
 	rightContent?: React.ReactNode;
 
+	quickSettingsContent?: React.ReactNode;
+
 	spacing?: number;
 }
 
@@ -15,6 +17,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 	leftContent,
 	centerContent,
 	rightContent,
+	quickSettingsContent,
 	spacing = 3,
 }) => {
 	return (
@@ -48,7 +51,24 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 				</Box>
 			</Grid>
 
-			{/* Second row: Center content that spans full width */}
+			{/* Second row (optional): Quick settings centered above tabs */}
+			{quickSettingsContent && (
+				<Grid size={{ xs: 12 }}>
+					<Box
+						sx={{
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							width: "100%",
+							mt: { xs: 1, md: 1 },
+						}}
+					>
+						{quickSettingsContent}
+					</Box>
+				</Grid>
+			)}
+
+			{/* Third row: Center content that spans full width */}
 			{centerContent && (
 				<Grid size={{ xs: 12 }}>
 					<Box
