@@ -150,7 +150,7 @@ There are two types of refreshes:
 - Team
 - Feature
 
-The Team refresh fetches all items related to your team, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different portfolios and is doing what can be manually trigger via the [Refresh Feature Button](../portfolios/detail.html#refresh-features).
+The Team refresh fetches all items related to your team, and is equivalent to clicking the update icon on the Team page, while the Feature refresh updates portfolio data and is equivalent to using the refresh icon on the Portfolio page.
 
 ![Feature Refresh Settings](../assets/settings/featurerefreshsettings.png)
 

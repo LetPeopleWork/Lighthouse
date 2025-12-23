@@ -76,6 +76,16 @@ If you use a *fixed* Throughput, you must specify a start and end date. The end 
 As mentioned above, use a *fixed* Throughput with caution, and ideally only temporarily. Examples where it may be useful is if most of the team is off for some time (for example if the offices are closed for a week or more, like it happens for some companies in the Christmas period). As soon as you have enough data after this period again, we encourage you to switch back to the *dynamic* Throughput.
 
 # Work Item Types
+
+## Cut Off Days
+The *Cut Off Days* setting controls how far back in time Lighthouse will look when fetching work items. Work ITems that were closed *before* this date will be ignored. This helps to speed up the update and forecast process.
+
+- Team default: **180 days**
+- Enter a value (in days) appropriate for your team — shorter windows emphasize recent behaviour, longer windows smooth variability.
+
+{: .note}
+This only applies to items that are considered done. If you have old items in your backlog, they will still appear. 
+
 In order to properly forecast, Lighthouse needs to know which items your team works on that are relevant for the forecast. Thus you can define the item types that should be taken into account for this specific team.
 
 {: .recommendation}

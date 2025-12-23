@@ -22,15 +22,17 @@ You can directly go to the team detail page if you bookmark the specific URL. Ev
 On top you can see general team information, which includes the Team name, an indication if a [fixed Throughput](./edit.html#throughput-start-and-end-date) is used, and when it was the last time this team was updated.
 
 ## Update Team Data
-While teams are continuously updated, you can trigger an update manually by clicking on the *Update Team Data* button. This will update all data related to the team, including the forecasts for any portfolio the team is involved in, as well as the Metrics.
+While teams are continuously updated, you can trigger an update manually by clicking the update icon in the header. This will update all data related to the team, including the forecasts for any portfolio the team is involved in, as well as the Metrics.
 
 A manual update can be useful if you just made significant changes (for example closed a couple of item for this team) and do not want to wait for the periodic update to kick in.
 
 {: .note}
-After you trigger the manual update, the button *Update Team Data* will be disabled while the team is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and team is different, a team data update should normally not take longer than ~60~ seconds. If it does, please reach out to us via Slack, so we can analyze and propose improvements and adjust Lighthouse to be more performant.
+After you trigger the manual update, the update icon will be disabled while the team is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and team is different, a team data update should normally not take longer than ~60~ seconds. If it does, please reach out to us via Slack, so we can analyze and propose improvements and adjust Lighthouse to be more performant.
 
-## Edit Team
-You can modify the team settings by clicking on the *Edit Team* button on the top right. This will bring you to the [Team Modification Page](./edit.html).
+## Settings
+Team settings are now available in the **Settings** tab on the Team page. They contain the same settings as the [Team Creation](./edit.html).
+
+For frequently used adjustments there is a Quick Settings bar in the header that allows you to change common values (Forecast Throughput Configuration, SLE, System WIP, Portfolio Feature WIP) without leaving the page.
 
 # Features
 The *Features* section is the default section. If a team is involved in one (or more) portfolios, all the features where this specific team has work for in their backlog are listed.

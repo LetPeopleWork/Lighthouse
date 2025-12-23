@@ -21,15 +21,17 @@ You can directly go to the portfolio detail page if you bookmark the specific UR
 On top you can see general portfolio information, which includes the name of the portfolio and it was last updated.
 
 ## Refresh Features
-While portfolios are continuously updated, you can trigger a refresh manually by clicking on the *Refresh Features* button. This will update the [Features](#features) and all associated forecasts.
+While portfolios are continuously updated, you can trigger a refresh manually by clicking the refresh icon in the header. This will update the [Features](#features) and all associated forecasts.
 
-A manual update can be useful if you just made significant changes (for example added new features to the portfolios) and do not want to wait for the periodic update to kick in.
+A manual refresh can be useful if you just made significant changes (for example added new features to the portfolios) and do not want to wait for the periodic update to kick in.
 
 {: .note}
-After you trigger the manual update, the button *Refresh Features* will be disabled while the portfolio is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and portfolio is different, an update should normally not take longer than two minutes.
+After you trigger the manual refresh, the refresh icon will be disabled while the portfolio is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and portfolio is different, an update should normally not take longer than two minutes.
 
-## Edit Portfolio
-You can modify the portfolio settings by clicking on the *Edit Portfolio* button on the top right. This will bring you to the [Portfolio Modification Page](./edit.html).
+## Settings
+Portfolio settings are available in the **Settings** tab on the Portfolio page. They contain the same settings as the [Portfolio Creation](./edit.html).
+
+For frequently used adjustments there is a Quick Settings bar in the header that allows you to change common values (SLE, System WIP, Portfolio Feature WIP) without leaving the page.
 
 # Forecasts
 
@@ -85,9 +87,7 @@ For each Feature you will see the forecasted completion date. You'll get four di
 The completion dates of each feature will take into account **all teams** that are involved. If a single item is planned to be done by one team, but this is far down their priority, this will mean that the feature completion will be moving backwards. Lighthouse cares about delivering complete features. You may be able to use such scenarios to kick off a discussion about how work or teams are sliced (as less dependencies mean more effective delivery).
 
 ## Feature WIP
-[Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [Edit Page of a Team](../teams/edit.html#feature-wip) or directly in the Portfolio Detail View. If you expand the *Involved Teams (Feature WIP)* box, you can see the current Feature WIP for each team of this portfolio.  
-
-You can adjust the Feature WIP, and it will automatically reforecast the completion dates.
+[Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) are based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [settings of a team](../teams/edit.html#feature-wip) or by using the Quick Settings bar in the portfolio header. Changing Feature WIP will automatically reforecast the completion dates.
 
 Adjusting the Feature WIP for *The A-Team* from 1 to 3 caused the probabilities to change. In general, increasing the Feature WIP will mean that *lower ordered* features will be completed sooner, while *higher ordered features* take longer to finish.  
 A Feature WIP of 1 means, the team will **only** work on the top most feature, and move to the next one only when this is all done. The single focus of this team is on one feature.  

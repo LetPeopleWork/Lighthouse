@@ -37,6 +37,15 @@ See the [Jira](../../concepts/worktrackingsystems/jira.html#portfolios) and [Azu
 
 If you chose a file-based Work Tracking system (like CSV), you will see an upload dialog instead of a query, which will allow you to upload the datasource.
 
+## Cut Off Days
+The *Cut Off Days* setting controls how far back in time Lighthouse will look when fetching features. Features that were closed *before* this date will be ignored. This helps to speed up the update and forecast process.
+
+- Portfolio default: **365 days**
+- Pick a value (in days) that makes sense for your portfolio — longer windows smooth variability, shorter windows emphasise recent behaviour.
+
+{: .note}
+This only applies to items that are considered done. If you have old items in your backlog, they will still appear. 
+
 # Work Item Types
 Independent of the [Work Item Query](#work-item-query), Lighthouse needs to know which item types your Features have. Thus you can define the item types that should be taken into account for this specific portfolio.
 
