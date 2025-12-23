@@ -445,14 +445,41 @@ jobs:
             # Create temporary DMG
             hdiutil create -volname "$VOLUME_NAME" -srcfolder "$APP_DIR" -ov -format UDRW "$TEMP_DMG"
             
-            # Mount the DMG
-            MOUNT_DIR=$(hdiutil attach "$TEMP_DMG" | grep Volumes | sed 's/.*\/Volumes/\/Volumes/')
+            # Mount the DMG and capture device path
+            MOUNT_OUTPUT=$(hdiutil attach "$TEMP_DMG" -nobrowse)
+            MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep Volumes | sed 's/.*\/Volumes/\/Volumes/')
+            DEVICE=$(echo "$MOUNT_OUTPUT" | head -1 | awk '{print $1}')
             
-            # Add Applications symlink (optional but recommended)
+            echo "Mounted at: $MOUNT_DIR"
+            echo "Device: $DEVICE"
+            
+            # Add Applications symlink
             ln -s /Applications "$MOUNT_DIR/Applications"
             
-            # Unmount
-            hdiutil detach "$MOUNT_DIR"
+            # Sync to ensure all writes are complete
+            sync
+            
+            # Wait a moment for filesystem to settle
+            sleep 2
+            
+            # Unmount with retries
+            echo "Unmounting DMG..."
+            for i in {1..5}; do
+              if hdiutil detach "$DEVICE" -force; then
+                echo "Successfully unmounted on attempt $i"
+                break
+              else
+                echo "Unmount attempt $i failed, retrying..."
+                sleep 2
+                if [ $i -eq 5 ]; then
+                  echo "Failed to unmount after 5 attempts"
+                  exit 1
+                fi
+              fi
+            done
+            
+            # Wait for device to fully detach
+            sleep 1
             
             # Convert to compressed read-only DMG
             hdiutil convert "$TEMP_DMG" -format UDZO -o "$DMG_PATH"
