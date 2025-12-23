@@ -71,7 +71,7 @@ testWithData(
 
 		const portfolioEditPage = await overviewPage.editPortfolio(portfolio);
 		expect(portfolioEditPage.page.url()).toContain(
-			`/portfolios/edit/${portfolio.id}`,
+			`/portfolios/${portfolio.id}/settings`,
 		);
 	},
 );

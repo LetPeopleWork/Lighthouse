@@ -68,7 +68,7 @@ testWithData(
 		const [team1] = testData.teams;
 
 		const teamDetailPage = await overviewPage.editTeam(team1.name);
-		expect(teamDetailPage.page.url()).toContain(`/teams/edit/${team1.id}`);
+		expect(teamDetailPage.page.url()).toContain(`/teams/${team1.id}/settings`);
 	},
 );
 
