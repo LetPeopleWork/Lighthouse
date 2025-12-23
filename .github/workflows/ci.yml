@@ -44,6 +44,8 @@ jobs:
 
   tag:
     needs: [frontend, backend, e2e]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_tag.yml
     name: Tag Version
     permissions:
