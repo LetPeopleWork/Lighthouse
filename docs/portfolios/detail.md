@@ -87,9 +87,7 @@ The completion dates of each feature will take into account **all teams** that a
 ## Feature WIP
 [Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [Edit Page of a Team](../teams/edit.html#feature-wip) or directly in the Portfolio Detail View. If you expand the *Involved Teams (Feature WIP)* box, you can see the current Feature WIP for each team of this portfolio.  
 
-You can adjust the Feature WIP, and it will automatically reforecast the completion dates:
-
-![Feature WIP](../assets/features/portfoliodetail_team_feature_wip.png)
+You can adjust the Feature WIP, and it will automatically reforecast the completion dates.
 
 Adjusting the Feature WIP for *The A-Team* from 1 to 3 caused the probabilities to change. In general, increasing the Feature WIP will mean that *lower ordered* features will be completed sooner, while *higher ordered features* take longer to finish.  
 A Feature WIP of 1 means, the team will **only** work on the top most feature, and move to the next one only when this is all done. The single focus of this team is on one feature.  

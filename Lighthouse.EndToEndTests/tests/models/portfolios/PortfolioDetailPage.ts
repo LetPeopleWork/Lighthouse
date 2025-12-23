@@ -44,15 +44,6 @@ export class PortfolioDetailPage {
 		return getLastUpdatedDateFromText(lastUpdatedText);
 	}
 
-	async toggleFeatureWIPConfiguration(): Promise<void> {
-		await this.page.getByLabel("toggle").nth(0).click();
-	}
-
-	async changeFeatureWIPForTeam(teamName: string, featureWIP: number) {
-		await this.page.getByLabel(teamName).fill(`${featureWIP}`);
-		await this.page.getByLabel(teamName).press("Enter");
-	}
-
 	async editPortfolio(): Promise<PortfolioEditPage> {
 		await this.goToSettings();
 

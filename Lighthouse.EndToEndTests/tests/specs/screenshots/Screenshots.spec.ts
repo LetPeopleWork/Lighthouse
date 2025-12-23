@@ -467,21 +467,6 @@ testWithData(
 			3,
 		);
 
-		// Involved Teams
-		await portfolioDetailPage.toggleFeatureWIPConfiguration();
-
-		await portfolioDetailPage.changeFeatureWIPForTeam(
-			testData.teams[0].name,
-			3,
-		);
-
-		await takePageScreenshot(
-			portfolioDetailPage.page,
-			"features/portfoliodetail_team_feature_wip.png",
-			5,
-			1000,
-		);
-
 		await portfolioDetailPage.goToMetrics();
 
 		await takeElementScreenshot(
