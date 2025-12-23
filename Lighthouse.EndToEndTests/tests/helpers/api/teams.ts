@@ -30,6 +30,7 @@ export async function createTeam(
 			systemWIPLimit: 6,
 			blockedStates: [],
 			blockedTags: ["Blocked"],
+			doneItemsCutoffDays: 180,
 		},
 	});
 

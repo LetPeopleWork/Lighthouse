@@ -39,7 +39,7 @@ export class TeamDetailPage {
 		await this.page
 			.getByLabel("Number of Work Items to Forecast")
 			.fill(`${howMany}`);
-		await this.page.getByRole("button", { name: "Forecast" }).nth(1).click();
+		await this.page.getByRole("button", { name: "Forecast" }).first().click();
 
 		const likelihood =
 			(await this.page.getByRole("heading", { name: "%" }).textContent()) ??
@@ -60,7 +60,7 @@ export class TeamDetailPage {
 			await this.page.keyboard.press("Enter");
 		}
 
-		await this.page.getByRole("button", { name: "Forecast" }).nth(2).click();
+		await this.page.getByRole("button", { name: "Forecast" }).nth(1).click();
 	}
 
 	async goToFeatures(): Promise<void> {

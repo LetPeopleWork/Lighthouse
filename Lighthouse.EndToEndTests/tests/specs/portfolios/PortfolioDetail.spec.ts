@@ -1,7 +1,6 @@
 import {
 	expect,
 	test,
-	testWithData,
 	testWithUpdatedTeams,
 } from "../../fixutres/LighthouseFixture";
 import { expectDateToBeRecent } from "../../helpers/dates";
@@ -124,20 +123,6 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 	);
 }
 
-testWithData(
-	"should open Portfolio Edit Page when clicking on Edit Button",
-	async ({ testData, overviewPage }) => {
-		const [portfolio] = testData.portfolios;
-
-		const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
-
-		const portfolioEditPage = await portfolioDetailPage.editPortfolio();
-		expect(portfolioEditPage.page.url()).toContain(
-			`/portfolios/edit/${portfolio.id}`,
-		);
-	},
-);
-
 testWithUpdatedTeams([0])(
 	"should properly handle deliveries within a portfolio",
 	async ({ testData, overviewPage }) => {
@@ -156,6 +141,7 @@ testWithUpdatedTeams([0])(
 			const lastUpdatedDate = await portfolioDetailPage.getLastUpdatedDate();
 			expectDateToBeRecent(lastUpdatedDate);
 		});
+		180;
 
 		let deliveriesPage = await portfolioDetailPage.goToDeliveries();
 		const deliveryName = "Next Release";

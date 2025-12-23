@@ -47,6 +47,7 @@ export async function createPortfolio(
 			parentOverrideField: "",
 			blockedStates: [],
 			blockedTags: [],
+			doneItemsCutoffDays: 365,
 		},
 	});
 	return response.json();

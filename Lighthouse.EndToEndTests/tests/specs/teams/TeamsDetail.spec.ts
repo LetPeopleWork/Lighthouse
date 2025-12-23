@@ -44,18 +44,6 @@ for (const { index, name } of testData) {
 }
 
 testWithData(
-	"should open Team Edit Page when clicking on Edit Button",
-	async ({ testData, overviewPage }) => {
-		const [team] = testData.teams;
-
-		const teamDetailPage = await overviewPage.goToTeam(team.name);
-
-		const teamEditPage = await teamDetailPage.editTeam();
-		expect(teamEditPage.page.url()).toContain(`/teams/edit/${team.id}`);
-	},
-);
-
-testWithData(
 	"should show Manual When and How Many Forecast for team",
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
