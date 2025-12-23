@@ -54,9 +54,13 @@ export class PortfolioDetailPage {
 	}
 
 	async editPortfolio(): Promise<PortfolioEditPage> {
-		await this.editPorftolioButton.click();
+		await this.goToSettings();
 
 		return new PortfolioEditPage(this.page);
+	}
+
+	async goToSettings(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Settings" }).click();
 	}
 
 	async refreshFeatures(): Promise<void> {
@@ -75,10 +79,6 @@ export class PortfolioDetailPage {
 
 	get refreshFeatureButton(): Locator {
 		return this.page.getByRole("button", { name: "Refresh Features" });
-	}
-
-	get editPorftolioButton(): Locator {
-		return this.page.getByRole("button", { name: "Edit Portfolio" });
 	}
 
 	get featureSizeWidget(): Locator {

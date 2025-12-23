@@ -1,9 +1,17 @@
-import { Button, Container, Stack, Tab, Tabs, Tooltip } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import {
+	CircularProgress,
+	Container,
+	IconButton,
+	Stack,
+	Tab,
+	Tabs,
+	Tooltip,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
@@ -85,10 +93,6 @@ const TeamDetail: React.FC = () => {
 
 		setIsTeamUpdating(true);
 		await teamService.updateTeamData(team.id);
-	};
-
-	const onEditTeam = () => {
-		navigate(`/teams/${id}/settings`);
 	};
 
 	useEffect(() => {
@@ -186,32 +190,25 @@ const TeamDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<>
-											<Tooltip title={updateTeamDataTooltip} arrow>
-												<span>
-													<ActionButton
-														onClickHandler={onUpdateTeamData}
-														buttonText={`Update ${teamTerm} Data`}
-														maxHeight="40px"
-														minWidth="120px"
-														externalIsWaiting={isTeamUpdating}
-														disabled={!canUpdateTeamData}
-													/>
-												</span>
-											</Tooltip>
-											<Tooltip title={updateTeamSettingsTooltip} arrow>
-												<span>
-													<Button
-														variant="contained"
-														onClick={onEditTeam}
-														sx={{ maxHeight: "40px", minWidth: "120px" }}
-														disabled={!canUpdateTeamSettings}
-													>
-														{`Edit ${teamTerm}`}
-													</Button>
-												</span>
-											</Tooltip>
-										</>
+										<Tooltip 
+											title={updateTeamDataTooltip || `Update ${teamTerm} Data`} 
+											arrow
+										>
+											<span>
+												<IconButton
+													aria-label={`Update ${teamTerm} Data`}
+													onClick={onUpdateTeamData}
+													disabled={!canUpdateTeamData || isTeamUpdating}
+													color="primary"
+												>
+													{isTeamUpdating ? (
+														<CircularProgress size={24} />
+													) : (
+														<RefreshIcon />
+													)}
+												</IconButton>
+											</span>
+										</Tooltip>
 									}
 								/>
 							</Grid>

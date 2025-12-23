@@ -1,9 +1,17 @@
-import { Button, Container, Stack, Tab, Tabs, Tooltip } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import {
+	CircularProgress,
+	Container,
+	IconButton,
+	Stack,
+	Tab,
+	Tabs,
+	Tooltip,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -63,12 +71,8 @@ const PortfolioDetail: React.FC = () => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
-	const {
-		canUpdatePortfolioData,
-		updatePortfolioDataTooltip,
-		canUpdatePortfolioSettings,
-		updatePortfolioSettingsTooltip,
-	} = useLicenseRestrictions();
+	const { canUpdatePortfolioData, updatePortfolioDataTooltip } =
+		useLicenseRestrictions();
 
 	const fetchPortfolio = useCallback(async () => {
 		const fetchInvolvedTeams = async (portfolioData: IPortfolio | null) => {
@@ -103,10 +107,6 @@ const PortfolioDetail: React.FC = () => {
 
 		setIsPortfolioUpdating(true);
 		await portfolioService.refreshFeaturesForPortfolio(portfolio.id);
-	};
-
-	const onEditPortfolio = () => {
-		navigate(`/portfolios/${id}/settings`);
 	};
 
 	const onTeamSettingsChange = async (updatedTeamSettings: ITeamSettings) => {
@@ -237,32 +237,27 @@ const PortfolioDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<>
-											<Tooltip title={updatePortfolioDataTooltip} arrow>
-												<span>
-													<ActionButton
-														buttonText={`Refresh ${featuresTerm}`}
-														onClickHandler={onRefreshFeatures}
-														maxHeight="40px"
-														minWidth="120px"
-														externalIsWaiting={isPortfolioUpdating}
-														disabled={!canUpdatePortfolioData}
-													/>
-												</span>
-											</Tooltip>
-											<Tooltip title={updatePortfolioSettingsTooltip} arrow>
-												<span>
-													<Button
-														variant="contained"
-														onClick={onEditPortfolio}
-														disabled={!canUpdatePortfolioSettings}
-														sx={{ maxHeight: "40px", minWidth: "120px" }}
-													>
-														Edit Portfolio
-													</Button>
-												</span>
-											</Tooltip>
-										</>
+										<Tooltip 
+											title={updatePortfolioDataTooltip || `Refresh ${featuresTerm}`} 
+											arrow
+										>
+										<span>
+											<IconButton
+												aria-label={`Refresh ${featuresTerm}`}
+												onClick={onRefreshFeatures}
+												disabled={
+													!canUpdatePortfolioData || isPortfolioUpdating
+												}
+												color="primary"
+											>
+												{isPortfolioUpdating ? (
+													<CircularProgress size={24} />
+												) : (
+													<RefreshIcon />
+												)}
+											</IconButton>
+										</span>
+										</Tooltip>
 									}
 								/>
 							</Grid>

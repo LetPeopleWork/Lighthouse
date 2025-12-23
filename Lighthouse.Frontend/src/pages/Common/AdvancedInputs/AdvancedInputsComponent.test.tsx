@@ -20,9 +20,9 @@ describe("AdvancedInputsComponent", () => {
 		expect(screen.getByLabelText("Parent Override Field")).toHaveValue(
 			"Test Field",
 		);
-		expect(
-			screen.getByLabelText("Closed Items Cutoff (days)"),
-		).toHaveValue(180);
+		expect(screen.getByLabelText("Closed Items Cutoff (days)")).toHaveValue(
+			180,
+		);
 	});
 
 	it("calls onTeamSettingsChange with the correct parameters when the TextField value changes", () => {

@@ -15,9 +15,13 @@ export class TeamDetailPage {
 	}
 
 	async editTeam(): Promise<TeamEditPage> {
-		await this.editTeamButton.click();
+		await this.goToSettings();
 
 		return new TeamEditPage(this.page);
+	}
+
+	async goToSettings(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Settings" }).click();
 	}
 
 	async getNumberOfFeatures(): Promise<number> {
@@ -116,10 +120,6 @@ export class TeamDetailPage {
 
 	get updateTeamDataButton(): Locator {
 		return this.page.getByRole("button", { name: "Update Team Data" });
-	}
-
-	get editTeamButton(): Locator {
-		return this.page.getByRole("button", { name: "Edit" });
 	}
 
 	get teamId(): number {

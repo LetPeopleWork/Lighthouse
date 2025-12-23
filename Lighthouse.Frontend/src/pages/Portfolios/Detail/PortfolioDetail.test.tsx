@@ -191,12 +191,13 @@ describe("PortfolioDetail component", () => {
 			expect(screen.getByText("Release Codename Daniel")).toBeInTheDocument();
 		});
 
-		const refreshButton = screen.getByText("Refresh Features");
+		const refreshButton = screen.getByRole("button", {
+			name: "Refresh Features",
+		});
 		fireEvent.click(refreshButton);
 
 		await waitFor(() => {
 			expect(refreshButton).toBeDisabled();
-			expect(refreshButton).toHaveTextContent("Refresh Features");
 		});
 	});
 
@@ -230,7 +231,9 @@ describe("PortfolioDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeEnabled();
+			expect(
+				await screen.findByRole("button", { name: "Refresh Features" }),
+			).toBeEnabled();
 		});
 	});
 
@@ -239,7 +242,9 @@ describe("PortfolioDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeEnabled();
+			expect(
+				await screen.findByRole("button", { name: "Refresh Features" }),
+			).toBeEnabled();
 		});
 	});
 
@@ -252,7 +257,9 @@ describe("PortfolioDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeDisabled();
+			expect(
+				await screen.findByRole("button", { name: "Refresh Features" }),
+			).toBeDisabled();
 		});
 	});
 
@@ -265,7 +272,9 @@ describe("PortfolioDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeDisabled();
+			expect(
+				await screen.findByRole("button", { name: "Refresh Features" }),
+			).toBeDisabled();
 		});
 	});
 
@@ -278,7 +287,9 @@ describe("PortfolioDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeDisabled();
+			expect(
+				await screen.findByRole("button", { name: "Refresh Features" }),
+			).toBeDisabled();
 		});
 	});
 
@@ -291,7 +302,9 @@ describe("PortfolioDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeDisabled();
+			expect(
+				await screen.findByRole("button", { name: "Refresh Features" }),
+			).toBeDisabled();
 		});
 	});
 
