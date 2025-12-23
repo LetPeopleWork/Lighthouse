@@ -7,7 +7,6 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class GitHubService : IGitHubService
     {
-        private const int RepositoryId = 755695945;
         private const string RepositoryOwner = "LetPeopleWork";
         private const string RepositoryName = "Lighthouse";
         
@@ -42,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var cachedReleases = gitHubServiceCache.Get(AllReleasesCacheKey) as IReadOnlyList<Release>;
             if (cachedReleases == null)
             {
-                cachedReleases = await client.Repository.Release.GetAll(RepositoryId);
+                cachedReleases = await client.Repository.Release.GetAll(RepositoryOwner, RepositoryName);
                 gitHubServiceCache.Store(AllReleasesCacheKey, cachedReleases, TimeSpan.FromHours(30));
             }
 
