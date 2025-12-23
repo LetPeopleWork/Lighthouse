@@ -4,7 +4,13 @@ import { useTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import {
+	Navigate,
+	Route,
+	BrowserRouter as Router,
+	Routes,
+	useParams,
+} from "react-router-dom";
 import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
@@ -35,6 +41,21 @@ const queryClient = new QueryClient({
 		},
 	},
 });
+
+const TeamEditRedirect: React.FC = () => {
+	const { id } = useParams<{ id: string }>();
+	return <Navigate to={`/teams/${id}/settings`} replace />;
+};
+
+const PortfolioEditRedirect: React.FC = () => {
+	const { id } = useParams<{ id: string }>();
+	return <Navigate to={`/portfolios/${id}/settings`} replace />;
+};
+
+const ProjectEditRedirect: React.FC = () => {
+	const { id } = useParams<{ id: string }>();
+	return <Navigate to={`/portfolios/${id}/settings`} replace />;
+};
 
 const App: React.FC = () => {
 	const theme = useTheme();
@@ -87,19 +108,22 @@ const App: React.FC = () => {
 									<Route path="/" element={<OverviewDashboard />} />
 									<Route path="/teams">
 										<Route path=":id/:tab?" element={<TeamDetail />} />
-										<Route path="edit/:id" element={<EditTeam />} />
+										<Route path="edit/:id" element={<TeamEditRedirect />} />
 										<Route path="new" element={<EditTeam />} />
 									</Route>
 									<Route path="/portfolios">
 										<Route path=":id/:tab?" element={<PortfolioDetail />} />
-										<Route path="edit/:id" element={<EditPortfolio />} />
+										<Route
+											path="edit/:id"
+											element={<PortfolioEditRedirect />}
+										/>
 										<Route path="new" element={<EditPortfolio />} />
 									</Route>
 
 									{/* Backward compatibility for old links */}
 									<Route path="/projects">
 										<Route path=":id/:tab?" element={<PortfolioDetail />} />
-										<Route path="edit/:id" element={<EditPortfolio />} />
+										<Route path="edit/:id" element={<ProjectEditRedirect />} />
 										<Route path="new" element={<EditPortfolio />} />
 									</Route>
 									<Route path="/settings" element={<Settings />} />

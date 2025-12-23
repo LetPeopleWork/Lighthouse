@@ -152,6 +152,7 @@ describe("EditPortfolio", () => {
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 30,
+			doneItemsCutoffDays: 0,
 		});
 		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems.mockResolvedValue(
 			[],
@@ -191,6 +192,7 @@ describe("EditPortfolio", () => {
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 30,
+			doneItemsCutoffDays: 0,
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
@@ -231,6 +233,7 @@ describe("EditPortfolio", () => {
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 30,
+			doneItemsCutoffDays: 0,
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(

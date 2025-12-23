@@ -11,6 +11,7 @@ import LoadingAnimation from "../../../components/Common/LoadingAnimation/Loadin
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
+import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -21,7 +22,7 @@ import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
 
-type TeamViewType = "features" | "forecasts" | "metrics";
+type TeamViewType = "features" | "forecasts" | "metrics" | "settings";
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -50,6 +51,10 @@ const TeamDetail: React.FC = () => {
 			return "forecasts";
 		}
 
+		if (tabParam === "settings") {
+			return "settings";
+		}
+
 		return "features";
 	};
 
@@ -60,7 +65,7 @@ const TeamDetail: React.FC = () => {
 		getInitialView(tab),
 	);
 
-	const { teamService, updateSubscriptionService } =
+	const { teamService, updateSubscriptionService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 
 	const fetchTeam = useCallback(async () => {
@@ -83,7 +88,7 @@ const TeamDetail: React.FC = () => {
 	};
 
 	const onEditTeam = () => {
-		navigate(`/teams/edit/${id}`);
+		navigate(`/teams/${id}/settings`);
 	};
 
 	useEffect(() => {
@@ -159,11 +164,11 @@ const TeamDetail: React.FC = () => {
 												<ForecastConfiguration team={team} />
 												<ServiceLevelExpectation
 													featureOwner={team}
-													hide={activeView !== "forecasts"}
+													hide={false}
 												/>
 												<SystemWIPLimitDisplay
 													featureOwner={team}
-													hide={activeView !== "forecasts"}
+													hide={false}
 												/>
 											</Stack>
 										</Stack>
@@ -177,6 +182,7 @@ const TeamDetail: React.FC = () => {
 											<Tab label={featureTerm} value="features" />
 											<Tab label="Forecasts" value="forecasts" />
 											<Tab label="Metrics" value="metrics" />
+											<Tab label="Settings" value="settings" />
 										</Tabs>
 									}
 									rightContent={
@@ -221,6 +227,24 @@ const TeamDetail: React.FC = () => {
 
 								{activeView === "metrics" && team && (
 									<TeamMetricsView team={team} />
+								)}
+
+								{activeView === "settings" && team && (
+									<ModifyTeamSettings
+										title={`Edit ${teamTerm}`}
+										getWorkTrackingSystems={() =>
+											workTrackingSystemService.getConfiguredWorkTrackingSystems()
+										}
+										getTeamSettings={() => teamService.getTeamSettings(team.id)}
+										saveTeamSettings={async (settings) => {
+											await teamService.updateTeam(settings);
+										}}
+										validateTeamSettings={(settings) =>
+											teamService.validateTeamSettings(settings)
+										}
+										disableSave={!canUpdateTeamSettings}
+										saveTooltip={updateTeamSettingsTooltip}
+									/>
 								)}
 							</Grid>
 						</Grid>

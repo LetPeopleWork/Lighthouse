@@ -107,17 +107,18 @@ describe("TeamDetail component", () => {
 		mockNavigate.mockClear();
 	});
 
-	it("should render three tabs: Features, Forecasts, and Metrics", async () => {
+	it("should render four tabs: Features, Forecasts, Metrics, and Settings", async () => {
 		renderTeamDetail();
 
 		await waitFor(() => {
 			expect(screen.getByTestId("team-features-view")).toBeInTheDocument();
 		});
 
-		// Check that all three tabs are present
+		// Check that all four tabs are present
 		expect(screen.getByRole("tab", { name: "Features" })).toBeInTheDocument();
 		expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
 		expect(screen.getByRole("tab", { name: "Metrics" })).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
 	});
 
 	it("should show Features tab as active by default when no tab specified", async () => {

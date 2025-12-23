@@ -43,6 +43,7 @@ export function createMockTeamSettings(): ITeamSettings {
 		systemWIPLimit: 0,
 		blockedStates: [],
 		blockedTags: [],
+		doneItemsCutoffDays: 180,
 	};
 }
 
@@ -71,6 +72,7 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		parentOverrideField: "",
 		blockedStates: [],
 		blockedTags: [],
+		doneItemsCutoffDays: 365,
 	};
 }
 

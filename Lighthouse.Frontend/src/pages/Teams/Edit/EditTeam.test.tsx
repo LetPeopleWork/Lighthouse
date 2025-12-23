@@ -168,11 +168,12 @@ describe("EditTeam", () => {
 			systemWIPLimit: 6,
 			blockedStates: [],
 			blockedTags: ["Blocked"],
+			doneItemsCutoffDays: 0,
 		};
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
 		// Set window.location.search and mock URLSearchParams properly
-		window.location.search = "?cloneFrom=5";
+		globalThis.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditTeamWithContext();
@@ -205,11 +206,12 @@ describe("EditTeam", () => {
 			systemWIPLimit: 6,
 			blockedStates: [],
 			blockedTags: [],
+			doneItemsCutoffDays: 0,
 		};
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
 		// Set window.location.search and mock URLSearchParams properly
-		window.location.search = "?cloneFrom=5";
+		globalThis.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditTeamWithContext();
@@ -217,7 +219,5 @@ describe("EditTeam", () => {
 		await waitFor(() => {
 			expect(mockTeamService.getTeamSettings).toHaveBeenCalledWith(5);
 		});
-
-		// TODO: Verify the name field shows "Copy of Original Team" once UI is implemented
 	});
 });

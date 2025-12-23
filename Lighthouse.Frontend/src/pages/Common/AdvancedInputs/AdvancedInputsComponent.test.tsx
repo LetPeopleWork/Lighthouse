@@ -7,6 +7,7 @@ describe("AdvancedInputsComponent", () => {
 	it("renders correctly with provided teamSettings", () => {
 		const teamSettings = createMockTeamSettings();
 		teamSettings.parentOverrideField = "Test Field";
+		teamSettings.doneItemsCutoffDays = 180;
 
 		render(
 			<AdvancedInputsComponent
@@ -19,6 +20,9 @@ describe("AdvancedInputsComponent", () => {
 		expect(screen.getByLabelText("Parent Override Field")).toHaveValue(
 			"Test Field",
 		);
+		expect(
+			screen.getByLabelText("Closed Items Cutoff (days)"),
+		).toHaveValue(180);
 	});
 
 	it("calls onTeamSettingsChange with the correct parameters when the TextField value changes", () => {
@@ -41,6 +45,29 @@ describe("AdvancedInputsComponent", () => {
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"parentOverrideField",
 			"New Value",
+		);
+	});
+
+	it("calls onTeamSettingsChange with numeric value when cutoff days changes", () => {
+		const onTeamSettingsChange = vi.fn();
+		const teamSettings = createMockTeamSettings();
+
+		render(
+			<AdvancedInputsComponent
+				settings={teamSettings}
+				onSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		// Simulate changing the cutoff days
+		fireEvent.change(screen.getByLabelText("Closed Items Cutoff (days)"), {
+			target: { value: "365" },
+		});
+
+		// Check if the callback was called with the correct parameters (numeric value)
+		expect(onTeamSettingsChange).toHaveBeenCalledWith(
+			"doneItemsCutoffDays",
+			365,
 		);
 	});
 });

@@ -14,4 +14,5 @@ export interface IBaseSettings {
 	parentOverrideField: string;
 	blockedStates: string[];
 	blockedTags: string[];
+	doneItemsCutoffDays: number;
 }

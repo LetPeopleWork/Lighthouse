@@ -174,6 +174,7 @@ describe("ConfigurationService", () => {
 					systemWIPLimit: 0,
 					blockedStates: ["Waiting for Peter"],
 					blockedTags: ["Blocked", "On Hold"],
+					doneItemsCutoffDays: 0,
 				},
 			],
 			projects: [
@@ -200,6 +201,7 @@ describe("ConfigurationService", () => {
 					parentOverrideField: "",
 					blockedStates: ["Waiting for Peter"],
 					blockedTags: ["Blocked", "On Hold"],
+					doneItemsCutoffDays: 0,
 				},
 			],
 		};

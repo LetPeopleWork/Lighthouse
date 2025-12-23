@@ -7,6 +7,7 @@ import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
+import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
@@ -24,7 +25,7 @@ import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import PortfolioForecastView from "./PortfolioForecastView";
 import PortfolioMetricsView from "./PortfolioMetricsView";
 
-type PortfolioViewType = "features" | "metrics" | "deliveries";
+type PortfolioViewType = "features" | "metrics" | "deliveries" | "settings";
 
 const PortfolioDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -42,6 +43,7 @@ const PortfolioDetail: React.FC = () => {
 	const getInitialActiveView = (tabParam?: string): PortfolioViewType => {
 		if (tabParam === "metrics") return "metrics";
 		if (tabParam === "deliveries") return "deliveries";
+		if (tabParam === "settings") return "settings";
 		return "features";
 	};
 
@@ -51,8 +53,12 @@ const PortfolioDetail: React.FC = () => {
 
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
 
-	const { portfolioService, teamService, updateSubscriptionService } =
-		useContext(ApiServiceContext);
+	const {
+		portfolioService,
+		teamService,
+		updateSubscriptionService,
+		workTrackingSystemService,
+	} = useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -100,7 +106,7 @@ const PortfolioDetail: React.FC = () => {
 	};
 
 	const onEditPortfolio = () => {
-		navigate(`/portfolios/edit/${id}`);
+		navigate(`/portfolios/${id}/settings`);
 	};
 
 	const onTeamSettingsChange = async (updatedTeamSettings: ITeamSettings) => {
@@ -208,12 +214,12 @@ const PortfolioDetail: React.FC = () => {
 											>
 												<ServiceLevelExpectation
 													featureOwner={portfolio}
-													hide={activeView !== "features"}
+													hide={false}
 													itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
 												/>
 												<SystemWIPLimitDisplay
 													featureOwner={portfolio}
-													hide={activeView !== "features"}
+													hide={false}
 												/>
 											</Stack>
 										</Stack>
@@ -227,6 +233,7 @@ const PortfolioDetail: React.FC = () => {
 											<Tab label={featuresTerm} value="features" />
 											<Tab label={deliveriesTerm} value="deliveries" />
 											<Tab label="Metrics" value="metrics" />
+											<Tab label="Settings" value="settings" />
 										</Tabs>
 									}
 									rightContent={
@@ -275,6 +282,25 @@ const PortfolioDetail: React.FC = () => {
 
 								{activeView === "metrics" && portfolio && (
 									<PortfolioMetricsView portfolio={portfolio} />
+								)}
+
+								{activeView === "settings" && portfolio && (
+									<ModifyProjectSettings
+										title="Edit Portfolio"
+										getWorkTrackingSystems={() =>
+											workTrackingSystemService.getConfiguredWorkTrackingSystems()
+										}
+										getProjectSettings={() =>
+											portfolioService.getPortfolioSettings(portfolio.id)
+										}
+										getAllTeams={() => teamService.getTeams()}
+										saveProjectSettings={async (settings) => {
+											await portfolioService.updatePortfolio(settings);
+										}}
+										validateProjectSettings={(settings) =>
+											portfolioService.validatePortfolioSettings(settings)
+										}
+									/>
 								)}
 							</Grid>
 						</Grid>

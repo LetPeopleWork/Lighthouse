@@ -40,11 +40,11 @@ const EditTeamPage: React.FC = () => {
 		if (isNewTeam) {
 			newSettings = await teamService.createTeam(updatedSettings);
 			await teamService.updateTeamData(newSettings.id);
+			navigate(`/teams/${newSettings.id}/settings`);
 		} else {
 			newSettings = await teamService.updateTeam(updatedSettings);
+			navigate(`/teams/${newSettings.id}`);
 		}
-
-		navigate(`/teams/${newSettings.id}`);
 	};
 
 	const getTeamSettings = async () => {

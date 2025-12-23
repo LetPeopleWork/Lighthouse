@@ -72,11 +72,11 @@ const EditPortfolio: React.FC = () => {
 		if (isNewPortfolio) {
 			savedSettings = await portfolioService.createPortfolio(updatedSettings);
 			await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
+			navigate(`/portfolios/${savedSettings.id}/settings`);
 		} else {
 			savedSettings = await portfolioService.updatePortfolio(updatedSettings);
+			navigate(`/portfolios/${savedSettings.id}`);
 		}
-
-		navigate(`/portfolios/${savedSettings.id}`);
 	};
 
 	return (
