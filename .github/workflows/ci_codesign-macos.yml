@@ -355,6 +355,70 @@ jobs:
 
             echo "✓ App bundle signed and verified successfully"
 
+        - name: Notarize app bundle
+          id: notarize_app
+          env:
+            APPLE_ID: ${{ secrets.APPLE_ID }}
+            APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          run: |
+            APP_DIR="./publish/Lighthouse.app"
+            
+            # Create temporary zip for notarization
+            TEMP_ZIP="./publish/Lighthouse-temp.zip"
+            echo "Creating temporary zip for notarization..."
+            ditto -c -k --keepParent "$APP_DIR" "$TEMP_ZIP"
+
+            echo "Submitting app bundle for notarization..."
+            SUBMIT_OUTPUT=$(xcrun notarytool submit "$TEMP_ZIP" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json)
+
+            APP_SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+            if [ -z "$APP_SUBMISSION_ID" ]; then
+              echo "Error: Failed to get submission ID for app bundle"
+              echo "$SUBMIT_OUTPUT"
+              exit 1
+            fi
+
+            echo "App bundle submission ID: $APP_SUBMISSION_ID"
+            echo "APP_SUBMISSION_ID=$APP_SUBMISSION_ID" >> $GITHUB_ENV
+
+            echo "Waiting for app bundle notarization to complete (timeout: 30 minutes)..."
+            xcrun notarytool wait "$APP_SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --timeout 30m \
+              --verbose
+
+            STATUS_OUTPUT=$(xcrun notarytool info "$APP_SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json)
+            STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+            if [ "$STATUS" != "Accepted" ]; then
+              echo "Error: App bundle notarization failed with status: $STATUS"
+              exit 1
+            fi
+
+            echo "App bundle notarization successful!"
+            
+            # Clean up temp zip
+            rm "$TEMP_ZIP"
+
+        - name: Staple notarization ticket to app bundle
+          run: |
+            APP_DIR="./publish/Lighthouse.app"
+            echo "Stapling notarization ticket to app bundle..."
+            xcrun stapler staple "$APP_DIR"
+            xcrun stapler validate "$APP_DIR"
+            echo "✓ Notarization ticket stapled to app bundle successfully"
+
         - name: Create app bundle zip
           run: |
             APP_DIR="./publish/Lighthouse.app"
