@@ -140,6 +140,33 @@ jobs:
             # Copy all binaries and resources
             cp -R ./publish/osx-universal/* "$MACOS_DIR/"
             
+            # Create icon from PNG
+            echo "Creating app icon from PNG..."
+            ICON_SOURCE="$MACOS_DIR/wwwroot/icons/icon-512x512.png"
+            ICONSET_DIR="Lighthouse.iconset"
+            
+            mkdir -p "$ICONSET_DIR"
+            
+            # Generate all required icon sizes
+            sips -z 16 16     "$ICON_SOURCE" --out "$ICONSET_DIR/icon_16x16.png"
+            sips -z 32 32     "$ICON_SOURCE" --out "$ICONSET_DIR/icon_16x16@2x.png"
+            sips -z 32 32     "$ICON_SOURCE" --out "$ICONSET_DIR/icon_32x32.png"
+            sips -z 64 64     "$ICON_SOURCE" --out "$ICONSET_DIR/icon_32x32@2x.png"
+            sips -z 128 128   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_128x128.png"
+            sips -z 256 256   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_128x128@2x.png"
+            sips -z 256 256   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_256x256.png"
+            sips -z 512 512   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_256x256@2x.png"
+            sips -z 512 512   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512.png"
+            sips -z 1024 1024 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png"
+            
+            # Convert to icns format
+            iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/Lighthouse.icns"
+            
+            # Clean up temporary iconset directory
+            rm -rf "$ICONSET_DIR"
+            
+            echo "Icon created at $RESOURCES_DIR/Lighthouse.icns"
+            
             # Create launcher script
             cat > "$MACOS_DIR/LighthouseLauncher" << 'LAUNCHER_EOF'
             #!/bin/bash
@@ -176,6 +203,8 @@ jobs:
                 <string>work.letpeople.lighthouse</string>
                 <key>CFBundleName</key>
                 <string>Lighthouse</string>
+                <key>CFBundleIconFile</key>
+                <string>Lighthouse.icns</string>
                 <key>CFBundlePackageType</key>
                 <string>APPL</string>
                 <key>CFBundleShortVersionString</key>
@@ -206,6 +235,7 @@ jobs:
             ls -la "$CONTENTS_DIR"
             ls -la "$MACOS_DIR"
             ls -la "$FRAMEWORKS_DIR"
+            ls -la "$RESOURCES_DIR"
 
         - name: Import code signing certificates
           uses: apple-actions/import-codesign-certs@v3
