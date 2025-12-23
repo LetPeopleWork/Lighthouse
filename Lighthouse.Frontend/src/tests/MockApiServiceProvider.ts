@@ -120,6 +120,7 @@ export const createMockTeamService = (): ITeamService => {
 		createTeam: vi.fn(),
 		updateTeamData: vi.fn(),
 		updateAllTeamData: vi.fn(),
+		updateForecastsForTeamPortfolios: vi.fn(),
 	};
 };
 

@@ -13,10 +13,11 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 type ThroughputQuickSettingProps = {
 	useFixedDates: boolean;
-	throughputHistory: number;
 	startDate: Date | null;
 	endDate: Date | null;
 	onSave: (
@@ -30,18 +31,30 @@ type ThroughputQuickSettingProps = {
 
 const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	useFixedDates: initialUseFixedDates,
-	throughputHistory: initialThroughputHistory,
 	startDate: initialStartDate,
 	endDate: initialEndDate,
 	onSave,
 	disabled = false,
 }) => {
 	const theme = useTheme();
+	const terminology = useTerminology();
+
+	const throughputTerm = terminology.getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
+
 	const [open, setOpen] = useState(false);
 	const [useFixedDates, setUseFixedDates] = useState(initialUseFixedDates);
+
+	const initialThroughputHistory =
+		initialStartDate && initialEndDate
+			? Math.floor(
+					(initialEndDate.getTime() - initialStartDate.getTime()) /
+						(1000 * 60 * 60 * 24),
+				) + 1
+			: 0;
 	const [throughputHistory, setThroughputHistory] = useState(
 		initialThroughputHistory,
 	);
+
 	const [startDate, setStartDate] = useState(initialStartDate);
 	const [endDate, setEndDate] = useState(initialEndDate);
 	const [error, setError] = useState<string>("");
@@ -64,14 +77,14 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 
 	const getTooltipText = (): string => {
 		if (!initialUseFixedDates && initialThroughputHistory <= 0) {
-			return "Throughput: Not set";
+			return `${throughputTerm}: Not set`;
 		}
 
 		if (initialUseFixedDates && initialStartDate && initialEndDate) {
-			return `Throughput: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}`;
+			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}`;
 		}
 
-		return `Throughput: Rolling ${initialThroughputHistory} days`;
+		return `${throughputTerm}: Rolling ${initialThroughputHistory} days`;
 	};
 
 	const isUnset = !initialUseFixedDates && initialThroughputHistory <= 0;
@@ -112,11 +125,11 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 				setError("Start date must be at least 10 days before end date");
 				return false;
 			}
-		} else {
-			if (throughputHistory < 0) {
-				setError("Throughput history must be at least 1 day (or 0 to unset)");
-				return false;
-			}
+		} else if (throughputHistory < 0) {
+			setError(
+				`${throughputTerm} history must be at least 1 day (or 0 to unset)`,
+			);
+			return false;
 		}
 
 		return true;
@@ -220,20 +233,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 							label="Use Fixed Dates"
 						/>
 
-						{!useFixedDates ? (
-							<TextField
-								label="Throughput History (days)"
-								type="number"
-								fullWidth
-								value={throughputHistory}
-								onChange={(e) =>
-									setThroughputHistory(Number.parseInt(e.target.value, 10) || 0)
-								}
-								error={!!error}
-								helperText={error || "Set to 0 to disable"}
-								inputProps={{ min: 0 }}
-							/>
-						) : (
+						{useFixedDates ? (
 							<>
 								<TextField
 									label="Start Date"
@@ -265,6 +265,19 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 									}}
 								/>
 							</>
+						) : (
+							<TextField
+								label={`${throughputTerm} History (days)`}
+								type="number"
+								fullWidth
+								value={throughputHistory}
+								onChange={(e) =>
+									setThroughputHistory(Number.parseInt(e.target.value, 10) || 0)
+								}
+								error={!!error}
+								helperText={error}
+								inputProps={{ min: 10 }}
+							/>
 						)}
 					</Box>
 				</DialogContent>

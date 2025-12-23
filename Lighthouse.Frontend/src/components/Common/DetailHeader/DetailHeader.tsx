@@ -22,8 +22,8 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 }) => {
 	return (
 		<Grid container spacing={spacing}>
-			{/* First row: Left and right content with 70/30 split */}
-			<Grid size={{ xs: 12, md: 8.4 }}>
+			{/* First row: Left content, quick settings, and right content */}
+			<Grid size={{ xs: 12, md: quickSettingsContent ? 4 : 8.4 }}>
 				<Box
 					sx={{
 						display: "flex",
@@ -35,6 +35,22 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 					{leftContent}
 				</Box>
 			</Grid>
+
+			{quickSettingsContent && (
+				<Grid size={{ xs: 12, md: 4.4 }}>
+					<Box
+						sx={{
+							display: "flex",
+							gap: 2,
+							justifyContent: { xs: "center", md: "center" },
+							alignItems: "center",
+							width: "100%",
+						}}
+					>
+						{quickSettingsContent}
+					</Box>
+				</Grid>
+			)}
 
 			<Grid size={{ xs: 12, md: 3.6 }}>
 				<Box
@@ -51,24 +67,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 				</Box>
 			</Grid>
 
-			{/* Second row (optional): Quick settings centered above tabs */}
-			{quickSettingsContent && (
-				<Grid size={{ xs: 12 }}>
-					<Box
-						sx={{
-							display: "flex",
-							justifyContent: "center",
-							alignItems: "center",
-							width: "100%",
-							mt: { xs: 1, md: 1 },
-						}}
-					>
-						{quickSettingsContent}
-					</Box>
-				</Grid>
-			)}
-
-			{/* Third row: Center content that spans full width */}
+			{/* Second row: Center content that spans full width */}
 			{centerContent && (
 				<Grid size={{ xs: 12 }}>
 					<Box

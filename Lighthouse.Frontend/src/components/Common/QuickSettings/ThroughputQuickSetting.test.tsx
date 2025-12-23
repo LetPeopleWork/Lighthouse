@@ -6,7 +6,6 @@ import ThroughputQuickSetting from "./ThroughputQuickSetting";
 const getMockProps = (
 	overrides?: Partial<{
 		useFixedDates: boolean;
-		throughputHistory: number;
 		startDate: Date | null;
 		endDate: Date | null;
 		onSave: (
@@ -19,7 +18,6 @@ const getMockProps = (
 	}>,
 ) => ({
 	useFixedDates: false,
-	throughputHistory: 30,
 	startDate: null,
 	endDate: null,
 	onSave: vi.fn().mockResolvedValue(undefined),
@@ -29,7 +27,13 @@ const getMockProps = (
 
 describe("ThroughputQuickSetting", () => {
 	it("should render icon button with tooltip showing rolling history", () => {
-		render(<ThroughputQuickSetting {...getMockProps()} />);
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30"); // 30 days
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ startDate, endDate })}
+			/>,
+		);
 
 		expect(
 			screen.getByRole("button", { name: /Throughput: Rolling 30 days/i }),
@@ -53,9 +57,7 @@ describe("ThroughputQuickSetting", () => {
 	});
 
 	it("should show greyed icon when unset (rolling with 0 days)", () => {
-		render(
-			<ThroughputQuickSetting {...getMockProps({ throughputHistory: 0 })} />,
-		);
+		render(<ThroughputQuickSetting {...getMockProps()} />);
 
 		const button = screen.getByRole("button", { name: /Not set/i });
 		expect(button).toBeInTheDocument();
@@ -78,7 +80,13 @@ describe("ThroughputQuickSetting", () => {
 
 	it("should show rolling history input when fixed dates is unchecked", async () => {
 		const user = userEvent.setup();
-		render(<ThroughputQuickSetting {...getMockProps()} />);
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30"); // 30 days
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ startDate, endDate })}
+			/>,
+		);
 
 		await user.click(screen.getByRole("button", { name: /Throughput/i }));
 
@@ -210,7 +218,7 @@ describe("ThroughputQuickSetting", () => {
 		const user = userEvent.setup();
 		const mockOnSave = vi.fn().mockResolvedValue(undefined);
 		const startDate = new Date("2024-01-01");
-		const endDate = new Date("2024-01-31");
+		const endDate = new Date("2024-01-31"); // 31 days initially
 		render(
 			<ThroughputQuickSetting
 				{...getMockProps({
@@ -235,11 +243,13 @@ describe("ThroughputQuickSetting", () => {
 		await user.keyboard("{Enter}");
 
 		await waitFor(() => {
+			// Component passes initialThroughputHistory when useFixedDates is true
+			// initialThroughputHistory is calculated from initial dates (Jan 1-31 = 31 days)
 			expect(mockOnSave).toHaveBeenCalledWith(
 				true,
-				30,
+				31,
 				expect.any(Date),
-				expect.objectContaining({ constructor: Date }),
+				expect.any(Date),
 			);
 		});
 	});
@@ -299,9 +309,11 @@ describe("ThroughputQuickSetting", () => {
 	it("should allow unsetting by setting rolling history to 0", async () => {
 		const user = userEvent.setup();
 		const mockOnSave = vi.fn().mockResolvedValue(undefined);
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30"); // 30 days initially
 		render(
 			<ThroughputQuickSetting
-				{...getMockProps({ throughputHistory: 30, onSave: mockOnSave })}
+				{...getMockProps({ startDate, endDate, onSave: mockOnSave })}
 			/>,
 		);
 

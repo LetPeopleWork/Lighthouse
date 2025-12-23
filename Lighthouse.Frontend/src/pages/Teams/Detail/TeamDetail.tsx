@@ -14,16 +14,13 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
-import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import FeatureWipQuickSetting from "../../../components/Common/QuickSettings/FeatureWipQuickSetting";
 import SleQuickSetting from "../../../components/Common/QuickSettings/SleQuickSetting";
 import SystemWipQuickSetting from "../../../components/Common/QuickSettings/SystemWipQuickSetting";
 import ThroughputQuickSetting from "../../../components/Common/QuickSettings/ThroughputQuickSetting";
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
-import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { Team } from "../../../models/Team/Team";
@@ -90,6 +87,31 @@ const TeamDetail: React.FC = () => {
 
 		setIsLoading(false);
 	}, [teamService, teamId]);
+
+	const updateTeamSettings = useCallback(
+		async (
+			updateFn: (
+				settings: ReturnType<
+					typeof teamService.getTeamSettings
+				> extends Promise<infer T>
+					? T
+					: never,
+			) => void,
+			shouldUpdatePortfolioForecasts = false,
+		) => {
+			if (!team) return;
+
+			const settings = await teamService.getTeamSettings(team.id);
+			updateFn(settings);
+			await teamService.updateTeam(settings);
+			await fetchTeam();
+
+			if (shouldUpdatePortfolioForecasts) {
+				await teamService.updateForecastsForTeamPortfolios(team.id);
+			}
+		},
+		[team, teamService, fetchTeam],
+	);
 
 	const onUpdateTeamData = async () => {
 		if (!team) {
@@ -164,56 +186,12 @@ const TeamDetail: React.FC = () => {
 									leftContent={
 										<Stack spacing={1} direction="row">
 											<FeatureOwnerHeader featureOwner={team} />
-
-											<Stack
-												direction={{ xs: "column", sm: "row" }}
-												spacing={1}
-												alignItems={{ xs: "flex-start", sm: "center" }}
-											>
-												<ForecastConfiguration team={team} />
-												<ServiceLevelExpectation
-													featureOwner={team}
-													hide={false}
-												/>
-												<SystemWIPLimitDisplay
-													featureOwner={team}
-													hide={false}
-												/>
-											</Stack>
 										</Stack>
 									}
 									quickSettingsContent={
 										<QuickSettingsBar>
-											<SleQuickSetting
-												probability={team.serviceLevelExpectationProbability}
-												range={team.serviceLevelExpectationRange}
-												onSave={async (probability, range) => {
-													const settings = await teamService.getTeamSettings(
-														team.id,
-													);
-													settings.serviceLevelExpectationProbability =
-														probability;
-													settings.serviceLevelExpectationRange = range;
-													await teamService.updateTeam(settings);
-													await fetchTeam();
-												}}
-												disabled={!canUpdateTeamSettings}
-											/>
-											<SystemWipQuickSetting
-												wipLimit={team.systemWIPLimit}
-												onSave={async (systemWip) => {
-													const settings = await teamService.getTeamSettings(
-														team.id,
-													);
-													settings.systemWIPLimit = systemWip;
-													await teamService.updateTeam(settings);
-													await fetchTeam();
-												}}
-												disabled={!canUpdateTeamSettings}
-											/>
 											<ThroughputQuickSetting
 												useFixedDates={team.useFixedDatesForThroughput}
-												throughputHistory={30}
 												startDate={team.throughputStartDate}
 												endDate={team.throughputEndDate}
 												onSave={async (
@@ -222,29 +200,46 @@ const TeamDetail: React.FC = () => {
 													startDate,
 													endDate,
 												) => {
-													const settings = await teamService.getTeamSettings(
-														team.id,
-													);
-													settings.useFixedDatesForThroughput = useFixedDates;
-													settings.throughputHistory = throughputHistory;
-													if (startDate)
-														settings.throughputHistoryStartDate = startDate;
-													if (endDate)
-														settings.throughputHistoryEndDate = endDate;
-													await teamService.updateTeam(settings);
-													await fetchTeam();
+													await updateTeamSettings((settings) => {
+														settings.useFixedDatesForThroughput = useFixedDates;
+														settings.throughputHistory = throughputHistory;
+														if (startDate) {
+															settings.throughputHistoryStartDate = startDate;
+														}
+														if (endDate) {
+															settings.throughputHistoryEndDate = endDate;
+														}
+													}, true);
+												}}
+												disabled={!canUpdateTeamSettings}
+											/>
+											<SleQuickSetting
+												probability={team.serviceLevelExpectationProbability}
+												range={team.serviceLevelExpectationRange}
+												onSave={async (probability, range) => {
+													await updateTeamSettings((settings) => {
+														settings.serviceLevelExpectationProbability =
+															probability;
+														settings.serviceLevelExpectationRange = range;
+													});
+												}}
+												disabled={!canUpdateTeamSettings}
+											/>
+											<SystemWipQuickSetting
+												wipLimit={team.systemWIPLimit}
+												onSave={async (systemWip) => {
+													await updateTeamSettings((settings) => {
+														settings.systemWIPLimit = systemWip;
+													});
 												}}
 												disabled={!canUpdateTeamSettings}
 											/>
 											<FeatureWipQuickSetting
 												featureWip={team.featureWip}
 												onSave={async (featureWip) => {
-													const settings = await teamService.getTeamSettings(
-														team.id,
-													);
-													settings.featureWIP = featureWip;
-													await teamService.updateTeam(settings);
-													await fetchTeam();
+													await updateTeamSettings((settings) => {
+														settings.featureWIP = featureWip;
+													}, true);
 												}}
 												disabled={!canUpdateTeamSettings}
 											/>

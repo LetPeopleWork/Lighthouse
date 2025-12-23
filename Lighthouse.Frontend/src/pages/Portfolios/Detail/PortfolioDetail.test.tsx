@@ -201,18 +201,6 @@ describe("PortfolioDetail component", () => {
 		});
 	});
 
-	it("should render involved teams", async () => {
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(screen.getByText("Release Codename Daniel")).toBeInTheDocument();
-		});
-
-		expect(screen.getByTestId("involved-teams-list")).toHaveTextContent(
-			"0 teams",
-		);
-	});
-
 	it("should subscribe to feature and forecast updates on mount", async () => {
 		renderWithMockApiProvider();
 

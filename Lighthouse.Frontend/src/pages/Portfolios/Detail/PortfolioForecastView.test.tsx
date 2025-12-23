@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
@@ -90,13 +90,6 @@ describe("PortfolioForecastView component", () => {
 	mockTeamSettings2.id = 2;
 	mockTeamSettings2.name = "Team B Settings";
 
-	const mockInvolvedTeams: ITeamSettings[] = [
-		mockTeamSettings1,
-		mockTeamSettings2,
-	];
-
-	const mockOnTeamSettingsChange = vi.fn().mockResolvedValue(undefined);
-
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -104,43 +97,15 @@ describe("PortfolioForecastView component", () => {
 	it("renders all components correctly", () => {
 		render(
 			<MemoryRouter>
-				<PortfolioForecastView
-					portfolio={mockPortfolio}
-					involvedTeams={mockInvolvedTeams}
-					onTeamSettingsChange={mockOnTeamSettingsChange}
-				/>
+				<PortfolioForecastView portfolio={mockPortfolio} />
 			</MemoryRouter>,
 		);
 
-		expect(screen.getByTestId("involved-teams-list")).toBeInTheDocument();
 		expect(screen.getByTestId("portfolio-feature-list")).toBeInTheDocument();
 
 		// Check if data is passed correctly
-		expect(screen.getByTestId("teams-count").textContent).toBe("2");
 		expect(screen.getByTestId("portfolio-name").textContent).toBe(
 			"Test Project",
 		);
-	});
-
-	it("updates team settings correctly", async () => {
-		render(
-			<MemoryRouter>
-				<PortfolioForecastView
-					portfolio={mockPortfolio}
-					involvedTeams={mockInvolvedTeams}
-					onTeamSettingsChange={mockOnTeamSettingsChange}
-				/>
-			</MemoryRouter>,
-		);
-
-		const updateTeamButton = screen.getByTestId("update-team-1");
-		fireEvent.click(updateTeamButton);
-
-		await waitFor(() => {
-			expect(mockOnTeamSettingsChange).toHaveBeenCalledTimes(1);
-			const updatedTeamSettings = mockOnTeamSettingsChange.mock.calls[0][0];
-			expect(updatedTeamSettings.id).toBe(1);
-			expect(updatedTeamSettings.name).toBe("Team A Settings-updated");
-		});
 	});
 });

@@ -20,9 +20,7 @@ import PortfolioFeatureWipQuickSetting from "../../../components/Common/QuickSet
 import SleQuickSetting from "../../../components/Common/QuickSettings/SleQuickSetting";
 import SystemWipQuickSetting from "../../../components/Common/QuickSettings/SystemWipQuickSetting";
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
-import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
 	IPortfolio,
@@ -104,6 +102,54 @@ const PortfolioDetail: React.FC = () => {
 		setIsLoading(false);
 	}, [portfolioService, teamService, portfolioId]);
 
+	const updatePortfolioSettings = useCallback(
+		async (
+			updateFn: (
+				settings: ReturnType<
+					typeof portfolioService.getPortfolioSettings
+				> extends Promise<infer T>
+					? T
+					: never,
+			) => void,
+		) => {
+			if (!portfolio) return;
+
+			const settings = await portfolioService.getPortfolioSettings(
+				portfolio.id,
+			);
+			updateFn(settings);
+			await portfolioService.updatePortfolio(settings);
+			await fetchPortfolio();
+		},
+		[portfolio, portfolioService, fetchPortfolio],
+	);
+
+	const updateTeamSettingsFromPortfolio = useCallback(
+		async (
+			teamId: number,
+			updateFn: (
+				settings: ReturnType<
+					typeof teamService.getTeamSettings
+				> extends Promise<infer T>
+					? T
+					: never,
+			) => void,
+			shouldRefreshForecasts = false,
+		) => {
+			if (!portfolio) return;
+
+			const settings = await teamService.getTeamSettings(teamId);
+			updateFn(settings);
+			await teamService.updateTeam(settings);
+			await fetchPortfolio();
+
+			if (shouldRefreshForecasts) {
+				await portfolioService.refreshForecastsForPortfolio(portfolio.id);
+			}
+		},
+		[portfolio, teamService, portfolioService, fetchPortfolio],
+	);
+
 	const onRefreshFeatures = async () => {
 		if (portfolio == null) {
 			return;
@@ -111,12 +157,6 @@ const PortfolioDetail: React.FC = () => {
 
 		setIsPortfolioUpdating(true);
 		await portfolioService.refreshFeaturesForPortfolio(portfolio.id);
-	};
-
-	const onTeamSettingsChange = async (updatedTeamSettings: ITeamSettings) => {
-		await teamService.updateTeam(updatedTeamSettings);
-
-		await portfolioService.refreshForecastsForPortfolio(portfolioId);
 	};
 
 	const getTabPath = (newView: PortfolioViewType): string => {
@@ -211,21 +251,6 @@ const PortfolioDetail: React.FC = () => {
 									leftContent={
 										<Stack spacing={1} direction="row">
 											<FeatureOwnerHeader featureOwner={portfolio} />
-											<Stack
-												direction={{ xs: "column", sm: "row" }}
-												spacing={1}
-												alignItems={{ xs: "flex-start", sm: "center" }}
-											>
-												<ServiceLevelExpectation
-													featureOwner={portfolio}
-													hide={false}
-													itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
-												/>
-												<SystemWIPLimitDisplay
-													featureOwner={portfolio}
-													hide={false}
-												/>
-											</Stack>
 										</Stack>
 									}
 									quickSettingsContent={
@@ -236,39 +261,33 @@ const PortfolioDetail: React.FC = () => {
 												}
 												range={portfolio.serviceLevelExpectationRange}
 												onSave={async (probability, range) => {
-													const settings =
-														await portfolioService.getPortfolioSettings(
-															portfolio.id,
-														);
-													settings.serviceLevelExpectationProbability =
-														probability;
-													settings.serviceLevelExpectationRange = range;
-													await portfolioService.updatePortfolio(settings);
-													await fetchPortfolio();
+													await updatePortfolioSettings((settings) => {
+														settings.serviceLevelExpectationProbability =
+															probability;
+														settings.serviceLevelExpectationRange = range;
+													});
 												}}
 												disabled={!canUpdatePortfolioData}
 											/>
 											<SystemWipQuickSetting
 												wipLimit={portfolio.systemWIPLimit}
 												onSave={async (systemWip) => {
-													const settings =
-														await portfolioService.getPortfolioSettings(
-															portfolio.id,
-														);
-													settings.systemWIPLimit = systemWip;
-													await portfolioService.updatePortfolio(settings);
-													await fetchPortfolio();
+													await updatePortfolioSettings((settings) => {
+														settings.systemWIPLimit = systemWip;
+													});
 												}}
 												disabled={!canUpdatePortfolioData}
 											/>
 											<PortfolioFeatureWipQuickSetting
 												teams={involvedTeams}
 												onSave={async (teamId, featureWip) => {
-													const settings =
-														await teamService.getTeamSettings(teamId);
-													settings.featureWIP = featureWip;
-													await teamService.updateTeam(settings);
-													await fetchPortfolio();
+													await updateTeamSettingsFromPortfolio(
+														teamId,
+														(settings) => {
+															settings.featureWIP = featureWip;
+														},
+														true,
+													);
 												}}
 												disabled={!canUpdatePortfolioData}
 											/>
@@ -316,11 +335,7 @@ const PortfolioDetail: React.FC = () => {
 
 							<Grid size={{ xs: 12 }}>
 								{activeView === "features" && portfolio && (
-									<PortfolioForecastView
-										portfolio={portfolio}
-										involvedTeams={involvedTeams}
-										onTeamSettingsChange={onTeamSettingsChange}
-									/>
+									<PortfolioForecastView portfolio={portfolio} />
 								)}
 
 								{activeView === "deliveries" && portfolio && (

@@ -44,7 +44,80 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(12), Times.Once);
-            };
+            }
+        }
+
+        [Test]
+        public void UpdateForecastsForTeamPortfolios_TeamExists_TriggersUpdateForAllPortfolios()
+        {
+            var portfolio1 = new Portfolio { Id = 1, Name = "Portfolio 1" };
+            var portfolio2 = new Portfolio { Id = 2, Name = "Portfolio 2" };
+            var portfolio3 = new Portfolio { Id = 3, Name = "Portfolio 3" };
+
+            var team = new Team { Id = 12, Name = "Test Team" };
+            team.Portfolios.Add(portfolio1);
+            team.Portfolios.Add(portfolio2);
+            team.Portfolios.Add(portfolio3);
+
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var subject = CreateSubject();
+
+            var response = subject.UpdateForecastsForTeamPortfolios(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = response.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(1), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(2), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(3), Times.Once);
+            }
+        }
+
+        [Test]
+        public void UpdateForecastsForTeamPortfolios_TeamHasNoPortfolios_DoesNotTriggerUpdates()
+        {
+            var team = new Team { Id = 12, Name = "Test Team" };
+
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var subject = CreateSubject();
+
+            var response = subject.UpdateForecastsForTeamPortfolios(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = response.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public void UpdateForecastsForTeamPortfolios_TeamDoesNotExist_ReturnsNotFound()
+        {
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns((Team)null);
+
+            var subject = CreateSubject();
+
+            var response = subject.UpdateForecastsForTeamPortfolios(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
+            }
         }
 
         [Test]
@@ -73,7 +146,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.Likelihood, Is.Zero);
-            };
+            }
         }
 
         [Test]
@@ -102,7 +175,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.Likelihood, Is.Zero);
-            };
+            }
         }
 
         [Test]
@@ -131,7 +204,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.Likelihood, Is.Not.Zero);
-            };
+            }
         }
 
         [Test]
@@ -147,7 +220,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -184,7 +257,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(prediction.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(prediction.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(prediction.Likelihood, Is.Zero);
-            };
+            }
         }
 
         [Test]
@@ -200,7 +273,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         private ForecastController CreateSubject()

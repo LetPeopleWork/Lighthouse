@@ -12,6 +12,7 @@ export interface ITeamService {
 	createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 	updateTeamData(teamId: number): Promise<void>;
 	updateAllTeamData(): Promise<void>;
+	updateForecastsForTeamPortfolios(teamId: number): Promise<void>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
@@ -101,6 +102,14 @@ export class TeamService extends BaseApiService implements ITeamService {
 	async updateForecast(teamId: number): Promise<void> {
 		await this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/forecast/update/${teamId}`);
+		});
+	}
+
+	async updateForecastsForTeamPortfolios(teamId: number): Promise<void> {
+		await this.withErrorHandling(async () => {
+			await this.apiService.post<void>(
+				`/forecast/update-portfolios-for-team/${teamId}`,
+			);
 		});
 	}
 }

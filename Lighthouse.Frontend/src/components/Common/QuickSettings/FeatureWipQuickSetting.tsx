@@ -1,4 +1,4 @@
-import WorkIcon from "@mui/icons-material/Work";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import {
 	Box,
 	Dialog,
@@ -121,7 +121,7 @@ const FeatureWipQuickSetting: React.FC<FeatureWipQuickSettingProps> = ({
 							},
 						}}
 					>
-						<WorkIcon />
+						<AssignmentIcon />
 					</IconButton>
 				</span>
 			</Tooltip>

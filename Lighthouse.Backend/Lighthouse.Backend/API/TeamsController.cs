@@ -159,8 +159,6 @@ namespace Lighthouse.Backend.API
 
                 SyncTeamWithTeamSettings(team, teamSetting);
 
-                team.ResetUpdateTime();
-
                 teamRepository.Update(team);
                 await teamRepository.Save();
 

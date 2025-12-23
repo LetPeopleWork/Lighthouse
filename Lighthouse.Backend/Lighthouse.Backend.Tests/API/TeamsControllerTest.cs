@@ -465,33 +465,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateTeam_GivenNewTeamSettings_ResetsLastUpdateTime()
-        {
-            var existingTeam = new Team { Id = 132, UpdateTime = DateTime.UtcNow };
-
-            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
-
-            var updatedTeamSettings = new TeamSettingDto
-            {
-                Id = 132,
-                Name = "Updated Team",
-                FeatureWIP = 12,
-                ThroughputHistory = 30,
-                WorkItemQuery = "project = MyProject",
-                WorkItemTypes = new List<string> { "User Story", "Bug" },
-                WorkTrackingSystemConnectionId = 2,
-                ParentOverrideField = "CUSTOM.AdditionalField",
-                AutomaticallyAdjustFeatureWIP = true,
-            };
-
-            var subject = CreateSubject();
-
-            _ = await subject.UpdateTeam(132, updatedTeamSettings);
-
-            Assert.That(existingTeam.UpdateTime, Is.EqualTo(DateTime.MinValue));
-        }
-
-        [Test]
         [TestCase("New Query", true)]
         [TestCase("Existing Query", false)]
         public async Task UpdateTeam_GivenNewQuery_DeletesExistingWorkItems(string workItemQuery, bool shouldDelete)

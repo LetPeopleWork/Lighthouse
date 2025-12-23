@@ -1,4 +1,4 @@
-import WorkIcon from "@mui/icons-material/Work";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import {
 	Box,
 	Dialog,
@@ -12,6 +12,8 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import StyledLink from "../StyledLink/StyledLink";
 
 type PortfolioFeatureWipQuickSettingProps = {
@@ -24,6 +26,8 @@ const PortfolioFeatureWipQuickSetting: React.FC<
 	PortfolioFeatureWipQuickSettingProps
 > = ({ teams: initialTeams, onSave, disabled = false }) => {
 	const theme = useTheme();
+	const { getTerm } = useTerminology();
+
 	const [open, setOpen] = useState(false);
 	const [teamWips, setTeamWips] = useState<Map<number, number>>(new Map());
 
@@ -37,12 +41,18 @@ const PortfolioFeatureWipQuickSetting: React.FC<
 		}
 	}, [open, initialTeams]);
 
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+
+	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+
 	const getTooltipText = (): string => {
 		const allUnset = initialTeams.every((t) => t.featureWIP <= 0);
 		if (allUnset) {
-			return "Feature WIP: Not set";
+			return `${featureTerm} ${wipTerm}: Not set`;
 		}
-		return `Feature WIP: ${initialTeams.length} teams`;
+		return `${featureTerm} ${wipTerm}: ${initialTeams.length} ${teamsTerm}`;
 	};
 
 	const isUnset = initialTeams.every((t) => t.featureWIP <= 0);
@@ -130,7 +140,7 @@ const PortfolioFeatureWipQuickSetting: React.FC<
 							},
 						}}
 					>
-						<WorkIcon />
+						<AssignmentIcon />
 					</IconButton>
 				</span>
 			</Tooltip>
@@ -142,7 +152,9 @@ const PortfolioFeatureWipQuickSetting: React.FC<
 				maxWidth="sm"
 				fullWidth
 			>
-				<DialogTitle>Feature WIP per Team</DialogTitle>
+				<DialogTitle>
+					{featureTerm} {wipTerm} per {teamTerm})
+				</DialogTitle>
 				<DialogContent>
 					<Box
 						sx={{

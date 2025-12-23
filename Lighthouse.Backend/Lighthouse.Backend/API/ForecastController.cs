@@ -35,6 +35,20 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [HttpPost("update-portfolios-for-team/{teamId}")]
+        public ActionResult<bool> UpdateForecastsForTeamPortfolios(int teamId)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            {
+                foreach (var portfolio in team.Portfolios)
+                {
+                    forecastUpdater.TriggerUpdate(portfolio.Id);
+                }
+
+                return true;
+            });
+        }
+
         [HttpPost("itemprediction/{id}")]
         [LicenseGuard(RequirePremium = true)]
         public ActionResult<ManualForecastDto> RunItemCreationPrediction(int id, [FromBody] ItemCreationPredictionInputDto input)

@@ -24,6 +24,7 @@ const mockTeamService = {
 	updateTeamData: vi.fn(),
 	updateAllTeamData: vi.fn(),
 	updateForecast: vi.fn(),
+	updateForecastsForTeamPortfolios: vi.fn(),
 };
 
 const mockPortfolioService = {
