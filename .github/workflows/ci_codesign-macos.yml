@@ -140,6 +140,30 @@ jobs:
             # Copy all binaries and resources
             cp -R ./publish/osx-universal/* "$MACOS_DIR/"
             
+            # Create launcher script
+            cat > "$MACOS_DIR/LighthouseLauncher" << 'LAUNCHER_EOF'
+            #!/bin/bash
+            SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+            
+            # Escape arguments for passing through osascript
+            ARGS=""
+            for arg in "$@"; do
+                # Escape single quotes and backslashes for the AppleScript string
+                escaped_arg=$(printf '%s' "$arg" | sed "s/'/'\\\\''/g")
+                ARGS="$ARGS '$escaped_arg'"
+            done
+            
+            # Open Terminal and run the app with arguments
+            osascript -e 'tell application "Terminal"
+                do script "cd \"'"$SCRIPT_DIR"'\" && ./Lighthouse'"$ARGS"'; echo \"\nLighthouse has stopped. Press any key to close...\"; read -n 1; exit"
+                activate
+            end tell'
+            LAUNCHER_EOF
+            
+            # Make launcher executable
+            chmod +x "$MACOS_DIR/LighthouseLauncher"
+            chmod +x "$MACOS_DIR/Lighthouse"
+            
             # Create Info.plist
             cat > "$CONTENTS_DIR/Info.plist" << EOF
             <?xml version="1.0" encoding="UTF-8"?>
@@ -147,7 +171,7 @@ jobs:
             <plist version="1.0">
             <dict>
                 <key>CFBundleExecutable</key>
-                <string>Lighthouse</string>
+                <string>LighthouseLauncher</string>
                 <key>CFBundleIdentifier</key>
                 <string>work.letpeople.lighthouse</string>
                 <key>CFBundleName</key>
@@ -164,7 +188,6 @@ jobs:
                 <true/>
                 <key>LSUIElement</key>
                 <false/>
-
                 <!-- Sparkle Update Configuration -->
                 <key>SUFeedURL</key>
                 <string>https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/appcast.xml</string>
