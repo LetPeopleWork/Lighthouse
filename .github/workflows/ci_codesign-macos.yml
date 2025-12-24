@@ -588,5 +588,5 @@ jobs:
         - name: Upload signed DMG artifact
           uses: actions/upload-artifact@v4
           with:
-            name: Lighthouse-osx-${{ inputs.version }}
+            name: Lighthouse-osx-dmg-${{ inputs.version }}
             path: ./publish/Lighthouse-${{ inputs.version }}.dmg
