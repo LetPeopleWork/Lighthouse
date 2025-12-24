@@ -118,6 +118,19 @@ jobs:
             echo "Sparkle framework extracted"
             ls -la Sparkle.framework/
 
+        # --- Build Swift Launcher ---
+        - name: Build Swift Launcher
+          run: |
+            echo "Building Swift launcher..."
+            swiftc -framework Cocoa -framework Sparkle \
+              -F ./Sparkle.framework/.. \
+              -o LighthouseLauncher \
+              tools/macOS/Launcher/main.swift \
+              tools/macOS/Launcher/AppDelegate.swift
+            
+            chmod +x LighthouseLauncher
+            echo "Swift launcher built successfully"
+
         # --- Create App Bundle Structure ---
         - name: Create App Bundle
           run: |
@@ -140,6 +153,13 @@ jobs:
             # Copy all binaries and resources
             cp -R ./publish/osx-universal/* "$MACOS_DIR/"
             
+            # Copy the Swift launcher
+            cp LighthouseLauncher "$MACOS_DIR/"
+            
+            # Make executables executable
+            chmod +x "$MACOS_DIR/LighthouseLauncher"
+            chmod +x "$MACOS_DIR/Lighthouse"
+            
             # Create icon from PNG
             echo "Creating app icon from PNG..."
             ICON_SOURCE="$MACOS_DIR/wwwroot/icons/icon-512x512.png"
@@ -159,6 +179,10 @@ jobs:
             sips -z 512 512   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512.png"
             sips -z 1024 1024 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png"
             
+            # Create menu bar icon (18x18 template)
+            echo "Creating menu bar icon..."
+            sips -z 18 18 "$ICON_SOURCE" --out "$RESOURCES_DIR/MenuBarIcon.png"
+            
             # Convert to icns format
             iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/Lighthouse.icns"
             
@@ -166,47 +190,6 @@ jobs:
             rm -rf "$ICONSET_DIR"
             
             echo "Icon created at $RESOURCES_DIR/Lighthouse.icns"
-            
-            # Create launcher script
-            cat > "$MACOS_DIR/LighthouseLauncher" << 'LAUNCHER_EOF'
-            #!/bin/bash
-            SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-            LOCKFILE="/tmp/lighthouse.lock"
-            
-            # Check if Lighthouse is already running
-            if [ -f "$LOCKFILE" ]; then
-                PID=$(cat "$LOCKFILE")
-                if ps -p "$PID" > /dev/null 2>&1; then
-                    # Process is running, bring Terminal to front
-                    osascript -e 'tell application "Terminal" to activate' 2>/dev/null
-                    
-                    # Show a notification
-                    osascript -e 'display notification "Lighthouse is already running. The Terminal window has been brought to front." with title "Lighthouse"' 2>/dev/null
-                    exit 0
-                else
-                    # Stale lock file, remove it
-                    rm -f "$LOCKFILE"
-                fi
-            fi
-            
-            # Escape arguments for passing through osascript
-            ARGS=""
-            for arg in "$@"; do
-                # Escape single quotes and backslashes for the AppleScript string
-                escaped_arg=$(printf '%s' "$arg" | sed "s/'/'\\\\''/g")
-                ARGS="$ARGS '$escaped_arg'"
-            done
-            
-            # Open Terminal and run the app with arguments
-            osascript -e 'tell application "Terminal"
-                do script "cd \"'"$SCRIPT_DIR"'\" && echo $$ > /tmp/lighthouse.lock && ./Lighthouse'"$ARGS"'; rm -f /tmp/lighthouse.lock; echo \"\nLighthouse has stopped. Press any key to close...\"; read -n 1; exit"
-                activate
-            end tell'
-            LAUNCHER_EOF
-            
-            # Make launcher executable
-            chmod +x "$MACOS_DIR/LighthouseLauncher"
-            chmod +x "$MACOS_DIR/Lighthouse"
             
             # Create Info.plist
             cat > "$CONTENTS_DIR/Info.plist" << EOF
@@ -232,8 +215,9 @@ jobs:
                 <string>10.15</string>
                 <key>NSHighResolutionCapable</key>
                 <true/>
+                <!-- Keep as menu bar app, not in dock -->
                 <key>LSUIElement</key>
-                <false/>
+                <true/>
                 <!-- Sparkle Update Configuration -->
                 <key>SUFeedURL</key>
                 <string>https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/appcast.xml</string>
@@ -343,15 +327,27 @@ jobs:
             mv ./temp_binary/Lighthouse "$BINARY_PATH"
             rmdir ./temp_binary
 
-            echo "=== Signing app bundle ==="                       
+            echo "✓ Lighthouse executable signed and verified"
+
+            echo "=== Signing LighthouseLauncher ==="
+            codesign --sign "$IDENTITY" \
+              --timestamp \
+              --options runtime \
+              --force \
+              --verbose=4 \
+              "$MACOS_DIR/LighthouseLauncher"
+            codesign --verify --strict --verbose=2 "$MACOS_DIR/LighthouseLauncher"
+            echo "✓ LighthouseLauncher signed and verified"
+
+            echo "=== Signing app bundle ==="
             codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR"
 
             echo "=== Verifying signatures ==="
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
             codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
 
-            echo "=== Entitlements in signed executable ==="
-            codesign -d --entitlements - "$BINARY_PATH"
+            echo "=== Entitlements in signed Lighthouse executable ==="
+            codesign -d --entitlements - "$MACOS_DIR/Lighthouse"
 
             echo "✓ App bundle signed and verified successfully"
 
