@@ -62,7 +62,7 @@ jobs:
             ${{ runner.os }}-sonar
       
       - name: Frontend SonarCloud
-        uses: sonarsource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
