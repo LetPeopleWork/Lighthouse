@@ -16,6 +16,7 @@ import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../services/TerminologyContext";
+import type { IUpdateStatus } from "../../services/UpdateSubscriptionService";
 
 const OverviewDashboard: React.FC = () => {
 	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -29,7 +30,11 @@ const OverviewDashboard: React.FC = () => {
 	const [deleteType, setDeleteType] = useState<"portfolio" | "team" | null>(
 		null,
 	);
-	const [isUpdatingAll, setIsUpdatingAll] = useState<boolean>(false);
+
+	const [globalUpdateStatus, setGlobalUpdateStatus] = useState<{
+		hasActiveUpdates: boolean;
+		activeCount: number;
+	}>({ hasActiveUpdates: false, activeCount: 0 });
 
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -41,7 +46,8 @@ const OverviewDashboard: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const { portfolioService, teamService } = useContext(ApiServiceContext);
+	const { portfolioService, teamService, updateSubscriptionService } =
+		useContext(ApiServiceContext);
 	const {
 		canCreatePortfolio,
 		createPortfolioTooltip,
@@ -67,9 +73,54 @@ const OverviewDashboard: React.FC = () => {
 		}
 	}, [portfolioService, teamService]);
 
+	const fetchGlobalUpdateStatus = useCallback(async () => {
+		try {
+			const status = await updateSubscriptionService.getGlobalUpdateStatus();
+			setGlobalUpdateStatus(status);
+		} catch (error) {
+			console.error("Error fetching global update status:", error);
+		}
+	}, [updateSubscriptionService]);
+
 	useEffect(() => {
 		fetchData();
 	}, [fetchData]);
+
+	useEffect(() => {
+		fetchGlobalUpdateStatus();
+
+		for (const team of teams) {
+			updateSubscriptionService.subscribeToTeamUpdates(
+				team.id,
+				(status: IUpdateStatus) => {
+					if (status.status === "Completed" || status.status === "Failed") {
+						fetchGlobalUpdateStatus();
+					}
+				},
+			);
+		}
+
+		for (const portfolio of portfolios) {
+			updateSubscriptionService.subscribeToFeatureUpdates(
+				portfolio.id,
+				(status: IUpdateStatus) => {
+					if (status.status === "Completed" || status.status === "Failed") {
+						fetchGlobalUpdateStatus();
+					}
+				},
+			);
+		}
+
+		return () => {
+			// Cleanup subscriptions
+			teams.forEach((team) => {
+				updateSubscriptionService.unsubscribeFromTeamUpdates(team.id);
+			});
+			portfolios.forEach((portfolio) => {
+				updateSubscriptionService.unsubscribeFromFeatureUpdates(portfolio.id);
+			});
+		};
+	}, [teams, portfolios, updateSubscriptionService, fetchGlobalUpdateStatus]);
 
 	const handlePortfolioDelete = (portfolio: IFeatureOwner) => {
 		setSelectedItem(portfolio as Portfolio);
@@ -136,14 +187,15 @@ const OverviewDashboard: React.FC = () => {
 
 	const handleUpdateAll = async () => {
 		try {
-			setIsUpdatingAll(true);
+			setGlobalUpdateStatus({
+				hasActiveUpdates: true,
+				activeCount: teams.length + portfolios.length,
+			});
 			await teamService.updateAllTeamData();
 			await portfolioService.refreshFeaturesForAllPortfolios();
 		} catch (error) {
 			console.error("Error updating all teams and portfolios:", error);
 			setHasError(true);
-		} finally {
-			setIsUpdatingAll(false);
 		}
 	};
 
@@ -198,12 +250,19 @@ const OverviewDashboard: React.FC = () => {
 						<Tooltip title={updateAllTeamsAndPortfoliosTooltip} arrow>
 							<span>
 								<ActionButton
-									buttonText="Update All"
+									buttonText={
+										globalUpdateStatus.activeCount > 0
+											? `Update All (${globalUpdateStatus?.activeCount})`
+											: "Update All"
+									}
 									startIcon={<UpdateIcon />}
 									onClickHandler={handleUpdateAll}
 									buttonVariant="outlined"
-									disabled={!canUpdateAllTeamsAndPortfolios}
-									externalIsWaiting={isUpdatingAll}
+									disabled={
+										!canUpdateAllTeamsAndPortfolios ||
+										globalUpdateStatus.hasActiveUpdates
+									}
+									externalIsWaiting={globalUpdateStatus.hasActiveUpdates}
 								/>
 							</span>
 						</Tooltip>

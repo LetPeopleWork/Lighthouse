@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type IUpdateStatus,
@@ -6,6 +7,8 @@ import {
 } from "./UpdateSubscriptionService";
 
 vi.mock("@microsoft/signalr");
+vi.mock("axios");
+const mockedAxios = vi.mocked(axios, true);
 
 describe("UpdateSubscriptionService", () => {
 	let service: UpdateSubscriptionService;
@@ -25,6 +28,8 @@ describe("UpdateSubscriptionService", () => {
 			}),
 		});
 		signalR.HubConnectionBuilder.prototype.withUrl = withUrlMock;
+
+		mockedAxios.create.mockReturnThis();
 
 		service = new UpdateSubscriptionService();
 	});
@@ -92,5 +97,28 @@ describe("UpdateSubscriptionService", () => {
 			"Team",
 			1,
 		);
+	});
+
+	it("should get global update status successfully", async () => {
+		const mockResponse = {
+			data: { hasActiveUpdates: true, activeCount: 2 },
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+		const result = await service.getGlobalUpdateStatus();
+
+		expect(result).toEqual({
+			data: { hasActiveUpdates: true, activeCount: 2 },
+		});
+		expect(mockedAxios.get).toHaveBeenCalledWith("/update/status");
+	});
+
+	it("should handle errors when getting global update status", async () => {
+		mockedAxios.get.mockRejectedValue(new Error("API error"));
+
+		const result = await service.getGlobalUpdateStatus();
+
+		expect(result).toEqual({ hasActiveUpdates: false, activeCount: 0 });
+		expect(mockedAxios.get).toHaveBeenCalledWith("/update/status");
 	});
 });

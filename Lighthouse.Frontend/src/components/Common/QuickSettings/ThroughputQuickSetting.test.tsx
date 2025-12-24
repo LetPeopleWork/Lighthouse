@@ -30,9 +30,7 @@ describe("ThroughputQuickSetting", () => {
 		const startDate = new Date("2024-01-01");
 		const endDate = new Date("2024-01-30"); // 30 days
 		render(
-			<ThroughputQuickSetting
-				{...getMockProps({ startDate, endDate })}
-			/>,
+			<ThroughputQuickSetting {...getMockProps({ startDate, endDate })} />,
 		);
 
 		expect(
@@ -83,9 +81,7 @@ describe("ThroughputQuickSetting", () => {
 		const startDate = new Date("2024-01-01");
 		const endDate = new Date("2024-01-30"); // 30 days
 		render(
-			<ThroughputQuickSetting
-				{...getMockProps({ startDate, endDate })}
-			/>,
+			<ThroughputQuickSetting {...getMockProps({ startDate, endDate })} />,
 		);
 
 		await user.click(screen.getByRole("button", { name: /Throughput/i }));

@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import axios, { type AxiosInstance } from "axios";
 
 export type UpdateType = "Team" | "Features" | "Forecasts";
 
@@ -10,12 +11,18 @@ export interface IUpdateStatus {
 	status: UpdateProgress;
 }
 
+export interface IGlobalUpdateStatus {
+	hasActiveUpdates: boolean;
+	activeCount: number;
+}
+
 export interface IUpdateSubscriptionService {
 	initialize(): Promise<void>;
 	getUpdateStatus(
 		updateType: UpdateType,
 		id: number,
 	): Promise<IUpdateStatus | null>;
+	getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus>;
 	subscribeToTeamUpdates(
 		teamId: number,
 		callback: (status: IUpdateStatus) => void,
@@ -40,11 +47,16 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	private isConnected = false;
 	private isConnecting = false;
 	private connectionPromise: Promise<void> | null = null;
+	private apiService: AxiosInstance;
 
 	public constructor() {
 		if (import.meta.env.VITE_API_BASE_URL !== undefined) {
 			this.baseUrl = import.meta.env.VITE_API_BASE_URL;
 		}
+
+		this.apiService = axios.create({
+			baseURL: this.baseUrl,
+		});
 	}
 
 	public async initialize(): Promise<void> {
@@ -132,6 +144,17 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		} catch (err) {
 			console.error("Error getting update status:", err);
 			return null;
+		}
+	}
+
+	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {
+		try {
+			const response =
+				await this.apiService.get<IGlobalUpdateStatus>("/update/status");
+			return response.data;
+		} catch (err) {
+			console.error("Error getting global update status:", err);
+			return { hasActiveUpdates: false, activeCount: 0 };
 		}
 	}
 

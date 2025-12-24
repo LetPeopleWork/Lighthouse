@@ -177,25 +177,44 @@ async function updateTeamData(
 	request: APIRequestContext,
 	teams: ModelIdentifier[],
 ): Promise<void> {
+	// Trigger updates for each team
 	for (const team of teams) {
 		await updateTeam(request, team.id);
 	}
-	const updatedTeams: ModelIdentifier[] = [];
 
-	while (updatedTeams.length < teams.length) {
-		for (const team of teams) {
-			if (!updatedTeams.some((t) => t.id === team.id)) {
-				const response = await request.get(
-					`/api/teams/${team.id}/metrics/featuresInProgress`,
-				);
-				const featuresInProgress = await response.json();
+	// Give UpdateController a moment to register the work
+	await new Promise((resolve) => setTimeout(resolve, 1000));
 
-				if (featuresInProgress.length > 0) {
-					updatedTeams.push(team);
-				}
-			}
+	const POLL_INTERVAL_MS = 3000;
+	const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+	const deadline = Date.now() + TIMEOUT_MS;
 
-			await new Promise((resolve) => setTimeout(resolve, 5000));
+	while (true) {
+		const response = await request.get(`/api/update/status`);
+		if (!response.ok()) {
+			throw new Error(`Failed to fetch update status: ${response.status}`);
 		}
+
+		type UpdateStatusDTO = {
+			hasActiveUpdates: boolean;
+			activeCount: number;
+		};
+
+		const body = (await response.json()) as UpdateStatusDTO;
+
+		if (!body.hasActiveUpdates && body.activeCount === 0) {
+			// All updates completed
+			return;
+		}
+
+		console.log(
+			`Waiting for background updates to complete. Active updates: ${body.activeCount}`,
+		);
+
+		if (Date.now() > deadline) {
+			throw new Error("Timed out waiting for background updates to complete");
+		}
+
+		await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 	}
 }

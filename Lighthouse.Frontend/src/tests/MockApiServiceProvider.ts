@@ -190,6 +190,7 @@ export const createMockUpdateSubscriptionService =
 			subscribeToForecastUpdates: vi.fn(),
 			subscribeToTeamUpdates: vi.fn(),
 			getUpdateStatus: vi.fn(),
+			getGlobalUpdateStatus: vi.fn(),
 			unsubscribeFromFeatureUpdates: vi.fn(),
 			unsubscribeFromForecastUpdates: vi.fn(),
 			unsubscribeFromTeamUpdates: vi.fn(),
