@@ -94,7 +94,7 @@ jobs:
   
   # macOS signing and verification
   codesign-macos:
-    needs: tag
+    needs: [tag, verifysqlite, verifypostgres]
     uses: ./.github/workflows/ci_codesign-macos.yml
     name: Code Sign macOS App
     permissions:
