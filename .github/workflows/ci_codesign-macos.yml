@@ -313,6 +313,8 @@ jobs:
             mkdir -p ./temp_binary
             mv "$BINARY_PATH" ./temp_binary/
             chmod +x ./temp_binary/Lighthouse
+            mv "$MACOS_DIR/LighthouseLauncher" ./temp_binary/
+            chmod +x ./temp_binary/LighthouseLauncher
 
             echo "=== Signing executable with entitlements ==="
             codesign --sign "$IDENTITY" \
@@ -323,21 +325,20 @@ jobs:
               --verbose=4 \
               ./temp_binary/Lighthouse
 
-            echo "=== Moving executable back ==="
-            mv ./temp_binary/Lighthouse "$BINARY_PATH"
-            rmdir ./temp_binary
-
-            echo "✓ Lighthouse executable signed and verified"
-
-            echo "=== Signing LighthouseLauncher ==="
             codesign --sign "$IDENTITY" \
               --timestamp \
               --options runtime \
+              --entitlements ./publish/entitlements.plist \
               --force \
               --verbose=4 \
-              "$MACOS_DIR/LighthouseLauncher"
-            codesign --verify --strict --verbose=2 "$MACOS_DIR/LighthouseLauncher"
-            echo "✓ LighthouseLauncher signed and verified"
+              ./temp_binary/LighthouseLauncher
+
+            echo "=== Moving executable back ==="
+            mv ./temp_binary/Lighthouse "$BINARY_PATH"
+            mv ./temp_binary/LighthouseLauncher "$MACOS_DIR/LighthouseLauncher"
+            rmdir ./temp_binary
+            
+            echo "✓ Lighthouse executable and Lighthouse Launcher signed"
 
             echo "=== Signing app bundle ==="
             codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR"
