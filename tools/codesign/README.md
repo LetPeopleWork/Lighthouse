@@ -1,202 +1,137 @@
-# Windows Code Signing Setup
+# Lighthouse Code Signing Setup
 
-This directory contains the setup script for configuring a self-hosted GitHub Actions runner on Windows for code signing the Lighthouse application.
+This directory contains the automation scripts for configuring self-hosted GitHub Actions runners for code signing. It supports both Windows-native signing and Linux-based signing using YubiKey hardware.
 
 ## Overview
 
-The `start-runner-windows.ps1` script automates the setup and configuration of a GitHub Actions self-hosted runner specifically for Windows code signing operations. This runner is used in the CI/CD pipeline to digitally sign Windows executables and DLLs.
+Lighthouse uses a cross-platform signing strategy to ensure binaries are trusted on Windows regardless of the build environment:
+- **Windows Runners**: Use signtool.exe with certificates stored in the Windows Certificate Store.
+- **Linux Runners (CachyOS/Arch)**: Use osslsigncode and YubiKey (FIPS/PIV) hardware for OV/EV code signing.
+
+---
 
 ## Prerequisites
 
-### Required Software
-- Windows 10/11 or Windows Server 2019+
-- PowerShell 5.1 or later
-- Internet connectivity to download the GitHub Actions runner
+### Global
+- **GitHub Personal Access Token (PAT)**: Requires repo and admin:org (or repository admin) scopes.
+- **Self-Hosted Environment**: A machine dedicated to signing with the necessary hardware/software.
 
-### Required Credentials
-- **GitHub Personal Access Token (PAT)** with the following scopes:
-  - `repo` (full control of private repositories)
-  - `admin:org` or repository admin permissions (for self-hosted runners)
+### Windows Requirements
+- **Windows SDK**: signtool.exe must be accessible in the system PATH.
+- **Certificate**: The code signing certificate must be imported into the "Personal" certificate store of the user running the script.
 
-### Code Signing Certificate
-The machine running this script must have:
-- A valid code signing certificate installed in the Windows Certificate Store
-- The certificate thumbprint available as an environment variable or GitHub secret
-- `signtool.exe` available (typically installed with Windows SDK or Visual Studio)
+### Linux Requirements (CachyOS/Arch)
+- **Packages**: opensc, libp11, pcsclite, osslsigncode.
+- **Services**: pcscd.service must be enabled and running.
+- **Hardware**: YubiKey plugged in with a Code Signing certificate (typically Slot 9a or 9c).
+- **Permissions**: The user must have permissions to access the USB smart card (check security group).
+
+---
 
 ## Quick Start
 
-1. **Set the required environment variable:**
-   ```powershell
-   $env:GITHUB_PAT = "ghp_your_personal_access_token_here"
-   ```
+### 1. Set Environment Variables
 
-2. **Run the setup script:**
-   ```powershell
-   .\start-runner-windows.ps1
-   ```
+Before running the registration scripts, set your PAT in your current shell session.
 
-3. **Verify the runner is connected:**
-   - Navigate to your GitHub repository
-   - Go to Settings → Actions → Runners
-   - You should see `codesign-runner` listed as online
-
-## Configuration Options
-
-The script accepts the following environment variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GITHUB_PAT` | Personal Access Token (required) | *none* |
-| `GITHUB_OWNER` | Repository owner/organization | `LetPeopleWork` |
-| `GITHUB_REPO` | Repository name | `Lighthouse` |
-| `RUNNER_NAME` | Name for the runner instance | `codesign-runner` |
-
-### Example: Custom Configuration
-
+**PowerShell (Windows):**
 ```powershell
-$env:GITHUB_PAT = "ghp_your_token"
-$env:GITHUB_OWNER = "YourOrg"
-$env:GITHUB_REPO = "YourRepo"
-$env:RUNNER_NAME = "windows-signer-01"
+$env:GITHUB_PAT = "ghp_your_token_here"
+```
+
+**Fish (Linux):**
+```fish
+set -gx GITHUB_PAT "ghp_your_token_here"
+```
+
+### 2. Execute Setup Script
+
+**On Windows:**
+```powershell
 .\start-runner-windows.ps1
 ```
 
-## How It Works
-
-1. **Runner Download**: Downloads the latest GitHub Actions runner for Windows if not already present
-2. **Token Request**: Requests a registration token from GitHub API using the PAT
-3. **Configuration**: Configures the runner with labels `windows` and `codesign`
-4. **Start**: Launches the runner in interactive mode
-
-## Runner Labels
-
-The runner is configured with the following labels:
-- `windows` - Indicates Windows platform
-- `codesign` - Indicates code signing capability
-
-These labels are used in the workflow file to target this specific runner:
-```yaml
-runs-on: [self-hosted, windows, codesign]
+**On Linux:**
+```bash
+pwsh ./start-runner-linux.ps1
 ```
+*Note: The Linux script includes a "Pre-Flight" check to verify that the YubiKey is plugged in and the Code Signing key (ID 01) is accessible via PKCS#11 before it attempts to register the runner.*
 
-## Code Signing Environment
+---
+
+## Configuration Options
+
+The scripts accept the following environment variables to customize the runner registration:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| GITHUB_PAT | Personal Access Token (required) | none |
+| GITHUB_OWNER | Repository owner/organization | LetPeopleWork |
+| GITHUB_REPO | Repository name | Lighthouse |
+| RUNNER_NAME | Name for the runner instance | codesign-runner-[os] |
+
+---
+
+## GitHub Actions Integration
+
+The CI/CD pipeline targets these runners using specific labels.
+
+### Runner Labels
+- **Windows**: [self-hosted, windows, codesign]
+- **Linux**: [self-hosted, linux, codesign]
 
 ### Required GitHub Secrets
+- CERT_THUMBPRINT: (Windows) The SHA1 thumbprint of the installed certificate.
+- YUBI_PIN: (Linux) The User PIN for the YubiKey.
 
-The following secrets must be configured in your repository for the code signing workflow to function:
+### Signing Commands Used
 
-- `CERT_THUMBPRINT` - The thumbprint of the code signing certificate
+The following commands are executed by the GitHub Action workflow depending on the runner OS.
 
-### Certificate Setup
+**Windows Runner (signtool.exe):**
+```powershell
+signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint /d "Lighthouse $version" /du "https://letpeople.work/lighthouse" $file
+```
 
-1. Install your code signing certificate in the Windows Certificate Store:
-   - Open Certificate Manager (`certmgr.msc`)
-   - Import the certificate to "Personal/Certificates"
-   - Note the certificate thumbprint
+**Linux Runner (osslsigncode):**
+```bash
+osslsigncode sign \
+    -pkcs11engine /usr/lib/engines-3/pkcs11.so \
+    -pkcs11module /usr/lib/opensc-pkcs11.so \
+    -key "pkcs11:id=%01;type=private" \
+    -pkcs11cert "pkcs11:id=%01;type=cert" \
+    -pass "$YUBI_PIN" \
+    -n "Lighthouse $version" \
+    -i "https://letpeople.work/lighthouse" \
+    -t http://timestamp.digicert.com \
+    -in $file -out $file.signed
+```
 
-2. Set the thumbprint as a GitHub secret:
-   - Repository Settings → Secrets and variables → Actions
-   - Create secret: `CERT_THUMBPRINT`
+---
 
 ## Troubleshooting
 
-### Common Issues
+### Linux / YubiKey
+- **pcscd errors**: Ensure the smart card daemon is running: sudo systemctl enable --now pcscd.
+- **Key not found**: Verify key visibility with:
+  pkcs11-tool --module /usr/lib/opensc-pkcs11.so --list-objects --login
+- **Permissions**: If the runner cannot see the YubiKey, ensure your user is in the security group on Arch/CachyOS.
 
-#### Token Request Fails
-```
-Failed to get registration token.
-```
-**Solution**: Verify that:
-- Your PAT has the correct scopes (`repo` and admin permissions)
-- The repository path is correct (`GITHUB_OWNER/GITHUB_REPO`)
-- The repository exists and you have access to it
+### Windows
+- **Thumbprint mismatch**: Double-check the thumbprint in certmgr.msc. Ensure there are no hidden spaces or non-alphanumeric characters when pasting into GitHub Secrets.
+- **Signtool path**: If the command is not found, ensure the Windows SDK bin folder is added to the System Environment Variables.
 
-#### Runner Configuration Fails
-```
-Failed to configure runner
-```
-**Solution**: 
-- Check if another runner with the same name already exists
-- The script uses `--replace` flag to replace existing runners with the same name
-- Ensure you have write permissions to the `actions-runner` directory
-
-#### Code Signing Fails in Workflow
-```
-Signing failed: Certificate not found
-```
-**Solution**:
-- Verify the certificate is installed in the machine's certificate store
-- Check that `CERT_THUMBPRINT` secret matches the installed certificate
-- Ensure `signtool.exe` is in the system PATH
-
-### Viewing Runner Logs
-
-Runner logs are stored in:
-```
-actions-runner\_diag\
-```
-
-For detailed troubleshooting, check:
-- `Worker_*.log` - Runner execution logs
-- `Runner_*.log` - Runner service logs
-
-## Stopping the Runner
-
-To stop the runner:
-1. Press `Ctrl+C` in the PowerShell window
-2. The runner will complete the current job before stopping
-
-## Removing the Runner
-
-To completely remove the runner:
-
-```powershell
-cd actions-runner
-.\config.cmd remove --token YOUR_TOKEN
-```
-
-Or delete it from the GitHub UI:
-- Repository Settings → Actions → Runners
-- Click the runner name
-- Click "Remove"
+---
 
 ## Security Considerations
 
-- Store the `GITHUB_PAT` securely - do not commit it to version control
-- Regularly rotate your Personal Access Token
-- Limit the PAT scope to only what's necessary
-- The code signing certificate's private key must be protected
-- Consider using a dedicated machine or VM for code signing
-- Review the runner logs periodically for suspicious activity
+- **FIPS Compliance**: On Linux, the private key is marked as non-extractable on the YubiKey. osslsigncode communicates with the hardware via PKCS#11, ensuring the key never leaves the hardware.
+- **PAT Security**: The Personal Access Token is used only for the initial registration/token request. It is not stored in plain text by the runner after configuration.
+- **Physical Access**: Since the Linux runner requires a physical YubiKey, the host machine should be kept in a physically secure location to prevent unauthorized use of the signing hardware.
 
-## Integration with CI/CD
+---
 
-This runner is used by the `codesign-windows` job in `.github/workflows/ci.yml`:
-
-```yaml
-codesign-windows:
-  name: Sign Windows Binaries
-  runs-on: [self-hosted, windows, codesign]
-  environment:
-    name: CodeSign
-  steps:
-    - name: Sign EXE and DLL files
-      shell: pwsh
-      run: |
-        $thumbprint = $env:CERT_THUMBPRINT
-        # ... signing logic
-```
-
-## Support
-
-For issues related to:
-- **Runner setup**: Check GitHub Actions documentation
-- **Code signing**: Verify certificate installation and signtool availability
-- **Lighthouse CI/CD**: Open an issue in the Lighthouse repository
-
-## Additional Resources
-
-- [GitHub Actions Self-Hosted Runners Documentation](https://docs.github.com/en/actions/hosting-your-own-runners)
-- [Windows Code Signing Guide](https://docs.microsoft.com/en-us/windows/win32/seccrypto/cryptography-tools)
-- [SignTool Documentation](https://docs.microsoft.com/en-us/windows/win32/seccrypto/signtool)
+## Support & Resources
+- [GitHub Actions Self-Hosted Runners Guide](https://docs.github.com/en/actions/hosting-your-own-runners)
+- [Yubico PIV Tool Documentation](https://developers.yubico.com/yubico-piv-tool/)
+- [osslsigncode GitHub Repository](https://github.com/mtrojnar/osslsigncode)

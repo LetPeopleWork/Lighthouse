@@ -14,7 +14,7 @@ Optional environment variables (defaults provided):
   GITHUB_PAT      : GitHub Personal Access Token with 'repo' or 'admin:org' scope (required)
   GITHUB_OWNER    : Repository owner (default: LetPeopleWork)
   GITHUB_REPO     : Repository name (default: Lighthouse)
-  RUNNER_NAME     : Name for this runner (default: codesign-runner)
+  RUNNER_NAME     : Name for this runner (default: codesign-runner-windows)
 
 Example:
   $env:GITHUB_PAT="ghp_12345..."
@@ -36,7 +36,7 @@ if (-not $env:GITHUB_PAT) {
 # ------------------------------
 $Owner = $env:GITHUB_OWNER ?? "LetPeopleWork"
 $Repo  = $env:GITHUB_REPO   ?? "Lighthouse"
-$RunnerName = $env:RUNNER_NAME ?? "codesign-runner"
+$RunnerName = $env:RUNNER_NAME ?? "codesign-runner-windows"
 $RunnerDir = "$PSScriptRoot\actions-runner"
 $WorkDir = "$RunnerDir\_work"
 
