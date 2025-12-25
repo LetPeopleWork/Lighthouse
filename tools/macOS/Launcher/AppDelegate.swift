@@ -62,17 +62,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(copyItem)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")).target = self
+        
+        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updateItem.target = self
+        menu.addItem(updateItem)
         
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit Lighthouse", action: #selector(quitApp), keyEquivalent: "q")).target = self
+        
+        let quitItem = NSMenuItem(title: "Quit Lighthouse", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
 
         statusItem?.menu = menu
     }
 
-    // MARK: - Process Management
     func launchLighthouse() {
-        // FIX 3: Correct pathing for the .NET binary
         let bundleURL = Bundle.main.bundleURL
         let macOSURL = bundleURL.appendingPathComponent("Contents/MacOS")
         let executableURL = macOSURL.appendingPathComponent("Lighthouse")
@@ -82,9 +86,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Your original Lockfile check
         if FileManager.default.fileExists(atPath: lockfile),
-           let pidString = try? String(contentsOfFile: lockfile),
+           let pidString = try? String(contentsOfFile: lockfile, encoding: .utf8),
            let pid = Int32(pidString.trimmingCharacters(in: .whitespacesAndNewlines)),
            kill(pid, 0) == 0 {
             showNotification(title: "Lighthouse", message: "Lighthouse is already running.")
@@ -96,8 +99,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         lighthouseProcess = Process()
         lighthouseProcess?.executableURL = executableURL
-        
-        // FIX 4: Set Working Directory so .NET finds appsettings/wwwroot
         lighthouseProcess?.currentDirectoryURL = macOSURL
         lighthouseProcess?.arguments = Array(CommandLine.arguments.dropFirst())
 
@@ -105,14 +106,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         lighthouseProcess?.standardOutput = pipe
         lighthouseProcess?.standardError = pipe
 
-        // Store PID in lockfile
+        // Store PID
         try? "\(ProcessInfo.processInfo.processIdentifier)".write(toFile: lockfile, atomically: true, encoding: .utf8)
 
         do {
             try lighthouseProcess?.run()
             monitorOutput(pipe: pipe)
 
-            // Handle clean exit
             DispatchQueue.global(qos: .background).async { [weak self] in
                 self?.lighthouseProcess?.waitUntilExit()
                 if let lock = self?.lockfile { try? FileManager.default.removeItem(atPath: lock) }
