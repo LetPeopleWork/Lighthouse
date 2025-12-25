@@ -118,19 +118,29 @@ jobs:
             echo "Sparkle framework extracted"
             ls -la Sparkle.framework/
 
-        # --- Build Swift Launcher ---
-        - name: Build Swift Launcher
+        - name: Build Swift Launcher (Universal)
           run: |
-            echo "Building Swift launcher..."
+            # 1. Compile for Intel (x86_64)
             swiftc -framework Cocoa -framework Sparkle \
               -F ./Sparkle.framework/.. \
-              -Xlinker -rpath -Xlinker @executable_path/../Frameworks \
-              -o LighthouseLauncher \
+              -target x86_64-apple-macos10.15 \
+              -o Launcher_x86_64 \
               tools/macOS/Launcher/main.swift \
               tools/macOS/Launcher/AppDelegate.swift
+
+            # 2. Compile for Apple Silicon (arm64)
+            swiftc -framework Cocoa -framework Sparkle \
+              -F ./Sparkle.framework/.. \
+              -target arm64-apple-macos11.0 \
+              -o Launcher_arm64 \
+              tools/macOS/Launcher/main.swift \
+              tools/macOS/Launcher/AppDelegate.swift
+
+            # 3. Create the Universal Binary
+            lipo -create Launcher_x86_64 Launcher_arm64 -output LighthouseLauncher
             
-            chmod +x LighthouseLauncher
-            echo "Swift launcher built successfully"
+            # Verify the result
+            lipo -info LighthouseLauncher
 
         # --- Create App Bundle Structure ---
         - name: Create App Bundle
@@ -312,7 +322,7 @@ jobs:
             echo "=== 4. Sign App Bundle Wrapper ==="
             # The final seal. We do not use --deep to prevent it from re-scanning 
             # and tripping over JSONs.
-            codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$APP_DIR"
+            codesign --sign "$IDENTITY" --timestamp --force --preserve-metadata=entitlements --options runtime --verbose --deep "$APP_DIR"
 
             echo "=== 5. Verification ==="
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
