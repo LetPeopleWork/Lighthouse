@@ -9,7 +9,7 @@ on:
 
 jobs:
   codesign-windows:
-    runs-on: [self-hosted, windows, codesign]
+    runs-on: [self-hosted, codesign]
     timeout-minutes: 10
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -26,29 +26,45 @@ jobs:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: ./artifacts/win-x64
 
-      - name: Sign EXE and DLL files
+      - name: Sign on Windows
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $thumbprint = $env:CERT_THUMBPRINT
           if (-not $thumbprint) { throw "CERT_THUMBPRINT environment variable is not set" }
-
           $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
           foreach ($file in $files) {
-              Write-Host "Signing $file with certificate thumbprint $thumbprint"
-              & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint $file.FullName
+              Write-Host "Signing $file with signtool.exe"
+              & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint /d "Lighthouse ${{ inputs.version }}" /du "https://letpeople.work/lighthouse" $file.FullName
           }
         env:
-          CERT_THUMBPRINT:  ${{ secrets.CERT_THUMBPRINT }}
+          CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
 
-      - name: Verify signatures
-        continue-on-error: true
-        shell: pwsh
+      - name: Sign on Linux
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
-          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
-          foreach ($file in $files) {
-              Write-Host "Verifying $file"
-              & "signtool.exe" verify /pa $file.FullName
-          }
+          shopt -s globstar
+          files=(./artifacts/win-x64/Lighthouse*.exe ./artifacts/win-x64/Lighthouse*.dll)
+          
+          for file in "${files[@]}"; do
+            echo "Signing $file with osslsigncode"
+            osslsigncode sign \
+              -pkcs11engine /usr/lib/engines-3/pkcs11.so \
+              -pkcs11module /usr/lib/opensc-pkcs11.so \
+              -key "pkcs11:id=%01;type=private" \
+              -pkcs11cert "pkcs11:id=%01;type=cert" \
+              -pass "$YUBI_PIN" \
+              -n "Lighthouse ${{ inputs.version }}" \
+              -i "https://letpeople.work/lighthouse" \
+              -t http://timestamp.digicert.com \
+              -in "$file" \
+              -out "${file}.signed"
+            
+            mv "${file}.signed" "$file"
+          done
+        env:
+          YUBI_PIN: ${{ secrets.YUBI_PIN }}
 
       - name: Delete unsigned artifact
         uses: geekyeggo/delete-artifact@v5
