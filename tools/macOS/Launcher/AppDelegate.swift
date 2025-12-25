@@ -30,19 +30,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         launchLighthouse()
     }
 
-    // MARK: - Menu Bar logic
     func setupMenuBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusItem?.button {
-            // FIX 2: Correct path for the icon in the Resources folder
             if let iconURL = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png") {
                 let image = NSImage(contentsOf: iconURL)
                 image?.size = NSSize(width: 18, height: 18)
                 image?.isTemplate = true
                 button.image = image
             } else {
-                button.image = NSImage(systemSymbolName: "house.fill", accessibilityDescription: "Lighthouse")
+                // Version check for macOS 11.0+ SF Symbols
+                if #available(macOS 11.0, *) {
+                    button.image = NSImage(systemSymbolName: "house.fill", accessibilityDescription: "Lighthouse")
+                } else {
+                    // Fallback for macOS 10.15
+                    button.title = "🏠"
+                }
             }
         }
         updateMenu()

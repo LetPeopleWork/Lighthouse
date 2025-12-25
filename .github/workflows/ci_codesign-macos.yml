@@ -120,7 +120,7 @@ jobs:
 
         - name: Build Swift Launcher (Universal)
           run: |
-            # 1. Compile for Intel (x86_64)
+            # Intel build (supports back to 10.15)
             swiftc -framework Cocoa -framework Sparkle \
               -F ./Sparkle.framework/.. \
               -target x86_64-apple-macos10.15 \
@@ -128,7 +128,7 @@ jobs:
               tools/macOS/Launcher/main.swift \
               tools/macOS/Launcher/AppDelegate.swift
 
-            # 2. Compile for Apple Silicon (arm64)
+            # Apple Silicon build (supports back to 11.0)
             swiftc -framework Cocoa -framework Sparkle \
               -F ./Sparkle.framework/.. \
               -target arm64-apple-macos11.0 \
@@ -136,10 +136,8 @@ jobs:
               tools/macOS/Launcher/main.swift \
               tools/macOS/Launcher/AppDelegate.swift
 
-            # 3. Create the Universal Binary
             lipo -create Launcher_x86_64 Launcher_arm64 -output LighthouseLauncher
-            
-            # Verify the result
+
             lipo -info LighthouseLauncher
 
         # --- Create App Bundle Structure ---
