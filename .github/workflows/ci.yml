@@ -53,6 +53,8 @@ jobs:
 
   packageapp:
     needs: tag
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_packageapp.yml
     name: Package App
     permissions:
@@ -63,6 +65,8 @@ jobs:
   
   docker:
     needs: tag
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_docker.yml
     name: Build and Push Docker Image
     permissions:
@@ -74,6 +78,8 @@ jobs:
   # Linux verification with EndToEnd tests
   verifysqlite:
     needs: [packageapp, tag]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifysqlite.yml
     name: Verify SQLite Linux Build
     permissions:
@@ -84,6 +90,8 @@ jobs:
       
   verifypostgres:
     needs: [packageapp, tag]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifypostgres.yml
     name: Verify Postgres Linux Build
     permissions:
@@ -95,6 +103,8 @@ jobs:
   # macOS signing and verification
   codesign-macos:
     needs: [tag, verifysqlite, verifypostgres]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_codesign-macos.yml
     name: Code Sign macOS App
     permissions:
@@ -106,6 +116,8 @@ jobs:
 
   verifymacos:
     needs: [codesign-macos, tag]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifymacos.yml
     name: Verify macOS App
     permissions:
@@ -118,6 +130,8 @@ jobs:
   # Windows signing and verification
   codesign-windows:
     needs: [tag, verifysqlite, verifypostgres]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_codesign-windows.yml
     name: Code Sign Windows App
     permissions:
@@ -128,6 +142,8 @@ jobs:
 
   verifywindows:
     needs: [codesign-windows, tag]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifywindows.yml
     name: Verify Windows App
     permissions:
@@ -137,6 +153,8 @@ jobs:
 
   release:
     needs: [tag, docker, verifymacos, verifywindows]
+    # Run tag even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_release.yml
     name: Release
     permissions:
