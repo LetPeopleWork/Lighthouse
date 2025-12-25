@@ -32,7 +32,7 @@ jobs:
         run: |
           $thumbprint = $env:CERT_THUMBPRINT
           if (-not $thumbprint) { throw "CERT_THUMBPRINT environment variable is not set" }
-          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
+          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe"
           foreach ($file in $files) {
               Write-Host "Signing $file with signtool.exe"
               & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint /d "Lighthouse ${{ inputs.version }}" /du "https://letpeople.work/lighthouse" $file.FullName
@@ -48,7 +48,7 @@ jobs:
           # Ensure the intermediate cert is available in the working directory
           INTERMEDIATE_CERT="./tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt"
 
-          files=(./artifacts/win-x64/Lighthouse*.exe ./artifacts/win-x64/Lighthouse*.dll)
+          files=(./artifacts/win-x64/Lighthouse*.exe)
           
           for file in "${files[@]}"; do
             echo "Signing $file with osslsigncode and intermediate chain"
