@@ -45,15 +45,19 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar
+          # Ensure the intermediate cert is available in the working directory
+          INTERMEDIATE_CERT="./tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt"
+
           files=(./artifacts/win-x64/Lighthouse*.exe ./artifacts/win-x64/Lighthouse*.dll)
           
           for file in "${files[@]}"; do
-            echo "Signing $file with osslsigncode"
+            echo "Signing $file with osslsigncode and intermediate chain"
             osslsigncode sign \
               -pkcs11engine /usr/lib/engines-3/pkcs11.so \
               -pkcs11module /usr/lib/opensc-pkcs11.so \
               -key "pkcs11:id=%01;type=private" \
               -pkcs11cert "pkcs11:id=%01;type=cert" \
+              -ac "$INTERMEDIATE_CERT" \
               -pass "$YUBI_PIN" \
               -n "Lighthouse ${{ inputs.version }}" \
               -i "https://letpeople.work/lighthouse" \
