@@ -124,6 +124,7 @@ jobs:
             echo "Building Swift launcher..."
             swiftc -framework Cocoa -framework Sparkle \
               -F ./Sparkle.framework/.. \
+              -Xlinker -rpath -Xlinker @executable_path/../Frameworks \
               -o LighthouseLauncher \
               tools/macOS/Launcher/main.swift \
               tools/macOS/Launcher/AppDelegate.swift
@@ -279,78 +280,42 @@ jobs:
             echo "Entitlements created at $ENTITLEMENTS_FILE"
             cat "$ENTITLEMENTS_FILE"
 
-        - name: Sign all binaries and app bundle
+        - name: Sign App Contents
           env:
             APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           run: |
             IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
-            if [ -z "$IDENTITY" ]; then
-              echo "Error: No Developer ID Application certificate found in keychain"
-              security find-identity -v -p codesigning
-              exit 1
-            fi
-            echo "Signing identity: $IDENTITY"
-
             APP_DIR="./publish/Lighthouse.app"
             MACOS_DIR="$APP_DIR/Contents/MacOS"
             FRAMEWORKS_DIR="$APP_DIR/Contents/Frameworks"
+            ENTITLEMENTS="./publish/entitlements.plist"
 
-            echo "=== Signing Sparkle.framework ==="
-            codesign --sign "$IDENTITY" --timestamp --force --options runtime --deep --verbose "$FRAMEWORKS_DIR/Sparkle.framework"
-            codesign --verify --deep --strict --verbose=2 "$FRAMEWORKS_DIR/Sparkle.framework"
-            echo "✓ Sparkle.framework signed and verified"
+            echo "=== 1. Sign Sparkle Framework ==="
+            codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$FRAMEWORKS_DIR/Sparkle.framework"
 
-            echo "=== Signing .dylib files ==="
-            find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
-              echo "Signing: $file"
-              codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$file"
-              codesign --verify --strict --verbose=2 "$file"
-              echo "✓ Signed and verified: $file"
-            done
+            echo "=== 2. Sign Dylibs in-place ==="
+            # Target dylibs directly; usually doesn't trigger JSON conflicts
+            find "$MACOS_DIR" -maxdepth 1 -name "*.dylib" -exec codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose {} \;
 
-            echo "=== Moving main executable out temporarily ==="
-            BINARY_PATH="$MACOS_DIR/Lighthouse"
-            mkdir -p ./temp_binary
-            mv "$BINARY_PATH" ./temp_binary/
-            chmod +x ./temp_binary/Lighthouse
-            mv "$MACOS_DIR/LighthouseLauncher" ./temp_binary/
-            chmod +x ./temp_binary/LighthouseLauncher
+            echo "=== 3. Sign Executables with Isolation ==="
+            # This handles the specific "JSON conflict" issue for the main binaries
+            mkdir -p ./temp_binaries
+            mv "$MACOS_DIR/Lighthouse" ./temp_binaries/
+            mv "$MACOS_DIR/LighthouseLauncher" ./temp_binaries/
 
-            echo "=== Signing executable with entitlements ==="
-            codesign --sign "$IDENTITY" \
-              --timestamp \
-              --options runtime \
-              --entitlements ./publish/entitlements.plist \
-              --force \
-              --verbose=4 \
-              ./temp_binary/Lighthouse
+            codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements "$ENTITLEMENTS" --force --verbose ./temp_binaries/Lighthouse
+            codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements "$ENTITLEMENTS" --force --verbose ./temp_binaries/LighthouseLauncher
 
-            codesign --sign "$IDENTITY" \
-              --timestamp \
-              --options runtime \
-              --entitlements ./publish/entitlements.plist \
-              --force \
-              --verbose=4 \
-              ./temp_binary/LighthouseLauncher
+            mv ./temp_binaries/* "$MACOS_DIR/"
+            rmdir ./temp_binaries
 
-            echo "=== Moving executable back ==="
-            mv ./temp_binary/Lighthouse "$BINARY_PATH"
-            mv ./temp_binary/LighthouseLauncher "$MACOS_DIR/LighthouseLauncher"
-            rmdir ./temp_binary
-            
-            echo "✓ Lighthouse executable and Lighthouse Launcher signed"
+            echo "=== 4. Sign App Bundle Wrapper ==="
+            # The final seal. We do not use --deep to prevent it from re-scanning 
+            # and tripping over JSONs.
+            codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$APP_DIR"
 
-            echo "=== Signing app bundle ==="
-            codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR"
-
-            echo "=== Verifying signatures ==="
+            echo "=== 5. Verification ==="
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
-            codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
-
-            echo "=== Entitlements in signed Lighthouse executable ==="
-            codesign -d --entitlements - "$MACOS_DIR/Lighthouse"
-
-            echo "✓ App bundle signed and verified successfully"
 
         - name: Notarize app bundle
           id: notarize_app
