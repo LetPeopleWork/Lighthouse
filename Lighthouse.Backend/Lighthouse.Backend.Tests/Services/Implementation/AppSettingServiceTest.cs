@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation;
 using Moq;
-using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.RefreshAfter, Is.EqualTo(360));
                 Assert.That(settings.StartDelay, Is.EqualTo(1));
             }
-            ;
         }
 
         [Test]
@@ -50,7 +48,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.RefreshAfter, Is.EqualTo(180));
                 Assert.That(settings.StartDelay, Is.EqualTo(2));
             }
-            ;
         }
 
         [Test]
@@ -153,8 +150,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.BlockedTags, Has.Count.EqualTo(2));
                 Assert.That(settings.BlockedTags, Does.Contain("tag1"));
                 Assert.That(settings.BlockedTags, Does.Contain("tag2"));
+                Assert.That(settings.DoneItemsCutoffDays, Is.EqualTo(180));
             }
-            ;
         }
 
         [Test]
@@ -234,8 +231,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.BlockedTags, Has.Count.EqualTo(2));
                 Assert.That(settings.BlockedTags, Does.Contain("tag1"));
                 Assert.That(settings.BlockedTags, Does.Contain("tag2"));
+
+                Assert.That(settings.DoneItemsCutoffDays, Is.EqualTo(365));
             }
-            ;
         }
 
         [Test]
@@ -264,7 +262,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.OverrideRequestTimeout, Is.True);
                 Assert.That(settings.RequestTimeoutInSeconds, Is.EqualTo(300));
             }
-            ;
         }
 
         [Test]

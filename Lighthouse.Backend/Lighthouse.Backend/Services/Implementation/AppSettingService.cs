@@ -70,6 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLERange).Value),
                 BlockedStates = blockedStates,
                 BlockedTags = blockedTags,
+                DoneItemsCutoffDays = 180,
             };
 
             return teamSettings;
@@ -116,6 +117,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 BlockedStates = blockedStates,
                 BlockedTags = blockedTags,
+
+                DoneItemsCutoffDays = 365,
             };
 
             return projectSettings;
