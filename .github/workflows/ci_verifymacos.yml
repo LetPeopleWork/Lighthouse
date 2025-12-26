@@ -111,11 +111,20 @@ jobs:
             hdiutil detach "$MOUNT_DIR" || true
           fi
 
-      - name: Run Lighthouse
+      #- name: Run Lighthouse
+      #  run: |
+      #    echo "Starting Lighthouse..."
+      #    ./Lighthouse > lighthouse.log 2>&1 &
+      #  working-directory: /Applications/Lighthouse.app/Contents/MacOS
+
+      - name: Launch Lighthouse app
         run: |
           echo "Starting Lighthouse..."
-          ./Lighthouse > lighthouse.log 2>&1 &
-        working-directory: /Applications/Lighthouse.app/Contents/MacOS
+          open /Applications/Lighthouse.app
+          sleep 2
+          # Verify launcher process started
+          pgrep -f "Lighthouse" || (echo "Lighthouse failed to start" && exit 1)
+          echo "Lighthouse launcher is running"
 
       - name: Wait for Lighthouse to start
         run: |
