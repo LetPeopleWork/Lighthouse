@@ -28,6 +28,21 @@ vi.mock("../../../../../services/TerminologyContext", () => ({
 	}),
 }));
 
+// Helper functions for date calculations
+const getTwoWeeksFromNow = (): Date => {
+	const date = new Date();
+	date.setDate(date.getDate() + 14);
+	return date;
+};
+
+const formatDateForInput = (date: Date): string => {
+	return date.toISOString().split("T")[0];
+};
+
+const formatDateForAPI = (date: Date): string => {
+	return date.toISOString();
+};
+
 // Mock the feature service
 const mockFeatureService = createMockFeatureService();
 mockFeatureService.getFeaturesByIds = vi.fn().mockResolvedValue([
@@ -63,10 +78,14 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		remainingFeatures: 0,
 	};
 
+	const twoWeeksFromNow = getTwoWeeksFromNow();
+	const twoWeeksFromNowFormatted = formatDateForInput(twoWeeksFromNow);
+	const twoWeeksFromNowISO = formatDateForAPI(twoWeeksFromNow);
+
 	const mockEditingDelivery: IDelivery = {
 		id: 10,
 		name: "Existing Milestone",
-		date: "2025-12-25T00:00:00Z", // Christmas 2025
+		date: twoWeeksFromNowISO,
 		features: [1, 2],
 		portfolioId: 1,
 		likelihoodPercentage: 85,
@@ -120,7 +139,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 
 		await waitFor(() => {
 			const nameInput = screen.getByDisplayValue("Existing Milestone");
-			const dateInput = screen.getByDisplayValue("2025-12-25");
+			const dateInput = screen.getByDisplayValue(twoWeeksFromNowFormatted);
 
 			expect(nameInput).toBeInTheDocument();
 			expect(dateInput).toBeInTheDocument();
@@ -153,9 +172,13 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 			expect(screen.getByText("Test Feature 1")).toBeInTheDocument();
 		});
 
-		// Modify the date to tomorrow to ensure it's in the future
-		const dateInput = screen.getByDisplayValue("2025-12-25");
-		fireEvent.change(dateInput, { target: { value: "2025-12-26" } });
+		// Modify the date to one day later to ensure it's in the future
+		const oneDayLater = new Date(twoWeeksFromNow);
+		oneDayLater.setDate(oneDayLater.getDate() + 1);
+		const oneDayLaterFormatted = formatDateForInput(oneDayLater);
+
+		const dateInput = screen.getByDisplayValue(twoWeeksFromNowFormatted);
+		fireEvent.change(dateInput, { target: { value: oneDayLaterFormatted } });
 
 		// Click Update button
 		const updateButton = screen.getByText("Update");
@@ -165,7 +188,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 			expect(mockOnUpdate).toHaveBeenCalledWith({
 				id: 10,
 				name: "Existing Milestone",
-				date: "2025-12-26",
+				date: oneDayLaterFormatted,
 				featureIds: [1, 2],
 			});
 		});
@@ -184,8 +207,12 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		const nameInput = screen.getByLabelText("Milestone Name");
 		fireEvent.change(nameInput, { target: { value: "New Milestone" } });
 
+		const threeWeeksFromNow = new Date();
+		threeWeeksFromNow.setDate(threeWeeksFromNow.getDate() + 21);
+		const threeWeeksFromNowFormatted = formatDateForInput(threeWeeksFromNow);
+
 		const dateInput = screen.getByLabelText("Milestone Date");
-		fireEvent.change(dateInput, { target: { value: "2025-12-30" } });
+		fireEvent.change(dateInput, { target: { value: threeWeeksFromNowFormatted } });
 
 		// Select a feature
 		const checkboxes = screen.getAllByRole("checkbox");
@@ -198,7 +225,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		await waitFor(() => {
 			expect(mockOnSave).toHaveBeenCalledWith({
 				name: "New Milestone",
-				date: "2025-12-30",
+				date: threeWeeksFromNowFormatted,
 				featureIds: [1],
 			});
 		});
