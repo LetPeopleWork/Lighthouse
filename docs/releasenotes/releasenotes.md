@@ -3,13 +3,49 @@ title: Release Notes
 layout: home
 nav_order: 95
 ---
-
 <!-- 
+# Lighthouse vNext
+-->
+
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
--->
+
+## New macOS App Bundle & Deployment Changes
+Lighthouse for macOS is now delivered in a proper **app bundle structure**, aligning with standard macOS application conventions.
+
+You can now download Lighthouse for macOS as either a **zip** or a **dmg file** (recommended for easiest installation). Both formats are fully **signed and notarized by Apple**, ensuring maximum security and trust for all users.
+
+⚠️ **Important:** Updates are now handled differently on macOS. All users must manually update to this version. Future updates will require the new app bundle structure - automatic updates from older versions will not work. Please download and install the latest version from our website to continue receiving updates and security fixes.
+
+## Rework Settings for Portfolios and Teams
+In order to change settings for Teams and Portfolios, you don't need to change the page anymore. Instead, you'll see the settings as dedicated tab. This should make it easier to change the settings and see the impact.
+
+Furthermore, the notion of *Quick Settings* was introduced. For selected settings, you now see a *Quick Settings Toolbar* across all the tabs of a team and portfolio. On click, you can directly change these settings.
+
+The following *Quick Settings* are available:
+- Throughput Forecasting Configuration: Select which Throughput Period should be used for the forecasting of this team (Team only)
+- Service Level Expectation Configuration
+- System WIP Configuration
+- Feature WIP: For a team, just change that individual teams Feature WIP. For Portfolios, change the Feature WIP of all involved teams.
+
+Changing the Throughput Forecasting Configuration or the Feature WIP will trigger an automatic re-forecast for the affected team.
+
+![Quick Settings](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/QuickSettings.png)
+
+## Other Improvements
+- Added a "Cut Off" for Teams and Portfolios that will define where to cut off "done" items. This should help to reduce the load on the server as we will not fetch items that were done 5 years ago. This is configurable in the settings, and will default to 180 days (teams) and 365 days (portfolio).
+- The "Update All" button in the Overview page was removed, and instead it's displayed in the header. Additionally, it will now be disabled if updates are running, and visualize how many update tasks are still ongoing.
+- Updated various third party dependencies
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.6.29.1252...v25.7.5.1158)
 
 # Lighthouse v25.12.19.1534
 {: .d-inline-block }
