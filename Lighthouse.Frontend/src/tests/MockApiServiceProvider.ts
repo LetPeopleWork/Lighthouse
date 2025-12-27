@@ -186,6 +186,8 @@ export const createMockUpdateSubscriptionService =
 	(): IUpdateSubscriptionService => {
 		return {
 			initialize: vi.fn(),
+			subscribeToAllUpdates: vi.fn(),
+			unsubscribeFromAllUpdates: vi.fn(),
 			subscribeToFeatureUpdates: vi.fn(),
 			subscribeToForecastUpdates: vi.fn(),
 			subscribeToTeamUpdates: vi.fn(),

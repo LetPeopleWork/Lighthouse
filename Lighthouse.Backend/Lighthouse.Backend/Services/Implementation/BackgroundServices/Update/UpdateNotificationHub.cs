@@ -7,11 +7,24 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
         private readonly ILogger<UpdateNotificationHub> logger;
+        private const string GlobalUpdatesGroup = "GlobalUpdates";
 
         public UpdateNotificationHub(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses, ILogger<UpdateNotificationHub> logger)
         {
             this.updateStatuses = updateStatuses;
             this.logger = logger;
+        }
+
+        public async Task SubscribeToAllUpdates()
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, GlobalUpdatesGroup);
+            logger.LogInformation("Client {ConnectionId} subscribed to all updates", Context.ConnectionId);
+        }
+
+        public async Task UnsubscribeFromAllUpdates()
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, GlobalUpdatesGroup);
+            logger.LogInformation("Client {ConnectionId} unsubscribed from all updates", Context.ConnectionId);
         }
 
         public async Task SubscribeToUpdate(string updateType, int id)

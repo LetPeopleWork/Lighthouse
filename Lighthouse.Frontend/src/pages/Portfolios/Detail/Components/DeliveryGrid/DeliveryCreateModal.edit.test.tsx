@@ -212,7 +212,9 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		const threeWeeksFromNowFormatted = formatDateForInput(threeWeeksFromNow);
 
 		const dateInput = screen.getByLabelText("Milestone Date");
-		fireEvent.change(dateInput, { target: { value: threeWeeksFromNowFormatted } });
+		fireEvent.change(dateInput, {
+			target: { value: threeWeeksFromNowFormatted },
+		});
 
 		// Select a feature
 		const checkboxes = screen.getAllByRole("checkbox");

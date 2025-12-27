@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
@@ -35,8 +34,6 @@ vi.mock("../../hooks/useLicenseRestrictions", () => ({
 		createPortfolioTooltip: "",
 		canCreateTeam: true,
 		createTeamTooltip: "",
-		canUpdateAllTeamsAndPortfolios: true,
-		updateAllTeamsAndPortfoliosTooltip: "",
 	}),
 }));
 
@@ -215,7 +212,6 @@ describe("OverviewDashboard", () => {
 		}); // Now check for the dashboard header and buttons
 		expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Add Team")).toBeInTheDocument();
-		expect(screen.getByText("Update All")).toBeInTheDocument();
 	});
 
 	it("shows main filter bar only", async () => {
@@ -226,134 +222,5 @@ describe("OverviewDashboard", () => {
 			const filterInputs = screen.getAllByRole("textbox");
 			expect(filterInputs.length).toBe(1); // Only the main filter
 		});
-	});
-
-	it("calls update services when Update All button is clicked", async () => {
-		const user = userEvent.setup();
-		renderWithProviders(<OverviewDashboard />);
-
-		// Wait for loading to complete first
-		await waitFor(() => {
-			expect(screen.getByText("Portfolios")).toBeInTheDocument();
-		});
-
-		// Click the Update All button
-		const updateAllButton = screen.getByText("Update All");
-		await user.click(updateAllButton);
-
-		// Note: In a real test, we would verify that the service methods are called
-		// However, since we're using the mock providers, the actual method calls
-		// would need to be verified through the mock setup in renderWithProviders
-		// This test primarily verifies that the button is clickable and doesn't crash
-		expect(updateAllButton).toBeInTheDocument();
-	});
-
-	it("disables Update All button when updates are active", async () => {
-		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
-		mockUpdateSubscriptionService.getGlobalUpdateStatus = vi
-			.fn()
-			.mockResolvedValue({
-				hasActiveUpdates: true,
-				activeCount: 2,
-			});
-
-		renderWithProviders(<OverviewDashboard />, {
-			updateSubscriptionService: mockUpdateSubscriptionService,
-		});
-
-		await waitFor(() => {
-			expect(screen.getByText("Portfolios")).toBeInTheDocument();
-		});
-
-		const updateAllButton = screen.getByText("Update All (2)");
-		expect(updateAllButton).toBeDisabled();
-	});
-
-	it("enables Update All button when no updates are active", async () => {
-		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
-		mockUpdateSubscriptionService.getGlobalUpdateStatus = vi
-			.fn()
-			.mockResolvedValue({
-				hasActiveUpdates: false,
-				activeCount: 0,
-			});
-
-		renderWithProviders(<OverviewDashboard />, {
-			updateSubscriptionService: mockUpdateSubscriptionService,
-		});
-
-		await waitFor(() => {
-			expect(screen.getByText("Portfolios")).toBeInTheDocument();
-		});
-
-		const updateAllButton = screen.getByText("Update All");
-		expect(updateAllButton).not.toBeDisabled();
-	});
-
-	it("subscribes to team and feature updates on mount", async () => {
-		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
-		mockUpdateSubscriptionService.getGlobalUpdateStatus = vi
-			.fn()
-			.mockResolvedValue({
-				hasActiveUpdates: false,
-				activeCount: 0,
-			});
-
-		renderWithProviders(<OverviewDashboard />, {
-			updateSubscriptionService: mockUpdateSubscriptionService,
-		});
-
-		await waitFor(() => {
-			expect(screen.getByText("Portfolios")).toBeInTheDocument();
-		});
-
-		// Verify subscription calls for teams and portfolios
-		expect(
-			mockUpdateSubscriptionService.subscribeToTeamUpdates,
-		).toHaveBeenCalledTimes(2);
-		expect(
-			mockUpdateSubscriptionService.subscribeToFeatureUpdates,
-		).toHaveBeenCalledTimes(2);
-	});
-
-	it("updates button state when update status changes", async () => {
-		type UpdateStatus = { updateType: string; id: number; status: string };
-		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
-		let statusCallback!: (status: UpdateStatus) => void;
-
-		// Mock subscription to capture the callback
-		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi
-			.fn()
-			.mockImplementation(
-				async (_: number, callback: (status: UpdateStatus) => void) => {
-					statusCallback = callback;
-				},
-			);
-
-		mockUpdateSubscriptionService.getGlobalUpdateStatus = vi
-			.fn()
-			.mockResolvedValue({
-				hasActiveUpdates: false,
-				activeCount: 0,
-			});
-
-		renderWithProviders(<OverviewDashboard />, {
-			updateSubscriptionService: mockUpdateSubscriptionService,
-		});
-
-		await waitFor(() => {
-			expect(screen.getByText("Portfolios")).toBeInTheDocument();
-		});
-
-		// Initially enabled
-		expect(screen.getByText("Update All")).not.toBeDisabled();
-
-		// Simulate update starting (only call if the mock has set the callback)
-		if (typeof statusCallback === "function") {
-			statusCallback({ updateType: "Team", id: 1, status: "InProgress" });
-		}
-
-		// Button should be disabled (this would require re-rendering logic in component)
-		// Note: This test demonstrates the intent; actual implementation would need state updates
 	});
 });

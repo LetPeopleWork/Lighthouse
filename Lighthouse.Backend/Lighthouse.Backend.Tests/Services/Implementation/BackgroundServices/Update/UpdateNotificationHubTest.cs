@@ -78,6 +78,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             Assert.That(result, Is.Null);
         }
 
+        [Test]
+        public async Task SubscribeToAllUpdates_AddsConnectionToGlobalUpdatesGroup()
+        {
+            var connectionId = "test-connection-id";
+            contextMock.Setup(c => c.ConnectionId).Returns(connectionId);
+
+            using var subject = CreateSubject();
+            await subject.SubscribeToAllUpdates();
+
+            groupsMock.Verify(g => g.AddToGroupAsync(connectionId, "GlobalUpdates", default), Times.Once);
+        }
+
+        [Test]
+        public async Task UnsubscribeFromAllUpdates_RemovesConnectionFromGlobalUpdatesGroup()
+        {
+            var connectionId = "test-connection-id";
+            contextMock.Setup(c => c.ConnectionId).Returns(connectionId);
+
+            using var subject = CreateSubject();
+            await subject.UnsubscribeFromAllUpdates();
+
+            groupsMock.Verify(g => g.RemoveFromGroupAsync(connectionId, "GlobalUpdates", default), Times.Once);
+        }
+
         private UpdateNotificationHub CreateSubject()
         {
             var hub = new UpdateNotificationHub(updateStatuses, Mock.Of<ILogger<UpdateNotificationHub>>())

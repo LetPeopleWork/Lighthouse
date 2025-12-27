@@ -23,6 +23,8 @@ export interface IUpdateSubscriptionService {
 		id: number,
 	): Promise<IUpdateStatus | null>;
 	getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus>;
+	subscribeToAllUpdates(callback: () => void): Promise<void>;
+	unsubscribeFromAllUpdates(): Promise<void>;
 	subscribeToTeamUpdates(
 		teamId: number,
 		callback: (status: IUpdateStatus) => void,
@@ -155,6 +157,28 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		} catch (err) {
 			console.error("Error getting global update status:", err);
 			return { hasActiveUpdates: false, activeCount: 0 };
+		}
+	}
+
+	public async subscribeToAllUpdates(callback: () => void): Promise<void> {
+		await this.initialize();
+
+		try {
+			this.connection.on("GlobalUpdateNotification", callback);
+			await this.connection.invoke("SubscribeToAllUpdates");
+		} catch (err) {
+			console.error("Error subscribing to all updates:", err);
+		}
+	}
+
+	public async unsubscribeFromAllUpdates(): Promise<void> {
+		await this.initialize();
+
+		try {
+			this.connection.off("GlobalUpdateNotification");
+			await this.connection.invoke("UnsubscribeFromAllUpdates");
+		} catch (err) {
+			console.error("Error unsubscribing from all updates:", err);
 		}
 	}
 

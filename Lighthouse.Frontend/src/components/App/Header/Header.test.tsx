@@ -8,6 +8,19 @@ import type { ILicensingService } from "../../../services/Api/LicensingService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import Header from "./Header";
 
+// Mock the useUpdateAll hook
+vi.mock("../../../hooks/useUpdateAll", () => ({
+	useUpdateAll: () => ({
+		handleUpdateAll: vi.fn(),
+		globalUpdateStatus: {
+			hasActiveUpdates: false,
+			activeCount: 0,
+		},
+		isLoading: false,
+		hasError: false,
+	}),
+}));
+
 describe("Header component", () => {
 	let queryClient: QueryClient;
 	let mockLicensingService: ILicensingService;
@@ -86,5 +99,16 @@ describe("Header component", () => {
 		// Test feedback dialog opens when button is clicked
 		await user.click(feedbackButton);
 		expect(screen.getByText("We'd Love to Hear from You!")).toBeInTheDocument();
+	});
+
+	it("should render the UpdateAllButton", () => {
+		renderHeader();
+
+		const updateAllButton = screen.getByTestId("update-all-button");
+		expect(updateAllButton).toBeInTheDocument();
+		expect(updateAllButton).toHaveAttribute(
+			"aria-label",
+			"Update All Teams and Portfolios",
+		);
 	});
 });

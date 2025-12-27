@@ -96,7 +96,11 @@
 
         private async Task NotifyListeners(UpdateKey updateKey, UpdateStatus status)
         {
+            // Send to specific update listeners
             await hubContext.Clients.Group(updateKey.ToString()).SendAsync(updateKey.ToString(), status);
+            
+            // Send global notification to all subscribers
+            await hubContext.Clients.Group("GlobalUpdates").SendAsync("GlobalUpdateNotification");
         }
     }
 }

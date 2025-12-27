@@ -1,5 +1,4 @@
 import AddIcon from "@mui/icons-material/Add";
-import UpdateIcon from "@mui/icons-material/Update";
 import { Box, Container, Tooltip, Typography } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -16,7 +15,6 @@ import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../services/TerminologyContext";
-import type { IUpdateStatus } from "../../services/UpdateSubscriptionService";
 
 const OverviewDashboard: React.FC = () => {
 	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -31,11 +29,6 @@ const OverviewDashboard: React.FC = () => {
 		null,
 	);
 
-	const [globalUpdateStatus, setGlobalUpdateStatus] = useState<{
-		hasActiveUpdates: boolean;
-		activeCount: number;
-	}>({ hasActiveUpdates: false, activeCount: 0 });
-
 	const location = useLocation();
 	const navigate = useNavigate();
 	const queryParams = new URLSearchParams(location.search);
@@ -46,15 +39,12 @@ const OverviewDashboard: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const { portfolioService, teamService, updateSubscriptionService } =
-		useContext(ApiServiceContext);
+	const { portfolioService, teamService } = useContext(ApiServiceContext);
 	const {
 		canCreatePortfolio,
 		createPortfolioTooltip,
 		canCreateTeam,
 		createTeamTooltip,
-		canUpdateAllTeamsAndPortfolios,
-		updateAllTeamsAndPortfoliosTooltip,
 	} = useLicenseRestrictions();
 
 	const fetchData = useCallback(async () => {
@@ -73,54 +63,9 @@ const OverviewDashboard: React.FC = () => {
 		}
 	}, [portfolioService, teamService]);
 
-	const fetchGlobalUpdateStatus = useCallback(async () => {
-		try {
-			const status = await updateSubscriptionService.getGlobalUpdateStatus();
-			setGlobalUpdateStatus(status);
-		} catch (error) {
-			console.error("Error fetching global update status:", error);
-		}
-	}, [updateSubscriptionService]);
-
 	useEffect(() => {
 		fetchData();
 	}, [fetchData]);
-
-	useEffect(() => {
-		fetchGlobalUpdateStatus();
-
-		for (const team of teams) {
-			updateSubscriptionService.subscribeToTeamUpdates(
-				team.id,
-				(status: IUpdateStatus) => {
-					if (status.status === "Completed" || status.status === "Failed") {
-						fetchGlobalUpdateStatus();
-					}
-				},
-			);
-		}
-
-		for (const portfolio of portfolios) {
-			updateSubscriptionService.subscribeToFeatureUpdates(
-				portfolio.id,
-				(status: IUpdateStatus) => {
-					if (status.status === "Completed" || status.status === "Failed") {
-						fetchGlobalUpdateStatus();
-					}
-				},
-			);
-		}
-
-		return () => {
-			// Cleanup subscriptions
-			teams.forEach((team) => {
-				updateSubscriptionService.unsubscribeFromTeamUpdates(team.id);
-			});
-			portfolios.forEach((portfolio) => {
-				updateSubscriptionService.unsubscribeFromFeatureUpdates(portfolio.id);
-			});
-		};
-	}, [teams, portfolios, updateSubscriptionService, fetchGlobalUpdateStatus]);
 
 	const handlePortfolioDelete = (portfolio: IFeatureOwner) => {
 		setSelectedItem(portfolio as Portfolio);
@@ -185,20 +130,6 @@ const OverviewDashboard: React.FC = () => {
 		navigate("/teams/new");
 	};
 
-	const handleUpdateAll = async () => {
-		try {
-			setGlobalUpdateStatus({
-				hasActiveUpdates: true,
-				activeCount: teams.length + portfolios.length,
-			});
-			await teamService.updateAllTeamData();
-			await portfolioService.refreshFeaturesForAllPortfolios();
-		} catch (error) {
-			console.error("Error updating all teams and portfolios:", error);
-			setHasError(true);
-		}
-	};
-
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 			<Container maxWidth={false}>
@@ -244,25 +175,6 @@ const OverviewDashboard: React.FC = () => {
 									onClickHandler={handleAddTeam}
 									buttonVariant="contained"
 									disabled={!canCreateTeam}
-								/>
-							</span>
-						</Tooltip>
-						<Tooltip title={updateAllTeamsAndPortfoliosTooltip} arrow>
-							<span>
-								<ActionButton
-									buttonText={
-										globalUpdateStatus.activeCount > 0
-											? `Update All (${globalUpdateStatus?.activeCount})`
-											: "Update All"
-									}
-									startIcon={<UpdateIcon />}
-									onClickHandler={handleUpdateAll}
-									buttonVariant="outlined"
-									disabled={
-										!canUpdateAllTeamsAndPortfolios ||
-										globalUpdateStatus.hasActiveUpdates
-									}
-									externalIsWaiting={globalUpdateStatus.hasActiveUpdates}
 								/>
 							</span>
 						</Tooltip>

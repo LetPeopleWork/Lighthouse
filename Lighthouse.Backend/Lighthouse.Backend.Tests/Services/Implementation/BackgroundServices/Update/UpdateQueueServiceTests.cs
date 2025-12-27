@@ -169,6 +169,73 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             Assert.That(wasNotified, Is.True);
         }
 
+        [Test]
+        public async Task EnqueueUpdate_SendsGlobalNotificationOnQueued()
+        {
+            var updateType = UpdateType.Team;
+            var id = 1;
+            var globalNotificationSent = false;
+
+            clientProxyMock.Setup(client => client.SendCoreAsync("GlobalUpdateNotification", It.IsAny<object[]>(), default))
+                .Callback(() => globalNotificationSent = true);
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(updateType, id, _ => Task.CompletedTask);
+
+            while (!globalNotificationSent)
+            {
+                await Task.Delay(100);
+            }
+
+            clientProxyMock.Verify(client => client.SendCoreAsync("GlobalUpdateNotification", It.IsAny<object[]>(), default), Times.AtLeastOnce);
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_SendsGlobalNotificationOnCompletion()
+        {
+            var updateType = UpdateType.Team;
+            var id = 1;
+            var globalNotificationCount = 0;
+
+            clientProxyMock.Setup(client => client.SendCoreAsync("GlobalUpdateNotification", It.IsAny<object[]>(), default))
+                .Callback(() => Interlocked.Increment(ref globalNotificationCount));
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(updateType, id, _ => Task.CompletedTask);
+
+            // Wait for both queued and completed notifications
+            while (globalNotificationCount < 2)
+            {
+                await Task.Delay(100);
+            }
+
+            // Should be called at least twice: once when queued, once when completed
+            Assert.That(globalNotificationCount, Is.GreaterThanOrEqualTo(2));
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_SendsGlobalNotificationOnFailure()
+        {
+            var updateType = UpdateType.Team;
+            var id = 1;
+            var globalNotificationCount = 0;
+
+            clientProxyMock.Setup(client => client.SendCoreAsync("GlobalUpdateNotification", It.IsAny<object[]>(), default))
+                .Callback(() => Interlocked.Increment(ref globalNotificationCount));
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(updateType, id, _ => throw new Exception("Test failure"));
+
+            // Wait for both queued and failed notifications
+            while (globalNotificationCount < 2)
+            {
+                await Task.Delay(100);
+            }
+
+            // Should be called at least twice: once when queued, once when failed
+            Assert.That(globalNotificationCount, Is.GreaterThanOrEqualTo(2));
+        }
+
         private UpdateQueueService CreateSubject()
         {
             return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, updateStatuses, serviceScopeFactoryMock.Object);

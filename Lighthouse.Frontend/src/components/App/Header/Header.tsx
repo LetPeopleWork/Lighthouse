@@ -20,6 +20,7 @@ import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
 import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
+import UpdateAllButton from "./UpdateAllButton";
 
 const Header: React.FC = () => {
 	const theme = useTheme();
@@ -56,6 +57,9 @@ const Header: React.FC = () => {
 			</ListItem>
 			<ListItem>
 				<LicenseStatusIcon />
+			</ListItem>
+			<ListItem>
+				<UpdateAllButton />
 			</ListItem>
 		</List>
 	);
@@ -110,6 +114,7 @@ const Header: React.FC = () => {
 							))}
 						</Box>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
+							<UpdateAllButton />
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<ExternalLinkButton
