@@ -120,11 +120,17 @@ jobs:
       - name: Launch Lighthouse app
         run: |
           echo "Starting Lighthouse..."
+          # Launch and capture output to system logs
           open /Applications/Lighthouse.app
-          sleep 2
-          # Verify launcher process started
-          pgrep -f "Lighthouse" || (echo "Lighthouse failed to start" && exit 1)
-          echo "Lighthouse launcher is running"
+          
+          # Give it more time to initialize .NET
+          sleep 10 
+          
+          # Check for both the Launcher and the Backend process
+          ps -ax | grep -i "Lighthouse"
+          
+          # If pgrep fails, dump the system log for the app
+          pgrep -f "Lighthouse" || (log show --predicate 'process == "Lighthouse"' --last 5m && exit 1)
 
       - name: Wait for Lighthouse to start
         run: |

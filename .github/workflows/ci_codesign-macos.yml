@@ -262,9 +262,16 @@ jobs:
             "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
             <dict>
+                <key>com.apple.security.automation.apple-events</key>
+                <true/>
+              
                 <key>com.apple.security.cs.allow-jit</key>
                 <true/>
+              
                 <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+                <true/>
+
+                <key>com.apple.security.app-sandbox</key>
                 <true/>
                 
                 <!-- Allow self-contained .NET runtime to load native libraries -->
@@ -274,6 +281,7 @@ jobs:
                 <!-- Network access for local web server -->
                 <key>com.apple.security.network.client</key>
                 <true/>
+              
                 <key>com.apple.security.network.server</key>
                 <true/>
                 

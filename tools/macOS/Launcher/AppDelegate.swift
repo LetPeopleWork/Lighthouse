@@ -8,10 +8,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var lighthouseProcess: Process?
     var statusItem: NSStatusItem?
     var serverURL: String = "http://localhost:5002"
-    let lockfile = "/tmp/lighthouse.lock"
+    let lockfile = FileManager.default.temporaryDirectory.appendingPathComponent("lighthouse.lock").path
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // FIX 1: Explicitly set to accessory mode so the tray icon appears
         NSApp.setActivationPolicy(.accessory)
 
         // Initialize Sparkle
@@ -84,6 +83,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let bundleURL = Bundle.main.bundleURL
         let macOSURL = bundleURL.appendingPathComponent("Contents/MacOS")
         let executableURL = macOSURL.appendingPathComponent("Lighthouse")
+
+        NSLog("Attempting to launch backend at: \(executableURL.path)")
+    
+        if !FileManager.default.isExecutableFile(atPath: executableURL.path) {
+            NSLog("ERROR: Backend binary is not executable")
+            // In CI, we might need to manually chmod if the build step missed it
+            try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executableURL.path)
+        }
 
         guard FileManager.default.fileExists(atPath: executableURL.path) else {
             showError("Binary not found at \(executableURL.path)")
