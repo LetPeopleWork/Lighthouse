@@ -5,59 +5,76 @@ parent: Installation and Configuration
 nav_order: 1
 ---
 
-If you can't or don't want to use [Docker](./docker.html), you can also run Lighthouse on your system directly.
 
-- TOC
-{:toc}
+If you can't or don't want to use [Docker](./docker.html), you can also run Lighthouse directly on your system. The packages provided by Lighthouse have everything included, so there are no prerequisites.
 
-## Prerequisites
-The packages provided by Lighthouse have everything included you need to run it, so there are no prerequisites.
+Lighthouse runs on Windows, macOS, and Linux based systems.
 
-Lighthouse runs on Windows, MacOs, and Linux based systems.
+## Quick OS Guide
 
-## Download Lighthouse
-Download the latest version of Lighthouse for your operating system from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
-Download the zip file, and extract it to the location you want to run the application from.
+| Operating System | How to Install & Run Lighthouse |
+|------------------|---------------------------------|
+| **Windows**      | Download and run the signed `Lighthouse.exe` |
+| **macOS**        | Download the signed & notarized app bundle (`.zip` or `.dmg`), install, and launch |
+| **Linux**        | Download, set executable permission, and run from terminal |
 
-## Run Lighthouse
-Once downloaded, you can run the the `Lighthouse` application:
-- `Lighthouse.exe` on Windows
-- `Lighthouse` on MacOS and Linux
+Download the latest version for your operating system from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
 
-{: .note}
-On Linux and MacOS it may be that the file *Lighthouse* is not appearing as executable (so it would show as a document). In such a case, you have to make it executable by running:  
-`sudo chmod +x Lighthouse`
+---
 
-In order to run it, open a terminal, navigate to the folder where the Lighthouse executable is located, and run it through the terminal:
-```bash
-# Navigate to Lighthouse directory
-cd /c/Users/benja/Downloads/Lighthouse-linux-x64
+## Windows
 
-# Make executable
-sudo chmod +x Lighthouse
+1. Download the latest `Lighthouse.exe` from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
+2. The Windows app is signed. Simply double-click the executable to start Lighthouse.
+3. The app will open a terminal window showing log messages.
+4. By default, Lighthouse runs on:
+	- HTTPS: https://localhost:5001
+	- HTTP:  http://localhost:5000
 
-# You will have to type in your password here, either on the consolre or via the UI
-# After this you will be able to run Lighthouse:
-./Lighthouse
-```
+You should see the (empty) landing page:
+![Landing Page](../assets/installation/landingpage.png)
 
-{: .recommendation}
-On Windows it should work by simply double-clicking the *Lighthouse.exe*.
+---
 
-Your terminal will start showing the logmessages and you should something similar to this:
+## macOS
 
-![Starting Lighthouse](../assets/installation/startup.png)
+1. Download the latest Lighthouse app for macOS as either a `.zip` or `.dmg` from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
+2. The macOS app is distributed as a signed and notarized app bundle. No Gatekeeper warnings should appear.
+3. Open the `.dmg` and drag Lighthouse to your Applications folder, or unzip and move the app as desired.
+4. Double-click the Lighthouse app to launch it.
+5. By default, Lighthouse runs on:
+	- HTTPS: https://localhost:5001
+	- HTTP:  http://localhost:5002 (port 5002 avoids conflicts with AirPlay Receiver)
 
-By default, Lighthouse will start running on port 5001 for HTTPS. The HTTP port is 5000 on Windows and Linux, or 5002 on macOS (to avoid conflicts with AirPlay Receiver). If everything worked as expected, you can open the app now in your browser:
-- Windows/Linux: [https://localhost:5001](https://localhost:5001) or [http://localhost:5000](http://localhost:5000)
-- macOS: [https://localhost:5001](https://localhost:5001) or [http://localhost:5002](http://localhost:5002)
+You should see the (empty) landing page:
+![Landing Page](../assets/installation/landingpage.png)
+
+---
+
+## Linux
+
+1. Download the latest Lighthouse release for Linux from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
+2. Extract the archive to your desired location.
+3. If the `Lighthouse` file is not executable, make it so:
+	```bash
+	sudo chmod +x Lighthouse
+	```
+4. Open a terminal, navigate to the Lighthouse directory, and run:
+	```bash
+	./Lighthouse
+	```
+5. By default, Lighthouse runs on:
+	- HTTPS: https://localhost:5001
+	- HTTP:  http://localhost:5000
 
 You should see the (empty) landing page:
 ![Landing Page](../assets/installation/landingpage.png)
 
 
 
+
 ## Updating Lighthouse
+
 If a new version is released, you will see an indication on the lower right edge in the footer. If you click on it, a dialog will pop up and you see the release notes of all newer versions of yours.
 
 {: .note }
@@ -66,13 +83,14 @@ As the published packages do not include the database, you will keep your data. 
 {: .recommendation}
 We recommend that you stay on the latest versions. We continuously update Lighthouse with new features and bug fixes, and we only offer support if you're on the latest version.
 
-If you want to update Lighthouse, you have the following three options.
+If you want to update Lighthouse, you have the following options:
+
 
 ### Automatic Update
-Through the "New Releases" dialog, you get the option to directly install the latest version. If you click it, Lighthouse will fetch the latest released version, replace the files, and restart. Once it's done, you'll see a dialog, and you're ready to go with the latest version.
+On Windows and Linux, Lighthouse supports auto-update directly from within the app. On macOS, auto-update is currently not available due to platform restrictions; you will be notified of new releases and can update manually. We are working on bringing seamless updates to macOS in the future.
 
 {: .note}
-This is not supported on docker. For Docker, please just use the latest container.
+Automatic update is not supported on Docker. For Docker, please use the latest container.
 
 ### Replace Files
 You can simply replace the files in the directory. Download and extract the latest version, and copy/paste them into your Lighthouse folder. Override all existing files.
@@ -81,12 +99,13 @@ You can simply replace the files in the directory. Download and extract the late
 You must make sure to stop Lighthouse from running before updating.
 
 ## Troubleshoot Startup Issues
+
 If you follow the instructions, but Lighthouse is not available on the above port, something didn't go as expected.
 
 In such a case, please inspect the logs in the terminal and try to spot an `Error`. They often tell already what the issue may be.
 
 {: .note}
-Now we don't expect you to understand that gibberish, but if you can provide us those logs (for example through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)), the chances are we can support you quite well and try to resolve the issue.
+If you can provide us those logs (for example through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)), the chances are we can support you quite well and try to resolve the issue.
 
 Following is a list of observed problems together with some potential solutions.
 
