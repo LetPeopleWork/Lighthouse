@@ -78,6 +78,8 @@ namespace Lighthouse.Backend.macOS
                     Console.WriteLine("Sparkle.framework not found in bundle, skipping update check.");
                     return;
                 }
+                
+                Console.WriteLine("Checking for updates...");
 
                 IntPtr suUpdaterClass = GetClass("SUUpdater");
                 if (suUpdaterClass == IntPtr.Zero) return;
