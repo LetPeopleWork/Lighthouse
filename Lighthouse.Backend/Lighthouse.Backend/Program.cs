@@ -44,7 +44,7 @@ namespace Lighthouse.Backend
         {
             var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
 
-            MacInitializer.SetMacOSSpecificPaths(builder);
+            MacInitializer.Initialize(builder);
 
             try
             {
