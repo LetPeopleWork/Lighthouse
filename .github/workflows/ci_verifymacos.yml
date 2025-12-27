@@ -111,26 +111,11 @@ jobs:
             hdiutil detach "$MOUNT_DIR" || true
           fi
 
-      #- name: Run Lighthouse
-      #  run: |
-      #    echo "Starting Lighthouse..."
-      #    ./Lighthouse > lighthouse.log 2>&1 &
-      #  working-directory: /Applications/Lighthouse.app/Contents/MacOS
-
-      - name: Launch Lighthouse app
+      - name: Run Lighthouse
         run: |
           echo "Starting Lighthouse..."
-          # Launch and capture output to system logs
-          open /Applications/Lighthouse.app
-          
-          # Give it more time to initialize .NET
-          sleep 10 
-          
-          # Check for both the Launcher and the Backend process
-          ps -ax | grep -i "Lighthouse"
-          
-          # If pgrep fails, dump the system log for the app
-          pgrep -f "Lighthouse" || (log show --predicate 'process == "Lighthouse"' --last 5m && exit 1)
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: /Applications/Lighthouse.app/Contents/MacOS
 
       - name: Wait for Lighthouse to start
         run: |

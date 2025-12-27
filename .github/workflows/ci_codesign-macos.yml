@@ -139,7 +139,7 @@ jobs:
             
             # Copy all binaries and resources
             cp -R ./publish/osx-universal/* "$MACOS_DIR/"
-            
+
             # Make executables executable
             chmod +x "$MACOS_DIR/Lighthouse"
             
@@ -162,10 +162,6 @@ jobs:
             sips -z 512 512   "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512.png"
             sips -z 1024 1024 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png"
             
-            # Create menu bar icon (18x18 template)
-            echo "Creating menu bar icon..."
-            sips -z 18 18 "$ICON_SOURCE" --out "$RESOURCES_DIR/MenuBarIcon.png"
-            
             # Convert to icns format
             iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/Lighthouse.icns"
             
@@ -174,6 +170,47 @@ jobs:
             
             echo "Icon created at $RESOURCES_DIR/Lighthouse.icns"
             
+            # Create launcher script
+            cat > "$MACOS_DIR/LighthouseLauncher" << 'LAUNCHER_EOF'
+            #!/bin/bash
+            SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+            LOCKFILE="/tmp/lighthouse.lock"
+            
+            # Check if Lighthouse is already running
+            if [ -f "$LOCKFILE" ]; then
+                PID=$(cat "$LOCKFILE")
+                if ps -p "$PID" > /dev/null 2>&1; then
+                    # Process is running, bring Terminal to front
+                    osascript -e 'tell application "Terminal" to activate' 2>/dev/null
+                    
+                    # Show a notification
+                    osascript -e 'display notification "Lighthouse is already running. The Terminal window has been brought to front." with title "Lighthouse"' 2>/dev/null
+                    exit 0
+                else
+                    # Stale lock file, remove it
+                    rm -f "$LOCKFILE"
+                fi
+            fi
+            
+            # Escape arguments for passing through osascript
+            ARGS=""
+            for arg in "$@"; do
+                # Escape single quotes and backslashes for the AppleScript string
+                escaped_arg=$(printf '%s' "$arg" | sed "s/'/'\\\\''/g")
+                ARGS="$ARGS '$escaped_arg'"
+            done
+            
+            # Open Terminal and run the app with arguments
+            osascript -e 'tell application "Terminal"
+                do script "cd \"'"$SCRIPT_DIR"'\" && echo $$ > /tmp/lighthouse.lock && ./Lighthouse'"$ARGS"'; rm -f /tmp/lighthouse.lock; echo \"\nLighthouse has stopped. Press any key to close...\"; read -n 1; exit"
+                activate
+            end tell'
+            LAUNCHER_EOF
+            
+            # Make launcher executable
+            chmod +x "$MACOS_DIR/LighthouseLauncher"
+            chmod +x "$MACOS_DIR/Lighthouse"
+            
             # Create Info.plist
             cat > "$CONTENTS_DIR/Info.plist" << EOF
             <?xml version="1.0" encoding="UTF-8"?>
@@ -181,7 +218,7 @@ jobs:
             <plist version="1.0">
             <dict>
                 <key>CFBundleExecutable</key>
-                <string>Lighthouse</string>
+                <string>LighthouseLauncher</string>
                 <key>CFBundleIdentifier</key>
                 <string>work.letpeople.lighthouse</string>
                 <key>CFBundleName</key>
@@ -198,9 +235,8 @@ jobs:
                 <string>10.15</string>
                 <key>NSHighResolutionCapable</key>
                 <true/>
-                <!-- Keep as menu bar app, not in dock -->
                 <key>LSUIElement</key>
-                <true/>
+                <false/>
                 <!-- Sparkle Update Configuration -->
                 <key>SUFeedURL</key>
                 <string>https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/appcast.xml</string>
@@ -236,16 +272,9 @@ jobs:
             "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
             <dict>
-                <key>com.apple.security.automation.apple-events</key>
-                <true/>
-              
                 <key>com.apple.security.cs.allow-jit</key>
                 <true/>
-              
                 <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-                <true/>
-
-                <key>com.apple.security.app-sandbox</key>
                 <true/>
                 
                 <!-- Allow self-contained .NET runtime to load native libraries -->
@@ -255,7 +284,6 @@ jobs:
                 <!-- Network access for local web server -->
                 <key>com.apple.security.network.client</key>
                 <true/>
-              
                 <key>com.apple.security.network.server</key>
                 <true/>
                 
@@ -270,40 +298,65 @@ jobs:
             echo "Entitlements created at $ENTITLEMENTS_FILE"
             cat "$ENTITLEMENTS_FILE"
 
-        - name: Sign App Contents
+        - name: Sign all binaries and app bundle
           env:
             APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           run: |
             IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+            if [ -z "$IDENTITY" ]; then
+              echo "Error: No Developer ID Application certificate found in keychain"
+              security find-identity -v -p codesigning
+              exit 1
+            fi
+            echo "Signing identity: $IDENTITY"
+
             APP_DIR="./publish/Lighthouse.app"
             MACOS_DIR="$APP_DIR/Contents/MacOS"
             FRAMEWORKS_DIR="$APP_DIR/Contents/Frameworks"
-            ENTITLEMENTS="./publish/entitlements.plist"
 
-            echo "=== 1. Sign Sparkle Framework ==="
-            codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$FRAMEWORKS_DIR/Sparkle.framework"
+            echo "=== Signing Sparkle.framework ==="
+            codesign --sign "$IDENTITY" --timestamp --force --options runtime --deep --verbose "$FRAMEWORKS_DIR/Sparkle.framework"
+            codesign --verify --deep --strict --verbose=2 "$FRAMEWORKS_DIR/Sparkle.framework"
+            echo "✓ Sparkle.framework signed and verified"
 
-            echo "=== 2. Sign Dylibs in-place ==="
-            # Target dylibs directly; usually doesn't trigger JSON conflicts
-            find "$MACOS_DIR" -maxdepth 1 -name "*.dylib" -exec codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose {} \;
+            echo "=== Signing .dylib files ==="
+            find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
+              echo "Signing: $file"
+              codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$file"
+              codesign --verify --strict --verbose=2 "$file"
+              echo "✓ Signed and verified: $file"
+            done
 
-            echo "=== 3. Sign Executables with Isolation ==="
-            # This handles the specific "JSON conflict" issue for the main binaries
-            mkdir -p ./temp_binaries
-            mv "$MACOS_DIR/Lighthouse" ./temp_binaries/
+            echo "=== Moving main executable out temporarily ==="
+            BINARY_PATH="$MACOS_DIR/Lighthouse"
+            mkdir -p ./temp_binary
+            mv "$BINARY_PATH" ./temp_binary/
+            chmod +x ./temp_binary/Lighthouse
 
-            codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements "$ENTITLEMENTS" --force --verbose ./temp_binaries/Lighthouse
+            echo "=== Signing executable with entitlements ==="
+            codesign --sign "$IDENTITY" \
+              --timestamp \
+              --options runtime \
+              --entitlements ./publish/entitlements.plist \
+              --force \
+              --verbose=4 \
+              ./temp_binary/Lighthouse
 
-            mv ./temp_binaries/* "$MACOS_DIR/"
-            rmdir ./temp_binaries
+            echo "=== Moving executable back ==="
+            mv ./temp_binary/Lighthouse "$BINARY_PATH"
+            rmdir ./temp_binary
 
-            echo "=== 4. Sign App Bundle Wrapper ==="
-            # The final seal. We do not use --deep to prevent it from re-scanning 
-            # and tripping over JSONs.
-            codesign --sign "$IDENTITY" --timestamp --force --preserve-metadata=entitlements --options runtime --verbose --deep "$APP_DIR"
+            echo "=== Signing app bundle ==="                       
+            codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR"
 
-            echo "=== 5. Verification ==="
+            echo "=== Verifying signatures ==="
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
+            codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
+
+            echo "=== Entitlements in signed executable ==="
+            codesign -d --entitlements - "$BINARY_PATH"
+
+            echo "✓ App bundle signed and verified successfully"
 
         - name: Notarize app bundle
           id: notarize_app

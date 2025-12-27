@@ -31,7 +31,6 @@ using Serilog.Settings.Configuration;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.macOS;
@@ -105,8 +104,6 @@ namespace Lighthouse.Backend
 
         private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
         {
-            MacInitializer.SetupMacOSMenuBar(app);
-            
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
