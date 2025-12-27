@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Serilog;
 
 namespace Lighthouse.Backend.macOS
 {
@@ -21,7 +22,7 @@ namespace Lighthouse.Backend.macOS
 
         private const int RTLD_LAZY = 0x1;
 
-        public static void Initialize(WebApplicationBuilder builder)
+        public static void InitializePaths(WebApplicationBuilder builder)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -29,6 +30,15 @@ namespace Lighthouse.Backend.macOS
             }
             
             SetMacOSSpecificPaths(builder);
+        }
+
+        public static void InitializeUpdates()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return;
+            }
+            
             CheckForUpdates();
         }
 
@@ -75,11 +85,11 @@ namespace Lighthouse.Backend.macOS
                 if (handle == IntPtr.Zero)
                 {
                     // Fallback for development environments where the structure might differ
-                    Console.WriteLine("Sparkle.framework not found in bundle, skipping update check.");
+                    Log.Warning("Sparkle.framework not found in bundle, skipping update check.");
                     return;
                 }
                 
-                Console.WriteLine("Checking for updates...");
+                Log.Information("Checking for updates...");
 
                 IntPtr suUpdaterClass = GetClass("SUUpdater");
                 if (suUpdaterClass == IntPtr.Zero) return;
@@ -97,8 +107,7 @@ namespace Lighthouse.Backend.macOS
             }
             catch (Exception ex)
             {
-                // Log to Console as Serilog might not be fully initialized yet
-                Console.WriteLine($"Sparkle Error: {ex.Message}");
+                Log.Error(ex, "Sparkle Error");
             }
         }
     }

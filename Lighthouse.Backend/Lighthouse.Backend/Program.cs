@@ -44,16 +44,18 @@ namespace Lighthouse.Backend
         {
             var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
 
-            MacInitializer.Initialize(builder);
-
             try
             {
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
 
+                MacInitializer.InitializePaths(builder);
+
                 ConfigureLogging(builder);
                 Log.Information("Starting up Lighthouse!");
                 Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
+
+                MacInitializer.InitializeUpdates();
 
                 RegisterServices(builder);
                 ConfigureHttps(builder);
