@@ -34,6 +34,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
+using Lighthouse.Backend.macOS;
 using Microsoft.Data.Sqlite;
 
 namespace Lighthouse.Backend
@@ -44,11 +45,7 @@ namespace Lighthouse.Backend
         {
             var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
 
-            // Override paths for macOS
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                SetMacOSSpecificPaths(builder);
-            }
+            MacInitializer.SetMacOSSpecificPaths(builder);
 
             try
             {
@@ -82,26 +79,6 @@ namespace Lighthouse.Backend
             }
         }
 
-        private static void SetMacOSSpecificPaths(WebApplicationBuilder builder)
-        {
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-            // Override log path
-            var logPath = Path.Combine(userProfile, "Library", "Logs", "Lighthouse", "log-.txt");
-            var logDirectory = Path.GetDirectoryName(logPath);
-            if (!string.IsNullOrEmpty(logDirectory))
-            {
-                Directory.CreateDirectory(logDirectory);
-            }
-
-            builder.Configuration["Serilog:WriteTo:0:Args:path"] = logPath;
-
-            // Override database path
-            var dbPath = Path.Combine(userProfile, "Library", "Application Support", "Lighthouse", "LighthouseAppContext.db");
-            var connectionString = $"Data Source={dbPath}";
-            builder.Configuration["Database:ConnectionString"] = connectionString;
-        }
-
 
         private static OptionalFeature? TryGetOptionalFeature(WebApplicationBuilder builder)
         {
@@ -128,6 +105,8 @@ namespace Lighthouse.Backend
 
         private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
         {
+            MacInitializer.SetupMacOSMenuBar(app);
+            
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

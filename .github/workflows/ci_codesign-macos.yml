@@ -118,28 +118,6 @@ jobs:
             echo "Sparkle framework extracted"
             ls -la Sparkle.framework/
 
-        - name: Build Swift Launcher (Universal)
-          run: |
-            # Intel build (supports back to 10.15)
-            swiftc -framework Cocoa -framework Sparkle \
-              -F ./Sparkle.framework/.. \
-              -target x86_64-apple-macos10.15 \
-              -o Launcher_x86_64 \
-              tools/macOS/Launcher/main.swift \
-              tools/macOS/Launcher/AppDelegate.swift
-
-            # Apple Silicon build (supports back to 11.0)
-            swiftc -framework Cocoa -framework Sparkle \
-              -F ./Sparkle.framework/.. \
-              -target arm64-apple-macos11.0 \
-              -o Launcher_arm64 \
-              tools/macOS/Launcher/main.swift \
-              tools/macOS/Launcher/AppDelegate.swift
-
-            lipo -create Launcher_x86_64 Launcher_arm64 -output LighthouseLauncher
-
-            lipo -info LighthouseLauncher
-
         # --- Create App Bundle Structure ---
         - name: Create App Bundle
           run: |
@@ -162,11 +140,7 @@ jobs:
             # Copy all binaries and resources
             cp -R ./publish/osx-universal/* "$MACOS_DIR/"
             
-            # Copy the Swift launcher
-            cp LighthouseLauncher "$MACOS_DIR/"
-            
             # Make executables executable
-            chmod +x "$MACOS_DIR/LighthouseLauncher"
             chmod +x "$MACOS_DIR/Lighthouse"
             
             # Create icon from PNG
@@ -207,7 +181,7 @@ jobs:
             <plist version="1.0">
             <dict>
                 <key>CFBundleExecutable</key>
-                <string>LighthouseLauncher</string>
+                <string>Lighthouse</string>
                 <key>CFBundleIdentifier</key>
                 <string>work.letpeople.lighthouse</string>
                 <key>CFBundleName</key>
@@ -317,10 +291,8 @@ jobs:
             # This handles the specific "JSON conflict" issue for the main binaries
             mkdir -p ./temp_binaries
             mv "$MACOS_DIR/Lighthouse" ./temp_binaries/
-            mv "$MACOS_DIR/LighthouseLauncher" ./temp_binaries/
 
             codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements "$ENTITLEMENTS" --force --verbose ./temp_binaries/Lighthouse
-            codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements "$ENTITLEMENTS" --force --verbose ./temp_binaries/LighthouseLauncher
 
             mv ./temp_binaries/* "$MACOS_DIR/"
             rmdir ./temp_binaries
