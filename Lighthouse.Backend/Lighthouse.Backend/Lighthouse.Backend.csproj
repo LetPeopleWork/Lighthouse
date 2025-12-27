@@ -20,17 +20,6 @@
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 	</PropertyGroup>
 
-    <!-- macOS-specific configuration -->
-    <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'osx-arm64' OR '$(RuntimeIdentifier)' == 'osx-x64'">
-        <DefineConstants>$(DefineConstants);OSX</DefineConstants>
-        <SupportedOSPlatformVersion>10.15</SupportedOSPlatformVersion>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-arm64' OR '$(RuntimeIdentifier)' == 'osx-x64'">
-        <PackageReference Include="Microsoft.macOS.Sdk" Version="14.2.9472" />
-    </ItemGroup>
-
-
     <ItemGroup>
 	  <None Remove="certs\LighthouseDefaultCert.pfx" />
 	  <None Remove="Services\Implementation\Licensing\public_key.pem" />
