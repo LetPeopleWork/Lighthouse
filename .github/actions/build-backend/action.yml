@@ -21,13 +21,16 @@ runs:
         dotnet-version: '10'
 
     - name: Restore dependencies
+      shell: bash
       run: dotnet restore ./Lighthouse.Backend
 
     - name: Build Backend Solution
+      shell: bash
       run: dotnet build -c Release -p:Version=${{ inputs.fileversion }} ./Lighthouse.Backend
 
     - name: Publish targets
       if: ${{ inputs.publish == 'true' }}
+      shell: bash
       run: |
         dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./publish/win-x64 ./Lighthouse.Backend/Lighthouse.Backend
         dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./publish/linux-x64 ./Lighthouse.Backend/Lighthouse.Backend
@@ -36,6 +39,7 @@ runs:
 
     - name: Remove development settings from published outputs
       if: ${{ inputs.publish == 'true' }}
+      shell: bash
       run: |
         rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json || true
         rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json || true

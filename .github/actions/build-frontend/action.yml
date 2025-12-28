@@ -29,15 +29,18 @@ runs:
         cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
 
     - name: Install dependencies
+      shell: bash
       run: pnpm install --frozen-lockfile
       working-directory: ./Lighthouse.Frontend
 
     - name: Build Frontend
+      shell: bash
       run: pnpm run build
       working-directory: ./Lighthouse.Frontend
 
     - name: Test Frontend and Sonar report
       if: ${{ inputs.run-tests == 'true' }}
+      shell: bash
       run: pnpm run sonarreport
       working-directory: ./Lighthouse.Frontend
       env:
@@ -56,6 +59,6 @@ runs:
       if: ${{ inputs.run-tests == 'true' }}
       uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
       env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       with:
         projectBaseDir: ./Lighthouse.Frontend

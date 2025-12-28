@@ -29,6 +29,7 @@ runs:
         fileversion: ${{ inputs.fileversion }}
 
     - name: Set linux executable permission
+      shell: bash
       run: sudo chmod -R +x ./publish/linux-x64
       working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
