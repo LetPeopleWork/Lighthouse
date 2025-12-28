@@ -9,6 +9,7 @@ on:
       - "Lighthouse.EndToEndTests/**"
       - "Lighthouse.Frontend/**"
       - ".github/workflows/ci*.yml"
+      - ".github/actions/**"
       - "examples/postgres/**"
   pull_request:
     branches: [ "main" ]
