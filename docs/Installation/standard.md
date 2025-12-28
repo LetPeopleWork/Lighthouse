@@ -41,10 +41,14 @@ You should see the (empty) landing page:
 1. Download the latest Lighthouse app for macOS as either a `.zip` or `.dmg` from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
 2. The macOS app is distributed as a signed and notarized app bundle. No Gatekeeper warnings should appear.
 3. Open the `.dmg` and drag Lighthouse to your Applications folder, or unzip and move the app as desired.
-4. Double-click the Lighthouse app to launch it.
+
+![Apple App Installation](../assets/installation/AppleAppInstallation.jpeg)
+
+4. Double-click the Lighthouse app to launch it. You will be asked whether you’re ok to launch an applications downloaded from the internet: Confirm to run Lighthouse. A terminal will be launched
 5. By default, Lighthouse runs on:
 	- HTTPS: https://localhost:5001
 	- HTTP:  http://localhost:5002 (port 5002 avoids conflicts with AirPlay Receiver)
+
 
 You should see the (empty) landing page:
 ![Landing Page](../assets/installation/landingpage.png)
