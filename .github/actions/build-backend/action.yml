@@ -26,7 +26,14 @@ runs:
 
     - name: Build Backend Solution
       shell: bash
-      run: dotnet build -c Release -p:Version=${{ inputs.fileversion }} ./Lighthouse.Backend
+      run: |
+        if [ -n "${{ inputs.fileversion }}" ]; then
+          echo "Building with Version=${{ inputs.fileversion }}"
+          dotnet build -c Release -p:Version=${{ inputs.fileversion }} ./Lighthouse.Backend
+        else
+          echo "Building without explicit Version"
+          dotnet build -c Release ./Lighthouse.Backend
+        fi
 
     - name: Publish targets
       if: ${{ inputs.publish == 'true' }}
