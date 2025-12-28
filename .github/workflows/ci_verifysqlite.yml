@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: '0'
       
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
         with:
           name: Lighthouse-linux-x64-${{ inputs.version }}
           path: ./Lighthouse/linux-x64
@@ -48,7 +48,7 @@ jobs:
         working-directory: ./Lighthouse.EndToEndTests
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
