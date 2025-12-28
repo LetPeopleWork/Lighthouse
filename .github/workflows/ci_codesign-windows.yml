@@ -71,7 +71,7 @@ jobs:
           YUBI_PIN: ${{ secrets.YUBI_PIN }}
 
       - name: Delete unsigned artifact
-        uses: geekyeggo/delete-artifact@b54d29a59e55046d1f7fc8226cdda507e6b9cf62
+        uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
 
