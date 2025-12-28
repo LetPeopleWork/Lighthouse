@@ -30,8 +30,7 @@ runs:
 
     - name: Set linux executable permission
       shell: bash
-      run: sudo chmod -R +x ./publish/linux-x64
-      working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+      run: sudo chmod -R +x ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64
 
     - name: Upload windows artifact for deployment job
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
