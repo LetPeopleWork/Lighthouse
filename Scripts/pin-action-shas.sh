@@ -141,13 +141,19 @@ for old in "${!RESOLVED_MAP[@]}"; do
 
     # Use perl if available for safe literal replacement; fall back to sed with escaped pattern
     if command -v perl >/dev/null 2>&1; then
-      perl -0777 -pe "s/\Q$old\E/$new/g" "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+      # Use environment variables to pass the old/new strings to perl so that
+      # special characters like '@' are not interpreted by the perl parser.
+      OLD="$old" NEW="$new" perl -0777 -pe 's/\Q$ENV{OLD}\E/\Q$ENV{NEW}\E/g' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
       echo "  Updated $file"
       updated_files_count=$((updated_files_count+1))
     else
-      # Escape | and & for sed
-      esc_old=$(printf '%s' "$old" | sed -e 's/[\/&|]/\\&/g')
-      esc_new=$(printf '%s' "$new" | sed -e 's/[\/&|]/\\&/g')
+      # If perl is not available, warn (sed fallback may not handle every edge case)
+      echo "Warning: perl not found; falling back to sed (may not handle all special characters)" >&2
+
+      # Escape backslashes and sed-special replacement chars (& and the delimiter |).
+      # Do NOT escape forward slashes — we use '|' as the sed delimiter so '/' can remain literal.
+      esc_old=$(printf '%s' "$old" | sed -e 's/[\\|]/\\&/g')
+      esc_new=$(printf '%s' "$new" | sed -e 's/\\/\\\\/g' -e 's/[&|]/\\&/g')
       sed -i "s|$esc_old|$esc_new|g" "$file"
       echo "  Updated $file"
       updated_files_count=$((updated_files_count+1))

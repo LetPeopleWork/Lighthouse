@@ -45,7 +45,7 @@ jobs:
       - name: Create tag if necessary
         if: env.create_tag == 'true'
         id: version
-        uses: fregante/daily-version-action@v2
+        uses: fregante/daily-version-action@fb1a60b7c4daf1410cd755e360ebec3901e58588
         with:
           prefix: v
 
