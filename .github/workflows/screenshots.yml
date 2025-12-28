@@ -119,7 +119,7 @@ jobs:
         shell: bash
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725
         with:
             token: ${{ secrets.GITHUB_TOKEN }}
             commit-message: "Update screenshots for version ${{ steps.version.outputs.VERSION }}"
