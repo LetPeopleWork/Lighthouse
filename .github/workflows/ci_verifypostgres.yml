@@ -16,11 +16,11 @@ jobs:
       LinearAPIKey: ${{ secrets.LINEARAPIKEY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: '0'
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: Lighthouse-linux-x64-${{ inputs.version }}
           path: ./Lighthouse/linux-x64
@@ -108,7 +108,7 @@ jobs:
         env:
           LIGHTHOUSEURL: https://localhost:5001
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-postgres

@@ -31,58 +31,23 @@ jobs:
 
     steps:
         - name: Checkout repository
-          uses: actions/checkout@v4
+          uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
         - name: Setup .NET SDK
-          uses: actions/setup-dotnet@v3
+          uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815
           with:
             dotnet-version: ${{ inputs.dotnet_version }}
 
-        - name: Setup pnpm
-          uses: pnpm/action-setup@v4
+        - name: Build Frontend (composite)
+          uses: ./.github/actions/build-frontend
           with:
-            version: latest
+            run-tests: 'false'
 
-        - uses: actions/setup-node@v4
+        - name: Build Backend (composite, publish osx targets)
+          uses: ./.github/actions/build-backend
           with:
-            node-version: 20
-        
-        - name: Install pnpm dependencies
-          run: pnpm install --frozen-lockfile
-          working-directory: ./Lighthouse.Frontend
-
-        - name: Build Frontend
-          run: pnpm run build
-          working-directory: ./Lighthouse.Frontend
-
-        - name: Restore dependencies
-          run: dotnet restore ./Lighthouse.Backend
-
-        - name: Build Backend Solution
-          run: dotnet build -c Release -p:Version=${{ inputs.fileversion }}
-          working-directory: ./Lighthouse.Backend
-
-        # --- Publish x64 ---
-        - name: Publish osx-x64
-          run: |
-            dotnet publish -c Release -r osx-x64 \
-              --self-contained \
-              -p:PublishSingleFile=true \
-              -p:IncludeNativeLibrariesForSelfContained=true \
-              -p:Version=${{ inputs.fileversion }} \
-              -o ./publish/osx-x64
-          working-directory: ./Lighthouse.Backend/Lighthouse.Backend
-
-        # --- Publish arm64 ---
-        - name: Publish osx-arm64
-          run: |
-            dotnet publish -c Release -r osx-arm64 \
-              --self-contained \
-              -p:PublishSingleFile=true \
-              -p:IncludeNativeLibrariesForSelfContained=true \
-              -p:Version=${{ inputs.fileversion }} \
-              -o ./publish/osx-arm64
-          working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+            publish: 'true'
+            fileversion: ${{ inputs.fileversion }}
 
         # --- Create universal binary ---
         - name: Create universal binary
@@ -585,13 +550,13 @@ jobs:
             fi
 
         - name: Upload signed app bundle zip artifact
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
           with:
             name: Lighthouse-osx-app-${{ inputs.version }}
             path: ./publish/Lighthouse-${{ inputs.version }}.app.zip
 
         - name: Upload signed DMG artifact
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
           with:
             name: Lighthouse-osx-dmg-${{ inputs.version }}
             path: ./publish/Lighthouse-${{ inputs.version }}.dmg

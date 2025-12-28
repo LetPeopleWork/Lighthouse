@@ -1,0 +1,42 @@
+name: "build-backend"
+description: "Composite action to build (and optionally publish) the backend with fixed tool versions and standard paths"
+
+inputs:
+  publish:
+    description: "Whether to publish self-contained runtimes for common targets (true/false)"
+    required: false
+    default: 'false'
+
+  fileversion:
+    description: "Version used to set assembly/package versions"
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815
+      with:
+        dotnet-version: '10'
+
+    - name: Restore dependencies
+      run: dotnet restore ./Lighthouse.Backend
+
+    - name: Build Backend Solution
+      run: dotnet build -c Release -p:Version=${{ inputs.fileversion }} ./Lighthouse.Backend
+
+    - name: Publish targets
+      if: ${{ inputs.publish == 'true' }}
+      run: |
+        dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./publish/win-x64 ./Lighthouse.Backend/Lighthouse.Backend
+        dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./publish/linux-x64 ./Lighthouse.Backend/Lighthouse.Backend
+        dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfContained=true -p:Version=${{ inputs.fileversion }} -o ./publish/osx-x64 ./Lighthouse.Backend/Lighthouse.Backend
+        dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfContained=true -p:Version=${{ inputs.fileversion }} -o ./publish/osx-arm64 ./Lighthouse.Backend/Lighthouse.Backend
+
+    - name: Remove development settings from published outputs
+      if: ${{ inputs.publish == 'true' }}
+      run: |
+        rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json || true
+        rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json || true
+        rm -f ./publish/osx-universal/appsettings.Development.json || true

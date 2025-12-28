@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -101,7 +101,7 @@ jobs:
           ls -la lighthouse-license.zip
 
       - name: Upload license as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: license
           path: lighthouse-license.zip

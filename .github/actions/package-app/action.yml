@@ -1,0 +1,45 @@
+name: "package-app"
+description: "Composite action that builds frontend+backend and uploads release artifacts. Minimal inputs: fileversion and version"
+
+inputs:
+  fileversion:
+    required: true
+    description: "File version for published artifacts"
+  version:
+    required: true
+    description: "Release version string (for artifact names)"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      with:
+        fetch-depth: '0'
+
+    - name: Build Frontend (composite)
+      uses: ./.github/actions/build-frontend
+      with:
+        run-tests: 'false'
+
+    - name: Build Backend (composite, publish outputs)
+      uses: ./.github/actions/build-backend
+      with:
+        publish: 'true'
+        fileversion: ${{ inputs.fileversion }}
+
+    - name: Set linux executable permission
+      run: sudo chmod -R +x ./publish/linux-x64
+      working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+    - name: Upload windows artifact for deployment job
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: Lighthouse-win-x64-${{ inputs.version }}
+        path: ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64
+
+    - name: Upload linux artifact for deployment job
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: Lighthouse-linux-x64-${{ inputs.version }}
+        path: ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64

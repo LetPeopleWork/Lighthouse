@@ -1,0 +1,61 @@
+name: "build-frontend"
+description: "Composite action to build and test the frontend with fixed tool versions and paths"
+
+inputs:
+  run-tests:
+    description: "Run tests and Sonar analysis (true/false)"
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      with:
+        fetch-depth: '0'
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c
+      with:
+        version: 9
+        run_install: false
+
+    - name: Use Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      working-directory: ./Lighthouse.Frontend
+
+    - name: Build Frontend
+      run: pnpm run build
+      working-directory: ./Lighthouse.Frontend
+
+    - name: Test Frontend and Sonar report
+      if: ${{ inputs.run-tests == 'true' }}
+      run: pnpm run sonarreport
+      working-directory: ./Lighthouse.Frontend
+      env:
+        CI: true
+
+    - name: Setup Sonar cache
+      if: ${{ inputs.run-tests == 'true' }}
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: |
+          ${{ runner.os }}-sonar
+
+    - name: Frontend SonarCloud
+      if: ${{ inputs.run-tests == 'true' }}
+      uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        projectBaseDir: ./Lighthouse.Frontend

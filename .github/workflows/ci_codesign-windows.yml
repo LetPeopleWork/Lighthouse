@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: ./artifacts/win-x64
@@ -71,12 +71,12 @@ jobs:
           YUBI_PIN: ${{ secrets.YUBI_PIN }}
 
       - name: Delete unsigned artifact
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@b54d29a59e55046d1f7fc8226cdda507e6b9cf62
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
 
       - name: Upload signed artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: ./artifacts/win-x64

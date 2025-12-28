@@ -41,3 +41,12 @@ updates:
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5
+    
+  # Update GitHub Actions used in workflows (pins / action refs)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 10
