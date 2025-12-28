@@ -5,17 +5,20 @@ nav_order: 95
 ---
 <!-- 
 # Lighthouse vNext
--->
 
-# Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
+-->
+
+# Lighthouse v25.12.28.1246
 
 ## New macOS App Bundle & Deployment Changes
 Lighthouse for macOS is now delivered in a proper **app bundle structure**, aligning with standard macOS application conventions.
 
 You can now download Lighthouse for macOS as either a **zip** or a **dmg file** (recommended for easiest installation). Both formats are fully **signed and notarized by Apple**, ensuring maximum security and trust for all users.
+
+![Apple App Installation](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/installation/AppleAppInstallation.jpeg)
 
 ⚠️ **Important:** Updates are now handled differently on macOS. All users must manually update to this version. Future updates will require the new app bundle structure - automatic updates from older versions will not work. Please download and install the latest version from our website to continue receiving updates and security fixes.
 
@@ -45,7 +48,7 @@ Special Thanks to everyone who contributed their feedback to this release:
 - [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
 - [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
  
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.6.29.1252...v25.7.5.1158)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.12.19.1534...v25.12.28.1246)
 
 # Lighthouse v25.12.19.1534
 {: .d-inline-block }
