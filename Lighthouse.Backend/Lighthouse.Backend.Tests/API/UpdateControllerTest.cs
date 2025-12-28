@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.HasActiveUpdates, Is.False);
                 Assert.That(response.ActiveCount, Is.Zero);
             }
-
         }
 
         [Test]
@@ -56,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.HasActiveUpdates, Is.True);
                 Assert.That(response.ActiveCount, Is.EqualTo(1));
             }
-
         }
 
         [Test]
@@ -78,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.HasActiveUpdates, Is.True);
                 Assert.That(response.ActiveCount, Is.EqualTo(1));
             }
-
         }
 
         [Test]
@@ -101,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.HasActiveUpdates, Is.False);
                 Assert.That(response.ActiveCount, Is.EqualTo(0));
             }
-
         }
 
         [Test]
@@ -127,7 +123,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.HasActiveUpdates, Is.True);
                 Assert.That(response.ActiveCount, Is.EqualTo(2));
             }
-
         }
 
         private UpdateController CreateSubject()
