@@ -550,13 +550,13 @@ jobs:
             fi
 
         - name: Upload signed app bundle zip artifact
-          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
           with:
             name: Lighthouse-osx-app-${{ inputs.version }}
             path: ./publish/Lighthouse-${{ inputs.version }}.app.zip
 
         - name: Upload signed DMG artifact
-          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
           with:
             name: Lighthouse-osx-dmg-${{ inputs.version }}
             path: ./publish/Lighthouse-${{ inputs.version }}.dmg
