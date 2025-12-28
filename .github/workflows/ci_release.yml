@@ -90,12 +90,12 @@ jobs:
 
       - name: Prepare macOS release files
         run: |
-          cp LighthouseArtifacts/osx-dmg/Lighthouse-${{ inputs.version }}.dmg Lighthouse-osx-${{ inputs.version }}.dmg
-          cp LighthouseArtifacts/osx-app/Lighthouse-${{ inputs.version }}.app.zip Lighthouse-osx-${{ inputs.version }}.app.zip
+          cp LighthouseArtifacts/osx-dmg/Lighthouse-${{ inputs.version }}.dmg Lighthouse-osx.dmg
+          cp LighthouseArtifacts/osx-app/Lighthouse-${{ inputs.version }}.app.zip Lighthouse-osx.app.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx-${{ inputs.version }}.dmg,Lighthouse-osx-${{ inputs.version }}.app.zip,Lighthouse-linux-x64.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"
