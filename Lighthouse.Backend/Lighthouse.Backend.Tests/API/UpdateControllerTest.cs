@@ -23,12 +23,17 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetUpdateStatus();
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            var okResult = result.Result as OkObjectResult;
-            var response = okResult.Value as UpdateController.UpdateStatusResponse;
-            Assert.That(response.HasActiveUpdates, Is.False);
-            Assert.That(response.ActiveCount, Is.EqualTo(0));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var response = okResult.Value as UpdateController.UpdateStatusResponse;
+
+                Assert.That(response.HasActiveUpdates, Is.False);
+                Assert.That(response.ActiveCount, Is.Zero);
+            }
+
         }
 
         [Test]
@@ -41,13 +46,17 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var result = subject.GetUpdateStatus();
+            using (Assert.EnterMultipleScope())
+            {
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            var okResult = result.Result as OkObjectResult;
-            var response = okResult.Value as UpdateController.UpdateStatusResponse;
-            Assert.That(response.HasActiveUpdates, Is.True);
-            Assert.That(response.ActiveCount, Is.EqualTo(1));
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var response = okResult.Value as UpdateController.UpdateStatusResponse;
+                Assert.That(response.HasActiveUpdates, Is.True);
+                Assert.That(response.ActiveCount, Is.EqualTo(1));
+            }
+
         }
 
         [Test]
@@ -60,13 +69,16 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var result = subject.GetUpdateStatus();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var response = okResult.Value as UpdateController.UpdateStatusResponse;
+                Assert.That(response.HasActiveUpdates, Is.True);
+                Assert.That(response.ActiveCount, Is.EqualTo(1));
+            }
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            var okResult = result.Result as OkObjectResult;
-            var response = okResult.Value as UpdateController.UpdateStatusResponse;
-            Assert.That(response.HasActiveUpdates, Is.True);
-            Assert.That(response.ActiveCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -80,12 +92,16 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetUpdateStatus();
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            var okResult = result.Result as OkObjectResult;
-            var response = okResult.Value as UpdateController.UpdateStatusResponse;
-            Assert.That(response.HasActiveUpdates, Is.False);
-            Assert.That(response.ActiveCount, Is.EqualTo(0));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var response = okResult.Value as UpdateController.UpdateStatusResponse;
+                Assert.That(response.HasActiveUpdates, Is.False);
+                Assert.That(response.ActiveCount, Is.EqualTo(0));
+            }
+
         }
 
         [Test]
@@ -102,13 +118,16 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var result = subject.GetUpdateStatus();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var response = okResult.Value as UpdateController.UpdateStatusResponse;
+                Assert.That(response.HasActiveUpdates, Is.True);
+                Assert.That(response.ActiveCount, Is.EqualTo(2));
+            }
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            var okResult = result.Result as OkObjectResult;
-            var response = okResult.Value as UpdateController.UpdateStatusResponse;
-            Assert.That(response.HasActiveUpdates, Is.True);
-            Assert.That(response.ActiveCount, Is.EqualTo(2));
         }
 
         private UpdateController CreateSubject()
