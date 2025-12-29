@@ -34,7 +34,7 @@ jobs:
           uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
         - name: Setup .NET SDK
-          uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815
+          uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602
           with:
             dotnet-version: ${{ inputs.dotnet_version }}
 
