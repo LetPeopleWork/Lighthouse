@@ -223,7 +223,7 @@ jobs:
             ls -la "$RESOURCES_DIR"
 
         - name: Import code signing certificates
-          uses: apple-actions/import-codesign-certs@7aba93a48fb485ac3f280066eb26d8b42c1bbb70
+          uses: apple-actions/import-codesign-certs@b610f78488812c1e56b20e6df63ec42d833f2d14
           with:
             p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
             p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
