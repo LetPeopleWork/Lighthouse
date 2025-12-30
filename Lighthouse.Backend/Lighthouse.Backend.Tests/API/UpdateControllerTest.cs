@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 var response = okResult.Value as UpdateController.UpdateStatusResponse;
                 Assert.That(response.HasActiveUpdates, Is.False);
-                Assert.That(response.ActiveCount, Is.EqualTo(0));
+                Assert.That(response.ActiveCount, Is.Zero);
             }
         }
 

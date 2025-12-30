@@ -1,7 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Licensing;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -12,27 +11,18 @@ namespace Lighthouse.Backend.API
     [Route("api/[controller]")]
     [LicenseGuard(RequirePremium = true)]
     [ApiController]
-    public class ConfigurationController : ControllerBase
+    public class ConfigurationController(
+        ILogger<ConfigurationController> logger,
+        IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo,
+        IRepository<Team> teamRepo,
+        IRepository<Portfolio> projectRepo)
+        : ControllerBase
     {
-        private readonly ILogger<ConfigurationController> logger;
-        private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
-        private readonly IRepository<Team> teamRepo;
-        private readonly IRepository<Portfolio> projectRepo;
-
         private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
             Converters = { new JsonStringEnumConverter() }
         };
-
-        public ConfigurationController(
-            ILogger<ConfigurationController> logger, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IRepository<Team> teamRepo, IRepository<Portfolio> projectRepo)
-        {
-            this.logger = logger;
-            this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
-            this.teamRepo = teamRepo;
-            this.projectRepo = projectRepo;
-        }
 
         [HttpGet("export")]
         public IActionResult ExportConfiguration()

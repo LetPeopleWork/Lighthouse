@@ -59,6 +59,8 @@ dotnet_diagnostic.IDE0056.severity = none
 # IDE0008: Use explicit type
 dotnet_diagnostic.IDE0008.severity = none
 
+dotnet_diagnostic.CA1873.severity = none
+
 [*.{cs,vb}]
 #### Naming styles ####
 

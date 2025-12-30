@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             subject.Add(connection);
             await subject.Save();
 
-            var storedOption = DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).Single(o => o.Key == "NotSecret");
+            var storedOption = await DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).SingleAsync(o => o.Key == "NotSecret");
 
             Assert.That(storedOption.Value, Is.EqualTo(optionValue));
         }
@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             subject.Add(connection);
             await subject.Save();
 
-            var storedOption = DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).Single(o => o.Key == "secret");
+            var storedOption = await DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).SingleAsync(o => o.Key == "secret");
 
             Assert.That(storedOption.Value, Is.Not.EqualTo(optionValue));
         }
@@ -126,9 +126,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
-        private IRepository<WorkTrackingSystemConnection> CreateSubject()
+        private WorkTrackingSystemConnectionRepository CreateSubject()
         {
-            var repo = (WorkTrackingSystemConnectionRepository)ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Coult not resolve Work Tracking System Connection Repo");
+            var repo = (WorkTrackingSystemConnectionRepository)ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new NullReferenceException("Could not resolve Work Tracking System Connection Repo");
             repo.SeedBuiltInConnections();
 
             return repo;

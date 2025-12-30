@@ -15,26 +15,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
             var (_, expiredLicenseIsValid) =  licenseService.GetLicenseData();
-            
-            Assert.That(expiredLicenseIsValid, Is.True);
-            Assert.That(licenseService.CanUsePremiumFeatures(), Is.False);
-            
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(expiredLicenseIsValid, Is.True);
+                Assert.That(licenseService.CanUsePremiumFeatures(), Is.False);
+            }
+
             // Remove License
             await licenseService.ClearLicense();
 
             var (noLicenseInfo, noLicenseInfoIsValid) =  licenseService.GetLicenseData();
-            
-            Assert.That(noLicenseInfoIsValid, Is.False);
-            Assert.That(noLicenseInfo, Is.Null);
-            Assert.That(licenseService.CanUsePremiumFeatures(), Is.False);
-            
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(noLicenseInfoIsValid, Is.False);
+                Assert.That(noLicenseInfo, Is.Null);
+                Assert.That(licenseService.CanUsePremiumFeatures(), Is.False);
+            }
+
             // Load valid not expired license
             await licenseService.ImportLicense(TestLicenseData.ValidLicense);
             
             var (_, validLicense) =  licenseService.GetLicenseData();
-            
-            Assert.That(validLicense, Is.True);
-            Assert.That(licenseService.CanUsePremiumFeatures(), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(validLicense, Is.True);
+                Assert.That(licenseService.CanUsePremiumFeatures(), Is.True);
+            }
         }
         [Test]
         public async Task ValidLicenseLoaded_LoadNewLicense_IsValid()
@@ -45,17 +51,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
             var (_, expiredLicenseIsValid) =  licenseService.GetLicenseData();
-            
-            Assert.That(expiredLicenseIsValid, Is.True);
-            Assert.That(licenseService.CanUsePremiumFeatures(), Is.False);
-            
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(expiredLicenseIsValid, Is.True);
+                Assert.That(licenseService.CanUsePremiumFeatures(), Is.False);
+            }
+
             // Load valid not expired license
             await licenseService.ImportLicense(TestLicenseData.ValidLicense);
             
             var (_, validLicense) =  licenseService.GetLicenseData();
-            
-            Assert.That(validLicense, Is.True);
-            Assert.That(licenseService.CanUsePremiumFeatures(), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(validLicense, Is.True);
+                Assert.That(licenseService.CanUsePremiumFeatures(), Is.True);
+            }
         }
     }
 }
