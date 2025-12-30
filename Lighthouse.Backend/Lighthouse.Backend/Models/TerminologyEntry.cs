@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
     public class TerminologyEntry : IEntity
     {
-        [Required]
+        [JsonRequired]
         public int Id { get; set; }
 
         public string Key { get; set; } = string.Empty;
