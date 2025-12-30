@@ -42,11 +42,11 @@ jobs:
     - name: Install SonarCloud scanner
       run: |
         dotnet tool install --global dotnet-sonarscanner
-
+        
     - name: Begin SonarCloud analysis
       run: |
-        dotnet sonarscanner begin /k:"LetPeopleWork_Lighthouse" /o:"letpeoplework" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**/*,**/Lighthouse.Migrations.Postgres/**/*,**/Lighthouse.Frontend/**/*,**/Lighthouse.EndToEndTests/**/*,**/.github/**/*,**/.vscode/**/*,**/docs/**/*"
-
+        dotnet sonarscanner begin /k:"LetPeopleWork_Lighthouse" /o:"letpeoplework" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,**/.github/**,**/.vscode/**,**/docs/**" /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**"
+    
     - name: Build Backend (composite)
       uses: ./.github/actions/build-backend
       with:
