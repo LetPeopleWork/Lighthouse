@@ -121,7 +121,7 @@ Please include:
 - Potential impact
 - Your contact information (for follow-up)
 
-See [SECURITY.md](https://github.com/LetPeopleWork/Lighthouse/blob/main/SECURITY.md) for complete reporting instructions.
+See [SECURITY.md](https://github.com/LetPeopleWork/Lighthouse/blob/main/SECURITY.html) for complete reporting instructions.
 
 ---
 

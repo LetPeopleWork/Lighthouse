@@ -11,18 +11,18 @@ This section contains documentation required for regulatory compliance, includin
 
 ## Contents
 
-- [CRA Technical File](./cra-technical-file.md) — The CRA Technical Documentation File containing all required compliance artifacts
-- [Roles and Contacts](./roles-and-contacts.md) — Compliance ownership and security contacts
-- [Distribution and Versioning](./distribution-and-versioning.md) — How Lighthouse is distributed and versioned
-- [Security Update Policy](./security-update-policy.md) — Best-effort security update targets and process
-- [PSIRT Process](./psirt-process.md) — Internal vulnerability handling runbook
-- [CRA Self-Assessment](./cra-self-assessment.md) — Self-assessment checklist against CRA Annex I
-- [Declaration of Conformity](./declaration-of-conformity.md) — EU Declaration of Conformity template
+- [CRA Technical File](./cra-technical-file.html) — The CRA Technical Documentation File containing all required compliance artifacts
+- [Roles and Contacts](./roles-and-contacts.html) — Compliance ownership and security contacts
+- [Distribution and Versioning](./distribution-and-versioning.html) — How Lighthouse is distributed and versioned
+- [Security Update Policy](./security-update-policy.html) — Best-effort security update targets and process
+- [PSIRT Process](./psirt-process.html) — Internal vulnerability handling runbook
+- [CRA Self-Assessment](./cra-self-assessment.html) — Self-assessment checklist against CRA Annex I
+- [Declaration of Conformity](./declaration-of-conformity.html) — EU Declaration of Conformity template
 
 ## Quick Links
 
 - **Report a vulnerability**: [security@letpeople.work](mailto:security@letpeople.work)
-- **SECURITY.md**: See [SECURITY.md](https://github.com/LetPeopleWork/Lighthouse/blob/main/SECURITY.md) in the repository root
+- **SECURITY.md**: See [SECURITY.md](https://github.com/LetPeopleWork/Lighthouse/blob/main/SECURITY.html) in the repository root
 
 ## CRA Classification
 

@@ -310,7 +310,7 @@ Lighthouse includes an update check mechanism:
 
 ### 8.3 Security Updates
 
-See [Security Update Policy](./security-update-policy.md) for:
+See [Security Update Policy](./security-update-policy.html) for:
 - Vulnerability response timelines
 - Severity classification
 - Communication channels
@@ -363,9 +363,9 @@ All changes go through:
 
 ### 10.3 Process Documentation
 
-- [SECURITY.md](https://github.com/LetPeopleWork/Lighthouse/blob/main/SECURITY.md) — Public reporting instructions
-- [PSIRT Process](./psirt-process.md) — Internal handling process
-- [Security Update Policy](./security-update-policy.md) — Response timelines
+- [SECURITY.md](https://github.com/LetPeopleWork/Lighthouse/blob/main/SECURITY.html) — Public reporting instructions
+- [PSIRT Process](./psirt-process.html) — Internal handling process
+- [Security Update Policy](./security-update-policy.html) — Response timelines
 
 ---
 
@@ -380,11 +380,11 @@ As permitted for standard products with digital elements under CRA.
 
 ### 11.2 Self-Assessment
 
-See [CRA Self-Assessment](./cra-self-assessment.md) for detailed checklist.
+See [CRA Self-Assessment](./cra-self-assessment.html) for detailed checklist.
 
 ### 11.3 Declaration of Conformity
 
-See [Declaration of Conformity](./declaration-of-conformity.md) for the EU DoC.
+See [Declaration of Conformity](./declaration-of-conformity.html) for the EU DoC.
 
 ---
 
@@ -403,12 +403,12 @@ See [Declaration of Conformity](./declaration-of-conformity.md) for the EU DoC.
 
 ### 12.3 Compliance Documents
 
-- [Roles and Contacts](./roles-and-contacts.md)
-- [Distribution and Versioning](./distribution-and-versioning.md)
-- [Security Update Policy](./security-update-policy.md)
-- [PSIRT Process](./psirt-process.md)
-- [CRA Self-Assessment](./cra-self-assessment.md)
-- [Declaration of Conformity](./declaration-of-conformity.md)
+- [Roles and Contacts](./roles-and-contacts.html)
+- [Distribution and Versioning](./distribution-and-versioning.html)
+- [Security Update Policy](./security-update-policy.html)
+- [PSIRT Process](./psirt-process.html)
+- [CRA Self-Assessment](./cra-self-assessment.html)
+- [Declaration of Conformity](./declaration-of-conformity.html)
 
 ---
 

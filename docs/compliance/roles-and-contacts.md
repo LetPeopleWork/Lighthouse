@@ -52,7 +52,7 @@ This document defines the roles and contacts responsible for CRA compliance and 
 
 ## Contact Availability
 
-LetPeopleWork GmbH is a small company (2 persons) with limited capacity. Response times are best-effort targets; see [Security Update Policy](./security-update-policy.md) for details.
+LetPeopleWork GmbH is a small company (2 persons) with limited capacity. Response times are best-effort targets; see [Security Update Policy](./security-update-policy.html) for details.
 
 ---
 
