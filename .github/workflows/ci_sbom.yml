@@ -65,7 +65,7 @@ jobs:
       - name: Generate Frontend SBOM
         working-directory: ./Lighthouse.Frontend
         run: |
-          npx @cyclonedx/cyclonedx-npm --output-file frontend-sbom.json --spec-version 1.5 --output-format json
+          pnpm dlx @cyclonedx/cdxgen -o frontend-sbom.json -t js --spec-version 1.5
 
       # Combine SBOMs into consolidated report
       - name: Create Consolidated SBOM Directory
