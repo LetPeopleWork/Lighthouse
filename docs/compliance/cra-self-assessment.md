@@ -28,7 +28,7 @@ This checklist documents the self-assessment of Lighthouse against the essential
 |-----|-------------|--------|------------------|
 | 1.1 | Products shall be designed, developed, and produced to ensure an appropriate level of cybersecurity | ✅ Implemented | Secure coding practices, code review, SonarCloud analysis |
 | 1.2 | Products shall be delivered without known exploitable vulnerabilities | ✅ Implemented | Dependency scanning via Dependabot, pre-release testing |
-| 1.3 | Products shall be delivered with a secure by default configuration | 🔄 In Progress | Reviewing default configurations for security hardening |
+| 1.3 | Products shall be delivered with a secure by default configuration | ✅ Implemented | Unique encryption keys can be specified per installation, HTTPS enabled, security.txt |
 | 1.4 | Products shall ensure protection from unauthorized access | ✅ Implemented | HTTPS by default, token encryption at rest |
 | 1.5 | Products shall protect the confidentiality of data | ✅ Implemented | Encrypted storage for sensitive data (tokens, credentials) |
 | 1.6 | Products shall protect the integrity of data | ✅ Implemented | Database integrity, input validation |
@@ -79,24 +79,23 @@ This checklist documents the self-assessment of Lighthouse against the essential
 
 | Category | Total | ✅ Implemented | 🔄 In Progress | ❌ Not Started |
 |----------|-------|----------------|----------------|----------------|
-| Security by Design | 9 | 8 | 1 | 0 |
+| Security by Design | 9 | 9 | 0 | 0 |
 | Vulnerability Handling | 7 | 7 | 0 | 0 |
 | SBOM | 3 | 0 | 3 | 0 |
 | Manufacturer Obligations | 7 | 7 | 0 | 0 |
-| **Total** | **26** | **22** | **4** | **0** |
+| **Total** | **26** | **23** | **3** | **0** |
 
 ## Open Items
 
 | Item | Description | Target Date | Owner |
 |------|-------------|-------------|-------|
 | 1 | Complete SBOM generation workflow | Q1 2026 | Engineering |
-| 2 | Review and document secure-by-default configuration | Q1 2026 | Engineering |
-| 3 | Attach SBOM to GitHub Releases | Q1 2026 | Engineering |
-| 4 | Complete CRA Technical File | Q1 2026 | CRA Compliance Owner |
+| 2 | Attach SBOM to GitHub Releases | Q1 2026 | Engineering |
+| 3 | Complete CRA Technical File | Q1 2026 | CRA Compliance Owner |
 
 ## Conclusion
 
-Based on this self-assessment, Lighthouse substantially meets the essential cybersecurity requirements of CRA Annex I for a standard product with digital elements. The remaining items (SBOM integration, secure-by-default documentation) are in progress and targeted for completion in Q1 2026.
+Based on this self-assessment, Lighthouse substantially meets the essential cybersecurity requirements of CRA Annex I for a standard product with digital elements. The remaining items (SBOM integration) are in progress and targeted for completion in Q1 2026.
 
 Upon completion of all items and final review, the EU Declaration of Conformity may be signed.
 
