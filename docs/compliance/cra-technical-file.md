@@ -249,13 +249,15 @@ Lighthouse is self-hosted software. Users accept responsibility for:
 
 | Control | Description | Status |
 |---------|-------------|--------|
-| Token encryption | API tokens encrypted at rest | ✅ Implemented |
+| Token encryption | API tokens encrypted at rest with unique per-installation keys | ✅ Implemented |
 | HTTPS | TLS encryption for all connections | ✅ Implemented |
 | Input validation | API input validation and sanitization | ✅ Implemented |
-| Dependency scanning | Automated vulnerability scanning | ✅ Implemented |
+| Dependency scanning | Automated vulnerability scanning (Dependabot, OSV Scanner) | ✅ Implemented |
 | Code signing | Signed executables (Windows, macOS) | ✅ Implemented |
 | Container signing | Cosign signatures on Docker images | ✅ Implemented |
 | Code analysis | SonarCloud static analysis | ✅ Implemented |
+| SBOM generation | Automated SBOM generation and distribution | ✅ Implemented |
+| security.txt | RFC 9116 security.txt at /.well-known/security.txt | ✅ Implemented |
 
 ### 6.3 Logging
 
@@ -275,7 +277,7 @@ Logging is minimal and avoids personal data. Users control log retention.
 
 | Format | Location | Update Frequency |
 |--------|----------|------------------|
-| SPDX | Attached to GitHub Releases | Each release |
+| SPDX 2.2 (backend) + CycloneDX 1.5 (frontend) | `Lighthouse-SBOM.zip` attached to GitHub Releases | Each release |
 
 ### 7.2 SBOM Scope
 
@@ -286,9 +288,13 @@ The SBOM includes:
 
 ### 7.3 SBOM Generation
 
-SBOM is generated automatically during the CI/CD release process.
+SBOM is generated automatically during the CI/CD release process using:
+- **Backend**: Microsoft SBOM Tool → SPDX 2.2 JSON format
+- **Frontend**: CycloneDX npm tool → CycloneDX 1.5 JSON format
 
-*Note: SBOM generation is being implemented as part of CRA conformance work.*
+Both formats are consolidated into a single `Lighthouse-SBOM.zip` artifact attached to each GitHub Release.
+
+**Workflow**: [`.github/workflows/ci_sbom.yml`](https://github.com/LetPeopleWork/Lighthouse/blob/main/.github/workflows/ci_sbom.yml)
 
 ---
 

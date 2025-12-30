@@ -52,9 +52,9 @@ This checklist documents the self-assessment of Lighthouse against the essential
 
 | Req | Requirement | Status | Evidence / Notes |
 |-----|-------------|--------|------------------|
-| 3.1 | Maintain SBOM covering components and dependencies | 🔄 In Progress | SBOM generation workflow being implemented |
-| 3.2 | SBOM in commonly used, machine-readable format | 🔄 In Progress | SPDX format selected |
-| 3.3 | SBOM available to users | 🔄 In Progress | Will be attached to GitHub Releases |
+| 3.1 | Maintain SBOM covering components and dependencies | ✅ Implemented | SBOM generation workflow in ci_sbom.yml |
+| 3.2 | SBOM in commonly used, machine-readable format | ✅ Implemented | SPDX 2.2 (backend) + CycloneDX 1.5 (frontend) |
+| 3.3 | SBOM available to users | ✅ Implemented | Attached to GitHub Releases as Lighthouse-SBOM.zip |
 
 ## Part II: Vulnerability Handling Requirements for Manufacturers
 
@@ -81,23 +81,19 @@ This checklist documents the self-assessment of Lighthouse against the essential
 |----------|-------|----------------|----------------|----------------|
 | Security by Design | 9 | 9 | 0 | 0 |
 | Vulnerability Handling | 7 | 7 | 0 | 0 |
-| SBOM | 3 | 0 | 3 | 0 |
+| SBOM | 3 | 3 | 0 | 0 |
 | Manufacturer Obligations | 7 | 7 | 0 | 0 |
-| **Total** | **26** | **23** | **3** | **0** |
+| **Total** | **26** | **26** | **0** | **0** |
 
 ## Open Items
 
-| Item | Description | Target Date | Owner |
-|------|-------------|-------------|-------|
-| 1 | Complete SBOM generation workflow | Q1 2026 | Engineering |
-| 2 | Attach SBOM to GitHub Releases | Q1 2026 | Engineering |
-| 3 | Complete CRA Technical File | Q1 2026 | CRA Compliance Owner |
+**No open items.** All CRA Annex I requirements have been implemented.
 
 ## Conclusion
 
-Based on this self-assessment, Lighthouse substantially meets the essential cybersecurity requirements of CRA Annex I for a standard product with digital elements. The remaining items (SBOM integration) are in progress and targeted for completion in Q1 2026.
+Based on this self-assessment, Lighthouse **fully meets** the essential cybersecurity requirements of CRA Annex I for a standard product with digital elements.
 
-Upon completion of all items and final review, the EU Declaration of Conformity may be signed.
+**Status**: Ready for Declaration of Conformity signature.
 
 ---
 

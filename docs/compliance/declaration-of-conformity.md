@@ -7,12 +7,6 @@ nav_order: 7
 
 # EU Declaration of Conformity
 
-## DRAFT — NOT YET IN EFFECT
-
-> **⚠️ This is a DRAFT document.** It will be signed and become effective once all CRA requirements have been verified and the self-assessment is complete.
-
----
-
 ## EU DECLARATION OF CONFORMITY
 
 **Regulation (EU) 2024/2847 — Cyber Resilience Act**
@@ -26,7 +20,7 @@ nav_order: 7
 | **Product Name** | Lighthouse |
 | **Product Description** | Flow metrics, predictability, and Monte Carlo forecasting tool for software delivery |
 | **Product Type** | Software application (standard product with digital elements) |
-| **Applicable Versions** | [To be specified upon signing] |
+| **Applicable Versions** | v26.xx and higher (all releases from 2026 onwards) |
 | **Unique Identification** | GitHub Release tags (format: vYY.MM.DD.build) |
 
 ---
@@ -36,7 +30,7 @@ nav_order: 7
 | Field | Value |
 |-------|-------|
 | **Name** | LetPeopleWork GmbH |
-| **Address** | [Registered address, Switzerland] |
+| **Address** | Mühlackerstrasse 108, 8046 Zürich, Switzerland |
 | **Contact** | lighthouse@letpeople.work |
 | **Security Contact** | security@letpeople.work |
 | **Website** | https://letpeople.work |
@@ -107,35 +101,28 @@ The documentation includes:
 
 ### 7. CE Marking
 
-Upon signing of this declaration, the CE marking will be applied to:
+Upon signing of this declaration, the CE marking has been applied to:
 
-- [ ] Product installer/executable
+- [x] Product user interface (About dialog)
+- [x] Product documentation
 - [ ] Product website download page
-- [ ] Product documentation
 
 In accordance with Article 30 of Regulation (EU) 2024/2847.
 
 ---
 
 ### 8. Signature
-
-**This declaration has NOT been signed. It is a DRAFT pending completion of:**
-
-- [ ] SBOM generation and inclusion in releases
-- [ ] Final review of self-assessment checklist
-- [ ] Verification of all essential requirements
-
 ---
 
 **Signed for and on behalf of LetPeopleWork GmbH:**
 
 | Field | Value |
 |-------|-------|
-| **Name** | [To be completed] |
-| **Position** | [To be completed] |
-| **Date** | [To be completed] |
-| **Place** | [To be completed] |
-| **Signature** | [To be completed] |
+| **Name** | Benjamin Huser-Berta |
+| **Position** | Authorized Representative |
+| **Date** | 30 December 2025 |
+| **Place** | Zürich, Switzerland |
+| **Signature** | ![Signature](Signature.png) |
 
 ---
 
@@ -143,9 +130,11 @@ In accordance with Article 30 of Regulation (EU) 2024/2847.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 0.1 (DRAFT) | 2025-12-30 | Benjamin Huser-Berta | Initial draft |
+| 1.0 | 2025-12-30 | Benjamin Huser-Berta | Finalized and signed declaration |
 
-**Next Review**: Upon completion of all open items from CRA self-assessment
+**Retention**: This document is retained in perpetuity through version control (Git) and stored on GitHub, exceeding the 10-year requirement of Article 31.
+
+**Next Review**: Annual review or upon significant product changes
 
 ---
 

@@ -1,3 +1,4 @@
+import InfoIcon from "@mui/icons-material/Info";
 import UpdateIcon from "@mui/icons-material/Update";
 import {
 	Button,
@@ -28,6 +29,7 @@ const LighthouseVersion: React.FC = () => {
 	const [hasError, setHasError] = useState(false);
 	const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
 	const [isUpdateSupported, setIsUpdateSupported] = useState(false);
+	const [showAboutDialog, setShowAboutDialog] = useState(false);
 	const [newReleases, setNewReleases] = useState<ILighthouseRelease[]>([]);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [isInstalling, setIsInstalling] = useState(false);
@@ -195,6 +197,15 @@ const LighthouseVersion: React.FC = () => {
 		setNotificationPreference("show");
 	};
 
+	const handleAboutOpen = (e: React.MouseEvent) => {
+		e.preventDefault();
+		setShowAboutDialog(true);
+	};
+
+	const handleAboutClose = () => {
+		setShowAboutDialog(false);
+	};
+
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 			<div style={{ display: "flex", alignItems: "center" }}>
@@ -213,6 +224,15 @@ const LighthouseVersion: React.FC = () => {
 				>
 					{version}
 				</Button>
+				<Tooltip title="About Lighthouse">
+					<IconButton
+						onClick={handleAboutOpen}
+						size="small"
+						sx={{ marginLeft: 0.5, color: theme.palette.primary.main }}
+					>
+						<InfoIcon fontSize="small" />
+					</IconButton>
+				</Tooltip>
 				{isUpdateAvailable && (
 					<Tooltip title="New Version Available">
 						<IconButton
@@ -315,6 +335,58 @@ const LighthouseVersion: React.FC = () => {
 						autoFocus
 					>
 						Reload Page
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog
+				open={showAboutDialog}
+				onClose={handleAboutClose}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle>About Lighthouse</DialogTitle>
+				<DialogContent>
+					<Typography variant="body1" gutterBottom>
+						<strong>Lighthouse {version}</strong>
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+						Flow metrics, predictability, and Monte Carlo forecasting tool for
+						software delivery
+					</Typography>
+
+					<Typography variant="body2" sx={{ mb: 1, mt: 2 }}>
+						<strong>CE Marking</strong>
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+						CE | EU Cyber Resilience Act Conformant
+					</Typography>
+
+					<Typography variant="body2" sx={{ mb: 1 }}>
+						<strong>Compliance</strong>
+					</Typography>
+					<Typography variant="body2" color="text.secondary">
+						This product conforms to EU Regulation 2024/2847 (Cyber Resilience
+						Act).{" "}
+						<Button
+							component={Link}
+							to="https://docs.lighthouse.letpeople.work/compliance/declaration-of-conformity.html"
+							target="_blank"
+							rel="noopener noreferrer"
+							size="small"
+							sx={{ textTransform: "none", p: 0, minWidth: 0 }}
+						>
+							Declaration of Conformity
+						</Button>
+					</Typography>
+
+					<Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
+						© 2025 LetPeopleWork GmbH. Licensed under MIT License.
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleAboutClose} variant="contained">
+						Close
 					</Button>
 				</DialogActions>
 			</Dialog>
