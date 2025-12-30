@@ -1,0 +1,9 @@
+# Lighthouse Security Policy
+# See https://securitytxt.org/ and RFC 9116
+
+Contact: mailto:security@letpeople.work
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en, de
+Canonical: https://docs.lighthouse.letpeople.work/.well-known/security.txt
+Policy: https://docs.lighthouse.letpeople.work/compliance/security-update-policy.html
+Acknowledgments: https://github.com/LetPeopleWork/Lighthouse/security/advisories

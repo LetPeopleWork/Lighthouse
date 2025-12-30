@@ -78,6 +78,11 @@ jobs:
           name: Lighthouse-linux-x64-${{ inputs.version }}
           path: LighthouseArtifacts/linux-x64
 
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: Lighthouse-SBOM-${{ inputs.version }}
+          path: LighthouseArtifacts/sbom
+
       - uses: vimtor/action-zip@1379ea20d4c5705669ba81fd626dd01b1c738f26
         with:
           files: LighthouseArtifacts/win-x64
@@ -93,9 +98,14 @@ jobs:
           cp LighthouseArtifacts/osx-dmg/Lighthouse-${{ inputs.version }}.dmg Lighthouse-osx.dmg
           cp LighthouseArtifacts/osx-app/Lighthouse-${{ inputs.version }}.app.zip Lighthouse-osx.app.zip
 
+      - uses: vimtor/action-zip@1379ea20d4c5705669ba81fd626dd01b1c738f26
+        with:
+          files: LighthouseArtifacts/sbom
+          dest: Lighthouse-SBOM.zip
+
       - uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"

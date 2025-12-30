@@ -1,0 +1,124 @@
+name: Generate SBOM
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: "Release version for SBOM filename"
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          fetch-depth: '0'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+        with:
+          version: 9
+
+      - name: Install pnpm dependencies
+        working-directory: ./Lighthouse.Frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore .NET dependencies
+        working-directory: ./Lighthouse.Backend
+        run: dotnet restore
+
+      # Generate SBOM for .NET Backend using Microsoft SBOM Tool
+      - name: Install Microsoft SBOM Tool
+        run: |
+          dotnet tool install --global Microsoft.Sbom.DotNetTool
+
+      - name: Generate Backend SBOM (SPDX)
+        working-directory: ./Lighthouse.Backend
+        run: |
+          sbom-tool generate \
+            -b . \
+            -bc ./Lighthouse.Backend \
+            -pn Lighthouse \
+            -pv ${{ inputs.version }} \
+            -ps LetPeopleWork \
+            -nsb https://github.com/LetPeopleWork/Lighthouse \
+            -m .
+
+      # Generate SBOM for Frontend using CycloneDX (converts to SPDX later or use as-is)
+      - name: Generate Frontend SBOM
+        working-directory: ./Lighthouse.Frontend
+        run: |
+          npx @cyclonedx/cyclonedx-npm --output-file frontend-sbom.json --spec-version 1.5 --output-format json
+
+      # Combine SBOMs into consolidated report
+      - name: Create Consolidated SBOM Directory
+        run: mkdir -p sbom-output
+
+      - name: Copy Backend SBOM
+        run: |
+          cp ./Lighthouse.Backend/_manifest/spdx_2.2/manifest.spdx.json ./sbom-output/lighthouse-backend-sbom.spdx.json || echo "Backend SBOM not found in expected location"
+          # Try alternate location
+          find ./Lighthouse.Backend -name "*.spdx.json" -exec cp {} ./sbom-output/lighthouse-backend-sbom.spdx.json \; 2>/dev/null || true
+
+      - name: Copy Frontend SBOM
+        run: cp ./Lighthouse.Frontend/frontend-sbom.json ./sbom-output/lighthouse-frontend-sbom.cdx.json
+
+      - name: Create SBOM Summary
+        run: |
+          cat > ./sbom-output/SBOM-README.md << 'EOF'
+          # Lighthouse Software Bill of Materials (SBOM)
+
+          This directory contains the Software Bill of Materials for Lighthouse version ${{ inputs.version }}.
+
+          ## Files
+
+          - `lighthouse-backend-sbom.spdx.json` - Backend (.NET) dependencies in SPDX 2.2 format
+          - `lighthouse-frontend-sbom.cdx.json` - Frontend (Node.js) dependencies in CycloneDX 1.5 format
+
+          ## Format Notes
+
+          - **Backend**: Generated using Microsoft SBOM Tool, SPDX 2.2 JSON format
+          - **Frontend**: Generated using CycloneDX npm, CycloneDX 1.5 JSON format
+
+          Both formats are machine-readable and widely supported by vulnerability scanning tools.
+
+          ## Usage
+
+          These SBOMs can be used to:
+          - Audit software dependencies
+          - Scan for known vulnerabilities
+          - Verify software composition
+          - Meet regulatory requirements (e.g., EU Cyber Resilience Act)
+
+          ## More Information
+
+          - [Lighthouse Documentation](https://docs.lighthouse.letpeople.work)
+          - [Compliance Documentation](https://docs.lighthouse.letpeople.work/compliance/)
+          - [CRA Technical File](https://docs.lighthouse.letpeople.work/compliance/cra-technical-file.html)
+
+          Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          EOF
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Lighthouse-SBOM-${{ inputs.version }}
+          path: ./sbom-output/
+          retention-days: 90

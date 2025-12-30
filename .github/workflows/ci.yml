@@ -16,6 +16,7 @@ on:
   workflow_dispatch:  
 
 jobs:
+
   changes:
     uses: ./.github/workflows/ci_changes.yml
     name: Detect Changes
@@ -75,6 +76,17 @@ jobs:
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
     secrets: inherit
+
+  sbom:
+    needs: tag
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    uses: ./.github/workflows/ci_sbom.yml
+    name: Generate SBOM
+    permissions:
+      contents: read
+    with:
+      version: ${{ needs.tag.outputs.version }}
+
   
   # Linux verification with EndToEnd tests
   verifysqlite:
@@ -153,7 +165,7 @@ jobs:
       version: ${{ needs.tag.outputs.version }}
 
   release:
-    needs: [tag, docker, verifymacos, verifywindows]
+    needs: [tag, docker, sbom, verifymacos, verifywindows]
     # Run tag even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_release.yml
