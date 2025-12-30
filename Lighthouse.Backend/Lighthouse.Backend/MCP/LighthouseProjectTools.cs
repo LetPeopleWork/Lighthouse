@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.MCP
                     return $"Project {projectName} features do not have forecast data available";
                 }
 
-                var totalRemainingWork = featuresWithWork.Sum(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems));
+                var totalRemainingWork = featuresWithWork.Sum((Feature f) => f.FeatureWork.Sum((FeatureWork fw) => fw.RemainingWorkItems));
 
                 return ToJson(new
                 {

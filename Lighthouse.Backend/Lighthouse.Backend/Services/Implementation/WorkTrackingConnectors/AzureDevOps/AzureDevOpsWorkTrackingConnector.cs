@@ -249,7 +249,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        private async Task<T> ExecuteWithThrottle<T>(string url, Func<Task<T>> action)
+        private static async Task<T> ExecuteWithThrottle<T>(string url, Func<Task<T>> action)
         {
             var limiter = GetLimiter(url);
             await limiter.WaitAsync();
@@ -353,7 +353,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return await GetWorkItemsInChunks(workItemIds, witClient, WorkItemExpand.Links, fields);
         }
 
-        private async Task<IEnumerable<AdoWorkItem>> GetWorkItemsInChunks(IEnumerable<int> workItemIds, WorkItemTrackingHttpClient witClient, WorkItemExpand expand, IEnumerable<string> fields)
+        private static async Task<IEnumerable<AdoWorkItem>> GetWorkItemsInChunks(IEnumerable<int> workItemIds, WorkItemTrackingHttpClient witClient, WorkItemExpand expand, IEnumerable<string> fields)
         {
             var url = witClient.BaseAddress!.ToString();
             var workItems = new List<AdoWorkItem>();
@@ -414,7 +414,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (startedDate, closedDate);
         }
 
-        private async Task<DateTime?> GetStateTransitionDateThrottled(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore)
+        private static async Task<DateTime?> GetStateTransitionDateThrottled(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore)
         {
             if (!workItemId.HasValue) return null;
 

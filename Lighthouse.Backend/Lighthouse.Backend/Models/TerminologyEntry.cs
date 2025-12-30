@@ -1,9 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
     public class TerminologyEntry : IEntity
     {
+        [Required]
         public int Id { get; set; }
 
         public string Key { get; set; } = string.Empty;

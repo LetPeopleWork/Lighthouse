@@ -9,9 +9,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
     public class WorkTrackingSystemConnectionRepository : RepositoryBase<WorkTrackingSystemConnection>
     {
-        private static bool seeded;
+        private static bool seeded = false;
 
         private readonly ILogger<WorkTrackingSystemConnectionRepository> logger;
+
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
 
         private readonly string AzureDevOpsCsvConnectionName = "CSV Azure DevOps";

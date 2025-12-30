@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Services.Implementation
                      f.StateCategory == StateCategories.Doing))
                 .ToList();
 
-            // Filter to only features that were closed in the date range OR are currently in ToDo/Doing state
+            // Filter to only features that were closed in the date range OR are currently in To Do/Doing state
             return allFeatures.Where(f =>
                 (f.StateCategory == StateCategories.Done &&
                  f.ClosedDate.HasValue &&

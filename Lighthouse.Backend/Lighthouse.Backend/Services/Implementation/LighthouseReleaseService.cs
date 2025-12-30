@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation
             this.assemblyService = assemblyService;
             this.platformService = platformService;
             this.logger = logger;
-            
+
             httpClient = new HttpClient();
         }
 
@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     return false;
                 }
 
-                logger.LogInformation("Update script created: {path}", updateScriptPath);
+                logger.LogDebug("Update script created: {Path}", updateScriptPath);
 
                 _ = Task.Run(async () =>
                 {
@@ -261,10 +261,22 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static string GetOperatingSystemIdentifier()
         {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" :
-                                 RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
-                                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" :
-                                 throw new PlatformNotSupportedException("Current OS platform is not supported for updates");
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return "win";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return "linux";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return "osx";
+            }
+            else
+            {
+                throw new PlatformNotSupportedException("Current OS platform is not supported for updates");
+            }
         }
 
         private string CreateUpdateScript(string operatingSystem, string sourcePath, string destinationPath, int processId, string executablePath, string arguments)
@@ -298,7 +310,7 @@ exit";
                 else // Linux/MacOS
                 {
                     scriptPath = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}.sh");
-                    
+
                     scriptContent = $@"#!/bin/bash
 set -e
 

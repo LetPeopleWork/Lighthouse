@@ -435,7 +435,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static async Task<string> GetCustomFieldByName(HttpClient jiraClient, string customFieldName)
         {
             var url = "rest/api/latest/field";
-            var customField = string.Empty;
 
             var response = await jiraClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
@@ -443,16 +442,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
 
-            foreach (var field in jsonResponse.RootElement.EnumerateArray())
-            {
-                if (field.GetProperty(JiraFieldNames.NamePropertyName).GetString() == customFieldName)
-                {
-                    customField = field.GetProperty(JiraFieldNames.IdPropertyName).GetString() ?? string.Empty;
-                    break;
-                }
-            }
+            var element = jsonResponse.RootElement.EnumerateArray().SingleOrDefault(
+                f => f.GetProperty(JiraFieldNames.NamePropertyName).GetString() == customFieldName
+            );
 
-            return customField;
+            return element.GetProperty(JiraFieldNames.IdPropertyName).GetString() ?? string.Empty;
         }
 
         private WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner)
@@ -541,9 +535,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 isLast = maxResultsOverride.HasValue || totalResultsActual < startAt;
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
-                {
-                    var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
-                    
+                {                    
                     var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField, flaggedField);
                     issues.Add(issue);
                 }

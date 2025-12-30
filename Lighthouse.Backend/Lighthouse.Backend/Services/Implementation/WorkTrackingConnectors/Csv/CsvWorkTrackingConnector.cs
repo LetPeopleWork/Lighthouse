@@ -130,9 +130,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
                 return Task.FromResult(isValid);
             }
-            catch
+            catch (Exception ex)
             {
-                logger.LogInformation("Could not read CSV for {Name} - Validation failed", owner.Name);
+                logger.LogInformation(ex, "Could not read CSV for {Name} - Validation failed", owner.Name);
                 return Task.FromResult(true);
             }
         }
@@ -242,7 +242,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return csv;
         }
 
-        private string[] GetRequiredColumns(WorkTrackingSystemConnection connection)
+        private static string[] GetRequiredColumns(WorkTrackingSystemConnection connection)
         {
             return [
                 GetOptionByKey(connection, CsvWorkTrackingOptionNames.IdHeader),

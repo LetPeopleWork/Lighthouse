@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public override IQueryable<Feature> GetAllByPredicate(Expression<Func<Feature, bool>> predicate)
         {
-            var features = GetFeatures().Where(predicate).ToList().OrderBy(f => f, new FeatureComparer());
+            var features = GetFeatures().Where(predicate).AsEnumerable().OrderBy(f => f, new FeatureComparer());
 
             return features.AsQueryable();
         }

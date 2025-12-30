@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
         
-        private bool IsDocker()
+        private static bool IsDocker()
         {
             // Check for common Docker environment indicators
             return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ||

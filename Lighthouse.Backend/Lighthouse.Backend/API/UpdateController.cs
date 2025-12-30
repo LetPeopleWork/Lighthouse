@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API
                 .Where(status => status.Status is UpdateProgress.Queued or UpdateProgress.InProgress)
                 .ToList();
 
-            var response = new UpdateStatusResponse(activeUpdates.Any(), activeUpdates.Count);
+            var response = new UpdateStatusResponse(activeUpdates.Count > 0, activeUpdates.Count);
 
             return Ok(response);
         }
