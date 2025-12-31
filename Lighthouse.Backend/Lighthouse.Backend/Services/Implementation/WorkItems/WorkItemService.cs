@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await RefreshFeatures(project);
             await RefreshParentFeatures(project);
-            await UpdateUnparentedItems(project);
 
             await UpdateRemainingWorkForProject(project);
 
@@ -48,9 +47,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             foreach (var project in team.Portfolios)
             {
-                var unparentedFeature = await GetOrAddUnparentedFeature(project);
-                await UpdateUnparentedItemsForTeam(project, unparentedFeature, team);
-
                 await UpdateRemainingWorkForProject(project);
             }
 
@@ -251,107 +247,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             return buckets;
-        }
-
-        private async Task UpdateUnparentedItems(Portfolio project)
-        {
-            logger.LogInformation("Getting Unparented Items for Project {ProjectName}", project.Name);
-
-            var unparentedFeature = await GetOrAddUnparentedFeature(project);
-
-            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
-            {
-                logger.LogDebug("Skipping Unparented Items for Project {ProjectName} - No Query defined", project.Name);
-                project.Features.Remove(unparentedFeature);
-                featureRepository.Remove(unparentedFeature.Id);
-
-                return;
-            }
-
-            foreach (var team in project.Teams)
-            {
-                await UpdateUnparentedItemsForTeam(project, unparentedFeature, team);
-            }
-        }
-
-        private async Task UpdateUnparentedItemsForTeam(Portfolio project, Feature unparentedFeature, Team team)
-        {
-            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
-            {
-                return;
-            }
-
-            var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
-            var potentiallyUnparentedWorkItems = await workItemService.GetWorkItemsIdsForTeamWithAdditionalQuery(team, project.UnparentedItemsQuery);
-
-            foreach (var potentiallyUnparentedWorkItem in potentiallyUnparentedWorkItems)
-            {
-                var workItem = workItemRepository.GetByPredicate(wi => wi.ReferenceId == potentiallyUnparentedWorkItem);
-                AssignParentToWorkItem(project, unparentedFeature, team, workItem);
-            }
-
-            await workItemRepository.Save();
-        }
-
-        private void AssignParentToWorkItem(Portfolio project, Feature unparentedFeature, Team team, WorkItem? workItem)
-        {
-            if (workItem != null)
-            {
-                if (FeatureExists(workItem.ParentReferenceId))
-                {
-                    logger.LogInformation("Work Item {ItemReference} of Team {TeamName} is already set to {FeatureReference} - skipping", workItem.ReferenceId, team.Name, workItem.ParentReferenceId);
-                    return;
-                }
-
-                logger.LogInformation("Work Item {ItemReference} of Team {TeamName} is unparented and matches the query - mark it to belong to Project {ProjectName}", workItem.ReferenceId, team.Name, project.Name);
-
-                workItem.ParentReferenceId = unparentedFeature.ReferenceId;
-                workItemRepository.Update(workItem);
-            }
-        }
-
-        private bool FeatureExists(string featureReferenceId)
-        {
-            if (!string.IsNullOrEmpty(featureReferenceId))
-            {
-                var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureReferenceId);
-                return feature != null;
-            }
-
-            return false;
-        }
-
-        private async Task<Feature> GetOrAddUnparentedFeature(Portfolio project)
-        {
-            var referenceId = Guid.NewGuid().ToString();
-            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = referenceId, IsUnparentedFeature = true, State = "In Progress" };
-            unparentedFeature.Portfolios.Add(project);
-
-            var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;
-
-            if (unparentedFeatureId != null)
-            {
-                unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
-
-                // We need a unique referenceId for the unparented feature - previously all unparented features had the same referenceId.
-                if (unparentedFeature.ReferenceId == $"{int.MaxValue - 1}")
-                {
-                    unparentedFeature.ReferenceId = referenceId;
-                    featureRepository.Update(unparentedFeature);
-                }
-            }
-            else
-            {
-                unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
-                logger.LogInformation("Setting order for {UnparentedFeatureName} to {UnparentedFeatureOrder}", unparentedFeature.Name, unparentedFeature.Order);
-
-                featureRepository.Add(unparentedFeature);
-                project.Features.Add(unparentedFeature);
-            }
-
-            await featureRepository.Save();
-
-            return unparentedFeature;
         }
 
         private async Task RefreshFeatures(Portfolio project)

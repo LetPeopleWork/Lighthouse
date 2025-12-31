@@ -165,7 +165,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
                 AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "New,Proposed",
-                AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
@@ -188,7 +187,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(settings.Name, Is.EqualTo("My Project"));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
-                Assert.That(settings.UnparentedItemsQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.True);
                 Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
                 Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));

@@ -9,28 +9,6 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 		return new PortfolioDetailPage(this.page);
 	}
 
-	async toggleUnparentedWorkItemConfiguration(): Promise<void> {
-		await this.page
-			.locator("div")
-			.filter({ hasText: /^Unparented Work Items*/ })
-			.getByLabel("toggle")
-			.click();
-	}
-
-	async setUnparentedWorkItemQuery(workItemQuery: string): Promise<void> {
-		await this.page
-			.getByLabel("Unparented Work Items Query")
-			.fill(workItemQuery);
-	}
-
-	async getUnparentedWorkItemQuery(): Promise<string> {
-		return (
-			(await this.page
-				.getByLabel("Unparented Work Items Query")
-				.inputValue()) ?? ""
-		);
-	}
-
 	async toggleDefaultFeatureSizeConfiguration(): Promise<void> {
 		await this.page
 			.locator("div")

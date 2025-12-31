@@ -2,12 +2,6 @@
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
-    public enum RelativeOrder
-    {
-        Above,
-        Below,
-    }
-
     public interface IWorkTrackingConnector
     {
         Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team);
@@ -15,10 +9,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         Task<List<Feature>> GetFeaturesForProject(Portfolio project);
 
         Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds);
-
-        Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery);
-
-        string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
 
         Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);
 

@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 24, 11, 05, 51, 877, DateTimeKind.Utc)));
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 10, 26, 11, 51, 18, 595, DateTimeKind.Utc)));
                 Assert.That(workItem.ClosedDate, Is.Null);
-            };
+            }
         }
 
         [Test]
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 12, 32, 958, DateTimeKind.Utc)));
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 04, 23, 08, 27, 38, 556, DateTimeKind.Utc)));
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 04, 23, 08, 27, 38, 556, DateTimeKind.Utc)));
-            };
+            }
         }
 
         [Test]
@@ -167,46 +167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 // Ordering = Manual, Less = "higher up"
                 Assert.That(item2Order, Is.LessThan(item1Order));
-            };
-        }
-
-        [Test]
-        [TestCase(RelativeOrder.Below)]
-        [TestCase(RelativeOrder.Above)]
-        public void GetAdjacentOrderIndex_NoExistingItems_Returns0(RelativeOrder relativeOrder)
-        {
-            var subject = CreateSubject();
-
-            var orderIndex = subject.GetAdjacentOrderIndex([], relativeOrder);
-            
-            Assert.That(orderIndex, Is.EqualTo("0"));
-        }
-
-        [Test]
-        [TestCase(RelativeOrder.Below, new string[] { "-92.3", "-82.9", "-83.23" }, "-93.3")]
-        [TestCase(RelativeOrder.Above, new string[] { "-92.3", "-82.9", "-83.23" }, "-81.9")]
-        [TestCase(RelativeOrder.Below, new string[] { "92.3", "82.9", "83.23" }, "81.9")]
-        [TestCase(RelativeOrder.Above, new string[] { "92.3", "82.9", "83.23" }, "93.3")]
-        [TestCase(RelativeOrder.Above, new string[] { "13.37", "BANANA?", "188.6" }, "189.6")]
-        public void GetAdjacentOrderIndex_ExistingItems_ReturnsCorrectOrderIndex(RelativeOrder relativeOrder, string[] existingItemsOrder, string expectedOrderIndex)
-        {
-            var subject = CreateSubject();
-
-            var orderIndex = subject.GetAdjacentOrderIndex(existingItemsOrder, relativeOrder);
-            
-            Assert.That(orderIndex, Is.EqualTo(expectedOrderIndex));
-        }
-
-        [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_GivenQuery_IgnoresAdditionalQueryAndReturnsWorkItems()
-        {
-            var subject = CreateSubject();
-
-            var team = CreateTeam();
-
-            var actualItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "SomeAdditionalQuery");
-            
-            Assert.That(actualItems, Is.EquivalentTo(Enumerable.Empty<string>()));
+            }
         }
 
         [Test]
@@ -268,7 +229,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
                 Assert.That(feature.StartedDate, Is.Null);
                 Assert.That(feature.ClosedDate, Is.Null);
-            };
+            }
         }
 
         [Test]
@@ -301,7 +262,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
                 Assert.That(feature.StartedDate, Is.Null);
                 Assert.That(feature.ClosedDate, Is.Null);
-            };
+            }
         }
 
         [Test]
@@ -386,7 +347,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return connection;
         }
 
-        private LinearWorkTrackingConnector CreateSubject()
+        private static LinearWorkTrackingConnector CreateSubject()
         {
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(new WorkTrackingSystemSettings());

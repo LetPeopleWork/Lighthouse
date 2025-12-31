@@ -31,7 +31,6 @@ export async function createPortfolio(
 			tags: tags,
 			overrideRealChildCountStates: [],
 			workItemQuery: workItemQuery,
-			unparentedItemsQuery: "",
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 90,

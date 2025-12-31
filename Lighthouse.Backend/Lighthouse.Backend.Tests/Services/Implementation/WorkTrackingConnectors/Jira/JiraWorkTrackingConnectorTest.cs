@@ -4,8 +4,6 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -15,14 +13,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [Category("Integration")]
     public class JiraWorkTrackingConnectorTest
     {
-        private Mock<ILexoRankService> lexoRankServiceMock;
-
-        [SetUp]
-        public void Setup()
-        {
-            lexoRankServiceMock = new Mock<ILexoRankService>();
-        }
-
         [Test]
         public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()
         {
@@ -458,117 +448,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesClosedItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.AddRange(["Story", "Bug"]);
-            
-            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
-
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "labels = \"LabelOfItemThatIsClosed\"");
-
-            Assert.That(totalItems, Has.Count.EqualTo(1));
-        }
-
-        [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IgnoresItemsOfNotMatchingWorkItemType()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.AddRange(["Bug"]);
-
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "labels = \"ExistingLabel\"");
-
-            Assert.That(totalItems, Has.Count.EqualTo(0));
-        }
-
-        [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesItemsThatMatchBothTeamAndCustomQuery()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.AddRange(["Story", "Bug"]);
-
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
-
-            Assert.That(totalItems, Has.Count.EqualTo(2));
-        }
-
-        [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesToDoAndDoneItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.AddRange(["Story", "Bug"]);
-
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "project = \"LGHTHSDMO\" AND fixVersion = \"Elixir Project\"");
-
-            Assert.That(totalItems, Has.Count.EqualTo(1));
-        }
-
-        [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IgnoresItemsThatMatchCustomBotNotTeamTeamQuery()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"RebelRevolt\"");
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.AddRange(["Story", "Bug"]);
-
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
-
-            Assert.That(totalItems, Has.Count.EqualTo(0));
-        }
-
-        [Test]
-        [TestCase(RelativeOrder.Above)]
-        [TestCase(RelativeOrder.Below)]
-        public void GetAdjacentOrderIndex_NoFeaturesPassed_ReturnsDefault(RelativeOrder relativeOrder)
-        {
-            var subject = CreateSubject();
-            var expectedOrder = "00000|";
-
-            lexoRankServiceMock.Setup(x => x.Default).Returns(expectedOrder);
-
-            var order = subject.GetAdjacentOrderIndex([], relativeOrder);
-
-            Assert.That(order, Is.EqualTo(expectedOrder));
-        }
-
-        [Test]
-        public void GetAdjacentOrderIndex_OrderIsAbove_ReturnsHigherOrder()
-        {
-            var subject = CreateSubject();
-            var itemsOrder = new[] { "0|i000v3:", "0|i001v3:", "0|i000v2:"};
-            var expectedOrder = "0|i001v5:";
-
-            lexoRankServiceMock.Setup(x => x.GetHigherPriority("0|i001v3:")).Returns(expectedOrder);
-
-            var order = subject.GetAdjacentOrderIndex(itemsOrder, RelativeOrder.Above);
-
-            Assert.That(order, Is.EqualTo(expectedOrder));
-        }
-
-        [Test]
-        public void GetAdjacentOrderIndex_OrderIsBelow_ReturnsLowestOrder()
-        {
-            var subject = CreateSubject();
-            var itemsOrder = new[] { "0|i000v3:", "0|i001v3:", "0|i000v2:"};
-            var expectedOrder = "0|i000v1:";
-
-            lexoRankServiceMock.Setup(x => x.GetLowerPriority("0|i000v2:")).Returns(expectedOrder);
-
-            var order = subject.GetAdjacentOrderIndex(itemsOrder, RelativeOrder.Below);
-
-            Assert.That(order, Is.EqualTo(expectedOrder));
-        }
-
-        [Test]
         public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
         {
             var subject = CreateSubject();
@@ -755,13 +634,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return connectionSetting;
         }
 
-        private JiraWorkTrackingConnector CreateSubject()
+        private static JiraWorkTrackingConnector CreateSubject()
         {
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(new WorkTrackingSystemSettings());
 
             return new JiraWorkTrackingConnector(
-                lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object);
+                new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object);
         }
     }
 }

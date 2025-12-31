@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
@@ -14,10 +13,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     public class JiraWorkTrackingConnector : IWorkTrackingConnector
     {
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
-
-        private readonly ILexoRankService lexoRankService;
+        
         private readonly IIssueFactory issueFactory;
+
         private readonly ILogger<JiraWorkTrackingConnector> logger;
+        
         private readonly ICryptoService cryptoService;
 
         private readonly int requestTimeoutInSeconds = 100;
@@ -41,10 +41,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
         private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
 
-        public JiraWorkTrackingConnector(
-            ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
+        public JiraWorkTrackingConnector(IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
         {
-            this.lexoRankService = lexoRankService;
             this.issueFactory = issueFactory;
             this.logger = logger;
             this.cryptoService = cryptoService;
@@ -90,45 +88,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var query = string.Join(" OR ", parentFeatureIds.Select(id => $"key = \"{id}\""));
             var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
             return await CreateFeaturesFromIssues(project, issues);
-        }
-
-        public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
-        {
-            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
-
-            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery, team.DoneItemsCutoffDays)} AND ({team.WorkItemQuery})";
-            var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
-
-            var issueKeys = issues.Select(x => x.Key).ToList();
-
-            logger.LogDebug("Found following Issues: {IssueKeys}", string.Join(", ", issueKeys));
-
-            return issueKeys;
-        }
-
-        public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
-        {
-            logger.LogInformation("Getting Adjacent Order Index for Issues {Items} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
-
-            string? result;
-            if (!existingItemsOrder.Any())
-            {
-                result = lexoRankService.Default;
-            }
-            else
-            {
-                if (relativeOrder == RelativeOrder.Above)
-                {
-                    var highestRank = existingItemsOrder.Max() ?? lexoRankService.Default;
-                    result = lexoRankService.GetHigherPriority(highestRank);
-                }
-                else
-                {
-                    var lowestRank = existingItemsOrder.Min() ?? lexoRankService.Default;
-                    result = lexoRankService.GetLowerPriority(lowestRank);
-                }
-            }
-            return result;
         }
 
         public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)

@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.ProjectSettingName, "New Project")]
         [TestCase(AppSettingKeys.ProjectSettingWorkItemQuery, "")]
         [TestCase(AppSettingKeys.ProjectSettingWorkItemTypes, "Epic")]
-        [TestCase(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "")]
         [TestCase(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10")]
         [TestCase(AppSettingKeys.ProjectSettingSizeEstimateField, "")]
         [TestCase(AppSettingKeys.ProjectSettingsFeatureOwnerField, "")]

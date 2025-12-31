@@ -36,7 +36,6 @@ namespace Lighthouse.Backend.MCP
                     feature.Type,
                     feature.OwningTeam,
                     feature.Url,
-                    feature.IsUnparentedFeature,
                     feature.IsParentFeature,
                     feature.IsUsingDefaultFeatureSize,
                     feature.Size,

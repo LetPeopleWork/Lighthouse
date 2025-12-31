@@ -23,7 +23,7 @@ vi.mock("react-router-dom", async () => {
 // Mock URLSearchParams and window.location
 const mockGet = vi.fn();
 
-Object.defineProperty(window, "location", {
+Object.defineProperty(globalThis, "location", {
 	value: {
 		search: "",
 	},
@@ -48,7 +48,7 @@ class MockURLSearchParams {
 	[Symbol.iterator] = vi.fn();
 }
 
-global.URLSearchParams =
+globalThis.URLSearchParams =
 	MockURLSearchParams as unknown as typeof URLSearchParams;
 
 const mockLicenseRestrictions = {
@@ -106,7 +106,7 @@ describe("EditPortfolio", () => {
 		vi.clearAllMocks();
 		mockGet.mockReturnValue(null);
 		// Reset window.location.search
-		window.location.search = "";
+		globalThis.location.search = "";
 
 		mockPortfolioService = {
 			getPortfolioSettings: vi.fn(),
@@ -133,7 +133,6 @@ describe("EditPortfolio", () => {
 			id: 0,
 			name: "",
 			workItemQuery: "",
-			unparentedItemsQuery: "",
 			workItemTypes: [],
 			defaultAmountOfWorkItemsPerFeature: 5,
 			toDoStates: [],
@@ -173,7 +172,6 @@ describe("EditPortfolio", () => {
 			id: 5,
 			name: "Original Project",
 			workItemQuery: "project = TEST",
-			unparentedItemsQuery: "parent is empty",
 			workItemTypes: ["Story", "Bug"],
 			defaultAmountOfWorkItemsPerFeature: 10,
 			toDoStates: ["New", "Active"],
@@ -199,7 +197,7 @@ describe("EditPortfolio", () => {
 			mockPortfolioSettings,
 		);
 		// Set window.location.search and mock URLSearchParams properly
-		window.location.search = "?cloneFrom=5";
+		globalThis.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditPortfolioWithContext();
@@ -214,7 +212,6 @@ describe("EditPortfolio", () => {
 			id: 5,
 			name: "Original Project",
 			workItemQuery: "project = TEST",
-			unparentedItemsQuery: "parent is empty",
 			workItemTypes: ["Story"],
 			defaultAmountOfWorkItemsPerFeature: 8,
 			toDoStates: ["New"],
@@ -240,7 +237,7 @@ describe("EditPortfolio", () => {
 			mockPortfolioSettings,
 		);
 		// Set window.location.search and mock URLSearchParams properly
-		window.location.search = "?cloneFrom=5";
+		globalThis.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditPortfolioWithContext();

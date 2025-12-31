@@ -99,17 +99,6 @@ testWithData(
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 		});
 
-		await test.step("Unparented Work Item Query should not be mandatory", async () => {
-			await portfolioEditPage.toggleUnparentedWorkItemConfiguration();
-			await portfolioEditPage.setUnparentedWorkItemQuery(
-				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
-			);
-			await expect(portfolioEditPage.validateButton).toBeEnabled();
-
-			await portfolioEditPage.setUnparentedWorkItemQuery("");
-			await expect(portfolioEditPage.validateButton).toBeEnabled();
-		});
-
 		await test.step("Default Feature Size Configuration should not be mandatory", async () => {
 			await portfolioEditPage.toggleDefaultFeatureSizeConfiguration();
 

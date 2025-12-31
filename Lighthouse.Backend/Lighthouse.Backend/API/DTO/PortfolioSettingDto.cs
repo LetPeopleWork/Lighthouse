@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public PortfolioSettingDto(Portfolio portfolio) : base(portfolio)
         {
-            UnparentedItemsQuery = portfolio.UnparentedItemsQuery;
-
             UsePercentileToCalculateDefaultAmountOfWorkItems = portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems;
             DefaultAmountOfWorkItemsPerFeature = portfolio.DefaultAmountOfWorkItemsPerFeature;
             DefaultWorkItemPercentile = portfolio.DefaultWorkItemPercentile;
@@ -33,8 +31,6 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
-
-        public string? UnparentedItemsQuery { get; set; }
 
         [JsonRequired]
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }

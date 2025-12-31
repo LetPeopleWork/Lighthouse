@@ -16,8 +16,6 @@
 
         public string? FeatureOwnerField { get; set; }
 
-        public string? UnparentedItemsQuery { get; set; }
-
         public string? SizeEstimateField { get; set; }
 
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; } = false;
@@ -48,12 +46,12 @@
 
         public IEnumerable<Feature> GetFeaturesToExtrapolate()
         {
-            return Features.Where(feature => !feature.IsUnparentedFeature && feature.StateCategory != StateCategories.Done && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0);
+            return Features.Where(feature => feature.StateCategory != StateCategories.Done && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0);
         }
 
         public IEnumerable<Feature> GetFeaturesToOverrideWithDefaultSize()
         {
-            return Features.Where(f => !f.IsUnparentedFeature && OverrideRealChildCountStates.Contains(f.State));
+            return Features.Where(f => OverrideRealChildCountStates.Contains(f.State));
         }
     }
 }

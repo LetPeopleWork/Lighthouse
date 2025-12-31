@@ -22,7 +22,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
@@ -254,7 +253,6 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDemoDataFactory, DemoDataFactory>();
 
             // Services
-            builder.Services.AddScoped<ILexoRankService, LexoRankService>();
             builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();

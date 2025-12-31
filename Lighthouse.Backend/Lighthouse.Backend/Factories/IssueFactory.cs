@@ -1,7 +1,6 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Globalization;
 using System.Text.Json;
 
@@ -9,12 +8,12 @@ namespace Lighthouse.Backend.Factories
 {
     public class IssueFactory : IIssueFactory
     {
-        private readonly ILexoRankService lexoRankService;
+        private readonly string DefaultRank = "00000|";
+
         private readonly ILogger<IssueFactory> logger;
 
-        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger)
+        public IssueFactory(ILogger<IssueFactory> logger)
         {
-            this.lexoRankService = lexoRankService;
             this.logger = logger;
         }
 
@@ -113,7 +112,7 @@ namespace Lighthouse.Backend.Factories
                 return rank;
             }
 
-            return lexoRankService.Default;
+            return DefaultRank;
         }
 
         private static bool TryGetRankFromRankField(JsonElement fields, string rankFieldName, out string rank)

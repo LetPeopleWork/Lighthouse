@@ -19,7 +19,6 @@ import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
-import UnparentedItemsComponent from "./Advanced/UnparentedItemsComponent";
 
 interface ModifyProjectSettingsProps {
 	title: string;
@@ -427,14 +426,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onAddTag={handleAddTag}
 							onRemoveTag={handleRemoveTag}
 						/>
-
-						{(selectedWorkTrackingSystem === null ||
-							selectedWorkTrackingSystem.dataSourceType === "Query") && (
-							<UnparentedItemsComponent
-								projectSettings={projectSettings}
-								onProjectSettingsChange={handleProjectSettingsChange}
-							/>
-						)}
 
 						<FeatureSizeComponent
 							projectSettings={projectSettings}

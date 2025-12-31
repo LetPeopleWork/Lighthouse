@@ -120,39 +120,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return Task.FromResult(parentFeatures);
         }
 
-        public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
-        {
-            logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
-
-            var orderIndex = 0.0;
-
-            var existingItems = existingItemsOrder
-                .Select(x => double.TryParse(x, out var value) ? value : double.MaxValue)
-                .Where(order => order < double.MaxValue * 0.999)
-                .ToList();
-
-            if (existingItems.Count > 0)
-            {
-                if (relativeOrder == RelativeOrder.Below)
-                {
-                    var lowestOrder = existingItems.Min();
-                    orderIndex = lowestOrder - 1;
-                }
-                else
-                {
-                    var highestOrder = existingItems.Max();
-                    orderIndex = highestOrder + 1;
-                }
-            }
-
-            return $"{orderIndex}";
-        }
-
-        public Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
-        {
-            return Task.FromResult(new List<string>());
-        }
-
         public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
             try

@@ -21,8 +21,8 @@ describe("ConfigurationService", () => {
 	let originalCreateElement: typeof document.createElement;
 	let originalAppendChild: typeof document.body.appendChild;
 	let originalRemoveChild: typeof document.body.removeChild;
-	let originalCreateObjectURL: typeof window.URL.createObjectURL;
-	let originalRevokeObjectURL: typeof window.URL.revokeObjectURL;
+	let originalCreateObjectURL: typeof globalThis.URL.createObjectURL;
+	let originalRevokeObjectURL: typeof globalThis.URL.revokeObjectURL;
 
 	beforeEach(() => {
 		mockedAxios.create.mockReturnThis();
@@ -32,8 +32,8 @@ describe("ConfigurationService", () => {
 		originalCreateElement = document.createElement;
 		originalAppendChild = document.body.appendChild;
 		originalRemoveChild = document.body.removeChild;
-		originalCreateObjectURL = window.URL.createObjectURL;
-		originalRevokeObjectURL = window.URL.revokeObjectURL;
+		originalCreateObjectURL = globalThis.URL.createObjectURL;
+		originalRevokeObjectURL = globalThis.URL.revokeObjectURL;
 
 		// Mock document functions
 		document.createElement = mockCreateElement;
@@ -41,8 +41,8 @@ describe("ConfigurationService", () => {
 		document.body.removeChild = mockRemoveChild;
 
 		// Mock URL functions
-		window.URL.createObjectURL = mockCreateObjectURL;
-		window.URL.revokeObjectURL = mockRevokeObjectURL;
+		globalThis.URL.createObjectURL = mockCreateObjectURL;
+		globalThis.URL.revokeObjectURL = mockRevokeObjectURL;
 
 		// Setup mock link element
 		mockCreateElement.mockReturnValue({
@@ -61,8 +61,8 @@ describe("ConfigurationService", () => {
 		document.createElement = originalCreateElement;
 		document.body.appendChild = originalAppendChild;
 		document.body.removeChild = originalRemoveChild;
-		window.URL.createObjectURL = originalCreateObjectURL;
-		window.URL.revokeObjectURL = originalRevokeObjectURL;
+		globalThis.URL.createObjectURL = originalCreateObjectURL;
+		globalThis.URL.revokeObjectURL = originalRevokeObjectURL;
 	});
 
 	it("should export configuration and download it", async () => {
@@ -181,7 +181,6 @@ describe("ConfigurationService", () => {
 				{
 					id: 3,
 					name: "Project X",
-					unparentedItemsQuery: "",
 					involvedTeams: [],
 					overrideRealChildCountStates: [],
 					usePercentileToCalculateDefaultAmountOfWorkItems: false,

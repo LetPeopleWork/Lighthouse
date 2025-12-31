@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDev
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -31,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(JiraWorkTrackingConnector)))
-            .Returns(new JiraWorkTrackingConnector(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object));
+            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(CsvWorkTrackingConnector)))

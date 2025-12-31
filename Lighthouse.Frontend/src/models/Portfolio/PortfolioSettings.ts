@@ -2,7 +2,6 @@ import type { IBaseSettings } from "../Common/BaseSettings";
 import type { IEntityReference } from "../EntityReference";
 
 export interface IPortfolioSettings extends IBaseSettings {
-	unparentedItemsQuery: string;
 	involvedTeams: IEntityReference[];
 	owningTeam?: IEntityReference;
 

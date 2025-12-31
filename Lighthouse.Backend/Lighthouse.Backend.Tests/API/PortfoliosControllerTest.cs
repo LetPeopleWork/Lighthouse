@@ -68,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectDto.Id, Is.EqualTo(testProject.Id));
                 Assert.That(projectDto.Name, Is.EqualTo(testProject.Name));
             }
-            ;
         }
 
         [Test]
@@ -84,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -107,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API
 
                 projectUpdaterMock.Verify(x => x.TriggerUpdate(testProject.Id));
             }
-            ;
         }
 
         [Test]
@@ -136,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API
                     projectUpdaterMock.Verify(x => x.TriggerUpdate(testProject.Id), Times.Once);
                 }
             }
-            ;
         }
 
         [Test]
@@ -161,7 +157,6 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "El Projecto",
                 WorkItemTypes = new List<string> { "Bug", "Feature" },
                 WorkItemQuery = "SELECT * FROM WorkItems",
-                UnparentedItemsQuery = "SELECT * FROM UnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
                 WorkTrackingSystemConnectionId = 101
             };
@@ -186,11 +181,9 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(project.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(project.WorkItemTypes));
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(project.WorkItemQuery));
-                Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(project.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(project.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(project.WorkTrackingSystemConnectionId));
             }
-            ;
         }
 
 
@@ -208,7 +201,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -219,7 +211,6 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "New Project",
                 WorkItemTypes = new List<string> { "Bug", "Feature" },
                 WorkItemQuery = "SELECT * FROM WorkItems",
-                UnparentedItemsQuery = "SELECT * FROM UnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
                 WorkTrackingSystemConnectionId = 101,
                 ToDoStates = new List<string> { "To Do " },
@@ -252,11 +243,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
 
-                {
-                }
-
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(newProjectSettings.WorkItemQuery));
-                Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(newProjectSettings.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(newProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newProjectSettings.WorkTrackingSystemConnectionId));
 
@@ -273,7 +260,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.BlockedTags, Contains.Item("Waiting"));
                 Assert.That(projectSettingDto.BlockedTags, Contains.Item("Customer Input"));
             }
-            ;
         }
 
         [Test]
@@ -291,7 +277,6 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Updated Project",
                 WorkItemTypes = new List<string> { "Feature", "Bug" },
                 WorkItemQuery = "SELECT * FROM UpdatedWorkItems",
-                UnparentedItemsQuery = "SELECT * FROM UpdatedUnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 10,
                 WorkTrackingSystemConnectionId = 202,
                 SizeEstimateField = "NewField",
@@ -329,11 +314,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(updatedProjectSettings.WorkItemTypes));
 
-                {
-                }
-
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(updatedProjectSettings.WorkItemQuery));
-                Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(updatedProjectSettings.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(updatedProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedProjectSettings.WorkTrackingSystemConnectionId));
                 Assert.That(projectSettingDto.SizeEstimateField, Is.EqualTo(updatedProjectSettings.SizeEstimateField));
@@ -356,7 +337,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.BlockedTags, Contains.Item("Waiting for Review"));
                 Assert.That(projectSettingDto.BlockedTags, Contains.Item("Customer Feedback"));
             }
-            ;
         }
 
         [Test]
@@ -373,7 +353,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -403,7 +382,6 @@ namespace Lighthouse.Backend.Tests.API
                 var value = okObjectResult.Value;
                 Assert.That(value, Is.EqualTo(expectedResult));
             }
-            ;
         }
 
         [Test]

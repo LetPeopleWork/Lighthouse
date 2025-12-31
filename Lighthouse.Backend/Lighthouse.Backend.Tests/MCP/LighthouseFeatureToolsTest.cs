@@ -143,7 +143,6 @@ namespace Lighthouse.Backend.Tests.MCP
                 StateCategory = StateCategories.Doing,
                 OwningTeam = "Development Team",
                 Url = "https://example.com/feature/1",
-                IsUnparentedFeature = false,
                 IsParentFeature = false,
                 IsUsingDefaultFeatureSize = false,
                 Type = "Feature"

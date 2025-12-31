@@ -78,27 +78,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(new List<Feature>());
         }
 
-        public Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
-        {
-            return Task.FromResult(new List<string>());
-        }
-
-        public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
-        {
-            if (!existingItemsOrder.Any())
-            {
-                return "0";
-            }
-
-            var ints = existingItemsOrder.Select(s =>
-            {
-                if (int.TryParse(s, out var i)) return i;
-                return 0;
-            });
-
-            return relativeOrder == RelativeOrder.Above ? (ints.Max() + 1).ToString() : (ints.Min() - 1).ToString();
-        }
-
         public Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
             var optionsEmpty = connection.Options.Where(o => !o.IsOptional).Any(o => string.IsNullOrEmpty(o.Value));

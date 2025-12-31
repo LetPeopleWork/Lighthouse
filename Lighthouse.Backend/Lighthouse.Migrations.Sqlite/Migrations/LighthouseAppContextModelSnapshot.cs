@@ -105,9 +105,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<bool>("IsParentFeature")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsUnparentedFeature")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("IsUsingDefaultFeatureSize")
                         .HasColumnType("INTEGER");
 
@@ -365,9 +362,6 @@ namespace Lighthouse.Backend.Migrations
 
                     b.PrimitiveCollection<string>("ToDoStates")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UnparentedItemsQuery")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdateTime")

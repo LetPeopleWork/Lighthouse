@@ -87,33 +87,6 @@ Tags allow you to add any kind of additional information that may be helpful for
 
 Tags are checked when you use the search functionality.
 
-# Unparented Work Items
-Sometimes (or shall we say "in the real world") there is work that is not belonging to a specific feature. Still it neeeds to get done.
-These may be small improvements that were planned (or promised) or some bug fixes.
-
-You could of course add some container feature (or even multiple) with the sole purpose of adding everything in this bucket.
-However, if you use a dedicated workflow for features (which we highly encourage), and your feature should be scoped and provide value, that is often at odds with such "containers".
-
-What Lighthouse offers instead is to collect all work items that are not having a feature parent into a "virtual" unparented feature that is also taken into the forecast.
-All you need to do for this is to create a query that searches for the work items in the individual team backlogs and Lighthouse will group all of them together and show them as "Unparented Items" for your portfolios.
-
-The query will only include items that are not already part of this portfolio (under a 'regular feature').
-
-An example could look like this:
-
-```bash
-[System.Tags] CONTAINS "My Release"
-```
-```bash
-labels = "My Release"
-```
-
-That will go through all [Involved Teams](#involved-teams) backlog items, and check if any work item is matching the query.
-If yes, and if those items are not yet added as part of a feature, it will be counted to the "Unparented Feature".
-
-{: .note}
-If you have multiple teams, all unparented work will be added to this Feature. Also the unparented Feature will be at the bottom of the priority, so it is always assumed that it will be done last.
-
 # Default Feature Size
 Not every Feature will be broken down already. This is great, because it might not be worth the effort. However, when we run a forecast, we need to know the approximate size.
 Lighthouse offers a functionality to define a *Default Feature Size* that is applied to features that don't have any child items yet.

@@ -53,7 +53,6 @@ namespace Lighthouse.Backend.MCP
                     project.OwningTeamId,
                     OwningTeamName = project.OwningTeam?.Name,
                     project.FeatureOwnerField,
-                    project.UnparentedItemsQuery,
                     project.SizeEstimateField,
                     project.UsePercentileToCalculateDefaultAmountOfWorkItems,
                     project.PercentileHistoryInDays,
@@ -90,7 +89,6 @@ namespace Lighthouse.Backend.MCP
                         f.Url,
                         TotalWorkItems = f.FeatureWork.Sum(fw => fw.TotalWorkItems),
                         RemainingWorkItems = f.FeatureWork.Sum(fw => fw.RemainingWorkItems),
-                        f.IsUnparentedFeature
                     }));
             }
         }

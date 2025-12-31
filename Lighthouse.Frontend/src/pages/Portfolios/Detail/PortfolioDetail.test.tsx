@@ -157,7 +157,6 @@ describe("PortfolioDetail component", () => {
 			name: "Release Codename Daniel",
 			workItemTypes: [],
 			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultAmountOfWorkItemsPerFeature: 10,
 			defaultWorkItemPercentile: 85,

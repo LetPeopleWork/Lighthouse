@@ -1,7 +1,6 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
@@ -11,7 +10,6 @@ namespace Lighthouse.Backend.Tests.Factories
 {
     public class IssueFactoryTest
     {
-        private Mock<ILexoRankService> lexoRankServiceMock;
         private TestWorkItemQueryOwner workItemQueryOwner;
 
         private string jsonTemplate;
@@ -19,8 +17,6 @@ namespace Lighthouse.Backend.Tests.Factories
         [SetUp]
         public void SetUp()
         {
-            lexoRankServiceMock = new Mock<ILexoRankService>();
-
             workItemQueryOwner = new TestWorkItemQueryOwner();
 
             var toDoStates = new List<string> { "BaCkLoG", "ANALYSIS" };
@@ -132,8 +128,6 @@ namespace Lighthouse.Backend.Tests.Factories
         [Test]
         public void CreateIssue_RankNotAvailable_SetsDefaultRank()
         {
-            lexoRankServiceMock.Setup(x => x.Default).Returns("00000|");
-
             var jsonDocument = CreateJsonDocument(json =>
             {
                 json["fields"].AsObject().Remove("customfield_10019");
@@ -546,9 +540,9 @@ namespace Lighthouse.Backend.Tests.Factories
             return JsonDocument.Parse(stream.ToArray());
         }
 
-        private IssueFactory CreateIssueFactory()
+        private static IssueFactory CreateIssueFactory()
         {
-            return new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>());
+            return new IssueFactory(Mock.Of<ILogger<IssueFactory>>());
         }
 
         private class TestWorkItemQueryOwner : WorkTrackingSystemOptionsOwner

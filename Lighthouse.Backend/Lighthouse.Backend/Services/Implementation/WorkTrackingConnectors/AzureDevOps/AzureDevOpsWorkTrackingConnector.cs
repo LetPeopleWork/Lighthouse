@@ -92,52 +92,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return features;
         }
 
-        public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
-        {
-            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Additional Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
-
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-
-            var workItemsQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery, team.ParentOverrideField ?? string.Empty, team.DoneItemsCutoffDays)} AND {team.WorkItemQuery}";
-
-            var matchingWorkItems = await GetWorkItemReferencesByQuery(witClient, workItemsQuery);
-
-            var matchingWorkItemsIds = matchingWorkItems.Select(x => x.Id.ToString()).ToList();
-            logger.LogDebug("Found following Work Items {MatchingWorkItems}", string.Join(", ", matchingWorkItemsIds));
-
-            return matchingWorkItemsIds;
-        }
-
-        public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
-        {
-            logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
-
-            string? result;
-            if (!existingItemsOrder.Any())
-            {
-                result = "0";
-            }
-            else
-            {
-                var orderAsInt = ConvertToIntegers(existingItemsOrder);
-
-                if (relativeOrder == RelativeOrder.Above)
-                {
-                    var highestOrder = orderAsInt.Max();
-                    result = $"{highestOrder + 1}";
-                }
-                else
-                {
-                    var lowestOrder = orderAsInt.Min();
-                    result = $"{lowestOrder - 1}";
-                }
-            }
-
-            logger.LogInformation("Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}: {Result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
-
-            return result;
-        }
-
         public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
             try
@@ -534,21 +488,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             return fieldValues;
-        }
-
-        private static List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
-        {
-            var orderAsInt = new List<int>();
-
-            foreach (var order in orderAsStrings)
-            {
-                if (int.TryParse(order, out int number))
-                {
-                    orderAsInt.Add(number);
-                }
-            }
-
-            return orderAsInt;
         }
 
         private static string PrepareQuery(

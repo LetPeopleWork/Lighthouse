@@ -39,8 +39,6 @@ namespace Lighthouse.Backend.Models
 
         public List<Portfolio> Portfolios { get; } = [];
 
-        public bool IsUnparentedFeature { get; set; }
-
         public bool IsParentFeature { get; set; } = false;
 
         public bool IsUsingDefaultFeatureSize { get; set; } = false;

@@ -53,7 +53,6 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		name: "Project A",
 		workItemTypes: ["Epic"],
 		workItemQuery: "Query",
-		unparentedItemsQuery: "Unparented Query",
 		usePercentileToCalculateDefaultAmountOfWorkItems: false,
 		defaultAmountOfWorkItemsPerFeature: 15,
 		defaultWorkItemPercentile: 85,

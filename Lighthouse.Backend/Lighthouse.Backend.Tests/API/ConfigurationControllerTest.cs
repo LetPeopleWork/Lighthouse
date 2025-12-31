@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(configuration.WorkTrackingSystems, Is.Empty);
                 Assert.That(configuration.Teams, Is.Empty);
                 Assert.That(configuration.Projects, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedWorkTrackingSystem.Name, Is.EqualTo("Test System"));
                 Assert.That(exportedWorkTrackingSystem.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Jira));
                 Assert.That(exportedWorkTrackingSystem.Options, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedWorkTrackingSystem.Options[0].Value, Is.EqualTo("Value1"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Key, Is.EqualTo("Option2"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Value, Is.EqualTo("Value2"));
-            };
+            }
         }
 
         [Test]
@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedWorkTrackingSystem.Options[0].Value, Is.EqualTo("Value1"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Key, Is.EqualTo("Option2"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Value, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -209,7 +209,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedTeam.ServiceLevelExpectationProbability, Is.EqualTo(73));
                 Assert.That(exportedTeam.ServiceLevelExpectationRange, Is.EqualTo(14));
                 Assert.That(exportedTeam.SystemWIPLimit, Is.EqualTo(5));
-            };
+            }
         }
 
         [Test]
@@ -235,7 +235,6 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = new List<string> { "Done", "Closed" },
                 WorkTrackingSystemConnectionId = workTrackingSystem.Id,
                 Tags = new List<string> { "ProjectTag1", "ProjectTag2" },
-                UnparentedItemsQuery = "SELECT * FROM UnparentedItems WHERE ProjectId = 1",
                 UsePercentileToCalculateDefaultAmountOfWorkItems = false,
                 DefaultAmountOfWorkItemsPerFeature = 14,
                 SizeEstimateField = "SizeEstimate",
@@ -284,7 +283,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectToVerify.Tags, Has.Count.EqualTo(2));
                 Assert.That(projectToVerify.Tags[0], Is.EqualTo("ProjectTag1"));
                 Assert.That(projectToVerify.Tags[1], Is.EqualTo("ProjectTag2"));
-                Assert.That(projectToVerify.UnparentedItemsQuery, Is.EqualTo("SELECT * FROM UnparentedItems WHERE ProjectId = 1"));
                 Assert.That(projectToVerify.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.False);
                 Assert.That(projectToVerify.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(14));
                 Assert.That(projectToVerify.SizeEstimateField, Is.EqualTo("SizeEstimate"));
@@ -296,8 +294,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectToVerify.ServiceLevelExpectationProbability, Is.EqualTo(85));
                 Assert.That(projectToVerify.ServiceLevelExpectationRange, Is.EqualTo(21));
                 Assert.That(projectToVerify.SystemWIPLimit, Is.EqualTo(1));
-
-            };
+            }
         }
 
         [Test]
@@ -366,7 +363,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.New));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -413,7 +410,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Update));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -453,7 +450,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
                 Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Update));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -487,7 +484,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
                 Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.EqualTo("Work Tracking System Not Found"));
-            };
+            }
         }
 
         [Test]
@@ -526,7 +523,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Work Tracking System Not Found"));
-            };
+            }
         }
 
         [Test]
@@ -562,7 +559,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Involved Team Not Found"));
-            };
+            }
         }
 
         [Test]
@@ -603,7 +600,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Owning Team must be involved in the project"));
-            };
+            }
         }
 
         private WorkTrackingSystemConnection AddWorkTrackingSystemConnection()

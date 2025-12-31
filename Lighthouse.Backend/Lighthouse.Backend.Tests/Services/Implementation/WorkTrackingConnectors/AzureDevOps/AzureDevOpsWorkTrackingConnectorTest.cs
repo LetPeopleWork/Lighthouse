@@ -630,67 +630,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesClosedItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
-            
-            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
-            
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
-
-            Assert.That(totalItems, Has.Count.EqualTo(1));
-        }
-
-        [Test]
-        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IgnoresItemsOfNotMatchingWorkItemType()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.Add("Bug");
-
-            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "[System.Tags] CONTAINS 'Release1'");
-
-            Assert.That(totalItems, Has.Count.EqualTo(0));
-        }
-
-        [Test]
-        [TestCase(RelativeOrder.Above)]
-        [TestCase(RelativeOrder.Below)]
-        public void GetAdjacentOrderIndex_NoFeaturesPassed_Returns0(RelativeOrder relativeOrder)
-        {
-            var subject = CreateSubject();
-
-            var order = subject.GetAdjacentOrderIndex([], relativeOrder);
-
-            Assert.That(order, Is.EqualTo("0"));
-        }
-
-        [Test]
-        [TestCase(new[] { "1" }, RelativeOrder.Above, "2")]
-        [TestCase(new[] { "2" }, RelativeOrder.Above, "3")]
-        [TestCase(new[] { "1", "2" }, RelativeOrder.Above, "3")]
-        [TestCase(new[] { "2", "1" }, RelativeOrder.Above, "3")]
-        [TestCase(new[] { "2", "3", "1" }, RelativeOrder.Above, "4")]
-        [TestCase(new[] { "2", "1", "test" }, RelativeOrder.Above, "3")]
-        [TestCase(new[] { "1" }, RelativeOrder.Below, "0")]
-        [TestCase(new[] { "2" }, RelativeOrder.Below, "1")]
-        [TestCase(new[] { "1", "2" }, RelativeOrder.Below, "0")]
-        [TestCase(new[] { "2", "1" }, RelativeOrder.Below, "0")]
-        [TestCase(new[] { "2", "1", "3" }, RelativeOrder.Below, "0")]
-        [TestCase(new[] { "2", "1", "test" }, RelativeOrder.Below, "0")]
-        public void GetAdjacentOrderIndex_ReturnsCorrectOrder(string[] existingItemsOrder, RelativeOrder relativeOrder, string expectedResult)
-        {
-            var subject = CreateSubject();
-
-            var order = subject.GetAdjacentOrderIndex(existingItemsOrder, relativeOrder);
-
-            Assert.That(order, Is.EqualTo(expectedResult));
-        }
-
-        [Test]
         public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
         {
             var subject = CreateSubject();
