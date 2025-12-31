@@ -3,13 +3,13 @@ title: Release Notes
 layout: home
 nav_order: 95
 ---
-<!-- 
+
 # Lighthouse vNext
 
-{: .d-inline-block }
-Preview
-{: .label .label-blue }
--->
+## Removal of Unparented Work Item Queries
+⚠️ The "Unparented Work Item Query" that could be specified per Portfolio has been removed. All "Unparented Features" are also removed. This due to the fact that the functionality was hard to maintain and rarely used. Furthermore, it doesn't fit in the new design with Deliveries anymore. In future, there may be a replacement of this functionality, but for now, it is removed without a successor.
+
+If you were heavily relying on this, please reach out to us for feedback.
 
 # Lighthouse v25.12.28.1246
 
