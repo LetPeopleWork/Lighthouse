@@ -19,12 +19,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AuthenticationMethodKeys_AreStable()
         {
-            // These keys must never change - they're stored in databases and exports
-            Assert.That(AuthenticationMethodKeys.AzureDevOpsPat, Is.EqualTo("ado.pat"));
-            Assert.That(AuthenticationMethodKeys.JiraCloud, Is.EqualTo("jira.cloud"));
-            Assert.That(AuthenticationMethodKeys.JiraDataCenter, Is.EqualTo("jira.datacenter"));
-            Assert.That(AuthenticationMethodKeys.LinearApiKey, Is.EqualTo("linear.apikey"));
-            Assert.That(AuthenticationMethodKeys.None, Is.EqualTo("none"));
+            using (Assert.EnterMultipleScope())
+            {
+                // These keys must never change - they're stored in databases and exports
+                Assert.That(AuthenticationMethodKeys.AzureDevOpsPat, Is.EqualTo("ado.pat"));
+                Assert.That(AuthenticationMethodKeys.JiraCloud, Is.EqualTo("jira.cloud"));
+                Assert.That(AuthenticationMethodKeys.JiraDataCenter, Is.EqualTo("jira.datacenter"));
+                Assert.That(AuthenticationMethodKeys.LinearApiKey, Is.EqualTo("linear.apikey"));
+                Assert.That(AuthenticationMethodKeys.None, Is.EqualTo("none"));
+            }
+
         }
     }
 }
