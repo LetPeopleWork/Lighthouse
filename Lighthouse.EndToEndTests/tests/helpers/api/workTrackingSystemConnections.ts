@@ -26,6 +26,7 @@ export async function createAzureDevOpsConnection(
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,
 		workTrackingSystem: "AzureDevOps",
+		authenticationMethodKey: "ado.pat",
 		options: options,
 	});
 }
@@ -54,6 +55,7 @@ export async function createJiraConnection(
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,
 		workTrackingSystem: "Jira",
+		authenticationMethodKey: "jira.cloud",
 		options: options,
 	});
 }
@@ -63,6 +65,7 @@ async function createWorkTrackingSystemConnection(
 	workTrackingSystemConnectionData: {
 		name: string;
 		workTrackingSystem: string;
+		authenticationMethodKey: string;
 		options: WorkTrackingSystemOption[];
 	},
 ): Promise<{ id: number; name: string }> {
@@ -71,9 +74,11 @@ async function createWorkTrackingSystemConnection(
 			id: 0,
 			name: workTrackingSystemConnectionData.name,
 			workTrackingSystem: workTrackingSystemConnectionData.workTrackingSystem,
+			authenticationMethodKey: workTrackingSystemConnectionData.authenticationMethodKey,
 			options: workTrackingSystemConnectionData.options,
 		},
 	});
+
 	return response.json();
 }
 

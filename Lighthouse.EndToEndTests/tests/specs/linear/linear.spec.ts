@@ -32,7 +32,7 @@ test("should be able to handle a team defined in Linear", async ({
 		);
 
 		await addWorkTrackingSystemConnectionDialog.setWorkTrackingSystemOption(
-			"ApiKey",
+			"API Key",
 			TestConfig.LinearApiKey,
 		);
 

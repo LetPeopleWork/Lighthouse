@@ -7,7 +7,7 @@ const workTrackingSystemConfiguration = [
 		workTrackingSystemName: "AzureDevOps",
 		workTrackingSystemOptions: [
 			{
-				field: "Azure DevOps Url",
+				field: "Organization URL",
 				value: "https://dev.azure.com/letpeoplework",
 			},
 			{ field: "Personal Access Token", value: TestConfig.AzureDevOpsToken },
@@ -16,9 +16,9 @@ const workTrackingSystemConfiguration = [
 	{
 		workTrackingSystemName: "Jira",
 		workTrackingSystemOptions: [
-			{ field: "Jira Url", value: "https://letpeoplework.atlassian.net" },
-			{ field: "Username", value: "atlassian.pushchair@huser-berta.com" },
-			{ field: "Api Token", value: TestConfig.JiraToken },
+			{ field: "Jira URL", value: "https://letpeoplework.atlassian.net" },
+			{ field: "Username (Email)", value: "atlassian.pushchair@huser-berta.com" },
+			{ field: "API Token", value: TestConfig.JiraToken },
 		],
 	},
 ];
