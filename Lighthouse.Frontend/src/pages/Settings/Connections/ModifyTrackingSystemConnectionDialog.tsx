@@ -1,4 +1,5 @@
 import {
+	Box,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -9,9 +10,10 @@ import {
 	Select,
 	type SelectChangeEvent,
 	TextField,
+	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ValidationActions from "../../../components/Common/ValidationActions/ValidationActions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type {
@@ -38,15 +40,28 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [selectedAuthMethod, setSelectedAuthMethod] =
 		useState<IAuthenticationMethod | null>(null);
-	const [selectedOptions, setSelectedOptions] = useState<
-		IWorkTrackingSystemOption[]
-	>([]);
+	
+		const [authOptions, setAuthOptions] = useState<IWorkTrackingSystemOption[]>(
+		[],
+	);
+	
+	const [otherOptions, setOtherOptions] = useState<IWorkTrackingSystemOption[]>(
+		[],
+	);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 
-	const getOptionsForAuthMethod = useCallback(
+	const getAuthOptionKeys = useCallback(
+		(authMethod: IAuthenticationMethod | null): Set<string> => {
+			if (!authMethod) return new Set();
+			return new Set(authMethod.options.map((opt) => opt.key));
+		},
+		[],
+	);
+
+	const getEmptyAuthOptions = useCallback(
 		(authMethod: IAuthenticationMethod | null): IWorkTrackingSystemOption[] => {
 			if (!authMethod) return [];
 			return authMethod.options.map((opt) => ({
@@ -58,6 +73,14 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		},
 		[],
 	);
+
+	const showAuthSection = useMemo(() => {
+		const methods =
+			selectedWorkTrackingSystem?.availableAuthenticationMethods ?? [];
+		if (methods.length === 0) return false;
+		if (methods.length === 1 && methods[0].options.length === 0) return false;
+		return true;
+	}, [selectedWorkTrackingSystem]);
 
 	useEffect(() => {
 		if (open && workTrackingSystems.length > 0) {
@@ -75,29 +98,57 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 
 			setSelectedAuthMethod(initialMethod);
 
+			const authKeys = getAuthOptionKeys(initialMethod);
+
 			if (workTrackingSystems.length === 1) {
-				setSelectedOptions(
-					firstSystem.options.map((option) => ({
+				const existingAuthOptions: IWorkTrackingSystemOption[] = [];
+				const existingOtherOptions: IWorkTrackingSystemOption[] = [];
+
+				for (const option of firstSystem.options) {
+					const mappedOption: IWorkTrackingSystemOption = {
 						key: option.key,
 						value: option.value,
 						isSecret: option.isSecret,
 						isOptional: option.isOptional,
-					})),
-				);
+					};
+					if (authKeys.has(option.key)) {
+						existingAuthOptions.push(mappedOption);
+					} else {
+						existingOtherOptions.push(mappedOption);
+					}
+				}
+
+				setAuthOptions(existingAuthOptions);
+				setOtherOptions(existingOtherOptions);
 			} else {
-				setSelectedOptions(getOptionsForAuthMethod(initialMethod));
+				setAuthOptions(getEmptyAuthOptions(initialMethod));
+
+				const nonAuthOptions = firstSystem.options
+					.filter((opt) => !authKeys.has(opt.key))
+					.map((opt) => ({
+						key: opt.key,
+						value: opt.value,
+						isSecret: opt.isSecret,
+						isOptional: opt.isOptional,
+					}));
+				setOtherOptions(nonAuthOptions);
 			}
 		}
-	}, [open, workTrackingSystems, getOptionsForAuthMethod]);
+	}, [open, workTrackingSystems, getAuthOptionKeys, getEmptyAuthOptions]);
+
+	const allOptions = useMemo(
+		() => [...authOptions, ...otherOptions],
+		[authOptions, otherOptions],
+	);
 
 	useEffect(() => {
-		const optionsValid = selectedOptions.every(
+		const optionsValid = allOptions.every(
 			(option) => option.isOptional || option.value !== "",
 		);
 		const nameValid = name !== "";
 
 		setInputsValid(optionsValid && nameValid);
-	}, [name, selectedOptions]);
+	}, [name, allOptions]);
 
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
 		const system = workTrackingSystems.find(
@@ -110,7 +161,20 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 			const availableMethods = system.availableAuthenticationMethods ?? [];
 			const defaultMethod = availableMethods[0] ?? null;
 			setSelectedAuthMethod(defaultMethod);
-			setSelectedOptions(getOptionsForAuthMethod(defaultMethod));
+
+			const authKeys = getAuthOptionKeys(defaultMethod);
+
+			setAuthOptions(getEmptyAuthOptions(defaultMethod));
+
+			const nonAuthOptions = system.options
+				.filter((opt) => !authKeys.has(opt.key))
+				.map((opt) => ({
+					key: opt.key,
+					value: opt.value,
+					isSecret: opt.isSecret,
+					isOptional: opt.isOptional,
+				}));
+			setOtherOptions(nonAuthOptions);
 		}
 	};
 
@@ -120,15 +184,28 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		const method = availableMethods.find((m) => m.key === event.target.value);
 		if (method) {
 			setSelectedAuthMethod(method);
-			setSelectedOptions(getOptionsForAuthMethod(method));
+			setAuthOptions(getEmptyAuthOptions(method));
 		}
 	};
 
-	const handleOptionChange = (
+	const handleAuthOptionChange = (
 		changedOption: IWorkTrackingSystemOption,
 		newValue: string,
 	) => {
-		setSelectedOptions((prevOptions) =>
+		setAuthOptions((prevOptions) =>
+			prevOptions.map((option) =>
+				option.key === changedOption.key
+					? { ...option, value: newValue }
+					: option,
+			),
+		);
+	};
+
+	const handleOtherOptionChange = (
+		changedOption: IWorkTrackingSystemOption,
+		newValue: string,
+	) => {
+		setOtherOptions((prevOptions) =>
 			prevOptions.map((option) =>
 				option.key === changedOption.key
 					? { ...option, value: newValue }
@@ -148,7 +225,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				name,
 				dataSourceType: selectedWorkTrackingSystem.dataSourceType,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
-				options: selectedOptions,
+				options: allOptions,
 				authenticationMethodKey: selectedAuthMethod.key,
 			};
 
@@ -165,7 +242,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				name: name,
 				dataSourceType: selectedWorkTrackingSystem.dataSourceType,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
-				options: selectedOptions,
+				options: allOptions,
 				authenticationMethodKey: selectedAuthMethod.key,
 			};
 			onClose(updatedSystem);
@@ -232,23 +309,62 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					</FormControl>
 				)}
 
-				{selectedOptions.map((option) => {
-					// Find display name from selected auth method
-					const displayName =
-						selectedAuthMethod?.options.find((o) => o.key === option.key)
-							?.displayName ?? option.key;
-					return (
-						<TextField
-							key={option.key}
-							label={displayName}
-							type={option.isSecret ? "password" : "text"}
-							fullWidth
-							margin="normal"
-							value={option.value}
-							onChange={(e) => handleOptionChange(option, e.target.value)}
-						/>
-					);
-				})}
+				{/* Auth Options Section - only show when there are auth fields */}
+				{showAuthSection && authOptions.length > 0 && (
+					<Box sx={{ mt: 2 }}>
+						<Typography
+							variant="subtitle2"
+							color="text.secondary"
+							sx={{ mb: 1 }}
+						>
+							Authentication
+						</Typography>
+						{authOptions.map((option) => {
+							const displayName =
+								selectedAuthMethod?.options.find((o) => o.key === option.key)
+									?.displayName ?? option.key;
+							return (
+								<TextField
+									key={option.key}
+									label={displayName}
+									type={option.isSecret ? "password" : "text"}
+									fullWidth
+									margin="normal"
+									value={option.value}
+									onChange={(e) =>
+										handleAuthOptionChange(option, e.target.value)
+									}
+								/>
+							);
+						})}
+					</Box>
+				)}
+
+				{/* Other Options Section - only show when there are non-auth options */}
+				{otherOptions.length > 0 && (
+					<Box sx={{ mt: 2 }}>
+						<Typography
+							variant="subtitle2"
+							color="text.secondary"
+							sx={{ mb: 1 }}
+						>
+							Options
+						</Typography>
+						{otherOptions.map((option) => (
+							<TextField
+								key={option.key}
+								label={option.key}
+								type={option.isSecret ? "password" : "text"}
+								fullWidth
+								margin="normal"
+								value={option.value}
+								onChange={(e) =>
+									handleOtherOptionChange(option, e.target.value)
+								}
+							/>
+						))}
+					</Box>
+				)}
 			</DialogContent>
 			<DialogActions>
 				<ValidationActions

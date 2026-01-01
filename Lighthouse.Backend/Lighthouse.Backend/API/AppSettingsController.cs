@@ -51,17 +51,19 @@ namespace Lighthouse.Backend.API
             return Ok(settings);
         }
 
-	[HttpGet("DefaultProjectSettings")]
-	public ActionResult<PortfolioSettingDto> GetDefaultProjectSettings()
-	{
-		var settings = appSettingService.GetDefaultProjectSettings();
-		return Ok(settings);
-	}	[HttpGet("WorkTrackingSystemSettings")]
-	public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
-	{
-		var settings = appSettingService.GetWorkTrackingSystemSettings();
-		return Ok(settings);
-	}        [HttpPut("WorkTrackingSystemSettings")]
+        [HttpGet("DefaultProjectSettings")]
+        public ActionResult<PortfolioSettingDto> GetDefaultProjectSettings()
+        {
+            var settings = appSettingService.GetDefaultProjectSettings();
+            return Ok(settings);
+        }
+        [HttpGet("WorkTrackingSystemSettings")]
+        public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
+        {
+            var settings = appSettingService.GetWorkTrackingSystemSettings();
+            return Ok(settings);
+        }
+        [HttpPut("WorkTrackingSystemSettings")]
         public async Task<ActionResult> UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings)
         {
             await appSettingService.UpdateWorkTrackingSystemSettings(workTrackingSystemSettings);

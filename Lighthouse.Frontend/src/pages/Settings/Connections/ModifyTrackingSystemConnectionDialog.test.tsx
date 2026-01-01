@@ -41,6 +41,15 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		},
 	];
 
+	// CSV has no auth options (method key "none" with empty options)
+	const csvAuthMethods: IAuthenticationMethod[] = [
+		{
+			key: "none",
+			displayName: "No Authentication",
+			options: [],
+		},
+	];
+
 	const mockWorkTrackingSystems: IWorkTrackingSystemConnection[] = [
 		new WorkTrackingSystemConnection({
 			name: "Jira",
@@ -368,6 +377,202 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		await waitFor(() => {
 			const urlInput = screen.getByLabelText("URL");
 			expect(urlInput).toHaveValue("");
+		});
+	});
+
+	describe("Auth vs Options section visibility", () => {
+		it("should not show Auth section for CSV (no-auth provider)", () => {
+			const csvConnection = new WorkTrackingSystemConnection({
+				name: "CSV",
+				workTrackingSystem: "Csv",
+				options: [
+					{ key: "Delimiter", value: ",", isSecret: false, isOptional: false },
+					{
+						key: "DateTimeFormat",
+						value: "yyyy-MM-dd",
+						isSecret: false,
+						isOptional: false,
+					},
+				],
+				dataSourceType: "File",
+				id: 3,
+				authenticationMethodKey: "none",
+				availableAuthenticationMethods: csvAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[csvConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Auth section header should not be present
+			expect(screen.queryByText("Authentication")).not.toBeInTheDocument();
+
+			// Options section should be present with CSV options
+			expect(screen.getByText("Options")).toBeInTheDocument();
+
+			// CSV options should be rendered with their keys as labels
+			expect(screen.getByLabelText("Delimiter")).toBeInTheDocument();
+			expect(screen.getByLabelText("DateTimeFormat")).toBeInTheDocument();
+		});
+
+		it("should show Auth section but not Options section for Jira (auth-only provider)", () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "http://jira.example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
+				dataSourceType: "Query",
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Auth section header should be present
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+
+			// Options section should NOT be present (no non-auth options)
+			expect(screen.queryByText("Options")).not.toBeInTheDocument();
+
+			// Auth options should be rendered with display names
+			expect(screen.getByLabelText("URL")).toBeInTheDocument();
+			expect(screen.getByLabelText("API Token")).toBeInTheDocument();
+		});
+
+		it("should preserve CSV option values when editing existing connection", () => {
+			const csvConnection = new WorkTrackingSystemConnection({
+				name: "My CSV Connection",
+				workTrackingSystem: "Csv",
+				options: [
+					{ key: "Delimiter", value: ";", isSecret: false, isOptional: false },
+					{
+						key: "DateTimeFormat",
+						value: "dd/MM/yyyy",
+						isSecret: false,
+						isOptional: false,
+					},
+				],
+				dataSourceType: "File",
+				id: 3,
+				authenticationMethodKey: "none",
+				availableAuthenticationMethods: csvAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[csvConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Existing values should be pre-populated
+			expect(screen.getByLabelText("Delimiter")).toHaveValue(";");
+			expect(screen.getByLabelText("DateTimeFormat")).toHaveValue("dd/MM/yyyy");
+		});
+
+		it("should include both auth and other options in validate payload", async () => {
+			// A hypothetical provider with both auth and non-auth options
+			const mixedAuthMethods: IAuthenticationMethod[] = [
+				{
+					key: "mixed.auth",
+					displayName: "Mixed Auth",
+					options: [
+						{
+							key: "authToken",
+							displayName: "Auth Token",
+							isSecret: true,
+							isOptional: false,
+						},
+					],
+				},
+			];
+
+			const mixedConnection = new WorkTrackingSystemConnection({
+				name: "Mixed",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "authToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+					{
+						key: "customSetting",
+						value: "custom-value",
+						isSecret: false,
+						isOptional: false,
+					},
+				],
+				dataSourceType: "Query",
+				id: 4,
+				authenticationMethodKey: "mixed.auth",
+				availableAuthenticationMethods: mixedAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[mixedConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Fill in auth token
+			fireEvent.change(screen.getByLabelText("Auth Token"), {
+				target: { value: "secret-token" },
+			});
+
+			// Click validate
+			fireEvent.click(screen.getByText("Validate"));
+
+			await waitFor(() =>
+				expect(mockValidateSettings).toHaveBeenCalledTimes(1),
+			);
+
+			// Validate payload should include both auth and non-auth options
+			expect(mockValidateSettings).toHaveBeenCalledWith(
+				expect.objectContaining({
+					options: expect.arrayContaining([
+						expect.objectContaining({
+							key: "authToken",
+							value: "secret-token",
+						}),
+						expect.objectContaining({
+							key: "customSetting",
+							value: "custom-value",
+						}),
+					]),
+				}),
+			);
 		});
 	});
 });
