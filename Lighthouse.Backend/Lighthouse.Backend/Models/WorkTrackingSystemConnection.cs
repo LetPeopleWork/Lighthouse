@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.Models
 
         public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
+        public string AuthenticationMethodKey { get; set; } = string.Empty;
 
         public List<WorkTrackingSystemConnectionOption> Options { get; } = [];
 

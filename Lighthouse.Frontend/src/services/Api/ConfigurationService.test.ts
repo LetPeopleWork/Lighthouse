@@ -149,6 +149,7 @@ describe("ConfigurationService", () => {
 					name: "AzureDevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
+					authenticationMethodKey: "ado.pat",
 				},
 			],
 			teams: [

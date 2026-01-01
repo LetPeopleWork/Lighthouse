@@ -57,6 +57,7 @@ vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 								workTrackingSystem: "Jira",
 								options: [],
 								dataSourceType: "Query",
+								authenticationMethodKey: "jira.cloud",
 							} as IWorkTrackingSystemConnection)
 						}
 					>
@@ -223,6 +224,7 @@ describe("ModifyProjectSettings", () => {
 			options: [],
 			workTrackingSystem: "Jira",
 			dataSourceType: "Query",
+			authenticationMethodKey: "jira.cloud",
 		},
 		{
 			id: 2,
@@ -230,6 +232,7 @@ describe("ModifyProjectSettings", () => {
 			options: [],
 			workTrackingSystem: "AzureDevOps",
 			dataSourceType: "Query",
+			authenticationMethodKey: "ado.pat",
 		},
 	];
 

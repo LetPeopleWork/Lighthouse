@@ -456,7 +456,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
 
-            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
@@ -479,7 +484,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
@@ -512,7 +522,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("project = LGHTHSDMO");
 
-            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = "https://letpeoplework.atlassian.net", IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = "Benji", IsSecret = false },
@@ -548,7 +563,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = CreatePortfolio("project = LGHTHSDMO");
             var subject = CreateSubject();
 
-            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.AzureDevOpsPat
+            };
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = "https://letpeoplework.atlassian.net", IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = "Benji", IsSecret = false },
@@ -624,7 +644,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
 
-            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },

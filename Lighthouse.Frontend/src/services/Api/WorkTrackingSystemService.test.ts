@@ -28,6 +28,7 @@ describe("WorkTrackingSystemService", () => {
 				dataSourceType: "Query",
 				name: "Jira",
 				workTrackingSystem: "Jira",
+				authenticationMethodKey: "jira.cloud",
 				options: [
 					{
 						key: "apiToken",
@@ -45,10 +46,10 @@ describe("WorkTrackingSystemService", () => {
 			await workTrackingSystemService.getWorkTrackingSystems();
 
 		expect(workTrackingSystems).toEqual([
-			new WorkTrackingSystemConnection(
-				"Jira",
-				"Jira",
-				[
+			new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
 					{
 						key: "apiToken",
 						value: "token123",
@@ -56,9 +57,10 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				"Query",
-				2,
-			),
+				dataSourceType: "Query",
+				id: 2,
+				authenticationMethodKey: "jira.cloud",
+			}),
 		]);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/worktrackingsystemconnections/supported",
@@ -71,6 +73,7 @@ describe("WorkTrackingSystemService", () => {
 			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
+			authenticationMethodKey: "jira.cloud",
 			options: [
 				{
 					key: "apiToken",
@@ -101,6 +104,7 @@ describe("WorkTrackingSystemService", () => {
 				dataSourceType: "Query",
 				name: "Azure DevOps",
 				workTrackingSystem: "AzureDevOps",
+				authenticationMethodKey: "ado.pat",
 				options: [
 					{
 						key: "apiToken",
@@ -118,10 +122,10 @@ describe("WorkTrackingSystemService", () => {
 			await workTrackingSystemService.getConfiguredWorkTrackingSystems();
 
 		expect(configuredSystems).toEqual([
-			new WorkTrackingSystemConnection(
-				"Azure DevOps",
-				"AzureDevOps",
-				[
+			new WorkTrackingSystemConnection({
+				name: "Azure DevOps",
+				workTrackingSystem: "AzureDevOps",
+				options: [
 					{
 						key: "apiToken",
 						value: "adoToken",
@@ -129,9 +133,10 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				"Query",
-				2,
-			),
+				dataSourceType: "Query",
+				id: 2,
+				authenticationMethodKey: "ado.pat",
+			}),
 		]);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/worktrackingsystemconnections",
@@ -144,6 +149,7 @@ describe("WorkTrackingSystemService", () => {
 			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
+			authenticationMethodKey: "jira.cloud",
 			options: [
 				{
 					key: "apiToken",
@@ -167,10 +173,10 @@ describe("WorkTrackingSystemService", () => {
 			);
 
 		expect(createdConnection).toEqual(
-			new WorkTrackingSystemConnection(
-				"Jira",
-				"Jira",
-				[
+			new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
 					{
 						key: "apiToken",
 						value: "token123",
@@ -178,9 +184,10 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				"Query",
-				3,
-			),
+				dataSourceType: "Query",
+				id: 3,
+				authenticationMethodKey: "jira.cloud",
+			}),
 		);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
 			"/worktrackingsystemconnections",
@@ -194,6 +201,7 @@ describe("WorkTrackingSystemService", () => {
 			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
+			authenticationMethodKey: "jira.cloud",
 			options: [
 				{
 					key: "apiToken",
@@ -212,10 +220,10 @@ describe("WorkTrackingSystemService", () => {
 			);
 
 		expect(result).toEqual(
-			new WorkTrackingSystemConnection(
-				"Jira",
-				"Jira",
-				[
+			new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
 					{
 						key: "apiToken",
 						value: "updatedToken123",
@@ -223,9 +231,10 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				"Query",
-				1,
-			),
+				dataSourceType: "Query",
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+			}),
 		);
 		expect(mockedAxios.put).toHaveBeenCalledWith(
 			"/worktrackingsystemconnections/1",
@@ -241,5 +250,25 @@ describe("WorkTrackingSystemService", () => {
 		expect(mockedAxios.delete).toHaveBeenCalledWith(
 			"/worktrackingsystemconnections/1",
 		);
+	});
+
+	it("should deserialize authenticationMethodKey from response", async () => {
+		const mockResponse: IWorkTrackingSystemConnection[] = [
+			{
+				id: 1,
+				dataSourceType: "Query",
+				name: "Jira Cloud",
+				workTrackingSystem: "Jira",
+				options: [],
+				authenticationMethodKey: "jira.cloud",
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+		const workTrackingSystems =
+			await workTrackingSystemService.getWorkTrackingSystems();
+
+		expect(workTrackingSystems[0].authenticationMethodKey).toBe("jira.cloud");
 	});
 });

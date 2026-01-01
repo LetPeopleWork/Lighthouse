@@ -70,6 +70,7 @@ describe("ImportSettingsStep", () => {
 				dataSourceType: "Query",
 				workTrackingSystem: "AzureDevOps",
 				options: [],
+				authenticationMethodKey: "ado.pat",
 			},
 		],
 		teams: [
@@ -352,6 +353,7 @@ describe("ImportSettingsStep", () => {
 					name: "Work Tracking System 1",
 					dataSourceType: "Query",
 					workTrackingSystem: "AzureDevOps",
+					authenticationMethodKey: "ado.pat",
 					options: [
 						{
 							key: "url",

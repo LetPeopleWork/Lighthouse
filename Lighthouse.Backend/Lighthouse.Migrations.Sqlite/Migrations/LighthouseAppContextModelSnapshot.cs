@@ -573,6 +573,10 @@ namespace Lighthouse.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AuthenticationMethodKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("DataSourceType")
                         .HasColumnType("INTEGER");
 

@@ -29,6 +29,7 @@ describe("GeneralSettingsComponent", () => {
 			workTrackingSystem: "Jira",
 			options: [],
 			dataSourceType: "Query",
+			authenticationMethodKey: "jira.cloud",
 		},
 		{
 			id: 2,
@@ -36,6 +37,7 @@ describe("GeneralSettingsComponent", () => {
 			workTrackingSystem: "AzureDevOps",
 			options: [],
 			dataSourceType: "File",
+			authenticationMethodKey: "ado.pat",
 		},
 	];
 
@@ -223,6 +225,7 @@ describe("GeneralSettingsComponent", () => {
 			workTrackingSystem: "Linear", // Valid WorkTrackingSystemType
 			options: [],
 			dataSourceType: "Query", // Same as Test System 1
+			authenticationMethodKey: "linear.apikey",
 		};
 
 		const systemsWithSameType = [...mockWorkTrackingSystems, sameTypeSystem];

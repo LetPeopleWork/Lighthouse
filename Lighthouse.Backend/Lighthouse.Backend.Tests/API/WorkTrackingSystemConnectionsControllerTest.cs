@@ -10,7 +10,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using NUnit.Framework.Internal;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -279,6 +278,51 @@ namespace Lighthouse.Backend.Tests.API
             await subject.ValidateConnection(connectionDto);
 
             workTrackingConnectorServiceMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(c => c.Options.Single().Value == "EncryptedSecret")));
+        }
+
+        [Test]
+        public async Task CreateNewWorkTrackingSystemConnection_WithAuthMethodKey_PreservesKey()
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Jira Cloud Connection",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud,
+            };
+
+            var subject = CreateSubject();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            var okResult = result.Result as OkObjectResult;
+            var connection = okResult?.Value as WorkTrackingSystemConnectionDto;
+
+            Assert.That(connection?.AuthenticationMethodKey, Is.EqualTo(AuthenticationMethodKeys.JiraCloud));
+        }
+
+        [Test]
+        [TestCase(WorkTrackingSystems.AzureDevOps, AuthenticationMethodKeys.AzureDevOpsPat)]
+        [TestCase(WorkTrackingSystems.Linear, AuthenticationMethodKeys.LinearApiKey)]
+        [TestCase(WorkTrackingSystems.Csv, AuthenticationMethodKeys.None)]
+        [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraCloud)]
+        public async Task CreateNewWorkTrackingSystemConnection_WithAuthMethodKey_PreservesKeyForAllProviders(
+            WorkTrackingSystems system, string authMethodKey)
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Connection",
+                WorkTrackingSystem = system,
+                AuthenticationMethodKey = authMethodKey,
+            };
+
+            var subject = CreateSubject();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            var okResult = result.Result as OkObjectResult;
+            var connection = okResult?.Value as WorkTrackingSystemConnectionDto;
+
+            Assert.That(connection?.AuthenticationMethodKey, Is.EqualTo(authMethodKey));
         }
 
         private WorkTrackingSystemConnectionsController CreateSubject()

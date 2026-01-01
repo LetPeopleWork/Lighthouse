@@ -34,5 +34,28 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(subject.Options, Has.Count.EqualTo(1));
         }
+
+        [Test]
+        public void Create_SetsAuthenticationMethodKey()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection
+            {
+                AuthenticationMethodKey = "ado.pat"
+            };
+
+            var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
+
+            Assert.That(subject.AuthenticationMethodKey, Is.EqualTo("ado.pat"));
+        }
+
+        [Test]
+        public void Create_AuthenticationMethodKey_WhenEmpty_RemainsEmpty()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection();
+
+            var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
+
+            Assert.That(subject.AuthenticationMethodKey, Is.EqualTo(string.Empty));
+        }
     }
 }

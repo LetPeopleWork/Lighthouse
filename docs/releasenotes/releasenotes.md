@@ -6,6 +6,20 @@ nav_order: 95
 
 # Lighthouse vNext
 
+## Explicit Authentication Methods for Work Tracking Systems
+Work Tracking System connections now use explicit authentication method selection. This change provides:
+
+- **Clearer configuration**: Each connection type shows exactly which authentication fields are required
+- **Jira Cloud vs Data Center distinction**: Jira connections now explicitly differentiate between Cloud (email + API Token) and Data Center (Personal Access Token/Bearer token)
+- **Backward compatibility**: Existing connections are automatically migrated:
+  - Azure DevOps → Personal Access Token
+  - Linear → API Key
+  - Jira with username → Jira Cloud
+  - Jira without username → Jira Data Center
+  - CSV → No authentication
+
+No manual action is required for existing configurations.
+
 ## Removal of Unparented Work Item Queries
 ⚠️ The "Unparented Work Item Query" that could be specified per Portfolio has been removed. All "Unparented Features" are also removed. This due to the fact that the functionality was hard to maintain and rarely used. Furthermore, it doesn't fit in the new design with Deliveries anymore. In future, there may be a replacement of this functionality, but for now, it is removed without a successor.
 

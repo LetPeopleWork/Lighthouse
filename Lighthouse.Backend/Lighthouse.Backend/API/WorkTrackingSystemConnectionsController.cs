@@ -139,7 +139,8 @@ namespace Lighthouse.Backend.API
                 Id = connectionDto.Id,
                 Name = connectionDto.Name,
                 WorkTrackingSystem = connectionDto.WorkTrackingSystem,
-                DataSourceType = connectionDto.WorkTrackingSystem == WorkTrackingSystems.Csv ? DataSourceType.File : DataSourceType.Query
+                DataSourceType = connectionDto.WorkTrackingSystem == WorkTrackingSystems.Csv ? DataSourceType.File : DataSourceType.Query,
+                AuthenticationMethodKey = connectionDto.AuthenticationMethodKey,
             };
 
             foreach (var option in connectionDto.Options)

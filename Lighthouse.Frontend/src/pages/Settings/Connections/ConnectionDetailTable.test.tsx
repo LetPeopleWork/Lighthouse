@@ -7,14 +7,44 @@ import ConnectionDetailTable from "./ConnectionDetailTable";
 
 describe("ConnectionDetailTable", () => {
 	const mockConnections: IWorkTrackingSystemConnection[] = [
-		new WorkTrackingSystemConnection("Jira", "Jira", [], "Query", 1),
-		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], "Query", 2),
+		new WorkTrackingSystemConnection({
+			name: "Jira",
+			workTrackingSystem: "Jira",
+			options: [],
+			dataSourceType: "Query",
+			id: 1,
+		}),
+		new WorkTrackingSystemConnection({
+			name: "ADO",
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			dataSourceType: "Query",
+			id: 2,
+		}),
 	];
 
 	const mockConnectionsWithCsv: IWorkTrackingSystemConnection[] = [
-		new WorkTrackingSystemConnection("Jira", "Jira", [], "Query", 1),
-		new WorkTrackingSystemConnection("CSV", "Csv", [], "File", 2),
-		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], "Query", 3),
+		new WorkTrackingSystemConnection({
+			name: "Jira",
+			workTrackingSystem: "Jira",
+			options: [],
+			dataSourceType: "Query",
+			id: 1,
+		}),
+		new WorkTrackingSystemConnection({
+			name: "CSV",
+			workTrackingSystem: "Csv",
+			options: [],
+			dataSourceType: "File",
+			id: 2,
+		}),
+		new WorkTrackingSystemConnection({
+			name: "ADO",
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			dataSourceType: "Query",
+			id: 3,
+		}),
 	];
 
 	const mockOnEditConnectionButtonClicked = vi.fn();

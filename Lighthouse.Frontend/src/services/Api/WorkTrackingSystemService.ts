@@ -101,12 +101,18 @@ export class WorkTrackingSystemService
 	private deserializeWorkTrackingSystemConnection(
 		workTrackingSystemConnection: IWorkTrackingSystemConnection,
 	) {
-		return new WorkTrackingSystemConnection(
-			workTrackingSystemConnection.name,
-			workTrackingSystemConnection.workTrackingSystem,
-			workTrackingSystemConnection.options,
-			workTrackingSystemConnection.dataSourceType,
-			workTrackingSystemConnection.id,
-		);
+		return new WorkTrackingSystemConnection({
+			name: workTrackingSystemConnection.name,
+			workTrackingSystem: workTrackingSystemConnection.workTrackingSystem,
+			options: workTrackingSystemConnection.options,
+			dataSourceType: workTrackingSystemConnection.dataSourceType,
+			id: workTrackingSystemConnection.id,
+			authenticationMethodKey:
+				workTrackingSystemConnection.authenticationMethodKey,
+			authenticationMethodDisplayName:
+				workTrackingSystemConnection.authenticationMethodDisplayName,
+			availableAuthenticationMethods:
+				workTrackingSystemConnection.availableAuthenticationMethods,
+		});
 	}
 }

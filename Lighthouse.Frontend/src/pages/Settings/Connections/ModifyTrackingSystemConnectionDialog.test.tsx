@@ -1,17 +1,51 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	type IAuthenticationMethod,
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import ModifyTrackingSystemConnectionDialog from "./ModifyTrackingSystemConnectionDialog";
 
 describe("ModifyTrackingSystemConnectionDialog", () => {
+	// Define auth methods for each system with their options
+	const jiraAuthMethods: IAuthenticationMethod[] = [
+		{
+			key: "jira.cloud",
+			displayName: "Jira Cloud",
+			options: [
+				{ key: "url", displayName: "URL", isSecret: false, isOptional: false },
+				{
+					key: "apiToken",
+					displayName: "API Token",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		},
+	];
+
+	const adoAuthMethods: IAuthenticationMethod[] = [
+		{
+			key: "ado.pat",
+			displayName: "Personal Access Token",
+			options: [
+				{ key: "url", displayName: "URL", isSecret: false, isOptional: false },
+				{
+					key: "apiToken",
+					displayName: "API Token",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		},
+	];
+
 	const mockWorkTrackingSystems: IWorkTrackingSystemConnection[] = [
-		new WorkTrackingSystemConnection(
-			"Jira",
-			"Jira",
-			[
+		new WorkTrackingSystemConnection({
+			name: "Jira",
+			workTrackingSystem: "Jira",
+			options: [
 				{
 					key: "url",
 					value: "http://jira.example.com",
@@ -20,13 +54,15 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 				},
 				{ key: "apiToken", value: "12345", isSecret: true, isOptional: false },
 			],
-			"Query",
-			1,
-		),
-		new WorkTrackingSystemConnection(
-			"ADO",
-			"AzureDevOps",
-			[
+			dataSourceType: "Query",
+			id: 1,
+			authenticationMethodKey: "jira.cloud",
+			availableAuthenticationMethods: jiraAuthMethods,
+		}),
+		new WorkTrackingSystemConnection({
+			name: "ADO",
+			workTrackingSystem: "AzureDevOps",
+			options: [
 				{
 					key: "url",
 					value: "http://ado.example.com",
@@ -35,9 +71,11 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 				},
 				{ key: "apiToken", value: "67890", isSecret: true, isOptional: false },
 			],
-			"Query",
-			2,
-		),
+			dataSourceType: "Query",
+			id: 2,
+			authenticationMethodKey: "ado.pat",
+			availableAuthenticationMethods: adoAuthMethods,
+		}),
 	];
 
 	const mockValidateSettings = vi.fn(
@@ -75,11 +113,12 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// Check the input field for the connection name
 		expect(screen.getByLabelText("Connection Name")).toHaveValue("Jira");
 
-		const urlInput = screen.getByLabelText("url");
-		expect(urlInput).toHaveValue("http://jira.example.com");
+		// When creating a new connection, options come from auth method schema with displayNames
+		const urlInput = screen.getByLabelText("URL");
+		expect(urlInput).toBeInTheDocument();
 
-		const apiTokenInput = screen.getByLabelText("apiToken");
-		expect(apiTokenInput).toHaveValue("12345");
+		const apiTokenInput = screen.getByLabelText("API Token");
+		expect(apiTokenInput).toBeInTheDocument();
 	});
 
 	it("should call validateSettings and show validation status", async () => {
@@ -94,6 +133,13 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 
 		fireEvent.change(screen.getByLabelText("Connection Name"), {
 			target: { value: "Valid Connection" },
+		});
+		// Fill in required options
+		fireEvent.change(screen.getByLabelText("URL"), {
+			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Token"), {
+			target: { value: "test-token" },
 		});
 		fireEvent.click(screen.getByText("Validate"));
 
@@ -115,6 +161,13 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 
 		fireEvent.change(screen.getByLabelText("Connection Name"), {
 			target: { value: "Valid Connection" },
+		});
+		// Fill in required options
+		fireEvent.change(screen.getByLabelText("URL"), {
+			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Token"), {
+			target: { value: "test-token" },
 		});
 		fireEvent.click(screen.getByText("Validate"));
 
@@ -157,8 +210,13 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			/>,
 		);
 
+		// Fill in required fields with display names from auth method schema
+		fireEvent.change(screen.getByLabelText("URL"), {
+			target: { value: "http://example.com" },
+		});
+
 		// Find the API token input field (which is a password field)
-		const apiTokenInput = screen.getByLabelText("apiToken");
+		const apiTokenInput = screen.getByLabelText("API Token");
 
 		// Simulate a paste event by directly using fireEvent.change
 		// This should trigger the handleOptionChange function the same way a paste would
@@ -197,6 +255,14 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			/>,
 		);
 
+		// Fill in required options first
+		fireEvent.change(screen.getByLabelText("URL"), {
+			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Token"), {
+			target: { value: "test-token" },
+		});
+
 		// First validate to set the correct state
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
@@ -234,6 +300,14 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			/>,
 		);
 
+		// Fill in required options first
+		fireEvent.change(screen.getByLabelText("URL"), {
+			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Token"), {
+			target: { value: "test-token" },
+		});
+
 		// First validate to set the correct state
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
@@ -241,7 +315,7 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		await waitFor(() => {}, { timeout: 500 });
 
 		// Clear a required option field to make inputs invalid
-		const urlInput: HTMLInputElement = screen.getByLabelText("url");
+		const urlInput: HTMLInputElement = screen.getByLabelText("URL");
 		fireEvent.change(urlInput, {
 			target: { value: "" },
 		});
@@ -268,6 +342,14 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			/>,
 		);
 
+		// Fill in required options first
+		fireEvent.change(screen.getByLabelText("URL"), {
+			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Token"), {
+			target: { value: "test-token" },
+		});
+
 		// First validate to set the correct state
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
@@ -282,10 +364,10 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		const adoOption = screen.getByText("AzureDevOps");
 		fireEvent.click(adoOption);
 
-		// The system should have changed, check the url field now shows the ADO url
+		// The system should have changed - options are reset to empty values from the new auth method
 		await waitFor(() => {
-			const urlInput = screen.getByLabelText("url");
-			expect(urlInput).toHaveValue("http://ado.example.com");
+			const urlInput = screen.getByLabelText("URL");
+			expect(urlInput).toHaveValue("");
 		});
 	});
 });

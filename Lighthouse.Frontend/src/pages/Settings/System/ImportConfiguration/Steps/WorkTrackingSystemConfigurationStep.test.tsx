@@ -28,6 +28,7 @@ describe("WorkTrackingSystemConfigurationStep", () => {
 			name: "Azure DevOps",
 			dataSourceType: "Query",
 			workTrackingSystem: "AzureDevOps",
+			authenticationMethodKey: "ado.pat",
 			options: [
 				{
 					key: "url",

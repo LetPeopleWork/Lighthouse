@@ -29,6 +29,21 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
+        [TestCase(WorkTrackingSystems.AzureDevOps, AuthenticationMethodKeys.AzureDevOpsPat)]
+        [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraCloud)]
+        [TestCase(WorkTrackingSystems.Linear, AuthenticationMethodKeys.LinearApiKey)]
+        [TestCase(WorkTrackingSystems.Csv, AuthenticationMethodKeys.None)]
+        public void CreateDefaultConnectionForWorkTrackingSystem_SetsAuthenticationMethodKey(
+            WorkTrackingSystems workTrackingSystem, string expectedAuthMethodKey)
+        {
+            var subject = CreateSubject();
+
+            var defaultConnection = subject.CreateDefaultConnectionForWorkTrackingSystem(workTrackingSystem);
+
+            Assert.That(defaultConnection.AuthenticationMethodKey, Is.EqualTo(expectedAuthMethodKey));
+        }
+
+        [Test]
         public void CreateOptionsForWorkTrackingSystem_GivenAzureDevOps_ReturnsCorrectOptions()
         {
             var subject = CreateSubject();

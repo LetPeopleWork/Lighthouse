@@ -50,6 +50,7 @@ describe("FileUploadComponent", () => {
 		workTrackingSystem: "Csv",
 		options: [],
 		dataSourceType: "File",
+		authenticationMethodKey: "none",
 	};
 
 	const mockQueryConnection: IWorkTrackingSystemConnection = {
@@ -58,6 +59,7 @@ describe("FileUploadComponent", () => {
 		workTrackingSystem: "Jira",
 		options: [],
 		dataSourceType: "Query",
+		authenticationMethodKey: "jira.cloud",
 	};
 
 	beforeEach(() => {
@@ -67,8 +69,8 @@ describe("FileUploadComponent", () => {
 			{ key: "workItems", value: "Work Items", defaultValue: "Work Items" },
 		]);
 
-		// Mock window.alert
-		vi.spyOn(window, "alert").mockImplementation(() => {});
+		// Mock globalThis.alert
+		vi.spyOn(globalThis, "alert").mockImplementation(() => {});
 	});
 
 	describe("Rendering Tests", () => {
@@ -221,7 +223,7 @@ describe("FileUploadComponent", () => {
 
 			fileInput.dispatchEvent(changeEvent);
 
-			expect(window.alert).toHaveBeenCalledWith(
+			expect(globalThis.alert).toHaveBeenCalledWith(
 				"Please select a valid CSV file.",
 			);
 			expect(mockOnFileSelect).not.toHaveBeenCalled();
@@ -252,7 +254,7 @@ describe("FileUploadComponent", () => {
 
 			fileInput.dispatchEvent(changeEvent);
 
-			expect(window.alert).toHaveBeenCalledWith(
+			expect(globalThis.alert).toHaveBeenCalledWith(
 				"File size must be less than 10MB.",
 			);
 			expect(mockOnFileSelect).not.toHaveBeenCalled();
@@ -400,7 +402,7 @@ describe("FileUploadComponent", () => {
 
 			dropZone?.dispatchEvent(dropEvent);
 
-			expect(window.alert).toHaveBeenCalledWith(
+			expect(globalThis.alert).toHaveBeenCalledWith(
 				"Please select a valid CSV file.",
 			);
 			expect(mockOnFileSelect).not.toHaveBeenCalled();
@@ -423,7 +425,7 @@ describe("FileUploadComponent", () => {
 
 			dropZone?.dispatchEvent(dropEvent);
 
-			expect(window.alert).toHaveBeenCalledWith(
+			expect(globalThis.alert).toHaveBeenCalledWith(
 				"File size must be less than 10MB.",
 			);
 			expect(mockOnFileSelect).not.toHaveBeenCalled();
@@ -816,7 +818,7 @@ describe("FileUploadComponent", () => {
 
 			fileInput.dispatchEvent(changeEvent);
 
-			expect(window.alert).toHaveBeenCalledWith(
+			expect(globalThis.alert).toHaveBeenCalledWith(
 				"Please select a valid CSV file.",
 			);
 			expect(mockOnFileSelect).not.toHaveBeenCalled();
@@ -847,7 +849,7 @@ describe("FileUploadComponent", () => {
 
 			fileInput.dispatchEvent(changeEvent);
 
-			expect(window.alert).toHaveBeenCalledWith(
+			expect(globalThis.alert).toHaveBeenCalledWith(
 				"File size must be less than 10MB.",
 			);
 			expect(mockOnFileSelect).not.toHaveBeenCalled();

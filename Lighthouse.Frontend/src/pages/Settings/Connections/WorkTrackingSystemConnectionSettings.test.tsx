@@ -50,15 +50,27 @@ describe("WorkTrackingSystemConnectionSettings", () => {
 	const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 
 	const mockConnections: IWorkTrackingSystemConnection[] = [
-		new WorkTrackingSystemConnection("Jira Connection", "Jira", [], "Query", 1),
-		new WorkTrackingSystemConnection("CSV", "Csv", [], "File", 2),
-		new WorkTrackingSystemConnection(
-			"Azure DevOps",
-			"AzureDevOps",
-			[],
-			"Query",
-			3,
-		),
+		new WorkTrackingSystemConnection({
+			name: "Jira Connection",
+			workTrackingSystem: "Jira",
+			options: [],
+			dataSourceType: "Query",
+			id: 1,
+		}),
+		new WorkTrackingSystemConnection({
+			name: "CSV",
+			workTrackingSystem: "Csv",
+			options: [],
+			dataSourceType: "File",
+			id: 2,
+		}),
+		new WorkTrackingSystemConnection({
+			name: "Azure DevOps",
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			dataSourceType: "Query",
+			id: 3,
+		}),
 	];
 
 	beforeEach(() => {

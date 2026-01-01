@@ -600,7 +600,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)
         {
             var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
-            var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var apiToken = cryptoService.Decrypt(encryptedApiToken);
             var key = $"{url}|{encryptedApiToken}";
@@ -615,8 +614,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return c;
             });
 
-            if (!string.IsNullOrEmpty(username))
+            if (connection.AuthenticationMethodKey == AuthenticationMethodKeys.JiraCloud)
             {
+                var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
                 var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
             }
