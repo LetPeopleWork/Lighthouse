@@ -432,6 +432,16 @@ const process = (payment: Payment) => {
 // Continue this pattern...
 ```
 
+## Planning Guardrail: Shared Contract Changes
+
+When changing a **shared contract** (DTOs, API payloads, core interfaces/classes used across multiple areas), do a quick blast-radius scan *before* starting implementation:
+
+- Identify the contract(s) being changed (properties added/renamed, nullability changes).
+- Search for usages in tests/mocks to estimate how many files will need updates.
+- If the change touches many tests, introduce or extend a shared test-data factory/builder so future changes are localized.
+
+This guardrail complements TDD: it reduces avoidable compilation failures and repetitive mock edits, but it does **not** replace RED-GREEN-REFACTOR.
+
 ## Working with GitHub Copilot
 
 When Copilot suggests code:

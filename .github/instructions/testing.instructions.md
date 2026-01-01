@@ -165,6 +165,14 @@ private PaymentRequest GetMockPaymentRequest(
 }
 ```
 
+### High Fan-Out Models (Prefer Shared Factories/Builders)
+
+If a model/DTO is used across many tests (a “high fan-out” type), avoid repeating ad-hoc object literals in each test file.
+
+- Prefer a shared `getMockX(overrides)` factory (or builder) in common test helpers.
+- Use optional overrides to keep tests focused on the behavior under test.
+- Avoid unsafe `as` casts to “make the compiler happy” — fix the factory/builder instead.
+
 ## Testing Anti-Patterns
 
 ### ❌ Testing Implementation Details
