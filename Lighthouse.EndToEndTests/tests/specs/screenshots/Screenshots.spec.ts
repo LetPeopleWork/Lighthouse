@@ -30,7 +30,7 @@ const updateWorkTrackingSystems = async (
 		},
 		{
 			name: "My Jira Connection",
-			optionName: "Api Token",
+			optionName: "API Token",
 			optionValue: TestConfig.JiraToken,
 		},
 	];
@@ -258,15 +258,15 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 
 	await workTrackingSystemDialog.selectWorkTrackingSystem("Jira");
 	await workTrackingSystemDialog.setWorkTrackingSystemOption(
-		"Jira Url",
+		"Jira URL",
 		jiraUrl,
 	);
 	await workTrackingSystemDialog.setWorkTrackingSystemOption(
-		"Username",
+		"Username (Email)",
 		username,
 	);
 	await workTrackingSystemDialog.setWorkTrackingSystemOption(
-		"Api Token",
+		"API Token",
 		TestConfig.JiraToken,
 	);
 
@@ -512,7 +512,7 @@ const workTrackingSystemConfiguration = [
 		workTrackingSystemName: "AzureDevOps",
 		workTrackingSystemOptions: [
 			{
-				field: "Azure DevOps Url",
+				field: "Organization URL",
 				value: "https://dev.azure.com/letpeoplework",
 			},
 		],
@@ -520,8 +520,8 @@ const workTrackingSystemConfiguration = [
 	{
 		workTrackingSystemName: "Jira",
 		workTrackingSystemOptions: [
-			{ field: "Jira Url", value: "https://letpeoplework.atlassian.net" },
-			{ field: "Username", value: "benj@letpeople.work" },
+			{ field: "Jira URL", value: "https://letpeoplework.atlassian.net" },
+			{ field: "Username (Email)", value: "benj@letpeople.work" },
 		],
 	},
 	{
