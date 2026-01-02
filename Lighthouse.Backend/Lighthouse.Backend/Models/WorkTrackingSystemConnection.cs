@@ -26,5 +26,11 @@ namespace Lighthouse.Backend.Models
 
             return workTrackingOption.Value;
         }
+
+        public T? GetWorkTrackingSystemConnectionOptionByKey<T>(string key) where T : struct, IParsable<T>
+        {
+            var value = GetWorkTrackingSystemConnectionOptionByKey(key);
+            return T.TryParse(value, null, out var result) ? result : null;
+        }
     }
 }

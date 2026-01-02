@@ -122,28 +122,6 @@ namespace Lighthouse.Backend.Services.Implementation
             return projectSettings;
         }
 
-        public WorkTrackingSystemSettings GetWorkTrackingSystemSettings()
-        {
-            return new WorkTrackingSystemSettings
-            {
-                OverrideRequestTimeout = bool.Parse(GetSettingByKey(AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout).Value),
-                RequestTimeoutInSeconds = int.Parse(GetSettingByKey(AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds).Value)
-            };
-        }
-
-        public async Task UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings)
-        {
-            var overrideRequestTimeout = GetSettingByKey(AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout);
-            overrideRequestTimeout.Value = workTrackingSystemSettings.OverrideRequestTimeout.ToString();
-            repository.Update(overrideRequestTimeout);
-
-            var requestTimeoutInSeconds = GetSettingByKey(AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds);
-            requestTimeoutInSeconds.Value = workTrackingSystemSettings.RequestTimeoutInSeconds.ToString();
-            repository.Update(requestTimeoutInSeconds);
-            
-            await repository.Save();
-        }
-
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
         {
             var interval = GetSettingByKey(intervalKey);

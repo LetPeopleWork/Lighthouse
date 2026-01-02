@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 appSettingServiceMock.Verify(x => x.UpdateFeatureRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            };
+            }
         }
 
         [Test]
@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            };
+            }
         }
 
         [Test]
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 appSettingServiceMock.Verify(x => x.UpdateTeamDataRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            };
+            }
         }
 
         [Test]
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            };
+            }
         }
 
         [Test]
@@ -126,43 +126,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            };
-        }
-
-        [Test]
-        public void GetWorkTrackingSystemSettings_ReturnsSettings()
-        {
-            var settings = new WorkTrackingSystemSettings { OverrideRequestTimeout = true, RequestTimeoutInSeconds = 300 };
-            appSettingServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(settings);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetWorkTrackingSystemSettings();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(settings));
-            };
-        }
-
-        [Test]
-        public async Task UpdateWorkTrackingSystemSettings_UpdatesSettings()
-        {
-            var settings = new WorkTrackingSystemSettings { OverrideRequestTimeout = true, RequestTimeoutInSeconds = 300 };
-
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateWorkTrackingSystemSettings(settings);
-
-            using (Assert.EnterMultipleScope())
-            {
-                appSettingServiceMock.Verify(x => x.UpdateWorkTrackingSystemSettings(settings), Times.Once);
-                Assert.That(result, Is.InstanceOf<OkResult>());
-            };
+            }
         }
 
         private AppSettingsController CreateSubject()

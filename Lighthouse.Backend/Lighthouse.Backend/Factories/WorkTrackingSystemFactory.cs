@@ -42,8 +42,8 @@ namespace Lighthouse.Backend.Factories
                     return GetOptionsForJira();
                 case WorkTrackingSystems.Linear:
                     return GetOptionsForLinear();
-                    case WorkTrackingSystems.Csv:
-                        return GetOptionsForCsv();
+                case WorkTrackingSystems.Csv:
+                    return GetOptionsForCsv();
                 default:
                     throw new NotSupportedException("Selected Work Tracking System is Not Supported");
             }
@@ -163,6 +163,13 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = true,
                     IsOptional = false,
                 },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds,
+                    Value = "100",
+                    IsSecret = false,
+                    IsOptional = true,
+                }
             };
         }
 
@@ -183,6 +190,13 @@ namespace Lighthouse.Backend.Factories
                     Value = string.Empty,
                     IsSecret = true,
                     IsOptional = false,
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds,
+                    Value = "100",
+                    IsSecret = false,
+                    IsOptional = true,
                 }
             };
         }

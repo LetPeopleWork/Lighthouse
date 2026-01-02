@@ -1,9 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -641,6 +638,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "30", IsSecret = false },
                 ]);
 
             var isValid = await subject.ValidateConnection(connectionSetting);
@@ -812,6 +810,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connectionSetting.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
                 ]);
 
             return connectionSetting;
@@ -819,10 +818,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static AzureDevOpsWorkTrackingConnector CreateSubject()
         {
-            var appSettingsServiceMock = new Mock<IAppSettingService>();
-            appSettingsServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(new WorkTrackingSystemSettings());
-
-            return new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object);
+            return new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService());
         }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -349,10 +346,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static LinearWorkTrackingConnector CreateSubject()
         {
-            var appSettingsServiceMock = new Mock<IAppSettingService>();
-            appSettingsServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(new WorkTrackingSystemSettings());
-
-            return new LinearWorkTrackingConnector(Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object);
+            return new LinearWorkTrackingConnector(Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService());
         }
     }
 }

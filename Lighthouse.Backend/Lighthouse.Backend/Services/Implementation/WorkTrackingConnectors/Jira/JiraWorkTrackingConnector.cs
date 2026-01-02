@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         
         private readonly ICryptoService cryptoService;
 
-        private readonly int requestTimeoutInSeconds = 100;
-
         private static string rankFieldName = string.Empty;
 
         private static string flaggedFieldName = string.Empty;
@@ -41,17 +39,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
         private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
 
-        public JiraWorkTrackingConnector(IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
+        public JiraWorkTrackingConnector(IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService)
         {
             this.issueFactory = issueFactory;
             this.logger = logger;
             this.cryptoService = cryptoService;
-
-            var workTrackingSystemSettings = appSettingService.GetWorkTrackingSystemSettings();
-            if (workTrackingSystemSettings.OverrideRequestTimeout)
-            {
-                requestTimeoutInSeconds = workTrackingSystemSettings.RequestTimeoutInSeconds;
-            }
         }
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
@@ -603,6 +595,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var apiToken = cryptoService.Decrypt(encryptedApiToken);
             var key = $"{url}|{encryptedApiToken}";
+
+            var requestTimeoutInSeconds =
+                connection.GetWorkTrackingSystemConnectionOptionByKey<int>(JiraWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
 
             var client = ClientCache.GetOrAdd(key, _ =>
             {

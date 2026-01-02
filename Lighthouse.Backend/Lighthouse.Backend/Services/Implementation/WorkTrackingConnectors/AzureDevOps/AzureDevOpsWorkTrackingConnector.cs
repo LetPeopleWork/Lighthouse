@@ -16,27 +16,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
     public class AzureDevOpsWorkTrackingConnector : IWorkTrackingConnector
     {
         private const int maxChunkSize = 200;
-        private readonly int requestTimeoutInSeconds = 100;
 
         private readonly ILogger<AzureDevOpsWorkTrackingConnector> logger;
+
         private readonly ICryptoService cryptoService;
 
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
+        
         private static readonly ConcurrentDictionary<string, WorkItemTrackingHttpClient> ClientCache = new();
+        
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> OrgLimiters = new();
 
         private static SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
 
-        public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
+        public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService)
         {
             this.logger = logger;
             this.cryptoService = cryptoService;
-
-            var workTrackingSystemSettings = appSettingService.GetWorkTrackingSystemSettings();
-            if (workTrackingSystemSettings.OverrideRequestTimeout)
-            {
-                requestTimeoutInSeconds = workTrackingSystemSettings.RequestTimeoutInSeconds;
-            }
         }
 
         public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team)
@@ -562,6 +558,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var encryptedPersonalAccessToken = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
             var personalAccessToken = cryptoService.Decrypt(encryptedPersonalAccessToken);
             var key = $"{url}|{personalAccessToken}";
+
+            var requestTimeoutInSeconds =
+                workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey<int>(AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
 
             var connection = ConnectionCache.GetOrAdd(key, _ =>
             {

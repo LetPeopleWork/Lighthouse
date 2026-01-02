@@ -4,7 +4,6 @@ import {
 	type IRefreshSettings,
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
-import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
 import {
 	createMockProjectSettings,
 	createMockTeamSettings,
@@ -56,37 +55,6 @@ describe("SettingsService", () => {
 
 		expect(mockedAxios.put).toHaveBeenCalledWith(
 			`/appsettings/${settingName}Refresh`,
-			mockRefreshSettings,
-		);
-	});
-
-	it("should get work tracking system settings", async () => {
-		const mockResponse: IWorkTrackingSystemSettings = {
-			overrideRequestTimeout: true,
-			requestTimeoutInSeconds: 500,
-		};
-		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
-
-		const workTrackingSystemSetting =
-			await settingsService.getWorkTrackingSystemSettings();
-
-		expect(workTrackingSystemSetting).toEqual(mockResponse);
-		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/appsettings/workTrackingSystemSettings",
-		);
-	});
-
-	it("should update work tracking system settings", async () => {
-		const mockRefreshSettings: IWorkTrackingSystemSettings = {
-			overrideRequestTimeout: false,
-			requestTimeoutInSeconds: 250,
-		};
-		mockedAxios.put.mockResolvedValueOnce({});
-
-		await settingsService.updateWorkTrackingSystemSettings(mockRefreshSettings);
-
-		expect(mockedAxios.put).toHaveBeenCalledWith(
-			"/appsettings/workTrackingSystemSettings",
 			mockRefreshSettings,
 		);
 	});

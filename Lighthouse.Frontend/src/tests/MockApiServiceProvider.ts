@@ -89,8 +89,6 @@ export const createMockSettingsService = (): ISettingsService => {
 		getRefreshSettings: vi.fn(),
 		updateRefreshSettings: vi.fn(),
 		getDefaultTeamSettings: vi.fn(),
-		getWorkTrackingSystemSettings: vi.fn(),
-		updateWorkTrackingSystemSettings: vi.fn(),
 	};
 };
 

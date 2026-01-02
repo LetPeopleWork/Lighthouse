@@ -17,18 +17,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private readonly ILogger<LinearWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
-        private readonly int requestTimeoutInSeconds = 100;
-
-        public LinearWorkTrackingConnector(ILogger<LinearWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
+        public LinearWorkTrackingConnector(ILogger<LinearWorkTrackingConnector> logger, ICryptoService cryptoService)
         {
             this.logger = logger;
             this.cryptoService = cryptoService;
-
-            var workTrackingSystemSettings = appSettingService.GetWorkTrackingSystemSettings();
-            if (workTrackingSystemSettings.OverrideRequestTimeout)
-            {
-                requestTimeoutInSeconds = workTrackingSystemSettings.RequestTimeoutInSeconds;
-            }
         }
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
@@ -392,7 +384,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             var client = new HttpClient
             {
                 BaseAddress = new Uri(LinearWorkTrackingOptionNames.ApiUrl),
-                Timeout = TimeSpan.FromSeconds(requestTimeoutInSeconds),
             };
             client.DefaultRequestHeaders.Add("Authorization", apiKey);
 

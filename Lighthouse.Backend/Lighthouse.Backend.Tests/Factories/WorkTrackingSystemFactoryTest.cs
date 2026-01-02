@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(defaultConnection.Id, Is.Zero);
                 Assert.That(defaultConnection.Name, Is.EqualTo($"New {workTrackingSystem} Connection"));
                 Assert.That(defaultConnection.WorkTrackingSystem, Is.EqualTo(workTrackingSystem));
-            };
+            }
         }
 
         [Test]
@@ -52,10 +52,13 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(connection.Options, Has.Count.EqualTo(2));
+                Assert.That(connection.Options, Has.Count.EqualTo(3));
                 Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
-            };
+                Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, false, true), Is.True);
+
+                Assert.That(GetOptionValue(connection.Options, AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds), Is.EqualTo("100"));
+            }
         }
 
         [Test]
@@ -67,11 +70,14 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(connection.Options, Has.Count.EqualTo(3));
+                Assert.That(connection.Options, Has.Count.EqualTo(4));
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
-            };
+                Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, false, true), Is.True);
+
+                Assert.That(GetOptionValue(connection.Options, JiraWorkTrackingOptionNames.RequestTimeoutInSeconds), Is.EqualTo("100"));
+            }
         }
 
         [Test]
@@ -85,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(ContainsOption(connection.Options, LinearWorkTrackingOptionNames.ApiKey, true, false), Is.True);
-            };
+            }
         }
 
         [Test]
@@ -130,20 +136,19 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.OwningTeamHeader), Is.EqualTo("Owning Team"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader), Is.EqualTo("Estimated Size"));
             }
-            ;
         }
 
-        private bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false, bool isOptional = false)
+        private static bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false, bool isOptional = false)
         {
             return options.Any(option => option.Key == key && option.IsSecret == isSecret && option.IsOptional == isOptional);
         }
 
-        private string GetOptionValue(IEnumerable<WorkTrackingSystemConnectionOption> options, string key)
+        private static string GetOptionValue(IEnumerable<WorkTrackingSystemConnectionOption> options, string key)
         {
             return options.Single(o => o.Key == key).Value;
         }
 
-        private WorkTrackingSystemFactory CreateSubject()
+        private static WorkTrackingSystemFactory CreateSubject()
         {
             return new WorkTrackingSystemFactory(Mock.Of<ILogger<WorkTrackingSystemFactory>>());
         }

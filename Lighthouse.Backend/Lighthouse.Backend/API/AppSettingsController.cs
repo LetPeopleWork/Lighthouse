@@ -57,17 +57,5 @@ namespace Lighthouse.Backend.API
             var settings = appSettingService.GetDefaultProjectSettings();
             return Ok(settings);
         }
-        [HttpGet("WorkTrackingSystemSettings")]
-        public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
-        {
-            var settings = appSettingService.GetWorkTrackingSystemSettings();
-            return Ok(settings);
-        }
-        [HttpPut("WorkTrackingSystemSettings")]
-        public async Task<ActionResult> UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings)
-        {
-            await appSettingService.UpdateWorkTrackingSystemSettings(workTrackingSystemSettings);
-            return Ok();
-        }
     }
 }

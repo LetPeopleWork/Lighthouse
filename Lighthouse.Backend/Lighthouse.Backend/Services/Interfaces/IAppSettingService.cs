@@ -16,9 +16,5 @@ namespace Lighthouse.Backend.Services.Interfaces
         TeamSettingDto GetDefaultTeamSettings();
 
         PortfolioSettingDto GetDefaultProjectSettings();
-
-        WorkTrackingSystemSettings GetWorkTrackingSystemSettings();
-
-        Task UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings);
     }
 }
