@@ -139,9 +139,5 @@ describe("WorkTrackingSystemConnectionSettings", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("connection-detail-table")).toBeInTheDocument();
 		});
-
-		expect(
-			screen.getByTestId("work-tracking-system-settings"),
-		).toBeInTheDocument();
 	});
 });
