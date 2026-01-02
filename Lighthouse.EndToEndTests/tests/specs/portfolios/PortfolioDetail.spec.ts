@@ -141,7 +141,6 @@ testWithUpdatedTeams([0])(
 			const lastUpdatedDate = await portfolioDetailPage.getLastUpdatedDate();
 			expectDateToBeRecent(lastUpdatedDate);
 		});
-		180;
 
 		let deliveriesPage = await portfolioDetailPage.goToDeliveries();
 		const deliveryName = "Next Release";

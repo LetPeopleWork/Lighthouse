@@ -5,6 +5,7 @@ type WorkTrackingSystemOption = {
 	key: string;
 	value: string;
 	isSecret: boolean;
+	isOptional?: boolean;
 };
 
 export async function createAzureDevOpsConnection(
@@ -12,16 +13,24 @@ export async function createAzureDevOpsConnection(
 	connectionName: string,
 ): Promise<{ id: number; name: string }> {
 	const options: WorkTrackingSystemOption[] = [];
-	options.push({
-		key: "Azure DevOps Url",
-		value: "https://dev.azure.com/letpeoplework",
-		isSecret: false,
-	});
-	options.push({
-		key: "Personal Access Token",
-		value: TestConfig.AzureDevOpsToken,
-		isSecret: true,
-	});
+	options.push(
+		{
+			key: "Azure DevOps Url",
+			value: "https://dev.azure.com/letpeoplework",
+			isSecret: false,
+		},
+		{
+			key: "Personal Access Token",
+			value: TestConfig.AzureDevOpsToken,
+			isSecret: true,
+		},
+		{
+			key: "Request Timeout In Seconds",
+			value: "100",
+			isSecret: false,
+			isOptional: true,
+		},
+	);
 
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,
@@ -36,21 +45,29 @@ export async function createJiraConnection(
 	connectionName: string,
 ): Promise<{ id: number; name: string }> {
 	const options: WorkTrackingSystemOption[] = [];
-	options.push({
-		key: "Jira Url",
-		value: "https://letpeoplework.atlassian.net",
-		isSecret: false,
-	});
-	options.push({
-		key: "Username",
-		value: "atlassian.pushchair@huser-berta.com",
-		isSecret: false,
-	});
-	options.push({
-		key: "Api Token",
-		value: TestConfig.JiraToken,
-		isSecret: true,
-	});
+	options.push(
+		{
+			key: "Jira Url",
+			value: "https://letpeoplework.atlassian.net",
+			isSecret: false,
+		},
+		{
+			key: "Username",
+			value: "atlassian.pushchair@huser-berta.com",
+			isSecret: false,
+		},
+		{
+			key: "Api Token",
+			value: TestConfig.JiraToken,
+			isSecret: true,
+		},
+		{
+			key: "Request Timeout In Seconds",
+			value: "100",
+			isSecret: false,
+			isOptional: true,
+		},
+	);
 
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,
