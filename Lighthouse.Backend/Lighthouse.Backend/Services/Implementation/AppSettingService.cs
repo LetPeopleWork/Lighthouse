@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 ThroughputHistoryStartDate = DateTime.UtcNow.Date.AddDays(-90),
                 ThroughputHistoryEndDate = DateTime.UtcNow.Date,
                 FeatureWIP = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingFeatureWIP).Value),
-                WorkItemQuery = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
+                DataRetrievalValue = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
                 ParentOverrideField = GetSettingByKey(AppSettingKeys.TeamSettingParentOverrideField).Value,
                 AutomaticallyAdjustFeatureWIP = bool.Parse(GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP).Value),
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var projectSettings = new PortfolioSettingDto
             {
                 Name = GetSettingByKey(AppSettingKeys.ProjectSettingName).Value,
-                WorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery).Value,
+                DataRetrievalValue = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
                 UsePercentileToCalculateDefaultAmountOfWorkItems = bool.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems).Value),
                 DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),

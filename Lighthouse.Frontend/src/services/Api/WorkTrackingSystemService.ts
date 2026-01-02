@@ -105,7 +105,6 @@ export class WorkTrackingSystemService
 			name: workTrackingSystemConnection.name,
 			workTrackingSystem: workTrackingSystemConnection.workTrackingSystem,
 			options: workTrackingSystemConnection.options,
-			dataSourceType: workTrackingSystemConnection.dataSourceType,
 			id: workTrackingSystemConnection.id,
 			authenticationMethodKey:
 				workTrackingSystemConnection.authenticationMethodKey,

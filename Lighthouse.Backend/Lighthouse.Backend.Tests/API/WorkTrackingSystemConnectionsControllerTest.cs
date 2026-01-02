@@ -141,7 +141,6 @@ namespace Lighthouse.Backend.Tests.API
 
                 var connection = okResult.Value as WorkTrackingSystemConnectionDto;
                 Assert.That(connection.Name, Is.EqualTo("Test"));
-                Assert.That(connection.DataSourceType, Is.EqualTo(DataSourceType.File));
                 Assert.That(connection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(connection.Options.Single().Key, Is.EqualTo("MyKey"));

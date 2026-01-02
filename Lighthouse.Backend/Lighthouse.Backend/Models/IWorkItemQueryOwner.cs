@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Models
     {
         string Name { get; set; }
 
-        string WorkItemQuery { get; set; }
+        string DataRetrievalValue { get; set; }
 
         List<string> WorkItemTypes { get; set; }
 

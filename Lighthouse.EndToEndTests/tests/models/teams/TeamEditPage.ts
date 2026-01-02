@@ -1,4 +1,5 @@
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
 import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
 import { TeamDetailPage } from "./TeamDetailPage";
@@ -65,6 +66,14 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		return new EditWorkTrackingSystemDialog(
 			this.page,
 			(page) => new TeamEditPage(page),
+		);
+	}
+
+	async triggerCsvWizard(): Promise<CsvUploadWizard<TeamEditPage>> {
+		await this.page.getByRole("button", { name: "Upload CSV File" }).click();
+		return new CsvUploadWizard(
+			this.page,
+			(page: Page) => new TeamEditPage(page),
 		);
 	}
 }

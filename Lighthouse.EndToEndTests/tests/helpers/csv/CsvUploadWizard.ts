@@ -1,15 +1,16 @@
 import type { Page } from "@playwright/test";
+import type { PortfolioEditPage } from "../../models/portfolios/PortfolioEditPage";
+import type { TeamEditPage } from "../../models/teams/TeamEditPage";
 
 /**
  * Page object methods for CSV file upload functionality
  */
-export class CsvUploadHelper {
-	constructor(private page: Page) {}
+export class CsvUploadWizard<T extends PortfolioEditPage | TeamEditPage> {
+	constructor(
+		private readonly page: Page,
+		private readonly createPageHandler: (page: Page) => T,
+	) {}
 
-	/**
-	 * Uploads a CSV file through the file input
-	 * @param filePath - Path to the CSV file to upload
-	 */
 	async uploadCsvFile(filePath: string): Promise<void> {
 		// Wait for file input to be available
 		await this.page.waitForSelector('input[type="file"]', { timeout: 10000 });
@@ -17,9 +18,6 @@ export class CsvUploadHelper {
 		await fileInput.setInputFiles(filePath);
 	}
 
-	/**
-	 * Checks if the file upload component is visible
-	 */
 	async isFileUploadVisible(): Promise<boolean> {
 		try {
 			await this.page.waitForSelector("text=Upload CSV File", {
@@ -31,32 +29,6 @@ export class CsvUploadHelper {
 		}
 	}
 
-	/**
-	 * Gets the selected file name if any
-	 */
-	async getSelectedFileName(): Promise<string | null> {
-		try {
-			// Look for the file name in the selected file section
-			const selectedFileElement = await this.page
-				.locator("text=/Selected file:\\s*(.+?)\\s/")
-				.first();
-			if (await selectedFileElement.isVisible({ timeout: 2000 })) {
-				const text = await selectedFileElement.textContent();
-				if (text) {
-					// Extract file name from "Selected file: filename.csv" text
-					const match = text.match(/Selected file:\s*(.+?)(\s|$)/);
-					return match ? match[1] : null;
-				}
-			}
-		} catch {
-			// No file selected or element not found
-		}
-		return null;
-	}
-
-	/**
-	 * Waits for file upload to complete (no processing indicator visible)
-	 */
 	async waitForUploadComplete(): Promise<void> {
 		// Wait for processing indicator to disappear if it exists
 		try {
@@ -69,9 +41,11 @@ export class CsvUploadHelper {
 		}
 	}
 
-	/**
-	 * Checks if there are validation errors
-	 */
+	async useFile(): Promise<T> {
+		await this.page.getByRole("button", { name: "Use File" }).click();
+		return this.createPageHandler(this.page);
+	}
+
 	async hasValidationErrors(): Promise<boolean> {
 		try {
 			await this.page.waitForSelector("text=Validation Errors:", {
@@ -83,9 +57,6 @@ export class CsvUploadHelper {
 		}
 	}
 
-	/**
-	 * Gets validation error messages
-	 */
 	async getValidationErrors(): Promise<string[]> {
 		const hasErrors = await this.hasValidationErrors();
 		if (!hasErrors) {

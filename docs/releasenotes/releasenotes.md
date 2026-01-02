@@ -6,6 +6,23 @@ nav_order: 95
 
 # Lighthouse vNext
 
+## Enhanced Data Retrieval Configuration
+The configuration for data retrieval (queries, team names, CSV data) has been improved with provider-specific labels and better semantics:
+
+- **Provider-specific labels**: The UI now shows context-appropriate labels based on the work tracking system:
+  - Azure DevOps: "WIQL Query"
+  - Jira: "JQL Query"
+  - Linear: "Team Name" (for teams) / "Project Name" (for portfolios)
+  - CSV: "CSV Data"
+- **CSV paste support**: CSV data can now be entered by either uploading a file OR pasting raw CSV content directly
+- **Stable data keys**: Backend now uses stable keys (e.g., `ado.wiql`, `jira.jql`) that enable future wizard-assisted configuration
+- **Data Retrieval Wizard System**: A new frontend wizard registry pattern enables specialized configuration assistants for different work tracking systems. This provides a cleaner architecture where:
+  - Each work tracking system can have zero or more configuration wizards
+  - Wizards appear as buttons alongside the data retrieval input field
+  - The CSV provider now has an "Upload CSV File" wizard button that provides a better file upload experience
+
+No manual action is required for existing configurations. The field has been renamed internally from "Work Item Query" to "Data Retrieval Value" to better reflect its varied usage across providers.
+
 ## Explicit Authentication Methods for Work Tracking Systems
 Work Tracking System connections now use explicit authentication method selection. This change provides:
 

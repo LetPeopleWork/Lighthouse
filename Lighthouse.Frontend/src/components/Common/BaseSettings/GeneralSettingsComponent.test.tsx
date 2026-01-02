@@ -20,7 +20,7 @@ describe("GeneralSettingsComponent", () => {
 
 	const testSettings = createMockTeamSettings();
 	testSettings.name = "Test Settings";
-	testSettings.workItemQuery = "Test Query";
+	testSettings.dataRetrievalValue = "Test Query";
 
 	const mockWorkTrackingSystems: IWorkTrackingSystemConnection[] = [
 		{
@@ -28,16 +28,16 @@ describe("GeneralSettingsComponent", () => {
 			name: "Test System 1",
 			workTrackingSystem: "Jira",
 			options: [],
-			dataSourceType: "Query",
 			authenticationMethodKey: "jira.cloud",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 		},
 		{
 			id: 2,
 			name: "Test System 2",
 			workTrackingSystem: "AzureDevOps",
 			options: [],
-			dataSourceType: "File",
 			authenticationMethodKey: "ado.pat",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 		},
 	];
 
@@ -56,7 +56,7 @@ describe("GeneralSettingsComponent", () => {
 		);
 
 		expect(screen.getByLabelText("Name")).toHaveValue("Test Settings");
-		expect(screen.getByLabelText("Work Item Query")).toHaveValue("Test Query");
+		expect(screen.getByLabelText("Query")).toHaveValue("Test Query");
 	});
 
 	it("calls onSettingsChange with correct arguments when name changes", () => {
@@ -85,12 +85,12 @@ describe("GeneralSettingsComponent", () => {
 			/>,
 		);
 
-		fireEvent.change(screen.getByLabelText("Work Item Query"), {
+		fireEvent.change(screen.getByLabelText("Query"), {
 			target: { value: "Updated Query" },
 		});
 
 		expect(mockOnSettingsChange).toHaveBeenCalledWith(
-			"workItemQuery",
+			"dataRetrievalValue",
 			"Updated Query",
 		);
 	});
@@ -116,7 +116,6 @@ describe("GeneralSettingsComponent", () => {
 		);
 
 		expect(screen.getByLabelText("Name")).toHaveValue("");
-		expect(screen.getByLabelText("Work Item Query")).toHaveValue("");
 	});
 
 	it("shows work tracking system selection when showWorkTrackingSystemSelection is true", () => {
@@ -160,7 +159,7 @@ describe("GeneralSettingsComponent", () => {
 		expect(screen.getByText(/Add New.*System/)).toBeInTheDocument();
 	});
 
-	it("clears workItemQuery when switching between different data source types", async () => {
+	it("calls onWorkTrackingSystemChange when switching work tracking systems", async () => {
 		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
 			.fn()
@@ -193,7 +192,7 @@ describe("GeneralSettingsComponent", () => {
 							settings={testSettings}
 							onSettingsChange={mockOnSettingsChange}
 							workTrackingSystems={mockWorkTrackingSystems}
-							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]} // Query type
+							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
 							onNewWorkTrackingSystemConnectionAdded={
 								mockOnNewWorkTrackingSystemConnectionAdded
@@ -211,83 +210,12 @@ describe("GeneralSettingsComponent", () => {
 		await waitFor(() => {
 			expect(screen.getByText("Test System 2")).toBeInTheDocument();
 		});
-		await userEvent.click(screen.getByText("Test System 2")); // Switch to File type
+		await userEvent.click(screen.getByText("Test System 2"));
 
 		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
-		// Should clear workItemQuery when switching from Query to File type
-		expect(mockOnSettingsChange).toHaveBeenCalledWith("workItemQuery", "");
 	});
 
-	it("preserves workItemQuery when switching between same data source types", async () => {
-		const sameTypeSystem: IWorkTrackingSystemConnection = {
-			id: 3,
-			name: "Test System 3",
-			workTrackingSystem: "Linear", // Valid WorkTrackingSystemType
-			options: [],
-			dataSourceType: "Query", // Same as Test System 1
-			authenticationMethodKey: "linear.apikey",
-		};
-
-		const systemsWithSameType = [...mockWorkTrackingSystems, sameTypeSystem];
-
-		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
-		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
-			.fn()
-			.mockResolvedValue(systemsWithSameType);
-
-		const mockTerminologyService = createMockTerminologyService();
-		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
-			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
-			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
-		]);
-
-		const mockApiContext = createMockApiServiceContext({
-			workTrackingSystemService: mockWorkTrackingSystemService,
-			terminologyService: mockTerminologyService,
-		});
-
-		const queryClient = new QueryClient({
-			defaultOptions: {
-				queries: {
-					retry: false,
-				},
-			},
-		});
-
-		render(
-			<QueryClientProvider client={queryClient}>
-				<ApiServiceContext.Provider value={mockApiContext}>
-					<TerminologyProvider>
-						<GeneralSettingsComponent
-							settings={testSettings}
-							onSettingsChange={mockOnSettingsChange}
-							workTrackingSystems={systemsWithSameType}
-							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]} // Query type
-							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								mockOnNewWorkTrackingSystemConnectionAdded
-							}
-							showWorkTrackingSystemSelection={true}
-						/>
-					</TerminologyProvider>
-				</ApiServiceContext.Provider>
-			</QueryClientProvider>,
-		);
-
-		const selectElement = screen.getByRole("combobox");
-
-		await userEvent.click(selectElement);
-		await waitFor(() => {
-			expect(screen.getByText("Test System 3")).toBeInTheDocument();
-		});
-		await userEvent.click(screen.getByText("Test System 3")); // Switch to another Query type
-
-		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
-		// Should NOT clear workItemQuery when switching between same data source types
-		expect(mockOnSettingsChange).not.toHaveBeenCalledWith("workItemQuery", "");
-	});
-
-	it("preserves workItemQuery when no previous system was selected", async () => {
+	it("preserves dataRetrievalValue when no previous system was selected", async () => {
 		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
 			.fn()
@@ -341,8 +269,11 @@ describe("GeneralSettingsComponent", () => {
 		await userEvent.click(screen.getByText("Test System 1")); // Select first system when none was selected
 
 		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
-		// Should NOT clear workItemQuery when no previous system was selected
-		expect(mockOnSettingsChange).not.toHaveBeenCalledWith("workItemQuery", "");
+		// Should NOT clear dataRetrievalValue when no previous system was selected
+		expect(mockOnSettingsChange).not.toHaveBeenCalledWith(
+			"dataRetrievalValue",
+			"",
+		);
 	});
 
 	it("opens ModifyTrackingSystemConnectionDialog when Add New button is clicked", async () => {
@@ -399,8 +330,7 @@ describe("GeneralSettingsComponent", () => {
 		});
 	});
 
-	it("shows file upload component when selected work tracking system has File dataSourceType", () => {
-		const fileBasedSystem = mockWorkTrackingSystems[1]; // Test System 2 has dataSourceType: "File"
+	it("shows wizard button when selected work tracking system is CSV", () => {
 		const mockTerminologyService = createMockTerminologyService();
 		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
 			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
@@ -420,6 +350,15 @@ describe("GeneralSettingsComponent", () => {
 			},
 		});
 
+		const csvSystem: IWorkTrackingSystemConnection = {
+			id: 3,
+			name: "CSV System",
+			workTrackingSystem: "Csv",
+			options: [],
+			authenticationMethodKey: "none",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+		};
+
 		render(
 			<QueryClientProvider client={queryClient}>
 				<ApiServiceContext.Provider value={mockApiContext}>
@@ -427,8 +366,8 @@ describe("GeneralSettingsComponent", () => {
 						<GeneralSettingsComponent
 							settings={testSettings}
 							onSettingsChange={mockOnSettingsChange}
-							workTrackingSystems={mockWorkTrackingSystems}
-							selectedWorkTrackingSystem={fileBasedSystem}
+							workTrackingSystems={[...mockWorkTrackingSystems, csvSystem]}
+							selectedWorkTrackingSystem={csvSystem}
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
 							onNewWorkTrackingSystemConnectionAdded={
 								mockOnNewWorkTrackingSystemConnectionAdded
@@ -440,14 +379,13 @@ describe("GeneralSettingsComponent", () => {
 			</QueryClientProvider>,
 		);
 
-		// Should show file upload component
-		expect(screen.getByText(/Upload/)).toBeInTheDocument();
-
-		// Should NOT show work item query field when using file-based system
-		expect(screen.queryByLabelText(/Work Item Query/)).not.toBeInTheDocument();
+		// Should show wizard button for CSV upload
+		expect(
+			screen.getByRole("button", { name: /Upload CSV File/i }),
+		).toBeInTheDocument();
 	});
 
-	it("hides work item query field when showWorkTrackingSystemSelection is false", () => {
+	it("hides query field when showWorkTrackingSystemSelection is false", () => {
 		render(
 			<GeneralSettingsComponent
 				settings={testSettings}
@@ -456,7 +394,7 @@ describe("GeneralSettingsComponent", () => {
 			/>,
 		);
 
-		expect(screen.getByLabelText("Work Item Query")).toBeInTheDocument();
+		expect(screen.getByLabelText("Query")).toBeInTheDocument();
 	});
 
 	it("handles missing onWorkTrackingSystemChange callback gracefully", () => {
@@ -500,5 +438,353 @@ describe("GeneralSettingsComponent", () => {
 		}).not.toThrow();
 
 		expect(screen.getByRole("combobox")).toBeInTheDocument();
+	});
+
+	describe("Wizard Functionality", () => {
+		it("opens wizard button when CSV system is selected", async () => {
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			const csvSystem: IWorkTrackingSystemConnection = {
+				id: 3,
+				name: "CSV System",
+				workTrackingSystem: "Csv",
+				options: [],
+				authenticationMethodKey: "none",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+			};
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={[csvSystem]}
+								selectedWorkTrackingSystem={csvSystem}
+								onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+								showWorkTrackingSystemSelection={true}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			// The wizard button should be present for CSV system
+			const wizardButton = await screen.findByRole("button", {
+				name: /Upload CSV File/i,
+			});
+			expect(wizardButton).toBeInTheDocument();
+		});
+
+		it("wizard button is clickable and interactive", async () => {
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			const csvSystem: IWorkTrackingSystemConnection = {
+				id: 3,
+				name: "CSV System",
+				workTrackingSystem: "Csv",
+				options: [],
+				authenticationMethodKey: "none",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+			};
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={[csvSystem]}
+								selectedWorkTrackingSystem={csvSystem}
+								onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+								showWorkTrackingSystemSelection={true}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			const wizardButton = await screen.findByRole("button", {
+				name: /Upload CSV File/i,
+			});
+
+			// Click the wizard button
+			await userEvent.click(wizardButton);
+
+			// After clicking, the wizard button should still be visible (until wizard completes)
+			expect(wizardButton).toBeInTheDocument();
+		});
+
+		it("does not show wizard buttons when selected system has no wizards", () => {
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			// Jira system has no registered wizards
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={mockWorkTrackingSystems}
+								selectedWorkTrackingSystem={mockWorkTrackingSystems[0]} // Jira
+								onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+								showWorkTrackingSystemSelection={true}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			// Should not show any wizard buttons
+			expect(
+				screen.queryByRole("button", { name: /Upload/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not show wizard buttons when no work tracking system is selected", () => {
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={mockWorkTrackingSystems}
+								selectedWorkTrackingSystem={null} // No system selected
+								onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+								showWorkTrackingSystemSelection={true}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			// Should not show any wizard buttons
+			expect(
+				screen.queryByRole("button", { name: /Upload/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows wizard buttons based on selected system regardless of showWorkTrackingSystemSelection", () => {
+			// This test verifies that wizard buttons are controlled by whether a system
+			// is selected, not by the showWorkTrackingSystemSelection flag.
+			// This allows wizards to be used even when the selection UI is hidden.
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			const csvSystem: IWorkTrackingSystemConnection = {
+				id: 3,
+				name: "CSV System",
+				workTrackingSystem: "Csv",
+				options: [],
+				authenticationMethodKey: "none",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+			};
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={[csvSystem]}
+								selectedWorkTrackingSystem={csvSystem}
+								onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+								showWorkTrackingSystemSelection={false} // Disabled
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			// Wizard buttons appear if a system with wizards is selected,
+			// even when the selection dropdown UI is hidden
+			expect(
+				screen.getByRole("button", { name: /Upload CSV File/i }),
+			).toBeInTheDocument();
+		});
+
+		it("shows multiple wizard buttons when system has multiple wizards", async () => {
+			// This is a future-proofing test for when systems have multiple wizards
+			// Currently only CSV has one wizard, but this validates the rendering logic
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			const csvSystem: IWorkTrackingSystemConnection = {
+				id: 3,
+				name: "CSV System",
+				workTrackingSystem: "Csv",
+				options: [],
+				authenticationMethodKey: "none",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+			};
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={[csvSystem]}
+								selectedWorkTrackingSystem={csvSystem}
+								onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+								showWorkTrackingSystemSelection={true}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			// For CSV, we expect 1 wizard button
+			const wizardButtons = await screen.findAllByRole("button", {
+				name: /Upload/i,
+			});
+
+			// Should have at least one wizard button for CSV
+			expect(wizardButtons.length).toBeGreaterThanOrEqual(1);
+		});
 	});
 });

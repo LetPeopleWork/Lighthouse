@@ -40,11 +40,11 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [selectedAuthMethod, setSelectedAuthMethod] =
 		useState<IAuthenticationMethod | null>(null);
-	
-		const [authOptions, setAuthOptions] = useState<IWorkTrackingSystemOption[]>(
+
+	const [authOptions, setAuthOptions] = useState<IWorkTrackingSystemOption[]>(
 		[],
 	);
-	
+
 	const [otherOptions, setOtherOptions] = useState<IWorkTrackingSystemOption[]>(
 		[],
 	);
@@ -223,10 +223,11 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 			const settings: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
 				name,
-				dataSourceType: selectedWorkTrackingSystem.dataSourceType,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
 				options: allOptions,
 				authenticationMethodKey: selectedAuthMethod.key,
+				workTrackingSystemGetDataRetrievalDisplayName:
+					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
 			};
 
 			return await validateSettings(settings);
@@ -240,10 +241,11 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 			const updatedSystem: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
 				name: name,
-				dataSourceType: selectedWorkTrackingSystem.dataSourceType,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
 				options: allOptions,
 				authenticationMethodKey: selectedAuthMethod.key,
+				workTrackingSystemGetDataRetrievalDisplayName:
+					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
 			};
 			onClose(updatedSystem);
 		} else {

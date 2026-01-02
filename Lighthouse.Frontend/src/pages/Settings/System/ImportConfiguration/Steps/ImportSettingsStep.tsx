@@ -108,6 +108,7 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 					const configData = camelcaseKeys(rawData, {
 						deep: true,
 					}) as ConfigurationExport;
+
 					setParsedConfig(configData);
 
 					const validation =

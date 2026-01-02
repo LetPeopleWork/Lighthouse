@@ -58,11 +58,12 @@ testWithData(
 		});
 
 		await test.step("Work Item Query should be mandatory", async () => {
-			await teamEditPage.setWorkItemQuery("");
+			await teamEditPage.setDataRetrievalValue("", "WIQL Query");
 			await expect(teamEditPage.validateButton).toBeDisabled();
 
-			await teamEditPage.setWorkItemQuery(
-				`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
+			await teamEditPage.setDataRetrievalValue(
+				String.raw`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
+				"WIQL Query",
 			);
 			await expect(teamEditPage.validateButton).toBeEnabled();
 		});
@@ -118,6 +119,7 @@ const newTeamConfigurations = [
 	{
 		name: "Jira",
 		workTrackingSystemIndex: 1,
+		dataRetrievalKey: "JQL Query",
 		teamConfiguration: {
 			validWorkItemTypes: ["Story", "Bug"],
 			invalidWorkItemTypes: ["User Story", "Bugs"],
@@ -128,13 +130,17 @@ const newTeamConfigurations = [
 		},
 		workTrackingSystemOptions: [
 			{ field: "Jira URL", value: "https://letpeoplework.atlassian.net" },
-			{ field: "Username (Email)", value: "atlassian.pushchair@huser-berta.com" },
+			{
+				field: "Username (Email)",
+				value: "atlassian.pushchair@huser-berta.com",
+			},
 			{ field: "API Token", value: TestConfig.JiraToken },
 		],
 	},
 	{
 		name: "AzureDevOps",
 		workTrackingSystemIndex: 0,
+		dataRetrievalKey: "WIQL Query",
 		teamConfiguration: {
 			validWorkItemTypes: ["User Story", "Bug"],
 			invalidWorkItemTypes: ["Story"],
@@ -144,9 +150,8 @@ const newTeamConfigurations = [
 				doing: ["In Progress"],
 				done: ["Done"],
 			},
-			validQuery: `[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
-			invalidQuery:
-				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Lighthouse Demo\\Binary Blazers"',
+			validQuery: String.raw`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
+			invalidQuery: String.raw`[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Lighthouse Demo\Binary Blazers"`,
 		},
 		workTrackingSystemOptions: [
 			{
@@ -160,6 +165,7 @@ const newTeamConfigurations = [
 
 for (const {
 	name,
+	dataRetrievalKey,
 	workTrackingSystemIndex,
 	teamConfiguration,
 } of newTeamConfigurations) {
@@ -173,7 +179,6 @@ for (const {
 			await test.step("Add general configuration", async () => {
 				await newTeamPage.setName(newTeam.name);
 				await newTeamPage.setThroughputHistory(20);
-				await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
 
 				// Expect Validation to be disabled because mandatory config is still missing
 				await expect(newTeamPage.validateButton).toBeDisabled();
@@ -208,11 +213,14 @@ for (const {
 				await newTeamPage.addTag(name);
 			});
 
-			await test.step("Select Work Tracking System", async () => {
+			await test.step("Set Work Tracking System and Data Retrieval Value", async () => {
 				const workTrackingSystem =
 					testData.connections[workTrackingSystemIndex];
 				await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
-				await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
+				await newTeamPage.setDataRetrievalValue(
+					teamConfiguration.validQuery,
+					dataRetrievalKey,
+				);
 
 				// Now we have all default configuration set
 				await expect(newTeamPage.validateButton).toBeEnabled();
@@ -225,12 +233,18 @@ for (const {
 			});
 
 			await test.step("Invalidate Work Item Query", async () => {
-				await newTeamPage.setWorkItemQuery(teamConfiguration.invalidQuery);
+				await newTeamPage.setDataRetrievalValue(
+					teamConfiguration.invalidQuery,
+					dataRetrievalKey,
+				);
 				await newTeamPage.validate();
 				await expect(newTeamPage.validateButton).toBeEnabled();
 				await expect(newTeamPage.saveButton).toBeDisabled();
 
-				await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
+				await newTeamPage.setDataRetrievalValue(
+					teamConfiguration.validQuery,
+					dataRetrievalKey,
+				);
 			});
 
 			await test.step("Invalidate Work Item Types", async () => {
@@ -283,6 +297,7 @@ for (const {
 
 for (const {
 	name: workTrackingSystemName,
+	dataRetrievalKey,
 	teamConfiguration,
 	workTrackingSystemOptions,
 } of newTeamConfigurations) {
@@ -294,7 +309,6 @@ for (const {
 
 		await test.step("Add Valid Configuration for new team", async () => {
 			await newTeamPage.setName(`My New ${workTrackingSystemName} team`);
-			await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
 			await newTeamPage.resetWorkItemTypes(
 				["User Story", "Bug"],
 				teamConfiguration.validWorkItemTypes,
@@ -340,6 +354,11 @@ for (const {
 			await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
 
 			newTeamPage = await newWorkTrackingSystemDialog.create();
+
+			await newTeamPage.setDataRetrievalValue(
+				teamConfiguration.validQuery,
+				dataRetrievalKey,
+			);
 
 			await expect(newTeamPage.validateButton).toBeEnabled();
 			await expect(newTeamPage.saveButton).toBeDisabled();

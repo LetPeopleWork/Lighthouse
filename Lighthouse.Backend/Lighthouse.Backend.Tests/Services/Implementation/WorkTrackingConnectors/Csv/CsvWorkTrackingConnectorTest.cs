@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = new Team
             {
-                WorkItemQuery = LoadCsvFile(csvFileName),
+                DataRetrievalValue = LoadCsvFile(csvFileName),
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = new Portfolio
             {
-                WorkItemQuery = LoadCsvFile(csvFileName),
+                DataRetrievalValue = LoadCsvFile(csvFileName),
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
@@ -386,7 +386,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = new Team
             {
                 Id = 1886,
-                WorkItemQuery = LoadCsvFile(csvFile),
+                DataRetrievalValue = LoadCsvFile(csvFile),
                 ToDoStates = new List<string> { "To Do" },
                 DoingStates = new List<string> { "In Progress" },
                 DoneStates = new List<string> { "done" },
@@ -402,7 +402,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = new Portfolio
             {
                 Id = 1886,
-                WorkItemQuery = LoadCsvFile(csvFile),
+                DataRetrievalValue = LoadCsvFile(csvFile),
                 ToDoStates = new List<string> { "To Do" },
                 DoingStates = new List<string> { "In Progress" },
                 DoneStates = new List<string> { "Done" },

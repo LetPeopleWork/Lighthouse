@@ -587,7 +587,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = new Team
             {
                 Name = "TestTeam",
-                WorkItemQuery = query
+                DataRetrievalValue = query
             };
 
             team.WorkItemTypes.Clear();
@@ -615,7 +615,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = new Portfolio
             {
                 Name = "TestProject",
-                WorkItemQuery = query,
+                DataRetrievalValue = query,
             };
 
             portfolio.WorkItemTypes.Clear();

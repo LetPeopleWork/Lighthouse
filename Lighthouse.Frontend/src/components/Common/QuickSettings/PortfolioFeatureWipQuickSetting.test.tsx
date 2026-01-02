@@ -17,7 +17,7 @@ const getMockTeam = (overrides?: Partial<ITeamSettings>): ITeamSettings => ({
 	serviceLevelExpectationProbability: 85,
 	serviceLevelExpectationRange: 10,
 	systemWIPLimit: 0,
-	workItemQuery: "",
+	dataRetrievalValue: "",
 	workItemTypes: [],
 	workTrackingSystemConnectionId: 1,
 	parentOverrideField: "",

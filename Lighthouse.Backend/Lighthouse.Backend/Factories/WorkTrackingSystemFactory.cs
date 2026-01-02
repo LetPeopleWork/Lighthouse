@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Factories
             {
                 Name = $"New {workTrackingSystem} Connection",
                 WorkTrackingSystem = workTrackingSystem,
-                DataSourceType = workTrackingSystem == WorkTrackingSystems.Csv ? DataSourceType.File : DataSourceType.Query,
                 AuthenticationMethodKey = AuthenticationMethodKeys.GetDefaultForSystem(workTrackingSystem),
             };
 

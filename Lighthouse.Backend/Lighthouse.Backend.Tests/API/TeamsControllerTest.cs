@@ -245,7 +245,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(12, "El Teamo");
             team.ThroughputHistory = 42;
             team.FeatureWIP = 3;
-            team.WorkItemQuery = "SELECT * FROM *";
+            team.DataRetrievalValue = "SELECT * FROM *";
             team.WorkTrackingSystemConnectionId = 37;
             team.ParentOverrideField = "Custom.RelatedItem";
             team.ServiceLevelExpectationProbability = 75;
@@ -272,7 +272,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.Name, Is.EqualTo(team.Name));
                 Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(team.ThroughputHistory));
                 Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(team.FeatureWIP));
-                Assert.That(teamSettingDto.WorkItemQuery, Is.EqualTo(team.WorkItemQuery));
+                Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(team.DataRetrievalValue));
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(team.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(team.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.ParentOverrideField, Is.EqualTo(team.ParentOverrideField));
@@ -306,7 +306,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "New Team",
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
-                WorkItemQuery = "project = MyProject",
+                DataRetrievalValue = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
                 ParentOverrideField = "CUSTOM.AdditionalField",
@@ -340,7 +340,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.Name, Is.EqualTo(newTeamSettings.Name));
                 Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(newTeamSettings.ThroughputHistory));
                 Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(newTeamSettings.FeatureWIP));
-                Assert.That(teamSettingDto.WorkItemQuery, Is.EqualTo(newTeamSettings.WorkItemQuery));
+                Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(newTeamSettings.DataRetrievalValue));
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(newTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newTeamSettings.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.ParentOverrideField, Is.EqualTo(newTeamSettings.ParentOverrideField));
@@ -421,7 +421,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Updated Team",
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
-                WorkItemQuery = "project = MyProject",
+                DataRetrievalValue = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
                 ParentOverrideField = "CUSTOM.AdditionalField",
@@ -452,7 +452,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.Name, Is.EqualTo(updatedTeamSettings.Name));
                 Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(updatedTeamSettings.ThroughputHistory));
                 Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(updatedTeamSettings.FeatureWIP));
-                Assert.That(teamSettingDto.WorkItemQuery, Is.EqualTo(updatedTeamSettings.WorkItemQuery));
+                Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(updatedTeamSettings.DataRetrievalValue));
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(updatedTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedTeamSettings.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.ParentOverrideField, Is.EqualTo(updatedTeamSettings.ParentOverrideField));
@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("Existing Query", false)]
         public async Task UpdateTeam_GivenNewQuery_DeletesExistingWorkItems(string workItemQuery, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -479,7 +479,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Updated Team",
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
-                WorkItemQuery = workItemQuery,
+                DataRetrievalValue = workItemQuery,
                 ToDoStates = existingTeam.ToDoStates,
                 DoingStates = existingTeam.DoingStates,
                 DoneStates = existingTeam.DoneStates,
@@ -505,7 +505,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(new string[] { "User Story", "Bug", "Task" }, true)]
         public async Task UpdateTeam_GivenWorkItemTypes_DeletesExistingWorkItems(string[] workItemTypes, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -515,7 +515,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Updated Team",
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
-                WorkItemQuery = "Existing Query",
+                DataRetrievalValue = "Existing Query",
                 ToDoStates = existingTeam.ToDoStates,
                 DoingStates = existingTeam.DoingStates,
                 DoneStates = existingTeam.DoneStates,
@@ -542,7 +542,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done", "Closed" }, true)]
         public async Task UpdateTeam_GivenChangedStates_DeletesExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -552,7 +552,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Updated Team",
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
-                WorkItemQuery = "Existing Query",
+                DataRetrievalValue = "Existing Query",
                 WorkItemTypes = ["User Story", "Bug"],
                 ToDoStates = toDoStates.ToList(),
                 DoingStates = doingStates.ToList(),
@@ -574,7 +574,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(1, true)]
         public async Task UpdateTeam_GivenWorkTrackingSystemConnectionId_DeletesExistingWorkItems(int workTrackingSystemConnectionId, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -584,7 +584,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Updated Team",
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
-                WorkItemQuery = "Existing Query",
+                DataRetrievalValue = "Existing Query",
                 ToDoStates = existingTeam.ToDoStates,
                 DoingStates = existingTeam.DoingStates,
                 DoneStates = existingTeam.DoneStates,

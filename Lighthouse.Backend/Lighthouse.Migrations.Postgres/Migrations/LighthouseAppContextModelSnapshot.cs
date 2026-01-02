@@ -327,6 +327,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+                    b.Property<string>("DataRetrievalValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("DefaultAmountOfWorkItemsPerFeature")
                         .HasColumnType("integer");
 
@@ -390,10 +394,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<bool>("UsePercentileToCalculateDefaultAmountOfWorkItems")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("WorkItemQuery")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.PrimitiveCollection<List<string>>("WorkItemTypes")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -428,6 +428,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.PrimitiveCollection<List<string>>("BlockedTags")
                         .IsRequired()
                         .HasColumnType("text[]");
+
+                    b.Property<string>("DataRetrievalValue")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.PrimitiveCollection<List<string>>("DoingStates")
                         .IsRequired()
@@ -481,10 +485,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<bool>("UseFixedDatesForThroughput")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("WorkItemQuery")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.PrimitiveCollection<List<string>>("WorkItemTypes")
                         .IsRequired()
@@ -604,9 +604,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("AuthenticationMethodKey")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("DataSourceType")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()

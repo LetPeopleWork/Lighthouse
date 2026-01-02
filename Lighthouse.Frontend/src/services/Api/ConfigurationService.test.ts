@@ -145,11 +145,11 @@ describe("ConfigurationService", () => {
 			workTrackingSystems: [
 				{
 					id: 1,
-					dataSourceType: "Query",
 					name: "AzureDevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 			],
 			teams: [
@@ -163,7 +163,7 @@ describe("ConfigurationService", () => {
 					featureWIP: 0,
 					parentOverrideField: "",
 					automaticallyAdjustFeatureWIP: false,
-					workItemQuery: "",
+					dataRetrievalValue: "",
 					workItemTypes: [],
 					toDoStates: [],
 					doingStates: [],
@@ -188,7 +188,7 @@ describe("ConfigurationService", () => {
 					defaultAmountOfWorkItemsPerFeature: 0,
 					defaultWorkItemPercentile: 0,
 					percentileHistoryInDays: 90,
-					workItemQuery: "",
+					dataRetrievalValue: "",
 					workItemTypes: [],
 					toDoStates: [],
 					doingStates: [],

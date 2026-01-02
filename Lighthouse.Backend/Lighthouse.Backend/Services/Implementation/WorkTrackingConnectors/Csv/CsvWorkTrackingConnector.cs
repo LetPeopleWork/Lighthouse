@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private Task<bool> ValidateCsv(IWorkItemQueryOwner owner)
         {
-            var csvContent = owner.WorkItemQuery;
+            var csvContent = owner.DataRetrievalValue;
 
             if (string.IsNullOrEmpty(csvContent))
             {
@@ -174,7 +174,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private bool IsValidCsv(IWorkItemQueryOwner owner)
         {
-            var csvContent = owner.WorkItemQuery;
+            var csvContent = owner.DataRetrievalValue;
             if (string.IsNullOrEmpty(csvContent))
             {
                 return false;
@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         {
             string delimiter = GetDelimiter(owner.WorkTrackingSystemConnection);
             var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = delimiter, IgnoreBlankLines = true, MissingFieldFound = null };
-            var csv = new CsvReader(new StringReader(owner.WorkItemQuery), csvConfig);
+            var csv = new CsvReader(new StringReader(owner.DataRetrievalValue), csvConfig);
 
             var dateFormat = GetAdditionalDateTimeFormat(owner.WorkTrackingSystemConnection);
 

@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.API
         {
             project.Name = portfolioSetting.Name;
             project.WorkItemTypes = portfolioSetting.WorkItemTypes;
-            project.WorkItemQuery = portfolioSetting.WorkItemQuery;
+            project.DataRetrievalValue = portfolioSetting.DataRetrievalValue;
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = portfolioSetting.UsePercentileToCalculateDefaultAmountOfWorkItems;
             project.DefaultAmountOfWorkItemsPerFeature = portfolioSetting.DefaultAmountOfWorkItemsPerFeature;

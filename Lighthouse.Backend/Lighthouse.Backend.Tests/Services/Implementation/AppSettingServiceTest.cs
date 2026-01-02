@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.ThroughputHistoryEndDate, Is.EqualTo(today));
 
                 Assert.That(settings.FeatureWIP, Is.EqualTo(2));
-                Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.DataRetrievalValue, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.ParentOverrideField, Is.EqualTo("Custom.RemoteParentID"));
                 Assert.That(settings.AutomaticallyAdjustFeatureWIP, Is.True);
 
@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(settings.Name, Is.EqualTo("My Project"));
-                Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.DataRetrievalValue, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.True);
                 Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
                 Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));

@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.Repository
             return new Portfolio
             {
                 Name = "Test Portfolio",
-                WorkItemQuery = "test query",
+                DataRetrievalValue = "test query",
                 WorkTrackingSystemConnection = workTrackingSystemConnection
             };
         }

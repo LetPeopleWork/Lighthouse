@@ -54,21 +54,18 @@ describe("WorkTrackingSystemConnectionSettings", () => {
 			name: "Jira Connection",
 			workTrackingSystem: "Jira",
 			options: [],
-			dataSourceType: "Query",
 			id: 1,
 		}),
 		new WorkTrackingSystemConnection({
 			name: "CSV",
 			workTrackingSystem: "Csv",
 			options: [],
-			dataSourceType: "File",
 			id: 2,
 		}),
 		new WorkTrackingSystemConnection({
 			name: "Azure DevOps",
 			workTrackingSystem: "AzureDevOps",
 			options: [],
-			dataSourceType: "Query",
 			id: 3,
 		}),
 	];

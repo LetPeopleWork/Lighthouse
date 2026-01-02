@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.API.DTO
             Id = workTrackingSystemConnection.Id;
             Name = workTrackingSystemConnection.Name;
             WorkTrackingSystem = workTrackingSystemConnection.WorkTrackingSystem;
-            DataSourceType = workTrackingSystemConnection.DataSourceType;
             AuthenticationMethodKey = workTrackingSystemConnection.AuthenticationMethodKey;
             AuthenticationMethodDisplayName = AuthenticationMethodSchema.GetDisplayName(
                 workTrackingSystemConnection.WorkTrackingSystem,
@@ -44,7 +43,5 @@ namespace Lighthouse.Backend.API.DTO
         public List<AuthenticationMethodDto> AvailableAuthenticationMethods { get; set; } = [];
 
         public List<WorkTrackingSystemConnectionOptionDto> Options { get; set; } = [];
-
-        public DataSourceType DataSourceType { get; } = DataSourceType.Query;
     }
 }

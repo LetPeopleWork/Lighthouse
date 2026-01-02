@@ -67,10 +67,10 @@ describe("ImportSettingsStep", () => {
 			{
 				id: 1,
 				name: "Work Tracking System 1",
-				dataSourceType: "Query",
 				workTrackingSystem: "AzureDevOps",
 				options: [],
 				authenticationMethodKey: "ado.pat",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 			},
 		],
 		teams: [
@@ -351,9 +351,9 @@ describe("ImportSettingsStep", () => {
 				{
 					id: 1,
 					name: "Work Tracking System 1",
-					dataSourceType: "Query",
 					workTrackingSystem: "AzureDevOps",
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 					options: [
 						{
 							key: "url",

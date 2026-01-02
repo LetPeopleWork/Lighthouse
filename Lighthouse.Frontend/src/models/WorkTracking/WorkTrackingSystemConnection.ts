@@ -2,8 +2,6 @@ import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
 
 export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear" | "Csv";
 
-export type DataSourceType = "Query" | "File";
-
 /**
  * Stable authentication method keys for Work Tracking System connections.
  * These keys should match the backend AuthenticationMethodKeys constants.
@@ -39,11 +37,11 @@ export interface IAuthenticationMethod {
 }
 
 export interface IWorkTrackingSystemConnection {
+	workTrackingSystemGetDataRetrievalDisplayName(): string;
 	id: number | null;
 	name: string;
 	workTrackingSystem: WorkTrackingSystemType;
 	options: IWorkTrackingSystemOption[];
-	dataSourceType: DataSourceType;
 	authenticationMethodKey: string;
 	authenticationMethodDisplayName?: string;
 	availableAuthenticationMethods?: IAuthenticationMethod[];
@@ -56,7 +54,6 @@ export class WorkTrackingSystemConnection
 	name: string;
 	workTrackingSystem: WorkTrackingSystemType;
 	options: IWorkTrackingSystemOption[];
-	dataSourceType: DataSourceType;
 	authenticationMethodKey: string;
 	authenticationMethodDisplayName?: string;
 	availableAuthenticationMethods?: IAuthenticationMethod[];
@@ -65,7 +62,6 @@ export class WorkTrackingSystemConnection
 		name: string;
 		workTrackingSystem: WorkTrackingSystemType;
 		options: IWorkTrackingSystemOption[];
-		dataSourceType?: DataSourceType;
 		id?: number | null;
 		authenticationMethodKey?: string;
 		authenticationMethodDisplayName?: string;
@@ -75,9 +71,23 @@ export class WorkTrackingSystemConnection
 		this.name = data.name;
 		this.workTrackingSystem = data.workTrackingSystem;
 		this.options = data.options;
-		this.dataSourceType = data.dataSourceType ?? "Query";
 		this.authenticationMethodKey = data.authenticationMethodKey ?? "";
 		this.authenticationMethodDisplayName = data.authenticationMethodDisplayName;
 		this.availableAuthenticationMethods = data.availableAuthenticationMethods;
+	}
+
+	workTrackingSystemGetDataRetrievalDisplayName(): string {
+		switch (this.workTrackingSystem) {
+			case "Jira":
+				return "JQL Query";
+			case "AzureDevOps":
+				return "WIQL Query";
+			case "Linear":
+				return "Linear Team/Project";
+			case "Csv":
+				return "CSV File Content";
+			default:
+				return "Query";
+		}
 	}
 }

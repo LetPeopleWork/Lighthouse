@@ -52,11 +52,12 @@ testWithData(
 		});
 
 		await test.step("Work Item Query should be mandatory", async () => {
-			await portfolioEditPage.setWorkItemQuery("");
+			await portfolioEditPage.setDataRetrievalValue("", "WIQL Query");
 			await expect(portfolioEditPage.validateButton).toBeDisabled();
 
-			await portfolioEditPage.setWorkItemQuery(
+			await portfolioEditPage.setDataRetrievalValue(
 				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
+				"WIQL Query",
 			);
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 		});
@@ -181,6 +182,7 @@ const newTeamConfigurations = [
 	{
 		name: "Jira",
 		workTrackingSystemIndex: 1,
+		dataRetrievalKey: "JQL Query",
 		involvedTeams: [2],
 		portfolioConfiguration: {
 			validWorkItemTypes: ["Epic"],
@@ -193,13 +195,17 @@ const newTeamConfigurations = [
 		},
 		workTrackingSystemOptions: [
 			{ field: "Jira URL", value: "https://letpeoplework.atlassian.net" },
-			{ field: "Username (Email)", value: "atlassian.pushchair@huser-berta.com" },
+			{
+				field: "Username (Email)",
+				value: "atlassian.pushchair@huser-berta.com",
+			},
 			{ field: "API Token", value: TestConfig.JiraToken },
 		],
 	},
 	{
 		name: "AzureDevOps",
 		workTrackingSystemIndex: 0,
+		dataRetrievalKey: "WIQL Query",
 		involvedTeams: [1],
 		portfolioConfiguration: {
 			validWorkItemTypes: ["Epic"],
@@ -212,8 +218,7 @@ const newTeamConfigurations = [
 			},
 			validQuery:
 				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
-			invalidQuery:
-				'[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
+			invalidQuery: String.raw`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\Binary Blazers"`,
 			involvedTeams: [1],
 		},
 		workTrackingSystemOptions: [
@@ -239,9 +244,6 @@ for (const teamConfiguration of newTeamConfigurations) {
 
 			await test.step("Add general configuration", async () => {
 				await newPortfolioPage.setName(newPortfolio.name);
-				await newPortfolioPage.setWorkItemQuery(
-					teamConfiguration.portfolioConfiguration.validQuery,
-				);
 
 				// Expect Validation to be disabled because mandatory config is still missing
 				await expect(newPortfolioPage.validateButton).toBeDisabled();
@@ -295,8 +297,9 @@ for (const teamConfiguration of newTeamConfigurations) {
 					workTrackingSystem.name,
 				);
 
-				await newPortfolioPage.setWorkItemQuery(
+				await newPortfolioPage.setDataRetrievalValue(
 					teamConfiguration.portfolioConfiguration.validQuery,
+					teamConfiguration.dataRetrievalKey,
 				);
 
 				// Now we have all default configuration set
@@ -310,15 +313,17 @@ for (const teamConfiguration of newTeamConfigurations) {
 			});
 
 			await test.step("Invalidate Work Item Query", async () => {
-				await newPortfolioPage.setWorkItemQuery(
+				await newPortfolioPage.setDataRetrievalValue(
 					teamConfiguration.portfolioConfiguration.invalidQuery,
+					teamConfiguration.dataRetrievalKey,
 				);
 				await newPortfolioPage.validate();
 				await expect(newPortfolioPage.validateButton).toBeEnabled();
 				await expect(newPortfolioPage.saveButton).toBeDisabled();
 
-				await newPortfolioPage.setWorkItemQuery(
+				await newPortfolioPage.setDataRetrievalValue(
 					teamConfiguration.portfolioConfiguration.validQuery,
+					teamConfiguration.dataRetrievalKey,
 				);
 			});
 
@@ -403,9 +408,6 @@ for (const teamConfiguration of newTeamConfigurations) {
 				await newPortfolioPage.setName(
 					`My New ${teamConfiguration.name} Portfolio`,
 				);
-				await newPortfolioPage.setWorkItemQuery(
-					teamConfiguration.portfolioConfiguration.validQuery,
-				);
 
 				for (const teamIndex of teamConfiguration.portfolioConfiguration
 					.involvedTeams) {
@@ -455,6 +457,11 @@ for (const teamConfiguration of newTeamConfigurations) {
 				await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
 
 				newPortfolioPage = await newWorkTrackingSystemDialog.create();
+
+				await newPortfolioPage.setDataRetrievalValue(
+					teamConfiguration.portfolioConfiguration.validQuery,
+					teamConfiguration.dataRetrievalKey,
+				);
 
 				await expect(newPortfolioPage.validateButton).toBeEnabled();
 				await expect(newPortfolioPage.saveButton).toBeDisabled();

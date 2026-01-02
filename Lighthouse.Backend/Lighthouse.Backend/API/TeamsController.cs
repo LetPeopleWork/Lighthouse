@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.API
 
         private static bool WorkItemRelatedSettingsChanged(Team team, TeamSettingDto teamSetting)
         {
-            var queryChanged = team.WorkItemQuery != teamSetting.WorkItemQuery;
+            var queryChanged = team.DataRetrievalValue != teamSetting.DataRetrievalValue;
             var connectionChanged = team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId;
             var workItemTypesChanged = !team.WorkItemTypes.OrderBy(x => x).SequenceEqual(teamSetting.WorkItemTypes.OrderBy(x => x));
             var statesChanged =
@@ -207,7 +207,7 @@ namespace Lighthouse.Backend.API
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)
         {
             team.Name = teamSetting.Name;
-            team.WorkItemQuery = teamSetting.WorkItemQuery;
+            team.DataRetrievalValue = teamSetting.DataRetrievalValue;
             team.ParentOverrideField = teamSetting.ParentOverrideField;
             team.FeatureWIP = teamSetting.FeatureWIP;
             team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;

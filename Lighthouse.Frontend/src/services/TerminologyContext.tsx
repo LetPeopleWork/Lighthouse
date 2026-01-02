@@ -84,7 +84,6 @@ const defaultTerminologyMap: Record<string, string> = {
 	[TERMINOLOGY_KEYS.TAG]: "Tag",
 	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM]: "Work Tracking System",
 	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS]: "Work Tracking Systems",
-	[TERMINOLOGY_KEYS.QUERY]: "Query",
 	[TERMINOLOGY_KEYS.BLOCKED]: "Blocked",
 	[TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION]: "Service Level Expectation",
 	[TERMINOLOGY_KEYS.SLE]: "SLE",

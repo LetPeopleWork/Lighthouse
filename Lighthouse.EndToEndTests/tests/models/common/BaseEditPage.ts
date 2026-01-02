@@ -24,14 +24,17 @@ export abstract class BaseEditPage<T> {
 		);
 	}
 
-	async setWorkItemQuery(workItemQuery: string): Promise<void> {
-		await this.page.getByLabel("Work Item Query").fill(workItemQuery);
+	async setDataRetrievalValue(
+		dataRetrievalValue: string,
+		dataRetrievalKey: string,
+	): Promise<void> {
+		await this.page.getByLabel(dataRetrievalKey).fill(dataRetrievalValue);
 	}
 
-	async getWorkItemQuery(): Promise<string> {
+	async getDataRetrievalValue(dataRetrievalKey: string): Promise<string> {
 		return (
 			(await this.page
-				.getByLabel("Work Item Query", { exact: true })
+				.getByLabel(dataRetrievalKey, { exact: true })
 				.inputValue()) ?? ""
 		);
 	}

@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Models
 
         public string Name { get; set; }
 
-        public string WorkItemQuery { get; set; } = string.Empty;
+        public string DataRetrievalValue { get; set; } = string.Empty;
 
         public DateTime UpdateTime { get; set; }
 

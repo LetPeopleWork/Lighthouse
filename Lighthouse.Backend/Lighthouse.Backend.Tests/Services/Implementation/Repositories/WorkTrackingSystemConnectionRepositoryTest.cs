@@ -96,7 +96,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Assert.That(csvConnection, Is.Not.Null);
                 Assert.That(csvConnection.Name, Is.EqualTo(connectionName));
                 Assert.That(csvConnection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
-                Assert.That(csvConnection.DataSourceType, Is.EqualTo(DataSourceType.File));
             }
         }
 

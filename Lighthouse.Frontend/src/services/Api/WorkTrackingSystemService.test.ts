@@ -25,10 +25,10 @@ describe("WorkTrackingSystemService", () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{
 				id: 2,
-				dataSourceType: "Query",
 				name: "Jira",
 				workTrackingSystem: "Jira",
 				authenticationMethodKey: "jira.cloud",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 				options: [
 					{
 						key: "apiToken",
@@ -57,7 +57,6 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				dataSourceType: "Query",
 				id: 2,
 				authenticationMethodKey: "jira.cloud",
 			}),
@@ -70,10 +69,10 @@ describe("WorkTrackingSystemService", () => {
 	it("should validate work tracking system connection", async () => {
 		const mockConnection: IWorkTrackingSystemConnection = {
 			id: 1,
-			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			options: [
 				{
 					key: "apiToken",
@@ -101,10 +100,10 @@ describe("WorkTrackingSystemService", () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{
 				id: 2,
-				dataSourceType: "Query",
 				name: "Azure DevOps",
 				workTrackingSystem: "AzureDevOps",
 				authenticationMethodKey: "ado.pat",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				options: [
 					{
 						key: "apiToken",
@@ -133,7 +132,6 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				dataSourceType: "Query",
 				id: 2,
 				authenticationMethodKey: "ado.pat",
 			}),
@@ -146,10 +144,10 @@ describe("WorkTrackingSystemService", () => {
 	it("should add a new work tracking system connection", async () => {
 		const newConnection: IWorkTrackingSystemConnection = {
 			id: 0,
-			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			options: [
 				{
 					key: "apiToken",
@@ -184,7 +182,6 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				dataSourceType: "Query",
 				id: 3,
 				authenticationMethodKey: "jira.cloud",
 			}),
@@ -198,10 +195,10 @@ describe("WorkTrackingSystemService", () => {
 	it("should update a work tracking system connection", async () => {
 		const updatedConnection: IWorkTrackingSystemConnection = {
 			id: 1,
-			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			options: [
 				{
 					key: "apiToken",
@@ -231,7 +228,6 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
-				dataSourceType: "Query",
 				id: 1,
 				authenticationMethodKey: "jira.cloud",
 			}),
@@ -256,11 +252,11 @@ describe("WorkTrackingSystemService", () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{
 				id: 1,
-				dataSourceType: "Query",
 				name: "Jira Cloud",
 				workTrackingSystem: "Jira",
 				options: [],
 				authenticationMethodKey: "jira.cloud",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			},
 		];
 

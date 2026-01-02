@@ -1,7 +1,7 @@
 export interface IBaseSettings {
 	id: number;
 	name: string;
-	workItemQuery: string;
+	dataRetrievalValue: string;
 	workItemTypes: string[];
 	toDoStates: string[];
 	doingStates: string[];

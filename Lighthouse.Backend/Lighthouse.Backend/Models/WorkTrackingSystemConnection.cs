@@ -3,12 +3,6 @@ using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
-    public enum DataSourceType
-    {
-        Query,
-        File
-    }
-
     public class WorkTrackingSystemConnection : IEntity
     {
         public int Id { get; set; }
@@ -20,8 +14,6 @@ namespace Lighthouse.Backend.Models
         public string AuthenticationMethodKey { get; set; } = string.Empty;
 
         public List<WorkTrackingSystemConnectionOption> Options { get; } = [];
-
-        public DataSourceType DataSourceType { get; set; } = DataSourceType.Query;
 
         public string GetWorkTrackingSystemConnectionOptionByKey(string key)
         {

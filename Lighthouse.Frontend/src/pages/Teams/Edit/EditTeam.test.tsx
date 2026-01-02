@@ -21,7 +21,7 @@ vi.mock("react-router-dom", async () => {
 // Mock URLSearchParams and window.location
 const mockGet = vi.fn();
 
-Object.defineProperty(window, "location", {
+Object.defineProperty(globalThis, "location", {
 	value: {
 		search: "",
 	},
@@ -46,7 +46,7 @@ class MockURLSearchParams {
 	[Symbol.iterator] = vi.fn();
 }
 
-global.URLSearchParams =
+globalThis.URLSearchParams =
 	MockURLSearchParams as unknown as typeof URLSearchParams;
 
 const mockTeamService = {
@@ -103,12 +103,12 @@ describe("EditTeam", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockGet.mockReturnValue(null);
-		// Reset window.location.search
-		window.location.search = "";
+		// Reset globalThis.location.search
+		globalThis.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
 			id: 0,
 			name: "",
-			workItemQuery: "",
+			dataRetrievalValue: "",
 			workItemTypes: [],
 			toDoStates: [],
 			doingStates: [],
@@ -149,7 +149,7 @@ describe("EditTeam", () => {
 		const mockTeamSettings: ITeamSettings = {
 			id: 5,
 			name: "Original Team",
-			workItemQuery: "project = TEST",
+			dataRetrievalValue: "project = TEST",
 			workItemTypes: ["Story", "Bug"],
 			toDoStates: ["New", "Active"],
 			doingStates: ["In Progress"],
@@ -187,7 +187,7 @@ describe("EditTeam", () => {
 		const mockTeamSettings: ITeamSettings = {
 			id: 5,
 			name: "Original Team",
-			workItemQuery: "project = TEST",
+			dataRetrievalValue: "project = TEST",
 			workItemTypes: ["Story"],
 			toDoStates: ["New"],
 			doingStates: ["In Progress"],

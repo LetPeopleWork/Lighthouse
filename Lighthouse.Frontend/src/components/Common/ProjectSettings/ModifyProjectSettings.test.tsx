@@ -56,8 +56,9 @@ vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 								name: "New System",
 								workTrackingSystem: "Jira",
 								options: [],
-								dataSourceType: "Query",
 								authenticationMethodKey: "jira.cloud",
+								workTrackingSystemGetDataRetrievalDisplayName: () =>
+									"JQL Query",
 							} as IWorkTrackingSystemConnection)
 						}
 					>
@@ -223,16 +224,16 @@ describe("ModifyProjectSettings", () => {
 			name: "System 1",
 			options: [],
 			workTrackingSystem: "Jira",
-			dataSourceType: "Query",
 			authenticationMethodKey: "jira.cloud",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 		},
 		{
 			id: 2,
 			name: "System 2",
 			options: [],
 			workTrackingSystem: "AzureDevOps",
-			dataSourceType: "Query",
 			authenticationMethodKey: "ado.pat",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 		},
 	];
 
@@ -517,7 +518,7 @@ describe("ModifyProjectSettings", () => {
 		{ invalidValue: "To Do States", toDoStates: [] },
 		{ invalidValue: "Doing States", doingStates: [] },
 		{ invalidValue: "Done States", doneStates: [] },
-		{ invalidValue: "Work Item Query", workItemQuery: "" },
+		{ invalidValue: "Work Item Query", dataRetrievalValue: "" },
 		{ invalidValue: "Involved Teams", involvedTeams: [] },
 		{
 			invalidValue: "Missing Historical Days",

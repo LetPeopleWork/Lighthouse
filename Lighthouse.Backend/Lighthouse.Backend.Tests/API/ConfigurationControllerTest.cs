@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Id = 1,
                 Name = "Test Team",
-                WorkItemQuery = "SELECT * FROM WorkItems WHERE TeamId = 1",
+                DataRetrievalValue = "SELECT * FROM WorkItems WHERE TeamId = 1",
                 UseFixedDatesForThroughput = false,
                 ThroughputHistory = 63,
                 WorkItemTypes = new List<string> { "User Story", "Task" },
@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(exportedTeam.Id, Is.EqualTo(1));
                 Assert.That(exportedTeam.Name, Is.EqualTo("Test Team"));
-                Assert.That(exportedTeam.WorkItemQuery, Is.EqualTo("SELECT * FROM WorkItems WHERE TeamId = 1"));
+                Assert.That(exportedTeam.DataRetrievalValue, Is.EqualTo("SELECT * FROM WorkItems WHERE TeamId = 1"));
                 Assert.That(exportedTeam.UseFixedDatesForThroughput, Is.False);
                 Assert.That(exportedTeam.ThroughputHistory, Is.EqualTo(63));
                 Assert.That(exportedTeam.WorkItemTypes, Has.Count.EqualTo(2));
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Id = 1,
                 Name = "Project A",
-                WorkItemQuery = "SELECT * FROM WorkItems WHERE ProjectId = 1",
+                DataRetrievalValue = "SELECT * FROM WorkItems WHERE ProjectId = 1",
                 WorkItemTypes = new List<string> { "Epic", "Feature" },
                 ToDoStates = new List<string> { "To Do", "New" },
                 DoingStates = new List<string> { "In Progress", "Testing" },
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectToVerify.Id, Is.EqualTo(1));
                 Assert.That(projectToVerify.Name, Is.EqualTo("Project A"));
-                Assert.That(projectToVerify.WorkItemQuery, Is.EqualTo("SELECT * FROM WorkItems WHERE ProjectId = 1"));
+                Assert.That(projectToVerify.DataRetrievalValue, Is.EqualTo("SELECT * FROM WorkItems WHERE ProjectId = 1"));
                 Assert.That(projectToVerify.InvolvedTeams, Has.Count.EqualTo(1));
                 Assert.That(projectToVerify.InvolvedTeams[0].Id, Is.EqualTo(1));
                 Assert.That(projectToVerify.WorkItemTypes, Has.Count.EqualTo(2));

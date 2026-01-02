@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.DoneItemsCutoffDays)}";
+            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
             var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
 
             foreach (var issue in issues)
@@ -74,9 +74,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
-            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
+            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery, project.DoneItemsCutoffDays);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays);
             var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
             return await CreateFeaturesFromIssues(project, issues);
         }
@@ -108,9 +108,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             try
             {
-                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
+                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
-                var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.DoneItemsCutoffDays);
+                var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
                 var issues = await GetIssuesByQuery(team, workItemsQuery, team.ParentOverrideField, 10);
                 var totalItems = issues.Count();
 
@@ -129,9 +129,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             try
             {
-                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.WorkItemQuery);
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
-                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.WorkItemQuery, portfolio.DoneItemsCutoffDays);
+                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
                 var issues = await GetIssuesByQuery(portfolio, query, null, 10);
                 var totalFeatures = issues.Count();
 

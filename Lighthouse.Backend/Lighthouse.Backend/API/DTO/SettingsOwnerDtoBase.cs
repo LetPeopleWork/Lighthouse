@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
@@ -13,7 +14,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             Id = workTrackingSystemOptionsOwner.Id;
             Name = workTrackingSystemOptionsOwner.Name;
-            WorkItemQuery = workTrackingSystemOptionsOwner.WorkItemQuery;
+            DataRetrievalValue = workTrackingSystemOptionsOwner.DataRetrievalValue;
             WorkItemTypes = workTrackingSystemOptionsOwner.WorkItemTypes;
             ToDoStates = workTrackingSystemOptionsOwner.ToDoStates;
             DoingStates = workTrackingSystemOptionsOwner.DoingStates;
@@ -33,7 +34,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public string Name { get; set; }
 
-        public string WorkItemQuery { get; set; }
+        public string DataRetrievalValue { get; set; }
 
         public List<string> WorkItemTypes { get; set; } = [];
 

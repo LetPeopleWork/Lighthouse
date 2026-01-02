@@ -52,11 +52,11 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
-					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 				status: "Success",
 			},
@@ -84,22 +84,22 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
-					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 				status: "Success",
 			},
 			{
 				entity: {
 					id: 2,
-					dataSourceType: "Query",
 					name: "GitHub",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 				status: "Error",
 				errorMessage: "Connection failed",
@@ -134,11 +134,11 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
-					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 				status: "Success",
 			},
@@ -164,11 +164,11 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
-					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
 					authenticationMethodKey: "ado.pat",
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 				status: "Error",
 				errorMessage: "Connection failed",
@@ -434,9 +434,9 @@ describe("ImportSummaryStep", () => {
 				{
 					entity: {
 						id: 1,
-						dataSourceType: "Query",
 						name: "Azure DevOps",
 						workTrackingSystem: "AzureDevOps",
+						workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 						options: [],
 						authenticationMethodKey: "ado.pat",
 					},

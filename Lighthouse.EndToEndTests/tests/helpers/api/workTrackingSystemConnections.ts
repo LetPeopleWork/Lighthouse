@@ -74,7 +74,8 @@ async function createWorkTrackingSystemConnection(
 			id: 0,
 			name: workTrackingSystemConnectionData.name,
 			workTrackingSystem: workTrackingSystemConnectionData.workTrackingSystem,
-			authenticationMethodKey: workTrackingSystemConnectionData.authenticationMethodKey,
+			authenticationMethodKey:
+				workTrackingSystemConnectionData.authenticationMethodKey,
 			options: workTrackingSystemConnectionData.options,
 		},
 	});

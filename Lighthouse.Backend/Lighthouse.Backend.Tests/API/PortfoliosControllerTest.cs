@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API
                 Id = 12,
                 Name = "El Projecto",
                 WorkItemTypes = new List<string> { "Bug", "Feature" },
-                WorkItemQuery = "SELECT * FROM WorkItems",
+                DataRetrievalValue = "SELECT * FROM WorkItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
                 WorkTrackingSystemConnectionId = 101
             };
@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Id, Is.EqualTo(project.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(project.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(project.WorkItemTypes));
-                Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(project.WorkItemQuery));
+                Assert.That(projectSettingDto.DataRetrievalValue, Is.EqualTo(project.DataRetrievalValue));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(project.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(project.WorkTrackingSystemConnectionId));
             }
@@ -210,7 +210,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Name = "New Project",
                 WorkItemTypes = new List<string> { "Bug", "Feature" },
-                WorkItemQuery = "SELECT * FROM WorkItems",
+                DataRetrievalValue = "SELECT * FROM WorkItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
                 WorkTrackingSystemConnectionId = 101,
                 ToDoStates = new List<string> { "To Do " },
@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
 
-                Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(newProjectSettings.WorkItemQuery));
+                Assert.That(projectSettingDto.DataRetrievalValue, Is.EqualTo(newProjectSettings.DataRetrievalValue));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(newProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newProjectSettings.WorkTrackingSystemConnectionId));
 
@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.API
                 Id = 132,
                 Name = "Updated Project",
                 WorkItemTypes = new List<string> { "Feature", "Bug" },
-                WorkItemQuery = "SELECT * FROM UpdatedWorkItems",
+                DataRetrievalValue = "SELECT * FROM UpdatedWorkItems",
                 DefaultAmountOfWorkItemsPerFeature = 10,
                 WorkTrackingSystemConnectionId = 202,
                 SizeEstimateField = "NewField",
@@ -314,7 +314,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(updatedProjectSettings.WorkItemTypes));
 
-                Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(updatedProjectSettings.WorkItemQuery));
+                Assert.That(projectSettingDto.DataRetrievalValue, Is.EqualTo(updatedProjectSettings.DataRetrievalValue));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(updatedProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedProjectSettings.WorkTrackingSystemConnectionId));
                 Assert.That(projectSettingDto.SizeEstimateField, Is.EqualTo(updatedProjectSettings.SizeEstimateField));

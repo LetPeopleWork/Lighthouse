@@ -46,16 +46,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
 
-	const handleTeamSettingsChange = (
-		key: keyof ITeamSettings,
-		value: string | number | boolean | Date | string[],
+	const handleTeamSettingsChange = <K extends keyof ITeamSettings>(
+		key: K,
+		value: ITeamSettings[K],
 	) => {
 		setTeamSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const workItemQueryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
 
 	const handleAddWorkItemType = (newWorkItemType: string) => {
 		if (newWorkItemType.trim()) {
@@ -264,11 +263,11 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 					teamSettings.doneStates.length > 0;
 				const hasValidWorkItemTypes = teamSettings.workItemTypes.length > 0;
 
-				// Check that workItemQuery is not empty (whether it's a query or CSV data)
+				// Check that dataRetrievalValue is not empty (whether it's a query or CSV data)
 				const hasValidDataSource =
 					modifyDefaultSettings ||
 					(selectedWorkTrackingSystem !== null &&
-						(teamSettings.workItemQuery ?? "") !== "");
+						(teamSettings.dataRetrievalValue ?? "") !== "");
 
 				areInputsValid =
 					hasValidName &&
@@ -398,7 +397,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								onValidate={modifyDefaultSettings ? undefined : handleValidate}
 								onSave={handleSave}
 								inputsValid={inputsValid}
-								validationFailedMessage={`Validation failed - either the connection failed, the ${workItemQueryTerm} is invalid, or no closed ${workItemsTerm} in the specified history could be found. Check the logs for additional details."`}
+								validationFailedMessage={`Validation failed - either the connection failed, the specified query is invalid, or no closed ${workItemsTerm} in the specified history could be found. Check the logs for additional details."`}
 								disableSave={disableSave}
 								saveTooltip={saveTooltip}
 							/>

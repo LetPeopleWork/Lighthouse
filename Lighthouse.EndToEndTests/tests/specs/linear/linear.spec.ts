@@ -48,7 +48,6 @@ test("should be able to handle a team defined in Linear", async ({
 		await test.step("Add general configuration", async () => {
 			await newTeamPage.setName(newTeam.name);
 			await newTeamPage.setThroughputHistory(20);
-			await newTeamPage.setWorkItemQuery(newTeam.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newTeamPage.validateButton).toBeDisabled();
@@ -84,7 +83,10 @@ test("should be able to handle a team defined in Linear", async ({
 
 		await test.step("Select Work Tracking System", async () => {
 			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
-			await newTeamPage.setWorkItemQuery(newTeam.name);
+			await newTeamPage.setDataRetrievalValue(
+				newTeam.name,
+				"Linear Team/Project",
+			);
 
 			// Now we have all default configuration set
 			await expect(newTeamPage.validateButton).toBeEnabled();
@@ -122,7 +124,6 @@ test("should be able to handle a team defined in Linear", async ({
 		const newPortfolioPage = await portfolioPage.addNewPortfolio();
 		await test.step("Add general configuration", async () => {
 			await newPortfolioPage.setName(newPortfolio.name);
-			await newPortfolioPage.setWorkItemQuery(newPortfolio.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newPortfolioPage.validateButton).toBeDisabled();
@@ -163,7 +164,10 @@ test("should be able to handle a team defined in Linear", async ({
 		await test.step("Select Work Tracking System", async () => {
 			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
-			await newPortfolioPage.setWorkItemQuery(newPortfolio.name);
+			await newPortfolioPage.setDataRetrievalValue(
+				newPortfolio.name,
+				"Linear Team/Project",
+			);
 
 			// Now we have all default configuration set
 			await expect(newPortfolioPage.validateButton).toBeEnabled();

@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             var team = CreateTeam();
-            team.WorkItemQuery = teamName;
+            team.DataRetrievalValue = teamName;
 
             var isValid = await subject.ValidateTeamSettings(team);
 
@@ -190,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             var project = CreateProject();
-            project.WorkItemQuery = projectName;
+            project.DataRetrievalValue = projectName;
 
             var isValid = await subject.ValidatePortfolioSettings(project);
 
@@ -284,7 +284,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = new Team
             {
                 Name = "Test Team",
-                WorkItemQuery = "LighthouseDemo",
+                DataRetrievalValue = "LighthouseDemo",
                 WorkTrackingSystemConnection = connection
             };
 
@@ -313,7 +313,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = new Portfolio
             {
                 Name = "Test Project",
-                WorkItemQuery = "My Demo Project",
+                DataRetrievalValue = "My Demo Project",
                 WorkTrackingSystemConnection = connection
             };
 

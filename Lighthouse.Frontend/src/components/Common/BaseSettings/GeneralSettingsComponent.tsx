@@ -10,12 +10,13 @@ import {
 import Grid from "@mui/material/Grid";
 import { useContext, useEffect, useState } from "react";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import ModifyTrackingSystemConnectionDialog from "../../../pages/Settings/Connections/ModifyTrackingSystemConnectionDialog";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
-import FileUploadComponent from "../FileUpload/FileUploadComponent";
+import { getWizardsForSystem } from "../../DataRetrievalWizards";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface GeneralSettingsComponentProps<T extends IBaseSettings> {
@@ -45,16 +46,13 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 		IWorkTrackingSystemConnection[]
 	>([]);
 	const [openDialog, setOpenDialog] = useState<boolean>(false);
-
-	const [selectedFile, setSelectedFile] = useState<File | null>(null);
-	const [uploadProgress] = useState<number | undefined>(undefined);
-	const [validationErrors] = useState<string[]>([]);
+	const [activeWizard, setActiveWizard] = useState<IDataRetrievalWizard | null>(
+		null,
+	);
 
 	const { workTrackingSystemService } = useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
-	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
-	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 	const workTrackingSystemsTerm = getTerm(
 		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
@@ -108,45 +106,32 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 		showWorkTrackingSystemSelection,
 	]);
 
-	const handleFileSelect = (file: File | null) => {
-		setSelectedFile(file);
+	// Get available wizards for the selected work tracking system
+	const availableWizards = selectedWorkTrackingSystem
+		? getWizardsForSystem(selectedWorkTrackingSystem.workTrackingSystem)
+		: [];
 
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const csvContent = e.target?.result as string;
-				if (csvContent) {
-					onSettingsChange(
-						"workItemQuery" as keyof T,
-						csvContent as T[keyof T],
-					);
-				}
-			};
-			reader.readAsText(file);
-		} else {
-			onSettingsChange("workItemQuery" as keyof T, "" as T[keyof T]);
-		}
+	const handleWizardComplete = (value: string) => {
+		onSettingsChange("dataRetrievalValue" as keyof T, value as T[keyof T]);
+		setActiveWizard(null);
+	};
+
+	const handleWizardCancel = () => {
+		setActiveWizard(null);
 	};
 
 	const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
-		const newSystemName = event.target.value;
-		const newSystem = workTrackingSystems.find(
-			(system) => system.name === newSystemName,
-		);
+		onWorkTrackingSystemChange(event);
+	};
 
-		// Only clear workItemQuery if switching between different data source types
-		const currentDataSourceType = selectedWorkTrackingSystem?.dataSourceType;
-		const newDataSourceType = newSystem?.dataSourceType;
-
-		if (
-			currentDataSourceType &&
-			newDataSourceType &&
-			currentDataSourceType !== newDataSourceType
-		) {
-			onSettingsChange("workItemQuery" as keyof T, "" as T[keyof T]);
+	const getDataRetrievalDisplayName = (
+		selectedWorkTrackingSystem: IWorkTrackingSystemConnection | null,
+	) => {
+		if (selectedWorkTrackingSystem === null) {
+			return "Query";
 		}
 
-		onWorkTrackingSystemChange(event);
+		return selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName();
 	};
 
 	return (
@@ -193,37 +178,55 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 					/>
 				</Grid>
 			)}
-			{(!showWorkTrackingSystemSelection ||
-				selectedWorkTrackingSystem?.dataSourceType !== "File") && (
+
+			<Grid size={{ xs: 12 }}>
+				<TextField
+					label={
+						selectedWorkTrackingSystem
+							? getDataRetrievalDisplayName(selectedWorkTrackingSystem)
+							: "Data Retrieval"
+					}
+					multiline
+					rows={4}
+					fullWidth
+					margin="normal"
+					value={settings?.dataRetrievalValue ?? ""}
+					onChange={(e) =>
+						onSettingsChange(
+							"dataRetrievalValue" as keyof T,
+							e.target.value as T[keyof T],
+						)
+					}
+					disabled={!selectedWorkTrackingSystem}
+					helperText={
+						selectedWorkTrackingSystem ? "" : "Select Work Tracking System"
+					}
+				/>
+			</Grid>
+
+			{/* Render wizard buttons for the selected work tracking system */}
+			{availableWizards.length > 0 && (
 				<Grid size={{ xs: 12 }}>
-					<TextField
-						label={`${workItemTerm} ${queryTerm}`}
-						multiline
-						rows={4}
-						fullWidth
-						margin="normal"
-						value={settings?.workItemQuery ?? ""}
-						onChange={(e) =>
-							onSettingsChange(
-								"workItemQuery" as keyof T,
-								e.target.value as T[keyof T],
-							)
-						}
-					/>
+					{availableWizards.map((wizard) => (
+						<Button
+							key={wizard.id}
+							variant="outlined"
+							onClick={() => setActiveWizard(wizard)}
+							sx={{ mr: 1, mt: 1 }}
+						>
+							{wizard.name}
+						</Button>
+					))}
 				</Grid>
 			)}
-			{showWorkTrackingSystemSelection &&
-				(selectedWorkTrackingSystem?.dataSourceType === "File" ||
-					(selectedWorkTrackingSystem &&
-						!selectedWorkTrackingSystem.dataSourceType)) && (
-					<FileUploadComponent
-						workTrackingSystemConnection={selectedWorkTrackingSystem}
-						selectedFile={selectedFile}
-						onFileSelect={handleFileSelect}
-						uploadProgress={uploadProgress}
-						validationErrors={validationErrors}
-					/>
-				)}
+			{/* Render the active wizard dialog */}
+			{activeWizard && (
+				<activeWizard.component
+					open={true}
+					onComplete={handleWizardComplete}
+					onCancel={handleWizardCancel}
+				/>
+			)}
 		</InputGroup>
 	);
 };

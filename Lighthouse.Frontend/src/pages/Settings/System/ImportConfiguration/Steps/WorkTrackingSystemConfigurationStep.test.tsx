@@ -26,9 +26,9 @@ describe("WorkTrackingSystemConfigurationStep", () => {
 		{
 			id: 1,
 			name: "Azure DevOps",
-			dataSourceType: "Query",
 			workTrackingSystem: "AzureDevOps",
 			authenticationMethodKey: "ado.pat",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 			options: [
 				{
 					key: "url",

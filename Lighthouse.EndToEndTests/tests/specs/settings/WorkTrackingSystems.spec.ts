@@ -17,7 +17,10 @@ const workTrackingSystemConfiguration = [
 		workTrackingSystemName: "Jira",
 		workTrackingSystemOptions: [
 			{ field: "Jira URL", value: "https://letpeoplework.atlassian.net" },
-			{ field: "Username (Email)", value: "atlassian.pushchair@huser-berta.com" },
+			{
+				field: "Username (Email)",
+				value: "atlassian.pushchair@huser-berta.com",
+			},
 			{ field: "API Token", value: TestConfig.JiraToken },
 		],
 	},

@@ -132,7 +132,7 @@ describe("EditPortfolio", () => {
 		mockSettingsService.getDefaultProjectSettings.mockResolvedValue({
 			id: 0,
 			name: "",
-			workItemQuery: "",
+			dataRetrievalValue: "",
 			workItemTypes: [],
 			defaultAmountOfWorkItemsPerFeature: 5,
 			toDoStates: [],
@@ -171,7 +171,7 @@ describe("EditPortfolio", () => {
 		const mockPortfolioSettings: IPortfolioSettings = {
 			id: 5,
 			name: "Original Project",
-			workItemQuery: "project = TEST",
+			dataRetrievalValue: "project = TEST",
 			workItemTypes: ["Story", "Bug"],
 			defaultAmountOfWorkItemsPerFeature: 10,
 			toDoStates: ["New", "Active"],
@@ -211,7 +211,7 @@ describe("EditPortfolio", () => {
 		const mockPortfolioSettings: IPortfolioSettings = {
 			id: 5,
 			name: "Original Project",
-			workItemQuery: "project = TEST",
+			dataRetrievalValue: "project = TEST",
 			workItemTypes: ["Story"],
 			defaultAmountOfWorkItemsPerFeature: 8,
 			toDoStates: ["New"],

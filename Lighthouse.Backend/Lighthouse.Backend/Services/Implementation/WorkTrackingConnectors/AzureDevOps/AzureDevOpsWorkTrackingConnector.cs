@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.ParentOverrideField ?? string.Empty, team.DoneItemsCutoffDays)}";
+            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.ParentOverrideField ?? string.Empty, team.DoneItemsCutoffDays)}";
 
             var adoWorkItems = await FetchAdoWorkItemsByQuery(team, workItemQuery, team.ParentOverrideField ?? string.Empty);
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
@@ -63,9 +63,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
-            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
+            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery, project.ParentOverrideField ?? string.Empty, project.DoneItemsCutoffDays);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.ParentOverrideField ?? string.Empty, project.DoneItemsCutoffDays);
             var features = await GetFeaturesForProjectByQuery(project, query);
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
@@ -112,9 +112,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             try
             {
-                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
+                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
-                var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, string.Empty, team.DoneItemsCutoffDays);
+                var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, string.Empty, team.DoneItemsCutoffDays);
                 var witClient = GetClientService(team.WorkTrackingSystemConnection);
                 var workItems = await GetWorkItemReferencesByQuery(witClient, query);
 
@@ -135,9 +135,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             try
             {
-                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.WorkItemQuery);
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
-                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.WorkItemQuery, string.Empty, portfolio.DoneItemsCutoffDays);
+                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, string.Empty, portfolio.DoneItemsCutoffDays);
 
                 var workItems = await FetchAdoWorkItemsByQuery(portfolio, query, portfolio.SizeEstimateField ?? string.Empty, portfolio.FeatureOwnerField ?? string.Empty);
                 var workItemCount = workItems.Count();

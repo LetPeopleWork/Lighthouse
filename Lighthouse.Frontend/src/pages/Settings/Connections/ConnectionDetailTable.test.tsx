@@ -11,14 +11,12 @@ describe("ConnectionDetailTable", () => {
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			options: [],
-			dataSourceType: "Query",
 			id: 1,
 		}),
 		new WorkTrackingSystemConnection({
 			name: "ADO",
 			workTrackingSystem: "AzureDevOps",
 			options: [],
-			dataSourceType: "Query",
 			id: 2,
 		}),
 	];
@@ -28,21 +26,18 @@ describe("ConnectionDetailTable", () => {
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			options: [],
-			dataSourceType: "Query",
 			id: 1,
 		}),
 		new WorkTrackingSystemConnection({
 			name: "CSV",
 			workTrackingSystem: "Csv",
 			options: [],
-			dataSourceType: "File",
 			id: 2,
 		}),
 		new WorkTrackingSystemConnection({
 			name: "ADO",
 			workTrackingSystem: "AzureDevOps",
 			options: [],
-			dataSourceType: "Query",
 			id: 3,
 		}),
 	];

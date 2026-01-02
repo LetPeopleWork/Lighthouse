@@ -53,7 +53,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
-	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
+
 	const {
 		canUpdatePortfolioSettings: canUpdateProjectSettings,
 		updatePortfolioSettingsTooltip: updateProjectSettingsTooltip,
@@ -312,11 +312,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 					projectSettings.doneStates.length > 0;
 				const hasValidInvolvedTeams = selectedTeams.length > 0;
 
-				// Check that workItemQuery is not empty (whether it's a query or CSV data)
+				// Check that dataRetrievalValue is not empty (whether it's a query or CSV data)
 				const hasValidDataSource =
 					modifyDefaultSettings ||
 					(selectedWorkTrackingSystem !== null &&
-						(projectSettings?.workItemQuery ?? "") !== "");
+						(projectSettings?.dataRetrievalValue ?? "") !== "");
 
 				isFormValid =
 					hasValidName &&
@@ -458,7 +458,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								onValidate={modifyDefaultSettings ? undefined : handleValidate}
 								onSave={handleSave}
 								inputsValid={formValid}
-								validationFailedMessage={`Validation failed - either the connection failed, the ${queryTerm} is invalid, or no ${featuresTerm} could be found. Check the logs for additional details."`}
+								validationFailedMessage={`Validation failed - either the connection failed, the Query is invalid, or no ${featuresTerm} could be found. Check the logs for additional details."`}
 								disableSave={!canUpdateProjectSettings}
 								saveTooltip={updateProjectSettingsTooltip}
 							/>

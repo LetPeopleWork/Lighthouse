@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         {
             try
             {
-                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.WorkItemQuery);
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
                 var issues = await GetIssuesForProject(portfolio);
 
@@ -167,10 +167,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         {
             try
             {
-                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
+                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
                 var issues = await GetIssuesForTeam(team);
-                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", issues.Count, team.WorkItemQuery);
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", issues.Count, team.DataRetrievalValue);
 
                 return issues.Count > 0;
             }
@@ -270,35 +270,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private async Task<List<IssueNode>> GetIssuesForProject(Portfolio project)
         {
-            var projectNode = await GetProjectByName(project.WorkTrackingSystemConnection, project.WorkItemQuery);
+            var projectNode = await GetProjectByName(project.WorkTrackingSystemConnection, project.DataRetrievalValue);
 
             if (projectNode == null)
             {
-                logger.LogInformation("Project with name '{ProjectName}' not found", project.WorkItemQuery);
+                logger.LogInformation("Project with name '{ProjectName}' not found", project.DataRetrievalValue);
                 return [];
             }
 
             var projectId = projectNode.Id;
             var issues = await GetAllIssuesForProject(project.WorkTrackingSystemConnection, projectId);
 
-            logger.LogInformation("Found a total of {Count} issues for project {ProjectName}", issues.Count, project.WorkItemQuery);
+            logger.LogInformation("Found a total of {Count} issues for project {ProjectName}", issues.Count, project.DataRetrievalValue);
             return FilterIssuesForWorkItemOwner(project, issues);
         }
 
         private async Task<List<IssueNode>> GetIssuesForTeam(Team team)
         {
-            var teamNode = await GetTeamByName(team.WorkTrackingSystemConnection, team.WorkItemQuery);
+            var teamNode = await GetTeamByName(team.WorkTrackingSystemConnection, team.DataRetrievalValue);
 
             if (teamNode == null)
             {
-                logger.LogInformation("Team with name '{TeamName}' not found", team.WorkItemQuery);
+                logger.LogInformation("Team with name '{TeamName}' not found", team.DataRetrievalValue);
                 return [];
             }
 
             var teamId = teamNode.Id;
             var issues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId);
 
-            logger.LogInformation("Found a total of {Count} issues for team {TeamName}", issues.Count, team.WorkItemQuery);
+            logger.LogInformation("Found a total of {Count} issues for team {TeamName}", issues.Count, team.DataRetrievalValue);
             return FilterIssuesForWorkItemOwner(team, issues);
         }
 

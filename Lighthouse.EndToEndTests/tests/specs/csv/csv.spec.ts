@@ -1,10 +1,11 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
+import type { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import {
 	createPortfoliosCsvFile,
 	createTeamCsvFile,
 } from "../../helpers/csv/csvTestData";
-import { CsvUploadHelper } from "../../helpers/csv/csvUploadHelper";
 import { generateRandomName } from "../../helpers/names";
+import type { TeamEditPage } from "../../models/teams/TeamEditPage";
 
 test("should be able to handle teams and portfolios defined via CSV", async ({
 	overviewPage,
@@ -42,8 +43,7 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		// Generate CSV data with current date to ensure consistent 30-day metrics
 		teamCsvFile = createTeamCsvFile();
 
-		const newTeamPage = await overviewPage.lightHousePage.createNewTeam();
-		const csvUploadHelper = new CsvUploadHelper(newTeamPage.page);
+		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
 
 		await test.step("Add general configuration", async () => {
 			await newTeamPage.setName(newTeam.name);
@@ -81,22 +81,26 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 			await expect(newTeamPage.validateButton).toBeDisabled();
 		});
 
+		let csvUploadWizard: CsvUploadWizard<TeamEditPage>;
+
 		await test.step("Select CSV Work Tracking System", async () => {
 			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
+			csvUploadWizard = await newTeamPage.triggerCsvWizard();
+
 			// CSV system should now show file upload component
-			await expect(csvUploadHelper.isFileUploadVisible()).resolves.toBe(true);
+			await expect(csvUploadWizard.isFileUploadVisible()).resolves.toBe(true);
 
 			// Upload the CSV file - ensure teamCsvFile is not null
 			if (!teamCsvFile) {
 				throw new Error("Team CSV file not created");
 			}
-			await csvUploadHelper.uploadCsvFile(teamCsvFile.filePath);
-			await csvUploadHelper.waitForUploadComplete();
+			await csvUploadWizard.uploadCsvFile(teamCsvFile.filePath);
+			await csvUploadWizard.waitForUploadComplete();
 
-			// Verify file was uploaded
-			const selectedFile = await csvUploadHelper.getSelectedFileName();
-			expect(selectedFile).toBeTruthy();
+			await expect(csvUploadWizard.hasValidationErrors()).resolves.toBeFalsy();
+
+			newTeamPage = await csvUploadWizard.useFile();
 
 			// Now we have all default configuration set
 			await expect(newTeamPage.validateButton).toBeEnabled();
@@ -108,9 +112,9 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 			await expect(newTeamPage.saveButton).toBeEnabled();
 
 			// Check for any validation errors
-			const hasErrors = await csvUploadHelper.hasValidationErrors();
+			const hasErrors = await csvUploadWizard.hasValidationErrors();
 			if (hasErrors) {
-				const errors = await csvUploadHelper.getValidationErrors();
+				const errors = await csvUploadWizard.getValidationErrors();
 				console.warn("CSV validation errors:", errors);
 			}
 		});
@@ -151,8 +155,7 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		portfolioCsvFile = createPortfoliosCsvFile();
 
 		const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
-		const newPortfolioPage = await portfoliosPage.addNewPortfolio();
-		const csvUploadHelper = new CsvUploadHelper(newPortfolioPage.page);
+		let newPortfolioPage = await portfoliosPage.addNewPortfolio();
 
 		await test.step("Add general configuration", async () => {
 			await newPortfolioPage.setName(newPortfolio.name);
@@ -196,19 +199,19 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		await test.step("Select CSV Work Tracking System", async () => {
 			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
+			const csvWizard = await newPortfolioPage.triggerCsvWizard();
+
 			// CSV system should now show file upload component
-			await expect(csvUploadHelper.isFileUploadVisible()).resolves.toBe(true);
+			await expect(csvWizard.isFileUploadVisible()).resolves.toBe(true);
 
 			// Upload the CSV file - ensure portfolioCsvFile is not null
 			if (!portfolioCsvFile) {
 				throw new Error("portfolio CSV file not created");
 			}
-			await csvUploadHelper.uploadCsvFile(portfolioCsvFile.filePath);
-			await csvUploadHelper.waitForUploadComplete();
+			await csvWizard.uploadCsvFile(portfolioCsvFile.filePath);
+			await csvWizard.waitForUploadComplete();
 
-			// Verify file was uploaded
-			const selectedFile = await csvUploadHelper.getSelectedFileName();
-			expect(selectedFile).toBeTruthy();
+			newPortfolioPage = await csvWizard.useFile();
 
 			// Now we have all default configuration set
 			await expect(newPortfolioPage.validateButton).toBeEnabled();
@@ -218,13 +221,6 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 			await newPortfolioPage.validate();
 			await expect(newPortfolioPage.validateButton).toBeEnabled();
 			await expect(newPortfolioPage.saveButton).toBeEnabled();
-
-			// Check for any validation errors
-			const hasErrors = await csvUploadHelper.hasValidationErrors();
-			if (hasErrors) {
-				const errors = await csvUploadHelper.getValidationErrors();
-				console.warn("CSV validation errors:", errors);
-			}
 		});
 
 		await test.step("Create New portfolio", async () => {
