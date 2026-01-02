@@ -179,30 +179,28 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 				</Grid>
 			)}
 
-			<Grid size={{ xs: 12 }}>
-				<TextField
-					label={
-						selectedWorkTrackingSystem
-							? getDataRetrievalDisplayName(selectedWorkTrackingSystem)
-							: "Data Retrieval"
-					}
-					multiline
-					rows={4}
-					fullWidth
-					margin="normal"
-					value={settings?.dataRetrievalValue ?? ""}
-					onChange={(e) =>
-						onSettingsChange(
-							"dataRetrievalValue" as keyof T,
-							e.target.value as T[keyof T],
-						)
-					}
-					disabled={!selectedWorkTrackingSystem}
-					helperText={
-						selectedWorkTrackingSystem ? "" : "Select Work Tracking System"
-					}
-				/>
-			</Grid>
+			{selectedWorkTrackingSystem && (
+				<Grid size={{ xs: 12 }}>
+					<TextField
+						label={
+							selectedWorkTrackingSystem
+								? getDataRetrievalDisplayName(selectedWorkTrackingSystem)
+								: "Data Retrieval"
+						}
+						multiline
+						rows={4}
+						fullWidth
+						margin="normal"
+						value={settings?.dataRetrievalValue ?? ""}
+						onChange={(e) =>
+							onSettingsChange(
+								"dataRetrievalValue" as keyof T,
+								e.target.value as T[keyof T],
+							)
+						}
+					/>
+				</Grid>
+			)}
 
 			{/* Render wizard buttons for the selected work tracking system */}
 			{availableWizards.length > 0 && (

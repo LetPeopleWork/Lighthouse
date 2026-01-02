@@ -52,11 +52,13 @@ describe("GeneralSettingsComponent", () => {
 			<GeneralSettingsComponent
 				settings={testSettings}
 				onSettingsChange={mockOnSettingsChange}
+				workTrackingSystems={mockWorkTrackingSystems}
+				selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
 			/>,
 		);
 
 		expect(screen.getByLabelText("Name")).toHaveValue("Test Settings");
-		expect(screen.getByLabelText("Query")).toHaveValue("Test Query");
+		expect(screen.getByLabelText("JQL Query")).toHaveValue("Test Query");
 	});
 
 	it("calls onSettingsChange with correct arguments when name changes", () => {
@@ -81,11 +83,13 @@ describe("GeneralSettingsComponent", () => {
 		render(
 			<GeneralSettingsComponent
 				settings={testSettings}
+				workTrackingSystems={mockWorkTrackingSystems}
+				selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
 				onSettingsChange={mockOnSettingsChange}
 			/>,
 		);
 
-		fireEvent.change(screen.getByLabelText("Query"), {
+		fireEvent.change(screen.getByLabelText("JQL Query"), {
 			target: { value: "Updated Query" },
 		});
 
@@ -383,18 +387,6 @@ describe("GeneralSettingsComponent", () => {
 		expect(
 			screen.getByRole("button", { name: /Upload CSV File/i }),
 		).toBeInTheDocument();
-	});
-
-	it("hides query field when showWorkTrackingSystemSelection is false", () => {
-		render(
-			<GeneralSettingsComponent
-				settings={testSettings}
-				onSettingsChange={mockOnSettingsChange}
-				showWorkTrackingSystemSelection={false}
-			/>,
-		);
-
-		expect(screen.getByLabelText("Query")).toBeInTheDocument();
 	});
 
 	it("handles missing onWorkTrackingSystemChange callback gracefully", () => {
