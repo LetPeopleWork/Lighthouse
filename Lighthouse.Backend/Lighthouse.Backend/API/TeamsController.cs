@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.API
         {
             team.Name = teamSetting.Name;
             team.DataRetrievalValue = teamSetting.DataRetrievalValue;
-            team.ParentOverrideField = teamSetting.ParentOverrideField;
+            team.ParentOverrideAdditionalFieldDefinitionId = teamSetting.ParentOverrideAdditionalFieldDefinitionId;
             team.FeatureWIP = teamSetting.FeatureWIP;
             team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
             team.ThroughputHistory = teamSetting.ThroughputHistory;

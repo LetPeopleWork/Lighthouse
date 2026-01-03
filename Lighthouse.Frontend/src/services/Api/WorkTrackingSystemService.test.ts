@@ -28,6 +28,7 @@ describe("WorkTrackingSystemService", () => {
 				name: "Jira",
 				workTrackingSystem: "Jira",
 				authenticationMethodKey: "jira.cloud",
+				additionalFieldDefinitions: [],
 				workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 				options: [
 					{
@@ -59,6 +60,7 @@ describe("WorkTrackingSystemService", () => {
 				],
 				id: 2,
 				authenticationMethodKey: "jira.cloud",
+				additionalFieldDefinitions: [],
 			}),
 		]);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
@@ -72,6 +74,7 @@ describe("WorkTrackingSystemService", () => {
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			additionalFieldDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			options: [
 				{
@@ -103,6 +106,7 @@ describe("WorkTrackingSystemService", () => {
 				name: "Azure DevOps",
 				workTrackingSystem: "AzureDevOps",
 				authenticationMethodKey: "ado.pat",
+				additionalFieldDefinitions: [],
 				workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				options: [
 					{
@@ -134,6 +138,7 @@ describe("WorkTrackingSystemService", () => {
 				],
 				id: 2,
 				authenticationMethodKey: "ado.pat",
+				additionalFieldDefinitions: [],
 			}),
 		]);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
@@ -147,6 +152,7 @@ describe("WorkTrackingSystemService", () => {
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			additionalFieldDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			options: [
 				{
@@ -184,6 +190,7 @@ describe("WorkTrackingSystemService", () => {
 				],
 				id: 3,
 				authenticationMethodKey: "jira.cloud",
+				additionalFieldDefinitions: [],
 			}),
 		);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -198,6 +205,7 @@ describe("WorkTrackingSystemService", () => {
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			additionalFieldDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			options: [
 				{
@@ -230,6 +238,7 @@ describe("WorkTrackingSystemService", () => {
 				],
 				id: 1,
 				authenticationMethodKey: "jira.cloud",
+				additionalFieldDefinitions: [],
 			}),
 		);
 		expect(mockedAxios.put).toHaveBeenCalledWith(
@@ -256,6 +265,7 @@ describe("WorkTrackingSystemService", () => {
 				workTrackingSystem: "Jira",
 				options: [],
 				authenticationMethodKey: "jira.cloud",
+				additionalFieldDefinitions: [],
 				workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 			},
 		];

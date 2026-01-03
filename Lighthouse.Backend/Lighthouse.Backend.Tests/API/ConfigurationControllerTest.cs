@@ -237,11 +237,11 @@ namespace Lighthouse.Backend.Tests.API
                 Tags = new List<string> { "ProjectTag1", "ProjectTag2" },
                 UsePercentileToCalculateDefaultAmountOfWorkItems = false,
                 DefaultAmountOfWorkItemsPerFeature = 14,
-                SizeEstimateField = "SizeEstimate",
+                SizeEstimateAdditionalFieldDefinitionId = 1,
                 OverrideRealChildCountStates = new List<string> { "In Progress", "Testing" },
                 OwningTeamId = team.Id,
                 OwningTeam = team,
-                FeatureOwnerField = "FeatureOwner",
+                FeatureOwnerAdditionalFieldDefinitionId = 2,
                 ServiceLevelExpectationProbability = 85,
                 ServiceLevelExpectationRange = 21,
                 SystemWIPLimit = 1,
@@ -285,12 +285,12 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectToVerify.Tags[1], Is.EqualTo("ProjectTag2"));
                 Assert.That(projectToVerify.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.False);
                 Assert.That(projectToVerify.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(14));
-                Assert.That(projectToVerify.SizeEstimateField, Is.EqualTo("SizeEstimate"));
+                Assert.That(projectToVerify.SizeEstimateAdditionalFieldDefinitionId, Is.EqualTo(1));
                 Assert.That(projectToVerify.OverrideRealChildCountStates, Has.Count.EqualTo(2));
                 Assert.That(projectToVerify.OverrideRealChildCountStates[0], Is.EqualTo("In Progress"));
                 Assert.That(projectToVerify.OverrideRealChildCountStates[1], Is.EqualTo("Testing"));
                 Assert.That(projectToVerify.OwningTeam.Id, Is.EqualTo(team.Id));
-                Assert.That(projectToVerify.FeatureOwnerField, Is.EqualTo("FeatureOwner"));
+                Assert.That(projectToVerify.FeatureOwnerAdditionalFieldDefinitionId, Is.EqualTo(2));
                 Assert.That(projectToVerify.ServiceLevelExpectationProbability, Is.EqualTo(85));
                 Assert.That(projectToVerify.ServiceLevelExpectationRange, Is.EqualTo(21));
                 Assert.That(projectToVerify.SystemWIPLimit, Is.EqualTo(1));

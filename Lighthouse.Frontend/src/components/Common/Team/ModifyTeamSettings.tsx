@@ -387,6 +387,9 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						<AdvancedInputsComponent
 							settings={teamSettings}
 							onSettingsChange={handleTeamSettingsChange}
+							additionalFieldDefinitions={
+								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
+							}
 						/>
 
 						<Grid

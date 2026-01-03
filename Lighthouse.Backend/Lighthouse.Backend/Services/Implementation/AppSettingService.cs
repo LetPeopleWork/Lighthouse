@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 FeatureWIP = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingFeatureWIP).Value),
                 DataRetrievalValue = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
-                ParentOverrideField = GetSettingByKey(AppSettingKeys.TeamSettingParentOverrideField).Value,
+                ParentOverrideAdditionalFieldDefinitionId = null,
                 AutomaticallyAdjustFeatureWIP = bool.Parse(GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP).Value),
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
@@ -105,13 +105,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 OverrideRealChildCountStates = overrideRealChildCountStates,
 
-                SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
-                FeatureOwnerField = GetSettingByKey(AppSettingKeys.ProjectSettingsFeatureOwnerField).Value,
+                SizeEstimateAdditionalFieldDefinitionId = null,
+                FeatureOwnerAdditionalFieldDefinitionId = null,
+                ParentOverrideAdditionalFieldDefinitionId = null,
 
                 ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLEProbability).Value),
                 ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLERange).Value),
-
-                ParentOverrideField = GetSettingByKey(AppSettingKeys.ProjectSettingParentOverrideField).Value,
 
                 BlockedStates = blockedStates,
                 BlockedTags = blockedTags,

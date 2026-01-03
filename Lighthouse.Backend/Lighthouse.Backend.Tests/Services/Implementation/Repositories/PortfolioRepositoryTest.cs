@@ -7,9 +7,9 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class ProjectRepositoryTest : IntegrationTestBase
+    public class PortfolioRepositoryTest : IntegrationTestBase
     {
-        public ProjectRepositoryTest() : base(new TestWebApplicationFactory<Program>())
+        public PortfolioRepositoryTest() : base(new TestWebApplicationFactory<Program>())
         {
         }
 
@@ -117,9 +117,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             };
         }
 
-        private ProjectRepository CreateSubject()
+        private PortfolioRepository CreateSubject()
         {
-            return new ProjectRepository(DatabaseContext, Mock.Of<ILogger<ProjectRepository>>());
+            return new PortfolioRepository(DatabaseContext, Mock.Of<ILogger<PortfolioRepository>>());
         }
     }
 }

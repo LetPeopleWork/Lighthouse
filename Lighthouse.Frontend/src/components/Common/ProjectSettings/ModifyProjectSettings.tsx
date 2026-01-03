@@ -430,6 +430,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<FeatureSizeComponent
 							projectSettings={projectSettings}
 							onProjectSettingsChange={handleProjectSettingsChange}
+							additionalFieldDefinitions={
+								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
+							}
 						/>
 
 						<OwnershipComponent
@@ -438,6 +441,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							currentInvolvedTeams={teams.filter((team) =>
 								selectedTeams.includes(team.id),
 							)}
+							additionalFieldDefinitions={
+								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
+							}
 						/>
 
 						<FlowMetricsConfigurationComponent
@@ -448,6 +454,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<AdvancedInputsComponent
 							settings={projectSettings}
 							onSettingsChange={handleProjectSettingsChange}
+							additionalFieldDefinitions={
+								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
+							}
 						/>
 
 						<Grid

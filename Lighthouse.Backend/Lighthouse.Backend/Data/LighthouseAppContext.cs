@@ -3,6 +3,9 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Lighthouse.Backend.Data
 {
@@ -37,7 +40,7 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
             modelBuilder.Entity<OptionalFeature>().HasKey(a => a.Key);
             modelBuilder.Entity<LicenseInformation>().HasKey(li => li.Id);
-            
+
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()
                 .Property(t => t.Id)
@@ -103,8 +106,37 @@ namespace Lighthouse.Backend.Data
                       .WithOne(option => option.WorkTrackingSystemConnection)
                       .HasForeignKey(option => option.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.AdditionalFieldDefinitions)
+                      .WithOne(afd => afd.WorkTrackingSystemConnection)
+                      .HasForeignKey(afd => afd.WorkTrackingSystemConnectionId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
+            var dictionaryConverter = new ValueConverter<Dictionary<int, string?>, string>(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrWhiteSpace(v) 
+                    ? new Dictionary<int, string?>() 
+                    : JsonSerializer.Deserialize<Dictionary<int, string?>>(v, (JsonSerializerOptions?)null) 
+                      ?? new Dictionary<int, string?>()
+            );
+
+            var dictionaryComparer = new ValueComparer<Dictionary<int, string?>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToDictionary(k => k.Key, v => v.Value)
+            );
+
+            modelBuilder.Entity<WorkItem>()
+                .Property(wi => wi.AdditionalFieldValues)
+                .HasConversion(dictionaryConverter)
+                .Metadata.SetValueComparer(dictionaryComparer);
+
+            modelBuilder.Entity<Feature>()
+                .Property(f => f.AdditionalFieldValues)
+                .HasConversion(dictionaryConverter)
+                .Metadata.SetValueComparer(dictionaryComparer);
+                
             modelBuilder.Entity<Delivery>()
                 .HasOne(d => d.Portfolio)
                 .WithMany()
@@ -180,7 +212,7 @@ namespace Lighthouse.Backend.Data
         private void RemoveOrphanedFeatures()
         {
             logger.LogDebug("Removing orphaned features");
-    
+
             // Only look at the change tracker, don't query the database
             var orphanedFeatures = ChangeTracker.Entries<Feature>()
                 .Where(e => e.State != EntityState.Deleted && e.State != EntityState.Detached)

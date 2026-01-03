@@ -7,24 +7,23 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Lighthouse.Backend.Extensions;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
-    public class JiraWorkTrackingConnector : IWorkTrackingConnector
+    public class JiraWorkTrackingConnector(
+        IIssueFactory issueFactory,
+        ILogger<JiraWorkTrackingConnector> logger,
+        ICryptoService cryptoService)
+        : IWorkTrackingConnector
     {
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
-        
-        private readonly IIssueFactory issueFactory;
-
-        private readonly ILogger<JiraWorkTrackingConnector> logger;
-        
-        private readonly ICryptoService cryptoService;
 
         private static string rankFieldName = string.Empty;
 
         private static string flaggedFieldName = string.Empty;
 
-        private static readonly SocketsHttpHandler SharedHandler = new SocketsHttpHandler
+        private static readonly SocketsHttpHandler SharedHandler = new()
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
@@ -39,13 +38,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
         private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
 
-        public JiraWorkTrackingConnector(IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService)
-        {
-            this.issueFactory = issueFactory;
-            this.logger = logger;
-            this.cryptoService = cryptoService;
-        }
-
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             var workItems = new List<WorkItem>();
@@ -53,11 +45,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
-            var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
+            var issues = await GetIssuesByQuery(team, query);
+
+            var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
             foreach (var issue in issues)
             {
-                var workItemBase = CreateWorkItemFromJiraIssue(issue, team);
+                var workItemBase = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
                 workItems.Add(new WorkItem(workItemBase, team));
             }
 
@@ -69,7 +63,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays);
-            var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
+            var issues = await GetIssuesByQuery(project, query);
             return await CreateFeaturesFromIssues(project, issues);
         }
 
@@ -78,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", parentFeatureIds));
 
             var query = string.Join(" OR ", parentFeatureIds.Select(id => $"key = \"{id}\""));
-            var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
+            var issues = await GetIssuesByQuery(project, query);
             return await CreateFeaturesFromIssues(project, issues);
         }
 
@@ -88,12 +82,36 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var client = GetJiraRestClient(connection);
                 var response = await client.GetAsync("rest/api/2/myself");
-                return response.IsSuccessStatusCode;
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogInformation("Authentication is not valid for {Connection}", connection.Name);
+                    return false;
+                }
+
+                var fieldsValid = await ValidateFields(connection);
+                return fieldsValid;
             }
             catch
             {
                 return false;
             }
+        }
+
+        private async Task<bool> ValidateFields(WorkTrackingSystemConnection connection)
+        {
+            var customFieldReferences = await GetCustomFieldReferences(connection);
+
+            var missingReference = 0;
+            foreach (var customFieldReference in customFieldReferences)
+            {
+                if (string.IsNullOrEmpty(customFieldReference.Value))
+                {
+                    logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
+                    missingReference++;
+                }
+            }
+
+            return missingReference <= 0;
         }
 
         public async Task<bool> ValidateTeamSettings(Team team)
@@ -103,7 +121,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
                 var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
-                var issues = await GetIssuesByQuery(team, workItemsQuery, team.ParentOverrideField, 10);
+                var issues = await GetIssuesByQuery(team, workItemsQuery, 10);
                 var totalItems = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Issues with specified Query settings", totalItems);
@@ -124,7 +142,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
                 var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
-                var issues = await GetIssuesByQuery(portfolio, query, null, 10);
+                var issues = await GetIssuesByQuery(portfolio, query, 10);
                 var totalFeatures = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
@@ -138,33 +156,51 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio project, IEnumerable<Issue> issues)
+        private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio portfolio, IEnumerable<Issue> issues)
         {
             var features = new List<Feature>();
+            
+            var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
+            
             foreach (var issue in issues)
             {
-                var feature = new Feature(CreateWorkItemFromJiraIssue(issue, project));
+                var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
 
-                var size = await GetEstimatedSizeForItem(issue.Key, project);
-                var owner = await GetFeatureOwnerByField(issue.Key, project);
+                var estimatedSize = GetEstimatedSize(portfolio, workItem);
+                var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                feature.EstimatedSize = size;
-                feature.OwningTeam = owner;
-
+                var feature = new Feature(workItem)
+                {
+                    EstimatedSize = estimatedSize,
+                    OwningTeam = owningTeam,
+                };
+                
                 features.Add(feature);
             }
 
             return features;
         }
 
-        private async Task<int> GetEstimatedSizeForItem(string referenceId, Portfolio project)
+        private static string GetOwningTeam(Portfolio portfolio, WorkItemBase workItem)
         {
-            if (string.IsNullOrEmpty(project.SizeEstimateField))
+            var owningTeam = workItem.GetAdditionalFieldValue(portfolio.FeatureOwnerAdditionalFieldDefinitionId) ?? string.Empty;
+
+            return owningTeam;
+        }
+
+        private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
+        {
+            var estimatedSizeRawValue = workItem.GetAdditionalFieldValue(portfolio.SizeEstimateAdditionalFieldDefinitionId);
+            
+            return ParseEstimatedSize(estimatedSizeRawValue);
+        }
+
+        private static int ParseEstimatedSize(string? estimateRawValue)
+        {
+            if (string.IsNullOrEmpty(estimateRawValue))
             {
                 return 0;
             }
-
-            var estimateRawValue = await GetFieldValue(referenceId, project, project.SizeEstimateField);
 
             // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
             if (double.TryParse(estimateRawValue, out var estimateAsDouble))
@@ -173,58 +209,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             return 0;
-        }
-
-        private async Task<string> GetFeatureOwnerByField(string referenceId, Portfolio project)
-        {
-            if (string.IsNullOrEmpty(project.FeatureOwnerField))
-            {
-                return string.Empty;
-            }
-
-            return await GetFieldValue(referenceId, project, project.FeatureOwnerField);
-        }
-
-        private async Task<string> GetFieldValue(string referenceId, Portfolio project, string fieldName)
-        {
-            try
-            {
-                var jiraClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
-                var issue = await GetIssueById(jiraClient, project, referenceId);
-                return issue.Fields.GetFieldValue(fieldName) ?? string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
-
-        private async Task<Issue> GetIssueById(HttpClient jiraClient, IWorkItemQueryOwner workitemQueryOwner, string issueId, string? additionalRelatedField = null)
-        {
-            logger.LogDebug("Getting Issue by Key '{Key}'", issueId);
-
-            // First, get the issue without changelog expansion (or with limited changelog)
-            var issueUrl = $"rest/api/latest/issue/{issueId}";
-            var issueResponse = await jiraClient.GetAsync(issueUrl);
-            issueResponse.EnsureSuccessStatusCode();
-
-            var issueBody = await issueResponse.Content.ReadAsStringAsync();
-            using var issueJsonDoc = JsonDocument.Parse(issueBody);
-
-            // Fetch all changelog entries via pagination
-            var allChangelogHistories = await GetAllChangelogEntriesForIssue(jiraClient, issueId);
-
-            // Merge the complete changelog back into the issue JSON structure
-            var issueWithCompleteChangelog = MergeChangelogIntoIssueJson(issueJsonDoc.RootElement, allChangelogHistories);
-
-            var rankField = await GetRankField(jiraClient);
-
-            var flaggedField = await GetFlaggedFieldName(jiraClient, workitemQueryOwner);
-            var issue = issueFactory.CreateIssueFromJson(issueWithCompleteChangelog, workitemQueryOwner, additionalRelatedField, rankField, flaggedField);
-
-            logger.LogDebug("Found Issue by Key: {Key} with {ChangelogCount} changelog entries", issue.Key, allChangelogHistories.Count);
-
-            return issue;
         }
 
         private async Task<List<JsonElement>> GetAllChangelogEntriesForIssue(HttpClient jiraClient, string issueId)
@@ -354,56 +338,78 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return JsonDocument.Parse(stream.ToArray()).RootElement;
         }
 
-        private static async Task<string> GetFlaggedFieldName(HttpClient jiraClient, IWorkItemQueryOwner workItemQueryOwner)
+        private static async Task SetFlaggedAndRankField(HttpClient client)
         {
-            var blockedTags = workItemQueryOwner.BlockedTags.Select(bt => bt.ToLower());
-
-            if (!blockedTags.Contains(JiraFieldNames.FlaggedName.ToLower()))
+            if (!string.IsNullOrEmpty(flaggedFieldName) && !string.IsNullOrEmpty(rankFieldName))
             {
-                return string.Empty;
+                return;
             }
-
-            if (!string.IsNullOrEmpty(flaggedFieldName))
-            {
-                return flaggedFieldName;
-            }
-
-            flaggedFieldName = await GetCustomFieldByName(jiraClient, JiraFieldNames.FlaggedName);
-            return flaggedFieldName;
+            
+            var customFields = await GetCustomFieldMappings(client, [JiraFieldNames.NamePropertyName],
+                [JiraFieldNames.RankName, JiraFieldNames.FlaggedName]);
+            
+            rankFieldName = customFields[JiraFieldNames.RankName];
+            flaggedFieldName = customFields[JiraFieldNames.FlaggedName];
         }
 
-        private static async Task<string> GetRankField(HttpClient jiraClient)
+        private static async Task<Dictionary<string, string>> GetCustomFieldMappings(HttpClient jiraClient, string[] propertyIdentifiers,
+            IEnumerable<string> customFields)
         {
-            if (!string.IsNullOrEmpty(rankFieldName))
-            {
-                return rankFieldName;
-            }
-
-            rankFieldName = await GetCustomFieldByName(jiraClient, JiraFieldNames.RankName);
-            return rankFieldName;
-        }
-
-        private static async Task<string> GetCustomFieldByName(HttpClient jiraClient, string customFieldName)
-        {
-            var url = "rest/api/latest/field";
+            const string url = "rest/api/latest/field";
 
             var response = await jiraClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
+            
+            var customFieldMappings = new Dictionary<string, string>();
 
-            var element = jsonResponse.RootElement.EnumerateArray().SingleOrDefault(
-                f => f.GetProperty(JiraFieldNames.NamePropertyName).GetString() == customFieldName
-            );
+            foreach (var customField in customFields)
+            {
+                var customFieldId = string.Empty;
+                
+                foreach (var propertyIdentifier in propertyIdentifiers)
+                {
+                    customFieldId = GetIdForCustomFieldByProperty(customField, propertyIdentifier, jsonResponse);
 
-            return element.GetProperty(JiraFieldNames.IdPropertyName).GetString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(customFieldId))
+                    {
+                        break;
+                    }
+                }
+                
+                customFieldMappings.Add(customField, customFieldId);
+            }
+            
+            return customFieldMappings;
         }
 
-        private WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner)
+        private static string GetIdForCustomFieldByProperty(string customField, string propertyIdentifier, JsonDocument allFields)
+        {
+            var element = allFields.RootElement.EnumerateArray().SingleOrDefault(
+                f => f.GetProperty(propertyIdentifier).GetString() == customField
+            );
+            
+            if (element.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            {
+                return string.Empty;
+            }
+
+            if (element.TryGetProperty(JiraFieldNames.IdPropertyName, out var idProperty))
+            {
+                return idProperty.GetString() ?? string.Empty;
+            }
+
+            return string.Empty;
+        }
+
+        private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, string> customFieldReferences)
         {
             var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
             var url = $"{baseAddress.TrimEnd('/')}/browse/{issue.Key}";
+
+            var additionalFieldDefs = workItemQueryOwner.WorkTrackingSystemConnection?.AdditionalFieldDefinitions ?? [];
 
             var workItem = new WorkItemBase
             {
@@ -420,25 +426,57 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
             };
+            
+            PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);
+
+            var parentReference = workItem.GetAdditionalFieldValue(workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId);
+
+            if (!string.IsNullOrEmpty(parentReference))
+            {
+                workItem.ParentReferenceId = parentReference;
+            }
+            
             return workItem;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, string? additionalRelatedField = null, int? maxResultsOverride = null)
+        private static void PopulateAdditionalFieldValues(Issue issue, WorkItemBase workItem, List<AdditionalFieldDefinition> additionalFieldDefs, Dictionary<string, string> customFields)
+        {
+            foreach (var fieldDef in additionalFieldDefs)
+            {
+                var customFieldId = customFields[fieldDef.Reference];
+                
+                var value = issue.Fields.GetFieldValue(customFieldId);
+                workItem.AdditionalFieldValues[fieldDef.Id] = value;
+            }
+        }
+
+        private async Task<Dictionary<string, string>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
+        {
+            var client = GetJiraRestClient(connection);
+            var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
+            
+            var customFieldReferences =  await GetCustomFieldMappings(client,
+                [JiraFieldNames.NamePropertyName, JiraFieldNames.KeyPropertyName],
+                additionalFieldDefinitions.Select(x => x.Reference));
+            
+            return  customFieldReferences;
+        }
+
+        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, int? maxResultsOverride = null)
         {
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
             var client = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var deployment = await GetDeploymentType(client, workItemQueryOwner.WorkTrackingSystemConnection);
-            
-            var rankField = await GetRankField(client);
-            var flaggedField = await GetFlaggedFieldName(client, workItemQueryOwner);
+
+            await SetFlaggedAndRankField(client);
 
             if (deployment == JiraDeployment.Cloud)
             {
-                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField, flaggedField);
+                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride);
             }
 
-            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField, flaggedField);
+            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride);
         }
 
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)
@@ -462,7 +500,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return false;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField, string flaggedField)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride)
         {
             var issues = new List<Issue>();
             var startAt = 0;
@@ -487,7 +525,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {                    
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField, flaggedField);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, flaggedFieldName);
                     issues.Add(issue);
                 }
             }
@@ -495,7 +533,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issues;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField, string flaggedField)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride)
         {
             var issues = new List<Issue>();
             string? nextPageToken = null;
@@ -518,7 +556,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var response = await client.GetAsync(query.ToString());
                 if (!response.IsSuccessStatusCode)
                 { 
-                    return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField, flaggedField);
+                    return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, maxResultsOverride);
                 }
 
                 var body = await response.Content.ReadAsStringAsync();
@@ -548,7 +586,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
                     }
                     
-                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, additionalRelatedField, rankField, flaggedField);
+                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName, flaggedFieldName);
                     issues.Add(issue);
                 }
 
@@ -584,9 +622,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
-            var q = string.Join($" {queryOperator} ", options.Select(o => $"{fieldName} {queryComparison} \"{o}\""));
-            if (options.Any()) q = $"AND ({q}) "; else q = string.Empty;
-            return q;
+            var query = string.Join($" {queryOperator} ", options.Select(o => $"{fieldName} {queryComparison} \"{o}\""));
+            query = options.Any() ? $"AND ({query}) " : string.Empty;
+            return query;
         }
 
         private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)

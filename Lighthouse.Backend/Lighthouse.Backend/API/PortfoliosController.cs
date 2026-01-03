@@ -159,16 +159,15 @@ namespace Lighthouse.Backend.API
             project.DefaultAmountOfWorkItemsPerFeature = portfolioSetting.DefaultAmountOfWorkItemsPerFeature;
             project.DefaultWorkItemPercentile = portfolioSetting.DefaultWorkItemPercentile;
             project.PercentileHistoryInDays = portfolioSetting.PercentileHistoryInDays;
-            project.SizeEstimateField = portfolioSetting.SizeEstimateField;
+            project.SizeEstimateAdditionalFieldDefinitionId = portfolioSetting.SizeEstimateAdditionalFieldDefinitionId;
             project.OverrideRealChildCountStates = portfolioSetting.OverrideRealChildCountStates;
             project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.Tags = portfolioSetting.Tags;
-            project.FeatureOwnerField = portfolioSetting.FeatureOwnerField;
+            project.FeatureOwnerAdditionalFieldDefinitionId = portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId;
+            project.ParentOverrideAdditionalFieldDefinitionId = portfolioSetting.ParentOverrideAdditionalFieldDefinitionId;
             project.SystemWIPLimit = portfolioSetting.SystemWIPLimit;
-
-            project.ParentOverrideField = portfolioSetting.ParentOverrideField;
 
             SyncStates(project, portfolioSetting);
             SyncTeams(project, portfolioSetting);

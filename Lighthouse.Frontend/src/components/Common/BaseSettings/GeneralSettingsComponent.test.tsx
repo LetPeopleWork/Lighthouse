@@ -30,6 +30,7 @@ describe("GeneralSettingsComponent", () => {
 			options: [],
 			authenticationMethodKey: "jira.cloud",
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
+			additionalFieldDefinitions: [],
 		},
 		{
 			id: 2,
@@ -38,6 +39,7 @@ describe("GeneralSettingsComponent", () => {
 			options: [],
 			authenticationMethodKey: "ado.pat",
 			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
+			additionalFieldDefinitions: [],
 		},
 	];
 
@@ -361,6 +363,7 @@ describe("GeneralSettingsComponent", () => {
 			options: [],
 			authenticationMethodKey: "none",
 			workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+			additionalFieldDefinitions: [],
 		};
 
 		render(
@@ -466,6 +469,7 @@ describe("GeneralSettingsComponent", () => {
 				options: [],
 				authenticationMethodKey: "none",
 				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+				additionalFieldDefinitions: [],
 			};
 
 			render(
@@ -525,6 +529,7 @@ describe("GeneralSettingsComponent", () => {
 				options: [],
 				authenticationMethodKey: "none",
 				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+				additionalFieldDefinitions: [],
 			};
 
 			render(
@@ -690,6 +695,7 @@ describe("GeneralSettingsComponent", () => {
 				options: [],
 				authenticationMethodKey: "none",
 				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+				additionalFieldDefinitions: [],
 			};
 
 			render(
@@ -751,6 +757,7 @@ describe("GeneralSettingsComponent", () => {
 				options: [],
 				authenticationMethodKey: "none",
 				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+				additionalFieldDefinitions: [],
 			};
 
 			render(

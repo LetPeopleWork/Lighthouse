@@ -1,12 +1,18 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../../models/EntityReference";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../../models/Team/Team";
+import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import OwnershipComponent from "./OwnershipComponent";
 
 describe("OwnershipComponent", () => {
+	const mockAdditionalFields: IAdditionalFieldDefinition[] = [
+		{ id: 1, displayName: "Feature Owner", reference: "custom.owner" },
+		{ id: 2, displayName: "Lead Developer", reference: "custom.lead" },
+	];
+
 	const mockTeams: ITeam[] = [
 		{
 			id: 1,
@@ -45,7 +51,7 @@ describe("OwnershipComponent", () => {
 	];
 
 	const initialSettings = createMockProjectSettings();
-	initialSettings.featureOwnerField = "custom.owner";
+	initialSettings.featureOwnerAdditionalFieldDefinitionId = 1;
 
 	const mockOnProjectSettingsChange = vi.fn();
 
@@ -59,16 +65,16 @@ describe("OwnershipComponent", () => {
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 				currentInvolvedTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
 
 		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		expect(screen.getByLabelText(/Feature Owner Field/i)).toHaveValue(
-			"custom.owner",
-		);
-		expect(screen.getByDisplayValue(/custom.owner/)).toBeInTheDocument();
+		// There should be two comboboxes: Owning Team and Feature Owner Field
+		const comboboxes = screen.getAllByRole("combobox");
+		expect(comboboxes).toHaveLength(2);
 	});
 
 	it("calls onProjectSettingsChange with correct arguments when featureOwnerField changes", () => {
@@ -77,19 +83,24 @@ describe("OwnershipComponent", () => {
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 				currentInvolvedTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
 
 		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		fireEvent.change(screen.getByLabelText(/Feature Owner Field/i), {
-			target: { value: "custom.newowner" },
-		});
+		// Get the Feature Owner Field dropdown (second combobox)
+		const comboboxes = screen.getAllByRole("combobox");
+		const featureOwnerSelect = comboboxes[1];
+		fireEvent.mouseDown(featureOwnerSelect);
+
+		const listbox = within(screen.getByRole("listbox"));
+		fireEvent.click(listbox.getByText("Lead Developer"));
 
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
-			"featureOwnerField",
-			"custom.newowner",
+			"featureOwnerAdditionalFieldDefinitionId",
+			2,
 		);
 	});
 
@@ -99,13 +110,14 @@ describe("OwnershipComponent", () => {
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 				currentInvolvedTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
 
 		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		fireEvent.mouseDown(screen.getByRole("combobox"));
+		fireEvent.mouseDown(screen.getAllByRole("combobox")[0]);
 		fireEvent.click(screen.getByText("Team A"));
 
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
@@ -130,13 +142,14 @@ describe("OwnershipComponent", () => {
 				projectSettings={settingsWithTeam}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 				currentInvolvedTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
 
 		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		fireEvent.mouseDown(screen.getByRole("combobox"));
+		fireEvent.mouseDown(screen.getAllByRole("combobox")[0]);
 		fireEvent.click(screen.getByText("None"));
 
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(

@@ -1,6 +1,7 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
+import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -10,12 +11,17 @@ import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import FeatureSizeComponent from "./FeatureSizeComponent";
 
 describe("FeatureSizeComponent", () => {
+	const mockAdditionalFields: IAdditionalFieldDefinition[] = [
+		{ id: 1, displayName: "Size Estimate", reference: "custom.sizeEstimate" },
+		{ id: 2, displayName: "Story Points", reference: "custom.storyPoints" },
+	];
+
 	const initialSettings = createMockProjectSettings();
 	initialSettings.usePercentileToCalculateDefaultAmountOfWorkItems = false;
 	initialSettings.defaultAmountOfWorkItemsPerFeature = 10;
 	initialSettings.defaultWorkItemPercentile = 85;
 	initialSettings.percentileHistoryInDays = 90;
-	initialSettings.sizeEstimateField = "";
+	initialSettings.sizeEstimateAdditionalFieldDefinitionId = null;
 
 	const mockOnProjectSettingsChange = vi.fn();
 
@@ -54,13 +60,18 @@ describe("FeatureSizeComponent", () => {
 			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
 
 		expect(
 			screen.getByLabelText(/Default Number of Work Items per Feature/i),
 		).toHaveValue(10);
-		expect(screen.getByLabelText(/Size Estimate Field/i)).toHaveValue("");
+		// Size Estimate Field is a combobox
+		expect(screen.getByRole("combobox")).toBeInTheDocument();
 	});
 
 	it("calls onProjectSettingsChange with correct arguments when defaultAmountOfWorkItemsPerFeature changes", () => {
@@ -68,8 +79,12 @@ describe("FeatureSizeComponent", () => {
 			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
 
 		fireEvent.change(
 			screen.getByLabelText(/Default Number of Work Items per Feature/i),
@@ -87,16 +102,23 @@ describe("FeatureSizeComponent", () => {
 			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
+				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
 
-		fireEvent.change(screen.getByLabelText(/Size Estimate Field/i), {
-			target: { value: "customfield_133742" },
-		});
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		// Open the dropdown and select an option
+		const select = screen.getByRole("combobox");
+		fireEvent.mouseDown(select);
+
+		const listbox = within(screen.getByRole("listbox"));
+		fireEvent.click(listbox.getByText("Size Estimate"));
 
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
-			"sizeEstimateField",
-			"customfield_133742",
+			"sizeEstimateAdditionalFieldDefinitionId",
+			1,
 		);
 	});
 

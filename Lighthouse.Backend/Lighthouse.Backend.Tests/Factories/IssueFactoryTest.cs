@@ -108,24 +108,6 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        [TestCase("customfield_1886", "0|GCZ4EVER:")]
-        [TestCase("customfield_10115", "0|i0007z:")]
-        [TestCase("", "0|i0007z:")]
-        public void CreateIssue_RankAvailableInNonDefaultField_ParsesRankCorrect(string rankFieldOverride, string expectedResult)
-        {
-            var jsonDocument = CreateJsonDocument(json =>
-            {
-                json["fields"].AsObject().Remove("customfield_10019");
-                json["fields"].AsObject().Add("customfield_10115", "0|i0007z:");
-                json["fields"].AsObject().Add("customfield_1886", "0|GCZ4EVER:");
-            });
-
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, null, rankFieldOverride);
-
-            Assert.That(issue.Rank, Is.EqualTo(expectedResult));
-        }
-
-        [Test]
         public void CreateIssue_RankNotAvailable_SetsDefaultRank()
         {
             var jsonDocument = CreateJsonDocument(json =>
@@ -203,19 +185,6 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        [TestCase("cf[10038]", "LGHTHSDMO-1724")]
-        [TestCase("customfield_10038", "LGHTHSDMO-1724")]
-        [TestCase("", "LGHTHSDMO-1")]
-        public void CreateIssue_GivenAdditionalRelatedField_SetsParentCorrectly(string additionalRelatedField, string expectedParent)
-        {
-            var jsonDocument = CreateJsonDocument();
-
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, additionalRelatedField);
-
-            Assert.That(issue.ParentKey, Is.EqualTo(expectedParent));
-        }
-
-        [Test]
         public void CreateIssue_IsInToDoStateCategory_DoesNotSetStartedNorClosedDate()
         {
             var jsonDocument = CreateJsonDocument(json =>
@@ -239,10 +208,11 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Implementation";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc))
-                });
+                AddChangelogEntries(json,
+                [
+                    CreateChangelogEntry("Backlog", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -263,11 +233,12 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Resolved";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc))
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Analysis", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Resolved",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -290,11 +261,12 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Verification";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc))
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Analysis", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Verification",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -315,12 +287,14 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Verification";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item started
-                    CreateChangelogEntry("Implementation", "Backlog", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item moved to To Do
-                    CreateChangelogEntry("Backlog", "Verification", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))  // // <-- Item moved back to Doing
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Analysis", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item started
+                    CreateChangelogEntry("Implementation", "Backlog",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)), // <-- Item moved to To Do
+                    CreateChangelogEntry("Backlog", "Verification",
+                        new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -341,13 +315,15 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item Started
-                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc)), // <-- Item Closed
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Backlog", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item Started
+                    CreateChangelogEntry("Implementation", "Verification",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Verification", "Resolved",
+                        new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc)), // <-- Item Closed
                     CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
-                });
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -370,13 +346,16 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Resolved";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed the first time
-                    CreateChangelogEntry("Resolved", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item reopened
-                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))  // <-- Item closed again
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Backlog", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Resolved",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed the first time
+                    CreateChangelogEntry("Resolved", "Verification",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)), // <-- Item reopened
+                    CreateChangelogEntry("Verification", "Resolved",
+                        new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -399,16 +378,21 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed the first time
-                    CreateChangelogEntry("Resolved", "Analysis", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)), // <-- Item repopened
-                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed again
-                    CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 10, 3, 0, 0, 0, DateTimeKind.Utc)) // <-- Moved within Done states -> ignore
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Backlog", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Resolved",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed the first time
+                    CreateChangelogEntry("Resolved", "Analysis",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)), // <-- Item repopened
+                    CreateChangelogEntry("Analysis", "Implementation",
+                        new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Verification",
+                        new DateTime(2024, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Verification", "Resolved",
+                        new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed again
+                    CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 10, 3, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -431,10 +415,10 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Implementation";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Removed", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Removed", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -455,11 +439,12 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Removed", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Closed", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Removed", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Closed",
+                        new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
@@ -482,10 +467,9 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
 
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Removed", "Closed", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
-                });
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Removed", "Closed", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc))
+                ]);
             });
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);

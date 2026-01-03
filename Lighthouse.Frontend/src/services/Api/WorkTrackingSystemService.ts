@@ -112,6 +112,8 @@ export class WorkTrackingSystemService
 				workTrackingSystemConnection.authenticationMethodDisplayName,
 			availableAuthenticationMethods:
 				workTrackingSystemConnection.availableAuthenticationMethods,
+			additionalFieldDefinitions:
+				workTrackingSystemConnection.additionalFieldDefinitions ?? [],
 		});
 	}
 }

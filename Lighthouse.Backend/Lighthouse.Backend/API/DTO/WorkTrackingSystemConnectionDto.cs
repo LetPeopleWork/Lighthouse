@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.API.DTO
                 .Select(AuthenticationMethodDto.FromSchema)
                 .ToList();
             Options.AddRange(workTrackingSystemConnection.Options.Select(o => new WorkTrackingSystemConnectionOptionDto(o)));
+            AdditionalFieldDefinitions.AddRange(
+                workTrackingSystemConnection.AdditionalFieldDefinitions.Select(f => new AdditionalFieldDefinitionDto(f)));
         }
 
         [JsonRequired]
@@ -43,5 +45,7 @@ namespace Lighthouse.Backend.API.DTO
         public List<AuthenticationMethodDto> AvailableAuthenticationMethods { get; set; } = [];
 
         public List<WorkTrackingSystemConnectionOptionDto> Options { get; set; } = [];
+
+        public List<AdditionalFieldDefinitionDto> AdditionalFieldDefinitions { get; set; } = [];
     }
 }

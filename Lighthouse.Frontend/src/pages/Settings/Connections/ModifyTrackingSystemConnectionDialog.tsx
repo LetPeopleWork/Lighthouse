@@ -16,12 +16,14 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ValidationActions from "../../../components/Common/ValidationActions/ValidationActions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type {
 	IAuthenticationMethod,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import { useTerminology } from "../../../services/TerminologyContext";
+import AdditionalFieldsEditor from "./AdditionalFieldsEditor";
 
 interface ModifyWorkTrackingSystemConnectionDialogProps {
 	open: boolean;
@@ -48,6 +50,9 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 	const [otherOptions, setOtherOptions] = useState<IWorkTrackingSystemOption[]>(
 		[],
 	);
+	const [additionalFields, setAdditionalFields] = useState<
+		IAdditionalFieldDefinition[]
+	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
 
 	const { getTerm } = useTerminology();
@@ -120,6 +125,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 
 				setAuthOptions(existingAuthOptions);
 				setOtherOptions(existingOtherOptions);
+				setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
 			} else {
 				setAuthOptions(getEmptyAuthOptions(initialMethod));
 
@@ -132,6 +138,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 						isOptional: opt.isOptional,
 					}));
 				setOtherOptions(nonAuthOptions);
+				setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
 			}
 		}
 	}, [open, workTrackingSystems, getAuthOptionKeys, getEmptyAuthOptions]);
@@ -175,6 +182,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					isOptional: opt.isOptional,
 				}));
 			setOtherOptions(nonAuthOptions);
+			setAdditionalFields(system.additionalFieldDefinitions ?? []);
 		}
 	};
 
@@ -228,6 +236,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				authenticationMethodKey: selectedAuthMethod.key,
 				workTrackingSystemGetDataRetrievalDisplayName:
 					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
+				additionalFieldDefinitions: additionalFields,
 			};
 
 			return await validateSettings(settings);
@@ -246,6 +255,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				authenticationMethodKey: selectedAuthMethod.key,
 				workTrackingSystemGetDataRetrievalDisplayName:
 					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
+				additionalFieldDefinitions: additionalFields,
 			};
 			onClose(updatedSystem);
 		} else {
@@ -341,6 +351,17 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 						})}
 					</Box>
 				)}
+
+				{/* Additional Fields Section */}
+				<AdditionalFieldsEditor
+					workTrackingSystemType={
+						selectedWorkTrackingSystem
+							? selectedWorkTrackingSystem.workTrackingSystem
+							: null
+					}
+					fields={additionalFields}
+					onChange={setAdditionalFields}
+				/>
 
 				{/* Other Options Section - only show when there are non-auth options */}
 				{otherOptions.length > 0 && (

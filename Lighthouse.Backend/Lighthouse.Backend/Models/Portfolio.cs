@@ -14,9 +14,9 @@
 
         public Team? OwningTeam { get; set; }
 
-        public string? FeatureOwnerField { get; set; }
+        public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
 
-        public string? SizeEstimateField { get; set; }
+        public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
 
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; } = false;
 

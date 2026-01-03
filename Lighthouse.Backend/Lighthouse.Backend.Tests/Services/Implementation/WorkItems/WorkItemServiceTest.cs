@@ -5,7 +5,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Microsoft.Build.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
@@ -19,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
         private Mock<IProjectMetricsService> projectMetricsServiceMock;
 
-        private int idCounter = 0;
+        private int idCounter;
         private List<WorkItem> workItems;
 
         [SetUp]
@@ -32,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
-            workItems = new List<WorkItem>();
+            workItems = [];
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
@@ -45,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var team = CreateTeam();
 
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             var feature = new Feature(team, 12) { ReferenceId = "12" };
 
             SetupWorkForFeature(feature, 1, 0, team);
@@ -69,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_GivenExistingFeatures_ClearsExistingFeatures()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
             var existingFeature = new Feature(team, 12) { Id = 12 };
 
@@ -89,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_UsesDefaultItems(string featureState, int remainingWork, int defaultWork, int expectedWork)
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
             project.DefaultAmountOfWorkItemsPerFeature = defaultWork;
             project.OverrideRealChildCountStates.Add("Analysis in Progress");
@@ -125,7 +124,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_IsInDoneState_DoesNotUsesDefaultItems(int remainingWork, int totalWork, int expectedWork)
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
 
             project.DoneStates.Clear();
@@ -156,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ItemWasMovedBack_UsesDefaultItems()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
 
             project.DefaultAmountOfWorkItemsPerFeature = 7;
@@ -188,7 +187,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
 
@@ -221,7 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_UseCalculatedDefault_AddsDefaultRemainingWorkBasedOnPercentileToFeature(int[] childItemCount, int percentile, int expectedValue)
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.PercentileHistoryInDays = 90;
@@ -266,7 +265,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.PercentileHistoryInDays = 45;
@@ -296,9 +295,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.SizeEstimateField = "customfield_10037";
+            project.SizeEstimateAdditionalFieldDefinitionId = 1;
 
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 0 };
@@ -317,9 +316,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.SizeEstimateField = "customfield_10037";
+            project.SizeEstimateAdditionalFieldDefinitionId = 1; // Size field configured and feature has size
 
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 7 };
@@ -338,7 +337,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_HasTotalWork_DoesNotAddDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
 
@@ -361,7 +360,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            var project = CreateProject(team1, team2);
+            var project = CreatePortfolio(team1, team2);
 
 
             project.DefaultAmountOfWorkItemsPerFeature = 12;
@@ -382,8 +381,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
                 var featureWork = project.Features[0].FeatureWork;
                 Assert.That(featureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(featureWork[featureWork.Count - 1].RemainingWorkItems, Is.EqualTo(6));
-                Assert.That(featureWork[featureWork.Count - 1].RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(featureWork[^1].RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(featureWork[^1].RemainingWorkItems, Is.EqualTo(6));
             }
         }
 
@@ -391,7 +390,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
 
 
             var remainingWorkItems = 12;
@@ -413,7 +412,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            var project = CreateProject(team1, team2);
+            var project = CreatePortfolio(team1, team2);
 
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
@@ -430,7 +429,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreateProject(team1, team2);
+            var project = CreatePortfolio(team1, team2);
 
 
             var remainingWorkItemsFeature1 = 12;
@@ -448,7 +447,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var actualFeature1 = project.Features[0];
             Assert.That(actualFeature1.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsFeature1));
-            var actualFeature2 = project.Features[project.Features.Count - 1];
+            var actualFeature2 = project.Features[^1];
             Assert.That(actualFeature2.GetRemainingWorkForTeam(team2), Is.EqualTo(remainingWorkItemsFeature2));
         }
 
@@ -458,7 +457,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreateProject(team1, team2);
+            var project = CreatePortfolio(team1, team2);
 
 
             var remainingWorkItemsTeam1 = 12;
@@ -487,7 +486,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreateProject(team1, team2);
+            var project = CreatePortfolio(team1, team2);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
 
@@ -506,7 +505,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(2));
                 Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(featureToVerify.FeatureWork[^1].TotalWorkItems, Is.EqualTo(6));
             }
         }
 
@@ -516,7 +515,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreateProject(team1, team2);
+            var project = CreatePortfolio(team1, team2);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.OwningTeam = team2;
 
@@ -535,8 +534,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 var featureToVerify = project.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
+                Assert.That(featureToVerify.FeatureWork[^1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[^1].Team, Is.EqualTo(team2));
             }
         }
 
@@ -549,28 +548,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team2 = CreateTeam();
             team2.Name = "The Most Awesome";
 
-            var project = CreateProject(team1, team2);
-            project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.OwningTeam = null;
-            project.FeatureOwnerField = "System.AreaPath";
+            var portfolio = CreatePortfolio(team1, team2);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
+            portfolio.OwningTeam = null;
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
 
+            AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Project\\The Most Awesome\\Features" };
+            var feature = new Feature(teams)
+            {
+                ReferenceId = "42",
+                AdditionalFieldValues =
+                {
+                    [1] = @"Project\The Most Awesome\Features"
+                }
+            };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForProject(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                var featureToVerify = project.Features.Single();
+                var featureToVerify = portfolio.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
+                Assert.That(featureToVerify.FeatureWork[^1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[^1].Team, Is.EqualTo(team2));
             }
         }
 
@@ -581,28 +588,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team2 = CreateTeam();
             team2.Name = "The Most Awesome";
 
-            var project = CreateProject(team1, team2);
-            project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.OwningTeam = team1;
-            project.FeatureOwnerField = "System.AreaPath";
+            var portfolio = CreatePortfolio(team1, team2);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
+            portfolio.OwningTeam = team1;
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 12;
 
+            AddAdditionalField(portfolio, 12, "MyCustomField", "My Custom Field");
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Project\\The Most Awesome\\Features" };
+            var feature = new Feature(teams)
+            {
+                ReferenceId = "42",
+                AdditionalFieldValues =
+                {
+                    [12] = @"Project\The Most Awesome\Features"
+                }
+            };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForProject(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                var featureToVerify = project.Features.Single();
+                var featureToVerify = portfolio.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
+                Assert.That(featureToVerify.FeatureWork[^1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[^1].Team, Is.EqualTo(team2));
             }
         }
 
@@ -616,23 +631,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var project = CreateProject(team1, team2, team3);
-            project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.FeatureOwnerField = "System.Tags";
+            var portfolio = CreatePortfolio(team1, team2, team3);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
 
+            AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "The Most Awesome;Other" };
+            var feature = new Feature(teams)
+            {
+                ReferenceId = "42",
+                AdditionalFieldValues =
+                {
+                    [1] = "The Most Awesome;Other"
+                }
+            };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForProject(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                var featureToVerify = project.Features.Single();
+                var featureToVerify = portfolio.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(2));
                 Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
@@ -652,24 +675,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var project = CreateProject(team1, team2, team3);
-            project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.FeatureOwnerField = "System.Tags";
-            project.OwningTeam = team1;
+            var portfolio = CreatePortfolio(team1, team2, team3);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwningTeam = team1;
 
+            AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "The Most Awesome;Other" };
+            var feature = new Feature(teams)
+            {
+                ReferenceId = "42",
+                AdditionalFieldValues =
+                {
+                    [1] = "The Most Awesome;Other"
+                }
+            };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForProject(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                var featureToVerify = project.Features.Single();
+                var featureToVerify = portfolio.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(2));
                 Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
@@ -689,24 +720,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var project = CreateProject(team1, team2, team3);
-            project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.FeatureOwnerField = "System.Tags";
-            project.OwningTeam = team1;
+            var portfolio = CreatePortfolio(team1, team2, team3);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwningTeam = team1;
 
+            AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Some Random String That does not contain a team name!" };
+            var feature = new Feature(teams)
+            {
+                ReferenceId = "42",
+                AdditionalFieldValues =
+                {
+                    [1] = "Some Random String That does not contain a team name!"
+                }
+            };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForProject(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                var featureToVerify = project.Features.Single();
+                var featureToVerify = portfolio.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
                 Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(12));
@@ -724,23 +763,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var project = CreateProject(team1, team2, team3);
-            project.DefaultAmountOfWorkItemsPerFeature = 15;
-            project.FeatureOwnerField = "System.Tags";
+            var portfolio = CreatePortfolio(team1, team2, team3);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 15;
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
 
+            AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Some Random String That does not contain a team name!" };
+            var feature = new Feature(teams)
+            {
+                ReferenceId = "42",
+                AdditionalFieldValues =
+                {
+                    [1] = "Some Random String That does not contain a team name!"
+                }
+            };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForProject(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                var featureToVerify = project.Features.Single();
+                var featureToVerify = portfolio.Features.Single();
 
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(3));
 
@@ -755,7 +802,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_FeatureHasParent_StoresParentAsFeature()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
             var parentFeature = new Feature { ReferenceId = "1886" };
 
@@ -764,7 +811,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature, 1, 0, team);
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
-            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId })).ReturnsAsync(new List<Feature>([parentFeature]));
+            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId })).ReturnsAsync(
+                [parentFeature]);
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
@@ -777,7 +825,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_FeatureHasParent_FeatureAlreadyExists_UpdatesParentFeature()
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
+            var project = CreatePortfolio(team);
             var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
             var parentFeature = new Feature { ReferenceId = "1886" };
 
@@ -786,7 +834,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature, 1, 0, team);
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
-            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId })).ReturnsAsync(new List<Feature>([parentFeature]));
+            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId })).ReturnsAsync(
+                [parentFeature]);
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
@@ -913,33 +962,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             return team;
         }
 
-        private Portfolio CreateProject(params Team[] teams)
+        private void AddAdditionalField(Portfolio portfolio, int id, string reference,
+            string displayName)
         {
-            return CreateProject(DateTime.Now, teams);
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = displayName,
+                    Reference = reference,
+                    Id = id,
+                });
         }
 
-        private Portfolio CreateProject(DateTime lastUpdateTime, params Team[] teams)
+        private Portfolio CreatePortfolio(params Team[] teams)
         {
-            var project = new Portfolio
+            return CreatePortfolio(DateTime.Now, teams);
+        }
+
+        private Portfolio CreatePortfolio(DateTime lastUpdateTime, params Team[] teams)
+        {
+            var portfolio = new Portfolio
             {
                 Id = idCounter++,
                 Name = "Release 1",
             };
 
-            project.WorkItemTypes.Add("Feature");
-            project.UpdateTeams(teams);
+            portfolio.WorkItemTypes.Add("Feature");
+            portfolio.UpdateTeams(teams);
 
             foreach (var team in teams)
             {
-                team.Portfolios.Add(project);
+                team.Portfolios.Add(portfolio);
             }
 
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
-            project.WorkTrackingSystemConnection = workTrackingConnection;
+            portfolio.WorkTrackingSystemConnection = workTrackingConnection;
 
-            project.UpdateTime = lastUpdateTime;
+            portfolio.UpdateTime = lastUpdateTime;
 
-            return project;
+            return portfolio;
         }
 
         private WorkItemService CreateSubject()

@@ -1,15 +1,10 @@
-import {
-	FormControl,
-	InputLabel,
-	MenuItem,
-	Select,
-	TextField,
-} from "@mui/material";
+import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
 
@@ -17,15 +12,17 @@ interface OwnershipComponentProps {
 	projectSettings: IPortfolioSettings | null;
 	onProjectSettingsChange: (
 		key: keyof IPortfolioSettings,
-		value: string | ITeam | null,
+		value: string | ITeam | number | null,
 	) => void;
 	currentInvolvedTeams: ITeam[];
+	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 }
 
 const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 	projectSettings,
 	onProjectSettingsChange,
 	currentInvolvedTeams,
+	additionalFieldDefinitions = [],
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -57,15 +54,31 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 				</FormControl>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				<TextField
-					label={`${featureTerm} Owner Field`}
-					fullWidth
-					margin="normal"
-					value={projectSettings?.featureOwnerField ?? ""}
-					onChange={(e) =>
-						onProjectSettingsChange("featureOwnerField", e.target.value)
-					}
-				/>
+				<FormControl fullWidth margin="normal">
+					<InputLabel>{`${featureTerm} Owner Field`}</InputLabel>
+					<Select<number | "">
+						value={
+							projectSettings?.featureOwnerAdditionalFieldDefinitionId ?? ""
+						}
+						label={`${featureTerm} Owner Field`}
+						onChange={(e) => {
+							const value = e.target.value;
+							onProjectSettingsChange(
+								"featureOwnerAdditionalFieldDefinitionId",
+								value === "" ? null : value,
+							);
+						}}
+					>
+						<MenuItem value="">
+							<em>None</em>
+						</MenuItem>
+						{additionalFieldDefinitions.map((field) => (
+							<MenuItem key={field.id} value={field.id}>
+								{field.displayName}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
 			</Grid>
 		</InputGroup>
 	);

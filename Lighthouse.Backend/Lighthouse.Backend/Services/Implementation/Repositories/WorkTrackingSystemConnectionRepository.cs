@@ -26,15 +26,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
             if (!seeded)
             {
-                SeedBuiltInConnections();
                 seeded = true;
+                SeedBuiltInConnections();
             }
         }
 
         public override IEnumerable<WorkTrackingSystemConnection> GetAll()
         {
             return Context.WorkTrackingSystemConnections
-                .Include(c => c.Options);
+                .Include(c => c.Options)
+                .Include(c => c.AdditionalFieldDefinitions);
         }
 
         public override WorkTrackingSystemConnection? GetById(int id)

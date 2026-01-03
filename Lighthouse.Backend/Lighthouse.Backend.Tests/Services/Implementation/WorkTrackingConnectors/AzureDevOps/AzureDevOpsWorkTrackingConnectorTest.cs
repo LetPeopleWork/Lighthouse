@@ -45,11 +45,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("377", "", null)]
         [TestCase("365", "371", null)]
         [TestCase("375", "279", "Custom.RemoteFeatureID")]
-        public async Task GetWorkItemsForTeam_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentOverrideField)
+        public async Task GetWorkItemsForTeam_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentFieldReference)
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
-            team.ParentOverrideField = parentOverrideField;
+            if (parentFieldReference != null)
+            {
+                team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                {
+                    Id = 1,
+                    DisplayName = "Parent Field",
+                    Reference = parentFieldReference
+                });
+
+                team.ParentOverrideAdditionalFieldDefinitionId = 1;
+            }
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
@@ -61,13 +71,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("377", "", null)]
         [TestCase("365", "371", null)]
         [TestCase("375", "279", "Custom.RemoteFeatureID")]
-        public async Task GetFeaturesForProject_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentOverrideField)
+        public async Task GetFeaturesForProject_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentFieldReference)
         {
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("User Story");
-            portfolio.ParentOverrideField = parentOverrideField;
+
+            if (parentFieldReference != null)
+            {
+                portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                {
+                    Id = 1,
+                    DisplayName = "Parent Field",
+                    Reference = parentFieldReference
+                });
+
+                portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+            }
 
             var workItems = await subject.GetFeaturesForProject(portfolio);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
@@ -563,8 +584,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
-            portfolio.SizeEstimateField = fieldName;
+            var additionalFieldDefs = new List<AdditionalFieldDefinition>();
+            int? sizeFieldId = null;
+            if (!string.IsNullOrEmpty(fieldName))
+            {
+                var sizeField = new AdditionalFieldDefinition { Id = 1, DisplayName = "Size", Reference = fieldName };
+                additionalFieldDefs.Add(sizeField);
+                sizeFieldId = sizeField.Id;
+            }
+
+            var portfolio = CreatePortfolioWithAdditionalFields($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'", additionalFieldDefs);
+            portfolio.SizeEstimateAdditionalFieldDefinitionId = sizeFieldId;
 
             var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == workItemId);
@@ -581,8 +611,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
-            portfolio.FeatureOwnerField = fieldName;
+            var additionalFieldDefs = new List<AdditionalFieldDefinition>();
+            int? ownerFieldId = null;
+            if (!string.IsNullOrEmpty(fieldName))
+            {
+                var ownerField = new AdditionalFieldDefinition { Id = 2, DisplayName = "Owner", Reference = fieldName };
+                additionalFieldDefs.Add(ownerField);
+                ownerFieldId = ownerField.Id;
+            }
+
+            var portfolio = CreatePortfolioWithAdditionalFields($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'", additionalFieldDefs);
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = ownerFieldId;
 
             var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == workItemId);
@@ -668,6 +707,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        [TestCase(new string[] { "System.AreaPath" }, true)]
+        [TestCase(new string[] { "System.AreaPath", "System.IterationPath" }, true)]
+        [TestCase(new string[] { "Custom.RemoteFeatureID" }, true)]
+        [TestCase(new string[] { "MamboJambo" }, false)]
+        [TestCase(new string[] { "System.AreaPath", "Custom.NOTEXISTING" }, false)]
+        public async Task ValidateConnection_GivenAdditionalFields_ReturnsTrueOnlyIfFieldsExist(string[] additionalFields, bool expectedValidationResult)
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://dev.azure.com/huserben";
+            var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "30", IsSecret = false },
+            ]);
+
+            foreach (var additionalField in additionalFields) 
+            {
+                connectionSetting.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                {
+                    DisplayName = additionalField,
+                    Reference =  additionalField,
+                });
+            }
+
+            var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.That(isValid, Is.EqualTo(expectedValidationResult));
+        }
+
+        [Test]
         [TestCase("[System.TeamProject] = 'CMFTTestTeamProject'", true)]
         [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.Tags] CONTAINS 'NotExistingTag'", false)]
         [TestCase("[System.TeamProject] = 'SomethingThatDoesNotExist'", false)]
@@ -741,25 +814,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task ValidateProjectSettings_NotExistingEstimateField_ReturnsFalse()
+        public async Task ValidateProjectSettings_NotExistingAdditionalField_ReturnsFalse()
         {
             _ = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            var portfolio = CreatePortfolio("[System.TeamProject] = 'CMFTTestTeamProject'");
-            portfolio.SizeEstimateField = "MamboJambo";
 
-            var subject = CreateSubject();
-
-            var isValid = await subject.ValidatePortfolioSettings(portfolio);
-
-            Assert.That(isValid, Is.False);
-        }
-
-        [Test]
-        public async Task ValidateProjectSettings_NotExistingFeatureOwnerField_ReturnsFalse()
-        {
-            _ = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            var portfolio = CreatePortfolio("[System.TeamProject] = 'CMFTTestTeamProject'");
-            portfolio.FeatureOwnerField = "System.AreaPaths";
+            // Add an additional field definition with an invalid reference
+            var invalidField = new AdditionalFieldDefinition { Id = 1, DisplayName = "Invalid", Reference = "MamboJambo" };
+            var portfolio = CreatePortfolioWithAdditionalFields("[System.TeamProject] = 'CMFTTestTeamProject'", [invalidField]);
 
             var subject = CreateSubject();
 
@@ -784,6 +845,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private Portfolio CreatePortfolio(string query, params Team[] teams)
         {
+            return CreatePortfolioWithAdditionalFields(query, [], teams);
+        }
+
+        private Portfolio CreatePortfolioWithAdditionalFields(string query, List<AdditionalFieldDefinition> additionalFieldDefs, params Team[] teams)
+        {
             var portfolio = new Portfolio
             {
                 Name = "TestProject",
@@ -794,6 +860,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Add("Feature");
 
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            workTrackingSystemConnection.AdditionalFieldDefinitions.AddRange(additionalFieldDefs);
             portfolio.WorkTrackingSystemConnection = workTrackingSystemConnection;
 
             portfolio.UpdateTeams(teams);

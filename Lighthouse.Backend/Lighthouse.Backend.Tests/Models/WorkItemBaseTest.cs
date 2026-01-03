@@ -190,6 +190,51 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(workItemAge, Is.EqualTo(1));
         }
 
+        [Test]
+        public void AdditionalFieldValues_EmptyByDefault()
+        {
+            var subject = CreateSubject();
+
+            Assert.That(subject.AdditionalFieldValues, Is.Empty);
+        }
+
+        [Test]
+        public void AdditionalFieldValues_CanSetAndRetrieveValues()
+        {
+            var subject = CreateSubject();
+            subject.AdditionalFieldValues[1] = "value1";
+            subject.AdditionalFieldValues[2] = "value2";
+
+            Assert.That(subject.AdditionalFieldValues, Has.Count.EqualTo(2));
+            Assert.That(subject.AdditionalFieldValues[1], Is.EqualTo("value1"));
+            Assert.That(subject.AdditionalFieldValues[2], Is.EqualTo("value2"));
+        }
+
+        [Test]
+        public void AdditionalFieldValues_SupportsNullValues()
+        {
+            var subject = CreateSubject();
+            subject.AdditionalFieldValues[1] = null;
+
+            Assert.That(subject.AdditionalFieldValues.ContainsKey(1), Is.True);
+            Assert.That(subject.AdditionalFieldValues[1], Is.Null);
+        }
+
+        [Test]
+        public void Update_CopiesAdditionalFieldValues()
+        {
+            var source = CreateSubject();
+            source.AdditionalFieldValues[1] = "value1";
+            source.AdditionalFieldValues[2] = "value2";
+
+            var target = CreateSubject();
+            target.Update(source);
+
+            Assert.That(target.AdditionalFieldValues, Has.Count.EqualTo(2));
+            Assert.That(target.AdditionalFieldValues[1], Is.EqualTo("value1"));;
+            Assert.That(target.AdditionalFieldValues[2], Is.EqualTo("value2"));
+        }
+
         private static WorkItemBase CreateSubject()
         {
             return new WorkItemBase();

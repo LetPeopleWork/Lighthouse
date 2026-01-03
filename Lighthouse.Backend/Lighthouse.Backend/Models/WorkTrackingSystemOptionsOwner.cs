@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Models
 
         public int SystemWIPLimit { get; set; } = 0;
 
-        public string? ParentOverrideField { get; set; } = string.Empty;
-
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public List<string> BlockedStates { get; set; } = [];
@@ -43,6 +41,8 @@ namespace Lighthouse.Backend.Models
         public abstract int DoneItemsCutoffDays { get; set; }
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
+
+        public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
 
         public StateCategories MapStateToStateCategory(string state)
         {

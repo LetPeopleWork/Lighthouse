@@ -11,6 +11,6 @@ export interface IPortfolioSettings extends IBaseSettings {
 	defaultAmountOfWorkItemsPerFeature: number;
 	defaultWorkItemPercentile: number;
 	percentileHistoryInDays: number;
-	sizeEstimateField?: string;
-	featureOwnerField?: string;
+	sizeEstimateAdditionalFieldDefinitionId: number | null;
+	featureOwnerAdditionalFieldDefinitionId: number | null;
 }

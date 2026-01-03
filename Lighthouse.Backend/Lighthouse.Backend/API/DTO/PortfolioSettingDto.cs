@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.API.DTO
             DefaultAmountOfWorkItemsPerFeature = portfolio.DefaultAmountOfWorkItemsPerFeature;
             DefaultWorkItemPercentile = portfolio.DefaultWorkItemPercentile;
             PercentileHistoryInDays = portfolio.PercentileHistoryInDays;
-            SizeEstimateField = portfolio.SizeEstimateField;
             OverrideRealChildCountStates = portfolio.OverrideRealChildCountStates;
             DoneItemsCutoffDays = portfolio.DoneItemsCutoffDays;
 
@@ -27,7 +26,8 @@ namespace Lighthouse.Backend.API.DTO
                 OwningTeam = new EntityReferenceDto(owningTeam.Id, owningTeam.Name);
             }
 
-            FeatureOwnerField = portfolio.FeatureOwnerField;
+            SizeEstimateAdditionalFieldDefinitionId = portfolio.SizeEstimateAdditionalFieldDefinitionId;
+            FeatureOwnerAdditionalFieldDefinitionId = portfolio.FeatureOwnerAdditionalFieldDefinitionId;
         }
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int DefaultAmountOfWorkItemsPerFeature { get; set; }
 
-        public string? SizeEstimateField { get; set; } = string.Empty;
+        public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
 
         [JsonRequired]
         public int DoneItemsCutoffDays { get; set; }
@@ -53,6 +53,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public EntityReferenceDto? OwningTeam { get; set; }
 
-        public string? FeatureOwnerField { get; set; }
+        public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
     }
 }

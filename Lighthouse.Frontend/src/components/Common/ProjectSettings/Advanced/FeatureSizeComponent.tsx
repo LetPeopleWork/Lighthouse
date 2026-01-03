@@ -1,9 +1,19 @@
-import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
+import {
+	FormControl,
+	FormControlLabel,
+	InputLabel,
+	MenuItem,
+	Select,
+	Switch,
+	TextField,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
@@ -13,13 +23,15 @@ interface FeatureSizeComponentProps {
 	projectSettings: IPortfolioSettings | null;
 	onProjectSettingsChange: (
 		key: keyof IPortfolioSettings,
-		value: string | number | boolean | string[],
+		value: string | number | boolean | string[] | null,
 	) => void;
+	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 }
 
 const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	projectSettings,
 	onProjectSettingsChange,
+	additionalFieldDefinitions = [],
 }) => {
 	const [statesSuggestions, setStatesSuggestions] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -163,15 +175,31 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 			)}
 
 			<Grid size={{ xs: 12 }}>
-				<TextField
-					label="Size Estimate Field"
-					fullWidth
-					margin="normal"
-					value={projectSettings?.sizeEstimateField ?? ""}
-					onChange={(e) =>
-						onProjectSettingsChange("sizeEstimateField", e.target.value)
-					}
-				/>
+				<FormControl fullWidth margin="normal">
+					<InputLabel>Size Estimate Field</InputLabel>
+					<Select<number | "">
+						value={
+							projectSettings?.sizeEstimateAdditionalFieldDefinitionId ?? ""
+						}
+						label="Size Estimate Field"
+						onChange={(e) => {
+							const value = e.target.value;
+							onProjectSettingsChange(
+								"sizeEstimateAdditionalFieldDefinitionId",
+								value === "" ? null : value,
+							);
+						}}
+					>
+						<MenuItem value="">
+							<em>None</em>
+						</MenuItem>
+						{additionalFieldDefinitions.map((field) => (
+							<MenuItem key={field.id} value={field.id}>
+								{field.displayName}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
 			</Grid>
 
 			<Grid size={{ xs: 12 }}>

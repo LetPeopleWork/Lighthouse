@@ -11,7 +11,7 @@ export interface IBaseSettings {
 	serviceLevelExpectationProbability: number;
 	serviceLevelExpectationRange: number;
 	systemWIPLimit: number;
-	parentOverrideField: string;
+	parentOverrideAdditionalFieldDefinitionId: number | null;
 	blockedStates: string[];
 	blockedTags: string[];
 	doneItemsCutoffDays: number;

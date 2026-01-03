@@ -36,8 +36,6 @@
 
         public const string TeamSettingSLERange = "DefaultTeamSetting:SLERange";
 
-        public const string TeamSettingParentOverrideField = "DefaultTeamSetting:RelationCustomField";
-
         public const string TeamSettingAutomaticallyAdjustFeatureWIP = "DefaultTeamSetting:AutomaticallyAdjustFeatureWIP";
 
         public const string TeamSettingBlockedStates = "DefaultTeamSetting:BlockedStates";
@@ -79,8 +77,6 @@
         public const string ProjectSettingSLEProbability = "DefaultProjectSetting:SLEProbability";
 
         public const string ProjectSettingSLERange = "DefaultProjectSetting:SLERange";
-
-        public const string ProjectSettingParentOverrideField = "DefaultProjectSetting:ParentOverrideField";
 
         public const string ProjectSettingBlockedStates = "DefaultProjectSetting:BlockedStates";
 

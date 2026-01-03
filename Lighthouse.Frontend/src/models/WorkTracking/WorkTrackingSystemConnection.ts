@@ -1,11 +1,8 @@
+import type { IAdditionalFieldDefinition } from "./AdditionalFieldDefinition";
 import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
 
 export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear" | "Csv";
 
-/**
- * Stable authentication method keys for Work Tracking System connections.
- * These keys should match the backend AuthenticationMethodKeys constants.
- */
 export const AuthenticationMethodKeys = {
 	AzureDevOpsPat: "ado.pat",
 	JiraCloud: "jira.cloud",
@@ -17,9 +14,6 @@ export const AuthenticationMethodKeys = {
 export type AuthenticationMethodKey =
 	(typeof AuthenticationMethodKeys)[keyof typeof AuthenticationMethodKeys];
 
-/**
- * Represents an option required by an authentication method.
- */
 export interface IAuthenticationMethodOption {
 	key: string;
 	displayName: string;
@@ -27,9 +21,6 @@ export interface IAuthenticationMethodOption {
 	isOptional: boolean;
 }
 
-/**
- * Represents an authentication method with its display name and required options.
- */
 export interface IAuthenticationMethod {
 	key: string;
 	displayName: string;
@@ -45,6 +36,7 @@ export interface IWorkTrackingSystemConnection {
 	authenticationMethodKey: string;
 	authenticationMethodDisplayName?: string;
 	availableAuthenticationMethods?: IAuthenticationMethod[];
+	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 }
 
 export class WorkTrackingSystemConnection
@@ -57,6 +49,7 @@ export class WorkTrackingSystemConnection
 	authenticationMethodKey: string;
 	authenticationMethodDisplayName?: string;
 	availableAuthenticationMethods?: IAuthenticationMethod[];
+	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 
 	constructor(data: {
 		name: string;
@@ -66,6 +59,7 @@ export class WorkTrackingSystemConnection
 		authenticationMethodKey?: string;
 		authenticationMethodDisplayName?: string;
 		availableAuthenticationMethods?: IAuthenticationMethod[];
+		additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 	}) {
 		this.id = data.id ?? null;
 		this.name = data.name;
@@ -74,6 +68,7 @@ export class WorkTrackingSystemConnection
 		this.authenticationMethodKey = data.authenticationMethodKey ?? "";
 		this.authenticationMethodDisplayName = data.authenticationMethodDisplayName;
 		this.availableAuthenticationMethods = data.availableAuthenticationMethods;
+		this.additionalFieldDefinitions = data.additionalFieldDefinitions ?? [];
 	}
 
 	workTrackingSystemGetDataRetrievalDisplayName(): string {

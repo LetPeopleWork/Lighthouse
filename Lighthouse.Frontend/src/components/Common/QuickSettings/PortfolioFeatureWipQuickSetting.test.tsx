@@ -20,7 +20,7 @@ const getMockTeam = (overrides?: Partial<ITeamSettings>): ITeamSettings => ({
 	dataRetrievalValue: "",
 	workItemTypes: [],
 	workTrackingSystemConnectionId: 1,
-	parentOverrideField: "",
+	parentOverrideAdditionalFieldDefinitionId: null,
 	toDoStates: [],
 	doingStates: [],
 	doneStates: [],

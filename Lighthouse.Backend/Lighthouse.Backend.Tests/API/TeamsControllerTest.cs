@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.API
             team.FeatureWIP = 3;
             team.DataRetrievalValue = "SELECT * FROM *";
             team.WorkTrackingSystemConnectionId = 37;
-            team.ParentOverrideField = "Custom.RelatedItem";
+            team.ParentOverrideAdditionalFieldDefinitionId = 5;
             team.ServiceLevelExpectationProbability = 75;
             team.ServiceLevelExpectationRange = 10;
             team.SystemWIPLimit = 5;
@@ -275,7 +275,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(team.DataRetrievalValue));
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(team.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(team.WorkTrackingSystemConnectionId));
-                Assert.That(teamSettingDto.ParentOverrideField, Is.EqualTo(team.ParentOverrideField));
+                Assert.That(teamSettingDto.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(team.ParentOverrideAdditionalFieldDefinitionId));
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(team.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(team.SystemWIPLimit));
@@ -309,7 +309,7 @@ namespace Lighthouse.Backend.Tests.API
                 DataRetrievalValue = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
-                ParentOverrideField = "CUSTOM.AdditionalField",
+                ParentOverrideAdditionalFieldDefinitionId = 7,
                 ToDoStates = new List<string> { " To Do" },
                 DoingStates = new List<string> { "Doing" },
                 DoneStates = new List<string> { "Done " },
@@ -343,7 +343,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(newTeamSettings.DataRetrievalValue));
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(newTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newTeamSettings.WorkTrackingSystemConnectionId));
-                Assert.That(teamSettingDto.ParentOverrideField, Is.EqualTo(newTeamSettings.ParentOverrideField));
+                Assert.That(teamSettingDto.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(newTeamSettings.ParentOverrideAdditionalFieldDefinitionId));
 
                 Assert.That(teamSettingDto.ToDoStates, Contains.Item("To Do"));
                 Assert.That(teamSettingDto.DoingStates, Contains.Item("Doing"));
@@ -424,7 +424,7 @@ namespace Lighthouse.Backend.Tests.API
                 DataRetrievalValue = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
-                ParentOverrideField = "CUSTOM.AdditionalField",
+                ParentOverrideAdditionalFieldDefinitionId = 7,
                 AutomaticallyAdjustFeatureWIP = true,
                 ServiceLevelExpectationRange = 18,
                 ServiceLevelExpectationProbability = 86,
@@ -455,7 +455,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(updatedTeamSettings.DataRetrievalValue));
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(updatedTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedTeamSettings.WorkTrackingSystemConnectionId));
-                Assert.That(teamSettingDto.ParentOverrideField, Is.EqualTo(updatedTeamSettings.ParentOverrideField));
+                Assert.That(teamSettingDto.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(updatedTeamSettings.ParentOverrideAdditionalFieldDefinitionId));
                 Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationRange));
@@ -485,7 +485,6 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
-                ParentOverrideField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
             };
 
@@ -521,7 +520,6 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = [.. workItemTypes],
                 WorkTrackingSystemConnectionId = 2,
-                ParentOverrideField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
             };
 
@@ -558,7 +556,6 @@ namespace Lighthouse.Backend.Tests.API
                 DoingStates = doingStates.ToList(),
                 DoneStates = doneStates.ToList(),
                 WorkTrackingSystemConnectionId = 2,
-                ParentOverrideField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
             };
 
@@ -590,7 +587,6 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = workTrackingSystemConnectionId,
-                ParentOverrideField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
             };
 

@@ -138,6 +138,76 @@ namespace Lighthouse.Backend.Tests.Factories
             }
         }
 
+        [Test]
+        public void CreateDefaultConnectionForWorkTrackingSystem_AzureDevOps_SeedsDefaultAdditionalFields()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.AzureDevOps);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(connection.AdditionalFieldDefinitions, Has.Count.EqualTo(3));
+
+                var iterationPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "System.IterationPath");
+                Assert.That(iterationPath, Is.Not.Null);
+                Assert.That(iterationPath!.DisplayName, Is.EqualTo("Iteration Path"));
+
+                var areaPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "System.AreaPath");
+                Assert.That(areaPath, Is.Not.Null);
+                Assert.That(areaPath!.DisplayName, Is.EqualTo("Area Path"));
+
+                var size = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Microsoft.VSTS.Scheduling.Size");
+                Assert.That(size, Is.Not.Null);
+                Assert.That(size!.DisplayName, Is.EqualTo("Size"));
+            }
+        }
+
+        [Test]
+        public void CreateDefaultConnectionForWorkTrackingSystem_Jira_SeedsDefaultAdditionalFields()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Jira);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(connection.AdditionalFieldDefinitions, Has.Count.EqualTo(3));
+
+                var fixVersion = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Fix versions");
+                Assert.That(fixVersion, Is.Not.Null);
+                Assert.That(fixVersion!.DisplayName, Is.EqualTo("Fix Version"));
+
+                var component = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Components");
+                Assert.That(component, Is.Not.Null);
+                Assert.That(component!.DisplayName, Is.EqualTo("Components"));
+                
+                var sprint = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Sprint");
+                Assert.That(sprint, Is.Not.Null);
+                Assert.That(sprint!.DisplayName, Is.EqualTo("Sprint"));
+            }
+        }
+
+        [Test]
+        public void CreateDefaultConnectionForWorkTrackingSystem_Csv_NoDefaultAdditionalFields()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+
+            Assert.That(connection.AdditionalFieldDefinitions, Is.Empty);
+        }
+
+        [Test]
+        public void CreateDefaultConnectionForWorkTrackingSystem_Linear_NoDefaultAdditionalFields()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Linear);
+
+            Assert.That(connection.AdditionalFieldDefinitions, Is.Empty);
+        }
+
         private static bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false, bool isOptional = false)
         {
             return options.Any(option => option.Key == key && option.IsSecret == isSecret && option.IsOptional == isOptional);

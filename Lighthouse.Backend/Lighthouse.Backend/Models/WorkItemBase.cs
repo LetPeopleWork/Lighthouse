@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Models
         {
         }
 
-        public WorkItemBase(WorkItemBase workItemBase)
+        protected WorkItemBase(WorkItemBase workItemBase)
         {
             Update(workItemBase);
         }
@@ -40,6 +40,8 @@ namespace Lighthouse.Backend.Models
         public DateTime? StartedDate { get; set; }
 
         public DateTime? ClosedDate { get; set; }
+
+        public Dictionary<int, string?> AdditionalFieldValues { get; set; } = new();
 
         public int CycleTime
         {
@@ -100,6 +102,13 @@ namespace Lighthouse.Backend.Models
             StartedDate = workItemBase.StartedDate;
             ClosedDate = workItemBase.ClosedDate;
             Tags = workItemBase.Tags;
+
+            // Copy additional field values
+            AdditionalFieldValues.Clear();
+            foreach (var kvp in workItemBase.AdditionalFieldValues)
+            {
+                AdditionalFieldValues[kvp.Key] = kvp.Value;
+            }
         }
     }
 }

@@ -86,6 +86,8 @@ namespace Lighthouse.Backend.API
                     existingOption.Value = option.Value;
                 }
 
+                UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions);
+
                 repository.Update(existingConnection);
                 await repository.Save();
 
@@ -134,7 +136,7 @@ namespace Lighthouse.Backend.API
 
         private WorkTrackingSystemConnection CreateConnectionFromDto(WorkTrackingSystemConnectionDto connectionDto)
         {
-            var connection = new WorkTrackingSystemConnection()
+            var connection = new WorkTrackingSystemConnection
             {
                 Id = connectionDto.Id,
                 Name = connectionDto.Name,
@@ -155,7 +157,45 @@ namespace Lighthouse.Backend.API
                     );
             }
 
+            foreach (var fieldDto in connectionDto.AdditionalFieldDefinitions)
+            {
+                var additionalField = fieldDto.ToModel();
+                
+                connection.AdditionalFieldDefinitions.Add(additionalField);
+            }
+
             return connection;
+        }
+
+        private static void UpdateAdditionalFieldDefinitions(
+            WorkTrackingSystemConnection existingConnection,
+            List<AdditionalFieldDefinitionDto> updatedFields)
+        {
+            var existingById = existingConnection.AdditionalFieldDefinitions.ToDictionary(f => f.Id);
+            var updatedIds = new HashSet<int>(updatedFields.Where(f => f.Id != 0).Select(f => f.Id));
+
+            var toRemove = existingConnection.AdditionalFieldDefinitions
+                .Where(f => !updatedIds.Contains(f.Id))
+                .ToList();
+            foreach (var field in toRemove)
+            {
+                existingConnection.AdditionalFieldDefinitions.Remove(field);
+            }
+
+            foreach (var fieldDto in updatedFields)
+            {
+                if (fieldDto.Id != 0 && existingById.TryGetValue(fieldDto.Id, out var existingField))
+                {
+                    // Update existing field (preserve Id)
+                    existingField.DisplayName = fieldDto.DisplayName;
+                    existingField.Reference = fieldDto.Reference;
+                }
+                else
+                {
+                    // Add new field (Id will be auto-generated)
+                    existingConnection.AdditionalFieldDefinitions.Add(fieldDto.ToModel());
+                }
+            }
         }
     }
 }

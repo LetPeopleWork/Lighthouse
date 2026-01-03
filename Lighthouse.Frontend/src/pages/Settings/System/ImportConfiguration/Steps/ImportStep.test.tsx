@@ -84,6 +84,7 @@ describe("ImportStep", () => {
 			name: "Azure DevOps",
 			workTrackingSystem: "AzureDevOps",
 			authenticationMethodKey: "ado.pat",
+			additionalFieldDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 			options: [
 				{

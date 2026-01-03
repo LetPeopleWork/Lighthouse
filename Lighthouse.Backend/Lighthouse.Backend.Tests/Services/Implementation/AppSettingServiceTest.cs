@@ -92,7 +92,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingToDoStates, "New,Planned",
                 AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
-                AppSettingKeys.TeamSettingParentOverrideField, "Custom.RemoteParentID",
                 AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true",
                 AppSettingKeys.TeamSettingTags, "tag1,tag2",
                 AppSettingKeys.TeamSettingSLEProbability, "88",
@@ -118,7 +117,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(settings.FeatureWIP, Is.EqualTo(2));
                 Assert.That(settings.DataRetrievalValue, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
-                Assert.That(settings.ParentOverrideField, Is.EqualTo("Custom.RemoteParentID"));
                 Assert.That(settings.AutomaticallyAdjustFeatureWIP, Is.True);
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
@@ -174,7 +172,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
                 AppSettingKeys.ProjectSettingSLEProbability, "88",
                 AppSettingKeys.ProjectSettingSLERange, "10",
-                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123",
                 AppSettingKeys.ProjectSettingBlockedStates, "Blocked,On Hold",
                 AppSettingKeys.ProjectSettingBlockedTags, "tag1,tag2"
                 );
@@ -191,8 +188,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
                 Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));
                 Assert.That(settings.PercentileHistoryInDays, Is.EqualTo(55));
-                Assert.That(settings.SizeEstimateField, Is.EqualTo("Microsoft.VSTS.Scheduling.Size"));
-                Assert.That(settings.FeatureOwnerField, Is.EqualTo("System.AreaPath"));
+                Assert.That(settings.SizeEstimateAdditionalFieldDefinitionId, Is.Null);
+                Assert.That(settings.FeatureOwnerAdditionalFieldDefinitionId, Is.Null);
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
                 Assert.That(settings.WorkItemTypes, Does.Contain("Epic"));
@@ -219,8 +216,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(settings.ServiceLevelExpectationProbability, Is.EqualTo(88));
                 Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
-
-                Assert.That(settings.ParentOverrideField, Is.EqualTo("customfield_10923123"));
 
                 Assert.That(settings.BlockedStates, Has.Count.EqualTo(2));
                 Assert.That(settings.BlockedStates, Does.Contain("Blocked"));

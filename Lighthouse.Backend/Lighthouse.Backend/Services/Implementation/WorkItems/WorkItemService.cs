@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Extensions;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -8,26 +9,17 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkItems
 {
-    public class WorkItemService : IWorkItemService
+    public class WorkItemService(
+        ILogger<WorkItemService> logger,
+        IWorkTrackingConnectorFactory workTrackingConnectorFactory,
+        IRepository<Feature> featureRepository,
+        IWorkItemRepository workItemRepository,
+        IProjectMetricsService projectMetricsService)
+        : IWorkItemService
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new Dictionary<int, int>();
-        private readonly ILogger<WorkItemService> logger;
-        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
-        private readonly IRepository<Feature> featureRepository;
-        private readonly IWorkItemRepository workItemRepository;
-        private readonly IProjectMetricsService projectMetricsService;
 
-        public WorkItemService(
-            ILogger<WorkItemService> logger, IWorkTrackingConnectorFactory workTrackingConnectorFactory, IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository, IProjectMetricsService projectMetricsService)
-        {
-            this.logger = logger;
-            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
-            this.featureRepository = featureRepository;
-            this.workItemRepository = workItemRepository;
-            this.projectMetricsService = projectMetricsService;
-        }
-
-        public async Task UpdateFeaturesForProject(Portfolio project)        
+        public async Task UpdateFeaturesForProject(Portfolio project)
         {
             logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
 
@@ -149,23 +141,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private void AssignExtrapolatedWorkToTeams(Portfolio project, Feature feature, int remainingWork)
+        private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
-            var owningTeams = project.Teams.ToList();
+            var owningTeams = portfolio.Teams.ToList();
 
-            if (project.OwningTeam != null)
+            if (portfolio.OwningTeam != null)
             {
-                logger.LogInformation("Owning Team for Project is {TeamName} - using this for Default Work Assignment", project.OwningTeam.Name);
-                owningTeams = new List<Team> { project.OwningTeam };
+                logger.LogInformation("Owning Team for Portfolio is {TeamName} - using this for Default Work Assignment", portfolio.OwningTeam.Name);
+                owningTeams = [portfolio.OwningTeam];
             }
 
-            if (!string.IsNullOrEmpty(project.FeatureOwnerField))
+            var featureOwnerValue =
+                feature.GetAdditionalFieldValue(portfolio.FeatureOwnerAdditionalFieldDefinitionId);
+
+            if (!string.IsNullOrEmpty(featureOwnerValue))
             {
-                logger.LogInformation("Feature Owner Field for Project is {FeatureOwnerField} - Getting value for Feature {FeatureName}", project.FeatureOwnerField, feature.Name);
+                logger.LogInformation("Feature Owner Field for Project is configured - Getting value for Feature {FeatureName}: {OwnerValue}", feature.Name, featureOwnerValue);
 
-                var featureOwners = project.Teams.Where(t => feature.OwningTeam.Contains(t.Name)).ToList();
+                var featureOwners = portfolio.Teams.Where(t => featureOwnerValue.Contains(t.Name)).ToList();
 
-                logger.LogInformation("Found following teams defined in {FeatureOwnerField}: {Owners}", project.FeatureOwnerField, string.Join(",", featureOwners));
+                logger.LogInformation("Found following teams defined in Feature Owner field: {Owners}", string.Join(",", featureOwners.Select(t => t.Name)));
                 if (featureOwners.Count > 0)
                 {
                     owningTeams = featureOwners;

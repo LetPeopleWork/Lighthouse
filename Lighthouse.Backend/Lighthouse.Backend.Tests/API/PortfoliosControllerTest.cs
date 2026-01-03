@@ -279,13 +279,13 @@ namespace Lighthouse.Backend.Tests.API
                 DataRetrievalValue = "SELECT * FROM UpdatedWorkItems",
                 DefaultAmountOfWorkItemsPerFeature = 10,
                 WorkTrackingSystemConnectionId = 202,
-                SizeEstimateField = "NewField",
+                SizeEstimateAdditionalFieldDefinitionId = 1,
                 InvolvedTeams = new List<EntityReferenceDto>
                 {
                     new EntityReferenceDto(existingTeam.Id, existingTeam.Name)
                 },
                 OwningTeam = new EntityReferenceDto(existingTeam.Id, existingTeam.Name),
-                FeatureOwnerField = "OwnerField",
+                FeatureOwnerAdditionalFieldDefinitionId = 2,
                 ServiceLevelExpectationProbability = 95,
                 ServiceLevelExpectationRange = 5,
                 SystemWIPLimit = 12,
@@ -317,7 +317,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.DataRetrievalValue, Is.EqualTo(updatedProjectSettings.DataRetrievalValue));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(updatedProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedProjectSettings.WorkTrackingSystemConnectionId));
-                Assert.That(projectSettingDto.SizeEstimateField, Is.EqualTo(updatedProjectSettings.SizeEstimateField));
+                Assert.That(projectSettingDto.SizeEstimateAdditionalFieldDefinitionId, Is.EqualTo(updatedProjectSettings.SizeEstimateAdditionalFieldDefinitionId));
 
                 Assert.That(projectSettingDto.InvolvedTeams, Has.Count.EqualTo(1));
                 var teamDto = projectSettingDto.InvolvedTeams.Single();
@@ -326,7 +326,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectSettingDto.OwningTeam.Id, Is.EqualTo(existingTeam.Id));
                 Assert.That(projectSettingDto.OwningTeam.Name, Is.EqualTo(existingTeam.Name));
-                Assert.That(projectSettingDto.FeatureOwnerField, Is.EqualTo(updatedProjectSettings.FeatureOwnerField));
+                Assert.That(projectSettingDto.FeatureOwnerAdditionalFieldDefinitionId, Is.EqualTo(updatedProjectSettings.FeatureOwnerAdditionalFieldDefinitionId));
 
                 Assert.That(projectSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationProbability));
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationRange));

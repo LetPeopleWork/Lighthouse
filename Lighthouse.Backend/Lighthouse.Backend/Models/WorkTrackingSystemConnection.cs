@@ -15,6 +15,11 @@ namespace Lighthouse.Backend.Models
 
         public List<WorkTrackingSystemConnectionOption> Options { get; } = [];
 
+        public List<AdditionalFieldDefinition> AdditionalFieldDefinitions { get; } = [];
+
+        public string[] GetAdditionalFieldReferences() => AdditionalFieldDefinitions?.Select(f => f.Reference)
+            .Where(r => !string.IsNullOrEmpty(r)).ToArray() ?? [];
+
         public string GetWorkTrackingSystemConnectionOptionByKey(string key)
         {
             var workTrackingOption = Options.SingleOrDefault(x => x.Key == key);

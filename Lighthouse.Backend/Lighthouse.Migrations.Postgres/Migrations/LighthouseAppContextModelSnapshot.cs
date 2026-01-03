@@ -53,6 +53,32 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("FeaturePortfolio");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.AdditionalFieldDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("WorkTrackingSystemConnectionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkTrackingSystemConnectionId");
+
+                    b.ToTable("AdditionalFieldDefinition");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.AppSetting", b =>
                 {
                     b.Property<string>("Key")
@@ -102,6 +128,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdditionalFieldValues")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ClosedDate")
                         .HasColumnType("timestamp with time zone");
@@ -348,8 +378,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<string>("FeatureOwnerField")
-                        .HasColumnType("text");
+                    b.Property<int?>("FeatureOwnerAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -362,8 +392,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ParentOverrideField")
-                        .HasColumnType("text");
+                    b.Property<int?>("ParentOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("PercentileHistoryInDays")
                         .HasColumnType("integer");
@@ -374,8 +404,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("ServiceLevelExpectationRange")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SizeEstimateField")
-                        .HasColumnType("text");
+                    b.Property<int?>("SizeEstimateAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("SystemWIPLimit")
                         .HasColumnType("integer");
@@ -451,8 +481,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ParentOverrideField")
-                        .HasColumnType("text");
+                    b.Property<int?>("ParentOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("integer");
@@ -539,6 +569,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdditionalFieldValues")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ClosedDate")
                         .HasColumnType("timestamp with time zone");
@@ -714,6 +748,17 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.AdditionalFieldDefinition", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", "WorkTrackingSystemConnection")
+                        .WithMany("AdditionalFieldDefinitions")
+                        .HasForeignKey("WorkTrackingSystemConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkTrackingSystemConnection");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Portfolio", "Portfolio")
@@ -857,6 +902,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkTrackingSystemConnection", b =>
                 {
+                    b.Navigation("AdditionalFieldDefinitions");
+
                     b.Navigation("Options");
                 });
 #pragma warning restore 612, 618

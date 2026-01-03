@@ -57,5 +57,44 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(subject.AuthenticationMethodKey, Is.EqualTo(string.Empty));
         }
+
+        [Test]
+        public void Create_SetsAdditionalFieldDefinitions()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection();
+            workTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 42,
+                DisplayName = "Iteration Path",
+                Reference = "System.IterationPath"
+            });
+
+            var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.AdditionalFieldDefinitions, Has.Count.EqualTo(1));
+                Assert.That(subject.AdditionalFieldDefinitions[0].DisplayName, Is.EqualTo("Iteration Path"));
+                Assert.That(subject.AdditionalFieldDefinitions[0].Reference, Is.EqualTo("System.IterationPath"));
+                Assert.That(subject.AdditionalFieldDefinitions[0].Id, Is.EqualTo(42));
+            }
+        }
+
+        [Test]
+        public void Create_AdditionalFieldDefinitions_PreservesId()
+        {
+            var field = new AdditionalFieldDefinition
+            {
+                Id = 123,
+                DisplayName = "Field Name",
+                Reference = "field.ref"
+            };
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection();
+            workTrackingSystemConnection.AdditionalFieldDefinitions.Add(field);
+
+            var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
+
+            Assert.That(subject.AdditionalFieldDefinitions[0].Id, Is.EqualTo(123));
+        }
     }
 }

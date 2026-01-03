@@ -6,23 +6,18 @@ using System.Text.Json;
 
 namespace Lighthouse.Backend.Factories
 {
-    public class IssueFactory : IIssueFactory
+    public class IssueFactory(ILogger<IssueFactory> logger) : IIssueFactory
     {
-        private readonly string DefaultRank = "00000|";
+        private const string DefaultRank = "00000|";
 
-        private readonly ILogger<IssueFactory> logger;
+        private const string DefaultRankField = "customfield_10019";
 
-        public IssueFactory(ILogger<IssueFactory> logger)
-        {
-            this.logger = logger;
-        }
-
-        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null, string? rankFieldName = null, string? flaggedField = null)
+        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? rankFieldName = null, string? flaggedField = null)
         {
             // If the rank field is not set, use the default one and try our luck
-            var rankField = !string.IsNullOrEmpty(rankFieldName) ? rankFieldName : "customfield_10019";
+            var rankField = !string.IsNullOrEmpty(rankFieldName) ? rankFieldName : DefaultRankField;
 
-            var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
+            var fields = json.GetProperty(JiraFieldNames.FieldsFieldName).Clone();
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
             var createdDate = GetCreatedDateFromFields(fields);
@@ -32,12 +27,7 @@ namespace Lighthouse.Backend.Factories
             var issueType = GetIssueTypeFromFields(fields);
             var state = GetStateFromFields(fields);
 
-            if (!string.IsNullOrEmpty(additionalRelatedField))
-            {
-                parentKey = fields.GetFieldValue(additionalRelatedField);
-            }
-
-            (var startedDate, var closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
+            var (startedDate, closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
 
             if (!string.IsNullOrEmpty(flaggedField))
             {
@@ -92,9 +82,7 @@ namespace Lighthouse.Backend.Factories
         private string GetRankFromFields(JsonElement fields, string rankFieldName)
         {
             // Try getting the ranks using the default field or previously used fields. It's a string, not an int. It's using the LexoGraph algorithm for this.
-            var rank = string.Empty;
-
-            if (TryGetRankFromRankField(fields, rankFieldName, out rank))
+            if (TryGetRankFromRankField(fields, rankFieldName, out var rank))
             {
                 return rank;
             }

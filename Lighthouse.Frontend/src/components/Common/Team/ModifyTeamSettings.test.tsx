@@ -69,6 +69,7 @@ vi.mock(
 									authenticationMethodKey: "linear.apikey",
 									workTrackingSystemGetDataRetrievalDisplayName: () =>
 										"Linear Team/Project",
+									additionalFieldDefinitions: [],
 								})
 							}
 						>
@@ -198,6 +199,7 @@ describe("ModifyTeamSettings", () => {
 			options: [],
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
+			additionalFieldDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 		},
 		{
@@ -206,6 +208,7 @@ describe("ModifyTeamSettings", () => {
 			options: [],
 			workTrackingSystem: "AzureDevOps",
 			authenticationMethodKey: "ado.pat",
+			additionalFieldDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 		},
 	];

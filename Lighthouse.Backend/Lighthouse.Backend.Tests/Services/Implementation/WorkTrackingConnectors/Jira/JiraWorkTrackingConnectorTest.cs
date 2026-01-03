@@ -77,7 +77,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
-            team.ParentOverrideField = "cf[10038]";
+
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Link Override",
+                Reference = "customrelationfield"
+            });
+
+            team.ParentOverrideAdditionalFieldDefinitionId = 1;
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
@@ -92,7 +100,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = CreatePortfolio("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("Story");
-            portfolio.ParentOverrideField = "cf[10038]";
+            
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Link Override",
+                Reference = "customfield_10038"
+            });
+
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
 
             var workItems = await subject.GetFeaturesForProject(portfolio);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
@@ -127,9 +143,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(workItem.Tags, Has.Count.EqualTo(2));
+                Assert.That(workItem.Tags, Has.Count.EqualTo(3));
                 Assert.That(workItem.Tags, Contains.Item("TagTest"));
                 Assert.That(workItem.Tags, Contains.Item("ExistingLabel"));
+                Assert.That(workItem.Tags, Contains.Item("Flagged"));
             }
         }
 
@@ -380,8 +397,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var portfolio = CreatePortfolio($"project = LGHTHSDMO AND issuekey = {issueKey}");
-            portfolio.SizeEstimateField = fieldName;
+            var additionalFieldDefs = new List<AdditionalFieldDefinition>();
+            
+            var sizeField = new AdditionalFieldDefinition { Id = 1, DisplayName = "Size", Reference = fieldName };
+            additionalFieldDefs.Add(sizeField);
+
+            var portfolio = CreatePortfolioWithAdditionalFields($"project = LGHTHSDMO AND issuekey = {issueKey}", additionalFieldDefs);
+            portfolio.SizeEstimateAdditionalFieldDefinitionId = 1;
 
             var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == issueKey);
@@ -400,8 +422,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var portfolio = CreatePortfolio($"project = LGHTHSDMO AND issuekey = {issueKey}");
-            portfolio.FeatureOwnerField = fieldName;
+            var additionalFieldDefs = new List<AdditionalFieldDefinition>();
+            
+            var ownerField = new AdditionalFieldDefinition { Id = 2, DisplayName = "Owner", Reference = fieldName };
+            additionalFieldDefs.Add(ownerField);
+
+            var portfolio = CreatePortfolioWithAdditionalFields($"project = LGHTHSDMO AND issuekey = {issueKey}", additionalFieldDefs);
+            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 2;
 
             var features = await subject.GetFeaturesForProject(portfolio);
             var feature = features.Single(f => f.ReferenceId == issueKey);
@@ -498,6 +525,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var isValid = await subject.ValidateConnection(connectionSetting);
 
             Assert.That(isValid, Is.False);
+        }
+
+        [Test]
+        [TestCase(new[] { "fixVersions" }, true)]
+        [TestCase(new[] { "Fix versions" }, true)]
+        [TestCase(new[] { "fixVersions", "components" }, true)]
+        [TestCase(new[] { "customfield_10038" }, true)]
+        [TestCase(new[] { "customrelationfield" }, true)]
+        [TestCase(new[] { "MamboJambo" }, false)]
+        [TestCase(new[] { "fixVersions", "Custom.NOTEXISTING" }, false)]
+        public async Task ValidateConnection_GivenAdditionalFields_ReturnsTrueOnlyIfFieldsExist(string[] additionalFields, bool expectedValidationResult)
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://letpeoplework.atlassian.net";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
+            var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
+            ]);
+
+            foreach (var additionalField in additionalFields) 
+            {
+                connectionSetting.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                {
+                    DisplayName = additionalField,
+                    Reference =  additionalField,
+                });
+            }
+
+            var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.That(isValid, Is.EqualTo(expectedValidationResult));
         }
 
         [Test]
@@ -611,6 +681,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private Portfolio CreatePortfolio(string query, params Team[] teams)
         {
+            return CreatePortfolioWithAdditionalFields(query, [], teams);
+        }
+
+        private Portfolio CreatePortfolioWithAdditionalFields(string query, List<AdditionalFieldDefinition> additionalFieldDefs, params Team[] teams)
+        {
             var portfolio = new Portfolio
             {
                 Name = "TestProject",
@@ -632,6 +707,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.UpdateTeams(teams);
 
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            workTrackingSystemConnection.AdditionalFieldDefinitions.AddRange(additionalFieldDefs);
             portfolio.WorkTrackingSystemConnection = workTrackingSystemConnection;
 
             return portfolio;

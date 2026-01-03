@@ -6,15 +6,8 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 
 namespace Lighthouse.Backend.Factories
 {
-    public class WorkTrackingSystemFactory : IWorkTrackingSystemFactory
+    public class WorkTrackingSystemFactory(ILogger<WorkTrackingSystemFactory> logger) : IWorkTrackingSystemFactory
     {
-        private readonly ILogger<WorkTrackingSystemFactory> logger;
-
-        public WorkTrackingSystemFactory(ILogger<WorkTrackingSystemFactory> logger)
-        {
-            this.logger = logger;
-        }
-
         public WorkTrackingSystemConnection CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
             var newConnection = new WorkTrackingSystemConnection
@@ -26,6 +19,9 @@ namespace Lighthouse.Backend.Factories
 
             var defaultOptions = CreateOptionsForWorkTrackingSystem(workTrackingSystem);
             newConnection.Options.AddRange(defaultOptions);
+
+            var defaultAdditionalFields = CreateAdditionalFieldsForWorkTrackingSystem(workTrackingSystem);
+            newConnection.AdditionalFieldDefinitions.AddRange(defaultAdditionalFields);
 
             return newConnection;
         }
@@ -49,105 +45,120 @@ namespace Lighthouse.Backend.Factories
             }
         }
 
-        private List<WorkTrackingSystemConnectionOption> GetOptionsForCsv()
+        private static List<WorkTrackingSystemConnectionOption> GetOptionsForCsv()
         {
-            return new List<WorkTrackingSystemConnectionOption>
-            {
+            return
+            [
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.Delimiter,
                     Value = ",",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.DateTimeFormat,
                     Value = "yyyy-MM-dd HH:mm:ss",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.TagSeparator,
                     Value = ";",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.IdHeader,
                     Value = "ID",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.NameHeader,
                     Value = "Name",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.StateHeader,
                     Value = "State",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.TypeHeader,
                     Value = "Type",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.StartedDateHeader,
                     Value = "Started Date",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.ClosedDateHeader,
                     Value = "Closed Date",
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.CreatedDateHeader,
                     Value = "Created Date",
                     IsOptional = true,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.ParentReferenceIdHeader,
                     Value = "Parent Reference Id",
                     IsOptional = true,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.TagsHeader,
                     Value = "Tags",
                     IsOptional = true,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.UrlHeader,
                     Value = "Url",
                     IsOptional = true,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.OwningTeamHeader,
                     Value = "Owning Team",
                     IsOptional = true,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.EstimatedSizeHeader,
                     Value = "Estimated Size",
                     IsOptional = true,
-                },
-            };
+                }
+            ];
         }
 
-        private List<WorkTrackingSystemConnectionOption> GetOptionsForJira()
+        private static List<WorkTrackingSystemConnectionOption> GetOptionsForJira()
         {
-            return new List<WorkTrackingSystemConnectionOption>
-            {
+            return
+            [
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = JiraWorkTrackingOptionNames.Url,
                     Value = string.Empty,
-                    IsSecret =false,
+                    IsSecret = false,
                     IsOptional = false,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = JiraWorkTrackingOptionNames.Username,
@@ -156,6 +167,7 @@ namespace Lighthouse.Backend.Factories
                     IsOptional = true,
                 },
 
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = JiraWorkTrackingOptionNames.ApiToken,
@@ -163,6 +175,7 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = true,
                     IsOptional = false,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds,
@@ -170,13 +183,13 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = false,
                     IsOptional = true,
                 }
-            };
+            ];
         }
 
-        private List<WorkTrackingSystemConnectionOption> GetOptionsForAzureDevOps()
+        private static List<WorkTrackingSystemConnectionOption> GetOptionsForAzureDevOps()
         {
-            return new List<WorkTrackingSystemConnectionOption>
-            {
+            return
+            [
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = AzureDevOpsWorkTrackingOptionNames.Url,
@@ -184,6 +197,7 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = false,
                     IsOptional = false,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken,
@@ -191,6 +205,7 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = true,
                     IsOptional = false,
                 },
+
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds,
@@ -198,13 +213,13 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = false,
                     IsOptional = true,
                 }
-            };
+            ];
         }
 
-        private List<WorkTrackingSystemConnectionOption> GetOptionsForLinear()
+        private static List<WorkTrackingSystemConnectionOption> GetOptionsForLinear()
         {
-            return new List<WorkTrackingSystemConnectionOption>
-            {
+            return
+            [
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = LinearWorkTrackingOptionNames.ApiKey,
@@ -212,7 +227,65 @@ namespace Lighthouse.Backend.Factories
                     IsSecret = true,
                     IsOptional = false,
                 }
+            ];
+        }
+
+        private List<AdditionalFieldDefinition> CreateAdditionalFieldsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
+        {
+            logger.LogDebug("Getting Default AdditionalFieldDefinitions for {WorkTrackingSystem}", workTrackingSystem);
+
+            return workTrackingSystem switch
+            {
+                WorkTrackingSystems.AzureDevOps => GetAdditionalFieldsForAzureDevOps(),
+                WorkTrackingSystems.Jira => GetAdditionalFieldsForJira(),
+                WorkTrackingSystems.Linear => [],
+                WorkTrackingSystems.Csv => [],
+                _ => throw new NotSupportedException("Selected Work Tracking System is Not Supported")
             };
+        }
+
+        private static List<AdditionalFieldDefinition> GetAdditionalFieldsForAzureDevOps()
+        {
+            return
+            [
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = "Iteration Path",
+                    Reference = "System.IterationPath"
+                },
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = "Area Path",
+                    Reference = "System.AreaPath"
+                },
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = "Size",
+                    Reference = "Microsoft.VSTS.Scheduling.Size"
+                },
+            ];
+        }
+
+        private static List<AdditionalFieldDefinition> GetAdditionalFieldsForJira()
+        {
+            return
+            [
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = "Fix Version",
+                    Reference = "Fix versions"
+                },
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = "Components",
+                    Reference = "Components"
+                },
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = "Sprint",
+                    Reference = "Sprint",
+                }
+            ];
         }
     }
 }

@@ -40,7 +40,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 11, Key = AppSettingKeys.TeamSettingFeatureWIP, Value = "1" });
             AddIfNotExists(new AppSetting { Id = 12, Key = AppSettingKeys.TeamSettingWorkItemQuery, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 13, Key = AppSettingKeys.TeamSettingWorkItemTypes, Value = "User Story,Bug" });
-            AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.TeamSettingParentOverrideField, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 9, Key = AppSettingKeys.ProjectSettingName, Value = "New Project" });
             AddIfNotExists(new AppSetting { Id = 12, Key = AppSettingKeys.ProjectSettingWorkItemQuery, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 13, Key = AppSettingKeys.ProjectSettingWorkItemTypes, Value = "Epic" });
@@ -73,8 +72,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
             AddIfNotExists(new AppSetting { Id = 35, Key = AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, Value = "False" });
             AddIfNotExists(new AppSetting { Id = 36, Key = AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, Value = "100" });
-
-            AddIfNotExists(new AppSetting { Id = 37, Key = AppSettingKeys.ProjectSettingParentOverrideField, Value = string.Empty });
 
             AddIfNotExists(new AppSetting { Id = 38, Key = AppSettingKeys.TeamSettingBlockedStates, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 39, Key = AppSettingKeys.TeamSettingBlockedTags, Value = string.Empty });

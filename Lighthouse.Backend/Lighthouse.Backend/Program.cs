@@ -236,7 +236,7 @@ namespace Lighthouse.Backend
         {
             // Repos
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
-            builder.Services.AddScoped<IRepository<Portfolio>, ProjectRepository>();
+            builder.Services.AddScoped<IRepository<Portfolio>, PortfolioRepository>();
             builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
             builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
