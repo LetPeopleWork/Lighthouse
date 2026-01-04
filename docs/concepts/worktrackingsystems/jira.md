@@ -21,23 +21,53 @@ To create a connection to a Jira system, you need three things:
 
 The URL will look something like this: `https://letpeoplework.atlassian.net` where *letpeoplework* is your instance name.  
 
+## Authentication
+Depending on whether you use Jira Cloud or Jira Data Center, you have different Authentication Options.
+
+### Jira Cloud (API Token)
 You can find more information on how to create an Access Token in the [Atlassian Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
 
 {: .important}
 The API Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 
-## Connecting to Jira Server/Data Center
+### Jira Data Center (Personal Access Token)
 The above description is true if you are working against a Jira Cloud instance. In case you are connecting to an on-premise Jira version (*Server* or *Data Center*), there are small differences.
 
 Instead of an *API Token*, you have to provide a *Personal Access Token*. See the [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) for more details.
 
-A *Personal Access Token* will not require you to specify a username, as it's part of the token itself. Thus please leave the username empty when you want to connect to a Jira Server/Data Center instance and provide a *Personal Access Token*.
-
-{: .note}
-If you do not leave the username field empty, Lighthouse will assume you try to connect to a Jira Cloud instance with an *API Token*, therefore the validation will fail!
+A *Personal Access Token* will not require you to specify a username, as it's part of the token itself.
 
 {: .important}
 As with the *API Token*, the *Personal Access Token* is treated like a password from Lighthouse.
+
+# Additional Fields
+
+Lighthouse allows you to configure **Additional Fields** for Jira connections. These fields let you retrieve and display extra information from your Jira issues, including custom fields and built-in properties.
+
+### Default Additional Fields
+When you create a new Jira connection, Lighthouse automatically adds the following additional fields:
+- **Fix Version** (`Fix versions`)
+- **Components** (`Components`)
+- **Sprint** (`Sprint`)
+
+You can add more fields or edit/remove these defaults as needed. These fields help you tailor Lighthouse to your organization's specific tracking needs.
+
+### How to Add or Configure Additional Fields
+You can manage additional fields in the connection settings UI. When adding a field, you will be prompted for:
+- **Display Name**: A user-friendly name for the field.
+- **Field Reference**: The Jira field name or key (e.g., `Flagged`, `customfield_10011`).
+
+For help finding the correct field reference, see the [Jira custom field documentation](https://confluence.atlassian.com/jirakb/find-my-custom-field-id-number-in-jira-744522503.html). The UI provides direct links and helper text to guide you.
+
+#### Example: Adding a Custom Field
+Suppose you want to add a custom field called "Business Value". You would enter:
+- Display Name: `Business Value`
+- Field Reference: `customfield_12345`
+
+# Options
+
+## Request Timeout
+- **Request Timeout (seconds)**: Controls how long Lighthouse will wait for a response from Jira before timing out. The default is `100` seconds, but you can adjust this in the connection settings if you experience slow network conditions or large queries.
 
 # Query
 Queries for Jira are written in [Jira Query Language (JQL)](https://www.atlassian.com/blog/jira/jql-the-most-flexible-way-to-search-jira-14). An example Query for a Team called "Lagunitas", where all issues for this Team are labeled with their team name, could look like this:

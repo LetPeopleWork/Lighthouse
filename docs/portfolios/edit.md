@@ -111,7 +111,9 @@ The features that are used for this calculation are based on the closed features
 
 ## Estimated Size
 On top of the default size, which will be similar for any feature, you can also specify a field that would include an estimate. This allows you to use the default size for features you have not looked at at all, while providing more details for some things that you may have started to refine, but have no child items yet.
-Simply specify the name of the field that contains your estimate, and Lighthouse will extract the data from your work tracking system.
+
+{: .note}
+The Size Estimate Field is configured by selecting an Additional Field that has been defined on your Work Tracking System connection. Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
 
 If the field is empty or 0 for a feature, it will fall back to the default/historical feature size.
 
@@ -139,7 +141,11 @@ This makes sense if you have one team that is driving most topics, while some ot
 If defined, the owning team will be used unless a [Feature Owner](#feature-owner-field) is defined.
 
 ## Feature Owner field
-You can specify a feature owner field that contains information about a team that owns a Feature. Potential fields may be *[System.AreaPath]* and *[System.Tags]* for Azure DevOps, and *labels* for Jira.
+You can specify a Feature Owner field that contains information about a team that owns a Feature.
+
+{: .note}
+The Feature Owner Field is configured by selecting an Additional Field that has been defined on your Work Tracking System connection. Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
+
 If defined, Lighthouse will get the data in this field for every feature. It will then check if the name of any team is included in the data (so it does not need to **match**, it just needs to be **contained**).
 
 {: .note}
@@ -186,9 +192,9 @@ We do not recommend using states for identifying blocked work. Tags work better 
 There are a few options that are optional. This means that they have an impact, but you can save a portfolio without bothering.
 
 ## Parent Override Field
-In order to establish a relation between two work items, Lighthouse assumes that the Feature is set as a parent for the work item.
-If this is not the case, you can specify an additional field that is containing the ID of the Feature in the Featuzres. That way, you can let Lighthouse know how the relation between Feature and it's parent can be established. On Portfolio level, this is used if you want to *group* features under a parent (for example if you have something like *Objectives*, *Initiatives*, etc., "above" your Features).
+By default, Lighthouse uses the native parent-child relationships from your work tracking system to determine which work items belong to which features.
+
+If you need to override this behavior (for example, to group work items under a custom field instead of the native parent link), you can select a **Parent Override Field**. This field must be defined as an Additional Field on your Work Tracking System connection first.
 
 {: .note}
-For Jira, you need to figure out the [ID] of your customfield, check the [Atlassian Documentation](https://confluence.atlassian.com/jirakb/find-my-custom-field-id-number-in-jira-744522503.html) to understand how to do this. Once you know the id, you must specify the customfield like this: `cf[id]`.
-For example, if your customfield id is 1886, you would specify `cf[1886]` as value.
+Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.

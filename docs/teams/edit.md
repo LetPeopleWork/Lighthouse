@@ -171,13 +171,9 @@ We do not recommend using states for identifying blocked work. Tags work better 
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 
 ## Parent Override Field
-In order to establish a relation between two work items, Lighthouse assumes that the Feature is set as a parent for the work item.
-If this is not the case, you can specify an additional field that is containing the ID of the Feature in the Teams Work Items. That way, you can let Lighthouse know how the relation between Feature and Work Items are established.
+By default, Lighthouse uses the native parent-child relationships from your work tracking system to determine which work items belong to which features.
+
+If you need to override this behavior (for example, to group work items under a custom field instead of the native parent link), you can select a **Parent Override Field**. This field must be defined as an Additional Field on your Work Tracking System connection first.
 
 {: .note}
-For Jira, you need to figure out the [ID] of your customfield, check the [Atlassian Documentation](https://confluence.atlassian.com/jirakb/find-my-custom-field-id-number-in-jira-744522503.html) to understand how to do this. Once you know the id, you must specify the customfield like this: `cf[id]`.
-For example, if your customfield id is 1886, you would specify `cf[1886]` as value.
-
-You may wonder "Why would use another way of specifying a parent-child relationship than the built in ones?". Well, corporations sometimes do things for reasons beyond our understanding. We're not here to judge 🤷‍♂️  
-In theory this would allow you to also *cross-link* Jira and Azure DevOps items (but please don't, we have not tested it, which is why we wrote *in theory*...).
-It also turns out that on Jira Data Center versions you must have a link through a custom field (*Epic Link*).
+Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.

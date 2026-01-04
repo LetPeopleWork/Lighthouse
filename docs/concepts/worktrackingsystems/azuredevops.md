@@ -21,10 +21,42 @@ To create a connection to an Azure DevOps system, you need two things:
 
 The URL will look something like this: `https://dev.azure.com/letpeoplework` where *letpeoplework* would be your organization name. You don't need to specify any Team Project, this should be part of the [Query](#query).
 
+# Authentication
+Currently you can only authenticate using a *Personal Access Token* to Azure DevOps.
+
 You can find more information on how to create a Personal Access Token in the [Microsoft Documentation](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows/)
 
 {: .important}
 The Personal Access Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+# Additional Fields
+
+Lighthouse allows you to configure **Additional Fields** for Azure DevOps connections. These fields are used to retrieve and display extra information from your work items, such as custom properties or metadata that are not part of the default set.
+
+### Default Additional Fields
+When you create a new Azure DevOps connection, Lighthouse automatically adds the following additional fields:
+- **Iteration Path** (`System.IterationPath`)
+- **Area Path** (`System.AreaPath`)
+- **Size** (`Microsoft.VSTS.Scheduling.Size`)
+
+You can add more fields or edit/remove these defaults as needed.
+
+### How to Add or Configure Additional Fields
+You can manage additional fields in the connection settings UI. When adding a field, you will be prompted for:
+- **Display Name**: A user-friendly name for the field.
+- **Field Reference**: The Azure DevOps field reference (e.g., `System.IterationPath`, `Custom.MyField`).
+
+For help finding the correct field reference, see the [Azure DevOps field documentation](https://learn.microsoft.com/en-us/azure/devops/boards/work-items/guidance/work-item-field?view=azure-devops). The UI provides direct links and helper text to guide you.
+
+#### Example: Adding a Custom Field
+Suppose you want to add a custom field called "Business Value". You would enter:
+- Display Name: `Business Value`
+- Field Reference: `Custom.BusinessValue`
+
+
+# Options
+
+## Request Timeout
+- **Request Timeout (seconds)**: Controls how long Lighthouse will wait for a response from Azure DevOps before timing out. The default is `100` seconds, but you can adjust this in the connection settings if you experience slow network conditions or large queries.
 
 # Query
 Queries for Azure DevOps are written in the [Work Item Query Language (WIQL)](https://learn.microsoft.com/en-us/azure/devops/boards/queries/wiql-syntax?view=azure-devops). An example Query for a Team called "Binary Blazers" in the Team Project "Lighthouse Demo" could look like this:
