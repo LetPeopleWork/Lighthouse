@@ -38,7 +38,7 @@ using Microsoft.Data.Sqlite;
 namespace Lighthouse.Backend
 {
     public class Program
-    {        
+    {
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
@@ -132,7 +132,22 @@ namespace Lighthouse.Backend
             app.MapControllers();
 
             app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
-            
+
+            app.MapGet("/.well-known/security.txt", async context =>
+            {
+                var wwwroot = app.Environment.WebRootPath;
+                var filePath = Path.Combine(wwwroot, "security.txt");
+
+                if (!File.Exists(filePath))
+                {
+                    context.Response.StatusCode = 404;
+                    return;
+                }
+
+                context.Response.ContentType = "text/plain; charset=utf-8";
+                await context.Response.SendFileAsync(filePath);
+            });
+
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "wwwroot";
