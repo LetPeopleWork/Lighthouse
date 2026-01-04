@@ -6,9 +6,11 @@ import AdditionalFieldsEditor from "./AdditionalFieldsEditor";
 
 describe("AdditionalFieldsEditor", () => {
 	const mockOnChange = vi.fn();
+	const mockOnFieldsChanged = vi.fn();
 
 	beforeEach(() => {
 		mockOnChange.mockClear();
+		mockOnFieldsChanged.mockClear();
 	});
 
 	describe("Rendering", () => {
@@ -18,6 +20,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -49,6 +52,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -70,6 +74,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -89,6 +94,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -107,6 +113,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -139,6 +146,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -164,6 +172,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -180,6 +189,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -201,6 +211,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -219,6 +230,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -250,6 +262,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -280,6 +293,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -325,6 +339,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -349,6 +364,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -367,6 +383,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={firstCall}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -392,6 +409,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -408,6 +426,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={mockOnChange.mock.calls[0][0]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -448,6 +467,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -482,6 +502,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -506,6 +527,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -525,6 +547,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -549,6 +572,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -565,6 +589,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType={null}
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -578,6 +603,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="Linear"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -591,6 +617,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -604,6 +631,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="Jira"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -621,6 +649,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType={null}
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -641,6 +670,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="Linear"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -661,6 +691,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={fields}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -680,6 +711,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="AzureDevOps"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -699,6 +731,7 @@ describe("AdditionalFieldsEditor", () => {
 					workTrackingSystemType="Jira"
 					fields={[]}
 					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
 				/>,
 			);
 
@@ -719,6 +752,7 @@ describe("AdditionalFieldsEditor", () => {
 						workTrackingSystemType="AzureDevOps"
 						fields={[]}
 						onChange={mockOnChange}
+						onFieldsChanged={mockOnFieldsChanged}
 					/>,
 				);
 
@@ -735,6 +769,7 @@ describe("AdditionalFieldsEditor", () => {
 						workTrackingSystemType="AzureDevOps"
 						fields={[]}
 						onChange={mockOnChange}
+						onFieldsChanged={mockOnFieldsChanged}
 					/>,
 				);
 
@@ -756,6 +791,7 @@ describe("AdditionalFieldsEditor", () => {
 						workTrackingSystemType="Jira"
 						fields={[]}
 						onChange={mockOnChange}
+						onFieldsChanged={mockOnFieldsChanged}
 					/>,
 				);
 

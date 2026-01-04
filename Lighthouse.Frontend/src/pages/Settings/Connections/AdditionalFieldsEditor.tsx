@@ -27,6 +27,7 @@ interface AdditionalFieldsEditorProps {
 	workTrackingSystemType: WorkTrackingSystemType | null;
 	fields: IAdditionalFieldDefinition[];
 	onChange: (fields: IAdditionalFieldDefinition[]) => void;
+	onFieldsChanged: () => void;
 }
 
 interface FieldEditDialogProps {
@@ -146,6 +147,7 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 	workTrackingSystemType,
 	fields,
 	onChange,
+	onFieldsChanged,
 }) => {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [editingField, setEditingField] =
@@ -167,6 +169,7 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 		setTempIdCounter(tempIdCounter - 1);
 		setEditingField(newField);
 		setEditDialogOpen(true);
+		onFieldsChanged();
 	};
 
 	const handleEditField = (field: IAdditionalFieldDefinition) => {
@@ -176,6 +179,7 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 
 	const handleDeleteField = (fieldToDelete: IAdditionalFieldDefinition) => {
 		onChange(fields.filter((f) => f.id !== fieldToDelete.id));
+		onFieldsChanged();
 	};
 
 	const handleSaveField = (savedField: IAdditionalFieldDefinition) => {
@@ -191,6 +195,7 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 		}
 		setEditDialogOpen(false);
 		setEditingField(null);
+		onFieldsChanged();
 	};
 
 	const handleCancelEdit = () => {

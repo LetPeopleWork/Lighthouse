@@ -54,6 +54,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		IAdditionalFieldDefinition[]
 	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
+	const [validationKey, setValidationKey] = useState<number>(0);
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
@@ -361,6 +362,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					}
 					fields={additionalFields}
 					onChange={setAdditionalFields}
+					onFieldsChanged={() => setValidationKey((prev) => prev + 1)}
 				/>
 
 				{/* Other Options Section - only show when there are non-auth options */}
@@ -397,6 +399,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					inputsValid={inputsValid}
 					validationFailedMessage={`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`}
 					saveButtonText={workTrackingSystems.length === 1 ? "Save" : "Create"}
+					key={validationKey}
 				/>
 			</DialogActions>
 		</Dialog>
