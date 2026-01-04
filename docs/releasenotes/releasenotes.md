@@ -6,41 +6,65 @@ nav_order: 95
 
 # Lighthouse vNext
 
-## Enhanced Data Retrieval Configuration
-The configuration for data retrieval (queries, team names, CSV data) has been improved with provider-specific labels and better semantics:
+**⚠️⚠️ This release contains breaking changes - please read carefully ⚠️⚠️**
 
-- **Provider-specific labels**: The UI now shows context-appropriate labels based on the work tracking system:
-  - Azure DevOps: "WIQL Query"
-  - Jira: "JQL Query"
-  - Linear: "Team Name" (for teams) / "Project Name" (for portfolios)
-  - CSV: "CSV Data"
-- **CSV paste support**: CSV data can now be entered by either uploading a file OR pasting raw CSV content directly
-- **Stable data keys**: Backend now uses stable keys (e.g., `ado.wiql`, `jira.jql`) that enable future wizard-assisted configuration
-- **Data Retrieval Wizard System**: A new frontend wizard registry pattern enables specialized configuration assistants for different work tracking systems. This provides a cleaner architecture where:
-  - Each work tracking system can have zero or more configuration wizards
-  - Wizards appear as buttons alongside the data retrieval input field
-  - The CSV provider now has an "Upload CSV File" wizard button that provides a better file upload experience
+This release was focused on a lot of infrastructure work in and around the Work Tracking System Connection. While the impact on the functionality right now is not as big, it will make future enhancements easier. This will include onboarding of new systems, supporting different authentication options, and dealing with the special configurations of the systems within their organization.
 
-No manual action is required for existing configurations. The field has been renamed internally from "Work Item Query" to "Data Retrieval Value" to better reflect its varied usage across providers.
+The Work Tracking System Connection configuration now looks like this:
 
-## Explicit Authentication Methods for Work Tracking Systems
-Work Tracking System connections now use explicit authentication method selection. This change provides:
+![Work Tracking System Connection Config](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/concepts/worktrackingsystem_Jira.png)
 
-- **Clearer configuration**: Each connection type shows exactly which authentication fields are required
-- **Jira Cloud vs Data Center distinction**: Jira connections now explicitly differentiate between Cloud (email + API Token) and Data Center (Personal Access Token/Bearer token)
-- **Backward compatibility**: Existing connections are automatically migrated:
-  - Azure DevOps → Personal Access Token
-  - Linear → API Key
-  - Jira with username → Jira Cloud
-  - Jira without username → Jira Data Center
-  - CSV → No authentication
+# Authentication Options
+If a system supports different means for Authentication (right now only Jira), you can select the option. This will also adjust the options you need to specify. This is a big UX improvement over the previous approach where all options where visible, and depending on whether you filled in some field or not it would chose the authentication option.
 
-No manual action is required for existing configurations.
+**Note:** Existing systems will be working as before and all this data will be migrated
 
-## Removal of Unparented Work Item Queries
+# Additional Fields Configuration
+For each supported Work Tracking System Connection, you can now add *Additional Fields* that should be fetched for all Work Items and Features. This allows to have data specific to your system and configuration in Lighthouse. Currently those additional fields are only used for *Parent Overrides*, *Size Estimates*, and *Feature Owner* definition (see below). However, this will be expanded in future.
+
+Currently supported are Azure DevOps and Jira. They both come with a set of predefined additional fields:
+- Azure DevOps: Area Path, Iteration Path, Size
+- Jira: Fix Version, Component, Sprint
+
+You can modify and remove those defaults as you please.
+
+**Note:** This only applies to newly created system. Migrated Work Tracking System Connection will not have any additional fields by default.
+
+Upon Validation of the system, It will check the Additional Fields. If a field cannot be found (e.g. due to a typo), the validation will fail. Please see respective documentation for [Jira](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html) or [Azure DevOps](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/azuredevops.html#additional-fields).
+
+# Options
+At the bottom of the Work Tracking System Connections, you can find now options. So far only Jira and Azure DevOps offer additional options. It's the *Request Timeout* that was previously specified in the Work Tracking System Settings page. This is now specific per connection. If you had an existing value set, it will automatically be migrated.
+
+## Known Unpleasantries
+As of now, you will have to provide the Authentication Token even if you don't change the authentication in the Work Tracking System Connection Dialog. We plan on improve this in future.
+
+## Parent Override Field ⚠️
+While previously you could define any field in the *Parent Override Field* with free text, you now can chose from the additional fields. Instead of free text, you will get a selection
+
+⚠️ **If you had an override specified before, this change will not be migrated. Please manually add your additional field and set it up through the Team and Portfolio settings.** ⚠️
+
+## Size Estimate Field ⚠️
+While previously you could define any field in the *Size Estimate* in the Portfolio Settings, you now can chose from the additional fields. Instead of free text, you will get a selection.
+
+⚠️ **If you had a Size Estimate specified before, this change will not be migrated. Please manually add your additional field and set it up through the Portfolio settings** ⚠️
+
+## Feature Owner Field ⚠️
+While previously you could define any field in the *Featuer Owner* in the Portfolio Settings, you now can chose from the additional fields. Instead of free text, you will get a selection.
+
+⚠️ **If you had a Featuer Owner specified before, this change will not be migrated. Please manually add your additional field and set it up through the Portfolio settings** ⚠️
+
+# Additional Work Tracking System Connection Related Changes
+- The UI will now display the field for the Query only after selecting a work tracking system and show a tailored description (for example "JQL Query")
+- You can now specify CSV content directly, without the need of having a file uploaded
+- The File Upload button for CSV looks slightly different as it's done in a more generic way
+
+
+# Removal of Unparented Work Item Queries ⚠️
 ⚠️ The "Unparented Work Item Query" that could be specified per Portfolio has been removed. All "Unparented Features" are also removed. This due to the fact that the functionality was hard to maintain and rarely used. Furthermore, it doesn't fit in the new design with Deliveries anymore. In future, there may be a replacement of this functionality, but for now, it is removed without a successor.
 
 If you were heavily relying on this, please reach out to us for feedback.
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.12.28.1246...)
 
 # Lighthouse v25.12.28.1246
 
