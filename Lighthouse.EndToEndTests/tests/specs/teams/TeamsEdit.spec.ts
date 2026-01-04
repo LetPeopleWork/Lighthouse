@@ -104,9 +104,22 @@ testWithData(
 		await test.step("Advanced Configuration should not be mandatory", async () => {
 			await teamEditPage.toggleAdvancedConfiguration();
 
-			await teamEditPage.setParentOverrideField("CUSTOMFIELD");
+			let parentOverride = await teamEditPage.getSelectedParentOverride();
+			expect(parentOverride).toBe("​");
+
+			const potentialOverrides =
+				await teamEditPage.getPotentialParentOverrides();
+			expect(potentialOverrides).toContain("None");
+			expect(potentialOverrides).toContain("Area Path");
+
+			await teamEditPage.selectParentOverride("Area Path");
+			parentOverride = await teamEditPage.getSelectedParentOverride();
+			expect(parentOverride).toBe("Area Path");
 			await expect(teamEditPage.validateButton).toBeEnabled();
-			await teamEditPage.setParentOverrideField("");
+
+			await teamEditPage.selectParentOverride("None");
+			parentOverride = await teamEditPage.getSelectedParentOverride();
+			expect(parentOverride).toBe("​");
 			await expect(teamEditPage.validateButton).toBeEnabled();
 		});
 	},

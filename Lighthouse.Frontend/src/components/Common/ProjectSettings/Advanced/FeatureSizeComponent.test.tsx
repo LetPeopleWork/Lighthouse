@@ -122,6 +122,36 @@ describe("FeatureSizeComponent", () => {
 		);
 	});
 
+	it("sets sizeEstimateAdditionalFieldDefinitionId to null when 'None' is selected", () => {
+		const settingsWithField: IPortfolioSettings = {
+			...initialSettings,
+			sizeEstimateAdditionalFieldDefinitionId: 1,
+		};
+
+		render(
+			<FeatureSizeComponent
+				projectSettings={settingsWithField}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		// Open the dropdown and select None
+		const select = screen.getByRole("combobox");
+		fireEvent.mouseDown(select);
+
+		const listbox = within(screen.getByRole("listbox"));
+		fireEvent.click(listbox.getByText("None"));
+
+		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+			"sizeEstimateAdditionalFieldDefinitionId",
+			null,
+		);
+	});
+
 	it("toggles the usePercentileToCalculateDefaultAmountOfWorkItems switch", () => {
 		render(
 			<FeatureSizeComponent

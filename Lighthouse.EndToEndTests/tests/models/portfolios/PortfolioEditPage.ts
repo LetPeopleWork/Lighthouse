@@ -52,14 +52,28 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 		return Number(percentileHistoryInDays);
 	}
 
-	async setSizeEstimateField(sizeEstimateField: string): Promise<void> {
-		await this.page.getByLabel("Size Estimate Field").fill(sizeEstimateField);
+	async getSelectedSizeEstimateField(): Promise<string> {
+		const combobox = this.sizeEstimateFieldCombobox;
+		return (await combobox.textContent()) ?? "";
 	}
 
-	async getSizeEstimateField(): Promise<string> {
-		return (
-			(await this.page.getByLabel("Size Estimate Field").inputValue()) ?? ""
-		);
+	async selectSizeEstimateField(additionalField: string): Promise<void> {
+		await this.sizeEstimateFieldCombobox.click();
+		await this.page.getByRole("option", { name: additionalField }).click();
+	}
+
+	async getPotentialSizeEstimateFields(): Promise<string[]> {
+		await this.sizeEstimateFieldCombobox.click();
+		const options = await this.page.getByRole("option").allInnerTexts();
+		await this.page.keyboard.press("Escape");
+		return options;
+	}
+
+	get sizeEstimateFieldCombobox(): Locator {
+		return this.page
+			.locator("div")
+			.filter({ hasText: /.*Size Estimate Field$/ })
+			.getByRole("combobox");
 	}
 
 	async toggleOwnershipSettings(): Promise<void> {
@@ -70,14 +84,29 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.click();
 	}
 
-	async setFeatureOwnerField(sizeEstimateField: string): Promise<void> {
-		await this.page.getByLabel("Feature Owner Field").fill(sizeEstimateField);
+	async getSelectedFeatureOwnerField(): Promise<string> {
+		const combobox = this.featureOwnerFieldCombobox;
+		return (await combobox.textContent()) ?? "";
 	}
 
-	async getFeatureOwnerField(): Promise<string> {
-		return (
-			(await this.page.getByLabel("Feature Owner Field").inputValue()) ?? ""
-		);
+	async selectFeatureOwnerField(additionalField: string): Promise<void> {
+		await this.featureOwnerFieldCombobox.click();
+		await this.page.getByRole("option", { name: additionalField }).click();
+	}
+
+	async getPotentialFeatureOwnerFields(): Promise<string[]> {
+		await this.featureOwnerFieldCombobox.click();
+		const options = await this.page.getByRole("option").allInnerTexts();
+		await this.page.keyboard.press("Escape");
+		return options;
+	}
+
+	get featureOwnerFieldCombobox(): Locator {
+		return this.page
+			.locator("div")
+			.filter({ hasText: /.*Feature Owner Field$/ })
+			.getByRole("combobox")
+			.nth(1);
 	}
 
 	async removeSizeOverrideState(overrideState: string): Promise<void> {

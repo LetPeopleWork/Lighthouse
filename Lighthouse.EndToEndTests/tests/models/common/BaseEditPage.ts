@@ -145,14 +145,28 @@ export abstract class BaseEditPage<T> {
 			.click();
 	}
 
-	async setParentOverrideField(customField: string): Promise<void> {
-		await this.page.getByLabel("Parent Override Field").fill(customField);
+	async getSelectedParentOverride(): Promise<string> {
+		const combobox = this.parentOverrideCombobox;
+		return (await combobox.textContent()) ?? "";
 	}
 
-	async getParentOverrideField(): Promise<string> {
-		return (
-			(await this.page.getByLabel("Parent Override Field").inputValue()) ?? ""
-		);
+	async selectParentOverride(additionalField: string): Promise<void> {
+		await this.parentOverrideCombobox.click();
+		await this.page.getByRole("option", { name: additionalField }).click();
+	}
+
+	async getPotentialParentOverrides(): Promise<string[]> {
+		await this.parentOverrideCombobox.click();
+		const options = await this.page.getByRole("option").allInnerTexts();
+		await this.page.keyboard.press("Escape");
+		return options;
+	}
+
+	get parentOverrideCombobox(): Locator {
+		return this.page
+			.locator("div")
+			.filter({ hasText: /.*Parent Override Field$/ })
+			.getByRole("combobox");
 	}
 
 	get saveButton(): Locator {

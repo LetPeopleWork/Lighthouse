@@ -157,4 +157,36 @@ describe("OwnershipComponent", () => {
 			null,
 		);
 	});
+
+	it("sets featureOwnerAdditionalFieldDefinitionId to null when 'None' is selected", () => {
+		const settingsWithField: IPortfolioSettings = {
+			...initialSettings,
+			featureOwnerAdditionalFieldDefinitionId: 1,
+		};
+
+		render(
+			<OwnershipComponent
+				projectSettings={settingsWithField}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				currentInvolvedTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		// Get the Feature Owner Field dropdown (second combobox)
+		const comboboxes = screen.getAllByRole("combobox");
+		const featureOwnerSelect = comboboxes[1];
+		fireEvent.mouseDown(featureOwnerSelect);
+
+		const listbox = within(screen.getByRole("listbox"));
+		fireEvent.click(listbox.getByText("None"));
+
+		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+			"featureOwnerAdditionalFieldDefinitionId",
+			null,
+		);
+	});
 });

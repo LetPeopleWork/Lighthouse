@@ -8,6 +8,12 @@ type WorkTrackingSystemOption = {
 	isOptional?: boolean;
 };
 
+type AdditionalFieldDefinitions = {
+	id: number;
+	reference: string;
+	displayName: string;
+};
+
 export async function createAzureDevOpsConnection(
 	api: APIRequestContext,
 	connectionName: string,
@@ -32,11 +38,20 @@ export async function createAzureDevOpsConnection(
 		},
 	);
 
+	const additionalFieldDefinitions: AdditionalFieldDefinitions[] = [
+		{
+			id: 0,
+			reference: "System.AreaPath",
+			displayName: "Area Path",
+		},
+	];
+
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,
 		workTrackingSystem: "AzureDevOps",
 		authenticationMethodKey: "ado.pat",
 		options: options,
+		additionalFieldDefinitions: additionalFieldDefinitions,
 	});
 }
 
@@ -69,11 +84,20 @@ export async function createJiraConnection(
 		},
 	);
 
+	const additionalFieldDefinitions: AdditionalFieldDefinitions[] = [
+		{
+			id: 0,
+			reference: "fixVersions",
+			displayName: "Fix Versions",
+		},
+	];
+
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,
 		workTrackingSystem: "Jira",
 		authenticationMethodKey: "jira.cloud",
 		options: options,
+		additionalFieldDefinitions: additionalFieldDefinitions,
 	});
 }
 
@@ -84,6 +108,7 @@ async function createWorkTrackingSystemConnection(
 		workTrackingSystem: string;
 		authenticationMethodKey: string;
 		options: WorkTrackingSystemOption[];
+		additionalFieldDefinitions: AdditionalFieldDefinitions[];
 	},
 ): Promise<{ id: number; name: string }> {
 	const response = await api.post("/api/WorkTrackingSystemConnections", {
@@ -94,6 +119,8 @@ async function createWorkTrackingSystemConnection(
 			authenticationMethodKey:
 				workTrackingSystemConnectionData.authenticationMethodKey,
 			options: workTrackingSystemConnectionData.options,
+			additionalFieldDefinitions:
+				workTrackingSystemConnectionData.additionalFieldDefinitions,
 		},
 	});
 

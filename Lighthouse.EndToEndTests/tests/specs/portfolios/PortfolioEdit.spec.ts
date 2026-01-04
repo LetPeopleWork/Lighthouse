@@ -103,10 +103,25 @@ testWithData(
 		await test.step("Default Feature Size Configuration should not be mandatory", async () => {
 			await portfolioEditPage.toggleDefaultFeatureSizeConfiguration();
 
-			await portfolioEditPage.setSizeEstimateField("CUSTOMFIELD_1337");
+			let sizeEstimateField =
+				await portfolioEditPage.getSelectedSizeEstimateField();
+			expect(sizeEstimateField).toBe("​");
+
+			const potentialSizeEstimateFields =
+				await portfolioEditPage.getPotentialSizeEstimateFields();
+			expect(potentialSizeEstimateFields).toContain("None");
+			expect(potentialSizeEstimateFields).toContain("Area Path");
+
+			await portfolioEditPage.selectSizeEstimateField("Area Path");
+			sizeEstimateField =
+				await portfolioEditPage.getSelectedSizeEstimateField();
+			expect(sizeEstimateField).toBe("Area Path");
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 
-			await portfolioEditPage.setSizeEstimateField("");
+			await portfolioEditPage.selectSizeEstimateField("None");
+			sizeEstimateField =
+				await portfolioEditPage.getSelectedSizeEstimateField();
+			expect(sizeEstimateField).toBe("​");
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 
 			await portfolioEditPage.addSizeOverrideState("New");
@@ -119,10 +134,25 @@ testWithData(
 		await test.step("Ownership Setting Configuration should not be mandatory", async () => {
 			await portfolioEditPage.toggleOwnershipSettings();
 
-			await portfolioEditPage.setFeatureOwnerField("System.AreaPath");
+			let featureOwnerField =
+				await portfolioEditPage.getSelectedFeatureOwnerField();
+			expect(featureOwnerField).toBe("​");
+
+			const potentialFeatureOwnerFields =
+				await portfolioEditPage.getPotentialFeatureOwnerFields();
+			expect(potentialFeatureOwnerFields).toContain("None");
+			expect(potentialFeatureOwnerFields).toContain("Area Path");
+
+			await portfolioEditPage.selectFeatureOwnerField("Area Path");
+			featureOwnerField =
+				await portfolioEditPage.getSelectedFeatureOwnerField();
+			expect(featureOwnerField).toBe("Area Path");
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 
-			await portfolioEditPage.setFeatureOwnerField("");
+			await portfolioEditPage.selectFeatureOwnerField("None");
+			featureOwnerField =
+				await portfolioEditPage.getSelectedFeatureOwnerField();
+			expect(featureOwnerField).toBe("​");
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 		});
 	},

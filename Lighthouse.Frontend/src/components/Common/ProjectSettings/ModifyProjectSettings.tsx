@@ -258,7 +258,15 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		key: K,
 		value: IPortfolioSettings[K] | null,
 	) => {
-		if (value === null) {
+		// Allow null for nullable fields: additional field definitions and owning team
+		const nullableFields = [
+			"sizeEstimateAdditionalFieldDefinitionId",
+			"featureOwnerAdditionalFieldDefinitionId",
+			"parentOverrideAdditionalFieldDefinitionId",
+			"owningTeam",
+		];
+
+		if (value === null && !nullableFields.includes(key)) {
 			return;
 		}
 
