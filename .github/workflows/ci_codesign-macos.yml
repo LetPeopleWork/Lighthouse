@@ -304,21 +304,8 @@ jobs:
             mv ./temp_binary/Lighthouse "$BINARY_PATH"
             rmdir ./temp_binary
 
-            echo "=== Moving .well-known directory temporarily ==="
-            WELLKNOWN_DIR="$MACOS_DIR/wwwroot/.well-known"
-            if [ -d "$WELLKNOWN_DIR" ]; then
-              mkdir -p ./temp_wellknown
-              mv "$WELLKNOWN_DIR" ./temp_wellknown/
-            fi
-
             echo "=== Signing app bundle ==="                       
             codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR"
-
-            echo "=== Moving .well-known back ==="
-            if [ -d ./temp_wellknown/.well-known ]; then
-              mv ./temp_wellknown/.well-known "$MACOS_DIR/wwwroot/"
-              rmdir ./temp_wellknown
-            fi
 
             echo "=== Verifying signatures ==="
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
