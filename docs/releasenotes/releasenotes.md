@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.1.4.1559
 
 **⚠️⚠️ This release contains breaking changes - please read carefully ⚠️⚠️**
 
@@ -64,7 +64,7 @@ While previously you could define any field in the *Featuer Owner* in the Portfo
 
 If you were heavily relying on this, please reach out to us for feedback.
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.12.28.1246...)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.12.28.1246...v26.1.4.1559)
 
 # Lighthouse v25.12.28.1246
 
