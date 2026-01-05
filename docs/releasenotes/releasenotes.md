@@ -4,6 +4,14 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.1.5.1620
+This is a hotfix release that attempts to fix an issue that caused the validation to fail for Azure DevOps Work Tracking Connections if they had *any* additional field defined.
+The check for the available fields is now changed, which should make it work for all environments, independent of user rights.
+
+Special thanks to [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/) for reporting this and supporting with debugging!
+
+⚠️ **Important: Please read through the release notes of version 26.4.1.1559 to understand the impact of upgrading to this version!**
+
 # Lighthouse v26.1.4.1559
 
 **⚠️⚠️ This release contains breaking changes - please read carefully ⚠️⚠️**
