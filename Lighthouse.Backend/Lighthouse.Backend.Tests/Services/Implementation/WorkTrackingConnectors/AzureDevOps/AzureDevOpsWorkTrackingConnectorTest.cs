@@ -707,11 +707,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [TestCase(new string[] { "System.AreaPath" }, true)]
-        [TestCase(new string[] { "System.AreaPath", "System.IterationPath" }, true)]
-        [TestCase(new string[] { "Custom.RemoteFeatureID" }, true)]
-        [TestCase(new string[] { "MamboJambo" }, false)]
-        [TestCase(new string[] { "System.AreaPath", "Custom.NOTEXISTING" }, false)]
+        [TestCase(new[] { "System.AreaPath" }, true)]
+        [TestCase(new[] { "System.AreaPath", "System.IterationPath" }, true)]
+        [TestCase(new[] { "Custom.RemoteFeatureID" }, true)]
+        [TestCase(new[] { "MamboJambo" }, false)]
+        [TestCase(new[] { "System.AreaPath", "Custom.NOTEXISTING" }, false)]
         public async Task ValidateConnection_GivenAdditionalFields_ReturnsTrueOnlyIfFieldsExist(string[] additionalFields, bool expectedValidationResult)
         {
             var subject = CreateSubject();

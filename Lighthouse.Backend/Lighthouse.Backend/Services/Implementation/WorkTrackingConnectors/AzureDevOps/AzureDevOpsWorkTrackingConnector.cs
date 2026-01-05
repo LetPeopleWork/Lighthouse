@@ -181,34 +181,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 return true;
             }
             
+            var fields = await witClient.GetWorkItemFieldsAsync();
+            var availableFieldReferences = fields.Select(f => f.ReferenceName).Distinct().ToList();
+
+            var allFieldsExist = true;
             foreach (var field in fieldsToValidate)
             {
-                if (!await IsValidField(witClient, field))
+                if (availableFieldReferences.Contains(field))
                 {
-                    return false;
+                    continue;
                 }
+
+                logger.LogInformation("Field {Field} does not exist", field);
+                allFieldsExist = false;
             }
 
 
-            return true;
-        }
-        
-        private async Task<bool> IsValidField(WorkItemTrackingHttpClient witClient, string fieldName)
-        {
-            try
-            {
-                var query = $"SELECT [{fieldName}] FROM WorkItems";
-                await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
-                return true;
-            }
-            catch (VssServiceException ex) when (
-                ex.Message.Contains("VS403033") || // Field does not exist
-                ex.Message.Contains("TF401232") || // Invalid field name
-                ex.Message.Contains("does not exist"))
-            {
-                logger.LogInformation("Field {Field} does not exist", fieldName);
-                return false;
-            }
+            return allFieldsExist;
         }
 
         private async Task<IEnumerable<AdoWorkItem>> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
