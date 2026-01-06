@@ -16,8 +16,27 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			options: [
 				{ key: "url", displayName: "URL", isSecret: false, isOptional: false },
 				{
+					key: "username",
+					displayName: "Username",
+					isSecret: false,
+					isOptional: false,
+				},
+				{
 					key: "apiToken",
 					displayName: "API Token",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		},
+		{
+			key: "jira.datacenter",
+			displayName: "Jira Data Center",
+			options: [
+				{ key: "url", displayName: "URL", isSecret: false, isOptional: false },
+				{
+					key: "apiToken",
+					displayName: "Personal Access Token",
 					isSecret: true,
 					isOptional: false,
 				},
@@ -58,6 +77,12 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 				{
 					key: "url",
 					value: "http://jira.example.com",
+					isSecret: false,
+					isOptional: false,
+				},
+				{
+					key: "username",
+					value: "user@example.com",
 					isSecret: false,
 					isOptional: false,
 				},
@@ -145,6 +170,9 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		fireEvent.change(screen.getByLabelText("URL"), {
 			target: { value: "http://example.com" },
 		});
+		fireEvent.change(screen.getByLabelText("Username"), {
+			target: { value: "user@example.com" },
+		});
 		fireEvent.change(screen.getByLabelText("API Token"), {
 			target: { value: "test-token" },
 		});
@@ -172,6 +200,9 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// Fill in required options
 		fireEvent.change(screen.getByLabelText("URL"), {
 			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("Username"), {
+			target: { value: "user@example.com" },
 		});
 		fireEvent.change(screen.getByLabelText("API Token"), {
 			target: { value: "test-token" },
@@ -221,6 +252,9 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		fireEvent.change(screen.getByLabelText("URL"), {
 			target: { value: "http://example.com" },
 		});
+		fireEvent.change(screen.getByLabelText("Username"), {
+			target: { value: "user@example.com" },
+		});
 
 		// Find the API token input field (which is a password field)
 		const apiTokenInput = screen.getByLabelText("API Token");
@@ -265,6 +299,9 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// Fill in required options first
 		fireEvent.change(screen.getByLabelText("URL"), {
 			target: { value: "http://example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("Username"), {
+			target: { value: "user@example.com" },
 		});
 		fireEvent.change(screen.getByLabelText("API Token"), {
 			target: { value: "test-token" },
@@ -311,6 +348,9 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		fireEvent.change(screen.getByLabelText("URL"), {
 			target: { value: "http://example.com" },
 		});
+		fireEvent.change(screen.getByLabelText("Username"), {
+			target: { value: "user@example.com" },
+		});
 		fireEvent.change(screen.getByLabelText("API Token"), {
 			target: { value: "test-token" },
 		});
@@ -353,6 +393,9 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		fireEvent.change(screen.getByLabelText("URL"), {
 			target: { value: "http://example.com" },
 		});
+		fireEvent.change(screen.getByLabelText("Username"), {
+			target: { value: "user@example.com" },
+		});
 		fireEvent.change(screen.getByLabelText("API Token"), {
 			target: { value: "test-token" },
 		});
@@ -363,8 +406,10 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// Wait for ActionButton's timeout to complete
 		await waitFor(() => {}, { timeout: 500 });
 
-		// Use the Select component directly instead of trying to find it by label
-		const selectElement = screen.getByRole("combobox");
+		// Use getAllByRole since there are 2 comboboxes (system + auth method)
+		// The first one is the system selector
+		const comboboxes = screen.getAllByRole("combobox");
+		const selectElement = comboboxes[0];
 		fireEvent.mouseDown(selectElement);
 
 		// Now select the AzureDevOps option
@@ -563,6 +608,367 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 						expect.objectContaining({
 							key: "customSetting",
 							value: "custom-value",
+						}),
+					]),
+				}),
+			);
+		});
+	});
+
+	describe("Multiple auth methods - filtering irrelevant auth options", () => {
+		it("should only show auth options relevant to the selected Jira Cloud method", () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "http://jira.example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+					{
+						key: "timeout",
+						value: "30",
+						isSecret: false,
+						isOptional: true,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Auth section should show URL, Username, and API Token (Jira Cloud options)
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+			expect(screen.getByLabelText("URL")).toBeInTheDocument();
+			expect(screen.getByLabelText("Username")).toBeInTheDocument();
+			expect(screen.getByLabelText("API Token")).toBeInTheDocument();
+
+			// Options section should show timeout (non-auth option)
+			expect(screen.getByText("Options")).toBeInTheDocument();
+			expect(screen.getByLabelText("timeout")).toBeInTheDocument();
+		});
+
+		it("should only show auth options relevant to Jira Data Center and hide username", () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "http://jira.example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "user@example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+					{
+						key: "timeout",
+						value: "30",
+						isSecret: false,
+						isOptional: true,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.datacenter",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Auth section should only show URL and Personal Access Token (Data Center options)
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+			expect(screen.getByLabelText("URL")).toBeInTheDocument();
+			expect(
+				screen.getByLabelText("Personal Access Token"),
+			).toBeInTheDocument();
+
+			// Username should NOT appear anywhere (neither in Auth nor Options)
+			expect(screen.queryByLabelText("Username")).not.toBeInTheDocument();
+			expect(screen.queryByLabelText("username")).not.toBeInTheDocument();
+
+			// Options section should show timeout (non-auth option)
+			expect(screen.getByText("Options")).toBeInTheDocument();
+			expect(screen.getByLabelText("timeout")).toBeInTheDocument();
+		});
+
+		it("should switch auth options when changing from Jira Cloud to Data Center", async () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "http://jira.example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+					{
+						key: "timeout",
+						value: "30",
+						isSecret: false,
+						isOptional: true,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Initially should show Username for Jira Cloud
+			expect(screen.getByLabelText("Username")).toBeInTheDocument();
+
+			// Change to Jira Data Center - use getAllByRole since there are 2 comboboxes
+			const comboboxes = screen.getAllByRole("combobox");
+			// Second combobox is the auth method selector
+			const authMethodSelect = comboboxes[1];
+			fireEvent.mouseDown(authMethodSelect);
+			const dataCenterOption = screen.getByText("Jira Data Center");
+			fireEvent.click(dataCenterOption);
+
+			// Username should disappear
+			await waitFor(() => {
+				expect(screen.queryByLabelText("Username")).not.toBeInTheDocument();
+			});
+
+			// Personal Access Token should appear
+			expect(
+				screen.getByLabelText("Personal Access Token"),
+			).toBeInTheDocument();
+
+			// URL and timeout should still be present
+			expect(screen.getByLabelText("URL")).toBeInTheDocument();
+			expect(screen.getByLabelText("timeout")).toBeInTheDocument();
+		});
+
+		it("should only send relevant auth options when validating Jira Data Center", async () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Jira DC",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "should-not-be-sent",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+					{
+						key: "timeout",
+						value: "60",
+						isSecret: false,
+						isOptional: true,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.datacenter",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Fill in the visible fields
+			fireEvent.change(screen.getByLabelText("URL"), {
+				target: { value: "http://jira.example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("Personal Access Token"), {
+				target: { value: "pat-token-123" },
+			});
+
+			// Click validate
+			fireEvent.click(screen.getByText("Validate"));
+
+			await waitFor(() =>
+				expect(mockValidateSettings).toHaveBeenCalledTimes(1),
+			);
+
+			// Validate payload should NOT include username (irrelevant for Data Center)
+			expect(mockValidateSettings).toHaveBeenCalledWith(
+				expect.objectContaining({
+					authenticationMethodKey: "jira.datacenter",
+					options: expect.arrayContaining([
+						expect.objectContaining({
+							key: "url",
+							value: "http://jira.example.com",
+						}),
+						expect.objectContaining({
+							key: "apiToken",
+							value: "pat-token-123",
+						}),
+						expect.objectContaining({
+							key: "timeout",
+							value: "60",
+						}),
+					]),
+				}),
+			);
+
+			// Ensure username is NOT in the options
+			const call = mockValidateSettings.mock.calls[0][0];
+			const usernameOption = call.options.find(
+				(opt: { key: string }) => opt.key === "username",
+			);
+			expect(usernameOption).toBeUndefined();
+		});
+
+		it("should only send relevant auth options when saving Jira Cloud", async () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Jira Cloud",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Fill in the fields
+			fireEvent.change(screen.getByLabelText("URL"), {
+				target: { value: "http://jira.cloud.example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("Username"), {
+				target: { value: "user@example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("API Token"), {
+				target: { value: "api-token-456" },
+			});
+
+			// Validate first
+			fireEvent.click(screen.getByText("Validate"));
+			await waitFor(() =>
+				expect(mockValidateSettings).toHaveBeenCalledTimes(1),
+			);
+			await waitFor(() => {}, { timeout: 500 });
+
+			// Click save
+			const saveButton = await screen.findByRole("button", {
+				name: /Save/i,
+			});
+			fireEvent.click(saveButton);
+
+			await waitFor(() => expect(mockOnClose).toHaveBeenCalledTimes(1));
+
+			// Save payload should include all Jira Cloud auth options
+			expect(mockOnClose).toHaveBeenCalledWith(
+				expect.objectContaining({
+					authenticationMethodKey: "jira.cloud",
+					options: expect.arrayContaining([
+						expect.objectContaining({
+							key: "url",
+							value: "http://jira.cloud.example.com",
+						}),
+						expect.objectContaining({
+							key: "username",
+							value: "user@example.com",
+						}),
+						expect.objectContaining({
+							key: "apiToken",
+							value: "api-token-456",
 						}),
 					]),
 				}),

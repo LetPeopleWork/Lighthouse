@@ -67,6 +67,20 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		[],
 	);
 
+	const getAllAuthOptionKeys = useCallback(
+		(connection: IWorkTrackingSystemConnection | null): Set<string> => {
+			if (!connection) return new Set();
+			const allKeys = new Set<string>();
+			for (const method of connection.availableAuthenticationMethods ?? []) {
+				for (const option of method.options) {
+					allKeys.add(option.key);
+				}
+			}
+			return allKeys;
+		},
+		[],
+	);
+
 	const getEmptyAuthOptions = useCallback(
 		(authMethod: IAuthenticationMethod | null): IWorkTrackingSystemOption[] => {
 			if (!authMethod) return [];
@@ -104,7 +118,8 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 
 			setSelectedAuthMethod(initialMethod);
 
-			const authKeys = getAuthOptionKeys(initialMethod);
+			const currentAuthKeys = getAuthOptionKeys(initialMethod);
+			const allAuthKeys = getAllAuthOptionKeys(firstSystem);
 
 			if (workTrackingSystems.length === 1) {
 				const existingAuthOptions: IWorkTrackingSystemOption[] = [];
@@ -117,9 +132,9 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 						isSecret: option.isSecret,
 						isOptional: option.isOptional,
 					};
-					if (authKeys.has(option.key)) {
+					if (currentAuthKeys.has(option.key)) {
 						existingAuthOptions.push(mappedOption);
-					} else {
+					} else if (!allAuthKeys.has(option.key)) {
 						existingOtherOptions.push(mappedOption);
 					}
 				}
@@ -131,7 +146,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				setAuthOptions(getEmptyAuthOptions(initialMethod));
 
 				const nonAuthOptions = firstSystem.options
-					.filter((opt) => !authKeys.has(opt.key))
+					.filter((opt) => !allAuthKeys.has(opt.key))
 					.map((opt) => ({
 						key: opt.key,
 						value: opt.value,
@@ -142,8 +157,13 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
 			}
 		}
-	}, [open, workTrackingSystems, getAuthOptionKeys, getEmptyAuthOptions]);
-
+	}, [
+		open,
+		workTrackingSystems,
+		getAuthOptionKeys,
+		getAllAuthOptionKeys,
+		getEmptyAuthOptions,
+	]);
 	const allOptions = useMemo(
 		() => [...authOptions, ...otherOptions],
 		[authOptions, otherOptions],
@@ -170,12 +190,12 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 			const defaultMethod = availableMethods[0] ?? null;
 			setSelectedAuthMethod(defaultMethod);
 
-			const authKeys = getAuthOptionKeys(defaultMethod);
+			const allAuthKeys = getAllAuthOptionKeys(system);
 
 			setAuthOptions(getEmptyAuthOptions(defaultMethod));
 
 			const nonAuthOptions = system.options
-				.filter((opt) => !authKeys.has(opt.key))
+				.filter((opt) => !allAuthKeys.has(opt.key))
 				.map((opt) => ({
 					key: opt.key,
 					value: opt.value,
