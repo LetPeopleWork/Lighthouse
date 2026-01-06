@@ -132,12 +132,12 @@ testWithData(
 		const oldName = connectionToModify.name;
 		const newName = generateRandomName();
 
-		await test.step("Can't modify without providing token and Re-Validation", async () => {
+		await test.step("Can modify without providing token and Re-Validation", async () => {
 			const modifyDialog =
 				await workTrackingSystemsPage.modifyWorkTryckingSystem(
 					connectionToModify.name,
 				);
-			await expect(modifyDialog.validateButton).not.toBeEnabled();
+			await expect(modifyDialog.validateButton).toBeEnabled();
 
 			await modifyDialog.setWorkTrackingSystemOption(
 				"Personal Access Token",
@@ -164,12 +164,8 @@ testWithData(
 				await workTrackingSystemsPage.modifyWorkTryckingSystem(
 					connectionToModify.name,
 				);
-			await expect(modifyDialog.validateButton).not.toBeEnabled();
+			await expect(modifyDialog.validateButton).toBeEnabled();
 
-			await modifyDialog.setWorkTrackingSystemOption(
-				"Personal Access Token",
-				TestConfig.AzureDevOpsToken,
-			);
 			await modifyDialog.setConnectionName(newName);
 			await expect(modifyDialog.validateButton).toBeEnabled();
 
