@@ -83,6 +83,13 @@ namespace Lighthouse.Backend.API
                 foreach (var option in updatedConnection.Options)
                 {
                     var existingOption = existingConnection.Options.Single(o => o.Key == option.Key);
+                    
+                    // Preserve existing secret values when empty string is provided
+                    if (existingOption.IsSecret && string.IsNullOrEmpty(option.Value))
+                    {
+                        continue; // Skip update - keep existing encrypted value
+                    }
+                    
                     existingOption.Value = option.Value;
                 }
 
@@ -112,11 +119,8 @@ namespace Lighthouse.Backend.API
         [HttpPost("validate")]
         public async Task<ActionResult<bool>> ValidateConnection(WorkTrackingSystemConnectionDto connectionDto)
         {
-            // Services expect an encrypted value, so we have to manually do that here
-            foreach (var option in connectionDto.Options.Where(o => o.IsSecret))
-            {
-                option.Value = cryptoService.Encrypt(option.Value);
-            }
+            PatchWorkTrackingSystemConnectionSecretsIfNeeded(connectionDto);
+            EncryptSecretValuesIfNeeded(connectionDto);
 
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(connectionDto.WorkTrackingSystem);
             var connection = CreateConnectionFromDto(connectionDto);
@@ -124,6 +128,43 @@ namespace Lighthouse.Backend.API
             var isConnectionValid = await workItemService.ValidateConnection(connection);
 
             return Ok(isConnectionValid);
+        }
+
+        private void EncryptSecretValuesIfNeeded(WorkTrackingSystemConnectionDto connectionDto)
+        {
+            // Only encrypt if not already encrypted (new values from user input)
+            if (connectionDto.Id != 0)
+            {
+                return;
+            }
+            
+            foreach (var option in connectionDto.Options.Where(o => o.IsSecret && !string.IsNullOrEmpty(o.Value)))
+            {
+                option.Value = cryptoService.Encrypt(option.Value);
+            }
+        }
+
+        private void PatchWorkTrackingSystemConnectionSecretsIfNeeded(WorkTrackingSystemConnectionDto connectionDto)
+        {
+            if (connectionDto.Id == 0)
+            {
+                return;
+            }
+
+            var existingConnection = repository.GetById(connectionDto.Id);
+            if (existingConnection == null)
+            {
+                return;
+            }
+
+            foreach (var option in connectionDto.Options.Where(o => o.IsSecret && string.IsNullOrEmpty(o.Value)))
+            {
+                var existingOption = existingConnection.Options.SingleOrDefault(o => o.Key == option.Key);
+                if (existingOption != null)
+                {
+                    option.Value = existingOption.Value;
+                }
+            }
         }
 
 

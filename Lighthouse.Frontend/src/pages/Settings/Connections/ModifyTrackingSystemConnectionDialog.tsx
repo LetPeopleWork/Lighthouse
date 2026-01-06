@@ -42,6 +42,9 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [selectedAuthMethod, setSelectedAuthMethod] =
 		useState<IAuthenticationMethod | null>(null);
+	const [originalAuthMethodKey, setOriginalAuthMethodKey] = useState<
+		string | null
+	>(null);
 
 	const [authOptions, setAuthOptions] = useState<IWorkTrackingSystemOption[]>(
 		[],
@@ -118,6 +121,13 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 
 			setSelectedAuthMethod(initialMethod);
 
+			// In edit mode, track the original auth method key
+			if (workTrackingSystems.length === 1) {
+				setOriginalAuthMethodKey(firstSystem.authenticationMethodKey);
+			} else {
+				setOriginalAuthMethodKey(null);
+			}
+
 			const currentAuthKeys = getAuthOptionKeys(initialMethod);
 			const allAuthKeys = getAllAuthOptionKeys(firstSystem);
 
@@ -169,14 +179,34 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		[authOptions, otherOptions],
 	);
 
+	const isEditMode = useMemo(
+		() => workTrackingSystems.length === 1,
+		[workTrackingSystems],
+	);
+
 	useEffect(() => {
-		const optionsValid = allOptions.every(
-			(option) => option.isOptional || option.value !== "",
-		);
+		const authMethodChanged =
+			isEditMode &&
+			originalAuthMethodKey !== null &&
+			selectedAuthMethod?.key !== originalAuthMethodKey;
+
+		const optionsValid = allOptions.every((option) => {
+			// In edit mode, secret options can be empty ONLY if auth method hasn't changed
+			if (
+				isEditMode &&
+				option.isSecret &&
+				option.value === "" &&
+				!authMethodChanged
+			) {
+				return true;
+			}
+			// Otherwise, non-optional options must have a value
+			return option.isOptional || option.value !== "";
+		});
 		const nameValid = name !== "";
 
 		setInputsValid(optionsValid && nameValid);
-	}, [name, allOptions]);
+	}, [name, allOptions, isEditMode, originalAuthMethodKey, selectedAuthMethod]);
 
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
 		const system = workTrackingSystems.find(
@@ -356,6 +386,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 							const displayName =
 								selectedAuthMethod?.options.find((o) => o.key === option.key)
 									?.displayName ?? option.key;
+							const isEditMode = workTrackingSystems.length === 1;
 							return (
 								<TextField
 									key={option.key}
@@ -364,6 +395,11 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 									fullWidth
 									margin="normal"
 									value={option.value}
+									placeholder={
+										isEditMode && option.isSecret && option.value === ""
+											? "Leave empty to keep existing value"
+											: ""
+									}
 									onChange={(e) =>
 										handleAuthOptionChange(option, e.target.value)
 									}

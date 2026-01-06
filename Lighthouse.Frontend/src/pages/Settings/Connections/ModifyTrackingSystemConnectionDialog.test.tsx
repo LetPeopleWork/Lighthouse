@@ -975,4 +975,263 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			);
 		});
 	});
+
+	describe("Edit mode validation with empty secrets", () => {
+		it("should allow validation when secret fields are empty in edit mode", async () => {
+			// Edit mode: single connection passed with empty secret value
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Existing Jira",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "http://jira.example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "user@example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "", // Empty because secrets are never sent to frontend
+						isSecret: true,
+						isOptional: false,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Secret field should be empty but have placeholder
+			const apiTokenInput = screen.getByLabelText("API Token");
+			expect(apiTokenInput).toHaveValue("");
+			expect(apiTokenInput).toHaveAttribute(
+				"placeholder",
+				"Leave empty to keep existing value",
+			);
+
+			// Non-secret fields have values
+			expect(screen.getByLabelText("URL")).toHaveValue(
+				"http://jira.example.com",
+			);
+			expect(screen.getByLabelText("Username")).toHaveValue("user@example.com");
+
+			// Validate button should be enabled even with empty secret field
+			const validateButton = screen.getByText("Validate");
+			expect(validateButton).not.toBeDisabled();
+
+			// Should be able to validate
+			fireEvent.click(validateButton);
+			await waitFor(() =>
+				expect(mockValidateSettings).toHaveBeenCalledTimes(1),
+			);
+
+			// Validation should be called with empty secret value (backend will fetch from DB)
+			expect(mockValidateSettings).toHaveBeenCalledWith(
+				expect.objectContaining({
+					id: 1,
+					options: expect.arrayContaining([
+						expect.objectContaining({
+							key: "apiToken",
+							value: "",
+						}),
+					]),
+				}),
+			);
+		});
+
+		it("should require all fields including secrets in create mode", async () => {
+			// Create mode: multiple connections passed
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={mockWorkTrackingSystems}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Fill only non-secret fields
+			fireEvent.change(screen.getByLabelText("URL"), {
+				target: { value: "http://example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("Username"), {
+				target: { value: "user@example.com" },
+			});
+
+			// Leave API Token empty
+			const apiTokenInput = screen.getByLabelText("API Token");
+			expect(apiTokenInput).toHaveValue("");
+
+			// Validate button should be disabled because secret is required in create mode
+			const validateButton = screen.getByText("Validate");
+			expect(validateButton).toBeDisabled();
+		});
+
+		it("should allow updating non-secret fields while keeping secret empty in edit mode", async () => {
+			const adoConnection = new WorkTrackingSystemConnection({
+				name: "Existing ADO",
+				workTrackingSystem: "AzureDevOps",
+				options: [
+					{
+						key: "url",
+						value: "http://old-url.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "", // Empty because secrets are never sent to frontend
+						isSecret: true,
+						isOptional: false,
+					},
+				],
+				id: 2,
+				authenticationMethodKey: "ado.pat",
+				availableAuthenticationMethods: adoAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[adoConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Change only the URL
+			fireEvent.change(screen.getByLabelText("URL"), {
+				target: { value: "http://new-url.com" },
+			});
+
+			// Leave API Token empty (it has placeholder in edit mode)
+			expect(screen.getByLabelText("API Token")).toHaveValue("");
+
+			// Validate button should be enabled
+			const validateButton = screen.getByText("Validate");
+			expect(validateButton).not.toBeDisabled();
+
+			// Click validate
+			fireEvent.click(validateButton);
+			await waitFor(() =>
+				expect(mockValidateSettings).toHaveBeenCalledTimes(1),
+			);
+
+			// Wait for validation to complete
+			await waitFor(() => {}, { timeout: 500 });
+
+			// Click save
+			const saveButton = screen.getByText("Save");
+			fireEvent.click(saveButton);
+
+			await waitFor(() => expect(mockOnClose).toHaveBeenCalledTimes(1));
+
+			// Should send updated URL with empty secret (backend will preserve existing)
+			expect(mockOnClose).toHaveBeenCalledWith(
+				expect.objectContaining({
+					options: expect.arrayContaining([
+						expect.objectContaining({
+							key: "url",
+							value: "http://new-url.com",
+						}),
+						expect.objectContaining({
+							key: "apiToken",
+							value: "",
+						}),
+					]),
+				}),
+			);
+		});
+
+		it("should require new secret value when changing auth method in edit mode", async () => {
+			const jiraConnection = new WorkTrackingSystemConnection({
+				name: "Existing Jira",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "url",
+						value: "http://jira.example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "username",
+						value: "user@example.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "apiToken",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
+				id: 1,
+				authenticationMethodKey: "jira.cloud",
+				availableAuthenticationMethods: jiraAuthMethods,
+			});
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={[jiraConnection]}
+					validateSettings={mockValidateSettings}
+				/>,
+			);
+
+			// Change to Jira Data Center
+			const comboboxes = screen.getAllByRole("combobox");
+			const authMethodSelect = comboboxes[1];
+			fireEvent.mouseDown(authMethodSelect);
+			const dataCenterOption = screen.getByText("Jira Data Center");
+			fireEvent.click(dataCenterOption);
+
+			await waitFor(() => {
+				expect(screen.queryByLabelText("Username")).not.toBeInTheDocument();
+			});
+
+			// New auth method requires Personal Access Token
+			const patInput = screen.getByLabelText("Personal Access Token");
+			expect(patInput).toHaveValue(""); // Empty after method change
+
+			// URL field should also be empty after auth method change
+			const urlInput = screen.getByLabelText("URL");
+			expect(urlInput).toHaveValue(""); // Empty after method change
+
+			// Validate button should be disabled because we changed auth method
+			const validateButton = screen.getByText("Validate");
+			expect(validateButton).toBeDisabled();
+
+			// Fill in all required fields for the new auth method
+			fireEvent.change(urlInput, {
+				target: { value: "http://jira.example.com" },
+			});
+			fireEvent.change(patInput, {
+				target: { value: "new-pat-token" },
+			});
+
+			// Now validate button should be enabled (wait for state update)
+			await waitFor(() => {
+				const validateButton = screen.getByText("Validate");
+				expect(validateButton).not.toBeDisabled();
+			});
+		});
+	});
 });

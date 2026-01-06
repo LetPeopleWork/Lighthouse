@@ -270,13 +270,121 @@ namespace Lighthouse.Backend.Tests.API
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
 
             cryptoServiceMock.Setup(x => x.Encrypt("SecretValue")).Returns("EncryptedSecret");
+            cryptoServiceMock.Setup(x => x.Decrypt("SecretValue")).Throws<Exception>(); // Not already encrypted
 
-            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 0, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
             connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Key", Value = "SecretValue", IsSecret = true });            
 
             await subject.ValidateConnection(connectionDto);
 
             workTrackingConnectorServiceMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(c => c.Options.Single().Value == "EncryptedSecret")));
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_EmptySecretValue_PreservesExistingSecretAsync()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Name = "Connection" };
+            existingConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "apiToken", Value = "OriginalEncryptedSecret", IsSecret = true });
+            existingConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "normalOption", Value = "OldValue", IsSecret = false });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Updated Name" };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "apiToken", Value = "", IsSecret = true });
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "normalOption", Value = "NewValue", IsSecret = false });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                
+                // Verify the secret option kept its original value
+                Assert.That(existingConnection.Options.Single(o => o.Key == "apiToken").Value, 
+                    Is.EqualTo("OriginalEncryptedSecret"));
+                
+                // Verify the non-secret option was updated
+                Assert.That(existingConnection.Options.Single(o => o.Key == "normalOption").Value, 
+                    Is.EqualTo("NewValue"));
+            }
+
+            repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
+            repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_NonEmptySecretValue_UpdatesSecretAsync()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Name = "Connection" };
+            existingConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "apiToken", Value = "OriginalEncryptedSecret", IsSecret = true });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "apiToken", Value = "NewSecretValue", IsSecret = true });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                
+                // Verify the secret option was updated with new value
+                Assert.That(existingConnection.Options.Single(o => o.Key == "apiToken").Value, 
+                    Is.EqualTo("NewSecretValue"));
+            }
+
+            repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
+            repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task ValidateConnection_ExistingConnectionWithEmptySecret_FetchesFromDatabase()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Connection" };
+            existingConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "apiToken", Value = "ExistingEncryptedSecret", IsSecret = true });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
+
+            cryptoServiceMock.Setup(x => x.Decrypt("ExistingEncryptedSecret")).Returns("ExistingEncryptedSecret"); // Already encrypted
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "apiToken", Value = "", IsSecret = true });
+
+            await subject.ValidateConnection(connectionDto);
+
+            // Verify that the validation used the existing encrypted secret from DB
+            workTrackingConnectorServiceMock.Verify(x => x.ValidateConnection(
+                It.Is<WorkTrackingSystemConnection>(c => c.Options.Single(o => o.Key == "apiToken").Value == "ExistingEncryptedSecret")));
+        }
+
+        [Test]
+        public async Task ValidateConnection_NewConnectionWithSecret_EncryptsNewValue()
+        {
+            var subject = CreateSubject();
+
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
+
+            cryptoServiceMock.Setup(x => x.Encrypt("NewSecretValue")).Returns("EncryptedNewSecret");
+            cryptoServiceMock.Setup(x => x.Decrypt("NewSecretValue")).Throws<Exception>(); // Not encrypted yet
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 0, Name = "New Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "apiToken", Value = "NewSecretValue", IsSecret = true });
+
+            await subject.ValidateConnection(connectionDto);
+
+            // Verify that the new secret was encrypted
+            workTrackingConnectorServiceMock.Verify(x => x.ValidateConnection(
+                It.Is<WorkTrackingSystemConnection>(c => c.Options.Single(o => o.Key == "apiToken").Value == "EncryptedNewSecret")));
         }
 
         [Test]
