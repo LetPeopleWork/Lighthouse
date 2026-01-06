@@ -9,6 +9,10 @@
         public static string ResolvedFieldName => "resolved";
 
         public static string ParentFieldName => "parent";
+        
+        public static string EpicLinkFieldName => "Epic Link";
+        
+        public static string ParentLinkFieldName => "Parent Link";
 
         public static string SummaryFieldName => "summary";
 

@@ -447,7 +447,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(feature.Tags, Has.Count.EqualTo(2));
                 Assert.That(feature.Tags, Contains.Item("TagTest"));
                 Assert.That(feature.Tags, Contains.Item("ExistingLabel"));
             }

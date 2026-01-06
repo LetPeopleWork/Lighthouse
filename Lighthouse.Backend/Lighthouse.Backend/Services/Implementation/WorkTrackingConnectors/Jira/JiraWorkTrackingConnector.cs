@@ -19,9 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     {
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
 
-        private static string rankFieldName = string.Empty;
-
-        private static string flaggedFieldName = string.Empty;
+        private static readonly Dictionary<int, Dictionary<string, string>> FieldNames = new();
 
         private static readonly SocketsHttpHandler SharedHandler = new()
         {
@@ -49,9 +47,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
+            var epicLinkFieldName = !team.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[team.WorkTrackingSystemConnectionId][JiraFieldNames.EpicLinkFieldName] : string.Empty;
+            
             foreach (var issue in issues)
             {
                 var workItemBase = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
+
+                TrySetParentForJiraDataCenter(workItemBase, issue, epicLinkFieldName);
+                
                 workItems.Add(new WorkItem(workItemBase, team));
             }
 
@@ -162,9 +165,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
             
+            var portfolioLinkFieldName = !portfolio.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[portfolio.WorkTrackingSystemConnectionId][JiraFieldNames.ParentLinkFieldName] : string.Empty;
+            
             foreach (var issue in issues)
             {
                 var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
+                
+                TrySetParentForJiraDataCenter(workItem, issue, portfolioLinkFieldName);
 
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
@@ -338,18 +345,36 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return JsonDocument.Parse(stream.ToArray()).RootElement;
         }
 
-        private static async Task SetFlaggedAndRankField(HttpClient client)
+        private static async Task SetStoredFieldKeys(HttpClient client, int workTrackingSystemConnectionId)
         {
-            if (!string.IsNullOrEmpty(flaggedFieldName) && !string.IsNullOrEmpty(rankFieldName))
+            if (!FieldNames.ContainsKey(workTrackingSystemConnectionId))
+            {
+                var fields = new Dictionary<string, string>
+                {
+                    [JiraFieldNames.FlaggedName] = string.Empty,
+                    [JiraFieldNames.RankName] = string.Empty,
+                    [JiraFieldNames.EpicLinkFieldName] = string.Empty,
+                    [JiraFieldNames.ParentLinkFieldName] = string.Empty,
+                };
+
+                FieldNames[workTrackingSystemConnectionId] = fields;
+            }
+
+            var connectionSpecificMapping = FieldNames[workTrackingSystemConnectionId];
+            
+            if (!string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.RankName]) && 
+                !string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.FlaggedName]) )
             {
                 return;
             }
             
             var customFields = await GetCustomFieldMappings(client, [JiraFieldNames.NamePropertyName],
-                [JiraFieldNames.RankName, JiraFieldNames.FlaggedName]);
+                [JiraFieldNames.RankName, JiraFieldNames.FlaggedName, JiraFieldNames.EpicLinkFieldName, JiraFieldNames.ParentLinkFieldName]);
             
-            rankFieldName = customFields[JiraFieldNames.RankName];
-            flaggedFieldName = customFields[JiraFieldNames.FlaggedName];
+            connectionSpecificMapping[JiraFieldNames.FlaggedName] = customFields[JiraFieldNames.FlaggedName];
+            connectionSpecificMapping[JiraFieldNames.RankName] = customFields[JiraFieldNames.RankName];
+            connectionSpecificMapping[JiraFieldNames.EpicLinkFieldName] = customFields[JiraFieldNames.EpicLinkFieldName];
+            connectionSpecificMapping[JiraFieldNames.ParentLinkFieldName] = customFields[JiraFieldNames.ParentLinkFieldName];
         }
 
         private static async Task<Dictionary<string, string>> GetCustomFieldMappings(HttpClient jiraClient, string[] propertyIdentifiers,
@@ -439,6 +464,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return workItem;
         }
 
+        private static void TrySetParentForJiraDataCenter(WorkItemBase workItemBase, Issue issue, string linkFieldName)
+        {
+            if (!string.IsNullOrEmpty(workItemBase.ParentReferenceId) || string.IsNullOrEmpty(linkFieldName))
+            {
+                // Parent already set or no link field (= we are on Jira Cloud) - do not overwrite!
+                return;
+            }
+            
+            var parentReferenceId = issue.Fields.GetFieldValue(linkFieldName);
+            if (!string.IsNullOrEmpty(parentReferenceId))
+            {
+                workItemBase.ParentReferenceId = parentReferenceId;
+            }
+        }
+
         private static void PopulateAdditionalFieldValues(Issue issue, WorkItemBase workItem, List<AdditionalFieldDefinition> additionalFieldDefs, Dictionary<string, string> customFields)
         {
             foreach (var fieldDef in additionalFieldDefs)
@@ -469,7 +509,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var deployment = await GetDeploymentType(client, workItemQueryOwner.WorkTrackingSystemConnection);
 
-            await SetFlaggedAndRankField(client);
+            await SetStoredFieldKeys(client, workItemQueryOwner.WorkTrackingSystemConnectionId);
 
             if (deployment == JiraDeployment.Cloud)
             {
@@ -523,6 +563,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 startAt += maxResults;
                 isLast = maxResultsOverride.HasValue || totalResultsActual < startAt;
 
+                var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
+                var flaggedFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.FlaggedName];
+                
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {                    
                     var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, flaggedFieldName);
@@ -563,6 +606,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 using var json = JsonDocument.Parse(body);
 
                 var issuesArray = json.RootElement.GetProperty("issues");
+
+                var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
+                var flaggedFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.FlaggedName];
 
                 foreach (var jsonIssue in issuesArray.EnumerateArray())
                 {
