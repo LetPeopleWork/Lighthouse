@@ -71,6 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("377", "", null)]
         [TestCase("365", "371", null)]
         [TestCase("375", "279", "Custom.RemoteFeatureID")]
+        [TestCase("375", "279", "RemoteFeatureID")]
         public async Task GetFeaturesForProject_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentFieldReference)
         {
             var subject = CreateSubject();
@@ -709,7 +710,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         [TestCase(new[] { "System.AreaPath" }, true)]
         [TestCase(new[] { "System.AreaPath", "System.IterationPath" }, true)]
+        [TestCase(new[] { "Area Path", "Iteration Path" }, true)]
         [TestCase(new[] { "Custom.RemoteFeatureID" }, true)]
+        [TestCase(new[] { "RemoteFeatureID" }, true)]
         [TestCase(new[] { "MamboJambo" }, false)]
         [TestCase(new[] { "System.AreaPath", "Custom.NOTEXISTING" }, false)]
         public async Task ValidateConnection_GivenAdditionalFields_ReturnsTrueOnlyIfFieldsExist(string[] additionalFields, bool expectedValidationResult)
@@ -726,10 +729,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "30", IsSecret = false },
             ]);
 
+            var id = 0;
             foreach (var additionalField in additionalFields) 
             {
                 connectionSetting.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
                 {
+                    Id = id++,
                     DisplayName = additionalField,
                     Reference =  additionalField,
                 });
@@ -814,7 +819,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task ValidateProjectSettings_NotExistingAdditionalField_ReturnsFalse()
+        public async Task ValidateProjectSettings_NotExistingAdditionalField_IgnoresExtraField()
         {
             _ = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
@@ -826,7 +831,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var isValid = await subject.ValidatePortfolioSettings(portfolio);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(isValid, Is.True);
         }
 
         private Team CreateTeam(string query)

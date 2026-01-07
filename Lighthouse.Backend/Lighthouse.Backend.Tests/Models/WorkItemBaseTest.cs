@@ -205,9 +205,12 @@ namespace Lighthouse.Backend.Tests.Models
             subject.AdditionalFieldValues[1] = "value1";
             subject.AdditionalFieldValues[2] = "value2";
 
-            Assert.That(subject.AdditionalFieldValues, Has.Count.EqualTo(2));
-            Assert.That(subject.AdditionalFieldValues[1], Is.EqualTo("value1"));
-            Assert.That(subject.AdditionalFieldValues[2], Is.EqualTo("value2"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.AdditionalFieldValues, Has.Count.EqualTo(2));
+                Assert.That(subject.AdditionalFieldValues[1], Is.EqualTo("value1"));
+                Assert.That(subject.AdditionalFieldValues[2], Is.EqualTo("value2"));
+            }
         }
 
         [Test]
@@ -216,8 +219,11 @@ namespace Lighthouse.Backend.Tests.Models
             var subject = CreateSubject();
             subject.AdditionalFieldValues[1] = null;
 
-            Assert.That(subject.AdditionalFieldValues.ContainsKey(1), Is.True);
-            Assert.That(subject.AdditionalFieldValues[1], Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.AdditionalFieldValues.ContainsKey(1), Is.True);
+                Assert.That(subject.AdditionalFieldValues[1], Is.Null);
+            }
         }
 
         [Test]
@@ -230,9 +236,12 @@ namespace Lighthouse.Backend.Tests.Models
             var target = CreateSubject();
             target.Update(source);
 
-            Assert.That(target.AdditionalFieldValues, Has.Count.EqualTo(2));
-            Assert.That(target.AdditionalFieldValues[1], Is.EqualTo("value1"));;
-            Assert.That(target.AdditionalFieldValues[2], Is.EqualTo("value2"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(target.AdditionalFieldValues, Has.Count.EqualTo(2));
+                Assert.That(target.AdditionalFieldValues[1], Is.EqualTo("value1"));
+                Assert.That(target.AdditionalFieldValues[2], Is.EqualTo("value2"));
+            }
         }
 
         private static WorkItemBase CreateSubject()

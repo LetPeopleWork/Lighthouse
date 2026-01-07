@@ -34,8 +34,11 @@ namespace Lighthouse.Backend.Tests.Models
 
             subject.DisplayName = "New Name";
 
-            Assert.That(subject.Id, Is.EqualTo(originalId));
-            Assert.That(subject.DisplayName, Is.EqualTo("New Name"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Id, Is.EqualTo(originalId));
+                Assert.That(subject.DisplayName, Is.EqualTo("New Name"));
+            }
         }
 
         [Test]
@@ -51,8 +54,11 @@ namespace Lighthouse.Backend.Tests.Models
 
             subject.Reference = "new.ref";
 
-            Assert.That(subject.Id, Is.EqualTo(originalId));
-            Assert.That(subject.Reference, Is.EqualTo("new.ref"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Id, Is.EqualTo(originalId));
+                Assert.That(subject.Reference, Is.EqualTo("new.ref"));
+            }
         }
     }
 }

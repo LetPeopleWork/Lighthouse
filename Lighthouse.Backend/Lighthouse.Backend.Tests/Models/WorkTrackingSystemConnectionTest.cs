@@ -41,9 +41,12 @@ namespace Lighthouse.Backend.Tests.Models
 
             subject.AdditionalFieldDefinitions.Add(field);
 
-            Assert.That(subject.AdditionalFieldDefinitions, Has.Count.EqualTo(1));
-            Assert.That(subject.AdditionalFieldDefinitions[0].DisplayName, Is.EqualTo("Iteration Path"));
-            Assert.That(subject.AdditionalFieldDefinitions[0].Reference, Is.EqualTo("System.IterationPath"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.AdditionalFieldDefinitions, Has.Count.EqualTo(1));
+                Assert.That(subject.AdditionalFieldDefinitions[0].DisplayName, Is.EqualTo("Iteration Path"));
+                Assert.That(subject.AdditionalFieldDefinitions[0].Reference, Is.EqualTo("System.IterationPath"));
+            }
         }
 
         [Test]

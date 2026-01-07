@@ -43,7 +43,7 @@ You can add more fields or edit/remove these defaults as needed.
 ### How to Add or Configure Additional Fields
 You can manage additional fields in the connection settings UI. When adding a field, you will be prompted for:
 - **Display Name**: A user-friendly name for the field.
-- **Field Reference**: The Azure DevOps field reference (e.g., `System.IterationPath`, `Custom.MyField`).
+- **Field Reference**: The Azure DevOps field reference (e.g., `System.IterationPath`, `Custom.MyField`) or name (e.g. `Iteration Path` or `My Field`).
 
 For help finding the correct field reference, see the [Azure DevOps field documentation](https://learn.microsoft.com/en-us/azure/devops/boards/work-items/guidance/work-item-field?view=azure-devops). The UI provides direct links and helper text to guide you.
 

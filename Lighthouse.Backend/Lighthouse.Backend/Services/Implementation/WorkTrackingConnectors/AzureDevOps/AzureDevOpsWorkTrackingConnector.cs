@@ -34,9 +34,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
 
-            var adoWorkItems = await FetchAdoWorkItemsByQuery(team, workItemQuery);
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, workItemQuery);
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
-            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team);
+            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences);
 
             var parentReferences = await parentReferencesTask;
 
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 
                 await VerifyConnection(witClient);
 
-                var fieldsValid = await VerifyFields(witClient, connection.GetAdditionalFieldReferences());
+                var fieldsValid = await VerifyFields(witClient, connection.AdditionalFieldDefinitions);
                 return fieldsValid;
             }
             catch
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
                 
-                var workItems = await FetchAdoWorkItemsByQuery(portfolio, query);
+                var (workItems, _) = await FetchAdoWorkItemsByQuery(portfolio, query);
                 var workItemCount = workItems.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
@@ -139,10 +139,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query)
         {
-            var adoWorkItems = await FetchAdoWorkItemsByQuery(portfolio, query);
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(portfolio, query);
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, portfolio);
 
-            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio);
+            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences);
             
             var parentReferences = await parentReferencesTask;
             var features = new List<Feature>();
@@ -173,35 +173,45 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
         }
 
-        private async Task<bool> VerifyFields(WorkItemTrackingHttpClient witClient,
-            string[] fieldsToValidate)
+        private async Task<bool> VerifyFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
-            if (fieldsToValidate.Length == 0)
+            var customFieldReferences = await GetCustomFieldReferences(witClient,  additionalFieldDefinitions);
+
+            var missingReference = 0;
+            foreach (var customFieldReference in customFieldReferences)
             {
-                return true;
+                if (string.IsNullOrEmpty(customFieldReference.Value))
+                {
+                    logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
+                    missingReference++;
+                }
+            }
+
+            return missingReference <= 0;
+        }
+        
+        private async Task<Dictionary<int, string>> GetCustomFieldReferences(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
+        {
+            var availableFields = await witClient.GetWorkItemFieldsAsync();
+            
+            var customFieldMappings = new Dictionary<int, string>();
+            
+            foreach (var additionalFieldDefinition in additionalFieldDefinitions)
+            {
+                var fieldReference = availableFields.SingleOrDefault(f =>
+                    f.Name == additionalFieldDefinition.Reference ||
+                    f.ReferenceName == additionalFieldDefinition.Reference)?.ReferenceName ?? string.Empty;
+                
+                customFieldMappings.Add(additionalFieldDefinition.Id, fieldReference);
             }
             
-            var fields = await witClient.GetWorkItemFieldsAsync();
-            var availableFieldReferences = fields.Select(f => f.ReferenceName).Distinct().ToList();
-
-            var allFieldsExist = true;
-            foreach (var field in fieldsToValidate)
-            {
-                if (availableFieldReferences.Contains(field))
-                {
-                    continue;
-                }
-
-                logger.LogInformation("Field {Field} does not exist", field);
-                allFieldsExist = false;
-            }
-
-
-            return allFieldsExist;
+            return  customFieldMappings;
         }
-
-        private async Task<IEnumerable<AdoWorkItem>> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
+        
+        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
         {
+            var additionalFieldsRef = new Dictionary<int, string>();
+            
             try
             {
                 var witClient = GetWorkItemTrackingHttpClient(workItemQueryOwner.WorkTrackingSystemConnection);
@@ -209,17 +219,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 if (!workItemReferences.Any())
                 {
-                    return [];
+                    return ([], additionalFieldsRef);
                 }
                 
-                var additionalFieldRefs = workItemQueryOwner.WorkTrackingSystemConnection?.GetAdditionalFieldReferences() ?? [];
+                additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
 
-                return await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFieldRefs);
+                var adoWOrkItemsById = await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFieldsRef.Select(f => f.Value));
+                
+                return (adoWOrkItemsById, additionalFieldsRef);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to fetch ADO work items for query '{Query}'", query);
-                return [];
+                return ([], new Dictionary<int, string>());
             }
         }
 
@@ -267,15 +279,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return await action();
         }
 
-        private async Task<IEnumerable<WorkItemBase>> ConvertAdoWorkItemToLighthouseWorkItemBase(IEnumerable<AdoWorkItem> adoWorkItems, IWorkItemQueryOwner workItemQueryOwner)
+        private async Task<IEnumerable<WorkItemBase>> ConvertAdoWorkItemToLighthouseWorkItemBase(IEnumerable<AdoWorkItem> adoWorkItems, IWorkItemQueryOwner workItemQueryOwner, Dictionary<int, string> fieldReferences)
         {
-            var additionalFields = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions;
-            
             var throttler = new SemaphoreSlim(8);
             var tasks = adoWorkItems.Select(async wi =>
             {
                 await throttler.WaitAsync();
-                try { return await ConvertAdoWorkItemToLighthouseWorkItem(wi, workItemQueryOwner, additionalFields); }
+                try { return await ConvertAdoWorkItemToLighthouseWorkItem(wi, workItemQueryOwner, fieldReferences); }
                 finally { throttler.Release(); }
             });
             return await Task.WhenAll(tasks);
@@ -302,7 +312,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, string[] additionalFields)
+        private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, IEnumerable<string> additionalFields)
         {
             if (!workItemIds.Any())
             {
@@ -343,7 +353,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return workItems;
         }
 
-        private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner, List<AdditionalFieldDefinition> additionalFieldDefinitions)
+        private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner, Dictionary<int, string> additionalFieldDefinitions)
         {
             var state = workItem.ExtractStateFromWorkItem();
             var stateCategory = workItemQueryOwner.MapStateToStateCategory(state);
@@ -353,7 +363,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var additionalFields = new Dictionary<int, string?>();
             foreach (var additionalField in additionalFieldDefinitions)
             {
-                additionalFields[additionalField.Id] = ExtractFieldValue(workItem, additionalField.Reference);
+                additionalFields[additionalField.Key] = ExtractFieldValue(workItem, additionalField.Value);
             }
 
             return new WorkItemBase
