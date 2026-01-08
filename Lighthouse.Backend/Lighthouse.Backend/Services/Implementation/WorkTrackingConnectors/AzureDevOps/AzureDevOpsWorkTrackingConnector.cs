@@ -175,6 +175,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<bool> VerifyFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
+            // Assign unique temp id's as they may all be 0 right now
+            var tempId = -1;
+            additionalFieldDefinitions.ForEach(f => f.Id = tempId--);
+            
             var customFieldReferences = await GetCustomFieldReferences(witClient,  additionalFieldDefinitions);
 
             var missingReference = 0;

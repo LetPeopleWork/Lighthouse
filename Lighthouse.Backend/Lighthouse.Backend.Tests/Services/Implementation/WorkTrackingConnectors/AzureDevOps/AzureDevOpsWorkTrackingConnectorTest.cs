@@ -729,12 +729,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "30", IsSecret = false },
             ]);
 
-            var id = 0;
             foreach (var additionalField in additionalFields) 
             {
                 connectionSetting.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
                 {
-                    Id = id++,
+                    Id = 0,
                     DisplayName = additionalField,
                     Reference =  additionalField,
                 });

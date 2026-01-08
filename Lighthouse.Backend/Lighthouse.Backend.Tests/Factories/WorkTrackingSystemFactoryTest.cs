@@ -149,15 +149,15 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 Assert.That(connection.AdditionalFieldDefinitions, Has.Count.EqualTo(3));
 
-                var iterationPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "System.IterationPath");
+                var iterationPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Iteration Path");
                 Assert.That(iterationPath, Is.Not.Null);
                 Assert.That(iterationPath!.DisplayName, Is.EqualTo("Iteration Path"));
 
-                var areaPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "System.AreaPath");
+                var areaPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Area Path");
                 Assert.That(areaPath, Is.Not.Null);
                 Assert.That(areaPath!.DisplayName, Is.EqualTo("Area Path"));
 
-                var size = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Microsoft.VSTS.Scheduling.Size");
+                var size = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Size");
                 Assert.That(size, Is.Not.Null);
                 Assert.That(size!.DisplayName, Is.EqualTo("Size"));
             }

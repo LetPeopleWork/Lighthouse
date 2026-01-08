@@ -250,18 +250,21 @@ namespace Lighthouse.Backend.Factories
             [
                 new AdditionalFieldDefinition
                 {
+                    Id = -1,
                     DisplayName = "Iteration Path",
-                    Reference = "System.IterationPath"
+                    Reference = "Iteration Path"
                 },
                 new AdditionalFieldDefinition
                 {
+                    Id = -2,
                     DisplayName = "Area Path",
-                    Reference = "System.AreaPath"
+                    Reference = "Area Path"
                 },
                 new AdditionalFieldDefinition
                 {
+                    Id = -3,
                     DisplayName = "Size",
-                    Reference = "Microsoft.VSTS.Scheduling.Size"
+                    Reference = "Size"
                 },
             ];
         }
@@ -272,16 +275,19 @@ namespace Lighthouse.Backend.Factories
             [
                 new AdditionalFieldDefinition
                 {
+                    Id = -1,
                     DisplayName = "Fix Version",
                     Reference = "Fix versions"
                 },
                 new AdditionalFieldDefinition
                 {
+                    Id = -2,
                     DisplayName = "Components",
                     Reference = "Components"
                 },
                 new AdditionalFieldDefinition
                 {
+                    Id = -3,
                     DisplayName = "Sprint",
                     Reference = "Sprint",
                 }
