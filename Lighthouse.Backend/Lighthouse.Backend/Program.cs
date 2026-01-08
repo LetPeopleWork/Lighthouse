@@ -34,6 +34,12 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.macOS;
 using Microsoft.Data.Sqlite;
+using System.Runtime.InteropServices;
+using System.Reflection;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using System.Diagnostics;
+using System.Text;
 
 namespace Lighthouse.Backend
 {
@@ -67,7 +73,21 @@ namespace Lighthouse.Backend
 
                 var app = builder.Build();
                 ConfigureApp(app, mcpFeature);
-                app.Run();
+
+                // Start the application in the background
+                _ = Task.Run(async () =>
+                {
+                    await app.StartAsync();
+
+                    // Wait a bit for the server to be fully ready
+                    await Task.Delay(500);
+
+                    // Print system info after startup
+                    PrintSystemInfo(app, builder);
+                });
+
+                // Wait for shutdown signal
+                app.WaitForShutdown();
             }
             catch (Exception ex)
             {
@@ -428,6 +448,122 @@ namespace Lighthouse.Backend
                     }
                 });
             });
+        }
+
+        private static void PrintSystemInfo(WebApplication app, WebApplicationBuilder builder)
+        {
+            var logo = new[]
+            {
+                "           -----------------------------------           ",
+                "         ---------------------------------------         ",
+                "        ------------##:--------------------------        ",
+                "       -------------#------------------------#----       ",
+                "       ------------###-----------------#######----       ",
+                "       ----------#######----------############----       ",
+                "       ---------------------##################----       ",
+                "       ----------##+##-#-#####################----       ",
+                "       ----------------------:################----       ",
+                "       ---------#########----------###########----       ",
+                "       ----------*******----------------:#####:---       ",
+                "       ----------#####:#--------------------------       ",
+                "       ----------#######--------------------------       ",
+                "       ---------:###------------------------------       ",
+                "       --------------####-------------------------       ",
+                "       ----------########-------------------------       ",
+                "       ---------######-##:------------------------       ",
+                "       --------:######*##+------------------------       ",
+                "       --------######:----------------------------       ",
+                "       --------#=---------------------------------       ",
+                "       *-----###############---------------------%       ",
+                "         ---------------------------------------         ",
+                "           -----------------------------------           "
+            };
+
+            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
+            var urls = app.Urls.ToList();
+
+            var logFilePath = TryGetLogFilePath(builder.Configuration);
+
+            var dbProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "Unknown";
+
+            string Line(string emoji, string label, string value)
+            {
+                return $"{emoji}  {label,-13} : {value}";
+            }
+
+            var info = new List<string>
+            {
+                "",
+                "",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                $"        Lighthouse {version}",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            };
+
+            info.Add("");
+
+            foreach (var url in urls)
+            {
+                info.Add(Line("🌐", "Url", url));
+            }
+
+            info.Add("");
+
+            info.Add(Line("🖥️", "OS", RuntimeInformation.OSDescription.Trim()));
+            info.Add(Line("⚙️", "Runtime", RuntimeInformation.FrameworkDescription));
+            info.Add(Line("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
+            info.Add(Line("🔢", "Process ID", Process.GetCurrentProcess().Id.ToString()));
+            info.Add(Line("💾", "Database", dbProvider));
+
+            if (!string.IsNullOrEmpty(logFilePath))
+            {
+                info.Add(Line("📝", "Logs", logFilePath));
+            }
+
+            info.Add("");
+
+            var startupBannerBuilder = new StringBuilder();
+
+            int maxLines = Math.Max(logo.Length, info.Count);
+
+            for (int i = 0; i < maxLines; i++)
+            {
+                var logoLine = i < logo.Length ? logo[i] : new string(' ', 59);
+                var infoLine = i < info.Count ? info[i] : "";
+
+                startupBannerBuilder.AppendLine($"{logoLine}    {infoLine}");
+            }
+
+            Log.Logger.Information("\n{StartupBanner}", startupBannerBuilder.ToString());
+        }
+
+        private static string? TryGetLogFilePath(IConfiguration configuration)
+        {
+            try
+            {
+                // Try to get the file path from Serilog configuration
+                var writeTo = configuration.GetSection("Serilog:WriteTo");
+                foreach (var sink in writeTo.GetChildren())
+                {
+                    var name = sink.GetValue<string>("Name");
+                    if (name == "File")
+                    {
+                        var args = sink.GetSection("Args");
+                        var path = args.GetValue<string>("path");
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            return Path.GetDirectoryName(Path.GetFullPath(path));
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not retrieve log file path from configuration");
+            }
+
+            return null;
         }
     }
 }
