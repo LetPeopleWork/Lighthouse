@@ -513,7 +513,7 @@ describe("AdditionalFieldsEditor", () => {
 			).toBeInTheDocument();
 			expect(
 				screen.getByText(
-					"Azure DevOps field reference (e.g., 'System.IterationPath', 'Custom.MyField')",
+					"Azure DevOps field reference (e.g., 'System.IterationPath', 'Custom.MyField') or name (e.g. 'Iteration Path' or 'My Field')",
 				),
 			).toBeInTheDocument();
 		});
