@@ -51,7 +51,7 @@ const FieldEditDialog: React.FC<FieldEditDialogProps> = ({
 	const getFieldReferenceHelperText = (): string => {
 		switch (workTrackingSystemType) {
 			case "AzureDevOps":
-				return "Azure DevOps field reference (e.g., 'System.IterationPath', 'Custom.MyField')";
+				return "Azure DevOps field reference (e.g., 'System.IterationPath', 'Custom.MyField') or name (e.g. 'Iteration Path' or 'My Field')";
 			case "Jira":
 				return "'Name' or 'Key' of Jira Field. Can be a custom field or a built-in field (e.g., 'Flagged', 'Our Custom Field', 'customfield_10011')";
 			default:
