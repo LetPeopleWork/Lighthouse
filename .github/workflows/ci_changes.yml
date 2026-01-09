@@ -35,13 +35,12 @@ jobs:
             
             // Paginate through workflow runs
             while (!foundCommit) {
-              // Get workflow runs for this workflow on main branch
+              // Get workflow runs for this workflow on main branch (no status filter to include in-progress runs)
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: workflow_id,
                 branch: branch,
-                status: 'success',
                 per_page: per_page,
                 page: page
               });
@@ -64,13 +63,13 @@ jobs:
                   run_id: run.id
                 });
                 
-                // Check if both verify stages succeeded
+                // Check if both verify stages succeeded (even if the overall workflow is still in progress)
                 const sqliteVerify = jobs.data.jobs.find(j => j.name.includes('sqlite'));
                 const postgresVerify = jobs.data.jobs.find(j => j.name.includes('postgres'));
               
                 
                 if (sqliteVerify?.conclusion === 'success' && postgresVerify?.conclusion === 'success') {
-                  console.log(`Found last successful run: ${run.id} at commit ${run.head_sha}`);
+                  console.log(`Found last successful run: ${run.id} (status: ${run.status}) at commit ${run.head_sha}`);
                   foundCommit = run.head_sha;
                   break;
                 }
