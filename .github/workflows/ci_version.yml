@@ -19,7 +19,6 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           fetch-depth: 0
-      
       - name: Generate version
         id: generate_version
         uses: actions/github-script@v7
@@ -27,26 +26,21 @@ jobs:
           script: |
             const now = new Date();
             const year = String(now.getUTCFullYear()).slice(-2);
-            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(now.getUTCDate()).padStart(2, '0');
+            const month = String(now.getUTCMonth() + 1);
+            const day = String(now.getUTCDate());
             const datePrefix = `${year}.${month}.${day}`;
-            
             // Get today's date in YYYY-MM-DD format for filtering
             const todayStart = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
             const todayStartISO = todayStart.toISOString();
-            
             console.log(`Generating version for date: ${datePrefix}`);
             console.log(`Checking runs since: ${todayStartISO}`);
-            
             // Get all workflow runs for today
             // Use the main CI workflow filename instead of context.workflow
             const workflow_id = 'ci.yml';
             const branch = context.ref.replace('refs/heads/', '');
-            
             let page = 1;
             let buildCount = 0;
             let hasMore = true;
-            
             while (hasMore) {
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
@@ -56,48 +50,36 @@ jobs:
                 per_page: 100,
                 page: page
               });
-              
               if (runs.data.workflow_runs.length === 0) {
                 hasMore = false;
                 break;
               }
-              
               for (const run of runs.data.workflow_runs) {
                 const runDate = new Date(run.created_at);
-                
                 // If run is from before today, we can stop
                 if (runDate < todayStart) {
                   hasMore = false;
                   break;
                 }
-                
                 // Count runs from today (including the current one)
                 if (runDate >= todayStart) {
                   buildCount++;
                 }
               }
-              
               page++;
-              
               // Safety limit
               if (page > 10) {
                 console.log('Reached page limit');
                 hasMore = false;
               }
             }
-            
             console.log(`Found ${buildCount} builds today`);
-            
-            // Format the build number with leading zeros (3 digits)
-            const buildNumber = String(buildCount).padStart(3, '0');
-            
+            // Use build number without padding
+            const buildNumber = String(buildCount);
             const version = `v${datePrefix}.${buildNumber}`;
             const fileversion = `${datePrefix}.${buildNumber}`;
-            
             console.log(`Generated version: ${version}`);
             console.log(`Generated fileversion: ${fileversion}`);
-            
             core.setOutput('version', version);
             core.setOutput('fileversion', fileversion);
-            
             return version;
