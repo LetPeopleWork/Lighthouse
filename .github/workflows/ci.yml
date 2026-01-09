@@ -44,106 +44,106 @@ jobs:
     with:
       e2e: ${{ needs.changes.outputs.e2e }}
 
-  tag:
+  version:
     needs: [frontend, backend, e2e]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/ci_tag.yml
-    name: Tag Version
+    uses: ./.github/workflows/ci_version.yml
+    name: Version
     permissions:
       contents: write
 
   packageapp:
-    needs: tag
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: version
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_packageapp.yml
     name: Package App
     permissions:
       actions: write
     with:
-      fileversion: ${{ needs.tag.outputs.fileversion }}
-      version: ${{ needs.tag.outputs.version }}
+      fileversion: ${{ needs.version.outputs.fileversion }}
+      version: ${{ needs.version.outputs.version }}
   
   docker:
-    needs: tag
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: version
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_docker.yml
     name: Build and Push Docker Image
     permissions:
       packages: write
     with:
-      fileversion: ${{ needs.tag.outputs.fileversion }}
+      fileversion: ${{ needs.version.outputs.fileversion }}
     secrets: inherit
 
   sbom:
-    needs: tag
+    needs: version
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_sbom.yml
     name: Generate SBOM
     permissions:
       contents: read
     with:
-      version: ${{ needs.tag.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
 
   
   # Linux verification with EndToEnd tests
   verifysqlite:
-    needs: [packageapp, tag]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [packageapp, version]
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifysqlite.yml
     name: Verify SQLite Linux Build
     permissions:
       actions: read
     with:
-      version: ${{ needs.tag.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
       
   verifypostgres:
-    needs: [packageapp, tag]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [packageapp, version]
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifypostgres.yml
     name: Verify Postgres Linux Build
     permissions:
       actions: read
     with:
-      version: ${{ needs.tag.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
   
   # macOS signing and verification
   codesign-macos:
-    needs: [tag, verifysqlite, verifypostgres]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [version, verifysqlite, verifypostgres]
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_codesign-macos.yml
     name: Code Sign macOS App
     permissions:
       actions: write
     with:
-      fileversion: ${{ needs.tag.outputs.fileversion }}
-      version: ${{ needs.tag.outputs.version }}
+      fileversion: ${{ needs.version.outputs.fileversion }}
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
   verifymacos:
-    needs: [codesign-macos, tag]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [codesign-macos, version]
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifymacos.yml
     name: Verify macOS App
     permissions:
       actions: read
     with:
-      version: ${{ needs.tag.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
       submission_id: ${{ needs.codesign-macos.outputs.submission_id }}
     secrets: inherit
   
   # Windows signing and verification
   codesign-windows:
-    needs: [tag, verifysqlite, verifypostgres]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [version, verifysqlite, verifypostgres]
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_codesign-windows.yml
     name: Code Sign Windows App
@@ -151,22 +151,22 @@ jobs:
       actions: write
     secrets: inherit
     with:
-      version: ${{ needs.tag.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
 
   verifywindows:
-    needs: [codesign-windows, tag]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [codesign-windows, version]
+    # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifywindows.yml
     name: Verify Windows App
     permissions:
       actions: read
     with:
-      version: ${{ needs.tag.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
 
   release:
-    needs: [tag, docker, sbom, verifymacos, verifywindows]
-    # Run tag even if some prior jobs were skipped, but not if they failed
+    needs: [version, docker, sbom, verifymacos, verifywindows]
+    # Run taversioversionng even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_release.yml
     name: Release
@@ -176,6 +176,6 @@ jobs:
       actions: read
       id-token: write
     with:
-      fileversion: ${{ needs.tag.outputs.fileversion }}
-      version: ${{ needs.tag.outputs.version }}
+      fileversion: ${{ needs.version.outputs.fileversion }}
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit

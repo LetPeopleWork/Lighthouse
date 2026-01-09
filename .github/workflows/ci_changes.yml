@@ -1,5 +1,4 @@
 name: Check for changes
-
 on:
   workflow_call:
     outputs:
@@ -9,7 +8,6 @@ on:
         value: ${{ jobs.changes.outputs.frontend }}
       e2e:
         value: ${{ jobs.changes.outputs.e2e }}
-
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -17,41 +15,129 @@ jobs:
       backend: ${{ steps.check.outputs.backend }}
       frontend: ${{ steps.check.outputs.frontend }}
       e2e: ${{ steps.check.outputs.e2e }}
-
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
-      with:
-        fetch-depth: 0
-
-    - name: Check for changes
-      id: check
-      run: |
-        base_ref=${{ github.base_ref }}
-        if [ -z "$base_ref" ]; then
-        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-          # On main branch, use the last version tag as base
-          base_ref=$(git describe --tags --abbrev=0)
-        else
-          # Default to checking against the previous commit on other branches
-          base_ref=$(git rev-parse HEAD^)
-        fi
-        else
-        git fetch origin $base_ref
-        base_ref="origin/$base_ref"
-        fi
-
-        # Print all changed files
-        echo "Changed files:"
-        git diff --name-only $base_ref HEAD
-
-        github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.*\.yml && echo 'true' || echo 'false')
-        backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-        frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-        e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-
-        echo "backend=$backend"
-        echo "frontend=$frontend"
-        echo "e2e=$e2e"
-        echo "backend=$backend" >> $GITHUB_OUTPUT
-        echo "frontend=$frontend" >> $GITHUB_OUTPUT
-        echo "e2e=$e2e" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          fetch-depth: 0
+    
+      - name: Find last successful workflow run
+        id: last_success
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflow_id = context.workflow;
+            const branch = 'main';
+            
+            let page = 1;
+            const per_page = 100;
+            let foundCommit = null;
+            
+            // Paginate through workflow runs
+            while (!foundCommit) {
+              // Get workflow runs for this workflow on main branch
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflow_id,
+                branch: branch,
+                status: 'success',
+                per_page: per_page,
+                page: page
+              });
+              
+              // If no more runs, break
+              if (runs.data.workflow_runs.length === 0) {
+                console.log('No more workflow runs to check');
+                break;
+              }
+              
+              // Find the last run where both verify stages succeeded
+              for (const run of runs.data.workflow_runs) {
+                // Skip the current run
+                if (run.id === context.runId) continue;
+                
+                // Get jobs for this run
+                const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id
+                });
+                
+                // Check if both verify stages succeeded
+                const sqliteVerify = jobs.data.jobs.find(j => j.name.includes('sqlite'));
+                const postgresVerify = jobs.data.jobs.find(j => j.name.includes('postgres'));
+              
+                
+                if (sqliteVerify?.conclusion === 'success' && postgresVerify?.conclusion === 'success') {
+                  console.log(`Found last successful run: ${run.id} at commit ${run.head_sha}`);
+                  foundCommit = run.head_sha;
+                  break;
+                }
+              }
+              
+              // If we found a commit, break out of pagination loop
+              if (foundCommit) break;
+              
+              // Move to next page
+              page++;
+              
+              // Safety limit to prevent infinite loops (adjust as needed)
+              if (page > 10) {
+                console.log('Reached page limit (1000 runs checked), stopping search');
+                break;
+              }
+            }
+            
+            if (foundCommit) {
+              core.setOutput('commit_sha', foundCommit);
+            } else {
+              // Fallback to the previous commit if no successful run found
+              console.log('No previous successful run found, using HEAD^');
+              core.setOutput('commit_sha', '');
+            }
+            
+            return foundCommit || '';
+      
+      - name: Check for changes
+        id: check
+        run: |
+          base_ref=${{ github.base_ref }}
+          
+          if [ -z "$base_ref" ]; then
+            if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+              # On main branch, use the last successful workflow commit
+              last_success_sha="${{ steps.last_success.outputs.commit_sha }}"
+              if [ -n "$last_success_sha" ]; then
+                base_ref="$last_success_sha"
+                echo "Comparing against last successful workflow run at: $base_ref"
+              else
+                # Fallback to previous commit if no successful run found
+                base_ref=$(git rev-parse HEAD^)
+                echo "No previous successful run found, comparing against: $base_ref"
+              fi
+            else
+              # Default to checking against the previous commit on other branches
+              base_ref=$(git rev-parse HEAD^)
+            fi
+          else
+            git fetch origin $base_ref
+            base_ref="origin/$base_ref"
+          fi
+          
+          # Print all changed files
+          echo "Changed files:"
+          git diff --name-only $base_ref HEAD
+          
+          github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.*\.yml && echo 'true' || echo 'false')
+          backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          
+          echo "backend=$backend"
+          echo "frontend=$frontend"
+          echo "e2e=$e2e"
+          
+          echo "backend=$backend" >> $GITHUB_OUTPUT
+          echo "frontend=$frontend" >> $GITHUB_OUTPUT
+          echo "e2e=$e2e" >> $GITHUB_OUTPUT
