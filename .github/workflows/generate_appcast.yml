@@ -182,14 +182,18 @@ jobs:
             ASSET_NAME=$(gh release view "$tag" --json assets --jq '.assets[].name' | grep -E '\.app\.zip$' | head -1)
             if [ -n "$ASSET_NAME" ]; then
               echo "App bundle zip found for $tag: $ASSET_NAME, downloading..."
-              gh release download "$tag" --pattern "$ASSET_NAME" --dir updates/app/
-              ZIP_PATH="updates/app/$ASSET_NAME"
+              # Download with unique filename to avoid conflicts
+              UNIQUE_FILENAME="${tag}-${ASSET_NAME}"
+              gh release download "$tag" --pattern "$ASSET_NAME" --dir updates/app/ --clobber
+              # Rename to unique filename
+              mv "updates/app/$ASSET_NAME" "updates/app/$UNIQUE_FILENAME"
+              ZIP_PATH="updates/app/$UNIQUE_FILENAME"
               # Sign the zip
               if ! get_signature "$ZIP_PATH" >/dev/null; then
                 echo "Signing failed for $ZIP_PATH"
                 exit 1
               fi
-
+          
               # Get release body and create HTML notes (one notes file per tag)
               RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" | jq -r '.body')
               NOTES_FILE="updates/notes-${tag}.html"
@@ -198,9 +202,9 @@ jobs:
               else
                 echo "<p>No release notes available.</p>" > "$NOTES_FILE"
               fi
-
-              # Record mapping of tag -> asset name for later appcast generation
-              echo "${tag},${ASSET_NAME}" >> updates/app/manifest.csv
+          
+              # Record mapping of tag -> unique filename for later appcast generation
+              echo "${tag},${UNIQUE_FILENAME}" >> updates/app/manifest.csv
             else
               echo "No .app.zip found for $tag, skipping..."
             fi
@@ -240,17 +244,20 @@ jobs:
               <language>en</language>
           EOF
           
-          # Use manifest mapping (tag -> asset) if available
+          # Use manifest mapping (tag -> unique filename)
           if [ -f updates/app/manifest.csv ]; then
-            while IFS=, read -r tag asset; do
-              if [ -z "$tag" ] || [ -z "$asset" ]; then continue; fi
-              ZIP_PATH="updates/app/${asset}"
+            while IFS=, read -r tag unique_filename; do
+              if [ -z "$tag" ] || [ -z "$unique_filename" ]; then continue; fi
+              ZIP_PATH="updates/app/${unique_filename}"
               if [ -f "$ZIP_PATH" ]; then
+                # Extract original asset name from unique filename
+                ORIGINAL_ASSET=$(echo "$unique_filename" | sed "s/^${tag}-//")
                 RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
                 TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
-                URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${asset}"
+                # Use original asset name in URL
+                URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${ORIGINAL_ASSET}"
                 SIGNATURE=$(get_signature "$ZIP_PATH")
                 if [ -z "$SIGNATURE" ]; then
                   echo "Failed to get signature for $ZIP_PATH"
@@ -274,9 +281,10 @@ jobs:
             # Fallback: look for zip files matching tag in updates/app/
             while IFS= read -r tag; do
               if [ -z "$tag" ]; then continue; fi
-              ZIP_PATH=$(ls updates/app/*"${tag}"*.app.zip 2>/dev/null | head -1)
+              ZIP_PATH=$(ls updates/app/"${tag}"-*.app.zip 2>/dev/null | head -1)
               if [ -f "$ZIP_PATH" ]; then
-                ASSET=$(basename "$ZIP_PATH")
+                UNIQUE_FILENAME=$(basename "$ZIP_PATH")
+                ASSET=$(echo "$UNIQUE_FILENAME" | sed "s/^${tag}-//")
                 RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
                 TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
