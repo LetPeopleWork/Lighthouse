@@ -26,7 +26,6 @@ jobs:
       contents: write
 
   changes:
-    needs: version
     uses: ./.github/workflows/ci_changes.yml
     name: Detect Changes
 
@@ -90,7 +89,7 @@ jobs:
   
   # Linux verification with EndToEnd tests
   verifysqlite:
-    needs: [packageapp, version]
+    needs: [frontend, backend, e2e, packageapp, version]
     # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifysqlite.yml
@@ -102,7 +101,7 @@ jobs:
     secrets: inherit
       
   verifypostgres:
-    needs: [packageapp, version]
+    needs: [frontend, backend, e2e, packageapp, version]
     # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifypostgres.yml
