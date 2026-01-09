@@ -39,7 +39,8 @@ jobs:
             console.log(`Checking runs since: ${todayStartISO}`);
             
             // Get all workflow runs for today
-            const workflow_id = context.workflow;
+            // Use the main CI workflow filename instead of context.workflow
+            const workflow_id = 'ci.yml';
             const branch = context.ref.replace('refs/heads/', '');
             
             let page = 1;
