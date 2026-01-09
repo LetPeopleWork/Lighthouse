@@ -4,6 +4,22 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.1.9.6
+This release was focused on improving the additional field functionality of the Work Tracking Systems. Following changes related to this were implemented:
+- Username is not shown in "Other Options" anymore if you choose Jira Data Center Auth Option
+- You don't need to specify the token (or other secrets) if you modify only the additional fields
+- For Jira Data Center, it will now automatically use the 'Epic Link' (for Teams) and 'Parent Link' (for Portfolios) fields to try to set the parent. If this convention is followed, no specific additional field and override is needed
+- For Azure DevOps, you can now also specify the Field Name, not only the reference. Example: Previously you had to specify 'Microsoft.VSTS.Scheduling.Size', while now you could also refer to it simply via 'Size'. Both options work, reference or name. No migration is needed if you have already something specified.
+
+## Other Improvements
+- Updated various third party dependencies
+- Added a system info on startup that shows you the details of your Lighthouse instance:
+
+![System Info](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/systeminfodisplay.png)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.5.1620...v26.01.09.006)
+
+
 # Lighthouse v26.1.5.1620
 This is a hotfix release that attempts to fix an issue that caused the validation to fail for Azure DevOps Work Tracking Connections if they had *any* additional field defined.
 The check for the available fields is now changed, which should make it work for all environments, independent of user rights.
