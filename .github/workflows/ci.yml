@@ -51,6 +51,7 @@ jobs:
     uses: ./.github/workflows/ci_version.yml
     name: Version
     permissions:
+      actions: read
       contents: write
 
   packageapp:
