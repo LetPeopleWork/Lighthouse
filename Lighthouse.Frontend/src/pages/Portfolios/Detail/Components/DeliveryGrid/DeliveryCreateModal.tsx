@@ -170,6 +170,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						onChange={(e) => setDate(e.target.value)}
 						error={!!errors.date}
 						helperText={errors.date}
+						slotProps={{ inputLabel: { shrink: true } }}
 						sx={{ mb: 2 }}
 					/>
 
