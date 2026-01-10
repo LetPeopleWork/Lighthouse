@@ -60,9 +60,8 @@ describe("DeliverySection", () => {
 			</MemoryRouter>,
 		);
 
-		expect(screen.getByText("Test Delivery")).toBeInTheDocument();
+		expect(screen.getByText("Test Delivery (1/31/2025)")).toBeInTheDocument();
 		expect(screen.getByText("Likelihood: 75%")).toBeInTheDocument();
-		expect(screen.getByText("Delivery Date: 1/31/2025")).toBeInTheDocument();
 		expect(screen.getByText(/1 Feature/i)).toBeInTheDocument();
 	});
 

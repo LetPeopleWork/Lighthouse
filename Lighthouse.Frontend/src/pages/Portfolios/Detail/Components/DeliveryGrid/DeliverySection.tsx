@@ -57,6 +57,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 
 	// Helper function to get forecast by probability (percentile)
@@ -322,85 +323,58 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							<Box
 								sx={{
 									display: "flex",
-									flexDirection: "column",
-									gap: 1,
+									alignItems: "center",
+									gap: 2,
 									flexShrink: 0,
 								}}
 							>
-								{/* Row 1 */}
-								<Box
+								<Typography variant="h6" component="h3">
+									{`${delivery.name} (${delivery.getFormattedDate()})`}
+								</Typography>
+								<Chip
+									label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
+									size="small"
 									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 2,
+										bgcolor: forecastLevel.color,
+										color: "#fff",
+										fontWeight: "bold",
 									}}
-								>
-									<Typography variant="h6" component="h3">
-										{delivery.name}
-									</Typography>
-									<Chip
-										label={`Delivery Date: ${delivery.getFormattedDate()}`}
-										size="small"
-										variant="outlined"
-									/>
-									<Chip
-										label={`Scope: ${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm}`}
-										size="small"
-									/>
-								</Box>
-								{/* Row 2 */}
-								<Box
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 2,
-									}}
-								>
-									<Chip
-										label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
-										size="small"
-										sx={{
-											bgcolor: forecastLevel.color,
-											color: "#fff",
-											fontWeight: "bold",
-										}}
-									/>
-									{(() => {
-										const forecast85 = getForecast(85);
-										if (forecast85) {
-											return (
-												<Chip
-													label={`85%: ${formatDate(forecast85.expectedDate)}`}
-													size="small"
-													sx={{
-														bgcolor: get85PercentileColor(),
-														color: "#fff",
-														fontWeight: "bold",
-													}}
-												/>
-											);
-										}
-										return null;
-									})()}
-									{(() => {
-										const forecast70 = getForecast(70);
-										const forecast95 = getForecast(95);
-										if (forecast70 && forecast95) {
-											return (
-												<Chip
-													label={`∆ 70 - 95%: ${formatDate(forecast70.expectedDate)} - ${formatDate(forecast95.expectedDate)}`}
-													size="small"
-													sx={{
-														bgcolor: getRangeColor(),
-														color: "#fff",
-														fontWeight: "bold",
-													}}
-												/>
-											);
-										}
-										return null;
-									})()}
-								</Box>
+								/>
+								{(() => {
+									const forecast85 = getForecast(85);
+									if (forecast85) {
+										return (
+											<Chip
+												label={`85%: ${formatDate(forecast85.expectedDate)}`}
+												size="small"
+												sx={{
+													bgcolor: get85PercentileColor(),
+													color: "#fff",
+													fontWeight: "bold",
+												}}
+											/>
+										);
+									}
+									return null;
+								})()}
+								{(() => {
+									const forecast70 = getForecast(70);
+									const forecast95 = getForecast(95);
+									if (forecast70 && forecast95) {
+										return (
+											<Chip
+												label={`∆ 70 - 95%: ${formatDate(forecast70.expectedDate)} - ${formatDate(forecast95.expectedDate)}`}
+												size="small"
+												sx={{
+													bgcolor: getRangeColor(),
+													color: "#fff",
+													fontWeight: "bold",
+												}}
+											/>
+										);
+									}
+									return null;
+								})()}
 							</Box>
 							<Box
 								sx={{
@@ -412,7 +386,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								}}
 							>
 								<ProgressIndicator
-									title=""
+									title={`${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm} (${delivery.totalWork} ${workItemsTerm})`}
 									progressableItem={{
 										remainingWork: delivery.remainingWork,
 										totalWork: delivery.totalWork,
