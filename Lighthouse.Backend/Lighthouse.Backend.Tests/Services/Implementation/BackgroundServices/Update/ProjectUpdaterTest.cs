@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IProjectMetricsService> projectMetricsServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
 
-        private int idCounter = 0;
+        private int idCounter;
 
         [SetUp]
         public void SetUp()

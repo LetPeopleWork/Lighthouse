@@ -3,7 +3,6 @@ import { BaseApiService } from "./BaseApiService";
 
 export interface IDeliveryService {
 	getByPortfolio(portfolioId: number): Promise<Delivery[]>;
-	getAll(): Promise<Delivery[]>;
 	create(
 		portfolioId: number,
 		name: string,
@@ -28,13 +27,6 @@ export class DeliveryService
 			const response = await this.apiService.get<IDelivery[]>(
 				`/deliveries/portfolio/${portfolioId}`,
 			);
-			return response.data.map((data) => Delivery.fromBackend(data));
-		});
-	}
-
-	async getAll(): Promise<Delivery[]> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IDelivery[]>(`/deliveries`);
 			return response.data.map((data) => Delivery.fromBackend(data));
 		});
 	}

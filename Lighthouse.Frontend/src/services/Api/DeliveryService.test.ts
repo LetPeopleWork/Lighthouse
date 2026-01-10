@@ -71,57 +71,6 @@ describe("DeliveryService", () => {
 		});
 	});
 
-	it("should return all deliveries", async () => {
-		// Arrange
-		const mockDeliveries: IDelivery[] = [
-			{
-				id: 1,
-				name: "Q1 Release",
-				date: "2025-03-15T10:00:00Z",
-				portfolioId: 1,
-				features: [1, 2], // Feature IDs
-				likelihoodPercentage: 75.5,
-				progress: 60.0,
-				remainingWork: 8,
-				totalWork: 20,
-				featureLikelihoods: [
-					{ featureId: 1, likelihoodPercentage: 80.0 },
-					{ featureId: 2, likelihoodPercentage: 75.5 },
-				],
-			},
-			{
-				id: 2,
-				name: "Q2 Release",
-				date: "2025-06-15T10:00:00Z",
-				portfolioId: 2,
-				features: [3],
-				likelihoodPercentage: 60.0,
-				progress: 30.0,
-				remainingWork: 14,
-				totalWork: 20,
-				featureLikelihoods: [{ featureId: 3, likelihoodPercentage: 60.0 }],
-			},
-		];
-
-		mockedAxios.get.mockResolvedValue({
-			data: mockDeliveries,
-		});
-
-		// Act
-		const result = await deliveryService.getAll();
-
-		// Assert
-		expect(mockedAxios.get).toHaveBeenCalledWith(`/deliveries`);
-
-		expect(result).toHaveLength(2);
-		expect(result[0].name).toBe("Q1 Release");
-		expect(result[0].portfolioId).toBe(1);
-		expect(result[0].likelihoodPercentage).toBe(75.5);
-		expect(result[1].name).toBe("Q2 Release");
-		expect(result[1].portfolioId).toBe(2);
-		expect(result[1].likelihoodPercentage).toBe(60.0);
-	});
-
 	describe("create", () => {
 		it("should create a new delivery", async () => {
 			// Arrange

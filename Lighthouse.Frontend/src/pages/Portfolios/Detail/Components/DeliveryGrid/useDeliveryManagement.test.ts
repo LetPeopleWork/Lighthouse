@@ -23,7 +23,6 @@ mockFeatureService.getFeaturesByIds = mockGetFeaturesByIds;
 const mockApiServiceContext = createMockApiServiceContext({
 	deliveryService: {
 		getByPortfolio: mockDeliveryService.getByPortfolio,
-		getAll: vi.fn(),
 		create: mockDeliveryService.create,
 		update: vi.fn(),
 		delete: mockDeliveryService.delete,
