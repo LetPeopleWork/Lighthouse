@@ -1,3 +1,5 @@
+import { WhenForecast } from "./Forecasts/WhenForecast";
+
 export interface IFeatureLikelihood {
 	featureId: number;
 	likelihoodPercentage: number;
@@ -14,6 +16,7 @@ export interface IDelivery {
 	remainingWork: number;
 	totalWork: number;
 	featureLikelihoods: IFeatureLikelihood[];
+	completionDates: WhenForecast[];
 }
 
 export class Delivery implements IDelivery {
@@ -27,8 +30,11 @@ export class Delivery implements IDelivery {
 	remainingWork!: number;
 	totalWork!: number;
 	featureLikelihoods!: IFeatureLikelihood[];
+	completionDates!: WhenForecast[];
 
 	static fromBackend(data: IDelivery): Delivery {
+		console.log("Mapping delivery from backend:", data);
+
 		const delivery = new Delivery();
 		delivery.id = data.id;
 		delivery.name = data.name;
@@ -40,6 +46,11 @@ export class Delivery implements IDelivery {
 		delivery.remainingWork = data.remainingWork || 0;
 		delivery.totalWork = data.totalWork || 0;
 		delivery.featureLikelihoods = data.featureLikelihoods || [];
+
+		delivery.completionDates = (data.completionDates || []).map(
+			(forecastData) => WhenForecast.fromBackend(forecastData),
+		);
+
 		return delivery;
 	}
 

@@ -4,27 +4,52 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureLikelihoodDto
     {
-        public int FeatureId { get; set; }
-        public double LikelihoodPercentage { get; set; }
+        public int FeatureId { get; init; }
+        
+        public double LikelihoodPercentage { get; init; }
+        
+        public List<WhenForecastDto> CompletionDates { get; init; } = [];
     }
 
     public class DeliveryWithLikelihoodDto
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public DateTime Date { get; set; }
-        public int PortfolioId { get; set; }
-        public double LikelihoodPercentage { get; set; }
-        public double Progress { get; set; }
-        public int RemainingWork { get; set; }
-        public int TotalWork { get; set; }
-        public List<int> Features { get; set; } = new List<int>();
-        public List<FeatureLikelihoodDto> FeatureLikelihoods { get; set; } = new List<FeatureLikelihoodDto>();
+        public int Id { get; private init; }
+        
+        public string Name { get; private init; } = string.Empty;
+        
+        public DateTime Date { get; private init; }
+        
+        public int PortfolioId { get; private init; }
+        
+        public double LikelihoodPercentage { get; private init; }
+        
+        public List<WhenForecastDto> CompletionDates { get; private init; } = [];
+        
+        public double Progress { get; private init; }
+        
+        public int RemainingWork { get; private init; }
+        
+        public int TotalWork { get; private init; }
+        
+        public List<int> Features { get; private init; } = [];
+        
+        public List<FeatureLikelihoodDto> FeatureLikelihoods { get; private init; } = [];
 
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
             var featureLikelihoods = CalculateFeatureLikelihoods(delivery);
-            var likelihoodPercentage = GetMinimumLikelihood(featureLikelihoods);
+
+            var likelihoodPercentage = 0.0;
+            var completionDates = new List<WhenForecastDto>();
+            
+            var leastLikelyFeature = GetLeastLikelyFeature(featureLikelihoods);
+
+            if (leastLikelyFeature != null)
+            {
+                likelihoodPercentage = leastLikelyFeature.LikelihoodPercentage;
+                completionDates.AddRange(leastLikelyFeature.CompletionDates);
+            }
+            
             var (progress, remainingWork, totalWork) = CalculateDeliveryWork(delivery);
 
             return new DeliveryWithLikelihoodDto
@@ -34,6 +59,7 @@ namespace Lighthouse.Backend.API.DTO
                 Date = delivery.Date,
                 PortfolioId = delivery.PortfolioId,
                 LikelihoodPercentage = likelihoodPercentage,
+                CompletionDates = completionDates,
                 Progress = progress,
                 RemainingWork = remainingWork,
                 TotalWork = totalWork,
@@ -42,21 +68,21 @@ namespace Lighthouse.Backend.API.DTO
             };
         }
 
-        private static double GetMinimumLikelihood(List<FeatureLikelihoodDto> featureLikelihoods)
+        private static FeatureLikelihoodDto? GetLeastLikelyFeature(List<FeatureLikelihoodDto> featureLikelihoods)
         {
             var likelihoods = featureLikelihoods
                 .Where(fl => fl.LikelihoodPercentage > 0)
-                .Select(fl => fl.LikelihoodPercentage)
+                .OrderByDescending(fl => fl.LikelihoodPercentage)
                 .ToList();
 
             // Return 0 if no features have forecasts
             if (likelihoods.Count == 0)
             {
-                return 0.0;
+                return null;
             }
 
             // Return the minimum likelihood (most conservative estimate)
-            return likelihoods.Min();
+            return likelihoods.Last();
         }
 
         private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)
@@ -86,17 +112,15 @@ namespace Lighthouse.Backend.API.DTO
             foreach (var feature in delivery.Features)
             {
                 var featureForecast = feature.Forecast;
-                var likelihood = 0.0;
-                
-                if (featureForecast != null)
-                {
-                    likelihood = featureForecast.GetLikelihood(daysToTarget);
-                }
+                var likelihood = featureForecast.GetLikelihood(daysToTarget);
+
+                var completionDates = feature.Forecast.CreateForecastDtos(70, 85, 95);
 
                 featureLikelihoods.Add(new FeatureLikelihoodDto
                 {
                     FeatureId = feature.Id,
-                    LikelihoodPercentage = likelihood
+                    LikelihoodPercentage = likelihood,
+                    CompletionDates = completionDates.ToList(),
                 });
             }
 

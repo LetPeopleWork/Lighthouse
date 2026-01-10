@@ -45,6 +45,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(deliveryDto.Id, Is.EqualTo(1));
                 Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
                 Assert.That(deliveryDto.Date, Is.EqualTo(deliveryDate));
+                Assert.That(deliveryDto.CompletionDates, Is.Not.Null);
+                Assert.That(deliveryDto.CompletionDates, Has.Count.EqualTo(3)); // Should have 70%, 85%, 95% forecasts
             }
         }
         
@@ -67,8 +69,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
             
-            // Assert
-            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(100.0));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(100.0));
+            }
         }
         
         [Test]
@@ -121,8 +125,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
             
-            // Assert - Should return the lowest likelihood (most conservative)
-            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(60.0));
+            using (Assert.EnterMultipleScope())
+            {
+                // Should return the lowest likelihood (most conservative)
+                Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(60.0));
+                // CompletionDates should come from the least likely feature (feature2 with 60%)
+                Assert.That(deliveryDto.CompletionDates, Is.Not.Null);
+                Assert.That(deliveryDto.CompletionDates, Has.Count.EqualTo(3)); // Should have 70%, 85%, 95% forecasts
+            }
         }
         
         [Test]
@@ -183,10 +193,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(deliveryDto.FeatureLikelihoods, Has.Count.EqualTo(3));
                 Assert.That(deliveryDto.FeatureLikelihoods[0].FeatureId, Is.EqualTo(1));
                 Assert.That(deliveryDto.FeatureLikelihoods[0].LikelihoodPercentage, Is.EqualTo(80.0));
+                Assert.That(deliveryDto.FeatureLikelihoods[0].CompletionDates, Has.Count.EqualTo(3)); // 70%, 85%, 95%
                 Assert.That(deliveryDto.FeatureLikelihoods[1].FeatureId, Is.EqualTo(2));
                 Assert.That(deliveryDto.FeatureLikelihoods[1].LikelihoodPercentage, Is.EqualTo(60.0));
+                Assert.That(deliveryDto.FeatureLikelihoods[1].CompletionDates, Has.Count.EqualTo(3)); // 70%, 85%, 95%
                 Assert.That(deliveryDto.FeatureLikelihoods[2].FeatureId, Is.EqualTo(3));
                 Assert.That(deliveryDto.FeatureLikelihoods[2].LikelihoodPercentage, Is.EqualTo(100.0));
+                Assert.That(deliveryDto.FeatureLikelihoods[2].CompletionDates, Has.Count.EqualTo(3)); // Even without forecast
             }
         }
     }

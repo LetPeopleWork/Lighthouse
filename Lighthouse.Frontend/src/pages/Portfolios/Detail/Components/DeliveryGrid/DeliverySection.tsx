@@ -27,6 +27,11 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import {
+	certainColor,
+	realisticColor,
+	riskyColor,
+} from "../../../../../utils/theme/colors";
 
 interface DeliverySectionProps {
 	delivery: Delivery;
@@ -53,6 +58,60 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+
+	// Helper function to get forecast by probability (percentile)
+	const getForecast = (probability: number) => {
+		return delivery.completionDates.find((f) => f.probability === probability);
+	};
+
+	// Helper function to compare dates (date portion only)
+	const compareDates = (
+		forecastDate: Date,
+		targetDateStr: string,
+	): "before" | "equal" | "after" => {
+		const forecast = new Date(forecastDate);
+		const target = new Date(targetDateStr);
+		forecast.setHours(0, 0, 0, 0);
+		target.setHours(0, 0, 0, 0);
+		if (forecast < target) return "before";
+		if (forecast > target) return "after";
+		return "equal";
+	};
+
+	// Helper function to determine chip color based on comparison with delivery date
+	const get85PercentileColor = () => {
+		const forecast85 = getForecast(85);
+		if (!forecast85) return realisticColor;
+		const comparison = compareDates(forecast85.expectedDate, delivery.date);
+		if (comparison === "before") return certainColor;
+		if (comparison === "equal") return realisticColor;
+		return riskyColor;
+	};
+
+	const getRangeColor = () => {
+		const forecast70 = getForecast(70);
+		const forecast95 = getForecast(95);
+		if (!forecast70 || !forecast95) return realisticColor;
+		const comparison70 = compareDates(forecast70.expectedDate, delivery.date);
+		const comparison95 = compareDates(forecast95.expectedDate, delivery.date);
+
+		// Certain if 95% is before the delivery date
+		if (comparison95 === "before") return certainColor;
+		// Realistic if 70% is before, but 95% is after the delivery date
+		if (comparison70 === "before" && comparison95 === "after")
+			return realisticColor;
+		// Risky if 70% is after the delivery date
+		return riskyColor;
+	};
+
+	// Helper function to format date for display
+	const formatDate = (date: Date): string => {
+		return new Date(date).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		});
+	};
 
 	// Define feature grid columns (adapted from PortfolioFeatureList)
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
@@ -194,10 +253,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					<AccordionSummary
 						expandIcon={<ExpandMoreIcon />}
 						sx={{
-							minHeight: 64,
+							minHeight: 80,
 							position: "relative",
 							"&.Mui-expanded": {
-								minHeight: 64,
+								minHeight: 80,
 							},
 							"& .MuiAccordionSummary-content": {
 								alignItems: "center",
@@ -263,40 +322,93 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							<Box
 								sx={{
 									display: "flex",
-									alignItems: "center",
-									gap: 2,
+									flexDirection: "column",
+									gap: 1,
 									flexShrink: 0,
 								}}
 							>
-								<Typography variant="h6" component="h3">
-									{delivery.name}
-								</Typography>
-								<Chip
-									label={`Target Date: ${delivery.getFormattedDate()}`}
-									size="small"
-									variant="outlined"
-								/>
-								<Chip
-									label={`Scope: ${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm}`}
-									size="small"
-								/>
-								<Chip
-									label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
-									size="small"
+								{/* Row 1 */}
+								<Box
 									sx={{
-										bgcolor: forecastLevel.color,
-										color: "#fff",
-										fontWeight: "bold",
+										display: "flex",
+										alignItems: "center",
+										gap: 2,
 									}}
-								/>
+								>
+									<Typography variant="h6" component="h3">
+										{delivery.name}
+									</Typography>
+									<Chip
+										label={`Delivery Date: ${delivery.getFormattedDate()}`}
+										size="small"
+										variant="outlined"
+									/>
+									<Chip
+										label={`Scope: ${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm}`}
+										size="small"
+									/>
+								</Box>
+								{/* Row 2 */}
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										gap: 2,
+									}}
+								>
+									<Chip
+										label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
+										size="small"
+										sx={{
+											bgcolor: forecastLevel.color,
+											color: "#fff",
+											fontWeight: "bold",
+										}}
+									/>
+									{(() => {
+										const forecast85 = getForecast(85);
+										if (forecast85) {
+											return (
+												<Chip
+													label={`85%: ${formatDate(forecast85.expectedDate)}`}
+													size="small"
+													sx={{
+														bgcolor: get85PercentileColor(),
+														color: "#fff",
+														fontWeight: "bold",
+													}}
+												/>
+											);
+										}
+										return null;
+									})()}
+									{(() => {
+										const forecast70 = getForecast(70);
+										const forecast95 = getForecast(95);
+										if (forecast70 && forecast95) {
+											return (
+												<Chip
+													label={`∆ 70 - 95%: ${formatDate(forecast70.expectedDate)} - ${formatDate(forecast95.expectedDate)}`}
+													size="small"
+													sx={{
+														bgcolor: getRangeColor(),
+														color: "#fff",
+														fontWeight: "bold",
+													}}
+												/>
+											);
+										}
+										return null;
+									})()}
+								</Box>
 							</Box>
 							<Box
 								sx={{
 									display: "flex",
 									alignItems: "center",
-									justifyContent: "flex-end",
-									flex: 1, // Take up remaining space
-									minWidth: 0, // Allow shrinking if needed
+									justifyContent: "center",
+									flex: 1,
+									minWidth: 200,
 								}}
 							>
 								<ProgressIndicator

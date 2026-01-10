@@ -37,6 +37,7 @@ describe("DeliveryService", () => {
 						{ featureId: 1, likelihoodPercentage: 80.0 },
 						{ featureId: 2, likelihoodPercentage: 75.5 },
 					],
+					completionDates: [],
 				},
 				{
 					id: 2,
@@ -49,6 +50,7 @@ describe("DeliveryService", () => {
 					remainingWork: 14,
 					totalWork: 20,
 					featureLikelihoods: [{ featureId: 3, likelihoodPercentage: 60.0 }],
+					completionDates: [],
 				},
 			];
 

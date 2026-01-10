@@ -93,6 +93,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		remainingWork: 10,
 		totalWork: 20,
 		featureLikelihoods: [],
+		completionDates: [],
 	};
 
 	const renderModal = (
