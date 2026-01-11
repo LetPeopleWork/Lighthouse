@@ -36,6 +36,7 @@ import {
 	TerminologyService,
 } from "./TerminologyService";
 import { type IVersionService, VersionService } from "./VersionService";
+import { type IWizardService, WizardService } from "./WizardService";
 import {
 	type IWorkTrackingSystemService,
 	WorkTrackingSystemService,
@@ -60,6 +61,7 @@ export interface IApiServiceContext {
 	licensingService: ILicensingService;
 	demoDataService: IDemoDataService;
 	deliveryService: IDeliveryService;
+	wizardService: IWizardService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -85,6 +87,7 @@ const defaultServices: IApiServiceContext = {
 	licensingService: new LicensingService(),
 	demoDataService: new DemoDataService(),
 	deliveryService: new DeliveryService(),
+	wizardService: new WizardService(),
 };
 
 export function getApiServices(): IApiServiceContext {
