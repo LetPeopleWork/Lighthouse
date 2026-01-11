@@ -60,7 +60,8 @@ describe("DeliverySection", () => {
 			</MemoryRouter>,
 		);
 
-		expect(screen.getByText("Test Delivery (1/31/2025)")).toBeInTheDocument();
+		expect(screen.getByText("Test Delivery")).toBeInTheDocument();
+		expect(screen.getByText("Delivery Date: 1/31/2025")).toBeInTheDocument();
 		expect(screen.getByText("Likelihood: 75%")).toBeInTheDocument();
 		expect(screen.getByText(/1 Feature/i)).toBeInTheDocument();
 	});
@@ -182,7 +183,7 @@ describe("DeliverySection", () => {
 			expect(screen.getByText(/85%:/)).toBeInTheDocument();
 		});
 
-		it("should display 70-95% range chip when both forecasts exist", () => {
+		it("should display 70-95% range forecasts when both forecasts exist", () => {
 			const deliveryWithForecasts = new Delivery();
 			deliveryWithForecasts.id = 1;
 			deliveryWithForecasts.name = "Test Delivery";
@@ -209,7 +210,8 @@ describe("DeliverySection", () => {
 				</MemoryRouter>,
 			);
 
-			expect(screen.getByText(/∆ 70 - 95%:/)).toBeInTheDocument();
+			expect(screen.getByText(/70%:/)).toBeInTheDocument();
+			expect(screen.getByText(/95%:/)).toBeInTheDocument();
 		});
 
 		it("should not display 85% chip when forecast does not exist", () => {
@@ -280,8 +282,9 @@ describe("DeliverySection", () => {
 				</MemoryRouter>,
 			);
 
+			expect(screen.getByText(/70%:/)).toBeInTheDocument();
 			expect(screen.getByText(/85%:/)).toBeInTheDocument();
-			expect(screen.getByText(/∆ 70 - 95%:/)).toBeInTheDocument();
+			expect(screen.getByText(/95%:/)).toBeInTheDocument();
 		});
 	});
 });

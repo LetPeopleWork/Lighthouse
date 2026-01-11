@@ -27,11 +27,6 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../../services/TerminologyContext";
-import {
-	certainColor,
-	realisticColor,
-	riskyColor,
-} from "../../../../../utils/theme/colors";
 
 interface DeliverySectionProps {
 	delivery: Delivery;
@@ -59,51 +54,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
-
-	// Helper function to get forecast by probability (percentile)
-	const getForecast = (probability: number) => {
-		return delivery.completionDates.find((f) => f.probability === probability);
-	};
-
-	// Helper function to compare dates (date portion only)
-	const compareDates = (
-		forecastDate: Date,
-		targetDateStr: string,
-	): "before" | "equal" | "after" => {
-		const forecast = new Date(forecastDate);
-		const target = new Date(targetDateStr);
-		forecast.setHours(0, 0, 0, 0);
-		target.setHours(0, 0, 0, 0);
-		if (forecast < target) return "before";
-		if (forecast > target) return "after";
-		return "equal";
-	};
-
-	// Helper function to determine chip color based on comparison with delivery date
-	const get85PercentileColor = () => {
-		const forecast85 = getForecast(85);
-		if (!forecast85) return realisticColor;
-		const comparison = compareDates(forecast85.expectedDate, delivery.date);
-		if (comparison === "before") return certainColor;
-		if (comparison === "equal") return realisticColor;
-		return riskyColor;
-	};
-
-	const getRangeColor = () => {
-		const forecast70 = getForecast(70);
-		const forecast95 = getForecast(95);
-		if (!forecast70 || !forecast95) return realisticColor;
-		const comparison70 = compareDates(forecast70.expectedDate, delivery.date);
-		const comparison95 = compareDates(forecast95.expectedDate, delivery.date);
-
-		// Certain if 95% is before the delivery date
-		if (comparison95 === "before") return certainColor;
-		// Realistic if 70% is before, but 95% is after the delivery date
-		if (comparison70 === "before" && comparison95 === "after")
-			return realisticColor;
-		// Risky if 70% is after the delivery date
-		return riskyColor;
-	};
 
 	// Helper function to format date for display
 	const formatDate = (date: Date): string => {
@@ -314,85 +264,91 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						<Box
 							sx={{
 								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
+								flexDirection: "column",
 								width: "100%",
-								gap: 4, // Add gap between left and right sections
+								gap: 1,
 							}}
 						>
 							<Box
 								sx={{
 									display: "flex",
 									alignItems: "center",
-									gap: 2,
-									flexShrink: 0,
+									justifyContent: "space-between",
+									width: "100%",
+									gap: 4,
 								}}
 							>
-								<Typography variant="h6" component="h3">
-									{`${delivery.name} (${delivery.getFormattedDate()})`}
-								</Typography>
-								<Chip
-									label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
-									size="small"
+								<Box
 									sx={{
-										bgcolor: forecastLevel.color,
-										color: "#fff",
-										fontWeight: "bold",
+										display: "flex",
+										flexDirection: "column",
+										gap: 1,
+										flex: 1,
 									}}
-								/>
-								{(() => {
-									const forecast85 = getForecast(85);
-									if (forecast85) {
-										return (
+								>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 2,
+											flexShrink: 0,
+										}}
+									>
+										<Typography variant="h6" component="h3">
+											{delivery.name}
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Delivery Date: {delivery.getFormattedDate()}
+										</Typography>
+										<Chip
+											label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
+											size="small"
+											sx={{
+												bgcolor: forecastLevel.color,
+												color: "#fff",
+												fontWeight: "bold",
+											}}
+										/>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 1,
+											flexWrap: "wrap",
+										}}
+									>
+										<Typography variant="body2" color="text.secondary">
+											Forecast:
+										</Typography>
+										{delivery.completionDates.map((forecast) => (
 											<Chip
-												label={`85%: ${formatDate(forecast85.expectedDate)}`}
+												key={forecast.probability}
+												label={`${forecast.probability}%: ${formatDate(forecast.expectedDate)}`}
 												size="small"
-												sx={{
-													bgcolor: get85PercentileColor(),
-													color: "#fff",
-													fontWeight: "bold",
-												}}
+												variant="outlined"
 											/>
-										);
-									}
-									return null;
-								})()}
-								{(() => {
-									const forecast70 = getForecast(70);
-									const forecast95 = getForecast(95);
-									if (forecast70 && forecast95) {
-										return (
-											<Chip
-												label={`∆ 70 - 95%: ${formatDate(forecast70.expectedDate)} - ${formatDate(forecast95.expectedDate)}`}
-												size="small"
-												sx={{
-													bgcolor: getRangeColor(),
-													color: "#fff",
-													fontWeight: "bold",
-												}}
-											/>
-										);
-									}
-									return null;
-								})()}
-							</Box>
-							<Box
-								sx={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									flex: 1,
-									minWidth: 200,
-								}}
-							>
-								<ProgressIndicator
-									title={`${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm} (${delivery.totalWork} ${workItemsTerm})`}
-									progressableItem={{
-										remainingWork: delivery.remainingWork,
-										totalWork: delivery.totalWork,
+										))}
+									</Box>
+								</Box>
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										minWidth: 200,
+										flex: 1,
 									}}
-									showDetails={true}
-								/>
+								>
+									<ProgressIndicator
+										title={`${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm} (${delivery.totalWork} ${workItemsTerm})`}
+										progressableItem={{
+											remainingWork: delivery.remainingWork,
+											totalWork: delivery.totalWork,
+										}}
+										showDetails={true}
+									/>
+								</Box>
 							</Box>
 						</Box>
 					</AccordionSummary>
