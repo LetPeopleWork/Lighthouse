@@ -79,7 +79,7 @@ describe("FeatureSelector", () => {
 		expect(screen.getByText("No rows to display")).toBeInTheDocument();
 	});
 
-	it("should filter and display only ToDo and Doing features", () => {
+	it("should display ToDo, Doing and Done features", () => {
 		const features = createMockFeatures([
 			{ stateCategory: "ToDo", id: 1, name: "Feature 1" },
 			{ stateCategory: "Doing", id: 2, name: "Feature 2" },
@@ -95,8 +95,9 @@ describe("FeatureSelector", () => {
 		expect(screen.getByText("2")).toBeInTheDocument();
 		expect(screen.getByText("Feature 2")).toBeInTheDocument();
 
-		expect(screen.queryByText("3")).not.toBeInTheDocument();
-		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		expect(screen.getByText("3")).toBeInTheDocument();
+		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+
 		expect(screen.queryByText("4")).not.toBeInTheDocument();
 		expect(screen.queryByText("Feature 4")).not.toBeInTheDocument();
 	});
@@ -182,5 +183,55 @@ describe("FeatureSelector", () => {
 
 		expect(screen.getByText("123")).toBeInTheDocument();
 		expect(screen.getByText("Important Feature")).toBeInTheDocument();
+	});
+
+	it("should display Done features at the bottom after ToDo and Doing features", () => {
+		const features = createMockFeatures([
+			{ stateCategory: "Done", id: 5, name: "Done Feature 1" },
+			{ stateCategory: "ToDo", id: 1, name: "ToDo Feature" },
+			{ stateCategory: "Done", id: 6, name: "Done Feature 2" },
+			{ stateCategory: "Doing", id: 2, name: "Doing Feature 1" },
+			{ stateCategory: "Doing", id: 3, name: "Doing Feature 2" },
+		]);
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		// Get all feature names displayed in the grid
+		const featureNames = [
+			screen.getByText("ToDo Feature"),
+			screen.getByText("Doing Feature 1"),
+			screen.getByText("Doing Feature 2"),
+			screen.getByText("Done Feature 1"),
+			screen.getByText("Done Feature 2"),
+		];
+
+		// All features should be present
+		featureNames.forEach((name) => {
+			expect(name).toBeInTheDocument();
+		});
+
+		// Get all rows in order
+		const rows = screen.getAllByRole("row").slice(1); // Skip header row
+
+		const rowTexts = rows.map((row) => row.textContent || "");
+
+		const doneFeature1Index = rowTexts.findIndex((text) =>
+			text.includes("Done Feature 1"),
+		);
+		const doneFeature2Index = rowTexts.findIndex((text) =>
+			text.includes("Done Feature 2"),
+		);
+		const todoFeatureIndex = rowTexts.findIndex((text) =>
+			text.includes("ToDo Feature"),
+		);
+		const doingFeature1Index = rowTexts.findIndex((text) =>
+			text.includes("Doing Feature 1"),
+		);
+
+		// Check that Done features appear after active features
+		expect(doneFeature1Index).toBeGreaterThan(todoFeatureIndex);
+		expect(doneFeature1Index).toBeGreaterThan(doingFeature1Index);
+		expect(doneFeature2Index).toBeGreaterThan(todoFeatureIndex);
+		expect(doneFeature2Index).toBeGreaterThan(doingFeature1Index);
 	});
 });

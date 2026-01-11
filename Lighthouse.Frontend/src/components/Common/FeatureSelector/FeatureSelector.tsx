@@ -13,8 +13,22 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 	storageKey,
 }) => {
 	const eligibleFeatures = useMemo(() => {
-		const validStates: Set<StateCategory> = new Set(["ToDo", "Doing"]);
-		return features.filter((feature) => validStates.has(feature.stateCategory));
+		const validStates: Set<StateCategory> = new Set(["ToDo", "Doing", "Done"]);
+		const filtered = features.filter((feature) =>
+			validStates.has(feature.stateCategory),
+		);
+
+		// Sort: active features first, completed features at bottom
+		return filtered.sort((a, b) => {
+			const aIsDone = a.stateCategory === "Done";
+			const bIsDone = b.stateCategory === "Done";
+
+			if (aIsDone === bIsDone) {
+				return 0; // Keep original order within same category
+			}
+
+			return aIsDone ? 1 : -1; // Done features go to the bottom
+		});
 	}, [features]);
 
 	// Transform features into rows for DataGrid
@@ -85,7 +99,16 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 			headerName: "Name",
 			flex: 1,
 			hideable: false,
-			renderCell: ({ row }) => <span>{row.name}</span>,
+			renderCell: ({ row }) => (
+				<span
+					style={{
+						textDecoration:
+							row.feature.stateCategory === "Done" ? "line-through" : "none",
+					}}
+				>
+					{row.name}
+				</span>
+			),
 		},
 	];
 
