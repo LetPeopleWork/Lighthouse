@@ -22,15 +22,18 @@ export class DeliveryItem {
 	}
 
 	async getScope(): Promise<number | null> {
-		const text = await this.container.textContent();
-		const match = text?.match(/Scope:\s*(\d+)\s*Feature/);
-		return match ? parseInt(match[1], 10) : null;
+		const badge = this.container
+			.locator(String.raw`text=/\d+\s*Features/`)
+			.first();
+		const text = await badge.textContent();
+		const match = text?.match(/(\d+)/);
+		return match ? Number.parseInt(match[1], 10) : null;
 	}
 
 	async getLikelihood(): Promise<number | null> {
 		const text = await this.container.textContent();
 		const match = text?.match(/Likelihood:\s*(\d+)%/);
-		return match ? parseInt(match[1], 10) : null;
+		return match ? Number.parseInt(match[1], 10) : null;
 	}
 
 	async getProgress(): Promise<string | null> {
@@ -65,7 +68,7 @@ export class DeliveryItem {
 		for (let i = 0; i < count; i++) {
 			const text = await likelihoodCells.nth(i).textContent();
 			if (text) {
-				const number = parseInt(text.trim().replace("%", ""), 10);
+				const number = Number.parseInt(text.trim().replace("%", ""), 10);
 				if (!Number.isNaN(number)) {
 					likelihoods.push(number);
 				}
