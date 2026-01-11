@@ -36,10 +36,9 @@ using Lighthouse.Backend.macOS;
 using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Diagnostics;
 using System.Text;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend
 {
@@ -304,7 +303,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
-            builder.Services.AddScoped<JiraWorkTrackingConnector>();
+            builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();
             builder.Services.AddScoped<LinearWorkTrackingConnector>();
             builder.Services.AddScoped<CsvWorkTrackingConnector>();
 

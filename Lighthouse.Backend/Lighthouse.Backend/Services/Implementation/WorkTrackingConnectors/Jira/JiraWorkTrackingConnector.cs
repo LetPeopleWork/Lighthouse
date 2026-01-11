@@ -15,11 +15,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         IIssueFactory issueFactory,
         ILogger<JiraWorkTrackingConnector> logger,
         ICryptoService cryptoService)
-        : IWorkTrackingConnector
+        : IJiraWorkTrackingConnector
     {
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
 
         private static readonly Dictionary<int, Dictionary<string, string>> FieldNames = new();
+
+        private const string BoardsEndpoint = "rest/agile/latest/board";
 
         private static readonly SocketsHttpHandler SharedHandler = new()
         {
@@ -98,6 +100,93 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return false;
             }
+        }
+
+        public async Task<IEnumerable<JiraBoard>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            try
+            {
+                var client = GetJiraRestClient(workTrackingSystemConnection);
+
+                return await GetBoardsFromJira(workTrackingSystemConnection, client);
+            }
+            catch
+            {
+                return [];
+            }
+        }
+
+        private async Task<IEnumerable<JiraBoard>> GetBoardsFromJira(WorkTrackingSystemConnection workTrackingSystemConnection, HttpClient client)
+        {
+            const int maxResults = 50;
+            var startAt = 0;
+            var isLast = false;
+            var boards = new List<JiraBoard>();
+            
+            while (!isLast)
+            {
+                var response = await client.GetAsync($"{BoardsEndpoint}?startAt={startAt}&maxResults={maxResults}");
+                    
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogInformation("Authentication is not valid for {Connection}", workTrackingSystemConnection.Name);
+                    return [];
+                }
+
+                var boardsResponseBody = await response.Content.ReadAsStringAsync();
+                using var boardsJson = JsonDocument.Parse(boardsResponseBody);
+                    
+                var parsedBoards  = ParseJiraBoards(boardsJson);
+                boards.AddRange(parsedBoards);
+
+                isLast = CheckIfIsLast(boardsJson, maxResults);
+                startAt += maxResults;
+            }
+
+            return boards;
+        }
+
+        private static bool CheckIfIsLast(JsonDocument boardsJson, int maxResults)
+        {
+            bool isLast;
+            if (boardsJson.RootElement.TryGetProperty("isLast", out var isLastElement))
+            {
+                isLast = isLastElement.GetBoolean();
+            }
+            else
+            {
+                var currentPageSize = boardsJson.RootElement.TryGetProperty("values", out var values) 
+                    ? values.GetArrayLength() 
+                    : 0;
+                isLast = currentPageSize < maxResults;
+            }
+
+            return isLast;
+        }
+
+        private static List<JiraBoard> ParseJiraBoards(JsonDocument boardsJson)
+        {
+            var boards = new List<JiraBoard>();
+            
+            var root = boardsJson.RootElement;
+
+            if (!root.TryGetProperty("values", out var valuesElement))
+            {
+                return boards;
+            }
+
+            foreach (var boardElement in valuesElement.EnumerateArray())
+            {
+                var board = new JiraBoard
+                {
+                    Id = boardElement.GetProperty("id").GetInt32(),
+                    Name = boardElement.GetProperty("name").GetString()
+                };
+                
+                boards.Add(board);
+            }
+
+            return boards;
         }
 
         private async Task<bool> ValidateFields(WorkTrackingSystemConnection connection)

@@ -472,6 +472,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetJiraBoards_ReturnsCorrectBoards()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boards = (await subject.GetBoards(workTrackingSystemConnection)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boards, Has.Count.GreaterThan(1));
+                
+                var storiesBoard =  boards.Single(b => b.Name == "Stories");
+                Assert.That(storiesBoard.Id, Is.EqualTo(8));
+            }
+        }
+
+        [Test]
         public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
         {
             var subject = CreateSubject();
