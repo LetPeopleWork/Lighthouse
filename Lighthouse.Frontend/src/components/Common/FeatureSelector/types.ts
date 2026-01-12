@@ -16,6 +16,7 @@ export interface FeatureSelectorProps {
 
 export interface FeatureSelectorRow {
 	id: number;
+	reference: string;
 	name: string;
 	selected: boolean;
 	feature: IFeature;

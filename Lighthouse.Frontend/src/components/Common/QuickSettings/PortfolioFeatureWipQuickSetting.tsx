@@ -153,7 +153,7 @@ const PortfolioFeatureWipQuickSetting: React.FC<
 				fullWidth
 			>
 				<DialogTitle>
-					{featureTerm} {wipTerm} per {teamTerm})
+					{featureTerm} {wipTerm} per {teamTerm}
 				</DialogTitle>
 				<DialogContent>
 					<Box

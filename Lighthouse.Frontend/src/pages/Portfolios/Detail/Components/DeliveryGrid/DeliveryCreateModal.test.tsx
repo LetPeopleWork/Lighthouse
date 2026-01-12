@@ -242,19 +242,21 @@ describe("DeliveryCreateModal", () => {
 		expect(mockOnClose).toHaveBeenCalled();
 	});
 
-	it("should show only ToDo and Doing features in feature selector", async () => {
+	it("should ToDo, Doing, and Done features in feature selector", async () => {
 		renderModal();
 
 		await waitFor(() => {
-			expect(screen.getByText("1")).toBeInTheDocument();
+			expect(screen.getByText("FTR-1")).toBeInTheDocument();
 			expect(screen.getByText("Todo Feature 1")).toBeInTheDocument();
-			expect(screen.getByText("2")).toBeInTheDocument();
+			expect(screen.getByText("FTR-2")).toBeInTheDocument();
 			expect(screen.getByText("Doing Feature 1")).toBeInTheDocument();
-			expect(screen.getByText("4")).toBeInTheDocument();
+			expect(screen.getByText("FTR-4")).toBeInTheDocument();
 			expect(screen.getByText("Todo Feature 2")).toBeInTheDocument();
 		});
 
 		// Done feature should not be visible
-		expect(screen.queryByText("3 - Done Feature 1")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("FTR-3 - Done Feature 1"),
+		).not.toBeInTheDocument();
 	});
 });

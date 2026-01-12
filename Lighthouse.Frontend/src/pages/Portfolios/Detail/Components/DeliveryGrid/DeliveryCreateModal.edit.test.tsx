@@ -48,12 +48,14 @@ const mockFeatureService = createMockFeatureService();
 mockFeatureService.getFeaturesByIds = vi.fn().mockResolvedValue([
 	{
 		id: 1,
+		referenceId: "FTR-1",
 		name: "Test Feature 1",
 		stateCategory: "ToDo" as const,
 		state: "New",
 	},
 	{
 		id: 2,
+		referenceId: "FTR-2",
 		name: "Test Feature 2",
 		stateCategory: "Doing" as const,
 		state: "In Progress",
@@ -169,7 +171,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 
 		await waitFor(() => {
 			// Features should be loaded and checkboxes available
-			expect(screen.getByText("1")).toBeInTheDocument();
+			expect(screen.getByText("FTR-1")).toBeInTheDocument();
 			expect(screen.getByText("Test Feature 1")).toBeInTheDocument();
 		});
 
@@ -200,7 +202,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		renderModal(undefined, mockOnSave);
 
 		await waitFor(() => {
-			expect(screen.getByText("1")).toBeInTheDocument();
+			expect(screen.getByText("FTR-1")).toBeInTheDocument();
 			expect(screen.getByText("Test Feature 1")).toBeInTheDocument();
 		});
 

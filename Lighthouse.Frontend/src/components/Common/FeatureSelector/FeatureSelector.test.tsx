@@ -37,24 +37,31 @@ const getMockFeature = (overrides?: Partial<IFeature>): IFeature => {
 	return { ...baseFeature, ...overrides };
 };
 
+const getStateFromCategory = (stateCategory: StateCategory): string => {
+	if (stateCategory === "ToDo") {
+		return "New";
+	}
+	if (stateCategory === "Doing") {
+		return "Active";
+	}
+	return "Completed";
+};
+
 const createMockFeatures = (
 	stateCategoriesAndIds: Array<{
 		stateCategory: StateCategory;
 		id: number;
+		referenceId: string;
 		name: string;
 	}>,
 ): IFeature[] => {
-	return stateCategoriesAndIds.map(({ stateCategory, id, name }) =>
+	return stateCategoriesAndIds.map(({ stateCategory, id, referenceId, name }) =>
 		getMockFeature({
 			id,
 			name,
 			stateCategory,
-			state:
-				stateCategory === "ToDo"
-					? "New"
-					: stateCategory === "Doing"
-						? "Active"
-						: "Completed",
+			referenceId,
+			state: getStateFromCategory(stateCategory),
 		}),
 	);
 };
@@ -81,31 +88,46 @@ describe("FeatureSelector", () => {
 
 	it("should display ToDo, Doing and Done features", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "ToDo", id: 1, name: "Feature 1" },
-			{ stateCategory: "Doing", id: 2, name: "Feature 2" },
-			{ stateCategory: "Done", id: 3, name: "Feature 3" },
-			{ stateCategory: "Unknown", id: 4, name: "Feature 4" },
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
+			{
+				stateCategory: "Doing",
+				id: 2,
+				name: "Feature 2",
+				referenceId: "FTR-2",
+			},
+			{ stateCategory: "Done", id: 3, name: "Feature 3", referenceId: "FTR-3" },
+			{
+				stateCategory: "Unknown",
+				id: 4,
+				name: "Feature 4",
+				referenceId: "FTR-4",
+			},
 		]);
 
 		render(<FeatureSelector {...defaultProps} features={features} />);
 
-		expect(screen.getByText("1")).toBeInTheDocument();
+		expect(screen.getByText("FTR-1")).toBeInTheDocument();
 		expect(screen.getByText("Feature 1")).toBeInTheDocument();
 
-		expect(screen.getByText("2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2")).toBeInTheDocument();
 		expect(screen.getByText("Feature 2")).toBeInTheDocument();
 
-		expect(screen.getByText("3")).toBeInTheDocument();
+		expect(screen.getByText("FTR-3")).toBeInTheDocument();
 		expect(screen.getByText("Feature 3")).toBeInTheDocument();
 
-		expect(screen.queryByText("4")).not.toBeInTheDocument();
+		expect(screen.queryByText("FTR-4")).not.toBeInTheDocument();
 		expect(screen.queryByText("Feature 4")).not.toBeInTheDocument();
 	});
 
 	it("should show selected features as checked", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "ToDo", id: 1, name: "Feature 1" },
-			{ stateCategory: "Doing", id: 2, name: "Feature 2" },
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
+			{
+				stateCategory: "Doing",
+				id: 2,
+				name: "Feature 2",
+				referenceId: "FTR-2",
+			},
 		]);
 
 		render(
@@ -123,8 +145,13 @@ describe("FeatureSelector", () => {
 
 	it("should call onChange when feature selection changes", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "ToDo", id: 1, name: "Feature 1" },
-			{ stateCategory: "Doing", id: 2, name: "Feature 2" },
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
+			{
+				stateCategory: "Doing",
+				id: 2,
+				name: "Feature 2",
+				referenceId: "FTR-2",
+			},
 		]);
 
 		render(<FeatureSelector {...defaultProps} features={features} />);
@@ -137,8 +164,13 @@ describe("FeatureSelector", () => {
 
 	it("should handle multiple feature selection correctly", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "ToDo", id: 1, name: "Feature 1" },
-			{ stateCategory: "Doing", id: 2, name: "Feature 2" },
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
+			{
+				stateCategory: "Doing",
+				id: 2,
+				name: "Feature 2",
+				referenceId: "FTR-2",
+			},
 		]);
 
 		render(<FeatureSelector {...defaultProps} features={features} />);
@@ -157,7 +189,7 @@ describe("FeatureSelector", () => {
 
 	it("should unselect feature when already selected checkbox is clicked", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "ToDo", id: 1, name: "Feature 1" },
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
 		]);
 
 		render(
@@ -176,22 +208,52 @@ describe("FeatureSelector", () => {
 
 	it("should display feature ID and name in clickable format", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "ToDo", id: 123, name: "Important Feature" },
+			{
+				stateCategory: "ToDo",
+				id: 123,
+				referenceId: "FTR-123",
+				name: "Important Feature",
+			},
 		]);
 
 		render(<FeatureSelector {...defaultProps} features={features} />);
 
-		expect(screen.getByText("123")).toBeInTheDocument();
+		expect(screen.getByText("FTR-123")).toBeInTheDocument();
 		expect(screen.getByText("Important Feature")).toBeInTheDocument();
 	});
 
 	it("should display Done features at the bottom after ToDo and Doing features", () => {
 		const features = createMockFeatures([
-			{ stateCategory: "Done", id: 5, name: "Done Feature 1" },
-			{ stateCategory: "ToDo", id: 1, name: "ToDo Feature" },
-			{ stateCategory: "Done", id: 6, name: "Done Feature 2" },
-			{ stateCategory: "Doing", id: 2, name: "Doing Feature 1" },
-			{ stateCategory: "Doing", id: 3, name: "Doing Feature 2" },
+			{
+				stateCategory: "Done",
+				id: 5,
+				name: "Done Feature 1",
+				referenceId: "FTR-5",
+			},
+			{
+				stateCategory: "ToDo",
+				id: 1,
+				name: "ToDo Feature",
+				referenceId: "FTR-1",
+			},
+			{
+				stateCategory: "Done",
+				id: 6,
+				name: "Done Feature 2",
+				referenceId: "FTR-6",
+			},
+			{
+				stateCategory: "Doing",
+				id: 2,
+				name: "Doing Feature 1",
+				referenceId: "FTR-2",
+			},
+			{
+				stateCategory: "Doing",
+				id: 3,
+				name: "Doing Feature 2",
+				referenceId: "FTR-3",
+			},
 		]);
 
 		render(<FeatureSelector {...defaultProps} features={features} />);

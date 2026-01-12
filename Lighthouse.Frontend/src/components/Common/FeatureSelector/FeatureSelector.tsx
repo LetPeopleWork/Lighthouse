@@ -35,6 +35,7 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 	const rows: FeatureSelectorRow[] = useMemo(() => {
 		return eligibleFeatures.map((feature) => ({
 			id: feature.id,
+			reference: feature.referenceId,
 			name: feature.name,
 			selected: selectedFeatureIds.includes(feature.id),
 			feature,
@@ -72,7 +73,7 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 		},
 		{
 			field: "id",
-			headerName: "ID",
+			headerName: "Reference",
 			flex: 1,
 			hideable: false,
 			renderCell: ({ row }) => (
@@ -90,7 +91,7 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 						},
 					}}
 				>
-					{row.id}
+					{row.reference}
 				</Link>
 			),
 		},
