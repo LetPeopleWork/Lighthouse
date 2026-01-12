@@ -13,6 +13,8 @@ export interface IDataRetrievalWizard {
 export interface DataRetrievalWizardProps {
 	open: boolean;
 
+	workTrackingSystemConnectionId: number;
+
 	onComplete: (value: string) => void;
 
 	onCancel: () => void;

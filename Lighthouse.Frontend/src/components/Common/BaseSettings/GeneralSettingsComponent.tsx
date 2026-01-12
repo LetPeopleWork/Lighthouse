@@ -218,9 +218,10 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 				</Grid>
 			)}
 			{/* Render the active wizard dialog */}
-			{activeWizard && (
+			{activeWizard && selectedWorkTrackingSystem?.id != null && (
 				<activeWizard.component
 					open={true}
+					workTrackingSystemConnectionId={selectedWorkTrackingSystem.id}
 					onComplete={handleWizardComplete}
 					onCancel={handleWizardCancel}
 				/>

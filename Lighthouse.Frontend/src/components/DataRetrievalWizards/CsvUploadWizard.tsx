@@ -42,6 +42,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 	open,
+	workTrackingSystemConnectionId: _workTrackingSystemConnectionId,
 	onComplete,
 	onCancel,
 }) => {

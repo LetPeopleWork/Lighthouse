@@ -4,17 +4,26 @@ import CsvUploadWizard from "./CsvUploadWizard";
 import dataRetrievalWizards, {
 	getWizardsForSystem,
 } from "./DataRetrievalWizardRegistry";
+import JiraBoardWizard from "./JiraBoardWizard";
 
 describe("DataRetrievalWizardRegistry", () => {
 	describe("dataRetrievalWizards array", () => {
-		it("should contain the CSV upload wizard", () => {
-			expect(dataRetrievalWizards).toHaveLength(1);
+		it("should contain the CSV upload wizard and Jira board wizard", () => {
+			expect(dataRetrievalWizards).toHaveLength(2);
 
-			const csvWizard = dataRetrievalWizards[0];
-			expect(csvWizard.id).toBe("csv.upload");
-			expect(csvWizard.name).toBe("Upload CSV File");
-			expect(csvWizard.applicableSystemTypes).toContain("Csv");
-			expect(csvWizard.component).toBe(CsvUploadWizard);
+			const csvWizard = dataRetrievalWizards.find((w) => w.id === "csv.upload");
+			expect(csvWizard).toBeDefined();
+			expect(csvWizard?.name).toBe("Upload CSV File");
+			expect(csvWizard?.applicableSystemTypes).toContain("Csv");
+			expect(csvWizard?.component).toBe(CsvUploadWizard);
+
+			const jiraWizard = dataRetrievalWizards.find(
+				(w) => w.id === "jira.board",
+			);
+			expect(jiraWizard).toBeDefined();
+			expect(jiraWizard?.name).toBe("Select Jira Board");
+			expect(jiraWizard?.applicableSystemTypes).toContain("Jira");
+			expect(jiraWizard?.component).toBe(JiraBoardWizard);
 		});
 
 		it("should have valid wizard structure", () => {
@@ -41,10 +50,12 @@ describe("DataRetrievalWizardRegistry", () => {
 			expect(wizards[0].name).toBe("Upload CSV File");
 		});
 
-		it("should return empty array for Jira system type", () => {
+		it("should return Jira board wizard for Jira system type", () => {
 			const wizards = getWizardsForSystem("Jira");
 
-			expect(wizards).toHaveLength(0);
+			expect(wizards).toHaveLength(1);
+			expect(wizards[0].id).toBe("jira.board");
+			expect(wizards[0].name).toBe("Select Jira Board");
 		});
 
 		it("should return empty array for AzureDevOps system type", () => {

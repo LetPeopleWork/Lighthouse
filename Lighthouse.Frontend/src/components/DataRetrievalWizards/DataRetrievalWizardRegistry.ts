@@ -1,6 +1,7 @@
 import type { IDataRetrievalWizard } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import CsvUploadWizard from "./CsvUploadWizard";
+import JiraBoardWizard from "./JiraBoardWizard";
 
 const dataRetrievalWizards: IDataRetrievalWizard[] = [
 	{
@@ -8,6 +9,12 @@ const dataRetrievalWizards: IDataRetrievalWizard[] = [
 		name: "Upload CSV File",
 		applicableSystemTypes: ["Csv"],
 		component: CsvUploadWizard,
+	},
+	{
+		id: "jira.board",
+		name: "Select Jira Board",
+		applicableSystemTypes: ["Jira"],
+		component: JiraBoardWizard,
 	},
 ];
 

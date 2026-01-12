@@ -16,6 +16,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -36,6 +37,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={false}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -48,6 +50,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -61,6 +64,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -87,6 +91,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -110,6 +115,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -147,6 +153,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -173,6 +180,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -201,6 +209,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -217,6 +226,7 @@ describe("CsvUploadWizard", () => {
 		const { rerender } = render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -242,6 +252,7 @@ describe("CsvUploadWizard", () => {
 		rerender(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -259,6 +270,7 @@ describe("CsvUploadWizard", () => {
 		const { rerender } = render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -286,6 +298,7 @@ describe("CsvUploadWizard", () => {
 		rerender(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -301,6 +314,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -332,6 +346,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -355,6 +370,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
@@ -386,6 +402,7 @@ describe("CsvUploadWizard", () => {
 		render(
 			<CsvUploadWizard
 				open={true}
+				workTrackingSystemConnectionId={1}
 				onComplete={mockOnComplete}
 				onCancel={mockOnCancel}
 			/>,
