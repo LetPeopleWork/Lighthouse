@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
@@ -102,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        public async Task<IEnumerable<JiraBoard>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             try
             {
@@ -116,12 +117,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private async Task<IEnumerable<JiraBoard>> GetBoardsFromJira(WorkTrackingSystemConnection workTrackingSystemConnection, HttpClient client)
+        private async Task<IEnumerable<Board>> GetBoardsFromJira(WorkTrackingSystemConnection workTrackingSystemConnection, HttpClient client)
         {
             const int maxResults = 50;
             var startAt = 0;
             var isLast = false;
-            var boards = new List<JiraBoard>();
+            var boards = new List<Board>();
             
             while (!isLast)
             {
@@ -164,9 +165,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return isLast;
         }
 
-        private static List<JiraBoard> ParseJiraBoards(JsonDocument boardsJson)
+        private static List<Board> ParseJiraBoards(JsonDocument boardsJson)
         {
-            var boards = new List<JiraBoard>();
+            var boards = new List<Board>();
             
             var root = boardsJson.RootElement;
 
@@ -177,7 +178,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var boardElement in valuesElement.EnumerateArray())
             {
-                var board = new JiraBoard
+                var board = new Board
                 {
                     Id = boardElement.GetProperty("id").GetInt32(),
                     Name = boardElement.GetProperty("name").GetString()
@@ -523,7 +524,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
             var url = $"{baseAddress.TrimEnd('/')}/browse/{issue.Key}";
 
-            var additionalFieldDefs = workItemQueryOwner.WorkTrackingSystemConnection?.AdditionalFieldDefinitions ?? [];
+            var additionalFieldDefs = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions;
 
             var workItem = new WorkItemBase
             {
@@ -800,7 +801,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
             
-            logger.LogDebug("Getting Deployment Type of Jira Instace for {Url}", baseUrl);
+            logger.LogDebug("Getting Deployment Type of Jira Instance for {Url}", baseUrl);
             
             if (DeploymentCache.TryGetValue(baseUrl, out var cached))
             {

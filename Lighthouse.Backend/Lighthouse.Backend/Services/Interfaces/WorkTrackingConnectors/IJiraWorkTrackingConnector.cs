@@ -1,10 +1,10 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
     public interface IJiraWorkTrackingConnector : IWorkTrackingConnector
     {
-        Task<IEnumerable<JiraBoard>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection);
+        Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection);
     }
 }

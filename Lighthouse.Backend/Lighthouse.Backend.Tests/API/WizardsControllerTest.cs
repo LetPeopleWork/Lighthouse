@@ -1,6 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingSystemConnection = new WorkTrackingSystemConnection();
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(12)).Returns(workTrackingSystemConnection);
             
-            var boards = new List<JiraBoard>
+            var boards = new List<Board>
             {
                 new() { Id = 1, Name = "My Board" },
                 new() { Id = 2, Name = "My Other Board" }
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 
-                var returnedBoards = okResult.Value as List<JiraBoard>;
+                var returnedBoards = okResult.Value as List<Board>;
                 Assert.That(returnedBoards, Has.Count.EqualTo(2));
                 Assert.That(returnedBoards[0].Name, Is.EqualTo("My Board"));
                 Assert.That(returnedBoards[0].Id, Is.EqualTo(1));
