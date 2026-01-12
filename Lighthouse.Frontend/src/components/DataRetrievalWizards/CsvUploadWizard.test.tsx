@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import CsvUploadWizard from "./CsvUploadWizard";
 
 describe("CsvUploadWizard", () => {
@@ -202,7 +203,15 @@ describe("CsvUploadWizard", () => {
 		const useFileButton = screen.getByRole("button", { name: "Use File" });
 		await userEvent.click(useFileButton);
 
-		expect(mockOnComplete).toHaveBeenCalledWith(csvContent);
+		const expectedBoardInfo: IBoardInformation = {
+			dataRetrievalValue: csvContent,
+			workItemTypes: [],
+			toDoStates: [],
+			doingStates: [],
+			doneStates: [],
+		};
+
+		expect(mockOnComplete).toHaveBeenCalledWith(expectedBoardInfo);
 	});
 
 	it("calls onCancel when Cancel button is clicked", async () => {

@@ -1,3 +1,4 @@
+import type { IBoardInformation } from "../Boards/BoardInformation";
 import type { WorkTrackingSystemType } from "../WorkTracking/WorkTrackingSystemConnection";
 
 export interface IDataRetrievalWizard {
@@ -15,7 +16,7 @@ export interface DataRetrievalWizardProps {
 
 	workTrackingSystemConnectionId: number;
 
-	onComplete: (value: string) => void;
+	onComplete: (value: IBoardInformation) => void;
 
 	onCancel: () => void;
 }

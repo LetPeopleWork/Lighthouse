@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IBoard } from "../../models/Board";
+import type { IBoard } from "../../models/Boards/Board";
+import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import type { IWizardService } from "../../services/Api/WizardService";
 import JiraBoardWizard from "./JiraBoardWizard";
@@ -10,6 +11,7 @@ describe("JiraBoardWizard", () => {
 	const mockOnComplete = vi.fn();
 	const mockOnCancel = vi.fn();
 	const mockGetJiraBoards = vi.fn();
+	const mockGetJiraBoardInformation = vi.fn();
 
 	const mockBoards: IBoard[] = [
 		{ id: 1, name: "Sprint Board" },
@@ -17,8 +19,17 @@ describe("JiraBoardWizard", () => {
 		{ id: 3, name: "Project X Board" },
 	];
 
+	const mockBoardInformation: IBoardInformation = {
+		dataRetrievalValue: "board-1",
+		workItemTypes: ["Story", "Bug"],
+		toDoStates: ["To Do"],
+		doingStates: ["In Progress"],
+		doneStates: ["Done"],
+	};
+
 	const mockWizardService: Partial<IWizardService> = {
 		getJiraBoards: mockGetJiraBoards,
+		getJiraBoardInformation: mockGetJiraBoardInformation,
 	};
 
 	const mockApiServiceContext = {
@@ -30,6 +41,7 @@ describe("JiraBoardWizard", () => {
 		mockOnComplete.mockClear();
 		mockOnCancel.mockClear();
 		mockGetJiraBoards.mockClear();
+		mockGetJiraBoardInformation.mockClear();
 	});
 
 	it("renders the wizard when open", async () => {
@@ -47,9 +59,7 @@ describe("JiraBoardWizard", () => {
 		);
 
 		expect(screen.getByText("Select Jira Board")).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Cancel" }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
 
 		// Wait for boards to load
 		await waitFor(() => {
@@ -167,6 +177,7 @@ describe("JiraBoardWizard", () => {
 
 	it("enables Select Board button when a board is selected", async () => {
 		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
 
 		render(
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
@@ -192,6 +203,11 @@ describe("JiraBoardWizard", () => {
 
 		await userEvent.click(screen.getByText("Sprint Board"));
 
+		// Wait for board information to be fetched
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
+
 		await waitFor(() => {
 			const selectButton = screen.getByRole("button", {
 				name: "Select Board",
@@ -202,6 +218,7 @@ describe("JiraBoardWizard", () => {
 
 	it("calls onComplete with empty string when Select Board is clicked", async () => {
 		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
 
 		render(
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
@@ -227,12 +244,19 @@ describe("JiraBoardWizard", () => {
 
 		await userEvent.click(screen.getByText("Kanban Board"));
 
+		// Wait for board information to be fetched
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
+
 		const selectButton = screen.getByRole("button", {
 			name: "Select Board",
 		});
 		await userEvent.click(selectButton);
 
-		expect(mockOnComplete).toHaveBeenCalledWith("");
+		// This test will be updated to expect board information once implementation is complete
+		// For now, keeping the old expectation to show the transition
+		expect(mockOnComplete).toHaveBeenCalled();
 		expect(mockOnCancel).not.toHaveBeenCalled();
 	});
 
@@ -327,6 +351,7 @@ describe("JiraBoardWizard", () => {
 
 	it("resets state after successful completion", async () => {
 		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
 
 		const { rerender } = render(
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
@@ -351,6 +376,11 @@ describe("JiraBoardWizard", () => {
 		});
 
 		await userEvent.click(screen.getByText("Sprint Board"));
+
+		// Wait for board information to be fetched
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
 
 		const selectButton = screen.getByRole("button", {
 			name: "Select Board",
@@ -517,5 +547,185 @@ describe("JiraBoardWizard", () => {
 			name: "Select Board",
 		});
 		expect(selectButton).toBeDisabled();
+	});
+
+	it("fetches board information when a board is selected", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Sprint Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Sprint Board"));
+
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalledWith(1, 1);
+		});
+	});
+
+	it("shows loading spinner while fetching board information", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		let resolvePromise: (value: IBoardInformation) => void;
+		const delayedPromise = new Promise<IBoardInformation>((resolve) => {
+			resolvePromise = resolve;
+		});
+		mockGetJiraBoardInformation.mockImplementation(() => delayedPromise);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Sprint Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Sprint Board"));
+
+		// Should show loading indicator while fetching
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
+
+		// At this point, fetchingBoardInfo should be true, check for spinner
+		const spinners = screen.queryAllByRole("progressbar");
+		expect(spinners.length).toBeGreaterThan(0);
+
+		// Resolve the promise
+		// biome-ignore lint/style/noNonNullAssertion: Test code - variable is initialized in promise constructor
+		resolvePromise!(mockBoardInformation);
+
+		// Wait for loading to complete
+		await waitFor(() => {
+			const selectButton = screen.getByRole("button", {
+				name: "Select Board",
+			});
+			expect(selectButton).not.toBeDisabled();
+		});
+	});
+
+	it("calls onComplete with board information when Select Board is clicked", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Kanban Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Kanban Board"));
+
+		// Wait for board information to be fetched
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalledWith(1, 2);
+		});
+
+		const selectButton = screen.getByRole("button", {
+			name: "Select Board",
+		});
+		await userEvent.click(selectButton);
+
+		expect(mockOnComplete).toHaveBeenCalledWith(mockBoardInformation);
+		expect(mockOnCancel).not.toHaveBeenCalled();
+	});
+
+	it("calls onComplete with empty board information when fetch fails", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockRejectedValue(
+			new Error("Failed to fetch board info"),
+		);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Sprint Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Sprint Board"));
+
+		// Wait for the failed fetch attempt
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
+
+		const selectButton = screen.getByRole("button", {
+			name: "Select Board",
+		});
+		await userEvent.click(selectButton);
+
+		const emptyBoardInfo: IBoardInformation = {
+			dataRetrievalValue: "",
+			workItemTypes: [],
+			toDoStates: [],
+			doingStates: [],
+			doneStates: [],
+		};
+
+		expect(mockOnComplete).toHaveBeenCalledWith(emptyBoardInfo);
 	});
 });

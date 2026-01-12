@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useCallback, useState } from "react";
+import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import type { DataRetrievalWizardProps } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
 
 const VisuallyHiddenInput = styled("input")({
@@ -115,7 +116,14 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 
 	const handleConfirm = () => {
 		if (fileContent) {
-			onComplete(fileContent);
+			const boardInfo: IBoardInformation = {
+				dataRetrievalValue: fileContent,
+				workItemTypes: [],
+				toDoStates: [],
+				doingStates: [],
+				doneStates: [],
+			};
+			onComplete(boardInfo);
 			// Reset state
 			setSelectedFile(null);
 			setFileContent("");

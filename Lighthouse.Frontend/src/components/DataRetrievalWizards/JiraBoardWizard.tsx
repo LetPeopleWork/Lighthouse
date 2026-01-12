@@ -10,7 +10,8 @@ import {
 	Typography,
 } from "@mui/material";
 import { useCallback, useContext, useEffect, useState } from "react";
-import type { IBoard } from "../../models/Board";
+import type { IBoard } from "../../models/Boards/Board";
+import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import type { DataRetrievalWizardProps } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 
@@ -23,7 +24,10 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	const { wizardService } = useContext(ApiServiceContext);
 	const [boards, setBoards] = useState<IBoard[]>([]);
 	const [selectedBoard, setSelectedBoard] = useState<IBoard | null>(null);
+	const [boardInformation, setBoardInformation] =
+		useState<IBoardInformation | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
+	const [fetchingBoardInfo, setFetchingBoardInfo] = useState<boolean>(false);
 	const [error, setError] = useState<string>("");
 
 	const loadBoards = useCallback(async () => {
@@ -53,17 +57,61 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 		}
 	}, [open, loadBoards]);
 
+	const fetchBoardInformation = useCallback(
+		async (board: IBoard) => {
+			setFetchingBoardInfo(true);
+			setError("");
+
+			try {
+				const info = await wizardService.getJiraBoardInformation(
+					workTrackingSystemConnectionId,
+					board.id,
+				);
+				setBoardInformation(info);
+			} catch (err) {
+				console.error("Error fetching board information:", err);
+				// Fallback to empty board information
+				const emptyBoardInfo: IBoardInformation = {
+					dataRetrievalValue: "",
+					workItemTypes: [],
+					toDoStates: [],
+					doingStates: [],
+					doneStates: [],
+				};
+				setBoardInformation(emptyBoardInfo);
+			} finally {
+				setFetchingBoardInfo(false);
+			}
+		},
+		[wizardService, workTrackingSystemConnectionId],
+	);
+
+	const handleBoardChange = useCallback(
+		(_: unknown, newValue: IBoard | null) => {
+			setSelectedBoard(newValue);
+			if (newValue) {
+				fetchBoardInformation(newValue);
+			} else {
+				setBoardInformation(null);
+			}
+		},
+		[fetchBoardInformation],
+	);
+
 	const handleConfirm = () => {
-		// Return empty string for now as wizard is not yet complete
-		onComplete("");
+		if (boardInformation) {
+			onComplete(boardInformation);
+		}
 
 		// Reset state
 		setSelectedBoard(null);
+		setBoardInformation(null);
 		setError("");
 	};
 
 	const handleCancel = () => {
 		setSelectedBoard(null);
+		setBoardInformation(null);
 		setError("");
 		onCancel();
 	};
@@ -75,24 +123,32 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 				{loading ? (
 					<CircularProgress sx={{ display: "block", margin: "2rem auto" }} />
 				) : (
-					<Autocomplete
-						options={boards}
-						getOptionLabel={(option) => option.name}
-						value={selectedBoard}
-						onChange={(_, newValue) => setSelectedBoard(newValue)}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								label="Board"
-								placeholder="Search for a board..."
-								fullWidth
-								margin="normal"
+					<>
+						<Autocomplete
+							options={boards}
+							getOptionLabel={(option) => option.name}
+							value={selectedBoard}
+							onChange={handleBoardChange}
+							renderInput={(params) => (
+								<TextField
+									{...params}
+									label="Board"
+									placeholder="Search for a board..."
+									fullWidth
+									margin="normal"
+								/>
+							)}
+							isOptionEqualToValue={(option, value) => option.id === value.id}
+							disabled={boards.length === 0}
+							noOptionsText="No boards available"
+						/>
+						{fetchingBoardInfo && (
+							<CircularProgress
+								sx={{ display: "block", margin: "1rem auto" }}
+								size={24}
 							/>
 						)}
-						isOptionEqualToValue={(option, value) => option.id === value.id}
-						disabled={boards.length === 0}
-						noOptionsText="No boards available"
-					/>
+					</>
 				)}
 				{error && (
 					<Typography color="error" sx={{ mt: 2 }}>
@@ -105,7 +161,7 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 				<Button
 					onClick={handleConfirm}
 					variant="contained"
-					disabled={!selectedBoard || loading}
+					disabled={!boardInformation || loading || fetchingBoardInfo}
 				>
 					Select Board
 				</Button>

@@ -117,6 +117,123 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
+        public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId)
+        {
+            try
+            {
+                var client = GetJiraRestClient(workTrackingSystemConnection);
+
+                return await GetBoardInformationFromJira(client, boardId);
+            }
+            catch
+            {
+                return new BoardInformation();
+            }
+        }
+
+        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, int boardId)
+        {
+            var boardInformation = new BoardInformation();
+            
+            var response = await client.GetAsync($"{BoardsEndpoint}/{boardId}/configuration");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return boardInformation;
+            }
+
+            var boardConfigResponseBody = await response.Content.ReadAsStringAsync();
+            var boardConfigJson = JsonDocument.Parse(boardConfigResponseBody);
+
+            boardInformation.DataRetrievalValue = await ExtractJqlFromBoardConfiguration(boardConfigJson, client);
+            
+            return boardInformation;
+        }
+
+        private async Task<string> ExtractJqlFromBoardConfiguration(JsonDocument boardsJson, HttpClient client)
+        {
+            var root = boardsJson.RootElement;
+
+            var subQuery = string.Empty;
+
+            var filter = await ExtractFilterQuery(client, root);
+
+            subQuery = ExtractSubQuery(root, subQuery);
+
+            return $"{filter} {subQuery}";
+        }
+
+        private static string ExtractSubQuery(JsonElement root, string subQuery)
+        {
+            if (!root.TryGetProperty("subQuery", out var subQueryElement) ||
+                !subQueryElement.TryGetProperty("query", out var query))
+            {
+                return subQuery;
+            }
+
+            subQuery = query.GetString() ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(subQuery))
+            {
+                subQuery = $"AND {subQuery}";
+            }
+
+            return subQuery;
+        }
+
+        private async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
+        {
+            var filter = string.Empty;
+
+            if (!root.TryGetProperty("filter", out var filterProperty) ||
+                !filterProperty.TryGetProperty("id", out var id))
+            {
+                return filter;
+            }
+
+            var filterId = id.ToString();
+            filter = await GetFilterQueryById(client, filterId);
+
+            return filter;
+        }
+
+        private async Task<string> GetFilterQueryById(HttpClient client, string filterId)
+        {
+            var response = await client.GetAsync($"rest/api/2/filter/{filterId}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return string.Empty;
+            }
+            
+            var filterResponseBody = await response.Content.ReadAsStringAsync();
+            var filterJson = JsonDocument.Parse(filterResponseBody);
+
+            if (!filterJson.RootElement.TryGetProperty("jql", out var jqlQuery))
+            {
+                return string.Empty;
+            }
+            
+            return RemoveOrderByClause(jqlQuery.GetString() ?? string.Empty);
+        }
+        
+        private static string RemoveOrderByClause(string jql)
+        {
+            if (string.IsNullOrWhiteSpace(jql))
+            {
+                return string.Empty;
+            }
+
+            var orderByIndex = jql.IndexOf("ORDER BY", StringComparison.OrdinalIgnoreCase);
+    
+            if (orderByIndex > 0)
+            {
+                return jql.Substring(0, orderByIndex).TrimEnd();
+            }
+
+            return jql;
+        }
+
         private async Task<IEnumerable<Board>> GetBoardsFromJira(WorkTrackingSystemConnection workTrackingSystemConnection, HttpClient client)
         {
             const int maxResults = 50;

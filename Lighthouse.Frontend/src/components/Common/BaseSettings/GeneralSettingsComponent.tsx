@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useContext, useEffect, useState } from "react";
+import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -111,8 +112,11 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 		? getWizardsForSystem(selectedWorkTrackingSystem.workTrackingSystem)
 		: [];
 
-	const handleWizardComplete = (value: string) => {
-		onSettingsChange("dataRetrievalValue" as keyof T, value as T[keyof T]);
+	const handleWizardComplete = (boardInfo: IBoardInformation) => {
+		onSettingsChange(
+			"dataRetrievalValue" as keyof T,
+			boardInfo.dataRetrievalValue as T[keyof T],
+		);
 		setActiveWizard(null);
 	};
 

@@ -489,6 +489,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetJiraBoardInformation_GetsCorrectJqlQuery()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, 8);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInformation.DataRetrievalValue, Does.Contain("project = LIGHTHOUSE AND type IN (Bug, Story)"));
+                Assert.That(boardInformation.DataRetrievalValue, Does.Contain("fixVersion in unreleasedVersions() OR fixVersion is EMPTY"));
+                Assert.That(boardInformation.DataRetrievalValue, Is.EqualTo("project = LIGHTHOUSE AND type IN (Bug, Story) AND fixVersion in unreleasedVersions() OR fixVersion is EMPTY"));
+            }
+        }
+
+        [Test]
         public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
         {
             var subject = CreateSubject();

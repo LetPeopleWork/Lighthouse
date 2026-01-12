@@ -13,10 +13,18 @@ namespace Lighthouse.Backend.API
         IRepository<WorkTrackingSystemConnection> workTrackingSystemRepo)
     : ControllerBase
     {
-        [HttpGet("jira/boards/{workTrackingSystemConnectionId:int}")]
+        [HttpGet("jira/{workTrackingSystemConnectionId:int}/boards")]
         public async Task<ActionResult<IEnumerable<Board>>> GetJiraBoards(int workTrackingSystemConnectionId)
         {
             return await this.GetEntityByIdAnExecuteAction(workTrackingSystemRepo, workTrackingSystemConnectionId, async workTrackingSystemConnection => await jiraWorkTrackingConnector.GetBoards(workTrackingSystemConnection));
+        }
+
+        [HttpGet("jira/{workTrackingSystemConnectionId:int}/boards/{boardId:int}")]
+        public async Task<ActionResult<BoardInformation>> GetJiraBoardInformation(int workTrackingSystemConnectionId,
+            int boardId)
+        {
+            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemRepo, workTrackingSystemConnectionId,
+                async workTrackingSystemConnection => await  jiraWorkTrackingConnector.GetBoardInformation(workTrackingSystemConnection, boardId));
         }
     }
 }
