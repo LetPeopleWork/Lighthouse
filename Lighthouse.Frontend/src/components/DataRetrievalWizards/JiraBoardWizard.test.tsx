@@ -728,4 +728,149 @@ describe("JiraBoardWizard", () => {
 
 		expect(mockOnComplete).toHaveBeenCalledWith(emptyBoardInfo);
 	});
+
+	it("displays 'Loading Board Information' when fetching board information", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+
+		let resolveBoardInfo: ((value: IBoardInformation) => void) | undefined;
+		const delayedPromise = new Promise<IBoardInformation>((resolve) => {
+			resolveBoardInfo = resolve;
+		});
+		mockGetJiraBoardInformation.mockImplementation(() => delayedPromise);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Sprint Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Sprint Board"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Loading Board Information")).toBeInTheDocument();
+		});
+
+		// Clean up
+		if (resolveBoardInfo) {
+			resolveBoardInfo(mockBoardInformation);
+		}
+	});
+
+	it("displays board information after it is loaded", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Sprint Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Sprint Board"));
+
+		// Wait for board information to be fetched
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
+
+		// Check that board information is displayed
+		await waitFor(() => {
+			expect(screen.getByText("Board Information")).toBeInTheDocument();
+			expect(screen.getByText("Story")).toBeInTheDocument();
+			expect(screen.getByText("Bug")).toBeInTheDocument();
+		});
+	});
+
+	it("displays JQL in board information preview", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+		mockGetJiraBoardInformation.mockResolvedValue(mockBoardInformation);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		const autocomplete = screen.getByLabelText("Board");
+		await userEvent.click(autocomplete);
+
+		await waitFor(() => {
+			expect(screen.getByText("Sprint Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Sprint Board"));
+
+		await waitFor(() => {
+			expect(mockGetJiraBoardInformation).toHaveBeenCalled();
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("board-1")).toBeInTheDocument();
+		});
+	});
+
+	it("does not display board information before board selection", async () => {
+		mockGetJiraBoards.mockResolvedValue(mockBoards);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<JiraBoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("Board Information")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("Loading Board Information"),
+		).not.toBeInTheDocument();
+	});
 });

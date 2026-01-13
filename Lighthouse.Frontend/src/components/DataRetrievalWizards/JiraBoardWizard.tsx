@@ -14,6 +14,7 @@ import type { IBoard } from "../../models/Boards/Board";
 import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import type { DataRetrievalWizardProps } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
+import BoardInformationDisplay from "../DataRetrieval/BoardInformationDisplay";
 
 const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	open,
@@ -142,12 +143,10 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 							disabled={boards.length === 0}
 							noOptionsText="No boards available"
 						/>
-						{fetchingBoardInfo && (
-							<CircularProgress
-								sx={{ display: "block", margin: "1rem auto" }}
-								size={24}
-							/>
-						)}
+						<BoardInformationDisplay
+							boardInformation={boardInformation}
+							loading={fetchingBoardInfo}
+						/>
 					</>
 				)}
 				{error && (
