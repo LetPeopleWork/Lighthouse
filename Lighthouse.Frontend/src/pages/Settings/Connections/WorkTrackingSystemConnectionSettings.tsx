@@ -2,7 +2,6 @@ import { Button, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import React, { useCallback, useContext, useEffect } from "react";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
-import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import ConnectionDetailTable from "./ConnectionDetailTable";
@@ -122,45 +121,43 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 	}, [initializeData]);
 
 	return (
-		<InputGroup title={"Work Tracking Systems"}>
-			<Container maxWidth={false}>
-				<Grid container spacing={3}>
-					<Grid size={{ xs: 12 }}>
-						<Button variant="contained" onClick={onAddConnectionButtonClicked}>
-							Add Connection
-						</Button>
+		<Container maxWidth={false}>
+			<Grid container spacing={3}>
+				<Grid size={{ xs: 12 }}>
+					<Button variant="contained" onClick={onAddConnectionButtonClicked}>
+						Add Connection
+					</Button>
+					<ModifyTrackingSystemConnectionDialog
+						open={openNewConnection}
+						onClose={handleCloseNewConnection}
+						workTrackingSystems={workTrackingSystems}
+						validateSettings={onValidateConnection}
+					/>
+				</Grid>
+				<Grid size={{ xs: 12 }}>
+					<ConnectionDetailTable
+						workTrackingSystemConnections={workTrackingSystemConnections}
+						onEditConnectionButtonClicked={onEditConnectionButtonClicked}
+						handleDeleteConnection={handleDeleteConnection}
+					/>
+					{selectedConnection && (
 						<ModifyTrackingSystemConnectionDialog
-							open={openNewConnection}
-							onClose={handleCloseNewConnection}
-							workTrackingSystems={workTrackingSystems}
+							open={openExistingConnection}
+							onClose={handleCloseEditConnection}
+							workTrackingSystems={[selectedConnection]}
 							validateSettings={onValidateConnection}
 						/>
-					</Grid>
-					<Grid size={{ xs: 12 }}>
-						<ConnectionDetailTable
-							workTrackingSystemConnections={workTrackingSystemConnections}
-							onEditConnectionButtonClicked={onEditConnectionButtonClicked}
-							handleDeleteConnection={handleDeleteConnection}
+					)}
+					{selectedConnection && (
+						<DeleteConfirmationDialog
+							open={deleteDialogOpen}
+							itemName={selectedConnection.name}
+							onClose={handleDeleteConfirmation}
 						/>
-						{selectedConnection && (
-							<ModifyTrackingSystemConnectionDialog
-								open={openExistingConnection}
-								onClose={handleCloseEditConnection}
-								workTrackingSystems={[selectedConnection]}
-								validateSettings={onValidateConnection}
-							/>
-						)}
-						{selectedConnection && (
-							<DeleteConfirmationDialog
-								open={deleteDialogOpen}
-								itemName={selectedConnection.name}
-								onClose={handleDeleteConfirmation}
-							/>
-						)}
-					</Grid>
+					)}
 				</Grid>
-			</Container>
-		</InputGroup>
+			</Grid>
+		</Container>
 	);
 };
 
