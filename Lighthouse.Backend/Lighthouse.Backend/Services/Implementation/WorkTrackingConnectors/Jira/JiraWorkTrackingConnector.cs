@@ -149,11 +149,87 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var jqlTask = ExtractJqlFromBoardConfiguration(boardConfigJson, client);
             var workItemTypesTask = GetItemTypesForBoard(client, boardId);
+            var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client);
             
             boardInformation.WorkItemTypes = await workItemTypesTask;
             boardInformation.DataRetrievalValue = await jqlTask;
+
+            var (toDoStates, doingStates, doneStates) = await statusMappingTask;
+            boardInformation.ToDoStates = toDoStates;
+            boardInformation.DoingStates = doingStates;
+            boardInformation.DoneStates = doneStates;
             
             return boardInformation;
+        }
+
+        private static async
+            Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
+            GetStateMappingForBoard(JsonDocument boardsJson, HttpClient client)
+        {
+            var root = boardsJson.RootElement;
+            var distinctStatusIds = root
+                .GetProperty("columnConfig")
+                .GetProperty("columns")
+                .EnumerateArray()
+                .SelectMany(column => 
+                    column.GetProperty("statuses").EnumerateArray()
+                )
+                .Select(status => status.GetProperty("id").GetString() ?? string.Empty)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct()
+                .ToList();
+
+            return await MapStatusToCategory(client, distinctStatusIds);
+        }
+
+        private static async
+            Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
+            MapStatusToCategory(HttpClient client, List<string> statusList)
+        {
+            var response = await client.GetAsync("rest/api/latest/status");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return ([], [], []);
+            }
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonDocument.Parse(json);
+
+            var root = data.RootElement;
+    
+            var todoStatuses = new List<string>();
+            var inProgressStatuses = new List<string>();
+            var doneStatuses = new List<string>();
+
+            var statusListSet = new HashSet<string>(statusList);
+
+            foreach (var status in root.EnumerateArray())
+            {
+                var id = status.GetProperty("id").GetString() ?? string.Empty;
+                
+                if (!statusListSet.Contains(id))
+                {
+                    continue;
+                }
+            
+                var name = status.GetProperty("name").GetString() ?? string.Empty;
+                var categoryName = status.GetProperty("statusCategory").GetProperty("name").GetString();
+
+                switch (categoryName)
+                {
+                    case "To Do":
+                        todoStatuses.Add(name);
+                        break;
+                    case "In Progress":
+                        inProgressStatuses.Add(name);
+                        break;
+                    case "Done":
+                        doneStatuses.Add(name);
+                        break;
+                }
+            }
+
+            return (todoStatuses, inProgressStatuses, doneStatuses);
         }
 
         private static async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, int boardId)

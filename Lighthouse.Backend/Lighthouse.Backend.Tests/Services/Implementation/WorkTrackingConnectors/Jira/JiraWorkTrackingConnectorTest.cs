@@ -515,7 +515,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(boardInformation.WorkItemTypes, Does.Contain("Bug"));
-                Assert.That(boardInformation.DataRetrievalValue, Does.Contain("Story"));
+                Assert.That(boardInformation.WorkItemTypes, Does.Contain("Story"));
+            }
+        }
+
+        [Test]
+        public async Task GetJiraBoardInformation_GetsCorrectStateMapping()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, 8);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInformation.ToDoStates, Does.Contain("Backlog"));
+                Assert.That(boardInformation.ToDoStates, Does.Contain("Planned"));
+                Assert.That(boardInformation.DoingStates, Does.Contain("Implementation"));
+                Assert.That(boardInformation.DoingStates, Does.Contain("Deployed"));
+                Assert.That(boardInformation.DoneStates, Does.Contain("Done"));
             }
         }
 
