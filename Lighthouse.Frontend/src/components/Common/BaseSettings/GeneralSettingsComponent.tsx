@@ -113,10 +113,42 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 		: [];
 
 	const handleWizardComplete = (boardInfo: IBoardInformation) => {
-		onSettingsChange(
-			"dataRetrievalValue" as keyof T,
-			boardInfo.dataRetrievalValue as T[keyof T],
-		);
+		// Only update fields that have non-empty values to preserve existing data
+		if (boardInfo.dataRetrievalValue.trim() !== "") {
+			onSettingsChange(
+				"dataRetrievalValue" as keyof T,
+				boardInfo.dataRetrievalValue as T[keyof T],
+			);
+		}
+
+		if (boardInfo.workItemTypes.length > 0) {
+			onSettingsChange(
+				"workItemTypes" as keyof T,
+				boardInfo.workItemTypes as T[keyof T],
+			);
+		}
+
+		if (boardInfo.toDoStates.length > 0) {
+			onSettingsChange(
+				"toDoStates" as keyof T,
+				boardInfo.toDoStates as T[keyof T],
+			);
+		}
+
+		if (boardInfo.doingStates.length > 0) {
+			onSettingsChange(
+				"doingStates" as keyof T,
+				boardInfo.doingStates as T[keyof T],
+			);
+		}
+
+		if (boardInfo.doneStates.length > 0) {
+			onSettingsChange(
+				"doneStates" as keyof T,
+				boardInfo.doneStates as T[keyof T],
+			);
+		}
+
 		setActiveWizard(null);
 	};
 

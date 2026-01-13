@@ -107,6 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             try
             {
+                logger.LogInformation("Getting Boards for System {ConnectionName}", workTrackingSystemConnection.Name);
                 var client = GetJiraRestClient(workTrackingSystemConnection);
 
                 return await GetBoardsFromJira(workTrackingSystemConnection, client);
@@ -121,6 +122,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             try
             {
+                logger.LogInformation("Getting Board Information for Board {BoardId}", boardId);
                 var client = GetJiraRestClient(workTrackingSystemConnection);
 
                 return await GetBoardInformationFromJira(client, boardId);
@@ -131,7 +133,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, int boardId)
+        private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, int boardId)
         {
             var boardInformation = new BoardInformation();
             
@@ -145,12 +147,41 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var boardConfigResponseBody = await response.Content.ReadAsStringAsync();
             var boardConfigJson = JsonDocument.Parse(boardConfigResponseBody);
 
-            boardInformation.DataRetrievalValue = await ExtractJqlFromBoardConfiguration(boardConfigJson, client);
+            var jqlTask = ExtractJqlFromBoardConfiguration(boardConfigJson, client);
+            var workItemTypesTask = GetItemTypesForBoard(client, boardId);
+            
+            boardInformation.WorkItemTypes = await workItemTypesTask;
+            boardInformation.DataRetrievalValue = await jqlTask;
             
             return boardInformation;
         }
 
-        private async Task<string> ExtractJqlFromBoardConfiguration(JsonDocument boardsJson, HttpClient client)
+        private static async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, int boardId)
+        {
+            var response = await client.GetAsync($"{BoardsEndpoint}/{boardId}/issue?maxResults=1000");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return [];
+            }
+    
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonDocument.Parse(json);
+    
+            var issueTypeNames = data.RootElement
+                .GetProperty("issues")
+                .EnumerateArray()
+                .Select(issue => issue.GetProperty("fields")
+                    .GetProperty("issuetype")
+                    .GetProperty("name")
+                    .GetString() ?? string.Empty)
+                .Distinct()
+                .ToList();
+    
+            return issueTypeNames;
+        }
+
+        private static async Task<string> ExtractJqlFromBoardConfiguration(JsonDocument boardsJson, HttpClient client)
         {
             var root = boardsJson.RootElement;
 
@@ -181,7 +212,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return subQuery;
         }
 
-        private async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
+        private static async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
         {
             var filter = string.Empty;
 
@@ -197,7 +228,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return filter;
         }
 
-        private async Task<string> GetFilterQueryById(HttpClient client, string filterId)
+        private static async Task<string> GetFilterQueryById(HttpClient client, string filterId)
         {
             var response = await client.GetAsync($"rest/api/2/filter/{filterId}");
 

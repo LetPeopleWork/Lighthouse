@@ -786,4 +786,127 @@ describe("GeneralSettingsComponent", () => {
 			expect(wizardButtons.length).toBeGreaterThanOrEqual(1);
 		});
 	});
+
+	describe("handleWizardComplete integration", () => {
+		it("updates all fields when CSV wizard completes with populated data", async () => {
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+
+			const mockApiContext = createMockApiServiceContext({
+				workTrackingSystemService: mockWorkTrackingSystemService,
+				terminologyService: mockTerminologyService,
+			});
+
+			const queryClient = new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			});
+
+			const csvSystem: IWorkTrackingSystemConnection = {
+				id: 3,
+				name: "CSV System",
+				workTrackingSystem: "Csv",
+				options: [],
+				authenticationMethodKey: "none",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+				additionalFieldDefinitions: [],
+			};
+
+			// Start with settings that have existing values
+			const settingsWithData = createMockTeamSettings();
+			settingsWithData.name = "Test Settings";
+			settingsWithData.dataRetrievalValue = "Existing Query";
+			settingsWithData.workItemTypes = ["OldType"];
+			settingsWithData.toDoStates = ["Old To Do"];
+			settingsWithData.doingStates = ["Old In Progress"];
+			settingsWithData.doneStates = ["Old Done"];
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={settingsWithData}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={[csvSystem]}
+								selectedWorkTrackingSystem={csvSystem}
+								showWorkTrackingSystemSelection={false}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			// Open the wizard
+			const uploadButton = screen.getByRole("button", {
+				name: /Upload CSV File/i,
+			});
+			await userEvent.click(uploadButton);
+
+			await waitFor(() => {
+				expect(screen.getAllByText(/Upload CSV File/i).length).toBeGreaterThan(
+					0,
+				);
+			});
+
+			// Upload a CSV file with work item data
+			const csvContent =
+				"ID,Type,Status\n1,Story,To Do\n2,Bug,In Progress\n3,Task,Done";
+			const file = new File([csvContent], "test.csv", { type: "text/csv" });
+
+			const input = screen.getByLabelText("Choose File", {
+				selector: "input[type='file']",
+			});
+
+			await userEvent.upload(input, file);
+
+			await waitFor(() => {
+				expect(screen.getByText("test.csv")).toBeInTheDocument();
+			});
+
+			// Complete the wizard
+			const useFileButton = screen.getByRole("button", { name: "Use File" });
+			await userEvent.click(useFileButton);
+
+			// Verify that onSettingsChange was called with the dataRetrievalValue
+			// (CSV wizard only populates dataRetrievalValue, leaves other arrays empty)
+			await waitFor(() => {
+				expect(mockOnSettingsChange).toHaveBeenCalledWith(
+					"dataRetrievalValue",
+					csvContent,
+				);
+			});
+
+			// Verify that empty arrays from CSV wizard don't trigger updates
+			// (preserving existing workItemTypes, states, etc.)
+			expect(mockOnSettingsChange).not.toHaveBeenCalledWith(
+				"workItemTypes",
+				expect.anything(),
+			);
+			expect(mockOnSettingsChange).not.toHaveBeenCalledWith(
+				"toDoStates",
+				expect.anything(),
+			);
+			expect(mockOnSettingsChange).not.toHaveBeenCalledWith(
+				"doingStates",
+				expect.anything(),
+			);
+			expect(mockOnSettingsChange).not.toHaveBeenCalledWith(
+				"doneStates",
+				expect.anything(),
+			);
+		});
+	});
 });
