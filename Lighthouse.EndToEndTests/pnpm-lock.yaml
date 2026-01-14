@@ -28,8 +28,8 @@ importers:
         specifier: ^1.57.0
         version: 1.57.0
       '@types/node':
-        specifier: ^25.0.7
-        version: 25.0.7
+        specifier: ^25.0.8
+        version: 25.0.8
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -126,8 +126,8 @@ packages:
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
-  '@types/node@25.0.7':
-    resolution: {integrity: sha512-C/er7DlIZgRJO7WtTdYovjIFzGsz0I95UlMyR9anTb4aCpBSRWe5Jc1/RvLKUfzmOxHPGjSE5+63HgLtndxU4w==}
+  '@types/node@25.0.8':
+    resolution: {integrity: sha512-powIePYMmC3ibL0UJ2i2s0WIbq6cg6UyVFQxSCpaPxxzAaziRfimGivjdF943sSGV6RADVbk0Nvlm5P/FB44Zg==}
 
   '@types/pixelmatch@5.2.6':
     resolution: {integrity: sha512-wC83uexE5KGuUODn6zkm9gMzTwdY5L0chiK+VrKcDfEjzxh1uadlWTvOmAbCpnM9zx/Ww3f8uKlYQVnO/TrqVg==}
@@ -370,17 +370,17 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
-  '@types/node@25.0.7':
+  '@types/node@25.0.8':
     dependencies:
       undici-types: 7.16.0
 
   '@types/pixelmatch@5.2.6':
     dependencies:
-      '@types/node': 25.0.7
+      '@types/node': 25.0.8
 
   '@types/pngjs@6.0.5':
     dependencies:
-      '@types/node': 25.0.7
+      '@types/node': 25.0.8
 
   asynckit@0.4.0: {}
 
