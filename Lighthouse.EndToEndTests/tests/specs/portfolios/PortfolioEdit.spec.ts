@@ -588,7 +588,7 @@ testWithUpdatedTeams(teamConfiguration.involvedTeams)(
 					teamConfiguration.dataRetrievalKey,
 				),
 			).toBe(
-				"project = LIGHTHOUSE AND type = Epic AND fixVersion in unreleasedVersions() OR fixVersion is EMPTY",
+				"project = LIGHTHOUSE AND type = Epic AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)",
 			);
 
 			const workItemTypes = await newPortfolioPage.getWorkItemTypes();

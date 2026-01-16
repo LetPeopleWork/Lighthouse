@@ -449,7 +449,7 @@ test("should allow to create a new team through a Jira Wizard", async ({
 				workTrackingSystemConfiguration.dataRetrievalKey,
 			),
 		).toBe(
-			"project = LIGHTHOUSE AND type IN (Bug, Story) AND fixVersion in unreleasedVersions() OR fixVersion is EMPTY",
+			"project = LIGHTHOUSE AND type IN (Bug, Story) AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)",
 		);
 
 		const workItemTypes = await newTeamPage.getWorkItemTypes();
