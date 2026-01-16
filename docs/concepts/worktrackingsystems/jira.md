@@ -126,3 +126,18 @@ The Order of Features (usually *Epics*, but it may be any other type) is based o
 Jira is using the [LexoRank Algorithm](https://confluence.atlassian.com/adminjiraserver/managing-lexorank-938847803.html) to adjust the ranks. While it's quite interesting (you can read more about it [here](https://tmcalm.nl/blog/lexorank-jira-ranking-system-explained/)), it's not relevant that you understand it.  
 
 What you must understand is that you simply need to re-order your items in Jira and that this order will be taken into account by Lighthouse. Higher up means higher priority, further down will mean less priority.
+
+
+
+## Jira Wizard
+
+Use the Jira Wizard to automatically discover and import configuration from the Boards in your Jira Instance. The Wizard will:
+- Show you all available boards from your Jira instance
+- Upon selection of a Board, fetch the JQL, Work Item Types, and State Configuration for the board
+
+![Select Jira Board](../../assets/concepts/jira_wizard.png)
+
+You may adjust all those values to your liking after that. For example, if the state mapping is not what you want to use.
+
+{: .note}
+Please be aware that this is a one-time operation. Lighthouse does not keep your settings in sync with the selected board. If you make changes in your Jira board, you must either update them manually, or rerun the Wizard.
