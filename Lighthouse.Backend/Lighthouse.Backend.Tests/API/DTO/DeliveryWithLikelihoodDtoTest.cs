@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             // Arrange
             var deliveryDate = DateTime.UtcNow.AddDays(30);
-            
+
             // Create a forecast that shows 75% likelihood to complete within 30 days
             var simulationResult = new Dictionary<int, int>
             {
@@ -24,10 +24,11 @@ namespace Lighthouse.Backend.Tests.API.DTO
             forecast.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast, [simulationResult]);
-            
+
             var feature = new Feature();
             feature.Forecasts.Add(forecast);
-            
+            feature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
             var delivery = new Delivery
             {
                 Id = 1,
@@ -35,10 +36,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Date = deliveryDate
             };
             delivery.Features.Add(feature);
-            
+
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(75.0));
@@ -49,15 +50,15 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(deliveryDto.CompletionDates, Has.Count.EqualTo(3)); // Should have 70%, 85%, 95% forecasts
             }
         }
-        
+
         [Test]
         public void Should_Return_Hundred_Likelihood_When_No_Features_Have_Forecasts()
         {
             // Arrange
             var deliveryDate = DateTime.UtcNow.AddDays(30);
-            
+
             var feature = new Feature();
-            
+
             var delivery = new Delivery
             {
                 Id = 1,
@@ -65,22 +66,22 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Date = deliveryDate
             };
             delivery.Features.Add(feature);
-            
+
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(100.0));
             }
         }
-        
+
         [Test]
         public void Should_Calculate_Minimum_Likelihood_Across_Multiple_Features()
         {
             // Arrange
             var deliveryDate = DateTime.UtcNow.AddDays(30);
-            
+
             // Feature 1: 80% likelihood to complete within 30 days
             var simulationResult1 = new Dictionary<int, int>
             {
@@ -93,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             forecast1.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast1, [simulationResult1]);
-            
+
             // Feature 2: 60% likelihood to complete within 30 days
             var simulationResult2 = new Dictionary<int, int>
             {
@@ -106,13 +107,15 @@ namespace Lighthouse.Backend.Tests.API.DTO
             forecast2.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast2, [simulationResult2]);
-            
+
             var feature1 = new Feature();
             feature1.Forecasts.Add(forecast1);
-            
+            feature1.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
             var feature2 = new Feature();
             feature2.Forecasts.Add(forecast2);
-            
+            feature2.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
             var delivery = new Delivery
             {
                 Id = 1,
@@ -121,10 +124,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
             };
             delivery.Features.Add(feature1);
             delivery.Features.Add(feature2);
-            
+
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
-            
+
             using (Assert.EnterMultipleScope())
             {
                 // Should return the lowest likelihood (most conservative)
@@ -134,13 +137,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(deliveryDto.CompletionDates, Has.Count.EqualTo(3)); // Should have 70%, 85%, 95% forecasts
             }
         }
-        
+
         [Test]
         public void Should_Include_Individual_Feature_Likelihoods()
         {
             // Arrange
             var deliveryDate = DateTime.UtcNow.AddDays(30);
-            
+
             // Feature 1: 80% likelihood
             var simulationResult1 = new Dictionary<int, int>
             {
@@ -153,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             forecast1.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast1, [simulationResult1]);
-            
+
             // Feature 2: 60% likelihood
             var simulationResult2 = new Dictionary<int, int>
             {
@@ -166,15 +169,17 @@ namespace Lighthouse.Backend.Tests.API.DTO
             forecast2.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast2, [simulationResult2]);
-            
+
             var feature1 = new Feature { Id = 1 };
             feature1.Forecasts.Add(forecast1);
-            
+            feature1.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
             var feature2 = new Feature { Id = 2 };
             feature2.Forecasts.Add(forecast2);
-            
+            feature2.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
             var feature3 = new Feature { Id = 3 }; // No forecast
-            
+
             var delivery = new Delivery
             {
                 Id = 1,
@@ -184,10 +189,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature1);
             delivery.Features.Add(feature2);
             delivery.Features.Add(feature3);
-            
+
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deliveryDto.FeatureLikelihoods, Has.Count.EqualTo(3));

@@ -69,6 +69,11 @@
 
         public double GetLikelihood(int daysToTargetDate)
         {
+            if (daysToTargetDate < 0)
+            {
+                return 0;
+            }
+
             var trialCounter = 0;
 
             foreach (var simulation in SimulationResult)

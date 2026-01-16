@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
-        private int idCounter = 0;
+        private int idCounter;
 
         [SetUp]
         public void Setup()
@@ -109,8 +109,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var startDate = DateTime.Now.AddDays(-30);
             var endDate = DateTime.Now;
 
-            var daysToForecast = 10;
-            var workItemTypes = new string[] { "User Story" };
+            const int daysToForecast = 10;
+            var workItemTypes = new[] { "User Story" };
 
             var itemCreationRunChart = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]));
             var team = CreateTeam(1, [1]);
@@ -145,6 +145,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(forecast.GetProbability(85), Is.InRange(40, 43));
                 Assert.That(forecast.GetProbability(95), Is.InRange(46, 49));
             }
+        }
+
+        [Test]
+        public async Task When_FixedThroughput_TargetDateInPast_ReturnZeroLikelihood()
+        {
+            var subject = CreateSubjectWithRealThroughput();
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
+            var team = CreateTeam(1, throughput);
+
+            var forecast = await subject.When(team, 35);
+
+            Assert.That(forecast.GetLikelihood(-1), Is.Zero);
+        }
+
+        [Test]
+        public async Task When_FixedThroughput_TargetDateToday_ReturnLikelihood()
+        {
+            var subject = CreateSubjectWithRealThroughput();
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
+            var team = CreateTeam(1, throughput);
+
+            var forecast = await subject.When(team, 35);
+
+            Assert.That(forecast.GetLikelihood(0), Is.GreaterThan(0));
         }
 
         [Test]
@@ -512,7 +536,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Id = idCounter,
                 ReferenceId = $"{idCounter++}"
             };
-            
+
             return feature;
         }
 
