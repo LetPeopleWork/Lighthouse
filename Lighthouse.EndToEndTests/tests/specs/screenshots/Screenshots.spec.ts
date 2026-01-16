@@ -495,7 +495,7 @@ testWithData(
 		);
 
 		deliveryPage = await addDeliveryPage.save();
-		const delivery = await deliveryPage.getDeliveryByName("Next Release");
+		const delivery = deliveryPage.getDeliveryByName("Next Release");
 		await delivery.toggleDetails();
 
 		await takePageScreenshot(
@@ -545,6 +545,27 @@ const workTrackingSystemConfiguration = [
 		],
 	},
 ];
+
+testWithData(
+	"Take @screenshot of Jira Wizard",
+	async ({ testData, overviewPage }) => {
+		const team = testData.teams[2];
+		const teamEditPage = await overviewPage.editTeam(team.name);
+
+		const jiraWizard = await teamEditPage.selectJiraWizard();
+
+		await jiraWizard.selectBoardByName("Stories");
+
+		await expect(jiraWizard.boardInformationPanel).toBeVisible();
+
+		await takeDialogScreenshot(
+			jiraWizard.page.getByRole("dialog"),
+			"concepts/jira_wizard.png",
+			5,
+			1000,
+		);
+	},
+);
 
 for (const {
 	workTrackingSystemName,

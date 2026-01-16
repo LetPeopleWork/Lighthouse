@@ -58,7 +58,7 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	async selectJiraWizard(): Promise<JiraWizard<TeamEditPage>> {
-		await this.page.getByRole("button", { name: "Jira" }).click();
+		await this.page.getByRole("button", { name: "Select Jira Board" }).click();
 		return new JiraWizard(this.page, (page) => new TeamEditPage(page));
 	}
 
