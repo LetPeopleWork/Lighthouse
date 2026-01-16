@@ -91,6 +91,53 @@ export abstract class BaseEditPage<T> {
 		await this.removeChipItem(state);
 	}
 
+	async getWorkItemTypes(): Promise<string[]> {
+		const section = this.page
+			.locator(".MuiCard-root")
+			.filter({
+				has: this.page.getByRole("heading", {
+					name: "Work Item Types",
+					exact: true,
+					level: 6,
+				}),
+			})
+			.first();
+
+		return section.locator(".MuiChip-label").allTextContents();
+	}
+
+	async getItemsFromStateSubsection(
+		subsectionTitle: string,
+	): Promise<string[]> {
+		// Find the h6 heading with the subsection title
+		const subsectionHeading = this.page.getByRole("heading", {
+			name: subsectionTitle,
+			exact: true,
+			level: 6,
+		});
+
+		// Navigate to the parent container that holds the chips for this subsection
+		// The chips are in a sibling div after the h6
+		const subsectionContainer = subsectionHeading.locator(".."); // Go to parent div
+
+		// Get chips only from this specific subsection
+		const chipLabels = subsectionContainer.locator(".MuiChip-label");
+
+		return chipLabels.allTextContents();
+	}
+
+	async getToDoStates(): Promise<string[]> {
+		return this.getItemsFromStateSubsection("To Do");
+	}
+
+	async getDoingStates(): Promise<string[]> {
+		return this.getItemsFromStateSubsection("Doing");
+	}
+
+	async getDoneStates(): Promise<string[]> {
+		return this.getItemsFromStateSubsection("Done");
+	}
+
 	getState(state: string): Locator {
 		return this.page.getByRole("button", { name: state, exact: true });
 	}

@@ -387,3 +387,81 @@ for (const {
 		);
 	});
 }
+
+test("should allow to create a new team through a Jira Wizard", async ({
+	overviewPage,
+}) => {
+	let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
+
+	const workTrackingSystemConfiguration = newTeamConfigurations[0];
+
+	await test.step("Add Work Tracking System", async () => {
+		const newWorkTrackingSystemConnectionName = generateRandomName();
+
+		const newWorkTrackingSystemDialog =
+			await newTeamPage.addNewWorkTrackingSystem();
+
+		await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
+			workTrackingSystemConfiguration.name,
+		);
+
+		for (const option of workTrackingSystemConfiguration.workTrackingSystemOptions) {
+			await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
+				option.field,
+				option.value,
+			);
+		}
+
+		await newWorkTrackingSystemDialog.setConnectionName(
+			newWorkTrackingSystemConnectionName,
+		);
+
+		await newWorkTrackingSystemDialog.validate();
+		await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
+
+		newTeamPage = await newWorkTrackingSystemDialog.create();
+	});
+
+	await test.step("Use Jira Wizard to Select Board", async () => {
+		const jiraWizard = await newTeamPage.selectJiraWizard();
+
+		expect(await jiraWizard.selectBoardButton.isEnabled()).toBeFalsy();
+
+		await jiraWizard.selectBoardByName("Stories");
+
+		await expect(jiraWizard.boardInformationPanel).toBeVisible();
+		expect(await jiraWizard.selectBoardButton.isEnabled()).toBeTruthy();
+
+		newTeamPage = await jiraWizard.selectBoard();
+	});
+
+	await test.step("Validate Settings", async () => {
+		expect(newTeamPage.validateButton).toBeEnabled();
+		expect(newTeamPage.saveButton).toBeDisabled();
+
+		await newTeamPage.validate();
+
+		await expect(newTeamPage.validateButton).toBeEnabled();
+		await expect(newTeamPage.saveButton).toBeEnabled();
+
+		expect(
+			await newTeamPage.getDataRetrievalValue(
+				workTrackingSystemConfiguration.dataRetrievalKey,
+			),
+		).toBe(
+			"project = LIGHTHOUSE AND type IN (Bug, Story) AND fixVersion in unreleasedVersions() OR fixVersion is EMPTY",
+		);
+
+		const workItemTypes = await newTeamPage.getWorkItemTypes();
+		expect(workItemTypes).toEqual(["Story", "Bug"]);
+
+		const toDoStates = await newTeamPage.getToDoStates();
+		expect(toDoStates).toEqual(["Backlog", "Planned"]);
+
+		const doingStates = await newTeamPage.getDoingStates();
+		expect(doingStates).toEqual(["Implementation", "Deployed"]);
+
+		const doneStates = await newTeamPage.getDoneStates();
+		expect(doneStates).toEqual(["Done"]);
+	});
+});

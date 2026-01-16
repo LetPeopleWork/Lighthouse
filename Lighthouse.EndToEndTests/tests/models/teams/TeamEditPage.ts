@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
+import { JiraWizard } from "../common/JiraWizard";
 import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
 import { TeamDetailPage } from "./TeamDetailPage";
 
@@ -54,6 +55,11 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 
 	async disableAutomaticallyAdjustFeatureWIP(): Promise<void> {
 		await this.automaticallyAdjustFeatureWIPCheckBox.uncheck();
+	}
+
+	async selectJiraWizard(): Promise<JiraWizard<TeamEditPage>> {
+		await this.page.getByRole("button", { name: "Jira" }).click();
+		return new JiraWizard(this.page, (page) => new TeamEditPage(page));
 	}
 
 	async addNewWorkTrackingSystem(): Promise<
