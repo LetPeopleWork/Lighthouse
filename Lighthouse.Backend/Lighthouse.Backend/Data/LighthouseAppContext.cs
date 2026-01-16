@@ -35,6 +35,13 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<Delivery> Deliveries { get; set; } = null!;
 
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            // Apply UTC converter to ALL DateTime properties in the database
+            configurationBuilder.Properties<DateTime>()
+                .HaveConversion<Converters.UtcDateTimeConverter>();
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);

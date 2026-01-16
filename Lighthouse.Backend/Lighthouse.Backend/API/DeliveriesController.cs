@@ -66,7 +66,11 @@ namespace Lighthouse.Backend.API
                 return NotFound($"Portfolio with ID {portfolioId} not found");
             }
             
-            var delivery = new Delivery(request.Name, request.Date, portfolioId);
+            var utcDate = request.Date.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc) 
+                : request.Date.ToUniversalTime();
+            
+            var delivery = new Delivery(request.Name, utcDate, portfolioId);
             delivery.Features.AddRange(featureList);
 
             deliveryRepository.Add(delivery);
@@ -108,8 +112,12 @@ namespace Lighthouse.Backend.API
                 featureList.Add(feature);
             }
             
+            var utcDate = request.Date.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc) 
+                : request.Date.ToUniversalTime();
+            
             existingDelivery.Name = request.Name;
-            existingDelivery.Date = request.Date;
+            existingDelivery.Date = utcDate;
             existingDelivery.Features.Clear();
             existingDelivery.Features.AddRange(featureList);
 

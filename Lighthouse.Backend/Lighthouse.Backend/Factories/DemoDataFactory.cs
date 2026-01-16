@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Factories
         private static string ReplaceDatePlaceholders(string csvContent)
         {
             var pattern = @"\{(-?\d+)\}";
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
 
             return Regex.Replace(csvContent, pattern, match =>
             {

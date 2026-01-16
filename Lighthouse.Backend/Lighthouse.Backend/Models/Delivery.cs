@@ -36,6 +36,6 @@ namespace Lighthouse.Backend.Models
         
         public Portfolio? Portfolio { get; set; }
         
-        public List<Feature> Features { get; } = new List<Feature>();
+        public List<Feature> Features { get; } = [];
     }
 }

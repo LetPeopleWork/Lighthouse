@@ -215,8 +215,8 @@ namespace Lighthouse.Backend.MCP
         [McpServerTool, Description("Get Flow Metrics of the specified Project in a given time range")]
         public string GetProjectFlowMetrics(string projectName, DateTime? startDate, DateTime? endDate)
         {
-            var rangeStart = startDate ?? DateTime.Now.AddDays(-90);
-            var rangeEnd = endDate ?? DateTime.Now;
+            var rangeStart = startDate ?? DateTime.UtcNow.AddDays(-90);
+            var rangeEnd = endDate ?? DateTime.UtcNow;
 
             using (var scope = CreateServiceScope())
             {

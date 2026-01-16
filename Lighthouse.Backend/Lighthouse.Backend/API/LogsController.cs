@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.API
         {
             var logsContent = logConfiguration.GetLogs();
             var fileBytes = Encoding.UTF8.GetBytes(logsContent);
-            var fileName = $"Lighthouse_Log_{DateTime.Now:yyyy.MM.dd}.txt";
+            var fileName = $"Lighthouse_Log_{DateTime.UtcNow:yyyy.MM.dd}.txt";
             return File(fileBytes, "text/plain", fileName);
         }
 

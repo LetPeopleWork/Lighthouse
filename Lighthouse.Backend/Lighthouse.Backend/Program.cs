@@ -235,6 +235,7 @@ namespace Lighthouse.Backend
                 .AddControllers().AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.Converters.Add(new API.JsonConverters.UtcDateTimeConverter());
                 });
 
             // Add Swagger services

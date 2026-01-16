@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.API
         {
             var json = JsonSerializer.Serialize(configurationExport, CachedJsonSerializerOptions);
             var fileBytes = System.Text.Encoding.UTF8.GetBytes(json);
-            var fileName = $"Lighthouse_Configuration_{DateTime.Now:yyyy.MM.dd}.json";
+            var fileName = $"Lighthouse_Configuration_{DateTime.UtcNow:yyyy.MM.dd}.json";
 
             return File(fileBytes, "application/json", fileName);
         }
