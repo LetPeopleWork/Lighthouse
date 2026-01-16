@@ -68,6 +68,8 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Lars Henning**](https://www.linkedin.com/in/larshenning42/)
 - [**Mihajlo Vilajić**](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
 - [**Maria Chec**](https://www.linkedin.com/in/mariachec/)  
+- [**Nick Brown**](https://www.linkedin.com/in/nicolasjmbrown/)
+- [**Paul Brown**](https://www.linkedin.com/in/paulisthrivving/)
 
 ---
 

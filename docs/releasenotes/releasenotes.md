@@ -4,7 +4,42 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Jira Wizard
+If you use a Jira Connection, Teams and Portfolios can now fetch some settings through a Jira Wizard from their existing Boards.
+The Wizard will display all available boards. If you chose a board, it will read:
+- The JQL for this board (including subquery)
+- The work item types on this board
+- The states with a state mapping (by category)
+
+![Jira Wizard](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/concepts/jira_wizard.png)
+
+This one-time sync should simplify the initial creation of your Teams and Portfolios!
+
+## Delivery Improvements
+To Do 
+
+## Other Improvements
+- Updated various third party dependencies
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Anoop A Parapurath](https://www.linkedin.com/in/anoop-a-parapurath-137a3b4/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Ann K Brea](https://www.linkedin.com/in/annkbrea/)
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+- [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.5.1620...v26.01.09.006)
+
 # Lighthouse v26.1.9.6
+{: .d-inline-block }
+Latest
+{: .label .label-green }
+
 This release was focused on improving the additional field functionality of the Work Tracking Systems. Following changes related to this were implemented:
 - Username is not shown in "Other Options" anymore if you choose Jira Data Center Auth Option
 - You don't need to specify the token (or other secrets) if you modify only the additional fields
@@ -130,9 +165,6 @@ Special Thanks to everyone who contributed their feedback to this release:
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.12.19.1534...v25.12.28.1246)
 
 # Lighthouse v25.12.19.1534
-{: .d-inline-block }
-Latest
-{: .label .label-green }
 
 ## Deliveries
 

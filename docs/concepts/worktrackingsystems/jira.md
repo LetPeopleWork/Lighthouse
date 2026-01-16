@@ -129,7 +129,7 @@ What you must understand is that you simply need to re-order your items in Jira 
 
 
 
-## Jira Wizard
+# Jira Wizard
 
 Use the Jira Wizard to automatically discover and import configuration from the Boards in your Jira Instance. The Wizard will:
 - Show you all available boards from your Jira instance
