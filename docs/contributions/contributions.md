@@ -20,11 +20,11 @@ We use our Slack Community also to look for feedback, asking for support where w
 Lighthouse is completely free and open-source. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework){:target="_blank"}. Your support helps us maintain and improve Lighthouse for everyone!
 
 # Bugs or Feature Requests
-If you have a feature request or found a potential bug, you can best reach us via [Slack](#join-our-slack-community). Otherwise, please raise an [Issue](https://github.com/LetPeopleWork/Lighthouse/issues). When doing so, please describe it in as much detail as possible.
+If you have a feature request or found a potential bug, you can best reach us via [Slack](#join-our-slack-community) or [email](mailto:contact@letpeople.work). When doing so, please describe it in as much detail as possible.
 
 # Documentation
 If you find something that can be improved in the documentation, you can contribute by letting us know about it!
-To do so, you can either just [let us know](#join-our-slack-community), or open a new [issue](https://github.com/LetPeopleWork/Lighthouse/issues/new?template=documentation-improvement.yml){:target="_blank"} in our GitHub repository. An issue can be as small as a typo, but also wrong or outdated sections, as well as something that we've might have missed so far.
+To do so, you can either let us know [via Slack](#join-our-slack-community) or [email](mailto:contact@letpeople.work).
 
 If you want to do more than just reporting, we're happy to onboard people that help us improve our docs. Please reach out to use if you are interested in this.
 
@@ -32,15 +32,11 @@ If you want to do more than just reporting, we're happy to onboard people that h
 While we're adding new functionality, we're always looking for people that are willing to spend some time in trying things out and give us feedback on a regular base. If you are willing to occasionally run into some errors in return for being at the bleeding edge of the development, [reach out](#join-our-slack-community).
 
 # Code
-While we mentioned that there are other ways than contributing code, the code still needs to be written. So if you are willing to contribute here, you are very welcome. We recommend to [reach out](#join-our-slack-community) before you start with adjusting the code, so we can make sure it makes sense what you work on.
+While we mentioned that there are other ways than contributing code, the code still needs to be written. So if you are willing to contribute here, you are welcome. We recommend to [reach out](#join-our-slack-community) before you start with adjusting the code, so we can make sure it makes sense what you work on.
 
-Feel free to browse through the [Issues](https://github.com/LetPeopleWork/Lighthouse/issues) and have a look at what might be there.
+You can also propose things where you want to contribute. After all, it's your time and it should be meaningful to you. We're always happy if we can improve, especially on the Frontend side of things. Go ahead, check out the code and make a proposal on how you would like to contribute. Once you have a proposal, [connect with us](#join-our-slack-community) to discuss details.
 
-You can also see the next issues we prioritized in our [Project Overview](https://github.com/orgs/LetPeopleWork/projects/3/views/2).
-
-Last but not least, you can also propose things where you want to contribute. After all, it's your time and it should be meaningful to you. We're always happy if we can improve, especially on the Frontend side of things. Go ahead, check out the code and make a proposal on how you would like to contribute. Once you have a proposal, [connect with us](#join-our-slack-community) to discuss details.
-
-We appreciate any contribution, but also want to make you aware that we reserve the right to decline certain changes. Thus, if you don't work on any of the prioritized issues, please always double check with us first. Otherwise it might lead to wasted work.
+We appreciate any contribution, but also want to make you aware that we reserve the right to decline changes. Please double check with us first. Otherwise it might lead to wasted work.
 
 # Contributors
 A huge thank you to everyone who has contributed to this project! Your support, whether through code, documentation, giving feedback, or spreading the word, has been invaluable. We’re incredibly grateful to have such an amazing community around this project.
@@ -71,7 +67,8 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Becky Tedds**](https://www.linkedin.com/in/beckytedds/)
 - [**Lars Henning**](https://www.linkedin.com/in/larshenning42/)
 - [**Mihajlo Vilajić**](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
-- [**Maria Chec**](https://www.linkedin.com/in/mariachec/)
+- [**Maria Chec**](https://www.linkedin.com/in/mariachec/)  
+
 ---
 
 ## Supporting Companies
