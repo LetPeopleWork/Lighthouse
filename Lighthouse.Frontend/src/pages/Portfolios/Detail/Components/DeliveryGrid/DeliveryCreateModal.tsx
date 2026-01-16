@@ -140,7 +140,24 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	}, [open, resetForm]);
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+		<Dialog
+			open={open}
+			onClose={onClose}
+			maxWidth="md"
+			fullWidth
+			slotProps={{
+				paper: {
+					sx: {
+						resize: "both",
+						overflow: "auto",
+						minWidth: "400px",
+						minHeight: "400px",
+						maxWidth: "90vw",
+						maxHeight: "90vh",
+					},
+				},
+			}}
+		>
 			<DialogTitle>
 				{isEditMode ? `Edit ${deliveryTerm}` : `Add ${deliveryTerm}`}
 			</DialogTitle>

@@ -282,7 +282,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!string.IsNullOrEmpty(subQuery))
             {
-                subQuery = $"AND {subQuery}";
+                subQuery = $"AND ({subQuery})";
             }
 
             return subQuery;

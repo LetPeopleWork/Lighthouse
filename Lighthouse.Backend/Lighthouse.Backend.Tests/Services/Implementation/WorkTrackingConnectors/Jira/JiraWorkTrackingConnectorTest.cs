@@ -500,7 +500,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(boardInformation.DataRetrievalValue, Does.Contain("project = LIGHTHOUSE AND type IN (Bug, Story)"));
                 Assert.That(boardInformation.DataRetrievalValue, Does.Contain("fixVersion in unreleasedVersions() OR fixVersion is EMPTY"));
-                Assert.That(boardInformation.DataRetrievalValue, Is.EqualTo("project = LIGHTHOUSE AND type IN (Bug, Story) AND fixVersion in unreleasedVersions() OR fixVersion is EMPTY"));
+                Assert.That(boardInformation.DataRetrievalValue, Is.EqualTo("project = LIGHTHOUSE AND type IN (Bug, Story) AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)"));
             }
         }
 
