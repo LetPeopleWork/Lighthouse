@@ -404,7 +404,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var board = new Board
                 {
-                    Id = boardElement.GetProperty("id").GetInt32(),
+                    Id = boardElement.GetProperty("id").GetInt32().ToString(),
                     Name = boardElement.GetProperty("name").GetString()
                 };
                 

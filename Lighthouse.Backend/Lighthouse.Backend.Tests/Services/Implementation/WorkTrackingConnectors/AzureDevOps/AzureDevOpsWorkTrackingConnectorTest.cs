@@ -833,6 +833,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(isValid, Is.True);
         }
 
+        [Test]
+        public async Task GetBoards_ReturnsAllBoardsInProject()
+        {
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+
+            var subject = CreateSubject();
+            
+            var boards = (await subject.GetBoards(workTrackingSystemConnection)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boards, Has.Count.GreaterThan(1));
+                
+                var relevantBoards = boards.Where(x => x.Name.StartsWith($"CMFTTestTeamProject - "));
+                var storyBoard = relevantBoards.Single(b => b.Name.EndsWith("Stories"));
+                Assert.That(storyBoard.Name, Is.EqualTo("CMFTTestTeamProject - Stories"));
+                Assert.That(storyBoard.Id, Is.EqualTo("67811f97-d952-419d-927b-6f5eaf47aadd"));
+            }
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team

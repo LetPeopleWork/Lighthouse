@@ -9,7 +9,11 @@ using Microsoft.VisualStudio.Services.WebApi;
 using System.Collections.Concurrent;
 using System.Net;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
+using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi.Types;
+using Microsoft.TeamFoundation.Work.WebApi;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
+using Board = Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards.Board;
 using LighthouseWorkItem = Lighthouse.Backend.Models.WorkItem;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
@@ -23,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
         
-        private static readonly ConcurrentDictionary<string, WorkItemTrackingHttpClient> ClientCache = new();
+        private static readonly ConcurrentDictionary<string, IVssHttpClient> ClientCache = new();
         
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> OrgLimiters = new();
 
@@ -138,14 +142,61 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        public Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            return Task.FromResult(Enumerable.Empty<Board>());
+            try
+            {
+                logger.LogInformation("Getting Boards for System {ConnectionName}", workTrackingSystemConnection.Name);
+
+                var projects = await GetAllProjects(workTrackingSystemConnection);
+                var boards = await GetBoardsForProjects(projects, workTrackingSystemConnection);
+
+                return boards;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting boards");
+                return [];
+            }
         }
 
         public Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId)
         {
             return Task.FromResult(new BoardInformation());
+        }
+
+        private async Task<IEnumerable<Board>> GetBoardsForProjects(IEnumerable<TeamProjectReference> projects,
+            WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            var workClient = GetClient<WorkHttpClient>(workTrackingSystemConnection);
+
+            var tasks = projects.Select(async project => await GetBoardsForProject(project, workClient));
+
+            var boardsPerProject = await Task.WhenAll(tasks);
+            return boardsPerProject.SelectMany(b => b).ToList();
+        }
+
+        private static async Task<IEnumerable<Board>> GetBoardsForProject(TeamProjectReference project,
+            WorkHttpClient workClient)
+        {
+            var boardsPerProject = await ExecuteWithThrottle(workClient.BaseAddress.ToString(), 
+                () => workClient.GetBoardsAsync(new TeamContext(project.Id)));
+
+            return boardsPerProject.Select(boardReference => new Board
+            {
+                Id = boardReference.Id.ToString(),
+                Name = $"{project.Name} - {boardReference.Name}"
+            });
+        }
+
+        private async Task<IEnumerable<TeamProjectReference>> GetAllProjects(WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            var projectClient = GetClient<ProjectHttpClient>(workTrackingSystemConnection);
+
+            var projects = await ExecuteWithThrottle(projectClient.BaseAddress.ToString(), 
+                () => projectClient.GetProjects());
+
+            return projects;
         }
 
         private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query)
@@ -630,8 +681,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         
         private WorkItemTrackingHttpClient GetWorkItemTrackingHttpClient(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
+            return GetClient<WorkItemTrackingHttpClient>(workTrackingSystemConnection);
+        }
+
+        private TClient GetClient<TClient>(WorkTrackingSystemConnection workTrackingSystemConnection) where TClient : IVssHttpClient
+        {
             var (connection, key) = GetConnectionForWorkTrackingSystem(workTrackingSystemConnection);
-            return ClientCache.GetOrAdd(key, _ => connection.GetClient<WorkItemTrackingHttpClient>());
+            var cacheKey = $"{typeof(TClient).FullName}_{key}";
+            
+            return (TClient)ClientCache.GetOrAdd(cacheKey, _ => connection.GetClient<TClient>());
         }
 
         private (VssConnection connection, string key) GetConnectionForWorkTrackingSystem(

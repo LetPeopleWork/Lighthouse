@@ -35,8 +35,8 @@ namespace Lighthouse.Backend.Tests.API
             
             var boards = new List<Board>
             {
-                new() { Id = 1, Name = "My Board" },
-                new() { Id = 2, Name = "My Other Board" }
+                new() { Id = "1", Name = "My Board" },
+                new() { Id = "2", Name = "My Other Board" }
             };
 
             var boardInformationProviderMock = GetServiceMockForWorkTrackingSystemConnection(workTrackingSystemType);
@@ -55,9 +55,9 @@ namespace Lighthouse.Backend.Tests.API
                 var returnedBoards = okResult.Value as List<Board>;
                 Assert.That(returnedBoards, Has.Count.EqualTo(2));
                 Assert.That(returnedBoards[0].Name, Is.EqualTo("My Board"));
-                Assert.That(returnedBoards[0].Id, Is.EqualTo(1));
+                Assert.That(returnedBoards[0].Id, Is.EqualTo("1"));
                 Assert.That(returnedBoards[1].Name, Is.EqualTo("My Other Board"));
-                Assert.That(returnedBoards[1].Id, Is.EqualTo(2));
+                Assert.That(returnedBoards[1].Id, Is.EqualTo("2"));
             }
         }
 

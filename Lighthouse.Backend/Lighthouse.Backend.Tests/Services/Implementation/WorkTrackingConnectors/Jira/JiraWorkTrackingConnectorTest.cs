@@ -484,7 +484,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(boards, Has.Count.GreaterThan(1));
                 
                 var storiesBoard =  boards.Single(b => b.Name == "Stories");
-                Assert.That(storiesBoard.Id, Is.EqualTo(8));
+                Assert.That(storiesBoard.Id, Is.EqualTo("8"));
             }
         }
 
