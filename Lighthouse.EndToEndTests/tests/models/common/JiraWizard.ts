@@ -17,8 +17,8 @@ export class JiraWizard<T extends PortfolioEditPage | TeamEditPage> {
 		await this.page.getByRole("option", { name: boardName }).click();
 	}
 
-	async selectBoard(): Promise<T> {
-		await this.selectBoardButton.click();
+	async confirm(): Promise<T> {
+		await this.confirmButton.click();
 		return this.createPageHandler(this.page);
 	}
 
@@ -26,7 +26,7 @@ export class JiraWizard<T extends PortfolioEditPage | TeamEditPage> {
 		return this.page.getByText("Board InformationQueryproject");
 	}
 
-	get selectBoardButton(): Locator {
-		return this.page.getByRole("button", { name: "Select Board" });
+	get confirmButton(): Locator {
+		return this.page.getByRole("button", { name: "Confirm" });
 	}
 }

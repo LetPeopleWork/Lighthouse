@@ -1,7 +1,7 @@
 import type { IDataRetrievalWizard } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import BoardWizard from "./BoardWizard";
 import CsvUploadWizard from "./CsvUploadWizard";
-import JiraBoardWizard from "./JiraBoardWizard";
 
 const dataRetrievalWizards: IDataRetrievalWizard[] = [
 	{
@@ -14,7 +14,13 @@ const dataRetrievalWizards: IDataRetrievalWizard[] = [
 		id: "jira.board",
 		name: "Select Jira Board",
 		applicableSystemTypes: ["Jira"],
-		component: JiraBoardWizard,
+		component: BoardWizard,
+	},
+	{
+		id: "ado.board",
+		name: "Select Azure DevOps Board",
+		applicableSystemTypes: ["AzureDevOps"],
+		component: BoardWizard,
 	},
 ];
 

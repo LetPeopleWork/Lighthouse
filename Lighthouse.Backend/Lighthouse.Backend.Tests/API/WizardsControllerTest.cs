@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -12,19 +13,24 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IJiraWorkTrackingConnector> jiraWorkTrackingConnectorMock;
         
+        private Mock<IAzureDevOpsWorkTrackingConnector> azureDevOpsWorkTrackingConnectorMock;
+        
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
 
         [SetUp]
         public void Setup()
         {
             jiraWorkTrackingConnectorMock = new Mock<IJiraWorkTrackingConnector>();
+            azureDevOpsWorkTrackingConnectorMock = new Mock<IAzureDevOpsWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
         
         [Test]
-        public async Task GetJiraBoards_WorkTrackingSystemExists_ReturnsAvailableBoards()
+        [TestCase(WorkTrackingSystems.Jira)]
+        [TestCase(WorkTrackingSystems.AzureDevOps)]
+        public async Task GetBoards_WorkTrackingSystemExists_ReturnsAvailableBoards(WorkTrackingSystems workTrackingSystemType)
         {
-            var workTrackingSystemConnection = new WorkTrackingSystemConnection();
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = workTrackingSystemType };
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(12)).Returns(workTrackingSystemConnection);
             
             var boards = new List<Board>
@@ -32,12 +38,13 @@ namespace Lighthouse.Backend.Tests.API
                 new() { Id = 1, Name = "My Board" },
                 new() { Id = 2, Name = "My Other Board" }
             };
-            
-            jiraWorkTrackingConnectorMock.Setup(x => x.GetBoards(workTrackingSystemConnection)).ReturnsAsync(boards);
+
+            var boardInformationProviderMock = GetServiceMockForWorkTrackingSystemConnection(workTrackingSystemType);
+            boardInformationProviderMock.Setup(x => x.GetBoards(workTrackingSystemConnection)).ReturnsAsync(boards);
 
             var subject = CreateSubject();
 
-            var response = await subject.GetJiraBoards(12);
+            var response = await subject.GetBoards(12);
             
             using (Assert.EnterMultipleScope())
             {
@@ -55,11 +62,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task GetJiraBoards_WorkTrackingSystemDoesNotExist_ReturnsNotFound()
+        public async Task GetBoards_WorkTrackingSystemDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var response = await subject.GetJiraBoards(12);
+            var response = await subject.GetBoards(12);
             
             using (Assert.EnterMultipleScope())
             {
@@ -71,9 +78,11 @@ namespace Lighthouse.Backend.Tests.API
         }
         
         [Test]
-        public async Task GetJiraBoardInformation_WorkTrackingSystemExists_BoardExists_ReturnsBoardInformation()
+        [TestCase(WorkTrackingSystems.Jira)]
+        [TestCase(WorkTrackingSystems.AzureDevOps)]
+        public async Task GetBoardInformation_WorkTrackingSystemExists_BoardExists_ReturnsBoardInformation(WorkTrackingSystems workTrackingSystemType)
         {
-            var workTrackingSystemConnection = new WorkTrackingSystemConnection();
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = workTrackingSystemType };
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(12)).Returns(workTrackingSystemConnection);
             
             const int boardId = 42;
@@ -87,11 +96,12 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = ["Done"],
             };
             
-            jiraWorkTrackingConnectorMock.Setup(x => x.GetBoardInformation(workTrackingSystemConnection, boardId)).ReturnsAsync(boardInformation);
+            var boardInformationProviderMock = GetServiceMockForWorkTrackingSystemConnection(workTrackingSystemType);
+            boardInformationProviderMock.Setup(x => x.GetBoardInformation(workTrackingSystemConnection, boardId)).ReturnsAsync(boardInformation);
 
             var subject = CreateSubject();
 
-            var response = await subject.GetJiraBoardInformation(12, boardId);
+            var response = await subject.GetBoardInformation(12, boardId);
             
             using (Assert.EnterMultipleScope())
             {
@@ -109,11 +119,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task GetJiraBoardConfiguration_WorkTrackingSystemDoesNotExist_ReturnsNotFound()
+        public async Task GetBoardConfiguration_WorkTrackingSystemDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var response = await subject.GetJiraBoardInformation(12, 42);
+            var response = await subject.GetBoardInformation(12, 42);
             
             using (Assert.EnterMultipleScope())
             {
@@ -123,10 +133,21 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
         }
+
+        private Mock<IBoardInformationProvider> GetServiceMockForWorkTrackingSystemConnection(
+            WorkTrackingSystems workTrackingSystemConnectionType)
+        {
+            return workTrackingSystemConnectionType switch
+            {
+                WorkTrackingSystems.Jira => jiraWorkTrackingConnectorMock.As<IBoardInformationProvider>(),
+                WorkTrackingSystems.AzureDevOps => azureDevOpsWorkTrackingConnectorMock.As<IBoardInformationProvider>(),
+                _ => throw new NotSupportedException("Not supported WorkTrackingSystemConnectionType")
+            };
+        }
         
         private WizardsController CreateSubject()
         {
-            return new WizardsController(jiraWorkTrackingConnectorMock.Object, workTrackingSystemConnectionRepoMock.Object);
+            return new WizardsController(jiraWorkTrackingConnectorMock.Object, azureDevOpsWorkTrackingConnectorMock.Object, workTrackingSystemConnectionRepoMock.Object);
         }
     }
 }

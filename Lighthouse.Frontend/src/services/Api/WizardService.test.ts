@@ -19,16 +19,16 @@ describe("WizardService", () => {
 		vi.resetAllMocks();
 	});
 
-	describe("getJiraBoards", () => {
-		it("should return Jira Boards", async () => {
+	describe("getBoards", () => {
+		it("should return Boards", async () => {
 			const workTrackingSystemConnectionId = 1;
 			const mockBoards: IBoard[] = [
 				{
-					id: 1,
+					id: "1",
 					name: "Epic Board",
 				},
 				{
-					id: 2,
+					id: "2",
 					name: "Story Board",
 				},
 			];
@@ -38,22 +38,22 @@ describe("WizardService", () => {
 			});
 
 			// Act
-			const result = await wizardService.getJiraBoards(
+			const result = await wizardService.getBoards(
 				workTrackingSystemConnectionId,
 			);
 
 			// Assert
 			expect(mockedAxios.get).toHaveBeenCalledWith(
-				`/wizards/jira/${workTrackingSystemConnectionId}/boards`,
+				`/wizards/${workTrackingSystemConnectionId}/boards`,
 			);
 			expect(result).toHaveLength(2);
 			expect(result[0].name).toBe("Epic Board");
 			expect(result[1].name).toBe("Story Board");
 		});
 
-		it("should return Jira Board Information", async () => {
+		it("should return Board Information", async () => {
 			const workTrackingSystemConnectionId = 1;
-			const boardId = 8;
+			const boardId = "8";
 
 			const mobckBoardInfo: IBoardInformation = {
 				dataRetrievalValue: "someValue",
@@ -68,14 +68,14 @@ describe("WizardService", () => {
 			});
 
 			// Act
-			const result = await wizardService.getJiraBoardInformation(
+			const result = await wizardService.getBoardInformation(
 				workTrackingSystemConnectionId,
 				boardId,
 			);
 
 			// Assert
 			expect(mockedAxios.get).toHaveBeenCalledWith(
-				`/wizards/jira/${workTrackingSystemConnectionId}/boards/${boardId}`,
+				`/wizards/${workTrackingSystemConnectionId}/boards/${boardId}`,
 			);
 
 			expect(result).toEqual(mobckBoardInfo);

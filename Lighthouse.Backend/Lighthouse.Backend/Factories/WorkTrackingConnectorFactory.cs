@@ -1,7 +1,6 @@
 ﻿using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -18,33 +17,27 @@ namespace Lighthouse.Backend.Factories
         public IWorkTrackingConnector GetWorkTrackingConnector(WorkTrackingSystems workTrackingSystem)
         {
             logger.LogDebug("Getting Work Item Service for {WorkTrackingSystem}", workTrackingSystem);
-            var workItemSerivce = cache.Get(workTrackingSystem);
+            var workItemService = cache.Get(workTrackingSystem);
 
-            if (workItemSerivce == null)
+            if (workItemService != null)
             {
-                logger.LogDebug("Work Item Service for {WorkTrackingSystem} not found in the cache - creating", workTrackingSystem);
-                switch (workTrackingSystem)
-                {
-                    case WorkTrackingSystems.AzureDevOps:
-                        workItemSerivce = serviceProvider.GetRequiredService<AzureDevOpsWorkTrackingConnector>();
-                        break;
-                    case WorkTrackingSystems.Jira:
-                        workItemSerivce = serviceProvider.GetRequiredService<IJiraWorkTrackingConnector>();
-                        break;
-                    case WorkTrackingSystems.Linear:
-                        workItemSerivce = serviceProvider.GetRequiredService<LinearWorkTrackingConnector>();
-                        break;
-                    case WorkTrackingSystems.Csv:
-                        workItemSerivce = serviceProvider.GetRequiredService<CsvWorkTrackingConnector>();
-                        break;
-                    default:
-                        throw new NotSupportedException();
-                }
-
-                cache.Store(workTrackingSystem, workItemSerivce, TimeSpan.FromMinutes(2));
+                return workItemService;
             }
 
-            return workItemSerivce;
+            logger.LogDebug("Work Item Service for {WorkTrackingSystem} not found in the cache - creating", workTrackingSystem);
+            workItemService = workTrackingSystem switch
+            {
+                WorkTrackingSystems.AzureDevOps => serviceProvider
+                    .GetRequiredService<IAzureDevOpsWorkTrackingConnector>(),
+                WorkTrackingSystems.Jira => serviceProvider.GetRequiredService<IJiraWorkTrackingConnector>(),
+                WorkTrackingSystems.Linear => serviceProvider.GetRequiredService<LinearWorkTrackingConnector>(),
+                WorkTrackingSystems.Csv => serviceProvider.GetRequiredService<CsvWorkTrackingConnector>(),
+                _ => throw new NotSupportedException()
+            };
+
+            cache.Store(workTrackingSystem, workItemService, TimeSpan.FromMinutes(2));
+
+            return workItemService;
         }
     }
 }

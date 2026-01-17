@@ -425,14 +425,14 @@ test("should allow to create a new team through a Jira Wizard", async ({
 	await test.step("Use Jira Wizard to Select Board", async () => {
 		const jiraWizard = await newTeamPage.selectJiraWizard();
 
-		expect(await jiraWizard.selectBoardButton.isEnabled()).toBeFalsy();
+		expect(await jiraWizard.confirmButton.isEnabled()).toBeFalsy();
 
 		await jiraWizard.selectBoardByName("Stories");
 
 		await expect(jiraWizard.boardInformationPanel).toBeVisible();
-		expect(await jiraWizard.selectBoardButton.isEnabled()).toBeTruthy();
+		expect(await jiraWizard.confirmButton.isEnabled()).toBeTruthy();
 
-		newTeamPage = await jiraWizard.selectBoard();
+		newTeamPage = await jiraWizard.confirm();
 	});
 
 	await test.step("Validate Settings", async () => {

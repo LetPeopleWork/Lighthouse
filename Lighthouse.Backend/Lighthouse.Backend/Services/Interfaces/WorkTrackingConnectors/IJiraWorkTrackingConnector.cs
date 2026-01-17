@@ -3,10 +3,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
-    public interface IJiraWorkTrackingConnector : IWorkTrackingConnector
+    public interface IJiraWorkTrackingConnector : IWorkTrackingConnector, IBoardInformationProvider
     {
-        Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection);
-        
-        Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId);
     }
 }

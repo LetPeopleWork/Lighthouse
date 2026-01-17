@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             serviceProviderMock = new Mock<IServiceProvider>();
             serviceProviderMock
-            .Setup(x => x.GetService(typeof(AzureDevOpsWorkTrackingConnector)))
+            .Setup(x => x.GetService(typeof(IAzureDevOpsWorkTrackingConnector)))
             .Returns(new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService()));
 
             serviceProviderMock

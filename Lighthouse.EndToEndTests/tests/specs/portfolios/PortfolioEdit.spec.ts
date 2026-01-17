@@ -564,14 +564,14 @@ testWithUpdatedTeams(teamConfiguration.involvedTeams)(
 		await test.step("Use Jira Wizard to Select Board", async () => {
 			const jiraWizard = await newPortfolioPage.selectJiraWizard();
 
-			expect(await jiraWizard.selectBoardButton.isEnabled()).toBeFalsy();
+			expect(await jiraWizard.confirmButton.isEnabled()).toBeFalsy();
 
 			await jiraWizard.selectBoardByName("Epics");
 
 			await expect(jiraWizard.boardInformationPanel).toBeVisible();
-			expect(await jiraWizard.selectBoardButton.isEnabled()).toBeTruthy();
+			expect(await jiraWizard.confirmButton.isEnabled()).toBeTruthy();
 
-			newPortfolioPage = await jiraWizard.selectBoard();
+			newPortfolioPage = await jiraWizard.confirm();
 		});
 
 		await test.step("Validate Settings", async () => {

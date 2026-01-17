@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import BoardWizard from "./BoardWizard";
 import CsvUploadWizard from "./CsvUploadWizard";
 import dataRetrievalWizards, {
 	getWizardsForSystem,
 } from "./DataRetrievalWizardRegistry";
-import JiraBoardWizard from "./JiraBoardWizard";
 
 describe("DataRetrievalWizardRegistry", () => {
 	describe("dataRetrievalWizards array", () => {
-		it("should contain the CSV upload wizard and Jira board wizard", () => {
-			expect(dataRetrievalWizards).toHaveLength(2);
+		it("should contain the CSV upload wizard, Jira and ADO board wizard", () => {
+			expect(dataRetrievalWizards).toHaveLength(3);
 
 			const csvWizard = dataRetrievalWizards.find((w) => w.id === "csv.upload");
 			expect(csvWizard).toBeDefined();
@@ -23,7 +23,13 @@ describe("DataRetrievalWizardRegistry", () => {
 			expect(jiraWizard).toBeDefined();
 			expect(jiraWizard?.name).toBe("Select Jira Board");
 			expect(jiraWizard?.applicableSystemTypes).toContain("Jira");
-			expect(jiraWizard?.component).toBe(JiraBoardWizard);
+			expect(jiraWizard?.component).toBe(BoardWizard);
+
+			const adoWizard = dataRetrievalWizards.find((w) => w.id === "ado.board");
+			expect(adoWizard).toBeDefined();
+			expect(adoWizard?.name).toBe("Select Azure DevOps Board");
+			expect(adoWizard?.applicableSystemTypes).toContain("AzureDevOps");
+			expect(adoWizard?.component).toBe(BoardWizard);
 		});
 
 		it("should have valid wizard structure", () => {
@@ -56,12 +62,6 @@ describe("DataRetrievalWizardRegistry", () => {
 			expect(wizards).toHaveLength(1);
 			expect(wizards[0].id).toBe("jira.board");
 			expect(wizards[0].name).toBe("Select Jira Board");
-		});
-
-		it("should return empty array for AzureDevOps system type", () => {
-			const wizards = getWizardsForSystem("AzureDevOps");
-
-			expect(wizards).toHaveLength(0);
 		});
 
 		it("should return empty array for Linear system type", () => {

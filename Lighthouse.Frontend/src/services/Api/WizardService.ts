@@ -3,33 +3,31 @@ import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IWizardService {
-	getJiraBoards(workTrackingSystemConnectionId: number): Promise<IBoard[]>;
-	getJiraBoardInformation(
+	getBoards(workTrackingSystemConnectionId: number): Promise<IBoard[]>;
+	getBoardInformation(
 		workTrackingSystemConnectionId: number,
-		boardId: number,
+		boardId: string,
 	): Promise<IBoardInformation>;
 }
 
 export class WizardService extends BaseApiService implements IWizardService {
-	async getJiraBoards(
-		workTrackingSystemConnectionId: number,
-	): Promise<IBoard[]> {
+	async getBoards(workTrackingSystemConnectionId: number): Promise<IBoard[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IBoard[]>(
-				`/wizards/jira/${workTrackingSystemConnectionId}/boards`,
+				`/wizards/${workTrackingSystemConnectionId}/boards`,
 			);
 
 			return response.data;
 		});
 	}
 
-	async getJiraBoardInformation(
+	async getBoardInformation(
 		workTrackingSystemConnectionId: number,
-		boardId: number,
+		boardId: string,
 	): Promise<IBoardInformation> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IBoardInformation>(
-				`/wizards/jira/${workTrackingSystemConnectionId}/boards/${boardId}`,
+				`/wizards/${workTrackingSystemConnectionId}/boards/${boardId}`,
 			);
 
 			return response.data;

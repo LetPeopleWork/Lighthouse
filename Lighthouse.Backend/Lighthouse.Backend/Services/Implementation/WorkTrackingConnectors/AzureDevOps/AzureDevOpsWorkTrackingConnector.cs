@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Collections.Concurrent;
 using System.Net;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 using LighthouseWorkItem = Lighthouse.Backend.Models.WorkItem;
 
@@ -16,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
     public class AzureDevOpsWorkTrackingConnector(
         ILogger<AzureDevOpsWorkTrackingConnector> logger,
         ICryptoService cryptoService)
-        : IWorkTrackingConnector
+        : IAzureDevOpsWorkTrackingConnector
     {
         private const int MaxChunkSize = 200;
 
@@ -135,6 +136,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
                 return false;
             }
+        }
+
+        public Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            return Task.FromResult(Enumerable.Empty<Board>());
+        }
+
+        public Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId)
+        {
+            return Task.FromResult(new BoardInformation());
         }
 
         private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query)

@@ -16,7 +16,7 @@ import type { DataRetrievalWizardProps } from "../../models/DataRetrievalWizard/
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import BoardInformationDisplay from "../DataRetrieval/BoardInformationDisplay";
 
-const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
+const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	open,
 	workTrackingSystemConnectionId,
 	onComplete,
@@ -36,17 +36,17 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 		setError("");
 
 		try {
-			const fetchedBoards = await wizardService.getJiraBoards(
+			const fetchedBoards = await wizardService.getBoards(
 				workTrackingSystemConnectionId,
 			);
 			setBoards(fetchedBoards);
 
 			if (fetchedBoards.length === 0) {
-				setError("No boards available for this Jira connection.");
+				setError("No boards available for this connection.");
 			}
 		} catch (err) {
-			setError("Failed to load Jira boards. Please try again.");
-			console.error("Error loading Jira boards:", err);
+			setError("Failed to load boards. Please try again.");
+			console.error("Error loading boards:", err);
 		} finally {
 			setLoading(false);
 		}
@@ -64,7 +64,7 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 			setError("");
 
 			try {
-				const info = await wizardService.getJiraBoardInformation(
+				const info = await wizardService.getBoardInformation(
 					workTrackingSystemConnectionId,
 					board.id,
 				);
@@ -119,7 +119,7 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 
 	return (
 		<Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-			<DialogTitle>Select Jira Board</DialogTitle>
+			<DialogTitle>Select Board</DialogTitle>
 			<DialogContent>
 				{loading ? (
 					<CircularProgress sx={{ display: "block", margin: "2rem auto" }} />
@@ -162,11 +162,11 @@ const JiraBoardWizard: React.FC<DataRetrievalWizardProps> = ({
 					variant="contained"
 					disabled={!boardInformation || loading || fetchingBoardInfo}
 				>
-					Select Board
+					Confirm
 				</Button>
 			</DialogActions>
 		</Dialog>
 	);
 };
 
-export default JiraBoardWizard;
+export default BoardWizard;
