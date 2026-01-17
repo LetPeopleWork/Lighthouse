@@ -70,6 +70,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Maria Chec**](https://www.linkedin.com/in/mariachec/)  
 - [**Nick Brown**](https://www.linkedin.com/in/nicolasjmbrown/)
 - [**Paul Brown**](https://www.linkedin.com/in/paulisthrivving/)
+- [**Myriam Greger**](https://www.linkedin.com/in/myriam-greger/)
 
 ---
 

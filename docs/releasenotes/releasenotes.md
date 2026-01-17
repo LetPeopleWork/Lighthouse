@@ -43,6 +43,7 @@ Special Thanks to everyone who contributed their feedback to this release:
 - [Ann K Brea](https://www.linkedin.com/in/annkbrea/)
 - [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
 - [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
+- [Myriam Greger](https://www.linkedin.com/in/myriam-greger/)
 
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.01.09.006...v26.1.17.4)
 
