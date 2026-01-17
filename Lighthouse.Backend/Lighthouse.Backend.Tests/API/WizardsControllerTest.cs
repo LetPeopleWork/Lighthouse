@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = workTrackingSystemType };
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(12)).Returns(workTrackingSystemConnection);
             
-            const int boardId = 42;
+            const string boardId = "42";
 
             var boardInformation = new BoardInformation
             {
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = await subject.GetBoardInformation(12, 42);
+            var response = await subject.GetBoardInformation(12, "42");
             
             using (Assert.EnterMultipleScope())
             {

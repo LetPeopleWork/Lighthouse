@@ -2,7 +2,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boar
 {
     public class BoardInformation
     {
-        public string DataRetrievalValue { get; set; }
+        public string DataRetrievalValue { get; set; } = string.Empty;
 
         public IEnumerable<string> WorkItemTypes { get; set; } = [];
         

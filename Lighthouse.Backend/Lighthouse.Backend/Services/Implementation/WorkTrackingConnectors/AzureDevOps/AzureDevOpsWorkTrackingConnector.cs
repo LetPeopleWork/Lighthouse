@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Text;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
@@ -160,9 +161,102 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        public Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId)
+        public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
         {
-            return Task.FromResult(new BoardInformation());
+            var emptyInfo = new BoardInformation();
+            
+            try
+            {
+                var splitBoardId = boardId.Split('|');
+                if (splitBoardId.Length != 2)
+                {
+                    return emptyInfo;
+                }
+                
+                var projectId =  splitBoardId[0];
+                var boardReference = splitBoardId[1];
+                
+                logger.LogInformation("Getting Board Information for Board {BoardId} in Project {ProjectId}", boardReference, projectId);
+                
+                var workClient = GetClient<WorkHttpClient>(workTrackingSystemConnection);
+                var board = await GetBoardForProject(projectId, boardReference, workClient);
+
+                var teamId = ExtractTeamIdFromBoard(board);
+                var query = await ExtractWiqlQueryForBoard(workClient, projectId, teamId);
+                
+                var workItemTypes = ExtractWorkItemTypesFromBoard(board);
+                
+                var (toDoStates, doingStates, doneStates) = ExtractStateMappingFromBoard(board);
+                
+                return new BoardInformation
+                {
+                    DataRetrievalValue = query,
+                    WorkItemTypes = workItemTypes,
+                    ToDoStates = toDoStates,
+                    DoingStates = doingStates,
+                    DoneStates =  doneStates,
+                };
+            }  
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting board information for board {BoardId}", boardId);
+                return emptyInfo;
+            }
+        }
+
+        private string ExtractTeamIdFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
+        {
+            var team = (ReferenceLink)board.Links.Links["team"];
+            var teamLink = team.Href;
+            var teamId = teamLink.Split('/').Last();
+
+            return teamId;
+        }
+
+        private static async Task<string> ExtractWiqlQueryForBoard(WorkHttpClient workClient, string projectId, string teamId)
+        {
+            
+            var teamFieldValues = await workClient.GetTeamFieldValuesAsync(new TeamContext(projectId, teamId));
+            var areaPathField = $"[{teamFieldValues.Field.ReferenceName}]";
+            var allValues = teamFieldValues.Values;
+
+            var queryParts = new List<string>();
+            
+            foreach (var fieldValue in allValues)
+            {
+                var operatorText = fieldValue.IncludeChildren ? "UNDER" : "=";
+                
+                queryParts.Add($"{areaPathField} {operatorText} {fieldValue.Value}");
+            }
+
+            return string.Join(" OR ",  queryParts);
+        }
+
+        private static (IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)
+            ExtractStateMappingFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
+        {
+            var incomingColumns = board.Columns.Where(c => c.ColumnType == BoardColumnType.Incoming);
+            var inProgressColumns =  board.Columns.Where(c => c.ColumnType == BoardColumnType.InProgress);
+            var outgoingColumns = board.Columns.Where(c => c.ColumnType == BoardColumnType.Outgoing);
+
+            var toDoStates = incomingColumns.SelectMany(c => c.StateMappings.Values).Distinct();
+            var doingStates = inProgressColumns.SelectMany(c => c.StateMappings.Values).Distinct().Where(s => !toDoStates.Contains(s));
+            var doneStates = outgoingColumns.SelectMany(c => c.StateMappings.Values).Distinct().Where(s => !toDoStates.Contains(s) &&  !doingStates.Contains(s));
+            
+            return (toDoStates, doingStates, doneStates);
+        }
+
+        private static IEnumerable<string> ExtractWorkItemTypesFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
+        {
+            return board.Columns.SelectMany(c => c.StateMappings).Select(sm => sm.Key).Distinct();
+        }
+
+        private async Task<Microsoft.TeamFoundation.Work.WebApi.Board> GetBoardForProject(string projectId,
+            string boardId, WorkHttpClient workClient)
+        {
+            var board = await workClient.GetBoardAsync(new TeamContext(projectId), boardId);
+            
+            return board;
         }
 
         private async Task<IEnumerable<Board>> GetBoardsForProjects(IEnumerable<TeamProjectReference> projects,
@@ -186,7 +280,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 return boardsPerProject.Select(boardReference => new Board
                 {
-                    Id = boardReference.Id.ToString(),
+                    Id = $"{project.Id}|{boardReference.Id.ToString()}",
                     Name = $"{project.Name} - {boardReference.Name}"
                 });
             }

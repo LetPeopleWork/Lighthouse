@@ -26,9 +26,9 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        [HttpGet("{workTrackingSystemConnectionId:int}/boards/{boardId:int}")]
+        [HttpGet("{workTrackingSystemConnectionId:int}/boards/{boardId}")]
         public async Task<ActionResult<BoardInformation>> GetBoardInformation(int workTrackingSystemConnectionId,
-            int boardId)
+            string boardId)
         {
             return await this.GetEntityByIdAnExecuteAction(workTrackingSystemRepo, workTrackingSystemConnectionId,
                 async workTrackingSystemConnection =>

@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId)
+        public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
         {
             try
             {
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, int boardId)
+        private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
         {
             var boardInformation = new BoardInformation();
             
@@ -232,7 +232,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return (todoStatuses, inProgressStatuses, doneStatuses);
         }
 
-        private static async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, int boardId)
+        private static async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, string boardId)
         {
             var response = await client.GetAsync($"{BoardsEndpoint}/{boardId}/issue?maxResults=1000");
 

@@ -7,6 +7,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
     {
         Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection);
         
-        Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, int boardId);
+        Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId);
     }
 }

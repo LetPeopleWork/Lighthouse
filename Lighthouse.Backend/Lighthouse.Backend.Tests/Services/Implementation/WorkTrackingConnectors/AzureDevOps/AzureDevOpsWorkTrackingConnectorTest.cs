@@ -849,7 +849,91 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 var relevantBoards = boards.Where(x => x.Name.StartsWith($"CMFTTestTeamProject - "));
                 var storyBoard = relevantBoards.Single(b => b.Name.EndsWith("Stories"));
                 Assert.That(storyBoard.Name, Is.EqualTo("CMFTTestTeamProject - Stories"));
-                Assert.That(storyBoard.Id, Is.EqualTo("67811f97-d952-419d-927b-6f5eaf47aadd"));
+                Assert.That(storyBoard.Id, Is.EqualTo("e7b3c1df-8d70-4943-98a7-ef00c7a0c523|67811f97-d952-419d-927b-6f5eaf47aadd"));
+            }
+        }
+
+        [Test]
+        [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
+        [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523-e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
+        [TestCase("Jambalaya")]
+        [TestCase("123123")]
+        public async Task GetBoardInformation_BoardIdIsNotContainingTwoGuids_ReturnsEmpty(string invalidBoardId)
+        {
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+
+            var subject = CreateSubject();
+            
+            var boardInfo = await subject.GetBoardInformation(workTrackingSystemConnection, invalidBoardId);
+
+            using (Assert.EnterMultipleScope()){
+                Assert.That(boardInfo.DataRetrievalValue, Is.Empty);
+                Assert.That(boardInfo.WorkItemTypes,  Is.Empty);
+                Assert.That(boardInfo.ToDoStates, Is.Empty);
+                Assert.That(boardInfo.DoingStates, Is.Empty);
+                Assert.That(boardInfo.DoneStates, Is.Empty);
+            }
+        }
+
+        [Test]
+        public async Task GetBoardInformation_GivenSpecificBoard_ReturnsCorrectQuery()
+        {
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+
+            var subject = CreateSubject();
+            
+            var boardInfo = await subject.GetBoardInformation(workTrackingSystemConnection, "e7b3c1df-8d70-4943-98a7-ef00c7a0c523|67811f97-d952-419d-927b-6f5eaf47aadd");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = CMFTTestTeamProject"));
+                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = CMFTTestTeamProject\\PreviousReleaseAreaPath"));
+                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths"));
+                Assert.That(boardInfo.DataRetrievalValue, Is.EqualTo("[System.AreaPath] = CMFTTestTeamProject OR [System.AreaPath] = CMFTTestTeamProject\\PreviousReleaseAreaPath OR [System.AreaPath] = CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths"));
+            }
+        }
+
+        [Test]
+        public async Task GetBoardInformation_GivenSpecificBoard_ReturnsCorrectWorkItemTypes()
+        {
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+
+            var subject = CreateSubject();
+            
+            var boardInfo = await subject.GetBoardInformation(workTrackingSystemConnection, "e7b3c1df-8d70-4943-98a7-ef00c7a0c523|67811f97-d952-419d-927b-6f5eaf47aadd");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInfo.WorkItemTypes, Is.Not.Empty);
+                Assert.That(boardInfo.WorkItemTypes.ToList(), Has.Count.EqualTo(2));
+                Assert.That(boardInfo.WorkItemTypes, Does.Contain("User Story"));
+                Assert.That(boardInfo.WorkItemTypes, Does.Contain("Bug"));
+            }
+        }
+
+        [Test]
+        public async Task GetBoardInformation_GivenSpecificBoard_ReturnsCorrectStateMapping()
+        {
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+
+            var subject = CreateSubject();
+            
+            var boardInfo = await subject.GetBoardInformation(workTrackingSystemConnection, "e7b3c1df-8d70-4943-98a7-ef00c7a0c523|67811f97-d952-419d-927b-6f5eaf47aadd");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInfo.ToDoStates, Is.Not.Empty);
+                Assert.That(boardInfo.DoingStates, Is.Not.Empty);
+                Assert.That(boardInfo.DoneStates, Is.Not.Empty);
+                
+                Assert.That(boardInfo.ToDoStates.ToList(), Has.Count.EqualTo(1));
+                Assert.That(boardInfo.DoingStates.ToList(), Has.Count.EqualTo(2));
+                Assert.That(boardInfo.DoneStates.ToList(), Has.Count.EqualTo(1));
+                
+                Assert.That(boardInfo.ToDoStates, Does.Contain("New"));
+                Assert.That(boardInfo.DoingStates, Does.Contain("Active"));
+                Assert.That(boardInfo.DoingStates, Does.Contain("Resolved"));
+                Assert.That(boardInfo.DoneStates, Does.Contain("Closed"));
             }
         }
 

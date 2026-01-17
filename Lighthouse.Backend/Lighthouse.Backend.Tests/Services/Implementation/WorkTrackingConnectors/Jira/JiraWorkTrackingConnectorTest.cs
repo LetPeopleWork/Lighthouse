@@ -494,7 +494,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
             
-            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, 8);
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, "8");
 
             using (Assert.EnterMultipleScope())
             {
@@ -510,7 +510,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
             
-            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, 8);
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, "8");
 
             using (Assert.EnterMultipleScope())
             {
@@ -525,7 +525,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
             
-            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, 8);
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, "8");
 
             using (Assert.EnterMultipleScope())
             {
