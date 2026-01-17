@@ -173,20 +173,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var tasks = projects.Select(async project => await GetBoardsForProject(project, workClient));
 
             var boardsPerProject = await Task.WhenAll(tasks);
-            return boardsPerProject.SelectMany(b => b).ToList();
+            return boardsPerProject.SelectMany(b => b);
         }
 
-        private static async Task<IEnumerable<Board>> GetBoardsForProject(TeamProjectReference project,
+        private async Task<IEnumerable<Board>> GetBoardsForProject(TeamProjectReference project,
             WorkHttpClient workClient)
         {
-            var boardsPerProject = await ExecuteWithThrottle(workClient.BaseAddress.ToString(), 
-                () => workClient.GetBoardsAsync(new TeamContext(project.Id)));
-
-            return boardsPerProject.Select(boardReference => new Board
+            try
             {
-                Id = boardReference.Id.ToString(),
-                Name = $"{project.Name} - {boardReference.Name}"
-            });
+                var boardsPerProject = await ExecuteWithThrottle(workClient.BaseAddress.ToString(),
+                    () => workClient.GetBoardsAsync(new TeamContext(project.Id)));
+
+                return boardsPerProject.Select(boardReference => new Board
+                {
+                    Id = boardReference.Id.ToString(),
+                    Name = $"{project.Name} - {boardReference.Name}"
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting Boards for Project {ProjectName}", project.Name);
+                return [];
+            }
         }
 
         private async Task<IEnumerable<TeamProjectReference>> GetAllProjects(WorkTrackingSystemConnection workTrackingSystemConnection)
