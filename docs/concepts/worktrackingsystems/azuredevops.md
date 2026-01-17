@@ -114,3 +114,16 @@ The Order of Features (be it *Epics*, *Features*, or anything else) is based on 
 Azure DevOps is shwoing this as *Order* in the *Backlog View*, and in general the field is adjusted if you shift items *up* or *down* (in the Backlog or Boards view).
 
 Check out the [documentation from Microsoft](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/backlogs-overview?view=azure-devops#backlog-priority-or-stack-rank-order) to learn more.
+
+# Board Wizard
+
+Use the Azure DevOps Board Wizard to automatically discover and import configuration from the Boards in your Azure DevOps Instance. The Wizard will:
+- Show you all boards from all the Projects you have access
+- Upon selection of a Board, fetch the WIQL Query, Work Item Types, and State Configuration for the board
+
+![Select Azure DevOps Board](../../assets/concepts/azuredevops_wizard.png)
+
+You may adjust all those values to your liking after that. For example, if the state mapping is not what you want to use.
+
+{: .note}
+Please be aware that this is a one-time operation. Lighthouse does not keep your settings in sync with the selected board. If you make changes in your Azure DevOps board, you must either update them manually, or rerun the Wizard.

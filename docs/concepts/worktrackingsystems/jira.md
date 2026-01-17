@@ -129,9 +129,9 @@ What you must understand is that you simply need to re-order your items in Jira 
 
 
 
-# Jira Wizard
+# Board Wizard
 
-Use the Jira Wizard to automatically discover and import configuration from the Boards in your Jira Instance. The Wizard will:
+Use the Jira Board Wizard to automatically discover and import configuration from the Boards in your Jira Instance. The Wizard will:
 - Show you all available boards from your Jira instance
 - Upon selection of a Board, fetch the JQL, Work Item Types, and State Configuration for the board
 

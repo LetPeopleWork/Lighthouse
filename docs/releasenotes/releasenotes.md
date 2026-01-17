@@ -4,12 +4,12 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.1.17.4
 
-## Jira Wizard
-If you use a Jira Connection, Teams and Portfolios can now fetch some settings through a Jira Wizard from their existing Boards.
+## Jira and Azure DevOps Board Wizards
+If you use a Jira or Azure DevOps connection, Teams and Portfolios can now fetch some settings through a Board Wizard from their existing Boards.
 The Wizard will display all available boards. If you chose a board, it will read:
-- The JQL for this board (including subquery)
+- The JQL/WIQL for this board
 - The work item types on this board
 - The states with a state mapping (by category)
 
@@ -44,7 +44,7 @@ Special Thanks to everyone who contributed their feedback to this release:
 - [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
 - [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.5.1620...v26.01.09.006)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.01.09.006...v26.1.17.4)
 
 # Lighthouse v26.1.9.6
 {: .d-inline-block }
