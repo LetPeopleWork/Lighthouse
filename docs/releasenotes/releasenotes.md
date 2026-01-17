@@ -18,16 +18,27 @@ The Wizard will display all available boards. If you chose a board, it will read
 This one-time sync should simplify the initial creation of your Teams and Portfolios!
 
 ## Delivery Improvements
-To Do 
+After releasing the Delivery functionality, we got various feedback and improved the following things:
+- The *Delivery Header* is now showing the 70, 85, and 95% likely dates
+- All Deliveries are now ordered by their Delivery date, starting with the earliest first
+- You can now see and select *Done* Features when you create or edit a delivery. The done Features are displayed in ~strikethrough~
+- The Delivery Creation Dialog can now be resized
+- The label of the "Delivery Date" Textbox was not readable and was improved
+- Instead of the "internal" ID of the Features, we display now the ID from your System (e.g. the Key if you are on Jira)
+- If deliverie dates were in the past, the likelihood was not correct. Now it's either 0% (if there is pending work) or 100% (if everything is done). There can't be anything in between for deliveries that are in the past
+
+![Delivery Header](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/Delivery_Header.png)
 
 ## Other Improvements
 - Updated various third party dependencies
+- Attempted to improve Date handling, so that we do not get "one-off" issues depedning on the timezone you are in
 
 ## Contributions ❤️ 
 Special Thanks to everyone who contributed their feedback to this release:
 - [Anoop A Parapurath](https://www.linkedin.com/in/anoop-a-parapurath-137a3b4/)
 - [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
 - [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Chandan Bala](https://www.linkedin.com/in/chandan-bala-7251b9242/)
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 - [Ann K Brea](https://www.linkedin.com/in/annkbrea/)
 - [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
