@@ -509,99 +509,135 @@ for (const teamConfiguration of newTeamConfigurations) {
 	);
 }
 
-const teamConfiguration = newTeamConfigurations[0];
-
-testWithUpdatedTeams(teamConfiguration.involvedTeams)(
-	`should allow to create a new Portfolio through a Jira Wizard`,
-	async ({ testData, overviewPage }) => {
-		test.fail(
-			testData.portfolios.length < 1,
-			"Expected to have portfolio initiatilized to prevent tutorial page from being displayed",
-		);
-
-		let newPortfolioPage = await overviewPage.addNewPortfolio();
-
-		await test.step("Add Valid Configuration for new portfolio", async () => {
-			await newPortfolioPage.setName(
-				`My New ${teamConfiguration.name} Portfolio`,
-			);
-
-			for (const teamIndex of teamConfiguration.portfolioConfiguration
-				.involvedTeams) {
-				const team = testData.teams[teamIndex];
-
-				await newPortfolioPage.selectTeam(team.name);
-			}
-		});
-
-		await test.step("Add Work Tracking System", async () => {
-			const newWorkTrackingSystemConnectionName = generateRandomName();
-
-			const newWorkTrackingSystemDialog =
-				await newPortfolioPage.addNewWorkTrackingSystem();
-
-			await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
-				teamConfiguration.name,
-			);
-
-			for (const option of teamConfiguration.workTrackingSystemOptions) {
-				await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
-					option.field,
-					option.value,
-				);
-			}
-
-			await newWorkTrackingSystemDialog.setConnectionName(
-				newWorkTrackingSystemConnectionName,
-			);
-
-			await newWorkTrackingSystemDialog.validate();
-			await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
-
-			newPortfolioPage = await newWorkTrackingSystemDialog.create();
-		});
-
-		await test.step("Use Jira Wizard to Select Board", async () => {
-			const jiraWizard = await newPortfolioPage.selectJiraWizard();
-
-			expect(await jiraWizard.confirmButton.isEnabled()).toBeFalsy();
-
-			await jiraWizard.selectBoardByName("Epics");
-
-			await expect(jiraWizard.boardInformationPanel).toBeVisible();
-			expect(await jiraWizard.confirmButton.isEnabled()).toBeTruthy();
-
-			newPortfolioPage = await jiraWizard.confirm();
-		});
-
-		await test.step("Validate Settings", async () => {
-			expect(newPortfolioPage.validateButton).toBeEnabled();
-			expect(newPortfolioPage.saveButton).toBeDisabled();
-
-			await newPortfolioPage.validate();
-
-			await expect(newPortfolioPage.validateButton).toBeEnabled();
-			await expect(newPortfolioPage.saveButton).toBeEnabled();
-
-			expect(
-				await newPortfolioPage.getDataRetrievalValue(
-					teamConfiguration.dataRetrievalKey,
-				),
-			).toBe(
-				"project = LIGHTHOUSE AND type = Epic AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)",
-			);
-
-			const workItemTypes = await newPortfolioPage.getWorkItemTypes();
-			expect(workItemTypes).toEqual(["Epic"]);
-
-			const toDoStates = await newPortfolioPage.getToDoStates();
-			expect(toDoStates).toEqual(["Ideas", "Evaluation", "Next"]);
-
-			const doingStates = await newPortfolioPage.getDoingStates();
-			expect(doingStates).toEqual(["Ready to Release", "Ongoing"]);
-
-			const doneStates = await newPortfolioPage.getDoneStates();
-			expect(doneStates).toEqual(["Done"]);
-		});
+const wizardConfigurations = [
+	{
+		name: "Jira",
+		displayName: "Jira",
+		involvedTeams: newTeamConfigurations[0].involvedTeams,
+		workTrackingSystemOptions:
+			newTeamConfigurations[0].workTrackingSystemOptions,
+		portfolioConfiguration: newTeamConfigurations[0].portfolioConfiguration,
+		boardName: "Epics",
+		dataRetrievalKey: "JQL Query",
+		expectedQuery:
+			"project = LIGHTHOUSE AND type = Epic AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)",
+		expectedWorkItemTypes: ["Epic"],
+		expectedToDoStates: ["Ideas", "Evaluation", "Next"],
+		expectedDoingStates: ["Ready to Release", "Ongoing"],
+		expectedDoneStates: ["Done"],
 	},
-);
+	{
+		name: "AzureDevOps",
+		displayName: "Azure DevOps",
+		invovolvedTeams: newTeamConfigurations[1].involvedTeams,
+		workTrackingSystemOptions:
+			newTeamConfigurations[1].workTrackingSystemOptions,
+		portfolioConfiguration: newTeamConfigurations[1].portfolioConfiguration,
+		boardName: "Lighthouse - Epics",
+		dataRetrievalKey: "WIQL Query",
+		expectedQuery: String.raw`[System.AreaPath] = "Lighthouse" OR [System.AreaPath] = "Lighthouse\Something Below"`,
+		expectedWorkItemTypes: ["Epic"],
+		expectedToDoStates: ["New"],
+		expectedDoingStates: ["Planned", "Active", "Resolved"],
+		expectedDoneStates: ["Closed"],
+	},
+];
+
+for (const wizardConfiguration of wizardConfigurations) {
+	testWithData(
+		`should allow to create a new Portfolio through a ${wizardConfiguration.displayName} Wizard`,
+		async ({ testData, overviewPage }) => {
+			test.fail(
+				testData.portfolios.length < 1,
+				"Expected to have portfolio initiatilized to prevent tutorial page from being displayed",
+			);
+
+			let newPortfolioPage = await overviewPage.addNewPortfolio();
+
+			await test.step("Add Valid Configuration for new portfolio", async () => {
+				await newPortfolioPage.setName(
+					`My New ${wizardConfiguration.name} Portfolio`,
+				);
+
+				for (const teamIndex of wizardConfiguration.portfolioConfiguration
+					.involvedTeams) {
+					const team = testData.teams[teamIndex];
+
+					await newPortfolioPage.selectTeam(team.name);
+				}
+			});
+
+			await test.step("Add Work Tracking System", async () => {
+				const newWorkTrackingSystemConnectionName = generateRandomName();
+
+				const newWorkTrackingSystemDialog =
+					await newPortfolioPage.addNewWorkTrackingSystem();
+
+				await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
+					wizardConfiguration.name,
+				);
+
+				for (const option of wizardConfiguration.workTrackingSystemOptions) {
+					await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
+						option.field,
+						option.value,
+					);
+				}
+
+				await newWorkTrackingSystemDialog.setConnectionName(
+					newWorkTrackingSystemConnectionName,
+				);
+
+				await newWorkTrackingSystemDialog.validate();
+				await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
+
+				newPortfolioPage = await newWorkTrackingSystemDialog.create();
+			});
+
+			await test.step(`Use ${wizardConfiguration.displayName} Wizard to Select Board`, async () => {
+				const boardWizard = await newPortfolioPage.openBoardWizard(
+					wizardConfiguration.displayName,
+				);
+
+				expect(await boardWizard.confirmButton.isEnabled()).toBeFalsy();
+
+				await boardWizard.selectBoardByName(wizardConfiguration.boardName);
+
+				await expect(boardWizard.boardInformationPanel).toBeVisible();
+				expect(await boardWizard.confirmButton.isEnabled()).toBeTruthy();
+
+				newPortfolioPage = await boardWizard.confirm();
+			});
+
+			await test.step("Validate Settings", async () => {
+				expect(newPortfolioPage.validateButton).toBeEnabled();
+				expect(newPortfolioPage.saveButton).toBeDisabled();
+
+				await newPortfolioPage.validate();
+
+				await expect(newPortfolioPage.validateButton).toBeEnabled();
+				await expect(newPortfolioPage.saveButton).toBeEnabled();
+
+				expect(
+					await newPortfolioPage.getDataRetrievalValue(
+						wizardConfiguration.dataRetrievalKey,
+					),
+				).toBe(wizardConfiguration.expectedQuery);
+
+				const workItemTypes = await newPortfolioPage.getWorkItemTypes();
+				expect(workItemTypes).toEqual(
+					wizardConfiguration.expectedWorkItemTypes,
+				);
+
+				const toDoStates = await newPortfolioPage.getToDoStates();
+				expect(toDoStates).toEqual(wizardConfiguration.expectedToDoStates);
+
+				const doingStates = await newPortfolioPage.getDoingStates();
+				expect(doingStates).toEqual(wizardConfiguration.expectedDoingStates);
+
+				const doneStates = await newPortfolioPage.getDoneStates();
+				expect(doneStates).toEqual(wizardConfiguration.expectedDoneStates);
+			});
+		},
+	);
+}

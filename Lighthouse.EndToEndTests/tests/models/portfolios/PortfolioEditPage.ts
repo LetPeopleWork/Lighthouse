@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
-import { JiraWizard } from "../common/JiraWizard";
+import { BoardWizard } from "../common/BoardWizard";
 import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
 import { PortfolioDetailPage } from "./PortfolioDetailPage";
 
@@ -171,9 +171,13 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 		);
 	}
 
-	async selectJiraWizard(): Promise<JiraWizard<PortfolioEditPage>> {
-		await this.page.getByRole("button", { name: "Jira" }).click();
-		return new JiraWizard(this.page, (page) => new PortfolioEditPage(page));
+	async openBoardWizard(
+		workTrackingSystemType: string,
+	): Promise<BoardWizard<PortfolioEditPage>> {
+		await this.page
+			.getByRole("button", { name: workTrackingSystemType })
+			.click();
+		return new BoardWizard(this.page, (page) => new PortfolioEditPage(page));
 	}
 
 	async triggerCsvWizard(): Promise<CsvUploadWizard<PortfolioEditPage>> {

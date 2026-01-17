@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import type { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
 import type { TeamEditPage } from "../teams/TeamEditPage";
 
-export class JiraWizard<T extends PortfolioEditPage | TeamEditPage> {
+export class BoardWizard<T extends PortfolioEditPage | TeamEditPage> {
 	page: Page;
 	createPageHandler: (page: Page) => T;
 
@@ -23,7 +23,7 @@ export class JiraWizard<T extends PortfolioEditPage | TeamEditPage> {
 	}
 
 	get boardInformationPanel(): Locator {
-		return this.page.getByText("Board InformationQueryproject");
+		return this.page.getByText("Board InformationQuery");
 	}
 
 	get confirmButton(): Locator {

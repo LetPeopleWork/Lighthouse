@@ -388,80 +388,107 @@ for (const {
 	});
 }
 
-test("should allow to create a new team through a Jira Wizard", async ({
-	overviewPage,
-}) => {
-	let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
-
-	const workTrackingSystemConfiguration = newTeamConfigurations[0];
-
-	await test.step("Add Work Tracking System", async () => {
-		const newWorkTrackingSystemConnectionName = generateRandomName();
-
-		const newWorkTrackingSystemDialog =
-			await newTeamPage.addNewWorkTrackingSystem();
-
-		await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
-			workTrackingSystemConfiguration.name,
-		);
-
-		for (const option of workTrackingSystemConfiguration.workTrackingSystemOptions) {
-			await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
-				option.field,
-				option.value,
-			);
-		}
-
-		await newWorkTrackingSystemDialog.setConnectionName(
-			newWorkTrackingSystemConnectionName,
-		);
-
-		await newWorkTrackingSystemDialog.validate();
-		await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
-
-		newTeamPage = await newWorkTrackingSystemDialog.create();
-	});
-
-	await test.step("Use Jira Wizard to Select Board", async () => {
-		const jiraWizard = await newTeamPage.selectJiraWizard();
-
-		expect(await jiraWizard.confirmButton.isEnabled()).toBeFalsy();
-
-		await jiraWizard.selectBoardByName("Stories");
-
-		await expect(jiraWizard.boardInformationPanel).toBeVisible();
-		expect(await jiraWizard.confirmButton.isEnabled()).toBeTruthy();
-
-		newTeamPage = await jiraWizard.confirm();
-	});
-
-	await test.step("Validate Settings", async () => {
-		expect(newTeamPage.validateButton).toBeEnabled();
-		expect(newTeamPage.saveButton).toBeDisabled();
-
-		await newTeamPage.validate();
-
-		await expect(newTeamPage.validateButton).toBeEnabled();
-		await expect(newTeamPage.saveButton).toBeEnabled();
-
-		expect(
-			await newTeamPage.getDataRetrievalValue(
-				workTrackingSystemConfiguration.dataRetrievalKey,
-			),
-		).toBe(
+const wizardConfiguration = [
+	{
+		name: "Jira",
+		displayName: "Jira",
+		workTrackingSystemOptions:
+			newTeamConfigurations[0].workTrackingSystemOptions,
+		boardName: "Stories",
+		dataRetrievalKey: "JQL Query",
+		expectedQuery:
 			"project = LIGHTHOUSE AND type IN (Bug, Story) AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)",
-		);
+		expectedWorkItemTypes: ["Story", "Bug"],
+		expectedToDoStates: ["Backlog", "Planned"],
+		expectedDoingStates: ["Implementation", "Deployed"],
+		expectedDoneStates: ["Done"],
+	},
+	{
+		name: "AzureDevOps",
+		displayName: "Azure DevOps",
+		workTrackingSystemOptions:
+			newTeamConfigurations[1].workTrackingSystemOptions,
+		boardName: "Lighthouse - Stories",
+		dataRetrievalKey: "WIQL Query",
+		expectedQuery: String.raw`[System.AreaPath] = "Lighthouse" OR [System.AreaPath] = "Lighthouse\Something Below"`,
+		expectedWorkItemTypes: ["User Story", "Bug"],
+		expectedToDoStates: ["New"],
+		expectedDoingStates: ["Active", "Resolved"],
+		expectedDoneStates: ["Closed"],
+	},
+];
 
-		const workItemTypes = await newTeamPage.getWorkItemTypes();
-		expect(workItemTypes).toEqual(["Story", "Bug"]);
+for (const wizardConfig of wizardConfiguration) {
+	test(`should allow to create a new team through a ${wizardConfig.name} Wizard`, async ({
+		overviewPage,
+	}) => {
+		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
 
-		const toDoStates = await newTeamPage.getToDoStates();
-		expect(toDoStates).toEqual(["Backlog", "Planned"]);
+		await test.step("Add Work Tracking System", async () => {
+			const newWorkTrackingSystemConnectionName = generateRandomName();
 
-		const doingStates = await newTeamPage.getDoingStates();
-		expect(doingStates).toEqual(["Implementation", "Deployed"]);
+			const newWorkTrackingSystemDialog =
+				await newTeamPage.addNewWorkTrackingSystem();
 
-		const doneStates = await newTeamPage.getDoneStates();
-		expect(doneStates).toEqual(["Done"]);
+			await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
+				wizardConfig.name,
+			);
+
+			for (const option of wizardConfig.workTrackingSystemOptions) {
+				await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
+					option.field,
+					option.value,
+				);
+			}
+
+			await newWorkTrackingSystemDialog.setConnectionName(
+				newWorkTrackingSystemConnectionName,
+			);
+
+			await newWorkTrackingSystemDialog.validate();
+			await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
+
+			newTeamPage = await newWorkTrackingSystemDialog.create();
+		});
+
+		await test.step(`Use Wizard to Select ${wizardConfig.name} Board`, async () => {
+			const wizard = await newTeamPage.openBoardWizard(
+				wizardConfig.displayName,
+			);
+
+			expect(await wizard.confirmButton.isEnabled()).toBeFalsy();
+
+			await wizard.selectBoardByName(wizardConfig.boardName);
+
+			await expect(wizard.boardInformationPanel).toBeVisible();
+			expect(await wizard.confirmButton.isEnabled()).toBeTruthy();
+
+			newTeamPage = await wizard.confirm();
+		});
+
+		await test.step("Validate Settings", async () => {
+			expect(newTeamPage.validateButton).toBeEnabled();
+			expect(newTeamPage.saveButton).toBeDisabled();
+
+			await newTeamPage.validate();
+
+			await expect(newTeamPage.validateButton).toBeEnabled();
+			await expect(newTeamPage.saveButton).toBeEnabled();
+
+			expect(
+				await newTeamPage.getDataRetrievalValue(wizardConfig.dataRetrievalKey),
+			).toBe(wizardConfig.expectedQuery);
+
+			const workItemTypes = await newTeamPage.getWorkItemTypes();
+			expect(workItemTypes).toEqual(wizardConfig.expectedWorkItemTypes);
+			const toDoStates = await newTeamPage.getToDoStates();
+			expect(toDoStates).toEqual(wizardConfig.expectedToDoStates);
+
+			const doingStates = await newTeamPage.getDoingStates();
+			expect(doingStates).toEqual(wizardConfig.expectedDoingStates);
+
+			const doneStates = await newTeamPage.getDoneStates();
+			expect(doneStates).toEqual(wizardConfig.expectedDoneStates);
+		});
 	});
-});
+}

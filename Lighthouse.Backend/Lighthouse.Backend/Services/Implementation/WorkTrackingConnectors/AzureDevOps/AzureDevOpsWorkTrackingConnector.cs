@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 var operatorText = fieldValue.IncludeChildren ? "UNDER" : "=";
                 
-                queryParts.Add($"{areaPathField} {operatorText} {fieldValue.Value}");
+                queryParts.Add($"{areaPathField} {operatorText} \"{fieldValue.Value}\"");
             }
 
             return string.Join(" OR ",  queryParts);

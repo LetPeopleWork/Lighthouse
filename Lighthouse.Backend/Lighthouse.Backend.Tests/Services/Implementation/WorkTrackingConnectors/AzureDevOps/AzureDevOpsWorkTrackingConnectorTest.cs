@@ -886,10 +886,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = CMFTTestTeamProject"));
-                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = CMFTTestTeamProject\\PreviousReleaseAreaPath"));
-                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths"));
-                Assert.That(boardInfo.DataRetrievalValue, Is.EqualTo("[System.AreaPath] = CMFTTestTeamProject OR [System.AreaPath] = CMFTTestTeamProject\\PreviousReleaseAreaPath OR [System.AreaPath] = CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths"));
+                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = \"CMFTTestTeamProject\""));
+                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = \"CMFTTestTeamProject\\PreviousReleaseAreaPath\""));
+                Assert.That(boardInfo.DataRetrievalValue, Does.Contain("[System.AreaPath] = \"CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths\""));
+                Assert.That(boardInfo.DataRetrievalValue, Is.EqualTo("[System.AreaPath] = \"CMFTTestTeamProject\" OR [System.AreaPath] = \"CMFTTestTeamProject\\PreviousReleaseAreaPath\" OR [System.AreaPath] = \"CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths\""));
             }
         }
 

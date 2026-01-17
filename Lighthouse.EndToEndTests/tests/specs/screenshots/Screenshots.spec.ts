@@ -552,7 +552,7 @@ testWithData(
 		const team = testData.teams[2];
 		const teamEditPage = await overviewPage.editTeam(team.name);
 
-		const jiraWizard = await teamEditPage.selectJiraWizard();
+		const jiraWizard = await teamEditPage.openBoardWizard("Jira");
 
 		await jiraWizard.selectBoardByName("Stories");
 
