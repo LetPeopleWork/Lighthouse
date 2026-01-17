@@ -71,6 +71,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Nick Brown**](https://www.linkedin.com/in/nicolasjmbrown/)
 - [**Paul Brown**](https://www.linkedin.com/in/paulisthrivving/)
 - [**Myriam Greger**](https://www.linkedin.com/in/myriam-greger/)
+- [**Chandan Bala**](https://www.linkedin.com/in/chandan-bala-7251b9242/)
 
 ---
 
