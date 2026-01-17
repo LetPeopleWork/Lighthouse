@@ -546,26 +546,41 @@ const workTrackingSystemConfiguration = [
 	},
 ];
 
-testWithData(
-	"Take @screenshot of Jira Wizard",
-	async ({ testData, overviewPage }) => {
-		const team = testData.teams[2];
-		const teamEditPage = await overviewPage.editTeam(team.name);
-
-		const jiraWizard = await teamEditPage.openBoardWizard("Jira");
-
-		await jiraWizard.selectBoardByName("Stories");
-
-		await expect(jiraWizard.boardInformationPanel).toBeVisible();
-
-		await takeDialogScreenshot(
-			jiraWizard.page.getByRole("dialog"),
-			"concepts/jira_wizard.png",
-			5,
-			1000,
-		);
+const wizardConfigs = [
+	{
+		name: "Jira",
+		boardName: "Stories",
+		teamIndex: 2,
 	},
-);
+	{
+		name: "Azure DevOps",
+		boardName: "Lighthouse - Epics",
+		teamIndex: 0,
+	},
+];
+
+for (const wizardConfig of wizardConfigs) {
+	testWithData(
+		`Take @screenshot of ${wizardConfig.name} Wizard`,
+		async ({ testData, overviewPage }) => {
+			const team = testData.teams[wizardConfig.teamIndex];
+			const teamEditPage = await overviewPage.editTeam(team.name);
+
+			const jiraWizard = await teamEditPage.openBoardWizard(wizardConfig.name);
+
+			await jiraWizard.selectBoardByName(wizardConfig.boardName);
+
+			await expect(jiraWizard.boardInformationPanel).toBeVisible();
+
+			await takeDialogScreenshot(
+				jiraWizard.page.getByRole("dialog"),
+				`concepts/${wizardConfig.name.replace(" ", "").toLowerCase()}_wizard.png`,
+				5,
+				1000,
+			);
+		},
+	);
+}
 
 for (const {
 	workTrackingSystemName,
