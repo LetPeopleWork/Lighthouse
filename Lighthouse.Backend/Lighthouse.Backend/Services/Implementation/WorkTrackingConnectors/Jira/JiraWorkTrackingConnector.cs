@@ -51,13 +51,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
             var epicLinkFieldName = !team.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[team.WorkTrackingSystemConnectionId][JiraFieldNames.EpicLinkFieldName] : string.Empty;
-            
+
             foreach (var issue in issues)
             {
                 var workItemBase = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
 
                 TrySetParentForJiraDataCenter(workItemBase, issue, epicLinkFieldName);
-                
+
                 workItems.Add(new WorkItem(workItemBase, team));
             }
 
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
         {
             var boardInformation = new BoardInformation();
-            
+
             var response = await client.GetAsync($"{BoardsEndpoint}/{boardId}/configuration");
 
             if (!response.IsSuccessStatusCode)
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var jqlTask = ExtractJqlFromBoardConfiguration(boardConfigJson, client);
             var workItemTypesTask = GetItemTypesForBoard(client, boardId);
             var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client);
-            
+
             boardInformation.WorkItemTypes = await workItemTypesTask;
             boardInformation.DataRetrievalValue = await jqlTask;
 
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             boardInformation.ToDoStates = toDoStates;
             boardInformation.DoingStates = doingStates;
             boardInformation.DoneStates = doneStates;
-            
+
             return boardInformation;
         }
 
@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .GetProperty("columnConfig")
                 .GetProperty("columns")
                 .EnumerateArray()
-                .SelectMany(column => 
+                .SelectMany(column =>
                     column.GetProperty("statuses").EnumerateArray()
                 )
                 .Select(status => status.GetProperty("id").GetString() ?? string.Empty)
@@ -196,7 +196,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var data = JsonDocument.Parse(json);
 
             var root = data.RootElement;
-    
+
             var todoStatuses = new List<string>();
             var inProgressStatuses = new List<string>();
             var doneStatuses = new List<string>();
@@ -206,12 +206,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var status in root.EnumerateArray())
             {
                 var id = status.GetProperty("id").GetString() ?? string.Empty;
-                
+
                 if (!statusListSet.Contains(id))
                 {
                     continue;
                 }
-            
+
                 var name = status.GetProperty("name").GetString() ?? string.Empty;
                 var categoryName = status.GetProperty("statusCategory").GetProperty("name").GetString();
 
@@ -240,10 +240,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return [];
             }
-    
+
             var json = await response.Content.ReadAsStringAsync();
             var data = JsonDocument.Parse(json);
-    
+
             var issueTypeNames = data.RootElement
                 .GetProperty("issues")
                 .EnumerateArray()
@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     .GetString() ?? string.Empty)
                 .Distinct()
                 .ToList();
-    
+
             return issueTypeNames;
         }
 
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return string.Empty;
             }
-            
+
             var filterResponseBody = await response.Content.ReadAsStringAsync();
             var filterJson = JsonDocument.Parse(filterResponseBody);
 
@@ -320,10 +320,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return string.Empty;
             }
-            
+
             return RemoveOrderByClause(jqlQuery.GetString() ?? string.Empty);
         }
-        
+
         private static string RemoveOrderByClause(string jql)
         {
             if (string.IsNullOrWhiteSpace(jql))
@@ -332,7 +332,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var orderByIndex = jql.IndexOf("ORDER BY", StringComparison.OrdinalIgnoreCase);
-    
+
             if (orderByIndex > 0)
             {
                 return jql.Substring(0, orderByIndex).TrimEnd();
@@ -347,11 +347,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var startAt = 0;
             var isLast = false;
             var boards = new List<Board>();
-            
+
             while (!isLast)
             {
                 var response = await client.GetAsync($"{BoardsEndpoint}?startAt={startAt}&maxResults={maxResults}");
-                    
+
                 if (!response.IsSuccessStatusCode)
                 {
                     logger.LogInformation("Authentication is not valid for {Connection}", workTrackingSystemConnection.Name);
@@ -360,8 +360,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var boardsResponseBody = await response.Content.ReadAsStringAsync();
                 using var boardsJson = JsonDocument.Parse(boardsResponseBody);
-                    
-                var parsedBoards  = ParseJiraBoards(boardsJson);
+
+                var parsedBoards = ParseJiraBoards(boardsJson);
                 boards.AddRange(parsedBoards);
 
                 isLast = CheckIfIsLast(boardsJson, maxResults);
@@ -380,8 +380,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             else
             {
-                var currentPageSize = boardsJson.RootElement.TryGetProperty("values", out var values) 
-                    ? values.GetArrayLength() 
+                var currentPageSize = boardsJson.RootElement.TryGetProperty("values", out var values)
+                    ? values.GetArrayLength()
                     : 0;
                 isLast = currentPageSize < maxResults;
             }
@@ -392,7 +392,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static List<Board> ParseJiraBoards(JsonDocument boardsJson)
         {
             var boards = new List<Board>();
-            
+
             var root = boardsJson.RootElement;
 
             if (!root.TryGetProperty("values", out var valuesElement))
@@ -407,7 +407,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     Id = boardElement.GetProperty("id").GetInt32().ToString(),
                     Name = boardElement.GetProperty("name").GetString()
                 };
-                
+
                 boards.Add(board);
             }
 
@@ -419,13 +419,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var customFieldReferences = await GetCustomFieldReferences(connection);
 
             var missingReference = 0;
-            foreach (var customFieldReference in customFieldReferences)
+            foreach (var customFieldReference in customFieldReferences.Where(cf => string.IsNullOrEmpty(cf.Value)))
             {
-                if (string.IsNullOrEmpty(customFieldReference.Value))
-                {
-                    logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
-                    missingReference++;
-                }
+                logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
+                missingReference++;
             }
 
             return missingReference <= 0;
@@ -476,15 +473,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio portfolio, IEnumerable<Issue> issues)
         {
             var features = new List<Feature>();
-            
+
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
-            
+
             var portfolioLinkFieldName = !portfolio.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[portfolio.WorkTrackingSystemConnectionId][JiraFieldNames.ParentLinkFieldName] : string.Empty;
-            
+
             foreach (var issue in issues)
             {
                 var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
-                
+
                 TrySetParentForJiraDataCenter(workItem, issue, portfolioLinkFieldName);
 
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
@@ -495,7 +492,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
                 };
-                
+
                 features.Add(feature);
             }
 
@@ -512,7 +509,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
         {
             var estimatedSizeRawValue = workItem.GetAdditionalFieldValue(portfolio.SizeEstimateAdditionalFieldDefinitionId);
-            
+
             return ParseEstimatedSize(estimatedSizeRawValue);
         }
 
@@ -611,11 +608,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     // Replace the changelog with our complete paginated data
                     writer.WritePropertyName(JiraFieldNames.ChangelogFieldName);
                     writer.WriteStartObject();
-                    
+
                     writer.WriteNumber(JiraFieldNames.StartAtFieldName, 0);
                     writer.WriteNumber(JiraFieldNames.MaxResultsFieldName, changelogHistories.Count);
                     writer.WriteNumber(JiraFieldNames.TotalFieldName, changelogHistories.Count);
-                    
+
                     writer.WritePropertyName(JiraFieldNames.HistoriesFieldName);
                     writer.WriteStartArray();
                     foreach (var history in changelogHistories)
@@ -623,7 +620,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         history.WriteTo(writer);
                     }
                     writer.WriteEndArray();
-                    
+
                     writer.WriteEndObject();
                 }
                 else
@@ -637,11 +634,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 writer.WritePropertyName(JiraFieldNames.ChangelogFieldName);
                 writer.WriteStartObject();
-                
+
                 writer.WriteNumber(JiraFieldNames.StartAtFieldName, 0);
                 writer.WriteNumber(JiraFieldNames.MaxResultsFieldName, changelogHistories.Count);
                 writer.WriteNumber(JiraFieldNames.TotalFieldName, changelogHistories.Count);
-                
+
                 writer.WritePropertyName(JiraFieldNames.HistoriesFieldName);
                 writer.WriteStartArray();
                 foreach (var history in changelogHistories)
@@ -649,7 +646,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     history.WriteTo(writer);
                 }
                 writer.WriteEndArray();
-                
+
                 writer.WriteEndObject();
             }
 
@@ -675,16 +672,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var connectionSpecificMapping = FieldNames[workTrackingSystemConnectionId];
-            
-            if (!string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.RankName]) && 
-                !string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.FlaggedName]) )
+
+            if (!string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.RankName]) &&
+                !string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.FlaggedName]))
             {
                 return;
             }
-            
+
             var customFields = await GetCustomFieldMappings(client, [JiraFieldNames.NamePropertyName],
                 [JiraFieldNames.RankName, JiraFieldNames.FlaggedName, JiraFieldNames.EpicLinkFieldName, JiraFieldNames.ParentLinkFieldName]);
-            
+
             connectionSpecificMapping[JiraFieldNames.FlaggedName] = customFields[JiraFieldNames.FlaggedName];
             connectionSpecificMapping[JiraFieldNames.RankName] = customFields[JiraFieldNames.RankName];
             connectionSpecificMapping[JiraFieldNames.EpicLinkFieldName] = customFields[JiraFieldNames.EpicLinkFieldName];
@@ -701,13 +698,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
-            
+
             var customFieldMappings = new Dictionary<string, string>();
 
             foreach (var customField in customFields)
             {
                 var customFieldId = string.Empty;
-                
+
                 foreach (var propertyIdentifier in propertyIdentifiers)
                 {
                     customFieldId = GetIdForCustomFieldByProperty(customField, propertyIdentifier, jsonResponse);
@@ -717,10 +714,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         break;
                     }
                 }
-                
+
                 customFieldMappings.Add(customField, customFieldId);
             }
-            
+
             return customFieldMappings;
         }
 
@@ -729,7 +726,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var element = allFields.RootElement.EnumerateArray().SingleOrDefault(
                 f => f.GetProperty(propertyIdentifier).GetString() == customField
             );
-            
+
             if (element.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
             {
                 return string.Empty;
@@ -765,7 +762,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
             };
-            
+
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);
 
             var parentReference = workItem.GetAdditionalFieldValue(workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId);
@@ -774,7 +771,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 workItem.ParentReferenceId = parentReference;
             }
-            
+
             return workItem;
         }
 
@@ -785,7 +782,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 // Parent already set or no link field (= we are on Jira Cloud) - do not overwrite!
                 return;
             }
-            
+
             var parentReferenceId = issue.Fields.GetFieldValue(linkFieldName);
             if (!string.IsNullOrEmpty(parentReferenceId))
             {
@@ -798,7 +795,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var fieldDef in additionalFieldDefs)
             {
                 var customFieldId = customFields[fieldDef.Reference];
-                
+
                 var value = issue.Fields.GetFieldValue(customFieldId);
                 workItem.AdditionalFieldValues[fieldDef.Id] = value;
             }
@@ -808,12 +805,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var client = GetJiraRestClient(connection);
             var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
-            
-            var customFieldReferences =  await GetCustomFieldMappings(client,
+
+            var customFieldReferences = await GetCustomFieldMappings(client,
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
-            
-            return  customFieldReferences;
+
+            return customFieldReferences;
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, int? maxResultsOverride = null)
@@ -836,21 +833,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)
         {
             totalChangelogs = 0;
-            
+
             if (jsonIssue.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelogProp) &&
                 changelogProp.TryGetProperty(JiraFieldNames.TotalFieldName, out var totalProp))
             {
                 totalChangelogs = totalProp.GetInt32();
                 var needsFullChangelog = totalChangelogs > 30;
-                
+
                 if (needsFullChangelog)
                 {
                     logger.LogDebug("Issue {Key} has {Total} changelog entries, fetching complete changelog", issueKey, totalChangelogs);
                 }
-                
+
                 return needsFullChangelog;
             }
-            
+
             return false;
         }
 
@@ -879,9 +876,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
                 var flaggedFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.FlaggedName];
-                
+
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
-                {                    
+                {
                     var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, flaggedFieldName);
                     issues.Add(issue);
                 }
@@ -912,7 +909,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var response = await client.GetAsync(query.ToString());
                 if (!response.IsSuccessStatusCode)
-                { 
+                {
                     return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, maxResultsOverride);
                 }
 
@@ -928,13 +925,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 {
                     var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
                     var needsFullChangelog = ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs);
-                    
+
                     JsonElement issueToProcess;
                     if (needsFullChangelog)
                     {
                         // Fetch complete changelog for this issue
                         var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey);
-                        
+
                         // Merge complete changelog into the issue JSON
                         issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, allChangelogHistories);
                         logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, allChangelogHistories.Count);
@@ -945,7 +942,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         issueToProcess = jsonIssue;
                         logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
                     }
-                    
+
                     var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName, flaggedFieldName);
                     issues.Add(issue);
                 }
@@ -1024,9 +1021,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
         {
             var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
-            
+
             logger.LogDebug("Getting Deployment Type of Jira Instance for {Url}", baseUrl);
-            
+
             if (DeploymentCache.TryGetValue(baseUrl, out var cached))
             {
                 logger.LogDebug("Found Deployment Type in cache - {DeploymentType}", cached);

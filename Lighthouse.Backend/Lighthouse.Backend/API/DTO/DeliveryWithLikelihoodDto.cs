@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             // Return the minimum likelihood (most conservative estimate)
-            return likelihoods.Last();
+            return likelihoods[likelihoods.Count - 1];
         }
 
         private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)

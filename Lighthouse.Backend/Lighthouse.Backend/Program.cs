@@ -513,7 +513,7 @@ namespace Lighthouse.Backend
             info.Add(Line("🖥️", "OS", RuntimeInformation.OSDescription.Trim()));
             info.Add(Line("⚙️", "Runtime", RuntimeInformation.FrameworkDescription));
             info.Add(Line("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
-            info.Add(Line("🔢", "Process ID", Process.GetCurrentProcess().Id.ToString()));
+            info.Add(Line("🔢", "Process ID", Environment.ProcessId.ToString()));
             info.Add(Line("💾", "Database", dbProvider));
 
             if (!string.IsNullOrEmpty(logFilePath))
@@ -538,7 +538,7 @@ namespace Lighthouse.Backend
             Log.Logger.Information("\n{StartupBanner}", startupBannerBuilder.ToString());
         }
 
-        private static string? TryGetLogFilePath(IConfiguration configuration)
+        private static string? TryGetLogFilePath(ConfigurationManager configuration)
         {
             try
             {

@@ -64,10 +64,14 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var savedDelivery = await context.Deliveries.FirstAsync();
-                Assert.That(savedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-                Assert.That(savedDelivery.Date.Year, Is.EqualTo(2026));
-                Assert.That(savedDelivery.Date.Month, Is.EqualTo(12));
-                Assert.That(savedDelivery.Date.Day, Is.EqualTo(31));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(savedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                    Assert.That(savedDelivery.Date.Year, Is.EqualTo(2026));
+                    Assert.That(savedDelivery.Date.Month, Is.EqualTo(12));
+                    Assert.That(savedDelivery.Date.Day, Is.EqualTo(31));
+                }
+
             }
         }
 
@@ -120,9 +124,13 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var savedWorkItem = await context.WorkItems.FirstAsync();
-                Assert.That(savedWorkItem.CreatedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "CreatedDate should be UTC");
-                Assert.That(savedWorkItem.StartedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "StartedDate should be UTC");
-                Assert.That(savedWorkItem.ClosedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "ClosedDate should be UTC");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(savedWorkItem.CreatedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "CreatedDate should be UTC");
+                    Assert.That(savedWorkItem.StartedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "StartedDate should be UTC");
+                    Assert.That(savedWorkItem.ClosedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "ClosedDate should be UTC");
+                }
+
             }
         }
 
@@ -154,9 +162,13 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var savedFeature = await context.Features.FirstAsync();
-                Assert.That(savedFeature.CreatedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "CreatedDate should be UTC");
-                Assert.That(savedFeature.StartedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "StartedDate should be UTC");
-                Assert.That(savedFeature.ClosedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "ClosedDate should be UTC");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(savedFeature.CreatedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "CreatedDate should be UTC");
+                    Assert.That(savedFeature.StartedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "StartedDate should be UTC");
+                    Assert.That(savedFeature.ClosedDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), "ClosedDate should be UTC");
+                }
+
             }
         }
 
@@ -182,11 +194,15 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var savedTeam = await context.Teams.FirstAsync();
-                Assert.That(savedTeam.ThroughputHistoryStartDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), 
-                    "ThroughputHistoryStartDate should be UTC");
-                Assert.That(savedTeam.ThroughputHistoryEndDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc), 
-                    "ThroughputHistoryEndDate should be UTC");
-                Assert.That(savedTeam.UpdateTime.Kind, Is.EqualTo(DateTimeKind.Utc), "UpdateTime should be UTC");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(savedTeam.ThroughputHistoryStartDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc),
+                                    "ThroughputHistoryStartDate should be UTC");
+                    Assert.That(savedTeam.ThroughputHistoryEndDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc),
+                        "ThroughputHistoryEndDate should be UTC");
+                    Assert.That(savedTeam.UpdateTime.Kind, Is.EqualTo(DateTimeKind.Utc), "UpdateTime should be UTC");
+                }
+
             }
         }
 

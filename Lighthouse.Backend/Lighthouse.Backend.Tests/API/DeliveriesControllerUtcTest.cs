@@ -57,9 +57,14 @@ namespace Lighthouse.Backend.Tests.API
             await subject.CreateDelivery(portfolioId, request);
 
             // Assert
-            Assert.That(capturedDelivery, Is.Not.Null);
-            Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-            Assert.That(capturedDelivery.Date, Is.EqualTo(futureDate));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(capturedDelivery, Is.Not.Null);
+
+                Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(capturedDelivery.Date, Is.EqualTo(futureDate));
+            }
+
         }
 
         [Test]
@@ -86,12 +91,15 @@ namespace Lighthouse.Backend.Tests.API
             // Act
             await subject.CreateDelivery(portfolioId, request);
 
-            // Assert
-            Assert.That(capturedDelivery, Is.Not.Null);
-            Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-            Assert.That(capturedDelivery.Date.Year, Is.EqualTo(2026));
-            Assert.That(capturedDelivery.Date.Month, Is.EqualTo(12));
-            Assert.That(capturedDelivery.Date.Day, Is.EqualTo(31));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(capturedDelivery, Is.Not.Null);
+                Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(capturedDelivery.Date.Year, Is.EqualTo(2026));
+                Assert.That(capturedDelivery.Date.Month, Is.EqualTo(12));
+                Assert.That(capturedDelivery.Date.Day, Is.EqualTo(31));
+            }
+
         }
 
         [Test]
@@ -119,8 +127,11 @@ namespace Lighthouse.Backend.Tests.API
             await subject.CreateDelivery(portfolioId, request);
 
             // Assert
-            Assert.That(capturedDelivery, Is.Not.Null);
-            Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(capturedDelivery, Is.Not.Null);
+                Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
         }
 
         [Test]
@@ -143,9 +154,12 @@ namespace Lighthouse.Backend.Tests.API
             // Act
             await subject.UpdateDelivery(deliveryId, request);
 
-            // Assert
-            Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-            Assert.That(existingDelivery.Date, Is.EqualTo(futureDate));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(existingDelivery.Date, Is.EqualTo(futureDate));
+            }
+
         }
 
         [Test]
@@ -168,11 +182,14 @@ namespace Lighthouse.Backend.Tests.API
             // Act
             await subject.UpdateDelivery(deliveryId, request);
 
-            // Assert
-            Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-            Assert.That(existingDelivery.Date.Year, Is.EqualTo(2026));
-            Assert.That(existingDelivery.Date.Month, Is.EqualTo(12));
-            Assert.That(existingDelivery.Date.Day, Is.EqualTo(31));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(existingDelivery.Date.Year, Is.EqualTo(2026));
+                Assert.That(existingDelivery.Date.Month, Is.EqualTo(12));
+                Assert.That(existingDelivery.Date.Day, Is.EqualTo(31));
+            }
+
         }
 
         [Test]

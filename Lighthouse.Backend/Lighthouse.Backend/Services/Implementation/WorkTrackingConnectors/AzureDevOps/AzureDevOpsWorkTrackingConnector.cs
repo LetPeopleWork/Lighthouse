@@ -8,7 +8,6 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Text;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
@@ -27,9 +26,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private const int MaxChunkSize = 200;
 
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
-        
+
         private static readonly ConcurrentDictionary<string, IVssHttpClient> ClientCache = new();
-        
+
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> OrgLimiters = new();
 
         private static SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
@@ -86,7 +85,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             try
             {
                 var witClient = GetWorkItemTrackingHttpClient(connection);
-                
+
                 await VerifyConnection(witClient);
 
                 var fieldsValid = await VerifyFields(witClient, connection.AdditionalFieldDefinitions);
@@ -128,7 +127,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
                 var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
-                
+
                 var (workItems, _) = await FetchAdoWorkItemsByQuery(portfolio, query);
                 var workItemCount = workItems.Count();
 
@@ -164,7 +163,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
         {
             var emptyInfo = new BoardInformation();
-            
+
             try
             {
                 var splitBoardId = boardId.Split('|');
@@ -172,31 +171,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 {
                     return emptyInfo;
                 }
-                
-                var projectId =  splitBoardId[0];
+
+                var projectId = splitBoardId[0];
                 var boardReference = splitBoardId[1];
-                
+
                 logger.LogInformation("Getting Board Information for Board {BoardId} in Project {ProjectId}", boardReference, projectId);
-                
+
                 var workClient = GetClient<WorkHttpClient>(workTrackingSystemConnection);
                 var board = await GetBoardForProject(projectId, boardReference, workClient);
 
                 var teamId = ExtractTeamIdFromBoard(board);
                 var query = await ExtractWiqlQueryForBoard(workClient, projectId, teamId);
-                
+
                 var workItemTypes = ExtractWorkItemTypesFromBoard(board);
-                
+
                 var (toDoStates, doingStates, doneStates) = ExtractStateMappingFromBoard(board);
-                
+
                 return new BoardInformation
                 {
                     DataRetrievalValue = query,
                     WorkItemTypes = workItemTypes,
                     ToDoStates = toDoStates,
                     DoingStates = doingStates,
-                    DoneStates =  doneStates,
+                    DoneStates = doneStates,
                 };
-            }  
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting board information for board {BoardId}", boardId);
@@ -204,45 +203,45 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        private string ExtractTeamIdFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
+        private static string ExtractTeamIdFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
         {
             var team = (ReferenceLink)board.Links.Links["team"];
             var teamLink = team.Href;
-            var teamId = teamLink.Split('/').Last();
+            var teamId = teamLink.Split('/')[^1];
 
             return teamId;
         }
 
         private static async Task<string> ExtractWiqlQueryForBoard(WorkHttpClient workClient, string projectId, string teamId)
         {
-            
+
             var teamFieldValues = await workClient.GetTeamFieldValuesAsync(new TeamContext(projectId, teamId));
             var areaPathField = $"[{teamFieldValues.Field.ReferenceName}]";
             var allValues = teamFieldValues.Values;
 
             var queryParts = new List<string>();
-            
+
             foreach (var fieldValue in allValues)
             {
                 var operatorText = fieldValue.IncludeChildren ? "UNDER" : "=";
-                
+
                 queryParts.Add($"{areaPathField} {operatorText} \"{fieldValue.Value}\"");
             }
 
-            return string.Join(" OR ",  queryParts);
+            return string.Join(" OR ", queryParts);
         }
 
         private static (IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)
             ExtractStateMappingFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
         {
             var incomingColumns = board.Columns.Where(c => c.ColumnType == BoardColumnType.Incoming);
-            var inProgressColumns =  board.Columns.Where(c => c.ColumnType == BoardColumnType.InProgress);
+            var inProgressColumns = board.Columns.Where(c => c.ColumnType == BoardColumnType.InProgress);
             var outgoingColumns = board.Columns.Where(c => c.ColumnType == BoardColumnType.Outgoing);
 
             var toDoStates = incomingColumns.SelectMany(c => c.StateMappings.Values).Distinct();
             var doingStates = inProgressColumns.SelectMany(c => c.StateMappings.Values).Distinct().Where(s => !toDoStates.Contains(s));
-            var doneStates = outgoingColumns.SelectMany(c => c.StateMappings.Values).Distinct().Where(s => !toDoStates.Contains(s) &&  !doingStates.Contains(s));
-            
+            var doneStates = outgoingColumns.SelectMany(c => c.StateMappings.Values).Distinct().Where(s => !toDoStates.Contains(s) && !doingStates.Contains(s));
+
             return (toDoStates, doingStates, doneStates);
         }
 
@@ -251,11 +250,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return board.Columns.SelectMany(c => c.StateMappings).Select(sm => sm.Key).Distinct();
         }
 
-        private async Task<Microsoft.TeamFoundation.Work.WebApi.Board> GetBoardForProject(string projectId,
+        private static async Task<Microsoft.TeamFoundation.Work.WebApi.Board> GetBoardForProject(string projectId,
             string boardId, WorkHttpClient workClient)
         {
             var board = await workClient.GetBoardAsync(new TeamContext(projectId), boardId);
-            
+
             return board;
         }
 
@@ -295,7 +294,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var projectClient = GetClient<ProjectHttpClient>(workTrackingSystemConnection);
 
-            var projects = await ExecuteWithThrottle(projectClient.BaseAddress.ToString(), 
+            var projects = await ExecuteWithThrottle(projectClient.BaseAddress.ToString(),
                 () => projectClient.GetProjects());
 
             return projects;
@@ -307,7 +306,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, portfolio);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences);
-            
+
             var parentReferences = await parentReferencesTask;
             var features = new List<Feature>();
 
@@ -342,44 +341,41 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             // Assign unique temp id's as they may all be 0 right now
             var tempId = -1;
             additionalFieldDefinitions.ForEach(f => f.Id = tempId--);
-            
-            var customFieldReferences = await GetCustomFieldReferences(witClient,  additionalFieldDefinitions);
+
+            var customFieldReferences = await GetCustomFieldReferences(witClient, additionalFieldDefinitions);
 
             var missingReference = 0;
-            foreach (var customFieldReference in customFieldReferences)
+            foreach (var customFieldReference in customFieldReferences.Where(cf => string.IsNullOrEmpty(cf.Value)))
             {
-                if (string.IsNullOrEmpty(customFieldReference.Value))
-                {
-                    logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
-                    missingReference++;
-                }
+                logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
+                missingReference++;
             }
 
             return missingReference <= 0;
         }
-        
-        private async Task<Dictionary<int, string>> GetCustomFieldReferences(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
+
+        private static async Task<Dictionary<int, string>> GetCustomFieldReferences(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
             var availableFields = await witClient.GetWorkItemFieldsAsync();
-            
+
             var customFieldMappings = new Dictionary<int, string>();
-            
+
             foreach (var additionalFieldDefinition in additionalFieldDefinitions)
             {
                 var fieldReference = availableFields.SingleOrDefault(f =>
                     f.Name == additionalFieldDefinition.Reference ||
                     f.ReferenceName == additionalFieldDefinition.Reference)?.ReferenceName ?? string.Empty;
-                
+
                 customFieldMappings.Add(additionalFieldDefinition.Id, fieldReference);
             }
-            
-            return  customFieldMappings;
+
+            return customFieldMappings;
         }
-        
+
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
         {
             var additionalFieldsRef = new Dictionary<int, string>();
-            
+
             try
             {
                 var witClient = GetWorkItemTrackingHttpClient(workItemQueryOwner.WorkTrackingSystemConnection);
@@ -389,11 +385,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 {
                     return ([], additionalFieldsRef);
                 }
-                
+
                 additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
 
                 var adoWOrkItemsById = await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFieldsRef.Select(f => f.Value));
-                
+
                 return (adoWOrkItemsById, additionalFieldsRef);
             }
             catch (Exception ex)
@@ -619,7 +615,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 // No need to load stuff if we have an override anyway.
                 return new Dictionary<string, string>();
             }
-            
+
             var itemIds = adoWorkItems.Select(wi => wi.Id ?? -1).Where(i => i >= 0).ToList();
 
             if (itemIds.Count == 0)
@@ -665,7 +661,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var estimatedSize = 0;
             var estimatedSizeRawValue = workItem.GetAdditionalFieldValue(portfolio.SizeEstimateAdditionalFieldDefinitionId);
-            
+
             if (!string.IsNullOrEmpty(estimatedSizeRawValue))
             {
                 estimatedSize = GetEstimatedSizeForItem(estimatedSizeRawValue);
@@ -754,9 +750,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 return string.Empty;
             }
-            
+
             var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
-            
+
             var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
 
             return $"AND ([{AzureDevOpsFieldNames.ClosedDate}] = '' OR [{AzureDevOpsFieldNames.ClosedDate}] >= '{cutoffDateString}') ";
@@ -780,7 +776,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             return query;
         }
-        
+
         private WorkItemTrackingHttpClient GetWorkItemTrackingHttpClient(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             return GetClient<WorkItemTrackingHttpClient>(workTrackingSystemConnection);
@@ -790,7 +786,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var (connection, key) = GetConnectionForWorkTrackingSystem(workTrackingSystemConnection);
             var cacheKey = $"{typeof(TClient).FullName}_{key}";
-            
+
             return (TClient)ClientCache.GetOrAdd(cacheKey, _ => connection.GetClient<TClient>());
         }
 
@@ -811,7 +807,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 c.Settings.SendTimeout = TimeSpan.FromSeconds(requestTimeoutInSeconds);
                 return c;
             });
-            
+
             return (connection, key);
         }
 
