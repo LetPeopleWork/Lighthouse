@@ -73,7 +73,7 @@ describe("LogSettings", () => {
 			expect(mockGetSupportedLogLevels).toHaveBeenCalled();
 		});
 
-		expect(screen.getByText("Sample log data")).toBeInTheDocument();
+		expect(screen.getByText("Logs")).toBeInTheDocument();
 	});
 
 	it("updates log level when changed", async () => {
