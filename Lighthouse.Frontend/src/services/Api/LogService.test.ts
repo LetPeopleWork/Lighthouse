@@ -59,17 +59,16 @@ describe("LogService", () => {
 
 	it("should download logs", async () => {
 		const blob = new Blob(["test logs"], { type: "text/plain" });
+
 		mockedAxios.get.mockResolvedValueOnce({ data: blob });
 
 		const createObjectURL = vi.fn().mockReturnValue("blobUrl");
 		const revokeObjectURL = vi.fn();
 		const appendChild = vi.fn();
-		const removeChild = vi.fn();
 
 		URL.createObjectURL = createObjectURL;
 		URL.revokeObjectURL = revokeObjectURL;
 		document.body.appendChild = appendChild;
-		document.body.removeChild = removeChild;
 
 		await logService.downloadLogs();
 
@@ -78,7 +77,6 @@ describe("LogService", () => {
 		});
 		expect(createObjectURL).toHaveBeenCalled();
 		expect(appendChild).toHaveBeenCalled();
-		expect(removeChild).toHaveBeenCalled();
 		expect(revokeObjectURL).toHaveBeenCalled();
 	});
 });

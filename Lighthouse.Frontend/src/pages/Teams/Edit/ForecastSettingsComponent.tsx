@@ -48,23 +48,7 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 				</Grid>
 			)}
 
-			{!teamSettings?.useFixedDatesForThroughput ? (
-				<Grid size={{ xs: 12 }}>
-					<TextField
-						label={`${throughputTerm} History`}
-						type="number"
-						fullWidth
-						margin="normal"
-						value={teamSettings?.throughputHistory ?? ""}
-						onChange={(e) =>
-							onTeamSettingsChange(
-								"throughputHistory",
-								Number.parseInt(e.target.value, 10),
-							)
-						}
-					/>
-				</Grid>
-			) : (
+			{teamSettings?.useFixedDatesForThroughput ? (
 				<Grid size={{ xs: 12, md: 12 }}>
 					<TextField
 						label="Start Date"
@@ -106,6 +90,22 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 							.slice(0, 10)} // Convert date to yyyy-MM-dd format
 						onChange={(e) =>
 							handleDateChange("throughputHistoryEndDate", e.target.value)
+						}
+					/>
+				</Grid>
+			) : (
+				<Grid size={{ xs: 12 }}>
+					<TextField
+						label={`${throughputTerm} History`}
+						type="number"
+						fullWidth
+						margin="normal"
+						value={teamSettings?.throughputHistory ?? ""}
+						onChange={(e) =>
+							onTeamSettingsChange(
+								"throughputHistory",
+								Number.parseInt(e.target.value, 10),
+							)
 						}
 					/>
 				</Grid>

@@ -12,6 +12,28 @@ import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 
+function getLocaleDateFormat(): string {
+	const date = new Date(2000, 0, 2);
+	const formatter = new Intl.DateTimeFormat(undefined);
+	const parts = formatter.formatToParts(date);
+	const format = parts
+		.map((part) => {
+			switch (part.type) {
+				case "day":
+					return "DD";
+				case "month":
+					return "MM";
+				case "year":
+					return "YYYY";
+				default:
+					return part.value;
+			}
+		})
+		.join("");
+
+	return format;
+}
+
 interface ManualForecasterProps {
 	remainingItems: number;
 	targetDate: dayjs.Dayjs | null;
@@ -31,28 +53,6 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-
-	function getLocaleDateFormat(): string {
-		const date = new Date(2000, 0, 2);
-		const formatter = new Intl.DateTimeFormat(undefined);
-		const parts = formatter.formatToParts(date);
-		const format = parts
-			.map((part) => {
-				switch (part.type) {
-					case "day":
-						return "DD";
-					case "month":
-						return "MM";
-					case "year":
-						return "YYYY";
-					default:
-						return part.value;
-				}
-			})
-			.join("");
-
-		return format;
-	}
 
 	return (
 		<Grid container spacing={3}>

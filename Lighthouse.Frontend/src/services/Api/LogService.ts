@@ -51,7 +51,7 @@ export class LogService extends BaseApiService implements ILogService {
 		link.download = `Lighthouse_Log_${new Date().toISOString().split("T")[0]}.txt`;
 		document.body.appendChild(link);
 		link.click();
-		document.body.removeChild(link);
+		link.remove();
 		URL.revokeObjectURL(fileUrl);
 	}
 }

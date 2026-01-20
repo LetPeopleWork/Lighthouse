@@ -57,13 +57,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 			}
 		};
 
-		window.addEventListener(
+		globalThis.addEventListener(
 			"lighthouse:dashboard:edit-mode-changed",
 			handler as EventListener,
 		);
 
 		return () => {
-			window.removeEventListener(
+			globalThis.removeEventListener(
 				"lighthouse:dashboard:edit-mode-changed",
 				handler as EventListener,
 			);
@@ -87,7 +87,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 			// ignore storage errors
 		}
 		// notify other components in this window
-		window.dispatchEvent(
+		globalThis.dispatchEvent(
 			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
 				detail: { dashboardId: dashboardId, isEditing: next },
 			}),
@@ -109,14 +109,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 		}
 
 		// notify other components in this window to reset their state
-		window.dispatchEvent(
+		globalThis.dispatchEvent(
 			new CustomEvent("lighthouse:dashboard:reset-layout", {
 				detail: { dashboardId: dashboardId },
 			}),
 		);
 
 		// also ensure edit mode is turned off everywhere
-		window.dispatchEvent(
+		globalThis.dispatchEvent(
 			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
 				detail: { dashboardId: dashboardId, isEditing: false },
 			}),

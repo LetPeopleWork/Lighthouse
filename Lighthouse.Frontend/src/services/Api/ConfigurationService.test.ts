@@ -9,8 +9,8 @@ const mockedAxios = vi.mocked(axios, true);
 // Mock the document methods needed for file download
 const mockCreateElement = vi.fn();
 const mockAppendChild = vi.fn();
-const mockRemoveChild = vi.fn();
 const mockClick = vi.fn();
+const mockRemove = vi.fn();
 
 // Mock URL methods
 const mockCreateObjectURL = vi.fn();
@@ -38,7 +38,6 @@ describe("ConfigurationService", () => {
 		// Mock document functions
 		document.createElement = mockCreateElement;
 		document.body.appendChild = mockAppendChild;
-		document.body.removeChild = mockRemoveChild;
 
 		// Mock URL functions
 		globalThis.URL.createObjectURL = mockCreateObjectURL;
@@ -48,6 +47,7 @@ describe("ConfigurationService", () => {
 		mockCreateElement.mockReturnValue({
 			setAttribute: vi.fn(),
 			click: mockClick,
+			remove: mockRemove,
 		});
 
 		// Mock createObjectURL to return a fake URL
@@ -87,7 +87,7 @@ describe("ConfigurationService", () => {
 		expect(mockCreateElement).toHaveBeenCalledWith("a");
 		expect(mockAppendChild).toHaveBeenCalled();
 		expect(mockClick).toHaveBeenCalled();
-		expect(mockRemoveChild).toHaveBeenCalled();
+		expect(mockRemove).toHaveBeenCalled();
 		expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
 	});
 
@@ -110,6 +110,7 @@ describe("ConfigurationService", () => {
 				}
 			},
 			click: mockClick,
+			remove: mockRemove,
 		});
 
 		await configurationService.exportConfiguration();

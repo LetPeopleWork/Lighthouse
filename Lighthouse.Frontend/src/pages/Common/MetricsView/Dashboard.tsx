@@ -274,23 +274,22 @@ const Dashboard: React.FC<DashboardProps> = ({
 			setSizesMap({});
 		};
 
-		window.addEventListener(
+		globalThis.addEventListener(
 			"lighthouse:dashboard:edit-mode-changed",
 			handler as EventListener,
 		);
 
-		window.addEventListener(
+		globalThis.addEventListener(
 			"lighthouse:dashboard:reset-layout",
 			resetHandler as EventListener,
 		);
 
-		// FIXED: Cleanup both event listeners
 		return () => {
-			window.removeEventListener(
+			globalThis.removeEventListener(
 				"lighthouse:dashboard:edit-mode-changed",
 				handler as EventListener,
 			);
-			window.removeEventListener(
+			globalThis.removeEventListener(
 				"lighthouse:dashboard:reset-layout",
 				resetHandler as EventListener,
 			);
@@ -408,15 +407,15 @@ const Dashboard: React.FC<DashboardProps> = ({
 		if (y < threshold) {
 			// scroll up
 			if (!autoScrollRef.current) {
-				autoScrollRef.current = window.setInterval(() => {
-					window.scrollBy({ top: -scrollAmount, left: 0 });
+				autoScrollRef.current = globalThis.window.setInterval(() => {
+					globalThis.window.scrollBy({ top: -scrollAmount, left: 0 });
 				}, 50);
 			}
-		} else if (y > window.innerHeight - threshold) {
+		} else if (y > globalThis.window.innerHeight - threshold) {
 			// scroll down
 			if (!autoScrollRef.current) {
-				autoScrollRef.current = window.setInterval(() => {
-					window.scrollBy({ top: scrollAmount, left: 0 });
+				autoScrollRef.current = globalThis.window.setInterval(() => {
+					globalThis.window.scrollBy({ top: scrollAmount, left: 0 });
 				}, 50);
 			}
 		} else if (autoScrollRef.current) {
@@ -510,7 +509,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 				try {
 					const editKey = `lighthouse:dashboard:${dashboardId}:edit`;
 					localStorage.setItem(editKey, "0");
-					window.dispatchEvent(
+					globalThis.dispatchEvent(
 						new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
 							detail: { dashboardId, isEditing: false },
 						}),
@@ -527,7 +526,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 			try {
 				const editKey = `lighthouse:dashboard:${dashboardId}:edit`;
 				localStorage.setItem(editKey, "0");
-				window.dispatchEvent(
+				globalThis.dispatchEvent(
 					new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
 						detail: { dashboardId, isEditing: false },
 					}),
@@ -539,13 +538,13 @@ const Dashboard: React.FC<DashboardProps> = ({
 		};
 
 		document.addEventListener("click", onDocClick, true);
-		window.addEventListener("popstate", onNav);
+		globalThis.addEventListener("popstate", onNav);
 		window.addEventListener("beforeunload", onNav);
 
 		return () => {
 			document.removeEventListener("click", onDocClick, true);
-			window.removeEventListener("popstate", onNav);
-			window.removeEventListener("beforeunload", onNav);
+			globalThis.removeEventListener("popstate", onNav);
+			globalThis.removeEventListener("beforeunload", onNav);
 		};
 	}, [isEditing, dashboardId]);
 

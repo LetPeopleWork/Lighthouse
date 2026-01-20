@@ -97,7 +97,7 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	};
 
 	const isTotalDifferenceLessThanTwo = (): boolean => {
-		return Math.abs(startedTotal - closedTotal) < 2.0;
+		return Math.abs(startedTotal - closedTotal) < 2;
 	};
 
 	const getDifferenceColor = (difference: number): string => {

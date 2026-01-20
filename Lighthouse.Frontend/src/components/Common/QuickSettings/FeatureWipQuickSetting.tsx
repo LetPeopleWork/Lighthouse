@@ -145,7 +145,7 @@ const FeatureWipQuickSetting: React.FC<FeatureWipQuickSettingProps> = ({
 								setFeatureWip(Number.parseInt(e.target.value, 10) || 0)
 							}
 							helperText="Set to 0 to disable limit"
-							inputProps={{ min: 0, step: 1 }}
+							slotProps={{ htmlInput: { min: 0, step: 1 } }}
 						/>
 					</Box>
 				</DialogContent>

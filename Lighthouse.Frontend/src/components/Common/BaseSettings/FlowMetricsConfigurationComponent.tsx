@@ -78,10 +78,10 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const handleWipLimitEnableChange = (checked: boolean) => {
 		setIsWipLimitEnabled(checked);
 
-		if (!checked) {
-			onSettingsChange("systemWIPLimit", 0);
-		} else {
+		if (checked) {
 			onSettingsChange("systemWIPLimit", 1);
+		} else {
+			onSettingsChange("systemWIPLimit", 0);
 		}
 	};
 
@@ -96,11 +96,11 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		setIsFeatureWipEnabled(checked);
 
 		if ("featureWIP" in settings) {
-			if (!checked) {
+			if (checked) {
+				onSettingsChange("featureWIP" as keyof T, 1);
+			} else {
 				onSettingsChange("featureWIP" as keyof T, 0);
 				onSettingsChange("automaticallyAdjustFeatureWIP" as keyof T, false);
-			} else {
-				onSettingsChange("featureWIP" as keyof T, 1);
 			}
 		}
 	};

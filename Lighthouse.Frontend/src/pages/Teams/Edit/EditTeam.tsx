@@ -48,7 +48,7 @@ const EditTeamPage: React.FC = () => {
 	};
 
 	const getTeamSettings = async () => {
-		const urlParams = new URLSearchParams(window.location.search);
+		const urlParams = new URLSearchParams(globalThis.location.search);
 		const cloneFromId = urlParams.get("cloneFrom");
 
 		if (isNewTeam && cloneFromId) {

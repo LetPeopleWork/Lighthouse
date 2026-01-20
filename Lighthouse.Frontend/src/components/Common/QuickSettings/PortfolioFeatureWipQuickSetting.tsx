@@ -179,7 +179,7 @@ const PortfolioFeatureWipQuickSetting: React.FC<
 										Number.parseInt(e.target.value, 10) || 0,
 									)
 								}
-								inputProps={{ min: 0, step: 1 }}
+								slotProps={{ htmlInput: { min: 0, step: 1 } }}
 							/>
 						))}
 					</Box>

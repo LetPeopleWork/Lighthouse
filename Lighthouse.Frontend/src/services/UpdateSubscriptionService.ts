@@ -49,7 +49,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	private isConnected = false;
 	private isConnecting = false;
 	private connectionPromise: Promise<void> | null = null;
-	private apiService: AxiosInstance;
+	private readonly apiService: AxiosInstance;
 
 	public constructor() {
 		if (import.meta.env.VITE_API_BASE_URL !== undefined) {

@@ -318,159 +318,151 @@ export const BaseMetricsView = <
 			});
 		}
 
-		items.push({
-			id: "itemsInProgress",
-			priority: 1,
-			size: "small",
-			node: <ItemsInProgress entries={inProgressEntries} />,
-		});
-
-		items.push({
-			id: "percentiles",
-			priority: 2,
-			size: "small",
-			node: (
-				<CycleTimePercentiles
-					percentileValues={percentileValues}
-					serviceLevelExpectation={serviceLevelExpectation}
-					items={cycleTimeData}
-				/>
-			),
-		});
-
-		items.push({
-			id: "startedVsFinished",
-			priority: 3,
-			size: "small",
-			node: (
-				<StartedVsFinishedDisplay
-					startedItems={startedItems}
-					closedItems={throughputData}
-				/>
-			),
-		});
-
-		items.push({
-			id: "totalWorkItemAge",
-			priority: 4,
-			size: "small",
-			node: (
-				<TotalWorkItemAgeWidget
-					entityId={entity.id}
-					metricsService={metricsService}
-				/>
-			),
-		});
-
-		items.push({
-			id: "throughput",
-			priority: 10,
-			size: "large",
-			node: throughputData ? (
-				<BarRunChart
-					title={`${title} Completed`}
-					startDate={startDate}
-					chartData={throughputData}
-					displayTotal={true}
-					predictabilityData={predictabilityData}
-				/>
-			) : null,
-		});
-
-		items.push({
-			id: "cycleScatter",
-			priority: 11,
-			size: "large",
-			node: (
-				<CycleTimeScatterPlotChart
-					cycleTimeDataPoints={cycleTimeData}
-					percentileValues={percentileValues}
-					serviceLevelExpectation={serviceLevelExpectation}
-				/>
-			),
-		});
-
-		items.push({
-			id: "workDistribution",
-			priority: 12,
-			size: "large",
-			node: (
-				<WorkDistributionChart
-					workItems={[...cycleTimeData, ...inProgressItems] as IWorkItem[]}
-					title="Work Distribution"
-				/>
-			),
-		});
-
-		items.push({
-			id: "aging",
-			priority: 13,
-			size: "large",
-			node: (
-				<WorkItemAgingChart
-					inProgressItems={inProgressItems}
-					percentileValues={percentileValues}
-					serviceLevelExpectation={serviceLevelExpectation}
-					doingStates={doingStates}
-				/>
-			),
-		});
-
-		items.push({
-			id: "wipOverTime",
-			priority: 14,
-			size: "large",
-			node: wipOverTimeData ? (
-				<LineRunChart
-					title={`${title} In Progress Over Time`}
-					startDate={startDate}
-					chartData={wipOverTimeData}
-					displayTotal={false}
-					wipLimit={entity.systemWIPLimit}
-				/>
-			) : null,
-		});
-
-		items.push({
-			id: "totalWorkItemAgeOverTime",
-			priority: 15,
-			size: "large",
-			node: wipOverTimeData ? (
-				<TotalWorkItemAgeRunChart
-					title={`${title} Total Work Item Age Over Time`}
-					startDate={startDate}
-					wipOverTimeData={wipOverTimeData}
-				/>
-			) : null,
-		});
-
-		items.push({
-			id: "stacked",
-			priority: 16,
-			size: "large",
-			node:
-				throughputData && startedItems ? (
-					<StackedAreaChart
-						title="Simplified Cumulative Flow Diagram"
+		items.push(
+			{
+				id: "itemsInProgress",
+				priority: 1,
+				size: "small",
+				node: <ItemsInProgress entries={inProgressEntries} />,
+			},
+			{
+				id: "percentiles",
+				priority: 2,
+				size: "small",
+				node: (
+					<CycleTimePercentiles
+						percentileValues={percentileValues}
+						serviceLevelExpectation={serviceLevelExpectation}
+						items={cycleTimeData}
+					/>
+				),
+			},
+			{
+				id: "startedVsFinished",
+				priority: 3,
+				size: "small",
+				node: (
+					<StartedVsFinishedDisplay
+						startedItems={startedItems}
+						closedItems={throughputData}
+					/>
+				),
+			},
+			{
+				id: "totalWorkItemAge",
+				priority: 4,
+				size: "small",
+				node: (
+					<TotalWorkItemAgeWidget
+						entityId={entity.id}
+						metricsService={metricsService}
+					/>
+				),
+			},
+			{
+				id: "throughput",
+				priority: 10,
+				size: "large",
+				node: throughputData ? (
+					<BarRunChart
+						title={`${title} Completed`}
 						startDate={startDate}
-						areas={[
-							{
-								index: 1,
-								title: "Doing",
-								area: startedItems,
-								color: appColors.primary.light,
-								startOffset: wipOverTimeData?.getValueOnDay(0) ?? 0,
-							},
-							{
-								index: 2,
-								title: "Done",
-								area: throughputData,
-								color: appColors.secondary.light,
-							},
-						]}
+						chartData={throughputData}
+						displayTotal={true}
+						predictabilityData={predictabilityData}
 					/>
 				) : null,
-		});
+			},
+			{
+				id: "cycleScatter",
+				priority: 11,
+				size: "large",
+				node: (
+					<CycleTimeScatterPlotChart
+						cycleTimeDataPoints={cycleTimeData}
+						percentileValues={percentileValues}
+						serviceLevelExpectation={serviceLevelExpectation}
+					/>
+				),
+			},
+			{
+				id: "workDistribution",
+				priority: 12,
+				size: "large",
+				node: (
+					<WorkDistributionChart
+						workItems={[...cycleTimeData, ...inProgressItems] as IWorkItem[]}
+						title="Work Distribution"
+					/>
+				),
+			},
+			{
+				id: "aging",
+				priority: 13,
+				size: "large",
+				node: (
+					<WorkItemAgingChart
+						inProgressItems={inProgressItems}
+						percentileValues={percentileValues}
+						serviceLevelExpectation={serviceLevelExpectation}
+						doingStates={doingStates}
+					/>
+				),
+			},
+			{
+				id: "wipOverTime",
+				priority: 14,
+				size: "large",
+				node: wipOverTimeData ? (
+					<LineRunChart
+						title={`${title} In Progress Over Time`}
+						startDate={startDate}
+						chartData={wipOverTimeData}
+						displayTotal={false}
+						wipLimit={entity.systemWIPLimit}
+					/>
+				) : null,
+			},
+			{
+				id: "totalWorkItemAgeOverTime",
+				priority: 15,
+				size: "large",
+				node: wipOverTimeData ? (
+					<TotalWorkItemAgeRunChart
+						title={`${title} Total Work Item Age Over Time`}
+						startDate={startDate}
+						wipOverTimeData={wipOverTimeData}
+					/>
+				) : null,
+			},
+			{
+				id: "stacked",
+				priority: 16,
+				size: "large",
+				node:
+					throughputData && startedItems ? (
+						<StackedAreaChart
+							title="Simplified Cumulative Flow Diagram"
+							startDate={startDate}
+							areas={[
+								{
+									index: 1,
+									title: "Doing",
+									area: startedItems,
+									color: appColors.primary.light,
+									startOffset: wipOverTimeData?.getValueOnDay(0) ?? 0,
+								},
+								{
+									index: 2,
+									title: "Done",
+									area: throughputData,
+									color: appColors.secondary.light,
+								},
+							]}
+						/>
+					) : null,
+			},
+		);
 
 		// Feature size chart (conditional)
 		if (allFeaturesForSizeChart.length > 0) {

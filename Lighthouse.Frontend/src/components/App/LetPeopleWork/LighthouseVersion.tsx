@@ -165,8 +165,8 @@ const LighthouseVersion: React.FC = () => {
 	};
 
 	const handleRestartConfirm = () => {
-		if (typeof window !== "undefined") {
-			window.location.reload();
+		if (globalThis.window !== undefined) {
+			globalThis.location.reload();
 		}
 	};
 

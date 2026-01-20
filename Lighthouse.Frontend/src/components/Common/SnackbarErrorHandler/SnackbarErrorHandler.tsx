@@ -86,15 +86,15 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 			showError(msg);
 		};
 
-		window.addEventListener("error", onWindowError);
-		window.addEventListener(
+		globalThis.addEventListener("error", onWindowError);
+		globalThis.addEventListener(
 			"unhandledrejection",
 			onUnhandledRejection as EventListener,
 		);
 
 		return () => {
-			window.removeEventListener("error", onWindowError);
-			window.removeEventListener(
+			globalThis.removeEventListener("error", onWindowError);
+			globalThis.removeEventListener(
 				"unhandledrejection",
 				onUnhandledRejection as EventListener,
 			);

@@ -30,7 +30,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 		const savedTheme = localStorage.getItem("theme") as ThemeMode;
 		return (
 			savedTheme ||
-			(window.matchMedia("(prefers-color-scheme: dark)").matches
+			(globalThis.matchMedia("(prefers-color-scheme: dark)").matches
 				? "dark"
 				: "light")
 		);

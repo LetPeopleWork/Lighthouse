@@ -95,12 +95,12 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 											borderWidth: wipLimitVisible ? 2 : 1,
 											borderStyle: "dashed",
 											opacity: wipLimitVisible ? 1 : 0.7,
-											backgroundColor: !wipLimitVisible
-												? "transparent"
-												: hexToRgba(
+											backgroundColor: wipLimitVisible
+												? hexToRgba(
 														theme.palette.secondary.main,
 														theme.opacity.medium,
-													),
+													)
+												: "transparent",
 											"&:hover": {
 												borderColor: theme.palette.secondary.main,
 												borderWidth: 2,

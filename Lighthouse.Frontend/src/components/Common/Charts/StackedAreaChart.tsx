@@ -54,7 +54,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 	}
 
 	const areaDataArrays = sortedAreas.map((areaItem) => {
-		const areaData = Array(chartData.length).fill(0);
+		const areaData = new Array(chartData.length).fill(0);
 
 		for (let i = 0; i < chartData.length; i++) {
 			if (i < areaItem.area.history) {
@@ -91,7 +91,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 			const areaData = areaDataArrays[idx];
 			if (areaData.length < 2) return null;
 
-			const lineData = Array(areaData.length).fill(null);
+			const lineData = new Array(areaData.length).fill(null);
 			lineData[0] = areaData[0];
 			lineData[areaData.length - 1] = areaData[areaData.length - 1];
 

@@ -71,7 +71,10 @@ const SleQuickSetting: React.FC<SleQuickSettingProps> = ({
 		// Allow setting both to 0 for "unset"
 		const isBothZero = probNum === 0 && rangeNum === 0;
 
-		if (!isBothZero) {
+		if (isBothZero) {
+			setProbabilityError("");
+			setRangeError("");
+		} else {
 			if (probNum < 50 || probNum > 95) {
 				setProbabilityError("Must be between 50 and 95");
 				valid = false;
@@ -85,9 +88,6 @@ const SleQuickSetting: React.FC<SleQuickSettingProps> = ({
 			} else {
 				setRangeError("");
 			}
-		} else {
-			setProbabilityError("");
-			setRangeError("");
 		}
 
 		return valid;
