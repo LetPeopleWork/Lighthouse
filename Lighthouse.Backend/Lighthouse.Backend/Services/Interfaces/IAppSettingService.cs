@@ -9,12 +9,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task UpdateTeamDataRefreshSettings(RefreshSettings refreshSettings);
         
-        RefreshSettings GetFeaturRefreshSettings();
+        RefreshSettings GetFeatureRefreshSettings();
 
         Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings);
-
-        TeamSettingDto GetDefaultTeamSettings();
-
-        PortfolioSettingDto GetDefaultProjectSettings();
     }
 }

@@ -86,10 +86,8 @@ export const createMockSuggestionService = (): ISuggestionService => {
 
 export const createMockSettingsService = (): ISettingsService => {
 	return {
-		getDefaultProjectSettings: vi.fn(),
 		getRefreshSettings: vi.fn(),
 		updateRefreshSettings: vi.fn(),
-		getDefaultTeamSettings: vi.fn(),
 	};
 };
 

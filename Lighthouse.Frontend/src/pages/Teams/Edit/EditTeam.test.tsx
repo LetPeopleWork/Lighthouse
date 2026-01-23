@@ -137,14 +137,6 @@ describe("EditTeam", () => {
 		mockSuggestionService.getStatesForTeams.mockResolvedValue([]);
 	});
 
-	it("loads default team settings for new team when no cloneFrom param", async () => {
-		renderEditTeamWithContext();
-
-		await waitFor(() => {
-			expect(mockSettingsService.getDefaultTeamSettings).toHaveBeenCalled();
-		});
-	});
-
 	it("calls getTeamSettings when cloneFrom param is present for new team", async () => {
 		const mockTeamSettings: ITeamSettings = {
 			id: 5,

@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation
             IRepository<Feature> featureRepository,
             IAppSettingService appSettingService,
             IServiceProvider serviceProvider)
-            : base(appSettingService.GetFeaturRefreshSettings().Interval, serviceProvider)
+            : base(appSettingService.GetFeatureRefreshSettings().Interval, serviceProvider)
         {
             this.logger = logger;
             this.featureRepository = featureRepository;

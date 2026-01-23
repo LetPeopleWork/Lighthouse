@@ -4,10 +4,6 @@ import {
 	type IRefreshSettings,
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
-import {
-	createMockProjectSettings,
-	createMockTeamSettings,
-} from "../../tests/TestDataProvider";
 import { SettingsService } from "./SettingsService";
 
 vi.mock("axios");
@@ -56,31 +52,6 @@ describe("SettingsService", () => {
 		expect(mockedAxios.put).toHaveBeenCalledWith(
 			`/appsettings/${settingName}Refresh`,
 			mockRefreshSettings,
-		);
-	});
-
-	it("should get default team settings", async () => {
-		const mockResponse = createMockTeamSettings();
-		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
-
-		const teamSettings = await settingsService.getDefaultTeamSettings();
-
-		expect(teamSettings).toEqual(mockResponse);
-		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/appsettings/defaultteamsettings",
-		);
-	});
-
-	it("should get default project settings", async () => {
-		const mockResponse = createMockProjectSettings();
-
-		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
-
-		const projectSettings = await settingsService.getDefaultProjectSettings();
-
-		expect(projectSettings).toEqual(mockResponse);
-		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/appsettings/defaultprojectsettings",
 		);
 	});
 });

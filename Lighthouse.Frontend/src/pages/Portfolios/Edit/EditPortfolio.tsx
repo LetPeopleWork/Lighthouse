@@ -13,12 +13,8 @@ const EditPortfolio: React.FC = () => {
 	const isNewPortfolio = id === undefined;
 
 	const navigate = useNavigate();
-	const {
-		settingsService,
-		portfolioService,
-		workTrackingSystemService,
-		teamService,
-	} = useContext(ApiServiceContext);
+	const { portfolioService, workTrackingSystemService, teamService } =
+		useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
@@ -48,7 +44,35 @@ const EditPortfolio: React.FC = () => {
 				Number.parseInt(id, 10),
 			);
 		}
-		return await settingsService.getDefaultProjectSettings();
+
+		const defaultPortfolioSettings: IPortfolioSettings = {
+			involvedTeams: [],
+			overrideRealChildCountStates: [],
+			usePercentileToCalculateDefaultAmountOfWorkItems: true,
+			defaultAmountOfWorkItemsPerFeature: 10,
+			defaultWorkItemPercentile: 80,
+			percentileHistoryInDays: 180,
+			sizeEstimateAdditionalFieldDefinitionId: null,
+			featureOwnerAdditionalFieldDefinitionId: null,
+			id: 0,
+			name: "New Portfolio",
+			dataRetrievalValue: "",
+			workItemTypes: [],
+			toDoStates: [],
+			doingStates: [],
+			doneStates: [],
+			tags: [],
+			workTrackingSystemConnectionId: 0,
+			serviceLevelExpectationProbability: 80,
+			serviceLevelExpectationRange: 30,
+			systemWIPLimit: 1,
+			parentOverrideAdditionalFieldDefinitionId: null,
+			blockedStates: [],
+			blockedTags: [],
+			doneItemsCutoffDays: 365,
+		};
+
+		return defaultPortfolioSettings;
 	};
 
 	const getWorkTrackingSystems = async () => {

@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             featureRepository = new Mock<IRepository<Feature>>();
             appSettingService = new Mock<IAppSettingService>();
 
-            appSettingService.Setup(m => m.GetFeaturRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
+            appSettingService.Setup(m => m.GetFeatureRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
 
             forecastServiceMock = new Mock<IForecastService>();
             var serviceProvider = new Mock<IServiceProvider>();

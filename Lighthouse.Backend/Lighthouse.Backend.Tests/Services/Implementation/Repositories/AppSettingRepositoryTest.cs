@@ -7,12 +7,8 @@ using System.Reflection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class AppSettingRepositoryTest : IntegrationTestBase
+    public class AppSettingRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public AppSettingRepositoryTest() : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         [TestCase(AppSettingKeys.TeamDataRefreshInterval, "60")]
         [TestCase(AppSettingKeys.TeamDataRefreshAfter, "180")]
@@ -20,32 +16,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.FeaturesRefreshInterval, "60")]
         [TestCase(AppSettingKeys.FeaturesRefreshAfter, "180")]
         [TestCase(AppSettingKeys.FeaturesRefreshStartDelay, "15")]
-        [TestCase(AppSettingKeys.TeamSettingName, "New Team")]
-        [TestCase(AppSettingKeys.TeamSettingHistory, "30")]
-        [TestCase(AppSettingKeys.TeamSettingFeatureWIP, "1")]
-        [TestCase(AppSettingKeys.TeamSettingWorkItemQuery, "")]
-        [TestCase(AppSettingKeys.TeamSettingWorkItemTypes, "User Story,Bug")]
-        [TestCase(AppSettingKeys.ProjectSettingName, "New Project")]
-        [TestCase(AppSettingKeys.ProjectSettingWorkItemQuery, "")]
-        [TestCase(AppSettingKeys.ProjectSettingWorkItemTypes, "Epic")]
-        [TestCase(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10")]
-        [TestCase(AppSettingKeys.ProjectSettingSizeEstimateField, "")]
-        [TestCase(AppSettingKeys.ProjectSettingsFeatureOwnerField, "")]
-        [TestCase(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False")]
-        [TestCase(AppSettingKeys.TeamSettingTags, "")]
-        [TestCase(AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "")]
-        [TestCase(AppSettingKeys.ProjectSettingTags, "")]
-        [TestCase(AppSettingKeys.TeamSettingSLEProbability, "0")]
-        [TestCase(AppSettingKeys.TeamSettingSLERange, "0")]
-        [TestCase(AppSettingKeys.ProjectSettingSLEProbability, "0")]
-        [TestCase(AppSettingKeys.ProjectSettingSLERange, "0")]
-        [TestCase(AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, "False")]
-        [TestCase(AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, "100")]
-        [TestCase(AppSettingKeys.TeamSettingBlockedStates, "")]
-        [TestCase(AppSettingKeys.TeamSettingBlockedTags, "")]
-        [TestCase(AppSettingKeys.ProjectSettingBlockedStates, "")]
-        [TestCase(AppSettingKeys.ProjectSettingBlockedTags, "")]
-        [TestCase(AppSettingKeys.ProjectSettingPercentileHistoryInDays, "90")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();
@@ -53,41 +23,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var appSetting = subject.GetByPredicate(s => s.Key == key);
 
             Assert.That(appSetting.Value, Is.EqualTo(expectedValue));
-        }
-
-        [Test]
-        public async Task UpdateDefaultSetting_DoesNotOverrideOnNextStart()
-        {
-            var subject = CreateSubject();
-
-            var appSetting = subject.GetByPredicate(s => s.Key == AppSettingKeys.TeamSettingFeatureWIP) ?? throw new ArgumentException($"Could not find setting with key {AppSettingKeys.TeamSettingFeatureWIP}");
-
-            appSetting.Value = "42";
-            subject.Update(appSetting);
-            await subject.Save();
-
-            subject = CreateSubject();
-            appSetting = subject.GetByPredicate(s => s.Key == AppSettingKeys.TeamSettingFeatureWIP);
-
-            Assert.That(appSetting.Value, Is.EqualTo("42"));
-        }
-
-        [Test]
-        public async Task StartRepo_DefaultSettingRemoved_AddsDefault()
-        {
-            var subject = CreateSubject();
-
-            var appSetting = subject.GetByPredicate(s => s.Key == AppSettingKeys.TeamSettingFeatureWIP) ?? throw new ArgumentException($"Could not find setting with key {AppSettingKeys.TeamSettingFeatureWIP}");
-
-            subject.Remove(appSetting);
-            await subject.Save();
-
-            ResetSeedingFlag();
-
-            subject = CreateSubject();
-            appSetting = subject.GetByPredicate(s => s.Key == AppSettingKeys.TeamSettingFeatureWIP);
-
-            Assert.That(appSetting.Value, Is.EqualTo("1"));
         }
 
         [TearDown]

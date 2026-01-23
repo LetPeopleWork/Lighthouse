@@ -18,7 +18,7 @@ const EditTeamPage: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const pageTitle = isNewTeam ? `Create ${teamTerm}` : `Update ${teamTerm}`;
-	const { settingsService, teamService, workTrackingSystemService } =
+	const { teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 
 	const {
@@ -66,7 +66,33 @@ const EditTeamPage: React.FC = () => {
 		if (!isNewTeam && id) {
 			return await teamService.getTeamSettings(Number.parseInt(id, 10));
 		}
-		return await settingsService.getDefaultTeamSettings();
+
+		const defaultTeamSettings: ITeamSettings = {
+			id: 0,
+			name: "New Team",
+			throughputHistory: 90,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
+			featureWIP: 1,
+			automaticallyAdjustFeatureWIP: false,
+			dataRetrievalValue: "",
+			workItemTypes: [],
+			toDoStates: [],
+			doingStates: [],
+			doneStates: [],
+			tags: [],
+			workTrackingSystemConnectionId: 0,
+			serviceLevelExpectationProbability: 80,
+			serviceLevelExpectationRange: 10,
+			systemWIPLimit: 5,
+			parentOverrideAdditionalFieldDefinitionId: null,
+			blockedStates: [],
+			blockedTags: [],
+			doneItemsCutoffDays: 180,
+		};
+
+		return defaultTeamSettings;
 	};
 
 	const getWorkTrackingSystems = async () => {

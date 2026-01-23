@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetFeatureRefreshSettings_ReturnsSettings()
         {
             var settings = new RefreshSettings();
-            appSettingServiceMock.Setup(x => x.GetFeaturRefreshSettings()).Returns(settings);
+            appSettingServiceMock.Setup(x => x.GetFeatureRefreshSettings()).Returns(settings);
 
             var subject = CreateSubject();
 
@@ -86,46 +86,6 @@ namespace Lighthouse.Backend.Tests.API
             {
                 appSettingServiceMock.Verify(x => x.UpdateTeamDataRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            }
-        }
-
-        [Test]
-        public void GetDefaultTeamSettings_ReturnsSettings()
-        {
-            var settings = new TeamSettingDto();
-            appSettingServiceMock.Setup(x => x.GetDefaultTeamSettings()).Returns(settings);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetDefaultTeamSettings();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(settings));
-            }
-        }
-
-        [Test]
-        public void GetDefaultProjectSettings_ReturnsSettings()
-        {
-            var settings = new PortfolioSettingDto();
-            appSettingServiceMock.Setup(x => x.GetDefaultProjectSettings()).Returns(settings);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetDefaultProjectSettings();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(settings));
             }
         }
 

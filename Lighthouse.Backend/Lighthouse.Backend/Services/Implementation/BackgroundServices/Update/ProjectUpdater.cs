@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             using (var scope = CreateServiceScope())
             {
-                return GetServiceFromServiceScope<IAppSettingService>(scope).GetFeaturRefreshSettings();
+                return GetServiceFromServiceScope<IAppSettingService>(scope).GetFeatureRefreshSettings();
             }
         }
 

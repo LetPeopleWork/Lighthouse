@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var service = CreateService();
 
-            var settings = service.GetFeaturRefreshSettings();
+            var settings = service.GetFeatureRefreshSettings();
 
             using (Assert.EnterMultipleScope())
             {
@@ -81,162 +81,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetDefaultTeamSettings_ReturnsCorrectSettings()
-        {
-            SetupRepositoryForKeys(
-                AppSettingKeys.TeamSettingName, "MyTeam",
-                AppSettingKeys.TeamSettingHistory, "90",
-                AppSettingKeys.TeamSettingFeatureWIP, "2",
-                AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
-                AppSettingKeys.TeamSettingToDoStates, "New,Planned",
-                AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
-                AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
-                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true",
-                AppSettingKeys.TeamSettingTags, "tag1,tag2",
-                AppSettingKeys.TeamSettingSLEProbability, "88",
-                AppSettingKeys.TeamSettingSLERange, "10",
-                AppSettingKeys.TeamSettingBlockedStates, "Blocked,On Hold",
-                AppSettingKeys.TeamSettingBlockedTags, "tag1,tag2"
-                );
-
-            var service = CreateService();
-
-            var settings = service.GetDefaultTeamSettings();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(settings.Name, Is.EqualTo("MyTeam"));
-
-                Assert.That(settings.ThroughputHistory, Is.EqualTo(90));
-                Assert.That(settings.UseFixedDatesForThroughput, Is.False);
-
-                var today = DateTime.Today;
-                Assert.That(settings.ThroughputHistoryStartDate, Is.EqualTo(today.AddDays(-90)));
-                Assert.That(settings.ThroughputHistoryEndDate, Is.EqualTo(today));
-
-                Assert.That(settings.FeatureWIP, Is.EqualTo(2));
-                Assert.That(settings.DataRetrievalValue, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
-                Assert.That(settings.AutomaticallyAdjustFeatureWIP, Is.True);
-
-                Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
-                Assert.That(settings.WorkItemTypes, Does.Contain("Product Backlog Item"));
-                Assert.That(settings.WorkItemTypes, Does.Contain("Bug"));
-
-                Assert.That(settings.ToDoStates, Has.Count.EqualTo(2));
-                Assert.That(settings.ToDoStates, Does.Contain("New"));
-                Assert.That(settings.ToDoStates, Does.Contain("Planned"));
-
-                Assert.That(settings.DoingStates, Has.Count.EqualTo(2));
-                Assert.That(settings.DoingStates, Does.Contain("In Progress"));
-                Assert.That(settings.DoingStates, Does.Contain("Committed"));
-
-                Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
-                Assert.That(settings.DoneStates, Does.Contain("Done"));
-                Assert.That(settings.DoneStates, Does.Contain("Closed"));
-
-                Assert.That(settings.Tags, Has.Count.EqualTo(2));
-                Assert.That(settings.Tags, Does.Contain("tag1"));
-                Assert.That(settings.Tags, Does.Contain("tag2"));
-
-                Assert.That(settings.ServiceLevelExpectationProbability, Is.EqualTo(88));
-                Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
-
-                Assert.That(settings.BlockedStates, Has.Count.EqualTo(2));
-                Assert.That(settings.BlockedStates, Does.Contain("Blocked"));
-                Assert.That(settings.BlockedStates, Does.Contain("On Hold"));
-                Assert.That(settings.BlockedTags, Has.Count.EqualTo(2));
-                Assert.That(settings.BlockedTags, Does.Contain("tag1"));
-                Assert.That(settings.BlockedTags, Does.Contain("tag2"));
-                Assert.That(settings.DoneItemsCutoffDays, Is.EqualTo(180));
-            }
-        }
-
-        [Test]
-        public void GetDefaultProjectSettings_ReturnsCorrectSettings()
-        {
-            SetupRepositoryForKeys(
-                AppSettingKeys.ProjectSettingName, "My Project",
-                AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
-                AppSettingKeys.ProjectSettingToDoStates, "New,Planned",
-                AppSettingKeys.ProjectSettingDoingStates, "In Progress,Committed",
-                AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
-                AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "New,Proposed",
-                AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True",
-                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
-                AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
-                AppSettingKeys.ProjectSettingPercentileHistoryInDays, "55",
-                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
-                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.AreaPath",
-                AppSettingKeys.ProjectSettingTags, "tag1,tag2",
-                AppSettingKeys.ProjectSettingSLEProbability, "88",
-                AppSettingKeys.ProjectSettingSLERange, "10",
-                AppSettingKeys.ProjectSettingBlockedStates, "Blocked,On Hold",
-                AppSettingKeys.ProjectSettingBlockedTags, "tag1,tag2"
-                );
-
-            var service = CreateService();
-
-            var settings = service.GetDefaultProjectSettings();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(settings.Name, Is.EqualTo("My Project"));
-                Assert.That(settings.DataRetrievalValue, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
-                Assert.That(settings.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.True);
-                Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
-                Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));
-                Assert.That(settings.PercentileHistoryInDays, Is.EqualTo(55));
-                Assert.That(settings.SizeEstimateAdditionalFieldDefinitionId, Is.Null);
-                Assert.That(settings.FeatureOwnerAdditionalFieldDefinitionId, Is.Null);
-
-                Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
-                Assert.That(settings.WorkItemTypes, Does.Contain("Epic"));
-
-                Assert.That(settings.ToDoStates, Has.Count.EqualTo(2));
-                Assert.That(settings.ToDoStates, Does.Contain("New"));
-                Assert.That(settings.ToDoStates, Does.Contain("Planned"));
-
-                Assert.That(settings.DoingStates, Has.Count.EqualTo(2));
-                Assert.That(settings.DoingStates, Does.Contain("In Progress"));
-                Assert.That(settings.DoingStates, Does.Contain("Committed"));
-
-                Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
-                Assert.That(settings.DoneStates, Does.Contain("Done"));
-                Assert.That(settings.DoneStates, Does.Contain("Closed"));
-
-                Assert.That(settings.OverrideRealChildCountStates, Has.Count.EqualTo(2));
-                Assert.That(settings.OverrideRealChildCountStates, Does.Contain("New"));
-                Assert.That(settings.OverrideRealChildCountStates, Does.Contain("Proposed"));
-
-                Assert.That(settings.Tags, Has.Count.EqualTo(2));
-                Assert.That(settings.Tags, Does.Contain("tag1"));
-                Assert.That(settings.Tags, Does.Contain("tag2"));
-
-                Assert.That(settings.ServiceLevelExpectationProbability, Is.EqualTo(88));
-                Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
-
-                Assert.That(settings.BlockedStates, Has.Count.EqualTo(2));
-                Assert.That(settings.BlockedStates, Does.Contain("Blocked"));
-                Assert.That(settings.BlockedStates, Does.Contain("On Hold"));
-
-                Assert.That(settings.BlockedTags, Has.Count.EqualTo(2));
-                Assert.That(settings.BlockedTags, Does.Contain("tag1"));
-                Assert.That(settings.BlockedTags, Does.Contain("tag2"));
-
-                Assert.That(settings.DoneItemsCutoffDays, Is.EqualTo(365));
-            }
-        }
-
-        [Test]
         public void GetSettingByKey_KeyDoesNotExist_ThrowsException()
         {
             repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<AppSetting, bool>>())).Returns((AppSetting)null);
 
             var service = CreateService();
 
-            Assert.Throws<ArgumentNullException>(() => service.GetFeaturRefreshSettings());
+            Assert.Throws<ArgumentNullException>(() => service.GetFeatureRefreshSettings());
         }
 
         private AppSettingService CreateService()

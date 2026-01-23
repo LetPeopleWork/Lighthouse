@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.API
         [HttpGet("FeatureRefresh")]
         public ActionResult<RefreshSettings> GetFeatureRefreshSettings()
         {
-            var settings = appSettingService.GetFeaturRefreshSettings();
+            var settings = appSettingService.GetFeatureRefreshSettings();
             return Ok(settings);
         }
 
@@ -42,20 +42,6 @@ namespace Lighthouse.Backend.API
         {
             await appSettingService.UpdateTeamDataRefreshSettings(refreshSettings);
             return Ok();
-        }
-
-        [HttpGet("DefaultTeamSettings")]
-        public ActionResult<TeamSettingDto> GetDefaultTeamSettings()
-        {
-            var settings = appSettingService.GetDefaultTeamSettings();
-            return Ok(settings);
-        }
-
-        [HttpGet("DefaultProjectSettings")]
-        public ActionResult<PortfolioSettingDto> GetDefaultProjectSettings()
-        {
-            var settings = appSettingService.GetDefaultProjectSettings();
-            return Ok(settings);
         }
     }
 }

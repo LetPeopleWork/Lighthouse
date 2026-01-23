@@ -1,6 +1,4 @@
 import type { IRefreshSettings } from "../../models/AppSettings/RefreshSettings";
-import type { IPortfolioSettings } from "../../models/Portfolio/PortfolioSettings";
-import type { ITeamSettings } from "../../models/Team/TeamSettings";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ISettingsService {
@@ -9,8 +7,6 @@ export interface ISettingsService {
 		settingName: string,
 		refreshSettings: IRefreshSettings,
 	): Promise<void>;
-	getDefaultTeamSettings(): Promise<ITeamSettings>;
-	getDefaultProjectSettings(): Promise<IPortfolioSettings>;
 }
 
 export class SettingsService
@@ -36,34 +32,6 @@ export class SettingsService
 				`/appsettings/${settingName}Refresh`,
 				refreshSettings,
 			);
-		});
-	}
-
-	async getDefaultTeamSettings(): Promise<ITeamSettings> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<ITeamSettings>(
-				"/appsettings/defaultteamsettings",
-			);
-
-			const teamSettings = response.data;
-			teamSettings.throughputHistoryStartDate = new Date(
-				teamSettings.throughputHistoryStartDate,
-			);
-			teamSettings.throughputHistoryEndDate = new Date(
-				teamSettings.throughputHistoryEndDate,
-			);
-
-			return teamSettings;
-		});
-	}
-
-	async getDefaultProjectSettings(): Promise<IPortfolioSettings> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IPortfolioSettings>(
-				"/appsettings/defaultprojectsettings",
-			);
-
-			return response.data;
 		});
 	}
 }

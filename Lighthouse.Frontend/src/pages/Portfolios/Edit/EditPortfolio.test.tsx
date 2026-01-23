@@ -161,14 +161,6 @@ describe("EditPortfolio", () => {
 		mockTeamService.getTeams.mockResolvedValue([]);
 	});
 
-	it("loads default Portfolio settings for new Portfolio when no cloneFrom param", async () => {
-		renderEditPortfolioWithContext();
-
-		await waitFor(() => {
-			expect(mockSettingsService.getDefaultProjectSettings).toHaveBeenCalled();
-		});
-	});
-
 	it("calls getPortfolioSettings when cloneFrom param is present for new Portfolio", async () => {
 		const mockPortfolioSettings: IPortfolioSettings = {
 			id: 5,

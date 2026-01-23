@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private void SetupRefreshSettings(int interval, int refreshAfter)
         {
             var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = refreshAfter, StartDelay = 0 };
-            appSettingServiceMock.Setup(x => x.GetFeaturRefreshSettings()).Returns(refreshSettings);
+            appSettingServiceMock.Setup(x => x.GetFeatureRefreshSettings()).Returns(refreshSettings);
         }
 
 

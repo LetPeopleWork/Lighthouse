@@ -6,16 +6,9 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class AppSettingService : IAppSettingService
+    public class AppSettingService(IRepository<AppSetting> repository) : IAppSettingService
     {
-        private readonly IRepository<AppSetting> repository;
-
-        public AppSettingService(IRepository<AppSetting> repository)
-        {
-            this.repository = repository;
-        }
-
-        public RefreshSettings GetFeaturRefreshSettings()
+        public RefreshSettings GetFeatureRefreshSettings()
         {
             return CreateRefreshSettings(
                 AppSettingKeys.FeaturesRefreshInterval,
@@ -39,86 +32,6 @@ namespace Lighthouse.Backend.Services.Implementation
         public async Task UpdateTeamDataRefreshSettings(RefreshSettings refreshSettings)
         {
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.TeamDataRefreshInterval, AppSettingKeys.TeamDataRefreshAfter, AppSettingKeys.TeamDataRefreshStartDelay);
-        }
-
-        public TeamSettingDto GetDefaultTeamSettings()
-        {
-            var workItemTypes = GetListByKey(AppSettingKeys.TeamSettingWorkItemTypes);
-
-            var toDoStates = GetListByKey(AppSettingKeys.TeamSettingToDoStates);
-            var doingStates = GetListByKey(AppSettingKeys.TeamSettingDoingStates);
-            var doneStates = GetListByKey(AppSettingKeys.TeamSettingDoneStates);
-            var blockedStates = GetListByKey(AppSettingKeys.TeamSettingBlockedStates);
-            var blockedTags = GetListByKey(AppSettingKeys.TeamSettingBlockedTags);
-
-            var teamSettings = new TeamSettingDto
-            {
-                Name = GetSettingByKey(AppSettingKeys.TeamSettingName).Value,
-                ThroughputHistory = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingHistory).Value),
-                ThroughputHistoryStartDate = DateTime.UtcNow.Date.AddDays(-90),
-                ThroughputHistoryEndDate = DateTime.UtcNow.Date,
-                FeatureWIP = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingFeatureWIP).Value),
-                DataRetrievalValue = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
-                WorkItemTypes = workItemTypes,
-                ParentOverrideAdditionalFieldDefinitionId = null,
-                AutomaticallyAdjustFeatureWIP = bool.Parse(GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP).Value),
-                ToDoStates = toDoStates,
-                DoingStates = doingStates,
-                DoneStates = doneStates,
-                Tags = GetListByKey(AppSettingKeys.TeamSettingTags),
-                ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLEProbability).Value),
-                ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLERange).Value),
-                BlockedStates = blockedStates,
-                BlockedTags = blockedTags,
-                DoneItemsCutoffDays = 180,
-            };
-
-            return teamSettings;
-        }
-
-        public PortfolioSettingDto GetDefaultProjectSettings()
-        {
-            var workItemTypes = GetListByKey(AppSettingKeys.ProjectSettingWorkItemTypes);
-
-            var toDoStates = GetListByKey(AppSettingKeys.ProjectSettingToDoStates);
-            var doingStates = GetListByKey(AppSettingKeys.ProjectSettingDoingStates);
-            var doneStates = GetListByKey(AppSettingKeys.ProjectSettingDoneStates);
-            var tags = GetListByKey(AppSettingKeys.ProjectSettingTags);
-            var blockedStates = GetListByKey(AppSettingKeys.ProjectSettingBlockedStates);
-            var blockedTags = GetListByKey(AppSettingKeys.ProjectSettingBlockedTags);
-
-            var overrideRealChildCountStates = GetListByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
-
-            var projectSettings = new PortfolioSettingDto
-            {
-                Name = GetSettingByKey(AppSettingKeys.ProjectSettingName).Value,
-                DataRetrievalValue = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery).Value,
-                WorkItemTypes = workItemTypes,
-                UsePercentileToCalculateDefaultAmountOfWorkItems = bool.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems).Value),
-                DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),
-                DefaultWorkItemPercentile = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile).Value),
-                PercentileHistoryInDays = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingPercentileHistoryInDays).Value),
-                ToDoStates = toDoStates,
-                DoingStates = doingStates,
-                DoneStates = doneStates,
-                Tags = tags,
-
-                OverrideRealChildCountStates = overrideRealChildCountStates,
-
-                SizeEstimateAdditionalFieldDefinitionId = null,
-                FeatureOwnerAdditionalFieldDefinitionId = null,
-                ParentOverrideAdditionalFieldDefinitionId = null,
-
-                ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLEProbability).Value),
-                ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLERange).Value),
-
-                BlockedStates = blockedStates,
-                BlockedTags = blockedTags,
-
-                DoneItemsCutoffDays = 365,
-            };
-
-            return projectSettings;
         }
 
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
@@ -156,18 +69,6 @@ namespace Lighthouse.Backend.Services.Implementation
             var setting = repository.GetByPredicate((setting) => setting.Key == key);
 
             return setting ?? throw new ArgumentNullException(nameof(key), "Setting with Key {key} not found");
-        }
-
-        private List<string> GetListByKey(string key)
-        {
-            var list = new List<string>();
-
-            foreach (var listItem in GetSettingByKey(key).Value.Split(','))
-            {
-                list.Add(listItem.Trim());
-            }
-
-            return list;
         }
     }
 }
