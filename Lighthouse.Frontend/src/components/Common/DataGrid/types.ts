@@ -55,6 +55,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	exportFileName?: string;
 	/** Whether the user can reorder columns using the Column Order dialog (default: true) */
 	allowColumnReorder?: boolean;
+	/** Custom actions to display in the toolbar */
+	toolbarActions?: React.ReactNode;
 }
 
 /**
@@ -74,4 +76,24 @@ export interface PersistedGridState {
 	/** Column widths in pixels keyed by columns' field names */
 	columnWidths?: { [field: string]: number };
 	filterModel?: GridFilterModel;
+}
+
+/**
+ * Props for DataGridToolbar component
+ */
+export interface DataGridToolbarProps {
+	/** Whether user has premium features available */
+	canUsePremiumFeatures?: boolean;
+	/** Whether export functionality is enabled */
+	enableExport?: boolean;
+	/** Custom filename for CSV export (without extension) */
+	exportFileName?: string;
+	/** Reset layout handler */
+	onResetLayout?: () => void;
+	/** Open column order dialog */
+	onOpenColumnOrder?: () => void;
+	/** Whether user may reorder columns */
+	allowColumnReorder?: boolean;
+	/** Custom actions to display in the toolbar */
+	customActions?: React.ReactNode;
 }

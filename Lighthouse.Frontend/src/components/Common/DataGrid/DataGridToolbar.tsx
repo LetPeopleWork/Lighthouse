@@ -6,21 +6,7 @@ import { Box, IconButton, Tooltip } from "@mui/material";
 import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useState } from "react";
-
-interface DataGridToolbarProps {
-	/** Whether user has premium features available */
-	canUsePremiumFeatures?: boolean;
-	/** Whether export functionality is enabled */
-	enableExport?: boolean;
-	/** Custom filename for CSV export (without extension) */
-	exportFileName?: string;
-	/** Reset layout handler */
-	onResetLayout?: () => void;
-	/** Open column order dialog */
-	onOpenColumnOrder?: () => void;
-	/** Whether user may reorder columns */
-	allowColumnReorder?: boolean;
-}
+import type { DataGridToolbarProps } from "./types";
 
 /**
  * Custom toolbar for DataGrid with CSV export functionality
@@ -33,6 +19,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	onResetLayout,
 	onOpenColumnOrder,
 	allowColumnReorder = false,
+	customActions,
 }) => {
 	const apiRef = useGridApiContext();
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
@@ -240,6 +227,8 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 					</Tooltip>
 				</>
 			)}
+			{/* Custom actions passed from parent */}
+			{customActions}
 			{/* Reset layout button */}
 			{onResetLayout && (
 				<Tooltip title="Reset layout to defaults">

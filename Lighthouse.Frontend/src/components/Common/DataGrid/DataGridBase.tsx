@@ -43,6 +43,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	enableExport = false,
 	exportFileName,
 	allowColumnReorder = true,
+	toolbarActions,
 }: Readonly<DataGridBaseProps<T>>): React.ReactElement {
 	// Check license status for premium features
 	const { licenseStatus } = useLicenseRestrictions();
@@ -185,6 +186,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					}}
 					onOpenColumnOrder={() => setIsColumnOrderDialogOpen(true)}
 					allowColumnReorder={allowColumnReorder}
+					customActions={toolbarActions}
 				/>
 				<ColumnOrderDialog
 					open={isColumnOrderDialogOpen}

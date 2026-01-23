@@ -1,10 +1,104 @@
-import { Checkbox, Link } from "@mui/material";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import ClearIcon from "@mui/icons-material/Clear";
+import { Button, Checkbox, Link } from "@mui/material";
+import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
 import { useMemo } from "react";
 import type { StateCategory } from "../../../models/WorkItem";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import type { FeatureSelectorProps, FeatureSelectorRow } from "./types";
+
+// Toolbar button components that use GridApiContext
+const SelectAllButton: React.FC<{
+	selectedFeatureIds: number[];
+	onChange: (ids: number[]) => void;
+}> = ({ selectedFeatureIds, onChange }) => {
+	const apiRef = useGridApiContext();
+
+	const handleSelectAll = () => {
+		// Get the sorted and filtered row IDs
+		const sortedRowIds = apiRef.current.getSortedRowIds() as number[];
+		const filterModel = apiRef.current.state.filter?.filterModel;
+
+		let visibleRowIds = sortedRowIds;
+
+		// If there are active filters, we need to filter the row IDs
+		if (filterModel?.items && filterModel.items.length > 0) {
+			visibleRowIds = sortedRowIds.filter((id) => {
+				// Check if this row passes all filter conditions
+				const row = apiRef.current.getRow(id);
+				if (!row) return false;
+
+				return filterModel.items.every((filterItem) => {
+					if (!filterItem.field || !filterItem.operator) return true;
+
+					const cellValue = apiRef.current.getCellValue(id, filterItem.field);
+					const cellValueStr = String(cellValue || "").toLowerCase();
+					const filterValue = String(filterItem.value || "").toLowerCase();
+
+					switch (filterItem.operator) {
+						case "contains":
+							return cellValueStr.includes(filterValue);
+						case "equals":
+							return cellValueStr === filterValue;
+						case "startsWith":
+							return cellValueStr.startsWith(filterValue);
+						case "endsWith":
+							return cellValueStr.endsWith(filterValue);
+						case "isEmpty":
+							return !cellValueStr;
+						case "isNotEmpty":
+							return !!cellValueStr;
+						default:
+							return true;
+					}
+				});
+			});
+		}
+
+		const newSelection = [...selectedFeatureIds];
+
+		// Add only new IDs that aren't already selected
+		for (const id of visibleRowIds) {
+			if (!newSelection.includes(id)) {
+				newSelection.push(id);
+			}
+		}
+
+		onChange(newSelection);
+	};
+
+	return (
+		<Button
+			size="small"
+			startIcon={<CheckBoxIcon fontSize="small" />}
+			onClick={handleSelectAll}
+			sx={{ ml: 1 }}
+		>
+			Select All
+		</Button>
+	);
+};
+
+const ClearSelectionButton: React.FC<{ onChange: (ids: number[]) => void }> = ({
+	onChange,
+}) => {
+	const handleClear = () => {
+		onChange([]);
+	};
+
+	return (
+		<Button
+			size="small"
+			startIcon={<ClearIcon fontSize="small" />}
+			onClick={handleClear}
+			sx={{ ml: 1 }}
+		>
+			Clear Selection
+		</Button>
+	);
+};
 
 export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 	features,
@@ -121,6 +215,15 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 			storageKey={storageKey}
 			idField="id"
 			emptyStateMessage="No rows to display"
+			toolbarActions={
+				<>
+					<SelectAllButton
+						selectedFeatureIds={selectedFeatureIds}
+						onChange={onChange}
+					/>
+					<ClearSelectionButton onChange={onChange} />
+				</>
+			}
 		/>
 	);
 };
