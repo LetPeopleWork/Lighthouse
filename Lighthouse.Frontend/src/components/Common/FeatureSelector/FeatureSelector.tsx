@@ -58,7 +58,8 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 			headerName: "Selected",
 			width: 120,
 			hideable: false,
-			sortable: false,
+			sortable: true,
+			valueGetter: (_value, row) => row.selected,
 			renderCell: ({ row }) => (
 				<Checkbox
 					checked={row.selected}
@@ -76,6 +77,7 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 			headerName: "Reference",
 			flex: 1,
 			hideable: false,
+			valueGetter: (_value, row) => row.reference,
 			renderCell: ({ row }) => (
 				<Link
 					href={row.feature.url ?? ""}
@@ -100,16 +102,15 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 			headerName: "Name",
 			flex: 1,
 			hideable: false,
-			renderCell: ({ row }) => (
-				<span
-					style={{
-						textDecoration:
-							row.feature.stateCategory === "Done" ? "line-through" : "none",
-					}}
-				>
-					{row.name}
-				</span>
-			),
+			renderCell: ({ row }) => <span>{row.name}</span>,
+		},
+		{
+			field: "state",
+			headerName: "State",
+			width: 100,
+			hideable: true,
+			valueGetter: (_value, row) => row.feature.state,
+			renderCell: ({ row }) => <span>{row.feature.state}</span>,
 		},
 	];
 

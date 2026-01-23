@@ -18,6 +18,15 @@ export interface DataGridColumn<T extends GridValidRowModel = GridValidRowModel>
 	sortable?: boolean;
 	hideable?: boolean;
 	renderCell?: (params: { row: T; value: unknown }) => React.ReactNode;
+	/** Value getter function for accessing nested or computed values for sorting and filtering */
+	valueGetter?: (value: unknown, row: T) => unknown;
+	/** Custom sort comparator function for defining sort behavior */
+	sortComparator?: (
+		v1: unknown,
+		v2: unknown,
+		cellParams1: unknown,
+		cellParams2: unknown,
+	) => number;
 }
 
 /**

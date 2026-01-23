@@ -296,4 +296,161 @@ describe("FeatureSelector", () => {
 		expect(doneFeature2Index).toBeGreaterThan(todoFeatureIndex);
 		expect(doneFeature2Index).toBeGreaterThan(doingFeature1Index);
 	});
+
+	it("should display state as text for ToDo features", () => {
+		const features = createMockFeatures([
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
+		]);
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		const rows = screen.getAllByRole("row").slice(1); // Skip header row
+		expect(rows[0]).toHaveTextContent("New");
+	});
+
+	it("should display state as text for Doing features", () => {
+		const features = createMockFeatures([
+			{
+				stateCategory: "Doing",
+				id: 2,
+				name: "Feature 2",
+				referenceId: "FTR-2",
+			},
+		]);
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		const rows = screen.getAllByRole("row").slice(1); // Skip header row
+		expect(rows[0]).toHaveTextContent("Active");
+	});
+
+	it("should display state as text for Done features", () => {
+		const features = createMockFeatures([
+			{ stateCategory: "Done", id: 3, name: "Feature 3", referenceId: "FTR-3" },
+		]);
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		const rows = screen.getAllByRole("row").slice(1); // Skip header row
+		expect(rows[0]).toHaveTextContent("Completed");
+	});
+
+	it("should not use strikethrough for Done feature names", () => {
+		const features = createMockFeatures([
+			{
+				stateCategory: "Done",
+				id: 3,
+				name: "Done Feature",
+				referenceId: "FTR-3",
+			},
+		]);
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		const featureName = screen.getByText("Done Feature");
+		const computedStyle = globalThis.getComputedStyle(featureName);
+
+		expect(computedStyle.textDecoration).not.toContain("line-through");
+	});
+
+	it("should sort Reference column alphabetically by reference string", () => {
+		const features = createMockFeatures([
+			{
+				stateCategory: "ToDo",
+				id: 3,
+				name: "Feature C",
+				referenceId: "FTR-103",
+			},
+			{
+				stateCategory: "ToDo",
+				id: 1,
+				name: "Feature A",
+				referenceId: "FTR-101",
+			},
+			{
+				stateCategory: "ToDo",
+				id: 2,
+				name: "Feature B",
+				referenceId: "FTR-102",
+			},
+		]);
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		// Find and click the Reference column header to sort
+		const columnHeaders = screen.getAllByRole("columnheader");
+		const referenceHeader = columnHeaders.find((header) =>
+			header.textContent?.includes("Reference"),
+		);
+
+		expect(referenceHeader).toBeDefined();
+		if (!referenceHeader) throw new Error("Reference header not found");
+		fireEvent.click(referenceHeader);
+
+		// Get all rows after sorting (skip header row)
+		const rows = screen.getAllByRole("row").slice(1);
+		const rowTexts = rows.map((row) => row.textContent || "");
+
+		// Verify sorted order: FTR-101, FTR-102, FTR-103
+		const ftr101Index = rowTexts.findIndex((text) => text.includes("FTR-101"));
+		const ftr102Index = rowTexts.findIndex((text) => text.includes("FTR-102"));
+		const ftr103Index = rowTexts.findIndex((text) => text.includes("FTR-103"));
+
+		expect(ftr101Index).toBeLessThan(ftr102Index);
+		expect(ftr102Index).toBeLessThan(ftr103Index);
+	});
+
+	it("should sort State column alphabetically by state string", () => {
+		const features = [
+			getMockFeature({
+				id: 1,
+				name: "Feature 1",
+				referenceId: "FTR-1",
+				stateCategory: "Doing",
+				state: "In Progress",
+			}),
+			getMockFeature({
+				id: 2,
+				name: "Feature 2",
+				referenceId: "FTR-2",
+				stateCategory: "Done",
+				state: "Completed",
+			}),
+			getMockFeature({
+				id: 3,
+				name: "Feature 3",
+				referenceId: "FTR-3",
+				stateCategory: "ToDo",
+				state: "Backlog",
+			}),
+		];
+
+		render(<FeatureSelector {...defaultProps} features={features} />);
+
+		// Find and click the State column header to sort
+		const columnHeaders = screen.getAllByRole("columnheader");
+		const stateHeader = columnHeaders.find((header) =>
+			header.textContent?.includes("State"),
+		);
+
+		expect(stateHeader).toBeDefined();
+		if (!stateHeader) throw new Error("State header not found");
+		fireEvent.click(stateHeader);
+
+		// Get all rows after sorting (skip header row)
+		const rows = screen.getAllByRole("row").slice(1);
+		const rowTexts = rows.map((row) => row.textContent || "");
+
+		// Verify sorted order: Backlog, Completed, In Progress (alphabetically)
+		const backlogIndex = rowTexts.findIndex((text) => text.includes("Backlog"));
+		const completedIndex = rowTexts.findIndex((text) =>
+			text.includes("Completed"),
+		);
+		const inProgressIndex = rowTexts.findIndex((text) =>
+			text.includes("In Progress"),
+		);
+
+		expect(backlogIndex).toBeLessThan(completedIndex);
+		expect(completedIndex).toBeLessThan(inProgressIndex);
+	});
 });

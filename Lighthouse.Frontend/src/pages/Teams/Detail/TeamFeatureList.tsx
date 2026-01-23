@@ -176,8 +176,10 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				headerName: "Updated On",
 				width: 200,
 				type: "dateTime",
-				valueGetter: (value: Date | string) => {
-					return value instanceof Date ? value : new Date(value);
+				valueGetter: (value: unknown) => {
+					if (value instanceof Date) return value;
+					if (typeof value === "string") return new Date(value);
+					return new Date();
 				},
 				renderCell: ({ row }) => (
 					<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
