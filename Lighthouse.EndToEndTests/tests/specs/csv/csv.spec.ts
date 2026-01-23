@@ -54,10 +54,7 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
-			await newTeamPage.resetWorkItemTypes(
-				["User Story", "Bug"],
-				["User Story", "Bug", "Task"],
-			);
+			await newTeamPage.resetWorkItemTypes([], ["User Story", "Bug", "Task"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newTeamPage.validateButton).toBeDisabled();
@@ -66,9 +63,9 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		await test.step("Add State Configuration", async () => {
 			await newTeamPage.resetStates(
 				{
-					toDo: ["New", "Proposed", "To Do"],
-					doing: ["Active", "Resolved", "In Progress", "Committed"],
-					done: ["Done", "Closed"],
+					toDo: [],
+					doing: [],
+					done: [],
 				},
 				{
 					toDo: ["To Do"],
@@ -165,7 +162,7 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
-			await newPortfolioPage.resetWorkItemTypes(["Epic"], ["Epic"]);
+			await newPortfolioPage.resetWorkItemTypes([], ["Epic"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newPortfolioPage.validateButton).toBeDisabled();
@@ -181,9 +178,9 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		await test.step("Add State Configuration", async () => {
 			await newPortfolioPage.resetStates(
 				{
-					toDo: ["New", "Proposed", "To Do"],
-					doing: ["Active", "Resolved", "In Progress", "Committed"],
-					done: ["Done", "Closed"],
+					toDo: [],
+					doing: [],
+					done: [],
 				},
 				{
 					toDo: ["To Do"],

@@ -199,7 +199,7 @@ for (const {
 
 			await test.step("Add Work Item Type Configuration", async () => {
 				await newTeamPage.resetWorkItemTypes(
-					["User Story", "Bug"],
+					[],
 					teamConfiguration.validWorkItemTypes,
 				);
 
@@ -210,9 +210,9 @@ for (const {
 			await test.step("Add State Configuration", async () => {
 				await newTeamPage.resetStates(
 					{
-						toDo: ["New", "Proposed", "To Do"],
-						doing: ["Active", "Resolved", "In Progress", "Committed"],
-						done: ["Done", "Closed"],
+						toDo: [],
+						doing: [],
+						done: [],
 					},
 					teamConfiguration.validStates,
 				);
@@ -323,14 +323,14 @@ for (const {
 		await test.step("Add Valid Configuration for new team", async () => {
 			await newTeamPage.setName(`My New ${workTrackingSystemName} team`);
 			await newTeamPage.resetWorkItemTypes(
-				["User Story", "Bug"],
+				[],
 				teamConfiguration.validWorkItemTypes,
 			);
 			await newTeamPage.resetStates(
 				{
-					toDo: ["New", "Proposed", "To Do"],
-					doing: ["Active", "Resolved", "In Progress", "Committed"],
-					done: ["Done", "Closed"],
+					toDo: [],
+					doing: [],
+					done: [],
 				},
 				teamConfiguration.validStates,
 			);

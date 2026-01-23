@@ -54,10 +54,7 @@ test("should be able to handle a team defined in Linear", async ({
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
-			await newTeamPage.resetWorkItemTypes(
-				["User Story", "Bug"],
-				["Default", "Bug"],
-			);
+			await newTeamPage.resetWorkItemTypes([], ["Default", "Bug"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newTeamPage.validateButton).toBeDisabled();
@@ -66,9 +63,9 @@ test("should be able to handle a team defined in Linear", async ({
 		await test.step("Add State Configuration", async () => {
 			await newTeamPage.resetStates(
 				{
-					toDo: ["New", "Proposed", "To Do"],
-					doing: ["Active", "Resolved", "In Progress", "Committed"],
-					done: ["Done", "Closed"],
+					toDo: [],
+					doing: [],
+					done: [],
 				},
 				{
 					toDo: ["Backlog", "Planned"],
@@ -130,7 +127,7 @@ test("should be able to handle a team defined in Linear", async ({
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
-			await newPortfolioPage.resetWorkItemTypes(["Epic"], ["Default"]);
+			await newPortfolioPage.resetWorkItemTypes([], ["Default"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newPortfolioPage.validateButton).toBeDisabled();
@@ -146,9 +143,9 @@ test("should be able to handle a team defined in Linear", async ({
 		await test.step("Add State Configuration", async () => {
 			await newPortfolioPage.resetStates(
 				{
-					toDo: ["New", "Proposed", "To Do"],
-					doing: ["Active", "Resolved", "In Progress", "Committed"],
-					done: ["Done", "Closed"],
+					toDo: [],
+					doing: [],
+					done: [],
 				},
 				{
 					toDo: ["Backlog", "Planned"],
