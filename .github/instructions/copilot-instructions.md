@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Development Guidelines for GitHub Copilot
 
 > **About this repository:** This project uses C# for backend services and TypeScript/React/Vitest for frontend development. These instructions ensure consistent development practices across both stacks.
