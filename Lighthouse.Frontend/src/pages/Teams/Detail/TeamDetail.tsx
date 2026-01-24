@@ -1,4 +1,4 @@
-import RefreshIcon from "@mui/icons-material/Refresh";
+import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import {
 	CircularProgress,
 	Container,
@@ -272,7 +272,7 @@ const TeamDetail: React.FC = () => {
 													{isTeamUpdating ? (
 														<CircularProgress size={24} />
 													) : (
-														<RefreshIcon />
+														<CloudSyncIcon />
 													)}
 												</IconButton>
 											</span>

@@ -1,4 +1,4 @@
-import UpdateIcon from "@mui/icons-material/Update";
+import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
 import Badge from "@mui/material/Badge";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
@@ -67,12 +67,12 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 					color="secondary"
 					max={99}
 				>
-					<UpdateIcon style={{ color: theme.palette.primary.main }} />
+					<AllInclusiveIcon style={{ color: theme.palette.primary.main }} />
 				</Badge>
 			);
 		}
 
-		return <UpdateIcon style={{ color: theme.palette.primary.main }} />;
+		return <AllInclusiveIcon style={{ color: theme.palette.primary.main }} />;
 	};
 
 	return (

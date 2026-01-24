@@ -1,6 +1,6 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import ReplayIcon from "@mui/icons-material/Replay";
+import GridViewIcon from "@mui/icons-material/GridView";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { useGridApiContext } from "@mui/x-data-grid";
@@ -238,7 +238,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 							size="small"
 							data-testid="reset-layout-button"
 						>
-							<ReplayIcon fontSize="small" />
+							<GridViewIcon fontSize="small" />
 						</IconButton>
 					</span>
 				</Tooltip>

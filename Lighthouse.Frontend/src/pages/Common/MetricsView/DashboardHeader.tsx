@@ -1,7 +1,7 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import GridViewIcon from "@mui/icons-material/GridView";
 import {
 	Box,
 	ButtonBase,
@@ -202,7 +202,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 						onClick={resetLayout}
 						data-testid="dashboard-reset-layout"
 					>
-						<RestartAltIcon fontSize="small" />
+						<GridViewIcon fontSize="small" />
 					</IconButton>
 				</Tooltip>
 			</Stack>
