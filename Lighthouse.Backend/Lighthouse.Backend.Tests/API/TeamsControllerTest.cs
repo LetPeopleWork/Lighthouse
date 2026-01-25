@@ -15,9 +15,8 @@ namespace Lighthouse.Backend.Tests.API
     public class TeamsControllerTest
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Portfolio>> projectRepositoryMock;
+        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
-        private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
@@ -29,9 +28,8 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            projectRepositoryMock = new Mock<IRepository<Portfolio>>();
+            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
-            workItemRepoMock = new Mock<IWorkItemRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             licenseServiceMock = new Mock<ILicenseService>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
@@ -39,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_SingleTeam_NoProjects()
+        public void GetTeams_SingleTeam_NoPortfolios()
         {
             var team = CreateTeam(1, "Numero Uno");
 
@@ -52,21 +50,21 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Has.Count.EqualTo(0));
+                Assert.That(result.Portfolios, Has.Count.EqualTo(0));
                 Assert.That(result.Features, Has.Count.EqualTo(0));
             }
         }
 
         [Test]
-        public void GetTeams_SingleTeam_SingleProject_SingleFeature()
+        public void GetTeams_SingleTeam_SinglePortfolio_SingleFeature()
         {
             var team = CreateTeam(1, "Numero Uno");
-            var project = CreateProject(42, "My Project");
-            project.UpdateTeams([team]);
+            var portfolio = CreatePortfolio(42, "My Portfolio");
+            portfolio.UpdateTeams([team]);
 
-            var feature = CreateFeature(project, team, 12);
+            var feature = CreateFeature(portfolio, team, 12);
 
-            var subject = CreateSubject([team], [project], [feature]);
+            var subject = CreateSubject([team], [portfolio], [feature]);
 
             var results = subject.GetTeams().ToList();
 
@@ -75,22 +73,22 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Has.Count.EqualTo(1));
+                Assert.That(result.Portfolios, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(1));
             }
         }
 
         [Test]
-        public void GetTeams_SingleTeam_SingleProject_MultipleFeatures()
+        public void GetTeams_SingleTeam_SinglePortfolio_MultipleFeatures()
         {
             var team = CreateTeam(1, "Numero Uno");
-            var project = CreateProject(42, "My Project");
-            project.UpdateTeams([team]);
+            var portfolio = CreatePortfolio(42, "My Portfolio");
+            portfolio.UpdateTeams([team]);
 
-            var feature1 = CreateFeature(project, team, 12);
-            var feature2 = CreateFeature(project, team, 42);
+            var feature1 = CreateFeature(portfolio, team, 12);
+            var feature2 = CreateFeature(portfolio, team, 42);
 
-            var subject = CreateSubject([team], [project], [feature1, feature2]);
+            var subject = CreateSubject([team], [portfolio], [feature1, feature2]);
 
             var results = subject.GetTeams().ToList();
 
@@ -99,27 +97,27 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Has.Count.EqualTo(1));
+                Assert.That(result.Portfolios, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(2));
             }
         }
 
         [Test]
-        public void GetTeams_SingleTeam_MultipleProjects_MultipleFeatures()
+        public void GetTeams_SingleTeam_MultiplePortfolios_MultipleFeatures()
         {
             var team = CreateTeam(1, "Numero Uno");
-            var project1 = CreateProject(42, "My Project");
-            project1.UpdateTeams([team]);
+            var portfolio1 = CreatePortfolio(42, "My Portfolio");
+            portfolio1.UpdateTeams([team]);
 
-            var feature1 = CreateFeature(project1, team, 12);
-            var feature2 = CreateFeature(project1, team, 42);
+            var feature1 = CreateFeature(portfolio1, team, 12);
+            var feature2 = CreateFeature(portfolio1, team, 42);
 
-            var project2 = CreateProject(13, "My Other Project");
-            project2.UpdateTeams([team]);
+            var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
+            portfolio2.UpdateTeams([team]);
 
-            var feature3 = CreateFeature(project2, team, 5);
+            var feature3 = CreateFeature(portfolio2, team, 5);
 
-            var subject = CreateSubject([team], [project1, project2], [feature1, feature2, feature3]);
+            var subject = CreateSubject([team], [portfolio1, portfolio2], [feature1, feature2, feature3]);
 
             var results = subject.GetTeams().ToList();
 
@@ -128,33 +126,33 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Has.Count.EqualTo(2));
+                Assert.That(result.Portfolios, Has.Count.EqualTo(2));
                 Assert.That(result.Features, Has.Count.EqualTo(3));
             }
         }
 
         [Test]
-        public void GetTeams_MultipleTeams_MultipleProjects_MultipleFeatures()
+        public void GetTeams_MultipleTeams_MultiplePortfolios_MultipleFeatures()
         {
             var team1 = CreateTeam(1, "Numero Uno");
-            var project1 = CreateProject(42, "My Project");
-            project1.UpdateTeams([team1]);
+            var portfolio1 = CreatePortfolio(42, "My Portfolio");
+            portfolio1.UpdateTeams([team1]);
 
-            var feature1 = CreateFeature(project1, team1, 12);
-            var feature2 = CreateFeature(project1, team1, 42);
+            var feature1 = CreateFeature(portfolio1, team1, 12);
+            var feature2 = CreateFeature(portfolio1, team1, 42);
 
             var team2 = CreateTeam(2, "Una Mas");
-            var project2 = CreateProject(13, "My Other Project");
-            project2.UpdateTeams([team2]);
+            var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
+            portfolio2.UpdateTeams([team2]);
 
-            var feature3 = CreateFeature(project2, team2, 5);
+            var feature3 = CreateFeature(portfolio2, team2, 5);
 
-            var subject = CreateSubject([team1, team2], [project1, project2], [feature1, feature2, feature3]);
+            var subject = CreateSubject([team1, team2], [portfolio1, portfolio2], [feature1, feature2, feature3]);
 
             var results = subject.GetTeams().ToList();
 
             var team1Results = results[0];
-            var team2Results = results[results.Count - 1];
+            var team2Results = results[^1];
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(team1Results.Id, Is.EqualTo(1));
@@ -163,138 +161,11 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(team1Results.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(team2Results.Name, Is.EqualTo("Una Mas"));
 
-                Assert.That(team1Results.Projects, Has.Count.EqualTo(1));
-                Assert.That(team2Results.Projects, Has.Count.EqualTo(1));
+                Assert.That(team1Results.Portfolios, Has.Count.EqualTo(1));
+                Assert.That(team2Results.Portfolios, Has.Count.EqualTo(1));
 
                 Assert.That(team1Results.Features, Has.Count.EqualTo(2));
                 Assert.That(team2Results.Features, Has.Count.EqualTo(1));
-            }
-        }
-
-        [Test]
-        public async Task Delete_RemovesTeamAndSaves()
-        {
-            var teamId = 12;
-
-            var subject = CreateSubject();
-
-            await subject.DeleteTeam(teamId);
-
-            teamRepositoryMock.Verify(x => x.Remove(teamId));
-            teamRepositoryMock.Verify(x => x.Save());
-        }
-
-        [Test]
-        public void GetTeam_TeamExists_ReturnsTeam()
-        {
-            var team = CreateTeam(1, "Numero Uno");
-
-            var project1 = CreateProject(42, "My Project");
-            project1.UpdateTeams([team]);
-
-            var feature1 = CreateFeature(project1, team, 12);
-            var feature2 = CreateFeature(project1, team, 42);
-
-            var project2 = CreateProject(13, "My Other Project");
-            project2.UpdateTeams([team]);
-
-
-            var feature3 = CreateFeature(project2, team, 5);
-
-            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
-
-            var subject = CreateSubject([team], [project1, project2], [feature1, feature2, feature3]);
-
-            var result = subject.GetTeam(1);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-
-                var returnedTeamDto = okResult.Value as TeamDto;
-
-                Assert.That(returnedTeamDto.Id, Is.EqualTo(1));
-                Assert.That(returnedTeamDto.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(returnedTeamDto.Projects, Has.Count.EqualTo(2));
-                Assert.That(returnedTeamDto.Features, Has.Count.EqualTo(3));
-            }
-        }
-
-        [Test]
-        public void GetTeam_TeamDoesNotExist_ReturnsNotFound()
-        {
-            var subject = CreateSubject();
-
-            var result = subject.GetTeam(1);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
-
-                var notFoundResult = result.Result as NotFoundResult;
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            }
-        }
-
-        [Test]
-        public void GetTeamSettings_TeamExists_ReturnsSettings()
-        {
-            var team = CreateTeam(12, "El Teamo");
-            team.ThroughputHistory = 42;
-            team.FeatureWIP = 3;
-            team.DataRetrievalValue = "SELECT * FROM *";
-            team.WorkTrackingSystemConnectionId = 37;
-            team.ParentOverrideAdditionalFieldDefinitionId = 5;
-            team.ServiceLevelExpectationProbability = 75;
-            team.ServiceLevelExpectationRange = 10;
-            team.SystemWIPLimit = 5;
-
-            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetTeamSettings(12);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okObjectResult = result.Result as OkObjectResult;
-                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
-
-                Assert.That(okObjectResult.Value, Is.InstanceOf<TeamSettingDto>());
-                var teamSettingDto = okObjectResult.Value as TeamSettingDto;
-
-                Assert.That(teamSettingDto.Id, Is.EqualTo(team.Id));
-                Assert.That(teamSettingDto.Name, Is.EqualTo(team.Name));
-                Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(team.ThroughputHistory));
-                Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(team.FeatureWIP));
-                Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(team.DataRetrievalValue));
-                Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(team.WorkItemTypes));
-                Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(team.WorkTrackingSystemConnectionId));
-                Assert.That(teamSettingDto.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(team.ParentOverrideAdditionalFieldDefinitionId));
-                Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(team.ServiceLevelExpectationProbability));
-                Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
-                Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(team.SystemWIPLimit));
-            }
-        }
-
-        [Test]
-        public void GetTeamSettings_TeamNotFound_ReturnsNotFoundResult()
-        {
-            var subject = CreateSubject();
-
-            var result = subject.GetTeamSettings(1);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
-
-                var notFoundResult = result.Result as NotFoundResult;
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
         }
 
@@ -307,17 +178,17 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 DataRetrievalValue = "project = MyProject",
-                WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkItemTypes = ["User Story", "Bug"],
                 WorkTrackingSystemConnectionId = 2,
                 ParentOverrideAdditionalFieldDefinitionId = 7,
-                ToDoStates = new List<string> { " To Do" },
-                DoingStates = new List<string> { "Doing" },
-                DoneStates = new List<string> { "Done " },
+                ToDoStates = [" To Do"],
+                DoingStates = ["Doing"],
+                DoneStates = ["Done "],
                 ServiceLevelExpectationProbability = 50,
                 ServiceLevelExpectationRange = 2,
                 SystemWIPLimit = 3,
-                BlockedStates = new List<string> { "Blocked" },
-                BlockedTags = new List<string> { "Waiting", "Customer Input Needed" },
+                BlockedStates = ["Blocked"],
+                BlockedTags = ["Waiting", "Customer Input Needed"],
             };
 
             var subject = CreateSubject();
@@ -409,248 +280,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateTeam_GivenNewTeamSettings_UpdatesTeamAsync()
-        {
-            var existingTeam = new Team { Id = 132 };
-
-            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
-
-            var updatedTeamSettings = new TeamSettingDto
-            {
-                Id = 132,
-                Name = "Updated Team",
-                FeatureWIP = 12,
-                ThroughputHistory = 30,
-                DataRetrievalValue = "project = MyProject",
-                WorkItemTypes = new List<string> { "User Story", "Bug" },
-                WorkTrackingSystemConnectionId = 2,
-                ParentOverrideAdditionalFieldDefinitionId = 7,
-                AutomaticallyAdjustFeatureWIP = true,
-                ServiceLevelExpectationRange = 18,
-                ServiceLevelExpectationProbability = 86,
-                BlockedStates = new List<string> { "Waiting for Peter" },
-                BlockedTags = new List<string> { "Customer Input Needed" },
-            };
-
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateTeam(132, updatedTeamSettings);
-
-            teamRepositoryMock.Verify(x => x.Update(existingTeam));
-            teamRepositoryMock.Verify(x => x.Save());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okObjectResult = result.Result as OkObjectResult;
-                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
-
-                Assert.That(okObjectResult.Value, Is.InstanceOf<TeamSettingDto>());
-                var teamSettingDto = okObjectResult.Value as TeamSettingDto;
-
-                Assert.That(teamSettingDto.Name, Is.EqualTo(updatedTeamSettings.Name));
-                Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(updatedTeamSettings.ThroughputHistory));
-                Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(updatedTeamSettings.FeatureWIP));
-                Assert.That(teamSettingDto.DataRetrievalValue, Is.EqualTo(updatedTeamSettings.DataRetrievalValue));
-                Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(updatedTeamSettings.WorkItemTypes));
-                Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedTeamSettings.WorkTrackingSystemConnectionId));
-                Assert.That(teamSettingDto.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(updatedTeamSettings.ParentOverrideAdditionalFieldDefinitionId));
-                Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
-                Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationProbability));
-                Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationRange));
-                Assert.That(teamSettingDto.BlockedStates, Contains.Item("Waiting for Peter"));
-                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
-            }
-        }
-
-        [Test]
-        [TestCase("New Query", true)]
-        [TestCase("Existing Query", false)]
-        public async Task UpdateTeam_GivenNewQuery_DeletesExistingWorkItems(string workItemQuery, bool shouldDelete)
-        {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
-
-            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
-
-            var updatedTeamSettings = new TeamSettingDto
-            {
-                Id = 132,
-                Name = "Updated Team",
-                FeatureWIP = 12,
-                ThroughputHistory = 30,
-                DataRetrievalValue = workItemQuery,
-                ToDoStates = existingTeam.ToDoStates,
-                DoingStates = existingTeam.DoingStates,
-                DoneStates = existingTeam.DoneStates,
-                WorkItemTypes = new List<string> { "User Story", "Bug" },
-                WorkTrackingSystemConnectionId = 2,
-                AutomaticallyAdjustFeatureWIP = true,
-            };
-
-            var subject = CreateSubject();
-
-            _ = await subject.UpdateTeam(132, updatedTeamSettings);
-
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
-        }
-
-        [Test]
-        [TestCase(new string[] { "User Story", "Bug" }, false)]
-        [TestCase(new string[] { "Bug", "User Story" }, false)]
-        [TestCase(new string[] { "Story", "Bug" }, true)]
-        [TestCase(new string[] { "User Story" }, true)]
-        [TestCase(new string[] { "All New Type" }, true)]
-        [TestCase(new string[] { "User Story", "Bug", "Task" }, true)]
-        public async Task UpdateTeam_GivenWorkItemTypes_DeletesExistingWorkItems(string[] workItemTypes, bool shouldDelete)
-        {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
-
-            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
-
-            var updatedTeamSettings = new TeamSettingDto
-            {
-                Id = 132,
-                Name = "Updated Team",
-                FeatureWIP = 12,
-                ThroughputHistory = 30,
-                DataRetrievalValue = "Existing Query",
-                ToDoStates = existingTeam.ToDoStates,
-                DoingStates = existingTeam.DoingStates,
-                DoneStates = existingTeam.DoneStates,
-                WorkItemTypes = [.. workItemTypes],
-                WorkTrackingSystemConnectionId = 2,
-                AutomaticallyAdjustFeatureWIP = true,
-            };
-
-            var subject = CreateSubject();
-
-            _ = await subject.UpdateTeam(132, updatedTeamSettings);
-
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
-        }
-
-        [Test]
-        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done" }, false)]
-        [TestCase(new string[] { "ToDo" }, new string[] { "Doing" }, new string[] { "Done" }, true)]
-        [TestCase(new string[] { "To Do" }, new string[] { "Boing" }, new string[] { "Done" }, true)]
-        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Donny" }, true)]
-        [TestCase(new string[] { "To Do", "New" }, new string[] { "Doing" }, new string[] { "Done" }, true)]
-        [TestCase(new string[] { "To Do" }, new string[] { "Doing", "In Progress" }, new string[] { "Done" }, true)]
-        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done", "Closed" }, true)]
-        public async Task UpdateTeam_GivenChangedStates_DeletesExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates, bool shouldDelete)
-        {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
-
-            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
-
-            var updatedTeamSettings = new TeamSettingDto
-            {
-                Id = 132,
-                Name = "Updated Team",
-                FeatureWIP = 12,
-                ThroughputHistory = 30,
-                DataRetrievalValue = "Existing Query",
-                WorkItemTypes = ["User Story", "Bug"],
-                ToDoStates = toDoStates.ToList(),
-                DoingStates = doingStates.ToList(),
-                DoneStates = doneStates.ToList(),
-                WorkTrackingSystemConnectionId = 2,
-                AutomaticallyAdjustFeatureWIP = true,
-            };
-
-            var subject = CreateSubject();
-
-            _ = await subject.UpdateTeam(132, updatedTeamSettings);
-
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
-        }
-
-        [Test]
-        [TestCase(2, false)]
-        [TestCase(1, true)]
-        public async Task UpdateTeam_GivenWorkTrackingSystemConnectionId_DeletesExistingWorkItems(int workTrackingSystemConnectionId, bool shouldDelete)
-        {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
-
-            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
-
-            var updatedTeamSettings = new TeamSettingDto
-            {
-                Id = 132,
-                Name = "Updated Team",
-                FeatureWIP = 12,
-                ThroughputHistory = 30,
-                DataRetrievalValue = "Existing Query",
-                ToDoStates = existingTeam.ToDoStates,
-                DoingStates = existingTeam.DoingStates,
-                DoneStates = existingTeam.DoneStates,
-                WorkItemTypes = new List<string> { "User Story", "Bug" },
-                WorkTrackingSystemConnectionId = workTrackingSystemConnectionId,
-                AutomaticallyAdjustFeatureWIP = true,
-            };
-
-            var subject = CreateSubject();
-
-            _ = await subject.UpdateTeam(132, updatedTeamSettings);
-
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
-        }
-
-        [Test]
-        public async Task UpdateTeam_TeamNotFound_ReturnsNotFoundResultAsync()
-        {
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateTeam(1, new TeamSettingDto());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
-
-                var notFoundResult = result.Result as NotFoundResult;
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            }
-        }
-
-        [Test]
-        public void UpdateTeamData_GivenTeamId_TriggersTeamUpdate()
-        {
-            var expectedTeam = new Team();
-            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
-
-            var subject = CreateSubject();
-
-            var response = subject.UpdateTeamData(12);
-
-            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(expectedTeam.Id));
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response, Is.InstanceOf<OkResult>());
-                var okResult = response as OkResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-            }
-        }
-
-        [Test]
-        public void UpdateTeamData_TeamDoesNotExist_ReturnsNotFound()
-        {
-            var subject = CreateSubject();
-
-            var response = subject.UpdateTeamData(12);
-
-            Assert.That(response, Is.InstanceOf<NotFoundObjectResult>());
-            var notFoundObjectResult = response as NotFoundObjectResult;
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
-                var value = notFoundObjectResult.Value;
-                Assert.That(value, Is.Null);
-            }
-        }
-
-        [Test]
         public void UpdateAllTeamData_TriggersUpdateOfAllTeams()
         {
             var expectedTeam = new Team { Id = 12 };
@@ -719,12 +348,12 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        private Team CreateTeam(int id, string name)
+        private static Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };
         }
 
-        private Portfolio CreateProject(int id, string name)
+        private static Portfolio CreatePortfolio(int id, string name)
         {
             return new Portfolio { Id = id, Name = name };
         }
@@ -737,18 +366,18 @@ namespace Lighthouse.Backend.Tests.API
             return feature;
         }
 
-        private TeamsController CreateSubject(Team[]? teams = null, Portfolio[]? projects = null, Feature[]? features = null)
+        private TeamsController CreateSubject(Team[]? teams = null, Portfolio[]? portfolios = null, Feature[]? features = null)
         {
             teams ??= [];
-            projects ??= [];
+            portfolios ??= [];
             features ??= [];
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
-            projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
+            portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
             return new TeamsController(
-                teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object);
         }
     }
 }

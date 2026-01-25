@@ -27,7 +27,7 @@ export class LighthousePage {
 	}
 
 	async createNewProject(): Promise<PortfolioEditPage> {
-		await this.page.goto("/projects/new");
+		await this.page.goto("/portfolios/new");
 		return new PortfolioEditPage(this.page);
 	}
 

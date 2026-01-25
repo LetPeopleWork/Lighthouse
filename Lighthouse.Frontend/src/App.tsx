@@ -52,11 +52,6 @@ const PortfolioEditRedirect: React.FC = () => {
 	return <Navigate to={`/portfolios/${id}/settings`} replace />;
 };
 
-const ProjectEditRedirect: React.FC = () => {
-	const { id } = useParams<{ id: string }>();
-	return <Navigate to={`/portfolios/${id}/settings`} replace />;
-};
-
 const App: React.FC = () => {
 	const theme = useTheme();
 	const [isDemoDialogOpen, setIsDemoDialogOpen] = useState(false);
@@ -117,13 +112,6 @@ const App: React.FC = () => {
 											path="edit/:id"
 											element={<PortfolioEditRedirect />}
 										/>
-										<Route path="new" element={<EditPortfolio />} />
-									</Route>
-
-									{/* Backward compatibility for old links */}
-									<Route path="/projects">
-										<Route path=":id/:tab?" element={<PortfolioDetail />} />
-										<Route path="edit/:id" element={<ProjectEditRedirect />} />
 										<Route path="new" element={<EditPortfolio />} />
 									</Route>
 									<Route path="/settings" element={<Settings />} />

@@ -13,7 +13,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
-    public class ProjectUpdaterTest : UpdateServiceTestBase
+    public class PortfolioUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IAppSettingService> appSettingServiceMock;
@@ -220,9 +220,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return project;
         }
 
-        private ProjectUpdater CreateSubject()
+        private PortfolioUpdater CreateSubject()
         {
-            return new ProjectUpdater(Mock.Of<ILogger<ProjectUpdater>>(), ServiceScopeFactory, UpdateQueueService);
+            return new PortfolioUpdater(Mock.Of<ILogger<PortfolioUpdater>>(), ServiceScopeFactory, UpdateQueueService);
         }
     }
 }

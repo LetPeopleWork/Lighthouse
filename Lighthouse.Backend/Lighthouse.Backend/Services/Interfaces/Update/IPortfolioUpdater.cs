@@ -1,6 +1,6 @@
 ﻿namespace Lighthouse.Backend.Services.Interfaces.Update
 {
-    public interface IProjectUpdater : IUpdateService
+    public interface IPortfolioUpdater : IUpdateService
     {
     }
 }

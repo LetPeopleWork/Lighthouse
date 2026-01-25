@@ -17,7 +17,7 @@ describe("OwnershipComponent", () => {
 		{
 			id: 1,
 			name: "Team A",
-			projects: [],
+			portfolios: [],
 			featureWip: 0,
 			lastUpdated: new Date(),
 			useFixedDatesForThroughput: false,
@@ -34,7 +34,7 @@ describe("OwnershipComponent", () => {
 		{
 			id: 2,
 			name: "Team B",
-			projects: [],
+			portfolios: [],
 			featureWip: 0,
 			lastUpdated: new Date(),
 			useFixedDatesForThroughput: false,

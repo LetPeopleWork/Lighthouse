@@ -4,7 +4,7 @@ import type { IEntityReference } from "../EntityReference";
 import type { IFeatureOwner } from "../IFeatureOwner";
 
 export interface ITeam extends IFeatureOwner {
-	projects: IEntityReference[];
+	portfolios: IEntityReference[];
 	featureWip: number;
 	useFixedDatesForThroughput: boolean;
 	throughputStartDate: Date;
@@ -16,7 +16,7 @@ export class Team implements ITeam {
 	name = "";
 	id = 0;
 
-	projects: IEntityReference[] = [];
+	portfolios: IEntityReference[] = [];
 	features: IEntityReference[] = [];
 
 	tags: string[] = [];

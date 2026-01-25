@@ -111,7 +111,7 @@ describe("PortfolioService", () => {
 
 		await portfolioService.refreshFeaturesForPortfolio(1);
 
-		expect(mockedAxios.post).toHaveBeenCalledWith("/portfolios/refresh/1");
+		expect(mockedAxios.post).toHaveBeenCalledWith("/portfolios/1/refresh");
 	});
 
 	it("should refresh features for all portfolios", async () => {
@@ -134,7 +134,7 @@ describe("PortfolioService", () => {
 
 		await portfolioService.refreshForecastsForPortfolio(1);
 
-		expect(mockedAxios.post).toHaveBeenCalledWith("/forecast/update/1");
+		expect(mockedAxios.post).toHaveBeenCalledWith("/forecast/1/update");
 	});
 
 	it("should validate project settings successfully", async () => {

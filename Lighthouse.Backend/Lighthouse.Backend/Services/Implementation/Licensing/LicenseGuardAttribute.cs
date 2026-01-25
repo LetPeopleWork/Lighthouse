@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
     {
         private const int MaxAllowedTeams = 3;
 
-        private const int MaxAllowedProjects = 1;
+        private const int MaxAllowedPortfolios = 1;
 
         public bool RequirePremium { get; set; } = false;
 
@@ -20,9 +20,9 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
 
         public int TeamLimitOverride { get; set; } = MaxAllowedTeams;
 
-        public int ProjectLimitOverride { get; set; } = MaxAllowedProjects;
+        public int PortfolioLimitOverride { get; set; } = MaxAllowedPortfolios;
 
-        public bool CheckProjectConstraint { get; set; } = false;
+        public bool CheckPortfolioConstraint { get; set; } = false;
 
         public Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
@@ -50,9 +50,9 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                     EntityLimitExceeded<Team>(context, TeamLimitOverride);
                 }
 
-                if (CheckProjectConstraint)
+                if (CheckPortfolioConstraint)
                 {
-                    EntityLimitExceeded<Portfolio>(context, ProjectLimitOverride);
+                    EntityLimitExceeded<Portfolio>(context, PortfolioLimitOverride);
                 }
             }
 

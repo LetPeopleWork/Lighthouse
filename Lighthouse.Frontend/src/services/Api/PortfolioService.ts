@@ -82,7 +82,7 @@ export class PortfolioService
 
 	async refreshFeaturesForPortfolio(id: number): Promise<void> {
 		await this.withErrorHandling(async () => {
-			await this.apiService.post<IPortfolio>(`/portfolios/refresh/${id}`);
+			await this.apiService.post<IPortfolio>(`/portfolios/${id}/refresh`);
 		});
 	}
 
@@ -94,7 +94,7 @@ export class PortfolioService
 
 	async refreshForecastsForPortfolio(id: number): Promise<void> {
 		await this.withErrorHandling(async () => {
-			await this.apiService.post<IPortfolio>(`/forecast/update/${id}`);
+			await this.apiService.post<IPortfolio>(`/forecast/${id}/update`);
 		});
 	}
 

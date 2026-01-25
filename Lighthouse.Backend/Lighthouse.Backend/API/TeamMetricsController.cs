@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/teams/{teamId}/metrics")]
+    [Route("api/teams/{teamId:int}/metrics")]
     [ApiController]
     public class TeamMetricsController : ControllerBase
     {

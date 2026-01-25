@@ -322,8 +322,8 @@ namespace Lighthouse.Backend
             builder.Services.AddHostedService<TeamUpdater>();
             builder.Services.AddSingleton<ITeamUpdater, TeamUpdater>();
 
-            builder.Services.AddHostedService<ProjectUpdater>();
-            builder.Services.AddSingleton<IProjectUpdater, ProjectUpdater>();
+            builder.Services.AddHostedService<PortfolioUpdater>();
+            builder.Services.AddSingleton<IPortfolioUpdater, PortfolioUpdater>();
 
             builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
 

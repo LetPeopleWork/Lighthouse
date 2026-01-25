@@ -110,7 +110,7 @@ public class LicenseGuardAttributeTest
         licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
         projectRepositoryMock.Setup(r => r.GetAll()).Returns(GetProjects(2));
 
-        var attribute = new LicenseGuardAttribute { CheckProjectConstraint = true };
+        var attribute = new LicenseGuardAttribute { CheckPortfolioConstraint = true };
 
         await attribute.OnAuthorizationAsync(context);
 

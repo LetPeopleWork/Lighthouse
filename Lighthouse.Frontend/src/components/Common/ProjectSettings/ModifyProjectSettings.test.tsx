@@ -247,7 +247,7 @@ describe("ModifyProjectSettings", () => {
 			features: [],
 			featureWip: 1,
 			lastUpdated: new Date(),
-			projects: [],
+			portfolios: [],
 			remainingFeatures: 1,
 			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(
@@ -266,7 +266,7 @@ describe("ModifyProjectSettings", () => {
 			features: [],
 			featureWip: 1,
 			lastUpdated: new Date(),
-			projects: [],
+			portfolios: [],
 			remainingFeatures: 1,
 			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(

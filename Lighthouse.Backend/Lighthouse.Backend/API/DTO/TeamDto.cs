@@ -24,9 +24,9 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int FeatureWip { get; set; }
 
-        public List<EntityReferenceDto> Features { get; } = new List<EntityReferenceDto>();
+        public List<EntityReferenceDto> Features { get; } = [];
 
-        public List<EntityReferenceDto> Projects { get; } = new List<EntityReferenceDto>();
+        public List<EntityReferenceDto> Portfolios { get; } = [];
 
         public List<string> WorkItemTypes { get; } = [];
 

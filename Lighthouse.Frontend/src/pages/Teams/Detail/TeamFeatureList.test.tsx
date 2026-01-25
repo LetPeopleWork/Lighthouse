@@ -60,7 +60,7 @@ describe("TeamFeatureList component", () => {
 		const team = new Team();
 		team.name = "Team A";
 		team.id = 1;
-		team.projects = [];
+		team.portfolios = [];
 		team.features = [
 			{ id: 1, name: "Feature 1" },
 			{ id: 2, name: "Feature 2" },

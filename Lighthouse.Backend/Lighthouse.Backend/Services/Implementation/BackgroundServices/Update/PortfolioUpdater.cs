@@ -9,14 +9,13 @@ using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class ProjectUpdater : UpdateServiceBase<Portfolio>, IProjectUpdater
+    public class PortfolioUpdater(
+        ILogger<PortfolioUpdater> logger,
+        IServiceScopeFactory serviceScopeFactory,
+        IUpdateQueueService updateQueueService)
+        : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Features),
+            IPortfolioUpdater
     {
-        public ProjectUpdater(
-            ILogger<ProjectUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
-            : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Features)
-        {
-        }
-
         protected override RefreshSettings GetRefreshSettings()
         {
             using (var scope = CreateServiceScope())

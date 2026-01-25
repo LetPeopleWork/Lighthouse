@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<ITeamUpdater> teamUpdaterMock;
-        private Mock<IProjectUpdater> projectUpdaterMock;
+        private Mock<IPortfolioUpdater> projectUpdaterMock;
 
         private List<DemoDataScenario> scenarios;
 
@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepoMock = new Mock<IRepository<Team>>();
             projectRepoMock = new Mock<IRepository<Portfolio>>();
             teamUpdaterMock = new Mock<ITeamUpdater>();
-            projectUpdaterMock = new Mock<IProjectUpdater>();
+            projectUpdaterMock = new Mock<IPortfolioUpdater>();
 
             teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
             projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Portfolio>());

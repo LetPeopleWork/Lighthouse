@@ -16,16 +16,16 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Team> teamRepo;
         private readonly ITeamUpdater teamUpdater;
         private readonly IRepository<Portfolio> projectRepo;
-        private readonly IProjectUpdater projectUpdater;
+        private readonly IPortfolioUpdater portfolioUpdater;
 
         public DemoController(
-            IDemoDataService demoDataService, IRepository<Team> teamRepo, ITeamUpdater teamUpdater, IRepository<Portfolio> projectRepo, IProjectUpdater projectUpdater)
+            IDemoDataService demoDataService, IRepository<Team> teamRepo, ITeamUpdater teamUpdater, IRepository<Portfolio> projectRepo, IPortfolioUpdater portfolioUpdater)
         {
             this.demoDataService = demoDataService;
             this.teamRepo = teamRepo;
             this.teamUpdater = teamUpdater;
             this.projectRepo = projectRepo;
-            this.projectUpdater = projectUpdater;
+            this.portfolioUpdater = portfolioUpdater;
         }
 
         [HttpGet("scenarios")]
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.API
             var projects = projectRepo.GetAll().ToList();
             foreach (var project in projects)
             {
-                projectUpdater.TriggerUpdate(project.Id);
+                portfolioUpdater.TriggerUpdate(project.Id);
             }
         }
 

@@ -34,7 +34,7 @@ describe("TeamFeaturesView component", () => {
 		id: 1,
 		name: "Test Team",
 		features: [],
-		projects: [],
+		portfolios: [],
 		tags: [],
 		featureWip: 5,
 		lastUpdated: new Date(),

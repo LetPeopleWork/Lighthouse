@@ -86,7 +86,7 @@ describe("Team Class", () => {
 			const team = new Team();
 			team.name = name;
 			team.id = id;
-			team.projects = projects;
+			team.portfolios = projects;
 			team.features = features;
 			team.featureWip = 1;
 			team.lastUpdated = new Date();
@@ -102,7 +102,7 @@ describe("Team Class", () => {
 	it("should create an instance of Team correctly", () => {
 		expect(team.name).toBe(name);
 		expect(team.id).toBe(id);
-		expect(team.projects).toEqual(projects);
+		expect(team.portfolios).toEqual(projects);
 		expect(team.features).toEqual(features);
 	});
 

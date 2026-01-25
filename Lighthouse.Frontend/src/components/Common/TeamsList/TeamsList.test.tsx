@@ -9,7 +9,7 @@ describe("TeamsList", () => {
 		{
 			id: 1,
 			name: "Team Alpha",
-			projects: [],
+			portfolios: [],
 			features: [],
 			featureWip: 1,
 			remainingFeatures: 1,
@@ -28,7 +28,7 @@ describe("TeamsList", () => {
 		{
 			id: 2,
 			name: "Team Beta",
-			projects: [],
+			portfolios: [],
 			features: [],
 			featureWip: 1,
 			remainingFeatures: 1,
@@ -47,7 +47,7 @@ describe("TeamsList", () => {
 		{
 			id: 3,
 			name: "Team Gamma",
-			projects: [],
+			portfolios: [],
 			features: [],
 			featureWip: 1,
 			remainingFeatures: 1,
