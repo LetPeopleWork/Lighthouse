@@ -59,3 +59,11 @@ jobs:
     - name: End SonarCloud analysis
       run: |
         dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+    - name: Wait for SonarCloud Quality Gate
+      uses: sonarsource/sonarqube-quality-gate-action@master
+      timeout-minutes: 5
+      with:
+        scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
