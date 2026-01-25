@@ -1509,18 +1509,16 @@ describe("BaseMetricsView component", () => {
 				expect(
 					screen.getByTestId("work-distribution-chart"),
 				).toBeInTheDocument();
+				// Verify the chart receives the correct title
+				expect(screen.getByTestId("distribution-title")).toHaveTextContent(
+					"Work Distribution",
+				);
+				// Verify the chart receives combined data (cycleTimeData + inProgressItems)
+				// mockCycleTimeData has 2 items, mockInProgressItems has 2 items = 4 total
+				expect(
+					screen.getByTestId("distribution-work-items-count"),
+				).toHaveTextContent("4");
 			});
-
-			// Verify the chart receives the correct title
-			expect(screen.getByTestId("distribution-title")).toHaveTextContent(
-				"Work Distribution",
-			);
-
-			// Verify the chart receives combined data (cycleTimeData + inProgressItems)
-			// mockCycleTimeData has 2 items, mockInProgressItems has 2 items = 4 total
-			expect(
-				screen.getByTestId("distribution-work-items-count"),
-			).toHaveTextContent("4");
 		});
 
 		it("passes correct combined data when cycle time data changes", async () => {
@@ -1592,13 +1590,12 @@ describe("BaseMetricsView component", () => {
 				expect(
 					screen.getByTestId("work-distribution-chart"),
 				).toBeInTheDocument();
+				// Verify the chart receives combined data
+				// customCycleTimeData has 3 items, mockInProgressItems has 2 items = 5 total
+				expect(
+					screen.getByTestId("distribution-work-items-count"),
+				).toHaveTextContent("5");
 			});
-
-			// Verify the chart receives combined data
-			// customCycleTimeData has 3 items, mockInProgressItems has 2 items = 5 total
-			expect(
-				screen.getByTestId("distribution-work-items-count"),
-			).toHaveTextContent("5");
 		});
 
 		it("passes correct combined data when in-progress items change", async () => {
