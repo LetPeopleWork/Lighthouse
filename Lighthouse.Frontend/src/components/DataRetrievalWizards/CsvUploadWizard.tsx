@@ -51,7 +51,7 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 	const [fileContent, setFileContent] = useState<string>("");
 	const [error, setError] = useState<string>("");
 
-	const validateAndProcessFile = useCallback((file: File | null) => {
+	const validateAndProcessFile = useCallback(async (file: File | null) => {
 		if (!file) {
 			setSelectedFile(null);
 			setFileContent("");
@@ -76,18 +76,20 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 		setError("");
 		setSelectedFile(file);
 
-		// Read file content
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const content = e.target?.result as string;
-			if (content) {
-				setFileContent(content);
-			}
-		};
-		reader.onerror = () => {
-			setError("Failed to read file.");
-		};
-		reader.readAsText(file);
+		// Read file content using modern Blob.text() method
+		try {
+			const content = await file.text();
+			setFileContent(content);
+		} catch (err) {
+			console.error("Error reading file:", err);
+			setError(
+				err instanceof Error
+					? `Failed to read file: ${err.message}`
+					: "Failed to read file.",
+			);
+			setSelectedFile(null);
+			setFileContent("");
+		}
 	}, []);
 
 	const handleFileChange = useCallback(

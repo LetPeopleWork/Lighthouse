@@ -47,7 +47,9 @@ export class BaseApiService {
 				interface HasMessage {
 					message?: unknown;
 				}
-				message = String((data as HasMessage).message ?? "");
+
+				const messageValue = (data as HasMessage).message;
+				message = typeof messageValue === "string" ? messageValue : "";
 			} else if (data && typeof data === "string") {
 				message = data;
 			}

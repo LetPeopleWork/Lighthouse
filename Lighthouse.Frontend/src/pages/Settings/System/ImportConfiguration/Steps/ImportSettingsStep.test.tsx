@@ -225,17 +225,27 @@ describe("ImportSettingsStep", () => {
 		fireEvent.click(screen.getByTestId("next-button"));
 
 		expect(mockOnNext).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ name: "Work Tracking System 1" }),
-			]), // newWorkTrackingSystems
-			[], // updatedWorkTrackingSystems
-			[], // newTeams
-			expect.arrayContaining([expect.objectContaining({ name: "Team 1" })]), // updatedTeams
-			expect.arrayContaining([expect.objectContaining({ name: "Project 1" })]), // newProjects
-			[], // updatedProjects
-			expect.any(Map), // workTrackingSystemsIdMapping
-			expect.any(Map), // teamIdMapping
-			false, // clearConfiguration
+			{
+				newWorkTrackingSystems: expect.arrayContaining([
+					expect.objectContaining({ name: "Work Tracking System 1" }),
+				]),
+				updatedWorkTrackingSystems: [],
+				newTeams: [],
+				updatedTeams: expect.arrayContaining([
+					expect.objectContaining({ name: "Team 1" }),
+				]),
+				newProjects: expect.arrayContaining([
+					expect.objectContaining({ name: "Project 1" }),
+				]),
+				updatedProjects: [],
+			},
+			{
+				workTrackingSystemsIdMapping: expect.any(Map),
+				teamIdMapping: expect.any(Map),
+			},
+			{
+				clearConfiguration: false,
+			},
 		);
 	});
 
@@ -271,19 +281,30 @@ describe("ImportSettingsStep", () => {
 		fireEvent.click(screen.getByTestId("next-button"));
 
 		expect(mockOnNext).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ name: "Work Tracking System 1" }),
-			]), // newWorkTrackingSystems
-			[], // updatedWorkTrackingSystems
-			expect.arrayContaining([expect.objectContaining({ name: "Team 1" })]), // newTeams - now this is a new team due to the transformation
-			[], // updatedTeams
-			expect.arrayContaining([expect.objectContaining({ name: "Project 1" })]), // newProjects
-			[], // updatedProjects
-			expect.any(Map), // workTrackingSystemsIdMapping
-			expect.any(Map), // teamIdMapping
-			true, // clearConfiguration
+			{
+				newWorkTrackingSystems: expect.arrayContaining([
+					expect.objectContaining({ name: "Work Tracking System 1" }),
+				]),
+				updatedWorkTrackingSystems: [],
+				newTeams: expect.arrayContaining([
+					expect.objectContaining({ name: "Team 1" }),
+				]),
+				updatedTeams: [],
+				newProjects: expect.arrayContaining([
+					expect.objectContaining({ name: "Project 1" }),
+				]),
+				updatedProjects: [],
+			},
+			{
+				workTrackingSystemsIdMapping: expect.any(Map),
+				teamIdMapping: expect.any(Map),
+			},
+			{
+				clearConfiguration: true,
+			},
 		);
 	});
+
 	it("handles error when file has invalid JSON", async () => {
 		// Create a file with invalid JSON content
 		// Using type assertion to add the text method to the File mock
@@ -345,6 +366,7 @@ describe("ImportSettingsStep", () => {
 
 		expect(mockOnClose).toHaveBeenCalled();
 	});
+
 	it("removes secret options from updated work tracking systems", async () => {
 		const configExportWithSecretOptions: ConfigurationExport = {
 			...mockConfigExport,
@@ -416,31 +438,42 @@ describe("ImportSettingsStep", () => {
 		fireEvent.click(screen.getByTestId("next-button"));
 
 		expect(mockOnNext).toHaveBeenCalledWith(
-			[], // newWorkTrackingSystems
-			expect.arrayContaining([
-				expect.objectContaining({
-					name: "Work Tracking System 1",
-					options: expect.arrayContaining([
-						expect.objectContaining({
-							key: "url",
-							value: "https://dev.azure.com",
-							isSecret: false,
-						}),
-					]),
-				}),
-			]), // updatedWorkTrackingSystems - with only non-secret options
-			[], // newTeams
-			expect.arrayContaining([expect.objectContaining({ name: "Team 1" })]), // updatedTeams
-			expect.arrayContaining([expect.objectContaining({ name: "Project 1" })]), // newProjects
-			[], // updatedProjects
-			expect.any(Map), // workTrackingSystemsIdMapping
-			expect.any(Map), // teamIdMapping
-			false, // clearConfiguration
+			{
+				newWorkTrackingSystems: [],
+				updatedWorkTrackingSystems: expect.arrayContaining([
+					expect.objectContaining({
+						name: "Work Tracking System 1",
+						options: expect.arrayContaining([
+							expect.objectContaining({
+								key: "url",
+								value: "https://dev.azure.com",
+								isSecret: false,
+							}),
+						]),
+					}),
+				]),
+				newTeams: [],
+				updatedTeams: expect.arrayContaining([
+					expect.objectContaining({ name: "Team 1" }),
+				]),
+				newProjects: expect.arrayContaining([
+					expect.objectContaining({ name: "Project 1" }),
+				]),
+				updatedProjects: [],
+			},
+			{
+				workTrackingSystemsIdMapping: expect.any(Map),
+				teamIdMapping: expect.any(Map),
+			},
+			{
+				clearConfiguration: false,
+			},
 		);
 
 		// Verify that the secret option was removed
 		const callArgs = mockOnNext.mock.calls[0];
-		const updatedWorkTrackingSystems = callArgs[1];
+		const changes = callArgs[0];
+		const updatedWorkTrackingSystems = changes.updatedWorkTrackingSystems;
 		expect(updatedWorkTrackingSystems[0].options).toHaveLength(1);
 		expect(updatedWorkTrackingSystems[0].options[0].key).toBe("url");
 		expect(updatedWorkTrackingSystems[0].options[0].isSecret).toBe(false);

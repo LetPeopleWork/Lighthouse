@@ -21,22 +21,28 @@ vi.mock("./Steps/ImportSettingsStep", () => ({
 				data-testid="import-settings-next-with-wts-no-secrets"
 				onClick={() =>
 					props.onNext(
-						[
-							{
-								id: 1,
-								options: [
-									{ isSecret: false, name: "regular-option", value: "value" },
-								],
-							},
-						],
-						[],
-						[],
-						[],
-						[],
-						[],
-						new Map(),
-						new Map(),
-						false,
+						{
+							newWorkTrackingSystems: [
+								{
+									id: 1,
+									options: [
+										{ isSecret: false, name: "regular-option", value: "value" },
+									],
+								},
+							],
+							updatedWorkTrackingSystems: [],
+							newTeams: [],
+							updatedTeams: [],
+							newProjects: [],
+							updatedProjects: [],
+						},
+						{
+							workTrackingSystemsIdMapping: new Map(),
+							teamIdMapping: new Map(),
+						},
+						{
+							clearConfiguration: false,
+						},
 					)
 				}
 			>
@@ -47,20 +53,26 @@ vi.mock("./Steps/ImportSettingsStep", () => ({
 				data-testid="import-settings-next-with-wts"
 				onClick={() =>
 					props.onNext(
-						[
-							{
-								id: 1,
-								options: [{ isSecret: true, name: "secret1", value: "" }],
-							},
-						],
-						[],
-						[],
-						[],
-						[],
-						[],
-						new Map(),
-						new Map(),
-						false,
+						{
+							newWorkTrackingSystems: [
+								{
+									id: 1,
+									options: [{ isSecret: true, name: "secret1", value: "" }],
+								},
+							],
+							updatedWorkTrackingSystems: [],
+							newTeams: [],
+							updatedTeams: [],
+							newProjects: [],
+							updatedProjects: [],
+						},
+						{
+							workTrackingSystemsIdMapping: new Map(),
+							teamIdMapping: new Map(),
+						},
+						{
+							clearConfiguration: false,
+						},
 					)
 				}
 			>
@@ -70,7 +82,23 @@ vi.mock("./Steps/ImportSettingsStep", () => ({
 				type="button"
 				data-testid="import-settings-next"
 				onClick={() =>
-					props.onNext([], [], [], [], [], [], new Map(), new Map(), false)
+					props.onNext(
+						{
+							newWorkTrackingSystems: [],
+							updatedWorkTrackingSystems: [],
+							newTeams: [],
+							updatedTeams: [],
+							newProjects: [],
+							updatedProjects: [],
+						},
+						{
+							workTrackingSystemsIdMapping: new Map(),
+							teamIdMapping: new Map(),
+						},
+						{
+							clearConfiguration: false,
+						},
+					)
 				}
 			>
 				Next

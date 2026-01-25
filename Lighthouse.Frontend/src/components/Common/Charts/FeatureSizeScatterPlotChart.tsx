@@ -18,7 +18,7 @@ import {
 	type ScatterValueType,
 } from "@mui/x-charts";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
 import type { IFeature } from "../../../models/Feature";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -47,6 +47,198 @@ type MarkerOptions = {
 	onShowItems: (items: IFeature[]) => void;
 };
 
+type ScatterDatum = {
+	item?: Record<string, unknown>;
+	color?: string;
+	groupIndex?: number;
+	groupKey?: string;
+	x?: number;
+	y?: number;
+	[key: string]: unknown;
+};
+
+type ScatterPropsExtended = ScatterMarkerProps & {
+	data?: ScatterDatum;
+	datum?: ScatterDatum;
+	item?: ScatterDatum;
+	dataIndex?: number;
+	seriesIndex?: number | string;
+	seriesId?: number | string;
+	color?: string;
+};
+
+// Extract datum retrieval logic
+const getDatum = (props: ScatterPropsExtended): ScatterDatum | undefined => {
+	return props.data ?? props.datum ?? props.item;
+};
+
+// Helper to get explicit group by index
+const getExplicitGroupByIndex = (
+	datumGroupIndex: number | undefined,
+	allGroupedDataPoints: IGroupedFeature[],
+	seriesGroup: IGroupedFeature,
+): IGroupedFeature => {
+	if (typeof datumGroupIndex !== "number") return seriesGroup;
+
+	const explicitGroup = allGroupedDataPoints[datumGroupIndex];
+	return explicitGroup && explicitGroup !== seriesGroup
+		? explicitGroup
+		: seriesGroup;
+};
+
+// Helper to get explicit group by key
+const getExplicitGroupByKey = (
+	datumGroupKey: string | undefined,
+	seriesIndexOrId: string | number,
+	seriesGroupKeyMapMap: Map<string | number, Map<string, number>> | undefined,
+	allGroupedDataPoints: IGroupedFeature[],
+	seriesGroup: IGroupedFeature,
+): IGroupedFeature => {
+	if (typeof datumGroupKey !== "string" || !seriesGroupKeyMapMap) {
+		return seriesGroup;
+	}
+
+	const seriesKeyMap = seriesGroupKeyMapMap.get(seriesIndexOrId);
+	const explicitIdx = seriesKeyMap?.get(datumGroupKey);
+
+	if (typeof explicitIdx !== "number") return seriesGroup;
+
+	const explicitGroup = allGroupedDataPoints[explicitIdx];
+	return explicitGroup && explicitGroup !== seriesGroup
+		? explicitGroup
+		: seriesGroup;
+};
+
+const getGroupFromSeries = (
+	props: ScatterPropsExtended,
+	datum: ScatterDatum | undefined,
+	allGroupedDataPoints: IGroupedFeature[],
+	seriesGroupedDataMap?: Map<string | number, IGroupedFeature[]>,
+	seriesGroupKeyMapMap?: Map<string | number, Map<string, number>>,
+): IGroupedFeature | undefined => {
+	if (!seriesGroupedDataMap) return undefined;
+
+	const seriesIndexOrId = props.seriesIndex ?? props.seriesId;
+	if (seriesIndexOrId === undefined) return undefined;
+
+	const seriesGrouped = seriesGroupedDataMap.get(seriesIndexOrId);
+	const dataIndex = props.dataIndex ?? 0;
+
+	if (!seriesGrouped || typeof dataIndex !== "number") return undefined;
+
+	const seriesGroup = seriesGrouped[dataIndex];
+	if (!seriesGroup) return undefined;
+
+	const datumGroupIndex = datum?.groupIndex;
+	const datumGroupKey = datum?.groupKey;
+
+	// Check explicit groupIndex first
+	if (typeof datumGroupIndex === "number") {
+		return getExplicitGroupByIndex(
+			datumGroupIndex,
+			allGroupedDataPoints,
+			seriesGroup,
+		);
+	}
+
+	// Then check explicit groupKey
+	return getExplicitGroupByKey(
+		datumGroupKey,
+		seriesIndexOrId,
+		seriesGroupKeyMapMap,
+		allGroupedDataPoints,
+		seriesGroup,
+	);
+};
+
+// Extract group lookup by index
+const getGroupByIndex = (
+	datumGroupIndex: number | undefined,
+	allGroupedDataPoints: IGroupedFeature[],
+): IGroupedFeature | undefined => {
+	return typeof datumGroupIndex === "number"
+		? allGroupedDataPoints[datumGroupIndex]
+		: undefined;
+};
+
+// Extract group lookup by key
+const getGroupByKey = (
+	datumGroupKey: string | undefined,
+	groupKeyMap: Map<string, number>,
+	allGroupedDataPoints: IGroupedFeature[],
+): IGroupedFeature | undefined => {
+	if (typeof datumGroupKey !== "string") return undefined;
+
+	const idx = groupKeyMap.get(datumGroupKey);
+	return typeof idx === "number" ? allGroupedDataPoints[idx] : undefined;
+};
+
+// Extract group lookup by coordinates
+const getGroupByCoordinates = (
+	props: ScatterPropsExtended,
+	datum: ScatterDatum | undefined,
+	allGroupedDataPoints: IGroupedFeature[],
+): IGroupedFeature | undefined => {
+	const datumX = datum?.x ?? props.x;
+	const datumY = datum?.y ?? props.y;
+	return allGroupedDataPoints.find(
+		(g) => g.size === datumX && g.cycleTime === datumY,
+	);
+};
+
+// Render fallback marker
+const renderFallbackMarker = (
+	props: ScatterPropsExtended,
+	theme: Theme,
+): JSX.Element => {
+	const providedColor = props.color;
+	const fallbackColor = providedColor ?? theme.palette.primary.main;
+	const fallbackSize = 6;
+
+	return (
+		<>
+			<circle
+				cx={props.x}
+				cy={props.y}
+				r={fallbackSize}
+				fill={fallbackColor}
+				opacity={props.isHighlighted ? 1 : 0.8}
+				stroke={
+					props.isHighlighted
+						? theme.palette.background.paper
+						: hexToRgba(fallbackColor, 0.12)
+				}
+				strokeWidth={props.isHighlighted ? 2 : 1}
+				pointerEvents="none"
+			>
+				<title>Feature (unknown group) - click for details</title>
+			</circle>
+			<foreignObject
+				x={props.x - fallbackSize}
+				y={props.y - fallbackSize}
+				width={fallbackSize * 2}
+				height={fallbackSize * 2}
+			>
+				<button
+					type="button"
+					style={{
+						width: "100%",
+						height: "100%",
+						cursor: "pointer",
+						background: "transparent",
+						border: "none",
+						padding: 0,
+						borderRadius: "50%",
+					}}
+					onClick={() => {}}
+					aria-label="View feature details"
+				/>
+			</foreignObject>
+		</>
+	);
+};
+
+// Main ScatterMarker with reduced complexity
 const ScatterMarker = (
 	props: ScatterMarkerProps,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -62,157 +254,32 @@ const ScatterMarker = (
 		onShowItems,
 	} = options;
 
-	type ScatterDatum = {
-		item?: Record<string, unknown>;
-		color?: string;
-		[key: string]: unknown;
-	};
+	const propsExtended = props as ScatterPropsExtended;
+	const datum = getDatum(propsExtended);
 
-	const datum =
-		(
-			props as unknown as {
-				data?: ScatterDatum;
-				datum?: ScatterDatum;
-				item?: ScatterDatum;
-			}
-		).data ??
-		(
-			props as unknown as {
-				data?: ScatterDatum;
-				datum?: ScatterDatum;
-				item?: ScatterDatum;
-			}
-		).datum ??
-		(
-			props as unknown as {
-				data?: ScatterDatum;
-				datum?: ScatterDatum;
-				item?: ScatterDatum;
-			}
-		).item;
+	// Try different strategies to find the group
+	const group =
+		getGroupFromSeries(
+			propsExtended,
+			datum,
+			allGroupedDataPoints,
+			seriesGroupedDataMap,
+			seriesGroupKeyMapMap,
+		) ??
+		getGroupByIndex(datum?.groupIndex, allGroupedDataPoints) ??
+		getGroupByKey(datum?.groupKey, groupKeyMap, allGroupedDataPoints) ??
+		getGroupByCoordinates(propsExtended, datum, allGroupedDataPoints);
 
-	const datumGroupIndex = (datum as unknown as { groupIndex?: number })
-		?.groupIndex;
-	const datumGroupKey = (datum as unknown as { groupKey?: string })?.groupKey;
-	const seriesIndexOrId =
-		(
-			props as unknown as {
-				seriesIndex?: number | string;
-				seriesId?: number | string;
-			}
-		)?.seriesIndex ??
-		(props as unknown as { seriesId?: number | string })?.seriesId;
-
-	let group: IGroupedFeature | undefined;
-
-	// 1) Prefer per-series mapping if available
-	if (seriesGroupedDataMap && seriesIndexOrId !== undefined) {
-		const seriesGrouped = seriesGroupedDataMap.get(seriesIndexOrId);
-		const dataIndex =
-			(props as unknown as { dataIndex?: number })?.dataIndex ?? 0;
-		if (seriesGrouped && typeof dataIndex === "number") {
-			const seriesGroup = seriesGrouped[dataIndex];
-			if (seriesGroup) {
-				if (typeof datumGroupIndex === "number") {
-					const explicitGroup = allGroupedDataPoints[datumGroupIndex];
-					if (explicitGroup && explicitGroup !== seriesGroup) {
-						group = explicitGroup;
-					} else {
-						group = seriesGroup;
-					}
-				} else if (typeof datumGroupKey === "string" && seriesGroupKeyMapMap) {
-					const seriesKeyMap = seriesGroupKeyMapMap.get(seriesIndexOrId);
-					const explicitIdx = seriesKeyMap?.get(datumGroupKey);
-					const explicitGroup =
-						typeof explicitIdx === "number"
-							? allGroupedDataPoints[explicitIdx]
-							: undefined;
-					if (explicitGroup && explicitGroup !== seriesGroup) {
-						group = explicitGroup;
-					} else {
-						group = seriesGroup;
-					}
-				} else {
-					group = seriesGroup;
-				}
-			}
-		}
-	}
-
-	// 2) Prefer explicit groupIndex if present
-	if (!group && typeof datumGroupIndex === "number") {
-		group = allGroupedDataPoints[datumGroupIndex];
-	}
-
-	// 3) Then try groupKey map
-	if (!group && typeof datumGroupKey === "string" && groupKeyMap) {
-		const idx = groupKeyMap.get(datumGroupKey);
-		if (typeof idx === "number") {
-			group = allGroupedDataPoints[idx];
-		}
-	}
-
-	// 4) As a last resort, try matching by coordinates (x/y)
+	// Render fallback if no group found
 	if (!group) {
-		const datumX = (datum as unknown as { x?: number })?.x ?? props.x;
-		const datumY = (datum as unknown as { y?: number })?.y ?? props.y;
-		group = allGroupedDataPoints.find(
-			(g) => g.size === datumX && g.cycleTime === datumY,
-		);
+		return renderFallbackMarker(propsExtended, theme);
 	}
 
-	// Fallback if we still don't have a group
-	if (!group) {
-		const providedColor = (props as unknown as { color?: string })?.color;
-		const fallbackColor = providedColor ?? theme.palette.primary.main;
-		const fallbackSize = 6;
-		return (
-			<>
-				<circle
-					cx={props.x}
-					cy={props.y}
-					r={fallbackSize}
-					fill={fallbackColor}
-					opacity={props.isHighlighted ? 1 : 0.8}
-					stroke={
-						props.isHighlighted
-							? theme.palette.background.paper
-							: hexToRgba(fallbackColor, 0.12)
-					}
-					strokeWidth={props.isHighlighted ? 2 : 1}
-					pointerEvents="none"
-				>
-					<title>{`Feature (unknown group) - click for details`}</title>
-				</circle>
-				<foreignObject
-					x={props.x - fallbackSize}
-					y={props.y - fallbackSize}
-					width={fallbackSize * 2}
-					height={fallbackSize * 2}
-				>
-					<button
-						type="button"
-						style={{
-							width: "100%",
-							height: "100%",
-							cursor: "pointer",
-							background: "transparent",
-							border: "none",
-							padding: 0,
-							borderRadius: "50%",
-						}}
-						onClick={() => {}}
-						aria-label={`View feature details`}
-					/>
-				</foreignObject>
-			</>
-		);
-	}
-
+	// Calculate marker properties
 	const bubbleSize = getBubbleSize(group.items.length);
-	const providedColor = (props as unknown as { color?: string }).color;
 	const stateCategory = group.items[0]?.stateCategory || group.state || "ToDo";
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
+	const providedColor = propsExtended.color;
 	const bubbleColor = hasBlockedItems
 		? errorColor
 		: (providedColor ?? colorMap[stateCategory] ?? theme.palette.primary.main);
@@ -222,6 +289,10 @@ const ScatterMarker = (
 			onShowItems(group.items);
 		}
 	};
+
+	const itemCountText = group.items.length > 1 ? "s" : "";
+	const featureTerm =
+		group.items.length > 1 ? featuresTerm : featuresTerm.slice(0, -1);
 
 	return (
 		<>
@@ -239,7 +310,7 @@ const ScatterMarker = (
 				strokeWidth={props.isHighlighted ? 2 : 1}
 				pointerEvents="none"
 			>
-				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with size ${group.size} child items`}</title>
+				<title>{`${group.items.length} item${itemCountText} with size ${group.size} child items`}</title>
 			</circle>
 			<foreignObject
 				x={props.x - bubbleSize}
@@ -259,7 +330,7 @@ const ScatterMarker = (
 						borderRadius: "50%",
 					}}
 					onClick={handleOpenFeatures}
-					aria-label={`View ${group.items.length} ${group.items.length > 1 ? featuresTerm : featuresTerm.slice(0, -1)} with size ${group.size} child items`}
+					aria-label={`View ${group.items.length} ${featureTerm} with size ${group.size} child items`}
 				/>
 			</foreignObject>
 		</>
@@ -329,6 +400,64 @@ const getMaxYAxisHeight = (
 			: 0;
 	const absoluteMax = Math.max(maxFromPercentiles, maxFromData);
 	return absoluteMax * 1.1;
+};
+
+// Extract series data point creation
+const createSeriesDataPoint = (
+	group: IGroupedFeature,
+	allGroupedDataPoints: IGroupedFeature[],
+	getGroupKey: (g: IGroupedFeature) => string,
+	stateCategory: StateCategory,
+	colorMap: Record<string, string>,
+	theme: Theme,
+) => {
+	const hasBlockedItems = group.items.some((i) => i.isBlocked);
+	const fillColor = hasBlockedItems
+		? errorColor
+		: colorMap[stateCategory] || theme.palette.primary.main;
+	const idx = allGroupedDataPoints.indexOf(group);
+
+	return {
+		x: group.size,
+		y: group.cycleTime,
+		groupIndex: idx,
+		groupKey: getGroupKey(group),
+		itemCount: group.items.length,
+		color: fillColor,
+	};
+};
+
+// Extract value formatter logic
+const formatSeriesValue = (
+	item: ScatterValueType | null,
+	allGroupedDataPoints: IGroupedFeature[],
+	groupKeyMap: Map<string, number>,
+	featuresTerm: string,
+): string => {
+	if (!item) return "";
+
+	const groupIndexVal = (item as unknown as { groupIndex?: number })
+		?.groupIndex;
+	const itemKey = (item as unknown as { groupKey?: string })?.groupKey;
+
+	let group: IGroupedFeature | undefined;
+	if (typeof groupIndexVal === "number") {
+		group = allGroupedDataPoints[groupIndexVal];
+	}
+	if (!group && typeof itemKey === "string") {
+		const idx = groupKeyMap.get(itemKey);
+		if (typeof idx === "number") {
+			group = allGroupedDataPoints[idx];
+		}
+	}
+	if (!group) return "";
+
+	const numberOfClosedItems = group.items.length ?? 0;
+	if (numberOfClosedItems === 1) {
+		const single = group.items[0];
+		return `${getWorkItemName(single)} - ${single.state} (Click for details)`;
+	}
+	return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
 };
 
 const FeatureSizeScatterPlotChart: React.FC<
@@ -513,24 +642,18 @@ const FeatureSizeScatterPlotChart: React.FC<
 					const globalIdx = allGroupedDataPoints.indexOf(group);
 					seriesKeyMap.set(getGroupKey(group), globalIdx);
 				}
-
 				keyMapMap.set(seriesIndex, seriesKeyMap);
 
-				const seriesData = seriesGrouped.map((group) => {
-					const hasBlockedItems = group.items.some((i) => i.isBlocked);
-					const fillColor = hasBlockedItems
-						? errorColor
-						: colorMap[stateCategory] || theme.palette.primary.main;
-					const idx = allGroupedDataPoints.indexOf(group);
-					return {
-						x: group.size,
-						y: group.cycleTime,
-						groupIndex: idx,
-						groupKey: getGroupKey(group),
-						itemCount: group.items.length,
-						color: fillColor,
-					};
-				});
+				const seriesData = seriesGrouped.map((group) =>
+					createSeriesDataPoint(
+						group,
+						allGroupedDataPoints,
+						getGroupKey,
+						stateCategory,
+						colorMap,
+						theme,
+					),
+				);
 
 				return {
 					type: "scatter" as const,
@@ -545,30 +668,13 @@ const FeatureSizeScatterPlotChart: React.FC<
 						highlight: "item" as const,
 						fade: "global" as const,
 					},
-					valueFormatter: (item: ScatterValueType | null) => {
-						if (!item) return "";
-						const groupIndexVal = (item as unknown as { groupIndex?: number })
-							?.groupIndex;
-						const itemKey = (item as unknown as { groupKey?: string })
-							?.groupKey;
-						let group: IGroupedFeature | undefined;
-						if (typeof groupIndexVal === "number") {
-							group = allGroupedDataPoints[groupIndexVal];
-						}
-						if (!group && typeof itemKey === "string") {
-							const idx = groupKeyMap.get(itemKey);
-							if (typeof idx === "number") {
-								group = allGroupedDataPoints[idx];
-							}
-						}
-						if (!group) return "";
-						const numberOfClosedItems = group.items.length ?? 0;
-						if (numberOfClosedItems === 1) {
-							const single = group.items[0];
-							return `${getWorkItemName(single)} - ${single.state} (Click for details)`;
-						}
-						return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
-					},
+					valueFormatter: (item: ScatterValueType | null) =>
+						formatSeriesValue(
+							item,
+							allGroupedDataPoints,
+							groupKeyMap,
+							featuresTerm,
+						),
 				};
 			});
 		return {

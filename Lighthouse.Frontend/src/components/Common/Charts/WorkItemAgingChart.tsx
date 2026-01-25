@@ -46,22 +46,36 @@ const getBubbleSize = (count: number): number => {
 	return Math.min(5 + Math.sqrt(count) * 3, 20);
 };
 
+interface ScatterMarkerConfig {
+	groupedDataPoints: IGroupedWorkItem[];
+	theme: Theme;
+	workItemTerm: string;
+	workItemsTerm: string;
+	blockedTerm: string;
+	colorMap: Record<string, string>;
+	onShowItems: (items: IWorkItem[]) => void;
+}
+
 const ScatterMarker = (
 	props: ScatterMarkerProps,
-	groupedDataPoints: IGroupedWorkItem[],
-	theme: Theme,
-	workItemTerm: string,
-	workItemsTerm: string,
-	blockedTerm: string,
-	colorMap: Record<string, string>,
-	onShowItems: (items: IWorkItem[]) => void,
+	config: ScatterMarkerConfig,
 ) => {
+	const {
+		groupedDataPoints,
+		theme,
+		workItemTerm,
+		workItemsTerm,
+		blockedTerm,
+		colorMap,
+		onShowItems,
+	} = config;
+
 	const dataIndex = props.dataIndex ?? 0;
 	const group = groupedDataPoints[dataIndex];
-
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
+
 	// Use the color provided on the data item if present (series/data.color), otherwise fallback to theme
 	const providedColor = (props as unknown as { color?: string }).color;
 	const bubbleColor = group.hasBlockedItems
@@ -93,7 +107,6 @@ const ScatterMarker = (
 			>
 				<title>{`${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`}</title>
 			</circle>
-
 			<foreignObject
 				x={props.x - bubbleSize}
 				y={props.y - bubbleSize}
@@ -499,16 +512,15 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 						<ScatterPlot
 							slots={{
 								marker: (props) =>
-									ScatterMarker(
-										props,
+									ScatterMarker(props, {
 										groupedDataPoints,
 										theme,
 										workItemTerm,
 										workItemsTerm,
 										blockedTerm,
 										colorMap,
-										handleShowItems,
-									),
+										onShowItems: handleShowItems,
+									}),
 							}}
 						/>{" "}
 						<ChartsTooltip

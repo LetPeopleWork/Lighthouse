@@ -20,6 +20,39 @@ interface FeatureNameProps {
 	teamsWorkIngOnFeature: IEntityReference[];
 }
 
+interface TeamLinksListProps {
+	teams: IEntityReference[];
+}
+
+const TeamLinksList: React.FC<TeamLinksListProps> = ({ teams }) => {
+	return (
+		<>
+			{teams.map((team, index) => (
+				<React.Fragment key={team.id}>
+					{index > 0 && ", "}
+					<StyledLink to={`/teams/${team.id}`} variant="body2">
+						{team.name}
+					</StyledLink>
+				</React.Fragment>
+			))}
+		</>
+	);
+};
+
+interface StateCategoryIconProps {
+	stateCategory: StateCategory;
+}
+
+const StateCategoryIcon: React.FC<StateCategoryIconProps> = ({
+	stateCategory,
+}) => {
+	if (stateCategory === "ToDo") return <AssignmentOutlinedIcon />;
+	if (stateCategory === "Doing") return <LoopOutlinedIcon />;
+	if (stateCategory === "Done") return <CheckCircleOutlinedIcon />;
+	if (stateCategory === "Unknown") return <HelpOutlineOutlinedIcon />;
+	return null;
+};
+
 const FeatureName: React.FC<FeatureNameProps> = ({
 	name,
 	url,
@@ -27,12 +60,6 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 	isUsingDefaultFeatureSize,
 	teamsWorkIngOnFeature,
 }) => {
-	const teamLinks = teamsWorkIngOnFeature.map((team) => (
-		<StyledLink key={team.id} to={`/teams/${team.id}`} variant="body2">
-			{team.name}
-		</StyledLink>
-	));
-
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -59,7 +86,6 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 			) : (
 				name
 			)}
-
 			{isUsingDefaultFeatureSize && (
 				<Tooltip
 					title={`No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`}
@@ -74,13 +100,7 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 					title={
 						<div>
 							This feature is actively being worked on by:{" "}
-							{teamLinks.reduce((acc, curr, index) => (
-								<React.Fragment key={teamLinks[index].key}>
-									{acc}
-									{index > 0 && ", "}
-									{curr}
-								</React.Fragment>
-							))}{" "}
+							<TeamLinksList teams={teamsWorkIngOnFeature} />
 						</div>
 					}
 				>
@@ -89,13 +109,9 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 					</IconButton>
 				</Tooltip>
 			)}
-
 			<Tooltip title={`${featureTerm} State: ${stateCategory}`}>
 				<IconButton size="small" sx={{ ml: 1 }}>
-					{stateCategory === "ToDo" && <AssignmentOutlinedIcon />}
-					{stateCategory === "Doing" && <LoopOutlinedIcon />}
-					{stateCategory === "Done" && <CheckCircleOutlinedIcon />}
-					{stateCategory === "Unknown" && <HelpOutlineOutlinedIcon />}
+					<StateCategoryIcon stateCategory={stateCategory} />
 				</IconButton>
 			</Tooltip>
 		</span>

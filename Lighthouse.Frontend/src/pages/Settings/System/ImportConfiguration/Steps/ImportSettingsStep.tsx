@@ -26,18 +26,30 @@ import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTr
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 
-interface ImportSettingsStepProps {
+export interface ImportMappings {
+	workTrackingSystemsIdMapping: Map<number, number>;
+	teamIdMapping: Map<number, number>;
+}
+
+export interface ImportChanges {
+	newWorkTrackingSystems: IWorkTrackingSystemConnection[];
+	updatedWorkTrackingSystems: IWorkTrackingSystemConnection[];
+	newTeams: ITeamSettings[];
+	updatedTeams: ITeamSettings[];
+	newProjects: IPortfolioSettings[];
+	updatedProjects: IPortfolioSettings[];
+}
+
+export interface ImportOptions {
+	clearConfiguration: boolean;
+}
+
+export interface ImportSettingsStepProps {
 	configurationService: IConfigurationService;
 	onNext: (
-		newWorkTrackingSystems: IWorkTrackingSystemConnection[],
-		updatedWorkTrackingSystems: IWorkTrackingSystemConnection[],
-		newTeams: ITeamSettings[],
-		updatedTeams: ITeamSettings[],
-		newProjects: IPortfolioSettings[],
-		updatedProjects: IPortfolioSettings[],
-		workTrackingSystemsIdMapping: Map<number, number>,
-		teamIdMapping: Map<number, number>,
-		clearConfiguration: boolean,
+		changes: ImportChanges,
+		mappings: ImportMappings,
+		options: ImportOptions,
 	) => void;
 	onClose: () => void;
 }
@@ -284,15 +296,21 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 			);
 
 			onNext(
-				newWorkTrackingSystems,
-				updatedWorkTrackingSystems,
-				newTeams,
-				updatedTeams,
-				newProjects,
-				updatedProjects,
-				workTrackingSystemsIdMapping,
-				teamIdMapping,
-				clearConfiguration,
+				{
+					newWorkTrackingSystems,
+					updatedWorkTrackingSystems,
+					newTeams,
+					updatedTeams,
+					newProjects,
+					updatedProjects,
+				},
+				{
+					workTrackingSystemsIdMapping,
+					teamIdMapping,
+				},
+				{
+					clearConfiguration,
+				},
 			);
 		}
 	};

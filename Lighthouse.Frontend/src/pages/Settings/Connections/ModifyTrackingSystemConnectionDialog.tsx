@@ -45,7 +45,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 	const [originalAuthMethodKey, setOriginalAuthMethodKey] = useState<
 		string | null
 	>(null);
-
 	const [authOptions, setAuthOptions] = useState<IWorkTrackingSystemOption[]>(
 		[],
 	);
@@ -105,75 +104,137 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		return true;
 	}, [selectedWorkTrackingSystem]);
 
-	useEffect(() => {
-		if (open && workTrackingSystems.length > 0) {
-			const firstSystem = workTrackingSystems[0];
-			setSelectedWorkTrackingSystem(firstSystem);
-			setName(firstSystem.name);
-
+	const getInitialAuthMethod = useCallback(
+		(
+			firstSystem: IWorkTrackingSystemConnection,
+		): IAuthenticationMethod | null => {
 			const availableMethods = firstSystem.availableAuthenticationMethods ?? [];
-			const initialMethod =
+			return (
 				availableMethods.find(
 					(m) => m.key === firstSystem.authenticationMethodKey,
 				) ??
 				availableMethods[0] ??
-				null;
+				null
+			);
+		},
+		[],
+	);
 
-			setSelectedAuthMethod(initialMethod);
+	const partitionExistingOptions = useCallback(
+		(
+			firstSystem: IWorkTrackingSystemConnection,
+			currentAuthKeys: Set<string>,
+			allAuthKeys: Set<string>,
+		): {
+			authOptions: IWorkTrackingSystemOption[];
+			otherOptions: IWorkTrackingSystemOption[];
+		} => {
+			const existingAuthOptions: IWorkTrackingSystemOption[] = [];
+			const existingOtherOptions: IWorkTrackingSystemOption[] = [];
 
-			// In edit mode, track the original auth method key
-			if (workTrackingSystems.length === 1) {
-				setOriginalAuthMethodKey(firstSystem.authenticationMethodKey);
-			} else {
-				setOriginalAuthMethodKey(null);
-			}
-
-			const currentAuthKeys = getAuthOptionKeys(initialMethod);
-			const allAuthKeys = getAllAuthOptionKeys(firstSystem);
-
-			if (workTrackingSystems.length === 1) {
-				const existingAuthOptions: IWorkTrackingSystemOption[] = [];
-				const existingOtherOptions: IWorkTrackingSystemOption[] = [];
-
-				for (const option of firstSystem.options) {
-					const mappedOption: IWorkTrackingSystemOption = {
-						key: option.key,
-						value: option.value,
-						isSecret: option.isSecret,
-						isOptional: option.isOptional,
-					};
-					if (currentAuthKeys.has(option.key)) {
-						existingAuthOptions.push(mappedOption);
-					} else if (!allAuthKeys.has(option.key)) {
-						existingOtherOptions.push(mappedOption);
-					}
+			for (const option of firstSystem.options) {
+				const mappedOption: IWorkTrackingSystemOption = {
+					key: option.key,
+					value: option.value,
+					isSecret: option.isSecret,
+					isOptional: option.isOptional,
+				};
+				if (currentAuthKeys.has(option.key)) {
+					existingAuthOptions.push(mappedOption);
+				} else if (!allAuthKeys.has(option.key)) {
+					existingOtherOptions.push(mappedOption);
 				}
-
-				setAuthOptions(existingAuthOptions);
-				setOtherOptions(existingOtherOptions);
-				setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
-			} else {
-				setAuthOptions(getEmptyAuthOptions(initialMethod));
-
-				const nonAuthOptions = firstSystem.options
-					.filter((opt) => !allAuthKeys.has(opt.key))
-					.map((opt) => ({
-						key: opt.key,
-						value: opt.value,
-						isSecret: opt.isSecret,
-						isOptional: opt.isOptional,
-					}));
-				setOtherOptions(nonAuthOptions);
-				setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
 			}
+
+			return {
+				authOptions: existingAuthOptions,
+				otherOptions: existingOtherOptions,
+			};
+		},
+		[],
+	);
+
+	const getNonAuthOptions = useCallback(
+		(
+			firstSystem: IWorkTrackingSystemConnection,
+			allAuthKeys: Set<string>,
+		): IWorkTrackingSystemOption[] => {
+			return firstSystem.options
+				.filter((opt) => !allAuthKeys.has(opt.key))
+				.map((opt) => ({
+					key: opt.key,
+					value: opt.value,
+					isSecret: opt.isSecret,
+					isOptional: opt.isOptional,
+				}));
+		},
+		[],
+	);
+
+	const initializeEditMode = useCallback(
+		(
+			firstSystem: IWorkTrackingSystemConnection,
+			currentAuthKeys: Set<string>,
+			allAuthKeys: Set<string>,
+		) => {
+			setOriginalAuthMethodKey(firstSystem.authenticationMethodKey);
+
+			const {
+				authOptions: existingAuthOptions,
+				otherOptions: existingOtherOptions,
+			} = partitionExistingOptions(firstSystem, currentAuthKeys, allAuthKeys);
+
+			setAuthOptions(existingAuthOptions);
+			setOtherOptions(existingOtherOptions);
+			setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
+		},
+		[partitionExistingOptions],
+	);
+
+	const initializeCreateMode = useCallback(
+		(
+			firstSystem: IWorkTrackingSystemConnection,
+			initialMethod: IAuthenticationMethod | null,
+			allAuthKeys: Set<string>,
+		) => {
+			setOriginalAuthMethodKey(null);
+			setAuthOptions(getEmptyAuthOptions(initialMethod));
+			setOtherOptions(getNonAuthOptions(firstSystem, allAuthKeys));
+			setAdditionalFields(firstSystem.additionalFieldDefinitions ?? []);
+		},
+		[getEmptyAuthOptions, getNonAuthOptions],
+	);
+
+	useEffect(() => {
+		if (!open || workTrackingSystems.length === 0) return;
+
+		const firstSystem = workTrackingSystems[0];
+		setSelectedWorkTrackingSystem(firstSystem);
+		setName(firstSystem.name);
+
+		const initialMethod = getInitialAuthMethod(firstSystem);
+		setSelectedAuthMethod(initialMethod);
+
+		const currentAuthKeys = getAuthOptionKeys(initialMethod);
+		const allAuthKeys = getAllAuthOptionKeys(firstSystem);
+
+		const isEditMode = workTrackingSystems.length === 1;
+
+		if (isEditMode) {
+			initializeEditMode(firstSystem, currentAuthKeys, allAuthKeys);
+		} else {
+			initializeCreateMode(firstSystem, initialMethod, allAuthKeys);
 		}
 	}, [
 		open,
 		workTrackingSystems,
 		getAuthOptionKeys,
 		getAllAuthOptionKeys,
-		getEmptyAuthOptions,
+		getInitialAuthMethod,
+		initializeEditMode,
+		initializeCreateMode,
 	]);
+
 	const allOptions = useMemo(
 		() => [...authOptions, ...otherOptions],
 		[authOptions, otherOptions],

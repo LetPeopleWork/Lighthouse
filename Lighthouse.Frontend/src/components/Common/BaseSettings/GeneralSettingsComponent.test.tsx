@@ -13,6 +13,19 @@ import {
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import GeneralSettingsComponent from "./GeneralSettingsComponent";
 
+// Polyfill File.prototype.text() for tests
+if (typeof File !== "undefined" && !File.prototype.text) {
+	File.prototype.text = function () {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as string);
+			reader.onerror = () =>
+				reject(new Error(reader.error?.message ?? "Failed to read file"));
+			reader.readAsText(this);
+		});
+	};
+}
+
 describe("GeneralSettingsComponent", () => {
 	const mockOnSettingsChange = vi.fn();
 	const mockOnWorkTrackingSystemChange = vi.fn();

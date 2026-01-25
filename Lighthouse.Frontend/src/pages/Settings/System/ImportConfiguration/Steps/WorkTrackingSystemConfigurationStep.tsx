@@ -74,6 +74,24 @@ const WorkTrackingSystemConfigurationStep: React.FC<
 		onNext(workTrackingSystems);
 	};
 
+	const handleOptionChange = (
+		systemId: number | null,
+		systemName: string,
+		optionKey: string,
+		newValue: string,
+	) => {
+		const updatedSystems = workTrackingSystems.map((sys) => {
+			if (sys.id === systemId && sys.name === systemName) {
+				const updatedOptions = sys.options.map((opt) =>
+					opt.key === optionKey ? { ...opt, value: newValue } : opt,
+				);
+				return { ...sys, options: updatedOptions };
+			}
+			return sys;
+		});
+		setWorkTrackingSystems(updatedSystems);
+	};
+
 	return (
 		<Box sx={{ width: "100%" }}>
 			<Typography variant="h6" gutterBottom>
@@ -99,21 +117,14 @@ const WorkTrackingSystemConfigurationStep: React.FC<
 									fullWidth
 									margin="normal"
 									value={option.value}
-									onChange={(e) => {
-										const updatedOptions = system.options.map((opt) =>
-											opt.key === option.key
-												? { ...opt, value: e.target.value }
-												: opt,
-										);
-
-										const updatedSystems = workTrackingSystems.map((sys) =>
-											sys.id === system.id && sys.name === system.name
-												? { ...sys, options: updatedOptions }
-												: sys,
-										);
-
-										setWorkTrackingSystems(updatedSystems);
-									}}
+									onChange={(e) =>
+										handleOptionChange(
+											system.id,
+											system.name,
+											option.key,
+											e.target.value,
+										)
+									}
 									required
 								/>
 							))}

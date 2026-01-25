@@ -4,6 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import CsvUploadWizard from "./CsvUploadWizard";
 
+// Polyfill File.prototype.text() for tests
+if (typeof File !== "undefined" && !File.prototype.text) {
+	File.prototype.text = function () {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as string);
+			reader.onerror = () =>
+				reject(new Error(reader.error?.message ?? "Failed to read file"));
+			reader.readAsText(this);
+		});
+	};
+}
+
 describe("CsvUploadWizard", () => {
 	const mockOnComplete = vi.fn();
 	const mockOnCancel = vi.fn();
@@ -80,12 +93,12 @@ describe("CsvUploadWizard", () => {
 
 		await userEvent.upload(input, file);
 
+		// Wait for async file.text() to complete
 		await waitFor(() => {
 			expect(screen.getByText("test.csv")).toBeInTheDocument();
+			const useFileButton = screen.getByRole("button", { name: "Use File" });
+			expect(useFileButton).not.toBeDisabled();
 		});
-
-		const useFileButton = screen.getByRole("button", { name: "Use File" });
-		expect(useFileButton).not.toBeDisabled();
 	});
 
 	it("displays file size when file is selected", async () => {
@@ -196,8 +209,10 @@ describe("CsvUploadWizard", () => {
 
 		await userEvent.upload(input, file);
 
+		// Wait for async file.text() to complete AND button to be enabled
 		await waitFor(() => {
-			expect(screen.getByText("test.csv")).toBeInTheDocument();
+			const useFileButton = screen.getByRole("button", { name: "Use File" });
+			expect(useFileButton).not.toBeDisabled();
 		});
 
 		const useFileButton = screen.getByRole("button", { name: "Use File" });
@@ -346,8 +361,11 @@ describe("CsvUploadWizard", () => {
 			});
 		}
 
+		// Wait for async file.text() to complete
 		await waitFor(() => {
 			expect(screen.getByText("dropped.csv")).toBeInTheDocument();
+			const useFileButton = screen.getByRole("button", { name: "Use File" });
+			expect(useFileButton).not.toBeDisabled();
 		});
 	});
 
@@ -427,8 +445,11 @@ describe("CsvUploadWizard", () => {
 
 		await userEvent.upload(input, invalidFile);
 
-		// Wait a bit for any validation
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		// Wait for validation to complete
+		await waitFor(() => {
+			const useFileButton = screen.getByRole("button", { name: "Use File" });
+			expect(useFileButton).toBeDisabled();
+		});
 
 		// Now upload valid file
 		const csvContent = "header1,header2\nvalue1,value2";
@@ -436,12 +457,11 @@ describe("CsvUploadWizard", () => {
 
 		await userEvent.upload(input, validFile);
 
+		// Wait for async file.text() to complete
 		await waitFor(() => {
 			expect(screen.getByText("test.csv")).toBeInTheDocument();
+			const useFileButton = screen.getByRole("button", { name: "Use File" });
+			expect(useFileButton).not.toBeDisabled();
 		});
-
-		// Use File button should be enabled for valid file
-		const useFileButton = screen.getByRole("button", { name: "Use File" });
-		expect(useFileButton).not.toBeDisabled();
 	});
 });

@@ -14,6 +14,11 @@ import type { ITeamSettings } from "../../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { ImportResults } from "./ImportResults";
+import type {
+	ImportChanges,
+	ImportMappings,
+	ImportOptions,
+} from "./Steps/ImportSettingsStep";
 import ImportSettingsStep from "./Steps/ImportSettingsStep";
 import ImportStep from "./Steps/ImportStep";
 import ImportSummaryStep from "./Steps/ImportSummaryStep";
@@ -78,33 +83,30 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 	};
 
 	const handleSettingsComplete = (
-		newWorkTrackingSys: IWorkTrackingSystemConnection[],
-		updatedWorkTrackingSystems: IWorkTrackingSystemConnection[],
-		newTeams: ITeamSettings[],
-		updatedTeams: ITeamSettings[],
-		newProjects: IPortfolioSettings[],
-		updatedProjects: IPortfolioSettings[],
-		workTrackingSystemsIdMapping: Map<number, number>,
-		teamIdMapping: Map<number, number>,
-		clearConfiguration: boolean,
+		changes: ImportChanges,
+		mappings: ImportMappings,
+		options: ImportOptions,
 	) => {
-		setNewWorkTrackingSystems(newWorkTrackingSys);
-		setUpdatedWorkTrackingSystems(updatedWorkTrackingSystems);
-		setNewTeams(newTeams);
-		setUpdatedTeams(updatedTeams);
-		setNewProjects(newProjects);
-		setUpdatedProjects(updatedProjects);
-		setClearConfiguration(clearConfiguration);
+		setNewWorkTrackingSystems(changes.newWorkTrackingSystems);
+		setUpdatedWorkTrackingSystems(changes.updatedWorkTrackingSystems);
+		setNewTeams(changes.newTeams);
+		setUpdatedTeams(changes.updatedTeams);
+		setNewProjects(changes.newProjects);
+		setUpdatedProjects(changes.updatedProjects);
+		setClearConfiguration(options.clearConfiguration);
 
-		setWorkTrackingSystemsIdMapping(workTrackingSystemsIdMapping);
-		setTeamIdMapping(teamIdMapping);
+		setWorkTrackingSystemsIdMapping(mappings.workTrackingSystemsIdMapping);
+		setTeamIdMapping(mappings.teamIdMapping);
 
-		const secretOptionsCount = newWorkTrackingSys.reduce((count, system) => {
-			return (
-				count +
-				(system.options?.filter((option) => option.isSecret).length || 0)
-			);
-		}, 0);
+		const secretOptionsCount = changes.newWorkTrackingSystems.reduce(
+			(count, system) => {
+				return (
+					count +
+					(system.options?.filter((option) => option.isSecret).length || 0)
+				);
+			},
+			0,
+		);
 
 		if (secretOptionsCount === 0) {
 			setActiveStep((prevStep) => prevStep + 2);
