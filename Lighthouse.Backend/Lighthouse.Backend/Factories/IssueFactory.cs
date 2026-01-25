@@ -39,7 +39,20 @@ namespace Lighthouse.Backend.Factories
                 }
             }
 
-            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, labels, fields);
+            return new Issue
+            {
+                Key = key,
+                Title = title,
+                CreatedDate = createdDate,
+                StartedDate = startedDate,
+                ClosedDate = closedDate,
+                ParentKey = parentKey,
+                Rank = rank,
+                IssueType = issueType,
+                State = state,
+                Labels = labels,
+                Fields = fields,
+            };
         }
 
         private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string state)

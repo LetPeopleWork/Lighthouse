@@ -4,41 +4,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public class Issue
     {
-        public Issue(string key, string title, DateTime? createdDate, DateTime? closedDate, DateTime? startedDate, string parentKey, string rank, string issueType, string status, List<string> labels, JsonElement fields)
-        {   
-            Key = key;
-            Title = title;
-            ClosedDate = closedDate;
-            StartedDate = startedDate;
-            CreatedDate = createdDate;
-            ParentKey = parentKey;
-            Rank = rank;
-            IssueType = issueType;
-            State = status;
-            Labels = labels;
-            Fields = fields;
-        }
+        public string Key { get; set; }
 
-        public string Key { get; }
+        public DateTime? CreatedDate { get; set;}
 
-        public DateTime? CreatedDate { get; }
+        public DateTime? ClosedDate { get; set;}
 
-        public DateTime? ClosedDate { get; }
+        public DateTime? StartedDate { get; set;}
 
-        public DateTime? StartedDate { get; }
+        public string ParentKey { get;set; }
 
-        public string ParentKey { get; }
+        public string Title { get; set;}
 
-        public string Title { get; }
+        public string Rank { get; set;}
 
-        public string Rank { get; }
+        public string IssueType { get; set;}
 
-        public string IssueType { get; }
+        public JsonElement Fields { get; set; }
 
-        public JsonElement Fields { get; }
+        public string State { get; set;}
 
-        public string State { get; }
-
-        public List<string> Labels { get; }
+        public List<string> Labels { get; set; }
     }
 }
