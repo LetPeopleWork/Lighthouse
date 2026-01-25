@@ -8,16 +8,9 @@ using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 {
-    public class CsvWorkTrackingConnector : IWorkTrackingConnector
+    public class CsvWorkTrackingConnector(ILogger<CsvWorkTrackingConnector> logger) : IWorkTrackingConnector
     {
-        private readonly ILogger<CsvWorkTrackingConnector> logger;
-
-        private static int orderCounter = 0;
-
-        public CsvWorkTrackingConnector(ILogger<CsvWorkTrackingConnector> logger)
-        {
-            this.logger = logger;
-        }
+        private static int orderCounter;
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
@@ -29,12 +22,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             {
                 var workItemBase = CreateWorkItemBaseForRow(csv, team);
 
-                if (workItemBase != null)
+                if (workItemBase == null)
                 {
-                    var workItem = new WorkItem(workItemBase, team);
-
-                    workItems.Add(workItem);
+                    continue;
                 }
+
+                var workItem = new WorkItem(workItemBase, team);
+
+                workItems.Add(workItem);
             }
 
             return Task.FromResult(workItems.AsEnumerable());

@@ -11,12 +11,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 {
     public sealed class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {
-        private readonly string DatabaseFileName;
-
-        public TestWebApplicationFactory()
-        {
-            DatabaseFileName = $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
-        }
+        private readonly string databaseFileName = $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -29,24 +24,24 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                 services.AddDbContext<LighthouseAppContext>(options =>
                 {
-                    options.UseSqlite($"DataSource={DatabaseFileName}",
+                    options.UseSqlite($"DataSource={databaseFileName}",
                         x => x.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
                 });
             });
         }
 
-        private void RemoveServices(IServiceCollection services)
+        private static void RemoveServices(IServiceCollection services)
         {
             RemoveAllDbContextFromServices(services);
             RemoveHostedServices(services);
         }
 
-        private void RemoveHostedServices(IServiceCollection services)
+        private static void RemoveHostedServices(IServiceCollection services)
         {
             services.RemoveAll<IHostedService>();
         }
 
-        private void RemoveAllDbContextFromServices(IServiceCollection services)
+        private static void RemoveAllDbContextFromServices(IServiceCollection services)
         {
             var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<LighthouseAppContext>));
 
@@ -65,9 +60,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         private void DeleteDatabaseFile()
         {
-            if (File.Exists(DatabaseFileName))
+            if (File.Exists(databaseFileName))
             {
-                File.Delete(DatabaseFileName);
+                File.Delete(databaseFileName);
             }
         }
 

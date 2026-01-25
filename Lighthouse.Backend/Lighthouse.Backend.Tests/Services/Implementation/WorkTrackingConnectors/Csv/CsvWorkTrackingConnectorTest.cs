@@ -7,16 +7,11 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Csv
 {
-    public class CsvWorkTrackingConnectorTest : IntegrationTestBase
+    public class CsvWorkTrackingConnectorTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public CsvWorkTrackingConnectorTest() : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         [TestCase("empty-file.txt", false)]
         [TestCase("invalid-missing-required.csv", false)]
@@ -102,11 +97,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyRequiredWorkItemFields(workItems[0], "ITEM-001", "User Story Title", "In Progress", StateCategories.Doing, "User Story", new DateTime(2025, 01, 20), new DateTime(2025, 01, 25));
-                VerifyRequiredWorkItemFields(workItems[1], "ITEM-002", "Bug Title", "Done", StateCategories.Done, "Bug", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18));
-                VerifyRequiredWorkItemFields(workItems[2], "ITEM-003", "Database cleanup task", "To Do", StateCategories.ToDo, "Task", new DateTime(2025, 01, 25), null);
-                VerifyRequiredWorkItemFields(workItems[3], "ITEM-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Task", new DateTime(2025, 01, 30), new DateTime(2025, 02, 05));
-                VerifyRequiredWorkItemFields(workItems[4], "ITEM-005", "Improve logging", "Done", StateCategories.Done, "Task", new DateTime(2025, 01, 22), new DateTime(2025, 01, 28));
+                VerifyRequiredWorkItemFields(workItems[0], "ITEM-001", "User Story Title", "In Progress", StateCategories.Doing, "User Story", new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 01, 25, 0, 0, 0, DateTimeKind.Utc));
+                VerifyRequiredWorkItemFields(workItems[1], "ITEM-002", "Bug Title", "Done", StateCategories.Done, "Bug", new DateTime(2025, 01, 12, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 01, 18, 0, 0, 0, DateTimeKind.Utc));
+                VerifyRequiredWorkItemFields(workItems[2], "ITEM-003", "Database cleanup task", "To Do", StateCategories.ToDo, "Task", new DateTime(2025, 01, 25, 0, 0, 0, DateTimeKind.Utc), null);
+                VerifyRequiredWorkItemFields(workItems[3], "ITEM-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Task", new DateTime(2025, 01, 30, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 02, 05, 0, 0, 0, DateTimeKind.Utc));
+                VerifyRequiredWorkItemFields(workItems[4], "ITEM-005", "Improve logging", "Done", StateCategories.Done, "Task", new DateTime(2025, 01, 22, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc));
 
                 var workItem = workItems[0];
                 Assert.That(workItem.TeamId, Is.EqualTo(team.Id));
@@ -124,11 +119,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyOptionalWorkItemFields(workItems[0], new DateTime(2025, 01, 15), "EPIC-001", ["frontend", "feature"], "https://system.com/item/1");
-                VerifyOptionalWorkItemFields(workItems[1], new DateTime(2025, 01, 10), string.Empty, ["critical"], string.Empty);
-                VerifyOptionalWorkItemFields(workItems[2], new DateTime(2025, 01, 20), "EPIC-001", ["maintenance", "blocked"], string.Empty);
-                VerifyOptionalWorkItemFields(workItems[3], new DateTime(2025, 01, 28), "EPIC-003", ["backend", "security"], "https://system.com/item/4");
-                VerifyOptionalWorkItemFields(workItems[4], new DateTime(2025, 01, 20), string.Empty, [], string.Empty);
+                VerifyOptionalWorkItemFields(workItems[0], new DateTime(2025, 01, 15, 0, 0, 0, DateTimeKind.Utc), "EPIC-001", ["frontend", "feature"], "https://system.com/item/1");
+                VerifyOptionalWorkItemFields(workItems[1], new DateTime(2025, 01, 10, 0, 0, 0, DateTimeKind.Utc), string.Empty, ["critical"], string.Empty);
+                VerifyOptionalWorkItemFields(workItems[2], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), "EPIC-001", ["maintenance", "blocked"], string.Empty);
+                VerifyOptionalWorkItemFields(workItems[3], new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc), "EPIC-003", ["backend", "security"], "https://system.com/item/4");
+                VerifyOptionalWorkItemFields(workItems[4], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), string.Empty, [], string.Empty);
             }
         }
 
@@ -164,11 +159,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyOptionalWorkItemFields(workItems[0], new DateTime(2025, 01, 15), string.Empty, ["frontend", "feature"], "https://system.com/item/1");
-                VerifyOptionalWorkItemFields(workItems[1], new DateTime(2025, 01, 10), string.Empty, ["critical", "bug"], "https://system.com/item/2");
-                VerifyOptionalWorkItemFields(workItems[2], new DateTime(2025, 01, 20), string.Empty, ["maintenance", "blocked"], string.Empty);
-                VerifyOptionalWorkItemFields(workItems[3], new DateTime(2025, 01, 28), string.Empty, ["backend", "security"], "https://system.com/item/4");
-                VerifyOptionalWorkItemFields(workItems[4], new DateTime(2025, 01, 20), string.Empty, [], "https://system.com/item/5");
+                VerifyOptionalWorkItemFields(workItems[0], new DateTime(2025, 01, 15, 0, 0, 0, DateTimeKind.Utc), string.Empty, ["frontend", "feature"], "https://system.com/item/1");
+                VerifyOptionalWorkItemFields(workItems[1], new DateTime(2025, 01, 10, 0, 0, 0, DateTimeKind.Utc), string.Empty, ["critical", "bug"], "https://system.com/item/2");
+                VerifyOptionalWorkItemFields(workItems[2], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), string.Empty, ["maintenance", "blocked"], string.Empty);
+                VerifyOptionalWorkItemFields(workItems[3], new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc), string.Empty, ["backend", "security"], "https://system.com/item/4");
+                VerifyOptionalWorkItemFields(workItems[4], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), string.Empty, [], "https://system.com/item/5");
             }
         }
 
@@ -204,11 +199,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyRequiredWorkItemFields(features[0], "EPIC-001", "Epic Title", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 20), new DateTime(2025, 01, 25));
-                VerifyRequiredWorkItemFields(features[1], "EPIC-002", "Feature Title", "Done", StateCategories.Done, "Feature", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18));
-                VerifyRequiredWorkItemFields(features[2], "EPIC-003", "Database cleanup Container", "To Do", StateCategories.ToDo, "Epic", new DateTime(2025, 01, 25), null);
-                VerifyRequiredWorkItemFields(features[3], "EPIC-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 30), new DateTime(2025, 02, 05));
-                VerifyRequiredWorkItemFields(features[4], "EPIC-005", "Improve logging", "Done", StateCategories.Done, "Epic", new DateTime(2025, 01, 22), new DateTime(2025, 01, 28));
+                VerifyRequiredWorkItemFields(features[0], "EPIC-001", "Epic Title", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 01, 25, 0, 0, 0, DateTimeKind.Utc));
+                VerifyRequiredWorkItemFields(features[1], "EPIC-002", "Feature Title", "Done", StateCategories.Done, "Feature", new DateTime(2025, 01, 12, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 01, 18, 0, 0, 0, DateTimeKind.Utc));
+                VerifyRequiredWorkItemFields(features[2], "EPIC-003", "Database cleanup Container", "To Do", StateCategories.ToDo, "Epic", new DateTime(2025, 01, 25, 0, 0, 0, DateTimeKind.Utc), null);
+                VerifyRequiredWorkItemFields(features[3], "EPIC-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 30, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 02, 05, 0, 0, 0, DateTimeKind.Utc));
+                VerifyRequiredWorkItemFields(features[4], "EPIC-005", "Improve logging", "Done", StateCategories.Done, "Epic", new DateTime(2025, 01, 22, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc));
             }
         }
 
@@ -222,11 +217,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", 8, "Frontend Team");
-                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical"], string.Empty, 3, string.Empty);
-                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, 1, "Frontend Team");
-                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
-                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], string.Empty, 2, string.Empty);
+                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15, 0, 0, 0, DateTimeKind.Utc), ["frontend", "feature"], "https://system.com/item/1", 8, "Frontend Team");
+                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10, 0, 0, 0, DateTimeKind.Utc), ["critical"], string.Empty, 3, string.Empty);
+                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), ["maintenance", "blocked"], string.Empty, 1, "Frontend Team");
+                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
+                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), [], string.Empty, 2, string.Empty);
             }
         }
 
@@ -240,11 +235,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", 8, "Frontend Team");
-                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical", "bug"], "https://system.com/item/2", 3, "Platform Team");
-                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, 1, "Operations");
-                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
-                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], "https://system.com/item/5", 2, "Backend Team");
+                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15, 0, 0, 0, DateTimeKind.Utc), ["frontend", "feature"], "https://system.com/item/1", 8, "Frontend Team");
+                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10, 0, 0, 0, DateTimeKind.Utc), ["critical", "bug"], "https://system.com/item/2", 3, "Platform Team");
+                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), ["maintenance", "blocked"], string.Empty, 1, "Operations");
+                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
+                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), [], "https://system.com/item/5", 2, "Backend Team");
             }
         }
 
@@ -267,7 +262,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("team-valid-required-only.csv");
 
-            team.ToDoStates = new List<string> { "New" };
+            team.ToDoStates = ["New"];
 
             var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
 
@@ -293,7 +288,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = CreateProject("project-valid-required-only.csv");
 
-            project.ToDoStates = new List<string> { "New" };
+            project.ToDoStates = ["New"];
 
             var features = (await subject.GetFeaturesForProject(project)).ToList();
 
@@ -303,18 +298,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task DefaultAzureDevOpsConnection_CanLoadAdoFile()
         {
+            await SeedDatabase();
             var subject = CreateSubject();
-            var adoCsvConnection = GetWorkTrackingSystemRepository().GetByPredicate(x => x.WorkTrackingSystem == WorkTrackingSystems.Csv && x.Name == "CSV Azure DevOps") ?? throw new ArgumentNullException("Azure DevOps CSV Connection");
+            var adoCsvConnection = GetWorkTrackingSystemRepository().GetByPredicate(x => x is { WorkTrackingSystem: WorkTrackingSystems.Csv, Name: "CSV Azure DevOps" }) ?? throw new InvalidOperationException("Azure DevOps CSV Connection not found");
 
             var toDoStates = new List<string>{ "New" };
             var doingStates = new List<string>{ "Active", "Resolved" };
-            var doneStaes = new List<string>{ "Closed" };
+            var doneStates = new List<string>{ "Closed" };
 
             var team = CreateTeam("adodata.csv");
             team.WorkTrackingSystemConnection = adoCsvConnection;
             team.ToDoStates = toDoStates;
             team.DoingStates = doingStates;
-            team.DoneStates = doneStaes;
+            team.DoneStates = doneStates;
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             Assert.That(workItems.ToList(), Has.Count.EqualTo(95));
@@ -322,14 +318,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreateProject("adodata.csv");
             project.ToDoStates = toDoStates;
             project.DoingStates = doingStates;
-            project.DoneStates = doneStaes;
+            project.DoneStates = doneStates;
 
             project.WorkTrackingSystemConnection = adoCsvConnection;
             var features = await subject.GetFeaturesForProject(project);
             Assert.That(features.ToList(), Has.Count.EqualTo(14));
         }
 
-        private void VerifyRequiredWorkItemFields(WorkItemBase workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
+        private static void VerifyRequiredWorkItemFields(WorkItemBase workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
         {
             using (Assert.EnterMultipleScope())
             {
@@ -348,7 +344,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private void VerifyOptionalWorkItemFields(WorkItemBase workItem, DateTime? createdDate, string? parentReferenceId, string[] tags, string? url)
+        private static void VerifyOptionalWorkItemFields(WorkItemBase workItem, DateTime? createdDate, string? parentReferenceId, string[] tags, string? url)
         {
             using (Assert.EnterMultipleScope())
             {
@@ -365,7 +361,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private void VerifyOptionalFeatureFields(Feature feature, DateTime? createdDate, string[] tags, string? url, int estimatedSize, string owningTeam)
+        private static void VerifyOptionalFeatureFields(Feature feature, DateTime? createdDate, string[] tags, string? url, int estimatedSize, string owningTeam)
         {
             VerifyOptionalWorkItemFields(feature, createdDate, string.Empty, tags, url);
             using (Assert.EnterMultipleScope())
@@ -375,7 +371,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private string LoadCsvFile(string csvFileName)
+        private static string LoadCsvFile(string csvFileName)
         {
             var csvFileContent = File.ReadAllText($"Services/Implementation/WorkTrackingConnectors/Csv/{csvFileName}");
             return csvFileContent;
@@ -387,10 +383,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Id = 1886,
                 DataRetrievalValue = LoadCsvFile(csvFile),
-                ToDoStates = new List<string> { "To Do" },
-                DoingStates = new List<string> { "In Progress" },
-                DoneStates = new List<string> { "done" },
-                WorkItemTypes = new List<string> { "User Story", "bug", "Task" },
+                ToDoStates = ["To Do"],
+                DoingStates = ["In Progress"],
+                DoneStates = ["done"],
+                WorkItemTypes = ["User Story", "bug", "Task"],
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
@@ -403,17 +399,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Id = 1886,
                 DataRetrievalValue = LoadCsvFile(csvFile),
-                ToDoStates = new List<string> { "To Do" },
-                DoingStates = new List<string> { "In Progress" },
-                DoneStates = new List<string> { "Done" },
-                WorkItemTypes = new List<string> { "Feature", "Epic" },
+                ToDoStates = ["To Do"],
+                DoingStates = ["In Progress"],
+                DoneStates = ["Done"],
+                WorkItemTypes = ["Feature", "Epic"],
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
             return project;
         }
 
-        private void AdjustWorkTrackingSystemOption(WorkTrackingSystemConnection connection, string key, string value)
+        private static void AdjustWorkTrackingSystemOption(WorkTrackingSystemConnection connection, string key, string value)
         {
             connection.Options.Single(o => o.Key == key).Value = value;
         }
@@ -430,19 +426,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private CsvWorkTrackingConnector CreateSubject()
         {
-            return ServiceProvider.GetService<CsvWorkTrackingConnector>() ?? throw new ArgumentNullException("Could not resolve Work Tracking Connector");
+            return ServiceProvider.GetService<CsvWorkTrackingConnector>() ?? throw new InvalidOperationException("Could not resolve Work Tracking Connector");
         }
 
         private IWorkTrackingSystemFactory GetWorkTrackingSystemFactory()
         {
-            return ServiceProvider.GetService<IWorkTrackingSystemFactory>() ?? throw new ArgumentNullException("Could not resolve Work Tracking System Factory");
+            return ServiceProvider.GetService<IWorkTrackingSystemFactory>() ?? throw new InvalidOperationException("Could not resolve Work Tracking System Factory");
         }
 
         private WorkTrackingSystemConnectionRepository GetWorkTrackingSystemRepository()
         {
-            var repo = (WorkTrackingSystemConnectionRepository)ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Coult not resolve Work Tracking System Connection Repo");
-            repo.SeedBuiltInConnections();
-
+            var repo = (WorkTrackingSystemConnectionRepository)ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new InvalidOperationException("Could not resolve Work Tracking System Connection Repo");
             return repo;
         }
     }

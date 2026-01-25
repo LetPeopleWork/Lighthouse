@@ -1,28 +1,17 @@
 ﻿using Lighthouse.Backend.Data;
-using Microsoft.EntityFrameworkCore;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     [TestFixture]
-    public abstract class IntegrationTestBase
+    public abstract class IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory)
     {
-        private readonly TestWebApplicationFactory<Program> webApplicationFactory;
-
-        private readonly HttpClient client;
-
         private IServiceScope serviceScope;
-
-        protected IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory)
-        {
-            this.webApplicationFactory = webApplicationFactory;
-
-            client = webApplicationFactory.CreateClient();
-        }
 
         protected IServiceProvider ServiceProvider { get; private set; }
 
-        protected HttpClient Client => client;
+        protected HttpClient Client { get; } = webApplicationFactory.CreateClient();
 
         protected LighthouseAppContext DatabaseContext { get; private set; }
 
@@ -31,7 +20,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             webApplicationFactory.Dispose();
 
-            client?.Dispose();
+            Client.Dispose();
         }
 
         [SetUp]
@@ -50,12 +39,17 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         [TearDown]
         protected virtual void TearDown()
         {
-            if (DatabaseContext != null)
+            DatabaseContext.Database.EnsureDeleted();
+            serviceScope.Dispose();
+        }
+        
+        protected async Task SeedDatabase()
+        {
+            var seeders = ServiceProvider.GetServices<ISeeder>();
+            foreach (var seeder in seeders)
             {
-                DatabaseContext.Database.EnsureDeleted();
+                await seeder.Seed();
             }
-
-            serviceScope?.Dispose();
         }
     }
 }

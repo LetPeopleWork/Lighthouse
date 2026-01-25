@@ -36,8 +36,9 @@ using Lighthouse.Backend.macOS;
 using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using System.Diagnostics;
 using System.Text;
+using Lighthouse.Backend.Services.Implementation.Seeding;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend
@@ -204,15 +205,15 @@ namespace Lighthouse.Backend
                         .WithReadResourceHandler(async (request, cancellationToken) =>
                         {
                             var serviceProvider = builder.Services.BuildServiceProvider();
-                            using var scope = serviceProvider.CreateScope();
-                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            using var serviceScope = serviceProvider.CreateScope();
+                            var resources = serviceScope.ServiceProvider.GetRequiredService<LighthouseResources>();
                             return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
                         })
-                        .WithListResourcesHandler(async (request, cancellationToken) =>
+                        .WithListResourcesHandler(async (_, _) =>
                         {
                             var serviceProvider = builder.Services.BuildServiceProvider();
-                            using var scope = serviceProvider.CreateScope();
-                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            using var serviceScope = serviceProvider.CreateScope();
+                            var resources = serviceScope.ServiceProvider.GetRequiredService<LighthouseResources>();
                             return await resources.ListDocumentationResources();
                         });
                 }
@@ -225,9 +226,9 @@ namespace Lighthouse.Backend
                 .AddCors(options =>
                 {
                     options.AddPolicy("AllowAll",
-                      builder =>
+                      corsPolicyBuilder =>
                       {
-                          builder.AllowAnyOrigin()
+                          corsPolicyBuilder.AllowAnyOrigin()
                                .AllowAnyMethod()
                                .AllowAnyHeader();
                       });
@@ -257,7 +258,7 @@ namespace Lighthouse.Backend
 
             builder.Services
             .AddHttpClient("Default")
-            .ConfigurePrimaryHttpMessageHandler(sp => new SocketsHttpHandler
+            .ConfigurePrimaryHttpMessageHandler(_ => new SocketsHttpHandler
             {
                 PooledConnectionLifetime = TimeSpan.FromMinutes(10),
                 PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
@@ -310,6 +311,12 @@ namespace Lighthouse.Backend
 
             // MCP Resources
             builder.Services.AddScoped<LighthouseResources>();
+            
+            // Seeding Services - Register in order they should run
+            builder.Services.AddScoped<ISeeder, AppSettingSeeder>();
+            builder.Services.AddScoped<ISeeder, OptionalFeatureSeeder>();
+            builder.Services.AddScoped<ISeeder, TerminologySeeder>();
+            builder.Services.AddScoped<ISeeder, WorkTrackingSystemConnectionSeeder>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();
@@ -400,18 +407,33 @@ namespace Lighthouse.Backend
                 }
             });
 
-            if (!builder.Environment.IsEnvironment("Testing"))
+            if (builder.Environment.IsEnvironment("Testing"))
             {
-                // Run migration
-                using var scope = builder.Services.BuildServiceProvider().CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-                logger.LogInformation("Migrating Database");
-                context.Database.Migrate();
+                return;
             }
+
+            // Run migration
+            using var scope = builder.Services.BuildServiceProvider().CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            logger.LogInformation("Migrating Database");
+            context.Database.Migrate();
+            
+            logger.LogInformation("Seeding Database");
+            SeedDatabase(scope.ServiceProvider);
         }
 
+        private static void SeedDatabase(IServiceProvider serviceProvider)
+        {
+            var seeders = serviceProvider.GetServices<ISeeder>();
+    
+            foreach (var seeder in seeders)
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
+        }
+        
         private static void ConfigureLogging(WebApplicationBuilder builder)
         {
             var fileSystemService = new FileSystemService();
@@ -499,14 +521,10 @@ namespace Lighthouse.Backend
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
                 $"        Lighthouse {version}",
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                ""
             };
 
-            info.Add("");
-
-            foreach (var url in urls)
-            {
-                info.Add(Line("🌐", "Url", url));
-            }
+            info.AddRange(urls.Select(url => Line("🌐", "Url", url)));
 
             info.Add("");
 
