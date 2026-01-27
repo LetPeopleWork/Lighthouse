@@ -34,7 +34,7 @@
 		"dayjs": "^1.11.19",
 		"lodash.debounce": "^4.0.8",
 		"lorem-ipsum": "^2.0.8",
-		"react": "^19.2.3",
+		"react": "^19.2.4",
 		"react-dom": "^19.2.3",
 		"react-markdown": "^10.1.0",
 		"react-router-dom": "^7.13.0",
