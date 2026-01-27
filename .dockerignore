@@ -14,6 +14,7 @@
 **/azds.yaml
 **/bin
 **/charts
+!Lighthouse.Frontend/src/utils/charts
 **/docker-compose*
 **/Dockerfile*
 **/node_modules
@@ -28,4 +29,3 @@ README.md
 !.git/HEAD
 !.git/config
 !.git/packed-refs
-!.git/refs/heads/**
