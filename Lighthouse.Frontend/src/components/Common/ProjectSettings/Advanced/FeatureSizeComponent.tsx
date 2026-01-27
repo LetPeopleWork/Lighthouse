@@ -1,13 +1,4 @@
-import {
-	FormControl,
-	FormControlLabel,
-	InputLabel,
-	MenuItem,
-	Select,
-	Switch,
-	TextField,
-	Typography,
-} from "@mui/material";
+import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
@@ -16,6 +7,7 @@ import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import FormSelectField from "../../FormSelectField/FormSelectField";
 import InputGroup from "../../InputGroup/InputGroup";
 import ItemListManager from "../../ItemListManager/ItemListManager";
 
@@ -137,7 +129,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					</Grid>
 					<Grid size={{ xs: 12 }}>
 						<TextField
-							label={`History in Days`}
+							label="History in Days"
 							type="number"
 							fullWidth
 							margin="normal"
@@ -175,31 +167,20 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 			)}
 
 			<Grid size={{ xs: 12 }}>
-				<FormControl fullWidth margin="normal">
-					<InputLabel>Size Estimate Field</InputLabel>
-					<Select<number | "">
-						value={
-							projectSettings?.sizeEstimateAdditionalFieldDefinitionId ?? ""
-						}
-						label="Size Estimate Field"
-						onChange={(e) => {
-							const value = e.target.value;
-							onProjectSettingsChange(
-								"sizeEstimateAdditionalFieldDefinitionId",
-								value === "" ? null : value,
-							);
-						}}
-					>
-						<MenuItem value="">
-							<em>None</em>
-						</MenuItem>
-						{additionalFieldDefinitions.map((field) => (
-							<MenuItem key={field.id} value={field.id}>
-								{field.displayName}
-							</MenuItem>
-						))}
-					</Select>
-				</FormControl>
+				<FormSelectField
+					label="Size Estimate Field"
+					value={projectSettings?.sizeEstimateAdditionalFieldDefinitionId ?? ""}
+					onChange={(value) => {
+						onProjectSettingsChange(
+							"sizeEstimateAdditionalFieldDefinitionId",
+							value,
+						);
+					}}
+					options={additionalFieldDefinitions.map((field) => ({
+						id: field.id,
+						label: field.displayName,
+					}))}
+				/>
 			</Grid>
 
 			<Grid size={{ xs: 12 }}>

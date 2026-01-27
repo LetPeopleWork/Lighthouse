@@ -1,11 +1,4 @@
-import {
-	Card,
-	CardContent,
-	Chip,
-	Stack,
-	Typography,
-	useTheme,
-} from "@mui/material";
+import { Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import type { Theme } from "@mui/material/styles";
 import {
 	ChartContainer,
@@ -17,19 +10,28 @@ import {
 } from "@mui/x-charts";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { getWorkItemName } from "../../../utils/featureName";
 import {
-	errorColor,
-	getColorMapForKeys,
-	hexToRgba,
-} from "../../../utils/theme/colors";
+	getMaxYAxisHeight,
+	integerValueFormatter,
+} from "../../../utils/charts/chartAxisUtils";
+import {
+	type BaseGroupedItem,
+	getBubbleSize,
+	getMarkerColor,
+	renderMarkerButton,
+	renderMarkerCircle,
+} from "../../../utils/charts/scatterMarkerUtils";
+import { getWorkItemName } from "../../../utils/featureName";
+import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
+import PercentileLegend from "./PercentileLegend";
 
 interface ScatterMarkerProps {
 	x: number;
@@ -42,9 +44,14 @@ const getAgeInDays = (item: IWorkItem): number => {
 	return item.workItemAge;
 };
 
-const getBubbleSize = (count: number): number => {
-	return Math.min(5 + Math.sqrt(count) * 3, 20);
-};
+interface IGroupedWorkItem extends BaseGroupedItem<IWorkItem> {
+	state: string;
+	stateIndex: number;
+	age: number;
+	items: IWorkItem[];
+	hasBlockedItems: boolean;
+	type: string;
+}
 
 interface ScatterMarkerConfig {
 	groupedDataPoints: IGroupedWorkItem[];
@@ -75,12 +82,8 @@ const ScatterMarker = (
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
-
-	// Use the color provided on the data item if present (series/data.color), otherwise fallback to theme
 	const providedColor = (props as unknown as { color?: string }).color;
-	const bubbleColor = group.hasBlockedItems
-		? errorColor
-		: (colorMap[group.type] ?? providedColor ?? theme.palette.primary.main);
+	const bubbleColor = getMarkerColor(group, colorMap, theme, providedColor);
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -95,51 +98,25 @@ const ScatterMarker = (
 
 	return (
 		<>
-			<circle
-				cx={props.x}
-				cy={props.y}
-				r={bubbleSize}
-				fill={bubbleColor}
-				opacity={props.isHighlighted ? 1 : 0.8}
-				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
-				strokeWidth={props.isHighlighted ? 2 : 0}
-				pointerEvents="none"
-			>
-				<title>{`${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`}</title>
-			</circle>
-			<foreignObject
-				x={props.x - bubbleSize}
-				y={props.y - bubbleSize}
-				width={bubbleSize * 2}
-				height={bubbleSize * 2}
-			>
-				<button
-					type="button"
-					style={{
-						width: "100%",
-						height: "100%",
-						cursor: "pointer",
-						background: "transparent",
-						border: "none",
-						padding: 0,
-						borderRadius: "50%",
-					}}
-					onClick={handleOpenWorkItems}
-					aria-label={`View ${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`}
-				/>
-			</foreignObject>
+			{renderMarkerCircle({
+				x: props.x,
+				y: props.y,
+				size: bubbleSize,
+				color: bubbleColor,
+				isHighlighted: props.isHighlighted,
+				theme,
+				title: `${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`,
+			})}
+			{renderMarkerButton({
+				x: props.x,
+				y: props.y,
+				size: bubbleSize,
+				ariaLabel: `View ${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`,
+				onClick: handleOpenWorkItems,
+			})}
 		</>
 	);
 };
-
-interface IGroupedWorkItem {
-	state: string;
-	stateIndex: number;
-	age: number;
-	items: IWorkItem[];
-	hasBlockedItems: boolean;
-	type: string;
-}
 
 const groupWorkItems = (
 	items: IWorkItem[],
@@ -195,11 +172,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	serviceLevelExpectation = null,
 	doingStates,
 }) => {
-	const [percentiles, setPercentiles] = useState<IPercentileValue[]>([]);
-	const [visiblePercentiles, setVisiblePercentiles] = useState<
-		Record<number, boolean>
-	>({});
-	const [sleVisible, setSleVisible] = useState<boolean>(false);
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
 	>([]);
@@ -208,7 +180,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
-	// Extract unique types and create color map
 	const types = useMemo(() => {
 		const typeSet = new Set<string>();
 		for (const item of inProgressItems) {
@@ -219,12 +190,17 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 	const colorMap = useMemo(() => getColorMapForKeys(types), [types]);
 
-	const [visibleTypes, setVisibleTypes] = useState<Record<string, boolean>>({});
-
-	// Initialize visible types when types change
-	useEffect(() => {
-		setVisibleTypes(Object.fromEntries(types.map((type) => [type, true])));
-	}, [types]);
+	const {
+		visiblePercentiles,
+		togglePercentileVisibility,
+		sleVisible,
+		toggleSleVisibility,
+		visibleTypes,
+		toggleTypeVisibility,
+	} = useChartVisibility({
+		percentiles: percentileValues,
+		types,
+	});
 
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
@@ -236,19 +212,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 
 	useEffect(() => {
-		setPercentiles(percentileValues);
-		const initialVisibility: Record<number, boolean> = {};
-		for (const p of percentileValues) {
-			initialVisibility[p.percentile] = true;
-		}
-		setVisiblePercentiles(initialVisibility);
-	}, [percentileValues]);
-
-	useEffect(() => {
 		const grouped = groupWorkItems(inProgressItems, doingStates);
-		// Filter based on type visibility - show group if at least one item has a visible type
 		const filtered = grouped.filter((g) => {
-			// Check if any item in the group has a visible type
 			return g.items.some((item) => {
 				const itemType = item.type || "";
 				if (!itemType) return true;
@@ -258,54 +223,19 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		setGroupedDataPoints(filtered);
 	}, [inProgressItems, doingStates, visibleTypes]);
 
-	const togglePercentileVisibility = (percentile: number) => {
-		setVisiblePercentiles((prev) => ({
-			...prev,
-			[percentile]: !prev[percentile],
-		}));
-	};
-
-	const toggleSleVisibility = () => {
-		setSleVisible((prev) => !prev);
-	};
-
-	const toggleTypeVisibility = (type: string) => {
-		setVisibleTypes((prev) => {
-			// Count how many types are currently visible
-			const visibleCount = Object.values(prev).filter(
-				(v) => v !== false,
-			).length;
-
-			// If trying to hide the last visible type, prevent it
-			if (prev[type] !== false && visibleCount <= 1) {
-				return prev;
-			}
-
-			return {
-				...prev,
-				[type]: !prev[type],
-			};
-		});
-	};
-
 	const handleShowItems = (items: IWorkItem[]) => {
 		setSelectedItems(items);
 		setDialogOpen(true);
 	};
 
-	const getMaxYAxisHeight = () => {
-		const percentileMax =
-			percentileValues.length > 0
-				? Math.max(...percentileValues.map((p) => p.value))
-				: 0;
-		const sleMax = serviceLevelExpectation ? serviceLevelExpectation.value : 0;
-		const dataMax =
-			groupedDataPoints.length > 0
-				? Math.max(...groupedDataPoints.map((g) => g.age))
-				: 0;
-
-		const maxValue = Math.max(percentileMax, sleMax, dataMax, 5);
-		return Math.ceil(maxValue * 1.1);
+	const getMaxYAxisHeightValue = () => {
+		return getMaxYAxisHeight({
+			percentiles: percentileValues,
+			serviceLevelExpectation,
+			dataPoints: groupedDataPoints,
+			getDataValue: (g) => g.age,
+			minValue: 5,
+		});
 	};
 
 	return inProgressItems.length > 0 && groupedDataPoints.length > 0 ? (
@@ -321,64 +251,15 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 						spacing={1}
 						sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
 					>
-						{percentiles.map((p) => {
-							const forecastLevel = new ForecastLevel(p.percentile);
-							return (
-								<Chip
-									key={`legend-${p.percentile}`}
-									label={`${p.percentile}%`}
-									sx={{
-										borderColor: forecastLevel.color,
-										borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
-										borderStyle: "dashed",
-										opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
-										backgroundColor: visiblePercentiles[p.percentile]
-											? hexToRgba(forecastLevel.color, theme.opacity.high)
-											: "transparent",
-										"&:hover": {
-											borderColor: forecastLevel.color,
-											borderWidth: 2,
-											backgroundColor: hexToRgba(
-												forecastLevel.color,
-												theme.opacity.high + 0.1,
-											),
-										},
-									}}
-									variant={
-										visiblePercentiles[p.percentile] ? "filled" : "outlined"
-									}
-									onClick={() => togglePercentileVisibility(p.percentile)}
-								/>
-							);
-						})}
-						{serviceLevelExpectation && (
-							<Chip
-								key="legend-sle"
-								label={serviceLevelExpectationTerm}
-								sx={{
-									borderColor: theme.palette.primary.main,
-									borderWidth: sleVisible ? 2 : 1,
-									borderStyle: "dashed",
-									opacity: sleVisible ? 1 : 0.7,
-									backgroundColor: sleVisible
-										? hexToRgba(
-												theme.palette.primary.main,
-												theme.opacity.medium,
-											)
-										: "transparent",
-									"&:hover": {
-										borderColor: theme.palette.primary.main,
-										borderWidth: 2,
-										backgroundColor: hexToRgba(
-											theme.palette.primary.main,
-											theme.opacity.high,
-										),
-									},
-								}}
-								variant={sleVisible ? "filled" : "outlined"}
-								onClick={toggleSleVisibility}
-							/>
-						)}
+						<PercentileLegend
+							percentiles={percentileValues}
+							visiblePercentiles={visiblePercentiles}
+							onTogglePercentile={togglePercentileVisibility}
+							serviceLevelExpectation={serviceLevelExpectation}
+							serviceLevelExpectationLabel={serviceLevelExpectationTerm}
+							sleVisible={sleVisible}
+							onToggleSle={toggleSleVisibility}
+						/>
 					</Stack>
 					<Stack
 						direction="row"
@@ -423,10 +304,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								scaleType: "linear",
 								label: `${workItemAgeTerm} (days)`,
 								min: 1,
-								max: getMaxYAxisHeight(),
-								valueFormatter: (value: number) => {
-									return Number.isInteger(value) ? value.toString() : "";
-								},
+								max: getMaxYAxisHeightValue(),
+								valueFormatter: integerValueFormatter,
 							},
 						]}
 						series={[
@@ -437,9 +316,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									y: group.age,
 									id: index,
 									itemCount: group.items.length,
-									color: group.hasBlockedItems
-										? errorColor
-										: colorMap[group.type] || theme.palette.primary.main,
+									color: getMarkerColor(group, colorMap, theme),
 								})),
 								xAxisId: "stateAxis",
 								yAxisId: "ageAxis",
@@ -467,7 +344,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							},
 						]}
 					>
-						{percentiles.map((p) => {
+						{percentileValues.map((p) => {
 							const forecastLevel = new ForecastLevel(p.percentile);
 							return visiblePercentiles[p.percentile] ? (
 								<ChartsReferenceLine
@@ -522,13 +399,12 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 										onShowItems: handleShowItems,
 									}),
 							}}
-						/>{" "}
+						/>
 						<ChartsTooltip
 							trigger="item"
 							sx={{
 								zIndex: 1200,
 								maxWidth: "400px",
-								// Hide the tooltip marker/dot
 								"& .MuiChartsTooltip-mark": {
 									display: "none",
 								},

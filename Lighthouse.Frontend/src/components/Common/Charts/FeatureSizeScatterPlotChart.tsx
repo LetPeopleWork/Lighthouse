@@ -1,7 +1,6 @@
 import {
 	Card,
 	CardContent,
-	Chip,
 	Stack,
 	type Theme,
 	Typography,
@@ -19,33 +18,37 @@ import {
 } from "@mui/x-charts";
 import type React from "react";
 import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IFeature } from "../../../models/Feature";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { StateCategory } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { getWorkItemName } from "../../../utils/featureName";
 import {
-	errorColor,
-	getColorMapForKeys,
-	hexToRgba,
-} from "../../../utils/theme/colors";
+	getMaxYAxisHeight,
+	integerValueFormatter,
+} from "../../../utils/charts/chartAxisUtils";
+import {
+	type BaseGroupedItem,
+	getBubbleSize,
+	renderMarkerButton,
+	renderMarkerCircle,
+} from "../../../utils/charts/scatterMarkerUtils";
+import { getWorkItemName } from "../../../utils/featureName";
+import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
+import PercentileLegend from "./PercentileLegend";
 
-const getBubbleSize = (count: number): number => {
-	return Math.min(5 + count * 3, 20);
-};
-
-type MarkerOptions = {
-	seriesGroupedDataMap?: Map<string | number, IGroupedFeature[]>;
-	seriesGroupKeyMapMap?: Map<string | number, Map<string, number>>;
-	theme: Theme;
-	featuresTerm: string;
-	colorMap: Record<string, string>;
-	onShowItems: (items: IFeature[]) => void;
-};
+interface IGroupedFeature extends BaseGroupedItem<IFeature> {
+	cycleTime: number;
+	size: number;
+	items: IFeature[];
+	state: string;
+	hasBlockedItems?: boolean;
+	type?: string;
+}
 
 type ScatterDatum = {
 	item?: Record<string, unknown>;
@@ -67,12 +70,19 @@ type ScatterPropsExtended = ScatterMarkerProps & {
 	color?: string;
 };
 
-// Extract datum retrieval logic
+type MarkerOptions = {
+	seriesGroupedDataMap?: Map<string | number, IGroupedFeature[]>;
+	seriesGroupKeyMapMap?: Map<string | number, Map<string, number>>;
+	theme: Theme;
+	featuresTerm: string;
+	colorMap: Record<string, string>;
+	onShowItems: (items: IFeature[]) => void;
+};
+
 const getDatum = (props: ScatterPropsExtended): ScatterDatum | undefined => {
 	return props.data ?? props.datum ?? props.item;
 };
 
-// Helper to get explicit group by index
 const getExplicitGroupByIndex = (
 	datumGroupIndex: number | undefined,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -86,7 +96,6 @@ const getExplicitGroupByIndex = (
 		: seriesGroup;
 };
 
-// Helper to get explicit group by key
 const getExplicitGroupByKey = (
 	datumGroupKey: string | undefined,
 	seriesIndexOrId: string | number,
@@ -132,7 +141,6 @@ const getGroupFromSeries = (
 	const datumGroupIndex = datum?.groupIndex;
 	const datumGroupKey = datum?.groupKey;
 
-	// Check explicit groupIndex first
 	if (typeof datumGroupIndex === "number") {
 		return getExplicitGroupByIndex(
 			datumGroupIndex,
@@ -141,7 +149,6 @@ const getGroupFromSeries = (
 		);
 	}
 
-	// Then check explicit groupKey
 	return getExplicitGroupByKey(
 		datumGroupKey,
 		seriesIndexOrId,
@@ -151,7 +158,6 @@ const getGroupFromSeries = (
 	);
 };
 
-// Extract group lookup by index
 const getGroupByIndex = (
 	datumGroupIndex: number | undefined,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -161,7 +167,6 @@ const getGroupByIndex = (
 		: undefined;
 };
 
-// Extract group lookup by key
 const getGroupByKey = (
 	datumGroupKey: string | undefined,
 	groupKeyMap: Map<string, number>,
@@ -173,7 +178,6 @@ const getGroupByKey = (
 	return typeof idx === "number" ? allGroupedDataPoints[idx] : undefined;
 };
 
-// Extract group lookup by coordinates
 const getGroupByCoordinates = (
 	props: ScatterPropsExtended,
 	datum: ScatterDatum | undefined,
@@ -186,7 +190,6 @@ const getGroupByCoordinates = (
 	);
 };
 
-// Render fallback marker
 const renderFallbackMarker = (
 	props: ScatterPropsExtended,
 	theme: Theme,
@@ -197,48 +200,26 @@ const renderFallbackMarker = (
 
 	return (
 		<>
-			<circle
-				cx={props.x}
-				cy={props.y}
-				r={fallbackSize}
-				fill={fallbackColor}
-				opacity={props.isHighlighted ? 1 : 0.8}
-				stroke={
-					props.isHighlighted
-						? theme.palette.background.paper
-						: hexToRgba(fallbackColor, 0.12)
-				}
-				strokeWidth={props.isHighlighted ? 2 : 1}
-				pointerEvents="none"
-			>
-				<title>Feature (unknown group) - click for details</title>
-			</circle>
-			<foreignObject
-				x={props.x - fallbackSize}
-				y={props.y - fallbackSize}
-				width={fallbackSize * 2}
-				height={fallbackSize * 2}
-			>
-				<button
-					type="button"
-					style={{
-						width: "100%",
-						height: "100%",
-						cursor: "pointer",
-						background: "transparent",
-						border: "none",
-						padding: 0,
-						borderRadius: "50%",
-					}}
-					onClick={() => {}}
-					aria-label="View feature details"
-				/>
-			</foreignObject>
+			{renderMarkerCircle({
+				x: props.x,
+				y: props.y,
+				size: fallbackSize,
+				color: fallbackColor,
+				isHighlighted: props.isHighlighted,
+				theme,
+				title: "Feature (unknown group) - click for details",
+			})}
+			{renderMarkerButton({
+				x: props.x,
+				y: props.y,
+				size: fallbackSize,
+				ariaLabel: "View feature details",
+				onClick: () => {},
+			})}
 		</>
 	);
 };
 
-// Main ScatterMarker with reduced complexity
 const ScatterMarker = (
 	props: ScatterMarkerProps,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -257,7 +238,6 @@ const ScatterMarker = (
 	const propsExtended = props as ScatterPropsExtended;
 	const datum = getDatum(propsExtended);
 
-	// Try different strategies to find the group
 	const group =
 		getGroupFromSeries(
 			propsExtended,
@@ -270,12 +250,10 @@ const ScatterMarker = (
 		getGroupByKey(datum?.groupKey, groupKeyMap, allGroupedDataPoints) ??
 		getGroupByCoordinates(propsExtended, datum, allGroupedDataPoints);
 
-	// Render fallback if no group found
 	if (!group) {
 		return renderFallbackMarker(propsExtended, theme);
 	}
 
-	// Calculate marker properties
 	const bubbleSize = getBubbleSize(group.items.length);
 	const stateCategory = group.items[0]?.stateCategory || group.state || "ToDo";
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
@@ -296,53 +274,25 @@ const ScatterMarker = (
 
 	return (
 		<>
-			<circle
-				cx={props.x}
-				cy={props.y}
-				r={bubbleSize}
-				fill={bubbleColor}
-				opacity={props.isHighlighted ? 1 : 0.8}
-				stroke={
-					props.isHighlighted
-						? theme.palette.background.paper
-						: hexToRgba(bubbleColor, 0.12)
-				}
-				strokeWidth={props.isHighlighted ? 2 : 1}
-				pointerEvents="none"
-			>
-				<title>{`${group.items.length} item${itemCountText} with size ${group.size} child items`}</title>
-			</circle>
-			<foreignObject
-				x={props.x - bubbleSize}
-				y={props.y - bubbleSize}
-				width={bubbleSize * 2}
-				height={bubbleSize * 2}
-			>
-				<button
-					type="button"
-					style={{
-						width: "100%",
-						height: "100%",
-						cursor: "pointer",
-						background: "transparent",
-						border: "none",
-						padding: 0,
-						borderRadius: "50%",
-					}}
-					onClick={handleOpenFeatures}
-					aria-label={`View ${group.items.length} ${featureTerm} with size ${group.size} child items`}
-				/>
-			</foreignObject>
+			{renderMarkerCircle({
+				x: props.x,
+				y: props.y,
+				size: bubbleSize,
+				color: bubbleColor,
+				isHighlighted: props.isHighlighted,
+				theme,
+				title: `${group.items.length} item${itemCountText} with size ${group.size} child items`,
+			})}
+			{renderMarkerButton({
+				x: props.x,
+				y: props.y,
+				size: bubbleSize,
+				ariaLabel: `View ${group.items.length} ${featureTerm} with size ${group.size} child items`,
+				onClick: handleOpenFeatures,
+			})}
 		</>
 	);
 };
-
-interface IGroupedFeature {
-	cycleTime: number;
-	size: number;
-	items: IFeature[];
-	state: string;
-}
 
 const getStateCategoryDisplayName = (stateCategory: StateCategory): string => {
 	if (stateCategory === "ToDo") return "To Do";
@@ -386,23 +336,6 @@ interface FeatureSizeScatterPlotChartProps {
 	sizePercentileValues?: IPercentileValue[];
 }
 
-const getMaxYAxisHeight = (
-	sizeDataPoints: IFeature[],
-	sizePercentileValues: IPercentileValue[],
-): number => {
-	const maxFromPercentiles =
-		sizePercentileValues.length > 0
-			? Math.max(...sizePercentileValues.map((p) => p.value))
-			: 0;
-	const maxFromData =
-		sizeDataPoints.length > 0
-			? Math.max(...sizeDataPoints.map((item) => item.size))
-			: 0;
-	const absoluteMax = Math.max(maxFromPercentiles, maxFromData);
-	return absoluteMax * 1.1;
-};
-
-// Extract series data point creation
 const createSeriesDataPoint = (
 	group: IGroupedFeature,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -427,7 +360,6 @@ const createSeriesDataPoint = (
 	};
 };
 
-// Extract value formatter logic
 const formatSeriesValue = (
 	item: ScatterValueType | null,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -471,29 +403,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 
 	const percentiles = sizePercentileValues ?? [];
 
-	const [visiblePercentiles, setVisiblePercentiles] = useState<
-		Record<number, boolean>
-	>({});
 	const [fixedXAxisMax, setFixedXAxisMax] = useState<number | null>(null);
 	const [fixedYAxisMax, setFixedYAxisMax] = useState<number | null>(null);
-
-	useEffect(() => {
-		const newVisibility = Object.fromEntries(
-			percentiles.map((p) => [p.percentile, true]),
-		);
-		setVisiblePercentiles((prev) => {
-			const prevKeys = Object.keys(prev)
-				.sort((a, b) => a.localeCompare(b))
-				.join(",");
-			const newKeys = Object.keys(newVisibility)
-				.sort((a, b) => a.localeCompare(b))
-				.join(",");
-			if (prevKeys !== newKeys) {
-				return newVisibility;
-			}
-			return prev;
-		});
-	}, [percentiles]);
 
 	const stateCategories = useMemo(() => {
 		const stateCategorySet = new Set<StateCategory>();
@@ -509,27 +420,18 @@ const FeatureSizeScatterPlotChart: React.FC<
 		[stateCategories],
 	);
 
-	const [visibleStateCategories, setVisibleStateCategories] = useState<
-		Partial<Record<StateCategory, boolean>>
-	>({});
-
-	useEffect(() => {
-		const newVisibility = Object.fromEntries(
-			stateCategories.map((s) => [s, s === "Done"]),
-		) as Partial<Record<StateCategory, boolean>>;
-		setVisibleStateCategories((prev) => {
-			const prevKeys = Object.keys(prev)
-				.sort((a, b) => a.localeCompare(b))
-				.join(",");
-			const newKeys = Object.keys(newVisibility)
-				.sort((a, b) => a.localeCompare(b))
-				.join(",");
-			if (prevKeys !== newKeys) {
-				return newVisibility;
-			}
-			return prev;
-		});
-	}, [stateCategories]);
+	const {
+		visiblePercentiles,
+		togglePercentileVisibility,
+		visibleTypes: visibleStateCategories,
+		toggleTypeVisibility: toggleStateCategoryVisibility,
+	} = useChartVisibility({
+		percentiles,
+		types: stateCategories,
+		initialTypeVisibility: Object.fromEntries(
+			stateCategories.map((state) => [state, state === "Done"]),
+		) as Record<StateCategory, boolean>,
+	});
 
 	useEffect(() => {
 		if (sizeDataPoints.length === 0) {
@@ -538,7 +440,11 @@ const FeatureSizeScatterPlotChart: React.FC<
 			return;
 		}
 
-		const xMax = getMaxYAxisHeight(sizeDataPoints, percentiles);
+		const xMax = getMaxYAxisHeight({
+			percentiles,
+			dataPoints: sizeDataPoints,
+			getDataValue: (item) => item.size,
+		});
 		setFixedXAxisMax(xMax);
 
 		const cycleTimes = sizeDataPoints.map((item) => {
@@ -588,30 +494,6 @@ const FeatureSizeScatterPlotChart: React.FC<
 
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IFeature[]>([]);
-
-	const togglePercentileVisibility = useCallback((percentile: number) => {
-		setVisiblePercentiles((prev) => ({
-			...prev,
-			[percentile]: !prev[percentile],
-		}));
-	}, []);
-
-	const toggleStateCategoryVisibility = (stateCategory: StateCategory) => {
-		setVisibleStateCategories((prev) => {
-			const visibleCount = Object.values(prev).filter(
-				(v) => v !== false,
-			).length;
-
-			if (prev[stateCategory] !== false && visibleCount <= 1) {
-				return prev;
-			}
-
-			return {
-				...prev,
-				[stateCategory]: !prev[stateCategory],
-			};
-		});
-	};
 
 	const handleShowItems = useCallback((items: IFeature[]) => {
 		setSelectedItems(items);
@@ -715,42 +597,11 @@ const FeatureSizeScatterPlotChart: React.FC<
 								alignItems: "center",
 							}}
 						>
-							<Stack
-								direction="row"
-								spacing={1}
-								sx={{ flexWrap: "wrap", gap: 1 }}
-							>
-								{percentiles.map((p) => {
-									const forecastLevel = new ForecastLevel(p.percentile);
-									return (
-										<Chip
-											key={`legend-${p.percentile}`}
-											label={`${p.percentile}%`}
-											sx={{
-												borderColor: forecastLevel.color,
-												borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
-												borderStyle: "dashed",
-												opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
-												backgroundColor: visiblePercentiles[p.percentile]
-													? hexToRgba(forecastLevel.color, theme.opacity.high)
-													: "transparent",
-												"&:hover": {
-													borderColor: forecastLevel.color,
-													borderWidth: 2,
-													backgroundColor: hexToRgba(
-														forecastLevel.color,
-														theme.opacity.high + 0.1,
-													),
-												},
-											}}
-											variant={
-												visiblePercentiles[p.percentile] ? "filled" : "outlined"
-											}
-											onClick={() => togglePercentileVisibility(p.percentile)}
-										/>
-									);
-								})}
-							</Stack>
+							<PercentileLegend
+								percentiles={percentiles}
+								visiblePercentiles={visiblePercentiles}
+								onTogglePercentile={togglePercentileVisibility}
+							/>
 							{stateCategories.length > 0 && (
 								<Stack
 									direction="row"
@@ -784,10 +635,12 @@ const FeatureSizeScatterPlotChart: React.FC<
 								min: 0,
 								max:
 									fixedXAxisMax ??
-									getMaxYAxisHeight(sizeDataPoints, percentiles),
-								valueFormatter: (value: number) => {
-									return Number.isInteger(value) ? value.toString() : "";
-								},
+									getMaxYAxisHeight({
+										percentiles,
+										dataPoints: sizeDataPoints,
+										getDataValue: (item) => item.size,
+									}),
+								valueFormatter: integerValueFormatter,
 							},
 						]}
 						yAxis={[
@@ -797,9 +650,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 								label: `${cycleTimeTerm} (days)`,
 								min: 0,
 								max: fixedYAxisMax ?? undefined,
-								valueFormatter: (value: number) => {
-									return Number.isInteger(value) ? value.toString() : "";
-								},
+								valueFormatter: integerValueFormatter,
 							},
 						]}
 						series={series}

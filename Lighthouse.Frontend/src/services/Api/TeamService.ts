@@ -20,7 +20,7 @@ export class TeamService extends BaseApiService implements ITeamService {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ITeam[]>("/teams");
 			return response.data
-				.map(BaseApiService.deserializeTeam)
+				.map((element) => BaseApiService.deserializeTeam(element))
 				.filter((team): team is Team => team !== null);
 		});
 	}

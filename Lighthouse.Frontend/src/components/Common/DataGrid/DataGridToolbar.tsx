@@ -8,76 +8,73 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import type { DataGridToolbarProps } from "./types";
 
-/**
- * Custom toolbar for DataGrid with CSV export functionality
- * Export features are gated behind premium license
- */
-const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
-	canUsePremiumFeatures = false,
-	enableExport = false,
-	exportFileName,
-	onResetLayout,
-	onOpenColumnOrder,
-	allowColumnReorder = false,
-	customActions,
-}) => {
-	const apiRef = useGridApiContext();
+const generateFileName = (exportFileName?: string): string => {
+	const timestamp = new Date().toISOString().split("T")[0];
+	return exportFileName
+		? `${exportFileName}_${timestamp}`
+		: `data_export_${timestamp}`;
+};
+
+const escapeHtml = (text: string): string => {
+	return text
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;");
+};
+
+const escapeCSV = (value: string): string => {
+	if (value.includes(",") || value.includes("\n") || value.includes('"')) {
+		return `"${value.replaceAll('"', '""')}"`;
+	}
+	return value;
+};
+
+const formatCellValue = (value: unknown): string => {
+	if (value === null || value === undefined) return "";
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+};
+
+const useDataGridExport = (
+	apiRef: ReturnType<typeof useGridApiContext>,
+	canUsePremiumFeatures: boolean,
+) => {
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
 
-	// Generate filename with timestamp
-	const generateFileName = useCallback(() => {
-		const timestamp = new Date().toISOString().split("T")[0];
-		return exportFileName
-			? `${exportFileName}_${timestamp}`
-			: `data_export_${timestamp}`;
-	}, [exportFileName]);
+	const getGridData = useCallback(() => {
+		const visibleRows = apiRef.current.getSortedRowIds();
+		const visibleColumns = apiRef.current.getVisibleColumns();
 
-	// Copy visible grid data to clipboard with both HTML table and plain text formats
+		const headers = visibleColumns.map((col) => col.headerName || col.field);
+
+		const dataRows = visibleRows.map((rowId) => {
+			return visibleColumns.map((col) => {
+				const value = apiRef.current.getCellValue(rowId, col.field);
+				return formatCellValue(value);
+			});
+		});
+
+		return { headers, dataRows };
+	}, [apiRef]);
+
 	const handleCopyToClipboard = useCallback(async () => {
-		// Runtime premium check
 		if (!canUsePremiumFeatures) {
 			console.warn("Copy to clipboard requires premium license");
 			return;
 		}
 
 		try {
-			// Get all visible rows (after filtering/sorting)
-			const visibleRows = apiRef.current.getSortedRowIds();
-			const visibleColumns = apiRef.current.getVisibleColumns();
-
-			// Build header row
-			const headers = visibleColumns.map((col) => col.headerName || col.field);
-
-			// Build data rows
-			const dataRows = visibleRows.map((rowId) => {
-				return visibleColumns.map((col) => {
-					// Use getCellValue to properly handle valueGetter columns
-					const value = apiRef.current.getCellValue(rowId, col.field);
-					// Handle different value types
-					if (value === null || value === undefined) return "";
-					if (typeof value === "object") return JSON.stringify(value);
-					return String(value);
-				});
-			});
-
-			// Plain text format (tab-separated)
+			const { headers, dataRows } = getGridData();
 			const allRows = [headers, ...dataRows];
+
 			const textContent = allRows.map((row) => row.join("\t")).join("\n");
 
-			// HTML table format (preserves formatting in emails/rich text editors)
-			const escapeHtml = (text: string) => {
-				let result = text;
-				result = result.replaceAll("&", "&amp;");
-				result = result.replaceAll("<", "&lt;");
-				result = result.replaceAll(">", "&gt;");
-				result = result.replaceAll('"', "&quot;");
-				return result;
-			};
 			const htmlContent = `
 				<table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse;">
 					<thead>
 						<tr>
-							${headers.map((h) => `<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;"> ${escapeHtml(h)}</th>`).join("")}
+							${headers.map((h) => `<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;">${escapeHtml(h)}</th>`).join("")}
 						</tr>
 					</thead>
 					<tbody>
@@ -94,7 +91,6 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 				</table>
 			`.trim();
 
-			// Write both formats to clipboard
 			const htmlBlob = new Blob([htmlContent], { type: "text/html" });
 			const textBlob = new Blob([textContent], { type: "text/plain" });
 
@@ -105,82 +101,78 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 				}),
 			]);
 
-			// Show feedback
 			setCopyStatus("copied");
 			setTimeout(() => setCopyStatus("idle"), 2000);
 		} catch (error) {
 			console.error("Failed to copy to clipboard:", error);
 		}
-	}, [apiRef, canUsePremiumFeatures]);
+	}, [getGridData, canUsePremiumFeatures]);
 
-	// Export visible grid data to CSV file
-	const handleExportToCSV = useCallback(async () => {
-		// Runtime premium check
-		if (!canUsePremiumFeatures) {
-			console.warn("CSV export requires premium license");
-			return;
-		}
+	const handleExportToCSV = useCallback(
+		async (fileName: string) => {
+			if (!canUsePremiumFeatures) {
+				console.warn("CSV export requires premium license");
+				return;
+			}
 
-		try {
-			// Get all visible rows (after filtering/sorting)
-			const visibleRows = apiRef.current.getSortedRowIds();
-			const visibleColumns = apiRef.current.getVisibleColumns();
+			try {
+				const { headers, dataRows } = getGridData();
 
-			// Build header row
-			const headers = visibleColumns.map((col) => col.headerName || col.field);
+				const csvRows = dataRows.map((row) =>
+					row.map((element) => escapeCSV(element)),
+				);
+				const allRows = [headers, ...csvRows];
+				const csvContent = allRows.map((row) => row.join(",")).join("\n");
 
-			// Build data rows
-			const dataRows = visibleRows.map((rowId) => {
-				return visibleColumns.map((col) => {
-					// Use getCellValue to properly handle valueGetter columns
-					const value = apiRef.current.getCellValue(rowId, col.field);
-					// Handle different value types
-					if (value === null || value === undefined) return "";
-					if (typeof value === "object") return JSON.stringify(value);
-					// Escape quotes and wrap in quotes if contains comma, newline, or quote
-					const stringValue = String(value);
-					if (
-						stringValue.includes(",") ||
-						stringValue.includes("\n") ||
-						stringValue.includes('"')
-					) {
-						return `"${stringValue.replaceAll('"', '""')}"`;
-					}
-					return stringValue;
+				const bom = "\uFEFF";
+				const blob = new Blob([bom + csvContent], {
+					type: "text/csv;charset=utf-8;",
 				});
-			});
 
-			// Combine header and data
-			const allRows = [headers, ...dataRows];
-			const csvContent = allRows.map((row) => row.join(",")).join("\n");
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = url;
+				link.download = `${fileName}.csv`;
+				document.body.appendChild(link);
+				link.click();
+				link.remove();
+				URL.revokeObjectURL(url);
+			} catch (error) {
+				console.error("Failed to export CSV:", error);
+			}
+		},
+		[getGridData, canUsePremiumFeatures],
+	);
 
-			// Add UTF-8 BOM for better Excel support
-			const bom = "\uFEFF";
-			const blob = new Blob([bom + csvContent], {
-				type: "text/csv;charset=utf-8;",
-			});
+	return {
+		copyStatus,
+		handleCopyToClipboard,
+		handleExportToCSV,
+	};
+};
 
-			// Create download link
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `${generateFileName()}.csv`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
-		} catch (error) {
-			console.error("Failed to export CSV:", error);
+const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
+	canUsePremiumFeatures = false,
+	enableExport = false,
+	exportFileName,
+	onResetLayout,
+	onOpenColumnOrder,
+	allowColumnReorder = false,
+	customActions,
+}) => {
+	const apiRef = useGridApiContext();
+
+	const { copyStatus, handleCopyToClipboard, handleExportToCSV } =
+		useDataGridExport(apiRef, canUsePremiumFeatures);
+
+	const getCopyTooltipText = () => {
+		if (!canUsePremiumFeatures) {
+			return "Premium feature - Upgrade to use";
 		}
-	}, [apiRef, canUsePremiumFeatures, generateFileName]);
+		return copyStatus === "copied" ? "Copied!" : "Copy to Clipboard";
+	};
 
-	// Determine tooltip messages
-	let copyTooltip = "Copy to Clipboard";
-	if (!canUsePremiumFeatures) {
-		copyTooltip = "Premium feature - Upgrade to use";
-	} else if (copyStatus === "copied") {
-		copyTooltip = "Copied!";
-	}
+	const copyTooltip = getCopyTooltipText();
 
 	const csvTooltip = canUsePremiumFeatures
 		? "Export to CSV"
@@ -198,7 +190,6 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 				borderColor: "divider",
 			}}
 		>
-			{/* Export features */}
 			{enableExport && (
 				<>
 					<Tooltip title={copyTooltip}>
@@ -216,7 +207,9 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 					<Tooltip title={csvTooltip}>
 						<span>
 							<IconButton
-								onClick={handleExportToCSV}
+								onClick={() =>
+									handleExportToCSV(generateFileName(exportFileName))
+								}
 								disabled={!canUsePremiumFeatures}
 								size="small"
 								data-testid="export-button"
@@ -227,9 +220,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 					</Tooltip>
 				</>
 			)}
-			{/* Custom actions passed from parent */}
 			{customActions}
-			{/* Reset layout button */}
 			{onResetLayout && (
 				<Tooltip title="Reset layout to defaults">
 					<span>
@@ -243,7 +234,6 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 					</span>
 				</Tooltip>
 			)}
-			{/* Column Order button */}
 			{allowColumnReorder && onOpenColumnOrder && (
 				<Tooltip title="Reorder columns">
 					<span>

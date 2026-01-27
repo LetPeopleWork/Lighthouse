@@ -94,7 +94,7 @@ export class PortfolioService
 
 	async refreshForecastsForPortfolio(id: number): Promise<void> {
 		await this.withErrorHandling(async () => {
-			await this.apiService.post<IPortfolio>(`/forecast/${id}/update`);
+			await this.apiService.post<IPortfolio>(`/forecast/update/${id}`);
 		});
 	}
 

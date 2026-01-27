@@ -134,7 +134,7 @@ describe("PortfolioService", () => {
 
 		await portfolioService.refreshForecastsForPortfolio(1);
 
-		expect(mockedAxios.post).toHaveBeenCalledWith("/forecast/1/update");
+		expect(mockedAxios.post).toHaveBeenCalledWith("/forecast/update/1");
 	});
 
 	it("should validate project settings successfully", async () => {

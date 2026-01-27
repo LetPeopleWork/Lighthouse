@@ -22,7 +22,6 @@ export const useDeliveryManagement = ({
 	const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
 		null,
 	);
-	// New state for expansion and feature loading
 	const [expandedDeliveries, setExpandedDeliveries] = useState<Set<number>>(
 		new Set(),
 	);
@@ -38,14 +37,12 @@ export const useDeliveryManagement = ({
 
 	const loadFeaturesForDelivery = useCallback(
 		async (delivery: Delivery): Promise<void> => {
-			// Skip if already loading or already have features loaded
 			if (
 				loadingFeaturesByDelivery.has(delivery.id) ||
 				loadedFeatures.has(delivery.id)
 			)
 				return;
 
-			// Skip if no feature IDs
 			if (!delivery.features || delivery.features.length === 0) {
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, []));
 				return;
@@ -54,7 +51,6 @@ export const useDeliveryManagement = ({
 			setLoadingFeaturesByDelivery((prev) => new Set(prev).add(delivery.id));
 
 			try {
-				// delivery.features is now an array of feature IDs
 				const featureIds = delivery.features;
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
@@ -74,10 +70,8 @@ export const useDeliveryManagement = ({
 
 	const forceReloadFeaturesForDelivery = useCallback(
 		async (delivery: Delivery): Promise<void> => {
-			// Skip if already loading
 			if (loadingFeaturesByDelivery.has(delivery.id)) return;
 
-			// Skip if no feature IDs
 			if (!delivery.features || delivery.features.length === 0) {
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, []));
 				return;
@@ -86,7 +80,6 @@ export const useDeliveryManagement = ({
 			setLoadingFeaturesByDelivery((prev) => new Set(prev).add(delivery.id));
 
 			try {
-				// delivery.features is now an array of feature IDs
 				const featureIds = delivery.features;
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
@@ -168,7 +161,6 @@ export const useDeliveryManagement = ({
 				deliveryData.featureIds,
 			);
 			setSelectedDelivery(null);
-			// Clear cached features for edited delivery to force refresh
 			setLoadedFeatures((prev) => {
 				const next = new Map(prev);
 				next.delete(deliveryData.id);
@@ -176,9 +168,7 @@ export const useDeliveryManagement = ({
 			});
 			await fetchDeliveries();
 
-			// If the delivery was expanded, reload its features immediately
 			if (wasExpanded) {
-				// Find the updated delivery and reload its features
 				const updatedDeliveries = await deliveryService.getByPortfolio(
 					portfolio.id,
 				);
@@ -198,7 +188,7 @@ export const useDeliveryManagement = ({
 	const handleDeleteConfirmation = async (confirmed: boolean) => {
 		if (confirmed && deliveryToDelete) {
 			try {
-				await deliveryService.delete(deliveryToDelete.id); // Clean up expansion state and loaded features
+				await deliveryService.delete(deliveryToDelete.id);
 				setExpandedDeliveries((prev) => {
 					const next = new Set(prev);
 					next.delete(deliveryToDelete.id);
@@ -238,7 +228,6 @@ export const useDeliveryManagement = ({
 					next.delete(deliveryId);
 				} else {
 					next.add(deliveryId);
-					// Load features when expanding
 					const delivery = deliveries.find((d) => d.id === deliveryId);
 					if (delivery) {
 						loadFeaturesForDelivery(delivery);
@@ -265,7 +254,6 @@ export const useDeliveryManagement = ({
 		loadedFeatures,
 		loadingFeaturesByDelivery,
 
-		// Actions
 		handleAddDelivery,
 		handleDeleteDelivery,
 		handleEditDelivery,
@@ -274,7 +262,6 @@ export const useDeliveryManagement = ({
 		handleCloseEditModal,
 		handleCreateDelivery,
 		handleUpdateDelivery,
-		// New expansion action
 		handleToggleExpanded,
 	};
 };
