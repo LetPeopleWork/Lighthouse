@@ -455,11 +455,11 @@ describe("Predictability Score functionality", () => {
 
 	it("should display different predictability score values correctly", () => {
 		const testCases = [
-			{ score: 0.0, expectedText: "0.0%" },
+			{ score: 0, expectedText: "0.0%" },
 			{ score: 0.333, expectedText: "33.3%" },
 			{ score: 0.5, expectedText: "50.0%" },
 			{ score: 0.999, expectedText: "99.9%" },
-			{ score: 1.0, expectedText: "100.0%" },
+			{ score: 1, expectedText: "100.0%" },
 		];
 
 		for (const { score, expectedText } of testCases) {
