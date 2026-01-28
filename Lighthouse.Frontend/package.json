@@ -48,7 +48,7 @@
 		"@types/date-fns": "^2.6.3",
 		"@types/lodash.debounce": "^4.0.9",
 		"@types/node": "^25.0.10",
-		"@types/react": "^19.2.9",
+		"@types/react": "^19.2.10",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^5.1.2",
 		"@vitest/coverage-v8": "^4.0.14",
