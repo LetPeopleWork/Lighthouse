@@ -5,11 +5,13 @@ import { useContext, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import BacktestForecaster from "./BacktestForecaster";
 import ManualForecaster from "./ManualForecaster";
 import NewItemForecaster from "./NewItemForecaster";
 
@@ -27,6 +29,10 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	const [newItemForecastResult, setNewItemForecastResult] =
 		useState<ManualForecast | null>(null);
+
+	const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(
+		null,
+	);
 
 	const { forecastService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
@@ -86,6 +92,32 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		}
 	};
 
+	const onRunBacktest = async (
+		startDate: Date,
+		endDate: Date,
+		historicalWindowDays: number,
+	) => {
+		if (!team?.id) {
+			return;
+		}
+
+		try {
+			const result = await forecastService.runBacktest(
+				team.id,
+				startDate,
+				endDate,
+				historicalWindowDays,
+			);
+			setBacktestResult(result);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Failed to run backtest. Please try again.";
+			showError(errorMessage);
+		}
+	};
+
 	return (
 		<Grid container spacing={3}>
 			<InputGroup title={`${teamTerm} Forecast`}>
@@ -106,6 +138,13 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					workItemTypes={team.workItemTypes || []}
 					isDisabled={!canUseNewItemForecaster}
 					disabledMessage={newItemForecasterTooltip}
+				/>
+			</InputGroup>
+			<InputGroup title="Forecast Backtesting">
+				<BacktestForecaster
+					onRunBacktest={onRunBacktest}
+					backtestResult={backtestResult}
+					onClearBacktestResult={() => setBacktestResult(null)}
 				/>
 			</InputGroup>
 		</Grid>

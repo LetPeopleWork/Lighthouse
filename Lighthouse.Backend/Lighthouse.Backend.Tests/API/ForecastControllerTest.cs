@@ -276,6 +276,172 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        #region Backtest Tests
+
+        [Test]
+        public void RunBacktest_TeamDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
+                HistoricalWindowDays = 30
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = result.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void RunBacktest_StartDateNotFarEnoughInPast_ReturnsBadRequest()
+        {
+            var expectedTeam = new Team { Id = 12, Name = "Test Team" };
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7)), // Only 7 days ago, needs 14
+                EndDate = DateOnly.FromDateTime(DateTime.Today),
+                HistoricalWindowDays = 30
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void RunBacktest_EndDateNotFarEnoughAfterStart_ReturnsBadRequest()
+        {
+            var expectedTeam = new Team { Id = 12, Name = "Test Team" };
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-23)), // Only 7 days after start, needs 14
+                HistoricalWindowDays = 30
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void RunBacktest_HistoricalWindowDaysInvalid_ReturnsBadRequest()
+        {
+            var expectedTeam = new Team { Id = 12, Name = "Test Team" };
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
+                HistoricalWindowDays = 0 // Invalid
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void RunBacktest_HistoricalWindowDaysTooLarge_ReturnsBadRequest()
+        {
+            var expectedTeam = new Team { Id = 12, Name = "Test Team" };
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
+                HistoricalWindowDays = 400 // Exceeds 365 max
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void RunBacktest_ValidInput_ReturnsBacktestResult()
+        {
+            var expectedTeam = new Team { Id = 12, Name = "Test Team" };
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60));
+            var endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+            var forecastDays = endDate.DayNumber - startDate.DayNumber;
+
+            // Setup historical throughput (window before start) - 3 days with [2, 1, 3] items = 6 total
+            var historicalThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 1, 3]));
+            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
+                expectedTeam,
+                startDate.AddDays(-30).ToDateTime(TimeOnly.MinValue),
+                startDate.ToDateTime(TimeOnly.MinValue)))
+                .Returns(historicalThroughput);
+
+            // Setup actual throughput (in backtest period) - 3 days with [2, 3, 1] items = 6 total
+            var actualThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 3, 1]));
+            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
+                expectedTeam,
+                startDate.ToDateTime(TimeOnly.MinValue),
+                endDate.ToDateTime(TimeOnly.MinValue)))
+                .Returns(actualThroughput);
+
+            // Setup forecast service
+            var howManyForecast = new HowManyForecast();
+            forecastServiceMock.Setup(x => x.HowMany(historicalThroughput, forecastDays))
+                .Returns(howManyForecast);
+
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                HistoricalWindowDays = 30
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                var backtestResult = okResult.Value as BacktestResultDto;
+                Assert.That(backtestResult, Is.Not.Null);
+                Assert.That(backtestResult.StartDate, Is.EqualTo(startDate));
+                Assert.That(backtestResult.EndDate, Is.EqualTo(endDate));
+                Assert.That(backtestResult.HistoricalWindowDays, Is.EqualTo(30));
+                Assert.That(backtestResult.Percentiles, Has.Count.EqualTo(4));
+                Assert.That(backtestResult.ActualThroughput, Is.EqualTo(actualThroughput.Total));
+            }
+        }
+
+        #endregion
+
         private ForecastController CreateSubject()
         {
             return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);

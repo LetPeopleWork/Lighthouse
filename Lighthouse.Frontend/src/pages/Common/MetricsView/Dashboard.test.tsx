@@ -634,18 +634,28 @@ describe("Dashboard component", () => {
 
 		const { default: Dashboard } = await import("./Dashboard");
 		const items: DashboardItem[] = [
-			{ id: "widget1", node: <div data-testid="widget1-content">Widget 1 Content</div> },
-			{ id: "widget2", node: <div data-testid="widget2-content">Widget 2 Content</div> },
+			{
+				id: "widget1",
+				node: <div data-testid="widget1-content">Widget 1 Content</div>,
+			},
+			{
+				id: "widget2",
+				node: <div data-testid="widget2-content">Widget 2 Content</div>,
+			},
 		];
 
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Spotlight button should be visible when not in edit mode
-		const spotlightBtn = await screen.findByTestId("dashboard-item-spotlight-widget1");
+		const spotlightBtn = await screen.findByTestId(
+			"dashboard-item-spotlight-widget1",
+		);
 		expect(spotlightBtn).toBeInTheDocument();
 
 		// Modal should not be visible initially
-		expect(screen.queryByTestId("dashboard-spotlight-modal")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("dashboard-spotlight-modal"),
+		).not.toBeInTheDocument();
 
 		// Click spotlight button
 		fireEvent.click(spotlightBtn);
@@ -653,7 +663,7 @@ describe("Dashboard component", () => {
 		// Modal should now be visible with the widget content
 		const modal = await screen.findByTestId("dashboard-spotlight-modal");
 		expect(modal).toBeInTheDocument();
-		
+
 		// Widget content should be in the modal
 		const modalContent = await screen.findAllByTestId("widget1-content");
 		expect(modalContent.length).toBeGreaterThan(0);
@@ -664,13 +674,18 @@ describe("Dashboard component", () => {
 
 		const { default: Dashboard } = await import("./Dashboard");
 		const items: DashboardItem[] = [
-			{ id: "widget1", node: <div data-testid="widget1-content">Widget 1</div> },
+			{
+				id: "widget1",
+				node: <div data-testid="widget1-content">Widget 1</div>,
+			},
 		];
 
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Open spotlight
-		const spotlightBtn = await screen.findByTestId("dashboard-item-spotlight-widget1");
+		const spotlightBtn = await screen.findByTestId(
+			"dashboard-item-spotlight-widget1",
+		);
 		fireEvent.click(spotlightBtn);
 
 		// Modal should be visible
@@ -683,7 +698,9 @@ describe("Dashboard component", () => {
 
 		// Modal should be removed
 		await waitFor(() => {
-			expect(screen.queryByTestId("dashboard-spotlight-modal")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("dashboard-spotlight-modal"),
+			).not.toBeInTheDocument();
 		});
 	});
 
@@ -692,13 +709,18 @@ describe("Dashboard component", () => {
 
 		const { default: Dashboard } = await import("./Dashboard");
 		const items: DashboardItem[] = [
-			{ id: "widget1", node: <div data-testid="widget1-content">Widget 1</div> },
+			{
+				id: "widget1",
+				node: <div data-testid="widget1-content">Widget 1</div>,
+			},
 		];
 
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Open spotlight
-		const spotlightBtn = await screen.findByTestId("dashboard-item-spotlight-widget1");
+		const spotlightBtn = await screen.findByTestId(
+			"dashboard-item-spotlight-widget1",
+		);
 		fireEvent.click(spotlightBtn);
 
 		// Modal should be visible
@@ -709,7 +731,9 @@ describe("Dashboard component", () => {
 
 		// Modal should be removed
 		await waitFor(() => {
-			expect(screen.queryByTestId("dashboard-spotlight-modal")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("dashboard-spotlight-modal"),
+			).not.toBeInTheDocument();
 		});
 	});
 
@@ -718,13 +742,20 @@ describe("Dashboard component", () => {
 
 		const { default: Dashboard } = await import("./Dashboard");
 		const items: DashboardItem[] = [
-			{ id: "widget1", node: <div data-testid="widget1-content">Widget 1</div> },
+			{
+				id: "widget1",
+				node: <div data-testid="widget1-content">Widget 1</div>,
+			},
 		];
 
-		const { container } = render(<Dashboard items={items} dashboardId="spotlight_test" />);
+		const { container } = render(
+			<Dashboard items={items} dashboardId="spotlight_test" />,
+		);
 
 		// Open spotlight
-		const spotlightBtn = await screen.findByTestId("dashboard-item-spotlight-widget1");
+		const spotlightBtn = await screen.findByTestId(
+			"dashboard-item-spotlight-widget1",
+		);
 		fireEvent.click(spotlightBtn);
 
 		// Modal should be visible
@@ -733,14 +764,16 @@ describe("Dashboard component", () => {
 
 		// Find the backdrop (MUI Modal creates a backdrop element)
 		const backdrop = container.querySelector(".MuiBackdrop-root");
-		
+
 		// Click backdrop - Modal's onClose should be triggered
 		if (backdrop) {
 			fireEvent.click(backdrop);
-			
+
 			// Modal should be removed
 			await waitFor(() => {
-				expect(screen.queryByTestId("dashboard-spotlight-modal")).not.toBeInTheDocument();
+				expect(
+					screen.queryByTestId("dashboard-spotlight-modal"),
+				).not.toBeInTheDocument();
 			});
 		} else {
 			// If backdrop not found (shouldn't happen), the test validates modal can open at least
@@ -760,12 +793,17 @@ describe("Dashboard component", () => {
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Spotlight button should NOT be visible in edit mode
-		expect(screen.queryByTestId("dashboard-item-spotlight-widget1")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("dashboard-item-spotlight-widget1"),
+		).not.toBeInTheDocument();
 	});
 
 	it("spotlight button is hidden for hidden widgets", async () => {
 		setMatchMediaWidth(1600);
-		localStorage.setItem("lighthouse:dashboard:spotlight_test:hidden", JSON.stringify(["widget1"]));
+		localStorage.setItem(
+			"lighthouse:dashboard:spotlight_test:hidden",
+			JSON.stringify(["widget1"]),
+		);
 
 		const { default: Dashboard } = await import("./Dashboard");
 		const items: DashboardItem[] = [
@@ -775,7 +813,9 @@ describe("Dashboard component", () => {
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Widget should not be visible when not in edit mode
-		expect(screen.queryByTestId("dashboard-item-spotlight-widget1")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("dashboard-item-spotlight-widget1"),
+		).not.toBeInTheDocument();
 	});
 
 	it("spotlight displays the correct widget content", async () => {
@@ -783,14 +823,22 @@ describe("Dashboard component", () => {
 
 		const { default: Dashboard } = await import("./Dashboard");
 		const items: DashboardItem[] = [
-			{ id: "widget1", node: <div data-testid="widget1-content">Widget 1 Content</div> },
-			{ id: "widget2", node: <div data-testid="widget2-content">Widget 2 Content</div> },
+			{
+				id: "widget1",
+				node: <div data-testid="widget1-content">Widget 1 Content</div>,
+			},
+			{
+				id: "widget2",
+				node: <div data-testid="widget2-content">Widget 2 Content</div>,
+			},
 		];
 
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Open spotlight for widget2
-		const spotlightBtn = await screen.findByTestId("dashboard-item-spotlight-widget2");
+		const spotlightBtn = await screen.findByTestId(
+			"dashboard-item-spotlight-widget2",
+		);
 		fireEvent.click(spotlightBtn);
 
 		// Modal should show widget2 content (there will be 2 instances - one in grid, one in modal)
@@ -813,14 +861,18 @@ describe("Dashboard component", () => {
 		render(<Dashboard items={items} dashboardId="spotlight_test" />);
 
 		// Open spotlight
-		const spotlightBtn = await screen.findByTestId("dashboard-item-spotlight-widget1");
+		const spotlightBtn = await screen.findByTestId(
+			"dashboard-item-spotlight-widget1",
+		);
 		fireEvent.click(spotlightBtn);
 
 		// Modal should be visible
 		await screen.findByTestId("dashboard-spotlight-modal");
 
 		// Check that no spotlight state is persisted
-		const spotlightKey = localStorage.getItem("lighthouse:dashboard:spotlight_test:spotlight");
+		const spotlightKey = localStorage.getItem(
+			"lighthouse:dashboard:spotlight_test:spotlight",
+		);
 		expect(spotlightKey).toBeNull();
 	});
 });

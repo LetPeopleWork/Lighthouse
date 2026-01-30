@@ -1,3 +1,7 @@
+import {
+	BacktestResult,
+	type IBacktestResult,
+} from "../../models/Forecasts/BacktestResult";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import {
 	type IManualForecast,
@@ -20,6 +24,13 @@ export interface IForecastService {
 		targetDate: Date,
 		workItemTypes: string[],
 	): Promise<ManualForecast>;
+
+	runBacktest(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+		historicalWindowDays: number,
+	): Promise<BacktestResult>;
 }
 
 export class ForecastService
@@ -83,6 +94,42 @@ export class ForecastService
 			whenForecasts,
 			howManyForecasts,
 			manualForecastData.likelihood,
+		);
+	}
+
+	async runBacktest(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+		historicalWindowDays: number,
+	): Promise<BacktestResult> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<IBacktestResult>(
+				`/forecast/backtest/${teamId}`,
+				{
+					startDate: this.formatDateOnly(startDate),
+					endDate: this.formatDateOnly(endDate),
+					historicalWindowDays: historicalWindowDays,
+				},
+			);
+			return this.deserializeBacktestResult(response.data);
+		});
+	}
+
+	private formatDateOnly(date: Date): string {
+		return date.toISOString().split("T")[0];
+	}
+
+	private deserializeBacktestResult(data: IBacktestResult): BacktestResult {
+		const percentiles = data.percentiles.map(
+			(forecast) => new HowManyForecast(forecast.probability, forecast.value),
+		);
+		return new BacktestResult(
+			new Date(data.startDate),
+			new Date(data.endDate),
+			data.historicalWindowDays,
+			percentiles,
+			data.actualThroughput,
 		);
 	}
 }

@@ -942,45 +942,45 @@ const Dashboard: React.FC<DashboardProps> = ({
 						transition: "opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)",
 					}}
 				>
-						{/* Close button */}
-						<Box
-							sx={{
-								position: "absolute",
-								top: 12,
-								right: 12,
-								zIndex: 1,
-							}}
-						>
-							<Tooltip title="Close (Esc)">
-								<IconButton
-									onClick={() => setSpotlightId(null)}
-									data-testid="dashboard-spotlight-close"
-									sx={{
-										backgroundColor: theme.palette.background.paper,
-										border: `1px solid ${theme.palette.divider}`,
-										"&:hover": {
-											backgroundColor: theme.palette.action.hover,
-										},
-									}}
-								>
-									<CloseIcon />
-								</IconButton>
-							</Tooltip>
-						</Box>
-
-						{/* Spotlighted widget content */}
-						<Box
-							sx={{
-								flex: 1,
-								overflow: "auto",
-								display: "flex",
-								flexDirection: "column",
-								pt: 2,
-							}}
-						>
-							{spotlightId !== null && keyToItem[spotlightId]?.node}
-						</Box>
+					{/* Close button */}
+					<Box
+						sx={{
+							position: "absolute",
+							top: 12,
+							right: 12,
+							zIndex: 1,
+						}}
+					>
+						<Tooltip title="Close (Esc)">
+							<IconButton
+								onClick={() => setSpotlightId(null)}
+								data-testid="dashboard-spotlight-close"
+								sx={{
+									backgroundColor: theme.palette.background.paper,
+									border: `1px solid ${theme.palette.divider}`,
+									"&:hover": {
+										backgroundColor: theme.palette.action.hover,
+									},
+								}}
+							>
+								<CloseIcon />
+							</IconButton>
+						</Tooltip>
 					</Box>
+
+					{/* Spotlighted widget content */}
+					<Box
+						sx={{
+							flex: 1,
+							overflow: "auto",
+							display: "flex",
+							flexDirection: "column",
+							pt: 2,
+						}}
+					>
+						{spotlightId !== null && keyToItem[spotlightId]?.node}
+					</Box>
+				</Box>
 			</Modal>
 		</Box>
 	);

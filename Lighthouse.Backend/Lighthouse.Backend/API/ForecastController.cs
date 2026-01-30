@@ -98,6 +98,55 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpPost("backtest/{teamId}")]
+        public ActionResult<BacktestResultDto> RunBacktest(int teamId, [FromBody] BacktestInputDto input)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var minStartDate = today.AddDays(-14);
+            if (input.StartDate > minStartDate)
+            {
+                return BadRequest("StartDate must be at least 14 days in the past.");
+            }
+
+            var forecastDays = input.EndDate.DayNumber - input.StartDate.DayNumber;
+            if (forecastDays < 14)
+            {
+                return BadRequest("EndDate must be at least 14 days after StartDate.");
+            }
+
+            if (input.HistoricalWindowDays <= 0)
+            {
+                return BadRequest("HistoricalWindowDays must be a positive number.");
+            }
+
+            if (input.HistoricalWindowDays > 365)
+            {
+                return BadRequest("HistoricalWindowDays must not exceed 365.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            {
+                var historyStart = input.StartDate.AddDays(-input.HistoricalWindowDays).ToDateTime(TimeOnly.MinValue);
+                var historyEnd = input.StartDate.ToDateTime(TimeOnly.MinValue);
+                var historicalThroughput = teamMetricsService.GetThroughputForTeam(team, historyStart, historyEnd);
+
+                var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);
+
+                var periodStart = input.StartDate.ToDateTime(TimeOnly.MinValue);
+                var periodEnd = input.EndDate.ToDateTime(TimeOnly.MinValue);
+                var actualThroughput = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd);
+
+                var result = new BacktestResultDto(input.StartDate, input.EndDate, input.HistoricalWindowDays)
+                {
+                    ActualThroughput = actualThroughput.Total
+                };
+
+                result.Percentiles.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
+
+                return result;
+            });
+        }
+
         public class ManualForecastInputDto
         {
             [JsonRequired]

@@ -1,5 +1,9 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	BacktestResult,
+	type IBacktestResult,
+} from "../../models/Forecasts/BacktestResult";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import {
 	type IManualForecast,
@@ -440,7 +444,7 @@ describe("ForecastService", () => {
 				targetDate,
 				[],
 				[],
-				1.0,
+				1,
 			);
 
 			mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
@@ -454,7 +458,7 @@ describe("ForecastService", () => {
 			);
 
 			expect(result).toEqual(
-				new ManualForecast(0, new Date("2023-04-15T00:00:00Z"), [], [], 1.0),
+				new ManualForecast(0, new Date("2023-04-15T00:00:00Z"), [], [], 1),
 			);
 			expect(mockedAxios.post).toHaveBeenCalledWith(
 				`/forecast/itemprediction/${teamId}`,
@@ -465,6 +469,182 @@ describe("ForecastService", () => {
 					workItemTypes,
 				},
 			);
+		});
+	});
+
+	describe("runBacktest", () => {
+		it("should run a backtest for a team with valid parameters", async () => {
+			const teamId = 1;
+			const startDate = new Date("2023-06-01");
+			const endDate = new Date("2023-06-30");
+			const historicalWindowDays = 30;
+
+			const mockResponse: IBacktestResult = {
+				startDate: "2023-06-01",
+				endDate: "2023-06-30",
+				historicalWindowDays: 30,
+				percentiles: [
+					{ probability: 50, value: 10 },
+					{ probability: 70, value: 12 },
+					{ probability: 85, value: 15 },
+					{ probability: 95, value: 18 },
+				],
+				actualThroughput: 12,
+			};
+
+			mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
+
+			const result = await forecastService.runBacktest(
+				teamId,
+				startDate,
+				endDate,
+				historicalWindowDays,
+			);
+
+			expect(result).toBeInstanceOf(BacktestResult);
+			expect(result.startDate).toEqual(new Date("2023-06-01"));
+			expect(result.endDate).toEqual(new Date("2023-06-30"));
+			expect(result.historicalWindowDays).toBe(30);
+			expect(result.percentiles).toHaveLength(4);
+			expect(result.percentiles[0]).toBeInstanceOf(HowManyForecast);
+			expect(result.percentiles[0].probability).toBe(50);
+			expect(result.percentiles[0].value).toBe(10);
+			expect(result.actualThroughput).toBe(12);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				`/forecast/backtest/${teamId}`,
+				{
+					startDate: "2023-06-01",
+					endDate: "2023-06-30",
+					historicalWindowDays,
+				},
+			);
+		});
+
+		it("should format dates as date-only strings", async () => {
+			const teamId = 2;
+			const startDate = new Date("2023-07-15T14:30:00Z");
+			const endDate = new Date("2023-08-15T09:00:00Z");
+			const historicalWindowDays = 45;
+
+			const mockResponse: IBacktestResult = {
+				startDate: "2023-07-15",
+				endDate: "2023-08-15",
+				historicalWindowDays: 45,
+				percentiles: [{ probability: 50, value: 8 }],
+				actualThroughput: 9,
+			};
+
+			mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
+
+			await forecastService.runBacktest(
+				teamId,
+				startDate,
+				endDate,
+				historicalWindowDays,
+			);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				`/forecast/backtest/${teamId}`,
+				{
+					startDate: "2023-07-15",
+					endDate: "2023-08-15",
+					historicalWindowDays,
+				},
+			);
+		});
+
+		it("should handle empty percentiles array", async () => {
+			const teamId = 3;
+			const startDate = new Date("2023-05-01");
+			const endDate = new Date("2023-05-31");
+			const historicalWindowDays = 30;
+
+			const mockResponse: IBacktestResult = {
+				startDate: "2023-05-01",
+				endDate: "2023-05-31",
+				historicalWindowDays: 30,
+				percentiles: [],
+				actualThroughput: 0,
+			};
+
+			mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
+
+			const result = await forecastService.runBacktest(
+				teamId,
+				startDate,
+				endDate,
+				historicalWindowDays,
+			);
+
+			expect(result.percentiles).toEqual([]);
+			expect(result.actualThroughput).toBe(0);
+		});
+
+		it("should throw an error if backtest API call fails", async () => {
+			const teamId = 4;
+			const startDate = new Date("2023-04-01");
+			const endDate = new Date("2023-04-30");
+			const historicalWindowDays = 30;
+
+			mockedAxios.post.mockRejectedValueOnce(new Error("Backtest API error"));
+
+			await expect(
+				forecastService.runBacktest(
+					teamId,
+					startDate,
+					endDate,
+					historicalWindowDays,
+				),
+			).rejects.toThrow("Backtest API error");
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				`/forecast/backtest/${teamId}`,
+				{
+					startDate: "2023-04-01",
+					endDate: "2023-04-30",
+					historicalWindowDays,
+				},
+			);
+		});
+
+		it("should deserialize all percentile forecasts correctly", async () => {
+			const teamId = 5;
+			const startDate = new Date("2023-03-01");
+			const endDate = new Date("2023-03-31");
+			const historicalWindowDays = 60;
+
+			const mockResponse: IBacktestResult = {
+				startDate: "2023-03-01",
+				endDate: "2023-03-31",
+				historicalWindowDays: 60,
+				percentiles: [
+					{ probability: 50, value: 5 },
+					{ probability: 70, value: 7 },
+					{ probability: 85, value: 10 },
+					{ probability: 95, value: 14 },
+				],
+				actualThroughput: 8,
+			};
+
+			mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
+
+			const result = await forecastService.runBacktest(
+				teamId,
+				startDate,
+				endDate,
+				historicalWindowDays,
+			);
+
+			expect(result.percentiles).toHaveLength(4);
+			expect(result.percentiles[0].probability).toBe(50);
+			expect(result.percentiles[0].value).toBe(5);
+			expect(result.percentiles[1].probability).toBe(70);
+			expect(result.percentiles[1].value).toBe(7);
+			expect(result.percentiles[2].probability).toBe(85);
+			expect(result.percentiles[2].value).toBe(10);
+			expect(result.percentiles[3].probability).toBe(95);
+			expect(result.percentiles[3].value).toBe(14);
 		});
 	});
 });

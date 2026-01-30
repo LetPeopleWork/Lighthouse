@@ -96,3 +96,35 @@ testWithData(
 		).toBeVisible();
 	},
 );
+
+testWithData(
+	"should show forecast backtesting results for team",
+	async ({ testData, overviewPage }) => {
+		const team = testData.teams[0];
+
+		const teamDetailPage = await overviewPage.goToTeam(team.name);
+
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+
+		await teamDetailPage.updateTeamData();
+		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
+
+		// Wait for update to be done
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+
+		await teamDetailPage.goToForecasts();
+
+		// Verify the Forecast Backtesting section is visible
+		await expect(teamDetailPage.backtestForecastingSection).toBeVisible();
+
+		// Run the backtest with default dates
+		await teamDetailPage.runBacktest();
+
+		// Verify backtest results appear
+		await expect(teamDetailPage.backtestResultsSection).toBeVisible();
+
+		// Verify the percentile list and actual throughput are displayed
+		await expect(teamDetailPage.page.getByText(/Forecast Percentiles:/)).toBeVisible();
+		await expect(teamDetailPage.page.getByText(/Actual Throughput:/)).toBeVisible();
+	},
+);

@@ -119,6 +119,43 @@ vi.mock("./NewItemForecaster", () => ({
 	),
 }));
 
+vi.mock("./BacktestForecaster", () => ({
+	default: ({
+		onRunBacktest,
+		onClearBacktestResult,
+	}: {
+		onRunBacktest: (
+			startDate: Date,
+			endDate: Date,
+			historicalWindowDays: number,
+		) => void;
+		backtestResult: unknown;
+		onClearBacktestResult?: () => void;
+	}) => (
+		<div data-testid="backtest-forecaster">
+			<button
+				type="button"
+				onClick={() => {
+					const startDate = new Date();
+					startDate.setDate(startDate.getDate() - 60);
+					const endDate = new Date();
+					endDate.setDate(endDate.getDate() - 30);
+					onRunBacktest(startDate, endDate, 30);
+				}}
+			>
+				Run Backtest
+			</button>
+			<button
+				type="button"
+				onClick={() => onClearBacktestResult?.()}
+				data-testid="clear-backtest-result"
+			>
+				Clear Backtest Result
+			</button>
+		</div>
+	),
+}));
+
 describe("TeamForecastView component", () => {
 	const mockTeam: Team = {
 		id: 1,
@@ -129,6 +166,7 @@ describe("TeamForecastView component", () => {
 	const mockForecastService = {
 		runManualForecast: vi.fn(),
 		runItemPrediction: vi.fn(),
+		runBacktest: vi.fn(),
 	};
 
 	const mockApiServiceContext = createMockApiServiceContext({
@@ -351,6 +389,103 @@ describe("TeamForecastView component", () => {
 			const clearButton = screen.getByTestId("clear-on-param-change");
 
 			// This should not throw an error even if no results exist
+			expect(() => fireEvent.click(clearButton)).not.toThrow();
+		});
+	});
+
+	describe("BacktestForecaster functionality", () => {
+		it("should render the Forecast Backtesting section", () => {
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			expect(screen.getByText("Forecast Backtesting")).toBeInTheDocument();
+			expect(screen.getByTestId("backtest-forecaster")).toBeInTheDocument();
+		});
+
+		it("should call runBacktest service when backtest button is clicked", async () => {
+			const mockBacktestResult = {
+				startDate: new Date(),
+				endDate: new Date(),
+				historicalWindowDays: 30,
+				percentiles: [
+					{ probability: 50, value: 10 },
+					{ probability: 70, value: 12 },
+					{ probability: 85, value: 15 },
+					{ probability: 95, value: 18 },
+				],
+				actualThroughput: 12,
+				interpretation: "Actual throughput within expected range",
+			};
+			mockForecastService.runBacktest.mockResolvedValueOnce(mockBacktestResult);
+
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			const runBacktestButton = screen.getByText("Run Backtest");
+			fireEvent.click(runBacktestButton);
+
+			await waitFor(() => {
+				expect(mockForecastService.runBacktest).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+					30,
+				);
+			});
+		});
+
+		it("should display error snackbar when backtest service fails", async () => {
+			const errorMessage = "Backtest service failed";
+			mockForecastService.runBacktest.mockRejectedValueOnce(
+				new Error(errorMessage),
+			);
+
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			const runBacktestButton = screen.getByText("Run Backtest");
+			fireEvent.click(runBacktestButton);
+
+			await waitFor(() => {
+				expect(screen.getByText(errorMessage)).toBeInTheDocument();
+			});
+		});
+
+		it("should display generic error message for non-Error objects in backtest", async () => {
+			mockForecastService.runBacktest.mockRejectedValueOnce(
+				"String error message",
+			);
+
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			const runBacktestButton = screen.getByText("Run Backtest");
+			fireEvent.click(runBacktestButton);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Failed to run backtest. Please try again."),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("should not run backtest when team is missing", async () => {
+			const nullTeam = {} as Team;
+			renderWithProviders(<TeamForecastView team={nullTeam} />);
+
+			const runBacktestButton = screen.queryByText("Run Backtest");
+
+			if (runBacktestButton) {
+				fireEvent.click(runBacktestButton);
+			}
+
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			expect(mockForecastService.runBacktest).not.toHaveBeenCalled();
+		});
+
+		it("should provide onClearBacktestResult callback to BacktestForecaster", () => {
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			const clearButton = screen.getByTestId("clear-backtest-result");
+			expect(clearButton).toBeInTheDocument();
+
 			expect(() => fireEvent.click(clearButton)).not.toThrow();
 		});
 	});

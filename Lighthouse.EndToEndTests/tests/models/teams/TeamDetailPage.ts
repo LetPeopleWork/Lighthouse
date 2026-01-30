@@ -63,6 +63,20 @@ export class TeamDetailPage {
 		await this.page.getByRole("button", { name: "Forecast" }).nth(1).click();
 	}
 
+	async runBacktest(): Promise<void> {
+		await this.page
+			.getByRole("button", { name: "Run Backtest" })
+			.click();
+	}
+
+	get backtestResultsSection(): Locator {
+		return this.page.getByText("Backtest Results");
+	}
+
+	get backtestForecastingSection(): Locator {
+		return this.page.getByRole("heading", { name: "Forecast Backtesting" });
+	}
+
 	async goToFeatures(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Features" }).click();
 	}

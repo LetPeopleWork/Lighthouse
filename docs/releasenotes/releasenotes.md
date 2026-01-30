@@ -8,7 +8,14 @@ nav_order: 95
 # Lighthouse vNext
 
 ## MCS Back-Testing
-To Do
+You can now validate Lighthouse's Monte Carlo Simulation forecasts against historical data using the new **Forecast Backtesting** feature. This helps build confidence in the forecasting system by comparing predicted outcomes with actual historical throughput.
+
+Navigate to any Team's **Forecasts** tab to find the new *Forecast Backtesting* section. Select a historical time period and run a backtest to see:
+- How many items the MCS predicted would be completed (at 50%, 70%, 85%, and 95% confidence levels)
+- The actual number of items that were completed during that period
+- An interpretation of how well the forecast performed
+
+This feature empowers teams to assess the reliability of Lighthouse forecasts using their own historical data.
 
 ## Delivery Improvements
 The *Feature Selection* for the Delivery creation now features two new improvements:
