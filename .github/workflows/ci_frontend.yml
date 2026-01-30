@@ -8,20 +8,109 @@ on:
         type: string
 
 jobs:
+  frontend-test:
+    if: inputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: '0'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c
+        with:
+          version: 9
+          run_install: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        shell: bash
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Run tests with coverage (shard ${{ matrix.shard }}/3)
+        shell: bash
+        run: pnpm run sonarreport -- --shard=${{ matrix.shard }}/3
+        working-directory: ./Lighthouse.Frontend
+        env:
+          CI: true
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: coverage-shard-${{ matrix.shard }}
+          path: ./Lighthouse.Frontend/coverage/
+          retention-days: 1
+
   frontend:
     if: inputs.frontend == 'true'
+    needs: frontend-test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: '0'
-      
-      - name: Build Frontend (composite)
-        uses: ./.github/actions/build-frontend
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c
         with:
-          run-tests: 'true'
+          version: 9
+          run_install: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        shell: bash
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          pattern: coverage-shard-*
+          path: ./Lighthouse.Frontend/coverage-shards/
+
+      - name: Merge coverage reports
+        shell: bash
+        run: |
+          pnpm exec nyc merge coverage-shards coverage/coverage-final.json
+          pnpm exec nyc report --reporter=lcov --temp-dir=coverage --report-dir=coverage
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Build Frontend
+        shell: bash
+        run: pnpm run build
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Setup Sonar cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: |
+            ${{ runner.os }}-sonar
+
+      - name: Frontend SonarCloud
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./Lighthouse.Frontend
 
       - name: Wait for SonarCloud Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
