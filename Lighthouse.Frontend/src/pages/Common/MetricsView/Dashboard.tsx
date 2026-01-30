@@ -636,20 +636,27 @@ const Dashboard: React.FC<DashboardProps> = ({
 								// Add some internal padding for better spacing
 								p: 1,
 								position: "relative",
+								// Show spotlight button on hover
+								"&:hover .spotlight-button": {
+									opacity: 1,
+								},
 							}}
 						>
-							{/* Spotlight button - always visible */}
+							{/* Spotlight button - subtle, appears on hover */}
 							{!isEditing && !isHidden && (
 								<Box
+									className="spotlight-button"
 									sx={{
 										position: "absolute",
-										top: 6,
-										right: 6,
+										top: 10,
+										right: 10,
 										zIndex: 5,
 										pointerEvents: "auto",
+										opacity: 0,
+										transition: "opacity 0.2s ease-in-out",
 									}}
 								>
-									<Tooltip title="Spotlight widget">
+									<Tooltip title="Expand">
 										<IconButton
 											size="small"
 											onClick={(e) => {
@@ -658,15 +665,22 @@ const Dashboard: React.FC<DashboardProps> = ({
 											}}
 											data-testid={`dashboard-item-spotlight-${key}`}
 											sx={{
-												backgroundColor: theme.palette.background.paper,
-												border: `1px solid ${theme.palette.divider}`,
-												boxShadow: 1,
+												padding: "3px",
+												backgroundColor: getColorWithOpacity(
+													theme.palette.background.paper,
+													0.85,
+												),
+												border: "none",
+												borderRadius: "4px",
+												boxShadow: "none",
+												color: theme.palette.text.secondary,
 												"&:hover": {
 													backgroundColor: theme.palette.action.hover,
+													color: theme.palette.text.primary,
 												},
 											}}
 										>
-											<OpenInFullIcon fontSize="small" />
+											<OpenInFullIcon sx={{ fontSize: 14 }} />
 										</IconButton>
 									</Tooltip>
 								</Box>
