@@ -111,3 +111,23 @@ The result will be a probabilistic one, where you get the usual percentiles:
 - 95% chance you will get 2 or more
 
 That may help you plan for the not plannable, as you can see that, based on your past, you will will have a good chance of 4 bug items making it into your backlog.
+
+## Forecast Backtesting
+Backtesting allows you to validate how accurate Lighthouse forecasts would have been in the past. This helps build trust in the Monte Carlo Simulation and assess whether your team's workflow is stable enough for probabilistic forecasting.
+
+![Forecast Backtesting](../assets/features/backtest.png)
+
+### How It Works
+You select a historical time period by specifying:
+- **Backtest Start Date**: The date from which the forecast should be run (must be at least 14 days in the past)
+- **Backtest End Date**: The end of the period to compare against (must be at least 14 days after the start)
+- **Historical Window (Days)**: The number of days of throughput history to use for the simulation
+
+Lighthouse will then run a Monte Carlo Simulation as if it were the start date, using only the historical data available at that time. The result shows:
+- The forecasted "How Many" percentiles (50%, 70%, 85%, 95%)
+- The **actual** throughput that occurred during that period
+
+This lets you see whether the actual outcome fell within the forecasted range, giving you confidence in future forecasts.
+
+### Historical Throughput
+The **Historical Throughput** tab shows the throughput run chart for the historical window used by the backtest, along with its Predictability Score. This helps you understand the input data that drove the simulation.

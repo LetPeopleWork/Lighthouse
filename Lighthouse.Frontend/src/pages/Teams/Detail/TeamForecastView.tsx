@@ -142,6 +142,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			</InputGroup>
 			<InputGroup title="Forecast Backtesting">
 				<BacktestForecaster
+					teamId={team.id}
 					onRunBacktest={onRunBacktest}
 					backtestResult={backtestResult}
 					onClearBacktestResult={() => setBacktestResult(null)}

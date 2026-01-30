@@ -1,13 +1,17 @@
-import { TextField } from "@mui/material";
+import { Box, CircularProgress, Tab, Tabs, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
+import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
+import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import BacktestResultDisplay from "./BacktestResultDisplay";
 
 function getLocaleDateFormat(): string {
@@ -33,6 +37,7 @@ function getLocaleDateFormat(): string {
 }
 
 interface BacktestForecasterProps {
+	teamId: number;
 	onRunBacktest: (
 		startDate: Date,
 		endDate: Date,
@@ -43,6 +48,7 @@ interface BacktestForecasterProps {
 }
 
 const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
+	teamId,
 	onRunBacktest,
 	backtestResult,
 	onClearBacktestResult,
@@ -54,6 +60,76 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 		dayjs().subtract(30, "day"),
 	);
 	const [historicalWindowDays, setHistoricalWindowDays] = useState<number>(30);
+	const [activeTab, setActiveTab] = useState<number>(0);
+
+	// Historical Throughput state
+	const [historicalThroughput, setHistoricalThroughput] =
+		useState<RunChartData | null>(null);
+	const [predictabilityScore, setPredictabilityScore] =
+		useState<IForecastPredictabilityScore | null>(null);
+	const [isLoadingHistorical, setIsLoadingHistorical] =
+		useState<boolean>(false);
+	const [historicalError, setHistoricalError] = useState<string | null>(null);
+	const [historicalStartDate, setHistoricalStartDate] = useState<Date | null>(
+		null,
+	);
+
+	const { teamMetricsService } = useContext(ApiServiceContext);
+
+	// Fetch historical data when backtest result changes
+	useEffect(() => {
+		if (!backtestResult) {
+			setHistoricalThroughput(null);
+			setPredictabilityScore(null);
+			setHistoricalError(null);
+			setHistoricalStartDate(null);
+			return;
+		}
+
+		const fetchHistoricalData = async () => {
+			setIsLoadingHistorical(true);
+			setHistoricalError(null);
+
+			try {
+				// Compute historical window dates (date-only semantics)
+				const historyEnd = dayjs(backtestResult.startDate).startOf("day");
+				const historyStart = historyEnd.subtract(
+					backtestResult.historicalWindowDays,
+					"day",
+				);
+				const historyStartDate = historyStart.toDate();
+				const historyEndDate = historyEnd.toDate();
+
+				setHistoricalStartDate(historyStartDate);
+
+				const [throughputData, predictability] = await Promise.all([
+					teamMetricsService.getThroughput(
+						teamId,
+						historyStartDate,
+						historyEndDate,
+					),
+					teamMetricsService.getMultiItemForecastPredictabilityScore(
+						teamId,
+						historyStartDate,
+						historyEndDate,
+					),
+				]);
+
+				setHistoricalThroughput(throughputData);
+				setPredictabilityScore(predictability);
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Failed to load historical throughput data.";
+				setHistoricalError(errorMessage);
+			} finally {
+				setIsLoadingHistorical(false);
+			}
+		};
+
+		fetchHistoricalData();
+	}, [backtestResult, teamId, teamMetricsService]);
 
 	const handleRunBacktest = async () => {
 		if (!startDate || !endDate) {
@@ -126,11 +202,71 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 					</Grid>
 				</Grid>
 			</Grid>
-			<Grid size={{ xs: 12 }}>
-				{backtestResult && (
-					<BacktestResultDisplay backtestResult={backtestResult} />
-				)}
-			</Grid>
+			{backtestResult && (
+				<Grid size={{ xs: 12 }}>
+					<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
+						<Tabs
+							value={activeTab}
+							onChange={(_event, newValue) => setActiveTab(newValue)}
+							aria-label="Backtest result tabs"
+						>
+							<Tab
+								label="Results"
+								id="backtest-tab-0"
+								aria-controls="backtest-tabpanel-0"
+							/>
+							<Tab
+								label="Historical Throughput"
+								id="backtest-tab-1"
+								aria-controls="backtest-tabpanel-1"
+							/>
+						</Tabs>
+					</Box>
+					<Box
+						role="tabpanel"
+						hidden={activeTab !== 0}
+						id="backtest-tabpanel-0"
+						aria-labelledby="backtest-tab-0"
+					>
+						{activeTab === 0 && (
+							<BacktestResultDisplay backtestResult={backtestResult} />
+						)}
+					</Box>
+					<Box
+						role="tabpanel"
+						hidden={activeTab !== 1}
+						id="backtest-tabpanel-1"
+						aria-labelledby="backtest-tab-1"
+					>
+						{activeTab === 1 && (
+							<>
+								{isLoadingHistorical && (
+									<Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+										<CircularProgress data-testid="loading-animation" />
+									</Box>
+								)}
+								{historicalError && (
+									<Box sx={{ color: "error.main", p: 2 }}>
+										{historicalError}
+									</Box>
+								)}
+								{historicalThroughput &&
+									!isLoadingHistorical &&
+									historicalStartDate && (
+										<Box sx={{ height: 400 }}>
+											<BarRunChart
+												chartData={historicalThroughput}
+												startDate={historicalStartDate}
+												title="Historical Throughput"
+												predictabilityData={predictabilityScore}
+											/>
+										</Box>
+									)}
+							</>
+						)}
+					</Box>
+				</Grid>
+			)}
 		</Grid>
 	);
 };

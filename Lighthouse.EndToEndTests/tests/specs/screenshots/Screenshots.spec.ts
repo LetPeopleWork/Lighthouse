@@ -354,6 +354,14 @@ testWithData(
 			"features/creationforecast.png",
 		);
 
+		// Backtest screenshot
+		await teamDetailPage.runBacktest();
+		await expect(teamDetailPage.backtestResultsSection).toBeVisible();
+		await takeElementScreenshot(
+			teamDetailPage.backtestForecastingSection.locator("../../.."),
+			"features/backtest.png",
+		);
+
 		// Go to Metrics Tab
 		await teamDetailPage.goToMetrics();
 

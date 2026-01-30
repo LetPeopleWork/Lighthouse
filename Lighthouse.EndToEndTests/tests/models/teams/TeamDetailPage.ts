@@ -77,6 +77,14 @@ export class TeamDetailPage {
 		return this.page.getByRole("heading", { name: "Forecast Backtesting" });
 	}
 
+	async clickBacktestHistoricalThroughputTab(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Historical Throughput" }).click();
+	}
+
+	get backtestHistoricalThroughputChart(): Locator {
+		return this.page.getByText("Historical Throughput").locator("../..");
+	}
+
 	async goToFeatures(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Features" }).click();
 	}
