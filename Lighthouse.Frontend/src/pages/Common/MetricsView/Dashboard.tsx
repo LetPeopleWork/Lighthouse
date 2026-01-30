@@ -1,11 +1,14 @@
 import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import HideSourceIcon from "@mui/icons-material/HideSource";
+import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import RemoveIcon from "@mui/icons-material/Remove";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
 	Box,
 	IconButton,
+	Modal,
 	Tooltip,
 	Typography,
 	useMediaQuery,
@@ -60,6 +63,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 	const [order, setOrder] = React.useState<string[]>(() => []);
 	const draggingIdRef = React.useRef<string | null>(null);
 	const [dragOverId, setDragOverId] = React.useState<string | null>(null);
+
+	// spotlight state (not persisted, auto-closes on navigation)
+	const [spotlightId, setSpotlightId] = React.useState<string | null>(null);
 
 	const rootRef = React.useRef<HTMLElement | null>(null);
 
@@ -497,6 +503,19 @@ const Dashboard: React.FC<DashboardProps> = ({
 		setDragOverId(null);
 	};
 
+	// Handle Escape key to close spotlight mode
+	React.useEffect(() => {
+		const handleEscape = (ev: KeyboardEvent) => {
+			if (ev.key === "Escape" && spotlightId !== null) {
+				setSpotlightId(null);
+			}
+		};
+		globalThis.addEventListener("keydown", handleEscape);
+		return () => {
+			globalThis.removeEventListener("keydown", handleEscape);
+		};
+	}, [spotlightId]);
+
 	// leave edit mode when clicking outside or navigating away
 	React.useEffect(() => {
 		if (!rootRef.current) return;
@@ -619,6 +638,40 @@ const Dashboard: React.FC<DashboardProps> = ({
 								position: "relative",
 							}}
 						>
+							{/* Spotlight button - always visible */}
+							{!isEditing && !isHidden && (
+								<Box
+									sx={{
+										position: "absolute",
+										top: 6,
+										right: 6,
+										zIndex: 5,
+										pointerEvents: "auto",
+									}}
+								>
+									<Tooltip title="Spotlight widget">
+										<IconButton
+											size="small"
+											onClick={(e) => {
+												e.stopPropagation();
+												setSpotlightId(key);
+											}}
+											data-testid={`dashboard-item-spotlight-${key}`}
+											sx={{
+												backgroundColor: theme.palette.background.paper,
+												border: `1px solid ${theme.palette.divider}`,
+												boxShadow: 1,
+												"&:hover": {
+													backgroundColor: theme.palette.action.hover,
+												},
+											}}
+										>
+											<OpenInFullIcon fontSize="small" />
+										</IconButton>
+									</Tooltip>
+								</Box>
+							)}
+
 							{/* edit controls overlay and interaction blocker */}
 							{isEditing && (
 								<>
@@ -850,6 +903,85 @@ const Dashboard: React.FC<DashboardProps> = ({
 					}}
 				/>
 			)}
+
+			{/* Spotlight Modal */}
+			<Modal
+				open={spotlightId !== null}
+				onClose={() => setSpotlightId(null)}
+				slotProps={{
+					backdrop: {
+						sx: {
+							backgroundColor: getColorWithOpacity(
+								"#000",
+								theme.palette.mode === "dark" ? 0.8 : 0.7,
+							),
+						},
+					},
+				}}
+				data-testid="dashboard-spotlight-modal"
+			>
+				<Box
+					sx={{
+						position: "absolute",
+						top: "50%",
+						left: "50%",
+						transform: "translate(-50%, -50%)",
+						width: "95vw",
+						height: "95vh",
+						maxWidth: "1800px",
+						maxHeight: "1200px",
+						backgroundColor: theme.palette.background.paper,
+						borderRadius: 2,
+						boxShadow: 24,
+						p: 3,
+						overflow: "auto",
+						display: "flex",
+						flexDirection: "column",
+						outline: "none",
+						opacity: spotlightId === null ? 0 : 1,
+						transition: "opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+					}}
+				>
+						{/* Close button */}
+						<Box
+							sx={{
+								position: "absolute",
+								top: 12,
+								right: 12,
+								zIndex: 1,
+							}}
+						>
+							<Tooltip title="Close (Esc)">
+								<IconButton
+									onClick={() => setSpotlightId(null)}
+									data-testid="dashboard-spotlight-close"
+									sx={{
+										backgroundColor: theme.palette.background.paper,
+										border: `1px solid ${theme.palette.divider}`,
+										"&:hover": {
+											backgroundColor: theme.palette.action.hover,
+										},
+									}}
+								>
+									<CloseIcon />
+								</IconButton>
+							</Tooltip>
+						</Box>
+
+						{/* Spotlighted widget content */}
+						<Box
+							sx={{
+								flex: 1,
+								overflow: "auto",
+								display: "flex",
+								flexDirection: "column",
+								pt: 2,
+							}}
+						>
+							{spotlightId !== null && keyToItem[spotlightId]?.node}
+						</Box>
+					</Box>
+			</Modal>
 		</Box>
 	);
 };
