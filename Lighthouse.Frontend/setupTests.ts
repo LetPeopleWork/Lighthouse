@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event';
 // This makes typing and other simulated interactions run synchronously in tests,
 // significantly reducing the test runtime without changing existing test code.
 const __origUserEventSetup = userEvent.setup.bind(userEvent);
-userEvent.setup = (options: any = {}) => __origUserEventSetup({ delay: null, ...options });
+// Override readonly type for testing convenience — cast to any to avoid TS error
+;(userEvent as unknown as any).setup = (options: any = {}) => __origUserEventSetup({ delay: null, ...options });
 
 class MockResizeObserver {
   observe() { /* Just declared to fulfill the interface */ }
