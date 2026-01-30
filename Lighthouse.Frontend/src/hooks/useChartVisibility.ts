@@ -1,6 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IPercentileValue } from "../models/PercentileValue";
 
+/**
+ * Computes initial visibility for percentiles, hiding overlapping lines.
+ * When multiple percentiles share the same rounded value, only the highest
+ * percentile is shown by default; others are hidden but remain toggleable.
+ */
+function computeInitialPercentileVisibility(
+	percentiles: IPercentileValue[],
+): Record<number, boolean> {
+	// Group percentiles by their rounded value
+	const byRoundedValue = new Map<number, IPercentileValue[]>();
+	for (const p of percentiles) {
+		const roundedValue = Math.round(p.value);
+		const group = byRoundedValue.get(roundedValue) ?? [];
+		group.push(p);
+		byRoundedValue.set(roundedValue, group);
+	}
+
+	const visibility: Record<number, boolean> = {};
+	for (const group of byRoundedValue.values()) {
+		// Find the highest percentile in this group
+		const maxPercentile = Math.max(...group.map((p) => p.percentile));
+		for (const p of group) {
+			// Only show the highest percentile; hide others with same value
+			visibility[p.percentile] = p.percentile === maxPercentile;
+		}
+	}
+
+	return visibility;
+}
+
 export function usePercentileVisibility(percentiles: IPercentileValue[]) {
 	const percentilesRef = useRef<string>("");
 	const [visiblePercentiles, setVisiblePercentiles] = useState<
@@ -9,11 +39,7 @@ export function usePercentileVisibility(percentiles: IPercentileValue[]) {
 		percentilesRef.current = JSON.stringify(
 			percentiles.map((p) => p.percentile).sort((a, b) => a - b),
 		);
-		const initialVisibility: Record<number, boolean> = {};
-		for (const p of percentiles) {
-			initialVisibility[p.percentile] = true;
-		}
-		return initialVisibility;
+		return computeInitialPercentileVisibility(percentiles);
 	});
 
 	useEffect(() => {
@@ -23,11 +49,7 @@ export function usePercentileVisibility(percentiles: IPercentileValue[]) {
 		if (percentilesRef.current === percentilesKey) return;
 		percentilesRef.current = percentilesKey;
 
-		const initialVisibility: Record<number, boolean> = {};
-		for (const p of percentiles) {
-			initialVisibility[p.percentile] = true;
-		}
-		setVisiblePercentiles(initialVisibility);
+		setVisiblePercentiles(computeInitialPercentileVisibility(percentiles));
 	}, [percentiles]);
 
 	const togglePercentileVisibility = useCallback((percentile: number) => {
