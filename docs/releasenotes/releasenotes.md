@@ -4,6 +4,30 @@ layout: home
 nav_order: 95
 ---
 
+
+# Lighthouse vNext
+
+## MCS Back-Testing
+To Do
+
+## Delivery Improvements
+The *Feature Selection* for the Delivery creation now features two new improvements:
+- A *Select All* button that will select all Features that are currently in view (this will respect any filter you've set in the grid - only the visible features will be selected)
+- The state of a feature is now shown as a dedicated column
+
+## Other Improvements
+- Spotlighting of Charts/Widgets in Metric view to highlight a specific chart
+- Updated various third party dependencies
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Marat Kiniabulatov](https://www.linkedin.com/in/maratkinyabulatov/)
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.17.4...vNext)
+
+
 # Lighthouse v26.1.17.4
 
 ## Jira and Azure DevOps Board Wizards
@@ -48,9 +72,6 @@ Special Thanks to everyone who contributed their feedback to this release:
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.01.09.006...v26.1.17.4)
 
 # Lighthouse v26.1.9.6
-{: .d-inline-block }
-Latest
-{: .label .label-green }
 
 This release was focused on improving the additional field functionality of the Work Tracking Systems. Following changes related to this were implemented:
 - Username is not shown in "Other Options" anymore if you choose Jira Data Center Auth Option
