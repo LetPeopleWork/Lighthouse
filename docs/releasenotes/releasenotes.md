@@ -5,15 +5,16 @@ nav_order: 95
 ---
 
 
-# Lighthouse vNext
+# Lighthouse v26.1.30.10
 
 ## MCS Back-Testing
 You can now validate Lighthouse's Monte Carlo Simulation forecasts against historical data using the new **Forecast Backtesting** feature. This helps build confidence in the forecasting system by comparing predicted outcomes with actual historical throughput.
 
+![Forecast Backtesting](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/backtest.png)
+
 Navigate to any Team's **Forecasts** tab to find the new *Forecast Backtesting* section. Select a historical time period and run a backtest to see:
 - How many items the MCS predicted would be completed (at 50%, 70%, 85%, and 95% confidence levels)
 - The actual number of items that were completed during that period
-- An interpretation of how well the forecast performed
 
 This feature empowers teams to assess the reliability of Lighthouse forecasts using their own historical data.
 
@@ -22,8 +23,14 @@ The *Feature Selection* for the Delivery creation now features two new improveme
 - A *Select All* button that will select all Features that are currently in view (this will respect any filter you've set in the grid - only the visible features will be selected)
 - The state of a feature is now shown as a dedicated column
 
+## Spotlighting Charts
+You can now *spotlight* a chart in the Metrics section. By doing so, you'll get an expanded view of this chart. This is especially useful when teaching about flow metrics or when you want to highlight something specific.
+
+![Spotlighting](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/SpotlightedChart.png)
+
 ## Other Improvements
-- Spotlighting of Charts/Widgets in Metric view to highlight a specific chart
+- The various "reload" buttons have now more distinct icons so they are not easily mixed up
+- If percentiles on the Feature Size, Cycle Time Scatterplot, or Work Item Aging chart are overlapping, by default only the *higher* percentile will be shown
 - Updated various third party dependencies
 
 ## Contributions ❤️ 
@@ -31,8 +38,9 @@ Special Thanks to everyone who contributed their feedback to this release:
 - [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
 - [Marat Kiniabulatov](https://www.linkedin.com/in/maratkinyabulatov/)
 - [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.17.4...vNext)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.17.4...v26.1.30.10)
 
 
 # Lighthouse v26.1.17.4
