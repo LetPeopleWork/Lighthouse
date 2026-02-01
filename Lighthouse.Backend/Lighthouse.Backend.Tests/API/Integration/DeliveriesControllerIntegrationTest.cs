@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -12,7 +13,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     public class DeliveriesControllerIntegrationTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
 
         [Test]
         public async Task CreateDelivery_WithMissingName_ReturnsBadRequest()
@@ -141,6 +146,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Name = "Release 1",
                 Date = DateTime.UtcNow.AddDays(30),
                 FeatureIds = features.Select(f => f.Id).ToList(),
+                SelectionMode = DeliverySelectionMode.Manual
             };
             
             var json = JsonSerializer.Serialize(request);
@@ -156,7 +162,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             var getResponseContent = await getResponse.Content.ReadAsStringAsync();
-            var deliveries = JsonSerializer.Deserialize<List<Delivery>>(getResponseContent,
+            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(getResponseContent,
                 JsonSerializerOptions
             );
 
@@ -176,7 +182,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             getResponseContent = await getResponse.Content.ReadAsStringAsync();
-            deliveries = JsonSerializer.Deserialize<List<Delivery>>(getResponseContent,
+            deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(getResponseContent,
                 JsonSerializerOptions
             );
 

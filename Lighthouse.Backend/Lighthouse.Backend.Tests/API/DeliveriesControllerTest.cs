@@ -1,7 +1,9 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliveryRules;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +19,8 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<ILicenseService> licenseServiceMock;
 
+        private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
+
         [SetUp]
         public void Setup()
         {
@@ -24,6 +28,11 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
+            deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
+
+            deliveryRuleServiceMock.Setup(x =>
+                    x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                .Returns([]);
 
             portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Portfolio());
         }
@@ -90,8 +99,8 @@ namespace Lighthouse.Backend.Tests.API
         public async Task CreateDelivery_ValidData_ReturnsOk()
         {
             // Arrange
-            var portfolioId = 1;
-            var name = "Q1 Release";
+            const int portfolioId = 1;
+            const string name = "Q1 Release";
             var date = DateTime.UtcNow.AddDays(30);
             var featureIds = new List<int> { 1, 2 };
 
@@ -237,7 +246,8 @@ namespace Lighthouse.Backend.Tests.API
                 deliveryRepositoryMock.Object,
                 featureRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
-                licenseServiceMock.Object);
+                licenseServiceMock.Object,
+                deliveryRuleServiceMock.Object);
         }
 
         private static List<Feature> GetTestFeatures(List<int> ids)
@@ -413,11 +423,7 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock.Setup(x => x.GetById(2)).Returns(feature2);
             deliveryRepositoryMock.Setup(x => x.Save()).Returns(Task.CompletedTask);
 
-            var controller = new DeliveriesController(
-                deliveryRepositoryMock.Object,
-                featureRepositoryMock.Object,
-                portfolioRepositoryMock.Object,
-                licenseServiceMock.Object);
+            var controller = CreateSubject();
 
             // Act
             var result = await controller.UpdateDelivery(deliveryId, request);
@@ -445,11 +451,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = [1]
             };
 
-            var controller = new DeliveriesController(
-                deliveryRepositoryMock.Object,
-                featureRepositoryMock.Object,
-                portfolioRepositoryMock.Object,
-                licenseServiceMock.Object);
+            var controller = CreateSubject();
 
             // Act
             var result = await controller.UpdateDelivery(deliveryId, request);
@@ -472,11 +474,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = [1]
             };
 
-            var controller = new DeliveriesController(
-                deliveryRepositoryMock.Object,
-                featureRepositoryMock.Object,
-                portfolioRepositoryMock.Object,
-                licenseServiceMock.Object);
+            var controller = CreateSubject();
 
             // Act
             var result = await controller.UpdateDelivery(deliveryId, request);
@@ -501,11 +499,7 @@ namespace Lighthouse.Backend.Tests.API
 
             deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns((Delivery)null);
 
-            var controller = new DeliveriesController(
-                deliveryRepositoryMock.Object,
-                featureRepositoryMock.Object,
-                portfolioRepositoryMock.Object,
-                licenseServiceMock.Object);
+            var controller = CreateSubject();
 
             // Act
             var result = await controller.UpdateDelivery(deliveryId, request);
@@ -532,11 +526,7 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
             featureRepositoryMock.Setup(x => x.GetById(999)).Returns((Feature)null);
 
-            var controller = new DeliveriesController(
-                deliveryRepositoryMock.Object,
-                featureRepositoryMock.Object,
-                portfolioRepositoryMock.Object,
-                licenseServiceMock.Object);
+            var controller = CreateSubject();
 
             // Act
             var result = await controller.UpdateDelivery(deliveryId, request);
@@ -550,6 +540,364 @@ namespace Lighthouse.Backend.Tests.API
         private static Delivery GetTestDelivery()
         {
             return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1);
+        }
+
+        [Test]
+        public async Task CreateDelivery_RuleBasedWithoutPremiumLicense_ReturnsForbidden()
+        {
+            // Arrange
+            var portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.CreateDelivery(portfolioId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<ObjectResult>());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(403));
+        }
+
+        [Test]
+        public async Task CreateDelivery_RuleBasedWithEmptyRules_ReturnsBadRequest()
+        {
+            // Arrange
+            const int portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = []
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.CreateDelivery(portfolioId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public async Task CreateDelivery_RuleBasedWithValidRules_SavesRuleDefinition()
+        {
+            // Arrange
+            const int portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            
+            Delivery? savedDelivery = null;
+            deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
+                .Callback<Delivery>(d => savedDelivery = d);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.CreateDelivery(portfolioId, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(savedDelivery, Is.Not.Null);
+                Assert.That(savedDelivery!.SelectionMode, Is.EqualTo(DeliverySelectionMode.RuleBased));
+                Assert.That(savedDelivery.RuleDefinitionJson, Is.Not.Null);
+                Assert.That(savedDelivery.RuleSchemaVersion, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task CreateDelivery_RuleBasedWithValidRules_FeatureMatchesRules_SetsFeaturesCorrectly()
+        {
+            // Arrange
+            const int portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var portfolio = new Portfolio
+            {
+                Id = portfolioId,
+                Features = { new Feature { Id = 12 } }
+            };
+            
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolioId)).Returns(portfolio);
+            deliveryRuleServiceMock.Setup(x =>
+                    x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                .Returns(portfolio.Features);
+            
+            Delivery? savedDelivery = null;
+            deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
+                .Callback<Delivery>(d => savedDelivery = d);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.CreateDelivery(portfolioId, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(savedDelivery, Is.Not.Null);
+                
+                Assert.That(savedDelivery.Features, Has.Count.EqualTo(1));
+                Assert.That(savedDelivery.Features.Single().Id, Is.EqualTo(12));
+            }
+        }
+        
+        [Test]
+        public async Task CreateDelivery_RuleBasedWithValidRules_FeatureDoesNotMatchRules_SetsFeaturesCorrectly()
+        {
+            // Arrange
+            const int portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var portfolio = new Portfolio
+            {
+                Id = portfolioId,
+                Features = { new Feature { Id = 12 } }
+            };
+            
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolioId)).Returns(portfolio);
+            deliveryRuleServiceMock.Setup(x =>
+                    x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                .Returns([]);
+            
+            Delivery? savedDelivery = null;
+            deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
+                .Callback<Delivery>(d => savedDelivery = d);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.CreateDelivery(portfolioId, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(savedDelivery, Is.Not.Null);
+                
+                Assert.That(savedDelivery.Features, Has.Count.EqualTo(0));
+            }
+        }
+
+        [Test]
+        public async Task CreateDelivery_ManualWithBothRulesAndFeatures_UsesFeaturesIgnoresRules()
+        {
+            // Arrange
+            const int portfolioId = 1;
+            var featureIds = new List<int> { 1 };
+            var features = GetTestFeatures(featureIds);
+            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(features[0]);
+
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Manual Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.Manual,
+                FeatureIds = featureIds,
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            
+            Delivery? savedDelivery = null;
+            deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
+                .Callback<Delivery>(d => savedDelivery = d);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.CreateDelivery(portfolioId, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(savedDelivery, Is.Not.Null);
+                Assert.That(savedDelivery!.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+                Assert.That(savedDelivery.RuleDefinitionJson, Is.Null);
+                Assert.That(savedDelivery.Features, Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task UpdateDelivery_RuleBasedWithoutPremiumLicense_ReturnsForbidden()
+        {
+            // Arrange
+            var deliveryId = 1;
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Updated Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<ObjectResult>());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(403));
+        }
+
+        [Test]
+        public async Task UpdateDelivery_RuleBasedWithEmptyRules_ReturnsBadRequest()
+        {
+            // Arrange
+            var deliveryId = 1;
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Updated Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = []
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public async Task UpdateDelivery_RuleBasedWithValidRules_SavesRuleDefinition()
+        {
+            // Arrange
+            const int deliveryId = 1;
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(existingDelivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.RuleBased));
+                Assert.That(existingDelivery.RuleDefinitionJson, Is.Not.Null);
+                Assert.That(existingDelivery.RuleSchemaVersion, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task UpdateDelivery_SwitchFromRuleBasedToManual_ClearsRuleDefinition()
+        {
+            // Arrange
+            const int deliveryId = 1;
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1)
+            {
+                Id = deliveryId,
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                RuleDefinitionJson = "{\"Version\":1,\"Conditions\":[]}",
+                RuleSchemaVersion = 1
+            };
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+
+            var featureIds = new List<int> { 1 };
+            var features = GetTestFeatures(featureIds);
+            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(features[0]);
+
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Manual Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.Manual,
+                FeatureIds = featureIds,
+                Rules = null
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var controller = CreateSubject();
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(existingDelivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+                Assert.That(existingDelivery.RuleDefinitionJson, Is.Null);
+                Assert.That(existingDelivery.RuleSchemaVersion, Is.Null);
+                Assert.That(existingDelivery.Features, Has.Count.EqualTo(1));
+            }
         }
     }
 }

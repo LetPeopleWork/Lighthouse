@@ -1,4 +1,6 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliveryRules;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -42,5 +44,50 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(request.FeatureIds, Has.Count.EqualTo(0));
             }
         }
+
+        #region SelectionMode Tests
+
+        [Test]
+        public void SelectionMode_DefaultsToManual()
+        {
+            var request = new UpdateDeliveryRequest();
+            
+            Assert.That(request.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+        }
+
+        [Test]
+        public void SelectionMode_CanBeSetToRuleBased()
+        {
+            var request = new UpdateDeliveryRequest
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased
+            };
+            
+            Assert.That(request.SelectionMode, Is.EqualTo(DeliverySelectionMode.RuleBased));
+        }
+
+        [Test]
+        public void Rules_DefaultsToNull()
+        {
+            var request = new UpdateDeliveryRequest();
+            
+            Assert.That(request.Rules, Is.Null);
+        }
+
+        [Test]
+        public void Rules_CanBeSet()
+        {
+            var request = new UpdateDeliveryRequest
+            {
+                Rules = 
+                [
+                    new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }
+                ]
+            };
+            
+            Assert.That(request.Rules, Has.Count.EqualTo(1));
+        }
+
+        #endregion
     }
 }

@@ -1,39 +1,45 @@
+using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliveryRules;
 
 namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureLikelihoodDto
     {
-        public int FeatureId { get; init; }
+        public int FeatureId { get; set; }
 
-        public double LikelihoodPercentage { get; init; }
+        public double LikelihoodPercentage { get; set; }
 
-        public List<WhenForecastDto> CompletionDates { get; init; } = [];
+        public List<WhenForecastDto> CompletionDates { get; set; } = [];
     }
 
     public class DeliveryWithLikelihoodDto
     {
-        public int Id { get; private init; }
+        public int Id { get; set; }
 
-        public string Name { get; private init; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
-        public DateTime Date { get; private init; }
+        public DateTime Date { get; set; }
 
-        public int PortfolioId { get; private init; }
+        public int PortfolioId { get; set; }
 
-        public double LikelihoodPercentage { get; private init; }
+        public double LikelihoodPercentage { get; set; }
 
-        public List<WhenForecastDto> CompletionDates { get; private init; } = [];
+        public List<WhenForecastDto> CompletionDates { get; set; } = [];
 
-        public double Progress { get; private init; }
+        public double Progress { get; set; }
 
-        public int RemainingWork { get; private init; }
+        public int RemainingWork { get; set; }
 
-        public int TotalWork { get; private init; }
+        public int TotalWork { get; set; }
 
-        public List<int> Features { get; private init; } = [];
+        public List<int> Features { get; set; } = [];
 
-        public List<FeatureLikelihoodDto> FeatureLikelihoods { get; private init; } = [];
+        public List<FeatureLikelihoodDto> FeatureLikelihoods { get; set; } = [];
+        
+        public DeliverySelectionMode SelectionMode { get; set; }
+        
+        public List<DeliveryRuleCondition> Rules { get; set; } = [];
 
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
@@ -64,8 +70,21 @@ namespace Lighthouse.Backend.API.DTO
                 RemainingWork = remainingWork,
                 TotalWork = totalWork,
                 Features = delivery.Features.Select(f => f.Id).ToList(),
-                FeatureLikelihoods = featureLikelihoods
+                FeatureLikelihoods = featureLikelihoods,
+                SelectionMode = delivery.SelectionMode,
+                Rules = GetRules(delivery.RuleDefinitionJson),
             };
+        }
+
+        private static List<DeliveryRuleCondition> GetRules(string? ruleDefinitionJson)
+        {
+            if (string.IsNullOrEmpty(ruleDefinitionJson))
+            {
+                return [];
+            }
+            
+            var ruleSet = JsonSerializer.Deserialize<DeliveryRuleSet>(ruleDefinitionJson);
+            return ruleSet.Conditions;
         }
 
         private static FeatureLikelihoodDto? GetLeastLikelyFeature(List<FeatureLikelihoodDto> featureLikelihoods)
@@ -82,7 +101,7 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             // Return the minimum likelihood (most conservative estimate)
-            return likelihoods[likelihoods.Count - 1];
+            return likelihoods[^1];
         }
 
         private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)

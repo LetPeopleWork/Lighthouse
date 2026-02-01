@@ -80,5 +80,66 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(delivery.Features, Has.Count.EqualTo(1));
             Assert.That(delivery.Features, Does.Contain(feature));
         }
+
+        #region SelectionMode Tests
+
+        [Test]
+        public void SelectionMode_DefaultsToManual()
+        {
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
+            
+            Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+        }
+
+        [Test]
+        public void SelectionMode_CanBeSetToRuleBased()
+        {
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased
+            };
+            
+            Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.RuleBased));
+        }
+
+        [Test]
+        public void RuleDefinitionJson_DefaultsToNull()
+        {
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
+            
+            Assert.That(delivery.RuleDefinitionJson, Is.Null);
+        }
+
+        [Test]
+        public void RuleDefinitionJson_CanBeSet()
+        {
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
+            {
+                RuleDefinitionJson = "{\"conditions\":[]}"
+            };
+            
+            Assert.That(delivery.RuleDefinitionJson, Is.EqualTo("{\"conditions\":[]}"));
+        }
+
+        [Test]
+        public void RuleSchemaVersion_DefaultsToNull()
+        {
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
+            
+            Assert.That(delivery.RuleSchemaVersion, Is.Null);
+        }
+
+        [Test]
+        public void RuleSchemaVersion_CanBeSet()
+        {
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
+            {
+                RuleSchemaVersion = 1
+            };
+            
+            Assert.That(delivery.RuleSchemaVersion, Is.EqualTo(1));
+        }
+
+        #endregion
     }
 }

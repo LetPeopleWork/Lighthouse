@@ -21,6 +21,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IProjectMetricsService> projectMetricsServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IDeliveryRepository> deliveryRepositoryMock;
+        private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
 
         private int idCounter;
 
@@ -33,6 +35,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             workItemServiceMock = new Mock<IWorkItemService>();
             projectMetricsServiceMock = new Mock<IProjectMetricsService>();
             licenseServiceMock = new Mock<ILicenseService>();
+            deliveryRepositoryMock = new Mock<IDeliveryRepository>();
+            deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
@@ -40,6 +44,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(workItemServiceMock.Object);
             SetupServiceProviderMock(projectMetricsServiceMock.Object);
             SetupServiceProviderMock(licenseServiceMock.Object);
+            SetupServiceProviderMock(deliveryRepositoryMock.Object);
+            SetupServiceProviderMock(deliveryRuleServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }
@@ -165,6 +171,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             await subject.StartAsync(CancellationToken.None);
 
             workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_TriggersDeliveryRuleRecompute()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var deliveries = new List<Delivery>();
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(deliveries);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            deliveryRuleServiceMock.Verify(x => x.RecomputeRuleBasedDeliveries(project, deliveries), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_SavesDeliveryChanges()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var deliveries = new List<Delivery>();
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(deliveries);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
         }
 
         private void SetupProjects(params Portfolio[] projects)

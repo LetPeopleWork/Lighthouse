@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -112,6 +112,15 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("PortfolioId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RuleDefinitionJson")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("RuleSchemaVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SelectionMode")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -246,7 +255,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.ToTable("ForecastBase");
 
-                    b.HasDiscriminator().HasValue("ForecastBase");
+                    b.HasDiscriminator<string>("Discriminator").HasValue("ForecastBase");
 
                     b.UseTphMappingStrategy();
                 });

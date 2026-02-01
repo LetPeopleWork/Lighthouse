@@ -303,6 +303,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILicenseService, LicenseService>();
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
+            builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
 
             builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();

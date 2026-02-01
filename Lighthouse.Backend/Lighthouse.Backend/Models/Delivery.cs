@@ -37,5 +37,11 @@ namespace Lighthouse.Backend.Models
         public Portfolio? Portfolio { get; set; }
         
         public List<Feature> Features { get; } = [];
+
+        public DeliverySelectionMode SelectionMode { get; set; } = DeliverySelectionMode.Manual;
+
+        public string? RuleDefinitionJson { get; set; }
+
+        public int? RuleSchemaVersion { get; set; }
     }
 }

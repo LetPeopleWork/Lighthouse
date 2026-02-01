@@ -4,15 +4,19 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class WhenForecastDto
     {
+        public WhenForecastDto()
+        {
+        }
+        
         public WhenForecastDto(WhenForecast forecast, int probability)
         {
             Probability = probability;
             ExpectedDate = GetFutureDate(forecast.GetProbability(probability));
         }
 
-        public int Probability { get; }
+        public int Probability { get; set; }
 
-        public DateTime ExpectedDate { get; }
+        public DateTime ExpectedDate { get; set; }
 
         private static DateTime GetFutureDate(int daysInFuture)
         {
