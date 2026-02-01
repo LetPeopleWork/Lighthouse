@@ -124,7 +124,11 @@ testWithData(
 		await expect(teamDetailPage.backtestResultsSection).toBeVisible();
 
 		// Verify the percentile list and actual throughput are displayed
-		await expect(teamDetailPage.page.getByText(/Forecast Percentiles:/)).toBeVisible();
-		await expect(teamDetailPage.page.getByText(/Actual Throughput:/)).toBeVisible();
+		await expect(
+			teamDetailPage.page.getByText(/Forecast Percentiles:/),
+		).toBeVisible();
+		await expect(
+			teamDetailPage.page.getByText(/Actual Throughput:/),
+		).toBeVisible();
 	},
 );

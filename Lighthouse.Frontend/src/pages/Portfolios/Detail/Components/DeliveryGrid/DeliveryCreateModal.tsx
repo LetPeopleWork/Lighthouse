@@ -309,6 +309,46 @@ const isValidFutureDate = (date: string): boolean => {
 	return selectedDate > today;
 };
 
+// Helper function to get the first blocking validation error
+const getFirstBlockingError = (
+	name: string,
+	date: string,
+	selectionMode: DeliverySelectionMode,
+	selectedFeatureIds: number[],
+	rulesValidated: boolean,
+	matchedFeaturesLength: number,
+	deliveryTerm: string,
+	featureTerm: string,
+): string | null => {
+	if (!name.trim()) {
+		return `${deliveryTerm} name is required`;
+	}
+
+	if (!date) {
+		return `${deliveryTerm} date is required`;
+	}
+
+	if (!isValidFutureDate(date)) {
+		return `${deliveryTerm} date must be in the future`;
+	}
+
+	if (selectionMode === DeliverySelectionMode.Manual) {
+		if (selectedFeatureIds.length === 0) {
+			return `At least one ${featureTerm.toLowerCase()} must be selected`;
+		}
+	} else {
+		// Rule-based mode
+		if (!rulesValidated) {
+			return "Rules must be validated before saving";
+		}
+		if (matchedFeaturesLength === 0) {
+			return "No features match the rules";
+		}
+	}
+
+	return null;
+};
+
 export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	open,
 	portfolio,
@@ -673,22 +713,58 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					/>
 				</Box>
 			</DialogContent>
-			<DialogActions>
-				<Button onClick={onClose}>Cancel</Button>
-				<Button
-					onClick={handleSave}
-					variant="contained"
-					disabled={isSaveDisabled(
+			<DialogActions
+				sx={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					gap: 2,
+					px: 3,
+					py: 2,
+				}}
+			>
+				<Box sx={{ flex: 1, mr: 2 }}>
+					{getFirstBlockingError(
 						name,
 						date,
 						selectionMode,
 						selectedFeatureIds,
 						rulesValidated,
 						matchedFeatures.length,
+						deliveryTerm,
+						featureTerm,
+					) && (
+						<Alert severity="error" sx={{ py: 0 }}>
+							{getFirstBlockingError(
+								name,
+								date,
+								selectionMode,
+								selectedFeatureIds,
+								rulesValidated,
+								matchedFeatures.length,
+								deliveryTerm,
+								featureTerm,
+							)}
+						</Alert>
 					)}
-				>
-					{isEditMode ? "Update" : "Save"}
-				</Button>
+				</Box>
+				<Box sx={{ display: "flex", gap: 1 }}>
+					<Button onClick={onClose}>Cancel</Button>
+					<Button
+						onClick={handleSave}
+						variant="contained"
+						disabled={isSaveDisabled(
+							name,
+							date,
+							selectionMode,
+							selectedFeatureIds,
+							rulesValidated,
+							matchedFeatures.length,
+						)}
+					>
+						{isEditMode ? "Update" : "Save"}
+					</Button>
+				</Box>
 			</DialogActions>
 		</Dialog>
 	);

@@ -64,9 +64,7 @@ export class TeamDetailPage {
 	}
 
 	async runBacktest(): Promise<void> {
-		await this.page
-			.getByRole("button", { name: "Run Backtest" })
-			.click();
+		await this.page.getByRole("button", { name: "Run Backtest" }).click();
 	}
 
 	get backtestResultsSection(): Locator {

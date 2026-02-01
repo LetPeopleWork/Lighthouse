@@ -1,11 +1,17 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { DeliveriesPage } from "./DeliveriesPage";
 
 export class ModifyDeliveriesDialog {
 	page: Page;
 
-	constructor(page: Page) {
+	saveButtonText: string = "Save";
+
+	constructor(page: Page, isUpdate: boolean = false) {
 		this.page = page;
+
+		if (isUpdate) {
+			this.saveButtonText = "Update";
+		}
 	}
 
 	async close(): Promise<void> {
@@ -14,8 +20,7 @@ export class ModifyDeliveriesDialog {
 	}
 
 	async save(): Promise<DeliveriesPage> {
-		const saveButton = this.page.getByRole("button", { name: "Save" });
-		await saveButton.click();
+		await this.saveButton.click();
 
 		return new DeliveriesPage(this.page);
 	}
@@ -55,5 +60,74 @@ export class ModifyDeliveriesDialog {
 	async hasAtLeastOneFeatureValidationError(): Promise<boolean> {
 		const errorMessage = this.page.getByText("At least one feature must be");
 		return await errorMessage.isVisible();
+	}
+
+	async hasRulesMustBeValidatedValidationError(): Promise<boolean> {
+		const errorMessage = this.page.getByText(
+			"Rules must be validated before saving",
+		);
+		return await errorMessage.isVisible();
+	}
+
+	// Rule-based delivery methods
+	async switchToRuleBased(): Promise<void> {
+		const ruleBasedButton = this.page.getByRole("button", {
+			name: "Rule-Based",
+		});
+		await ruleBasedButton.click();
+	}
+
+	async switchToManual(): Promise<void> {
+		const manualButton = this.page.getByRole("button", { name: "Manual" });
+		await manualButton.click();
+	}
+
+	async addRule(): Promise<void> {
+		const addRuleButton = this.page.getByRole("button", { name: "Add Rule" });
+		await addRuleButton.click();
+	}
+
+	async setRuleField(ruleIndex: number, fieldValue: string): Promise<void> {
+		const fieldSelect = this.page.locator(
+			`[data-testid="rule-field-select-${ruleIndex}"]`,
+		);
+		await fieldSelect.click();
+		await this.page.getByRole("option", { name: fieldValue }).click();
+	}
+
+	async setRuleOperator(
+		ruleIndex: number,
+		operatorValue: string,
+	): Promise<void> {
+		const operatorSelect = this.page.locator(
+			`[data-testid="rule-operator-select-${ruleIndex}"]`,
+		);
+		await operatorSelect.click();
+		await this.page
+			.getByRole("option", { name: operatorValue, exact: true })
+			.click();
+	}
+
+	async setRuleValue(_ruleIndex: number, value: string): Promise<void> {
+		const valueInput = this.page.getByRole("textbox", { name: "Value" });
+		await valueInput.fill(value);
+	}
+
+	async removeRule(ruleIndex: number): Promise<void> {
+		const removeButton = this.page.locator(
+			`[data-testid="rule-delete-${ruleIndex}"]`,
+		);
+		await removeButton.click();
+	}
+
+	async validateRules(): Promise<void> {
+		const validateButton = this.page.getByRole("button", {
+			name: "Validate Rules",
+		});
+		await validateButton.click();
+	}
+
+	get saveButton(): Locator {
+		return this.page.getByRole("button", { name: this.saveButtonText });
 	}
 }

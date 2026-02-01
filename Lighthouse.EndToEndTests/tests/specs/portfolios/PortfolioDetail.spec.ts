@@ -148,14 +148,14 @@ testWithUpdatedTeams([0])(
 		await test.step("Create new Delivery", async () => {
 			const addDeliveryDialog = await deliveriesPage.addDelivery();
 
-			await addDeliveryDialog.save();
+			await expect(addDeliveryDialog.saveButton).toBeDisabled();
 			expect(
 				await addDeliveryDialog.hasDeliveryNameValidationError(),
 			).toBeTruthy();
 
 			await addDeliveryDialog.setDeliveryName(deliveryName);
 
-			await addDeliveryDialog.save();
+			await expect(addDeliveryDialog.saveButton).toBeDisabled();
 			expect(
 				await addDeliveryDialog.hasDeliveryNameValidationError(),
 			).toBeFalsy();
@@ -172,7 +172,7 @@ testWithUpdatedTeams([0])(
 
 			await addDeliveryDialog.setDeliveryDate(futureDate);
 
-			await addDeliveryDialog.save();
+			await expect(addDeliveryDialog.saveButton).toBeDisabled();
 			expect(
 				await addDeliveryDialog.hasDeliveryDateValidationError(),
 			).toBeFalsy();
@@ -186,7 +186,7 @@ testWithUpdatedTeams([0])(
 			deliveriesPage = await addDeliveryDialog.save();
 		});
 
-		let delivery = deliveriesPage.getDeliveryByName(deliveryName);
+		const delivery = deliveriesPage.getDeliveryByName(deliveryName);
 		await test.step("Verify Delivery is shown in Portfolio Detail", async () => {
 			const details = await delivery.getDetails();
 			expect(details.name).toBe(deliveryName);
@@ -199,7 +199,31 @@ testWithUpdatedTeams([0])(
 			expect(featureLikelihoods).toContain(details.likelihood);
 		});
 
+		await test.step("Rule Based Delivery Modification", async () => {
+			const modifyDialog = await delivery.modifyDelivery();
+
+			await expect(modifyDialog.saveButton).toBeEnabled();
+
+			await modifyDialog.switchToRuleBased();
+
+			await expect(modifyDialog.saveButton).toBeDisabled();
+			expect(
+				await modifyDialog.hasRulesMustBeValidatedValidationError(),
+			).toBeTruthy();
+
+			await modifyDialog.addRule();
+			await modifyDialog.setRuleField(0, "Type");
+			await modifyDialog.setRuleOperator(0, "Equals");
+			await modifyDialog.setRuleValue(0, "Epic");
+
+			await modifyDialog.validateRules();
+
+			await expect(modifyDialog.saveButton).toBeEnabled();
+			deliveriesPage = await modifyDialog.save();
+		});
+
 		await test.step("Delete Delivery from Portfolio Detail", async () => {
+			let delivery = deliveriesPage.getDeliveryByName(deliveryName);
 			let deleteDialog = await delivery.delete();
 
 			await deleteDialog.cancel();

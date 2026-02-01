@@ -11,6 +11,15 @@ export class DeliveryItem {
 		this.heading = container.getByRole("heading", { level: 3 });
 	}
 
+	async modifyDelivery(): Promise<ModifyDeliveriesDialog> {
+		await this.container
+			.page()
+			.getByRole("button", { name: "edit", exact: true })
+			.click();
+
+		return new ModifyDeliveriesDialog(this.container.page(), true);
+	}
+
 	async getName(): Promise<string> {
 		return (await this.heading.textContent()) || "";
 	}

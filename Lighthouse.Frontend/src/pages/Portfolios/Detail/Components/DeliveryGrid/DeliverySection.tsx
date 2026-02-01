@@ -1,6 +1,8 @@
+import AutoModeIcon from "@mui/icons-material/AutoMode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import TouchAppIcon from "@mui/icons-material/TouchApp";
 import {
 	Accordion,
 	AccordionDetails,
@@ -10,6 +12,7 @@ import {
 	IconButton,
 	Paper,
 	TableContainer,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
@@ -23,6 +26,7 @@ import { ForecastLevel } from "../../../../../components/Common/Forecasts/Foreca
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import type { Delivery } from "../../../../../models/Delivery";
+import { DeliverySelectionMode } from "../../../../../models/DeliveryRules";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -54,6 +58,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+
+	const isRuleBased =
+		delivery.selectionMode === DeliverySelectionMode.RuleBased ||
+		(delivery.selectionMode as unknown as string) === "RuleBased";
 
 	// Helper function to format date for display
 	const formatDate = (date: Date): string => {
@@ -297,6 +305,27 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 										<Typography variant="h6" component="h3">
 											{delivery.name}
 										</Typography>
+										<Tooltip
+											title={
+												isRuleBased
+													? "Rule-Based: Features automatically update based on rules"
+													: "Manual: Features are fixed"
+											}
+										>
+											<Box sx={{ display: "flex", alignItems: "center" }}>
+												{isRuleBased ? (
+													<AutoModeIcon
+														fontSize="small"
+														sx={{ color: "text.secondary" }}
+													/>
+												) : (
+													<TouchAppIcon
+														fontSize="small"
+														sx={{ color: "text.secondary" }}
+													/>
+												)}
+											</Box>
+										</Tooltip>
 										<Typography variant="body2" color="text.secondary">
 											Delivery Date: {delivery.getFormattedDate()}
 										</Typography>
