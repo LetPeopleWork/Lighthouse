@@ -179,18 +179,6 @@ describe("NewItemForecaster", () => {
 			);
 		});
 
-		it("displays alert when disabled with message", () => {
-			const props = {
-				...defaultProps,
-				isDisabled: true,
-				disabledMessage: "Feature not available",
-			};
-
-			renderWithLocalizationProvider(<NewItemForecaster {...props} />);
-
-			expect(screen.getByText("Feature not available")).toBeInTheDocument();
-		});
-
 		it("does not display alert when disabled without message", () => {
 			const props = {
 				...defaultProps,

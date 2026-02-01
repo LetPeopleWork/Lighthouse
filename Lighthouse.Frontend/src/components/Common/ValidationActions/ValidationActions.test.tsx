@@ -86,20 +86,6 @@ describe("ValidationActions", () => {
 		expect(saveButton).toBeDisabled();
 	});
 
-	it("shows tooltip when saveTooltip prop is provided", () => {
-		const tooltipText = "License restriction tooltip";
-		render(
-			<ValidationActions
-				{...defaultProps}
-				onValidate={undefined}
-				saveTooltip={tooltipText}
-			/>,
-		);
-
-		// Check that the tooltip is set as aria-label
-		expect(screen.getByLabelText(tooltipText)).toBeInTheDocument();
-	});
-
 	it("prioritizes disableSave over validation state", () => {
 		render(
 			<ValidationActions

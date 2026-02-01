@@ -6,12 +6,12 @@ import {
 	Stack,
 	Tab,
 	Tabs,
-	Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -43,12 +43,8 @@ const TeamDetail: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
-	const {
-		canUpdateTeamData,
-		updateTeamDataTooltip,
-		canUpdateTeamSettings,
-		updateTeamSettingsTooltip,
-	} = useLicenseRestrictions();
+	const { canUpdateTeamData, canUpdateTeamSettings, maxTeamsWithoutPremium } =
+		useLicenseRestrictions();
 
 	let subscribedToUpdates = false;
 
@@ -258,9 +254,10 @@ const TeamDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<Tooltip
-											title={updateTeamDataTooltip || `Update ${teamTerm} Data`}
-											arrow
+										<LicenseTooltip
+											canUseFeature={canUpdateTeamData}
+											defaultTooltip={`Update ${teamTerm} Data`}
+											premiumExtraInfo={`Free users can only update team data for up to ${maxTeamsWithoutPremium} teams.`}
 										>
 											<span>
 												<IconButton
@@ -276,7 +273,7 @@ const TeamDetail: React.FC = () => {
 													)}
 												</IconButton>
 											</span>
-										</Tooltip>
+										</LicenseTooltip>
 									}
 								/>
 							</Grid>
@@ -308,7 +305,7 @@ const TeamDetail: React.FC = () => {
 											teamService.validateTeamSettings(settings)
 										}
 										disableSave={!canUpdateTeamSettings}
-										saveTooltip={updateTeamSettingsTooltip}
+										saveTooltip={`Free users can only update team settings for up to ${maxTeamsWithoutPremium} teams`}
 									/>
 								)}
 							</Grid>

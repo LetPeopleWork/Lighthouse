@@ -6,12 +6,12 @@ import {
 	Stack,
 	Tab,
 	Tabs,
-	Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -73,7 +73,7 @@ const PortfolioDetail: React.FC = () => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
-	const { canUpdatePortfolioData, updatePortfolioDataTooltip } =
+	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
 		useLicenseRestrictions();
 
 	const fetchPortfolio = useCallback(async () => {
@@ -306,11 +306,10 @@ const PortfolioDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<Tooltip
-											title={
-												updatePortfolioDataTooltip || `Refresh ${featuresTerm}`
-											}
-											arrow
+										<LicenseTooltip
+											canUseFeature={canUpdatePortfolioData}
+											defaultTooltip={`Refresh ${featuresTerm}`}
+											premiumExtraInfo={`Free users can only update portfolio data for up to ${maxPortfoliosWithoutPremium} portfolio.`}
 										>
 											<span>
 												<IconButton
@@ -328,7 +327,7 @@ const PortfolioDetail: React.FC = () => {
 													)}
 												</IconButton>
 											</span>
-										</Tooltip>
+										</LicenseTooltip>
 									}
 								/>
 							</Grid>

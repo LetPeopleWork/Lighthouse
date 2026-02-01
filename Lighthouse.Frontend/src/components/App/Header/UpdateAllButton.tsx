@@ -3,12 +3,12 @@ import Badge from "@mui/material/Badge";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
-import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useUpdateAll } from "../../../hooks/useUpdateAll";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { LicenseTooltip } from "../License/LicenseToolTip";
 
 interface UpdateAllButtonProps {
 	className?: string;
@@ -17,17 +17,13 @@ interface UpdateAllButtonProps {
 const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 	const theme = useTheme();
 	const { handleUpdateAll, globalUpdateStatus } = useUpdateAll();
-	const { canUpdateAllTeamsAndPortfolios, updateAllTeamsAndPortfoliosTooltip } =
-		useLicenseRestrictions();
+	const { canUpdateAllTeamsAndPortfolios } = useLicenseRestrictions();
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
 	const isDisabled =
 		!canUpdateAllTeamsAndPortfolios || globalUpdateStatus.hasActiveUpdates;
-	const tooltipTitle =
-		updateAllTeamsAndPortfoliosTooltip ||
-		`Update All ${teamsTerm} and ${portfoliosTerm}`;
 
 	const handleClick = async () => {
 		if (!isDisabled) {
@@ -76,7 +72,11 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 	};
 
 	return (
-		<Tooltip title={tooltipTitle} arrow>
+		<LicenseTooltip
+			canUseFeature={canUpdateAllTeamsAndPortfolios}
+			defaultTooltip={`Update All ${teamsTerm} and ${portfoliosTerm}`}
+			premiumExtraInfo="Please obtain a premium license to update all teams and portfolios."
+		>
 			<span>
 				<IconButton
 					size="large"
@@ -90,7 +90,7 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 					{renderIcon()}
 				</IconButton>
 			</span>
-		</Tooltip>
+		</LicenseTooltip>
 	);
 };
 

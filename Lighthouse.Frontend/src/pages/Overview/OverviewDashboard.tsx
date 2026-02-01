@@ -1,8 +1,9 @@
 import AddIcon from "@mui/icons-material/Add";
-import { Box, Container, Tooltip, Typography } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
 import DataOverviewTable from "../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
@@ -42,9 +43,9 @@ const OverviewDashboard: React.FC = () => {
 	const { portfolioService, teamService } = useContext(ApiServiceContext);
 	const {
 		canCreatePortfolio,
-		createPortfolioTooltip,
 		canCreateTeam,
-		createTeamTooltip,
+		maxPortfoliosWithoutPremium,
+		maxTeamsWithoutPremium,
 	} = useLicenseRestrictions();
 
 	const fetchData = useCallback(async () => {
@@ -156,7 +157,11 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ fontWeight: 600 }}
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
-						<Tooltip title={createPortfolioTooltip} arrow>
+						<LicenseTooltip
+							canUseFeature={canCreatePortfolio}
+							defaultTooltip=""
+							premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
+						>
 							<span>
 								<ActionButton
 									buttonText={`Add ${portfolioTerm}`}
@@ -166,8 +171,12 @@ const OverviewDashboard: React.FC = () => {
 									disabled={!canCreatePortfolio}
 								/>
 							</span>
-						</Tooltip>
-						<Tooltip title={createTeamTooltip} arrow>
+						</LicenseTooltip>
+						<LicenseTooltip
+							canUseFeature={canCreateTeam}
+							defaultTooltip=""
+							premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
+						>
 							<span>
 								<ActionButton
 									buttonText={`Add ${teamTerm}`}
@@ -177,7 +186,7 @@ const OverviewDashboard: React.FC = () => {
 									disabled={!canCreateTeam}
 								/>
 							</span>
-						</Tooltip>
+						</LicenseTooltip>
 					</Box>
 				</Box>
 

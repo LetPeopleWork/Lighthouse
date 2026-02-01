@@ -3,7 +3,6 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { useTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useState } from "react";
 import {
 	Navigate,
 	Route,
@@ -16,7 +15,6 @@ import Header from "./components/App/Header/Header";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
-import DemoDialog from "./components/App/Demo/DemoDialog";
 import PortfolioDetail from "./pages/Portfolios/Detail/PortfolioDetail";
 import EditPortfolio from "./pages/Portfolios/Edit/EditPortfolio";
 import TeamDetail from "./pages/Teams/Detail/TeamDetail";
@@ -54,26 +52,7 @@ const PortfolioEditRedirect: React.FC = () => {
 
 const App: React.FC = () => {
 	const theme = useTheme();
-	const [isDemoDialogOpen, setIsDemoDialogOpen] = useState(false);
 	const apiServices: IApiServiceContext = getApiServices();
-
-	useEffect(() => {
-		const isDemoMode = import.meta.env.VITE_API_SERVICE_TYPE === "DEMO";
-		const demoDialogSeen = localStorage.getItem("demoDialogSeen") === "true";
-
-		if (isDemoMode && !demoDialogSeen) {
-			setIsDemoDialogOpen(true);
-		}
-	}, []);
-
-	const handleCloseDemoDialog = () => {
-		setIsDemoDialogOpen(false);
-	};
-
-	const handleDontShowAgain = () => {
-		localStorage.setItem("demoDialogSeen", "true");
-		setIsDemoDialogOpen(false);
-	};
 
 	return (
 		<QueryClientProvider client={queryClient}>
@@ -119,11 +98,6 @@ const App: React.FC = () => {
 							</Box>
 							<Footer />
 						</Box>
-						<DemoDialog
-							open={isDemoDialogOpen}
-							onClose={handleCloseDemoDialog}
-							onDontShowAgain={handleDontShowAgain}
-						/>
 					</TerminologyProvider>
 				</ApiServiceContext.Provider>
 			</Router>

@@ -1,9 +1,10 @@
 import CheckIcon from "@mui/icons-material/Check";
 import ErrorIcon from "@mui/icons-material/Error";
 import PendingIcon from "@mui/icons-material/HourglassEmpty";
-import { Alert, Button, Stack, Tooltip } from "@mui/material";
+import { Alert, Button, Stack } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { LicenseTooltip } from "../../App/License/LicenseToolTip";
 import ActionButton from "../ActionButton/ActionButton";
 
 export type ValidationState = "pending" | "success" | "failed";
@@ -89,7 +90,11 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 				</>
 			)}
 
-			<Tooltip title={saveTooltip} arrow>
+			<LicenseTooltip
+				canUseFeature={saveTooltip === ""}
+				defaultTooltip={saveTooltip}
+				premiumExtraInfo={saveTooltip}
+			>
 				<span>
 					<ActionButton
 						buttonText={saveButtonText}
@@ -102,7 +107,7 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 						}
 					/>
 				</span>
-			</Tooltip>
+			</LicenseTooltip>
 		</Stack>
 	);
 };

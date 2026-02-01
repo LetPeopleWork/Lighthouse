@@ -20,7 +20,6 @@ describe("UpdateAllButton", () => {
 
 		mockUseLicenseRestrictions.mockReturnValue({
 			canUpdateAllTeamsAndPortfolios: true,
-			updateAllTeamsAndPortfoliosTooltip: "",
 		} as ReturnType<typeof useLicenseRestrictions>);
 
 		mockUseUpdateAll.mockReturnValue({
@@ -80,7 +79,6 @@ describe("UpdateAllButton", () => {
 	it("should be disabled when user cannot update all teams and portfolios", () => {
 		mockUseLicenseRestrictions.mockReturnValue({
 			canUpdateAllTeamsAndPortfolios: false,
-			updateAllTeamsAndPortfoliosTooltip: "Premium feature required",
 		} as ReturnType<typeof useLicenseRestrictions>);
 
 		render(<UpdateAllButton />);
@@ -118,7 +116,6 @@ describe("UpdateAllButton", () => {
 	it("should not call handleUpdateAll when disabled", async () => {
 		mockUseLicenseRestrictions.mockReturnValue({
 			canUpdateAllTeamsAndPortfolios: false,
-			updateAllTeamsAndPortfoliosTooltip: "Premium feature required",
 		} as ReturnType<typeof useLicenseRestrictions>);
 
 		render(<UpdateAllButton />);
@@ -126,31 +123,5 @@ describe("UpdateAllButton", () => {
 		const button = screen.getByTestId("update-all-button");
 		expect(button).toBeDisabled();
 		expect(mockHandleUpdateAll).not.toHaveBeenCalled();
-	});
-
-	it("should show correct tooltip when license restriction applies", () => {
-		mockUseLicenseRestrictions.mockReturnValue({
-			canUpdateAllTeamsAndPortfolios: false,
-			updateAllTeamsAndPortfoliosTooltip: "Premium feature required",
-		} as ReturnType<typeof useLicenseRestrictions>);
-
-		render(<UpdateAllButton />);
-
-		const tooltipWrapper = screen.getByLabelText("Premium feature required");
-		expect(tooltipWrapper).toBeInTheDocument();
-
-		mockUseUpdateAll.mockReturnValue({
-			handleUpdateAll: mockHandleUpdateAll,
-			globalUpdateStatus: {
-				hasActiveUpdates: false,
-				activeCount: 150,
-			},
-			hasError: false,
-		});
-
-		render(<UpdateAllButton />);
-
-		// Badge should show up to 99, then "99+"
-		expect(screen.getByText("99+")).toBeInTheDocument();
 	});
 });

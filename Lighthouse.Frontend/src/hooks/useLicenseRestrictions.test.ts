@@ -112,14 +112,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(true);
 			expect(result.current.teamCount).toBe(5);
 			expect(result.current.portfolioCount).toBe(2);
-			expect(result.current.createTeamTooltip).toBe("");
-			expect(result.current.updateTeamDataTooltip).toBe("");
-			expect(result.current.updateTeamSettingsTooltip).toBe("");
-			expect(result.current.createPortfolioTooltip).toBe("");
-			expect(result.current.updatePortfolioDataTooltip).toBe("");
-			expect(result.current.updatePortfolioSettingsTooltip).toBe("");
-			expect(result.current.newItemForecasterTooltip).toBe("");
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe("");
 			expect(result.current.licenseStatus).toEqual(premiumLicense);
 		});
 	});
@@ -159,18 +151,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(2);
 			expect(result.current.portfolioCount).toBe(0);
-			expect(result.current.createTeamTooltip).toBe("");
-			expect(result.current.updateTeamDataTooltip).toBe("");
-			expect(result.current.updateTeamSettingsTooltip).toBe("");
-			expect(result.current.createPortfolioTooltip).toBe("");
-			expect(result.current.updatePortfolioDataTooltip).toBe("");
-			expect(result.current.updatePortfolioSettingsTooltip).toBe("");
-			expect(result.current.newItemForecasterTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
-			);
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
-			);
 		});
 
 		it("should block team creation when user has exactly 3 teams", async () => {
@@ -195,17 +175,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(3);
 			expect(result.current.portfolioCount).toBe(0);
-			expect(result.current.createTeamTooltip).toBe(
-				"Free users can only create up to 3 teams. You currently have 3 teams. Please obtain a premium license to create more teams.",
-			);
-			expect(result.current.updateTeamDataTooltip).toBe("");
-			expect(result.current.updateTeamSettingsTooltip).toBe("");
-			expect(result.current.newItemForecasterTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
-			);
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
-			);
 		});
 
 		it("should block all team operations when user has more than 3 teams", async () => {
@@ -230,21 +199,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(5);
 			expect(result.current.portfolioCount).toBe(0);
-			expect(result.current.createTeamTooltip).toBe(
-				"Free users can only create up to 3 teams. You currently have 5 teams. Please obtain a premium license to create more teams.",
-			);
-			expect(result.current.updateTeamDataTooltip).toBe(
-				"Free users can only update team data for up to 3 teams. You currently have 5 teams. Please delete some teams or obtain a premium license.",
-			);
-			expect(result.current.updateTeamSettingsTooltip).toBe(
-				"Free users can only update team settings for up to 3 teams. You currently have 5 teams. Please delete some teams or obtain a premium license.",
-			);
-			expect(result.current.newItemForecasterTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
-			);
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
-			);
 		});
 
 		it("should block Portfolio creation when user has exactly 1 Portfolio", async () => {
@@ -269,17 +223,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(0);
 			expect(result.current.portfolioCount).toBe(1);
-			expect(result.current.createPortfolioTooltip).toBe(
-				"Free users can only create up to 1 portfolio. You currently have 1 portfolio. Please obtain a premium license to create more portfolios.",
-			);
-			expect(result.current.updatePortfolioDataTooltip).toBe("");
-			expect(result.current.updatePortfolioSettingsTooltip).toBe("");
-			expect(result.current.newItemForecasterTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
-			);
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
-			);
 		});
 
 		it("should block all portfolio operations when user has more than 1 portfolios", async () => {
@@ -304,21 +247,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(0);
 			expect(result.current.portfolioCount).toBe(2);
-			expect(result.current.createPortfolioTooltip).toBe(
-				"Free users can only create up to 1 portfolio. You currently have 2 portfolio. Please obtain a premium license to create more portfolios.",
-			);
-			expect(result.current.updatePortfolioDataTooltip).toBe(
-				"Free users can only update portfolio data for up to 1 portfolio. You currently have 2 portfolios. Please delete some portfolios or obtain a premium license.",
-			);
-			expect(result.current.updatePortfolioSettingsTooltip).toBe(
-				"Free users can only update portfolio settings for up to 1 portfolio. You currently have 2 portfolios. Please delete some portfolios or obtain a premium license.",
-			);
-			expect(result.current.newItemForecasterTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
-			);
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
-			);
 		});
 
 		it("should handle API errors gracefully", async () => {
@@ -347,8 +275,6 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.teamCount).toBe(0);
 			expect(result.current.portfolioCount).toBe(0);
 			expect(result.current.licenseStatus).toBe(null);
-			expect(result.current.newItemForecasterTooltip).toBe("");
-			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe("");
 		});
 	});
 

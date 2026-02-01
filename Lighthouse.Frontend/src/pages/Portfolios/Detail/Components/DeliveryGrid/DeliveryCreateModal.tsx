@@ -9,11 +9,11 @@ import {
 	DialogContent,
 	DialogTitle,
 	TextField,
-	Tooltip,
 	Typography,
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import { LicenseTooltip } from "../../../../../components/App/License/LicenseToolTip";
 import { DeliveryRuleBuilder } from "../../../../../components/Common/DeliveryRuleBuilder";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
@@ -669,13 +669,10 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 							>
 								Manual
 							</Button>
-							<Tooltip
-								title={
-									isPremium
-										? ""
-										: "Rule-based delivery selection requires a premium license"
-								}
-								arrow
+							<LicenseTooltip
+								canUseFeature={isPremium}
+								defaultTooltip=""
+								premiumExtraInfo="Please obtain a premium license to use rule-based deliveries."
 							>
 								<span>
 									<Button
@@ -695,7 +692,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 										Rule-Based
 									</Button>
 								</span>
-							</Tooltip>
+							</LicenseTooltip>
 						</ButtonGroup>
 					</Box>
 

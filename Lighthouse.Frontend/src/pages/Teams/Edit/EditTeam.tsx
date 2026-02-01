@@ -21,15 +21,16 @@ const EditTeamPage: React.FC = () => {
 	const { teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 
-	const {
-		canCreateTeam,
-		canUpdateTeamSettings,
-		createTeamTooltip,
-		updateTeamSettingsTooltip,
-	} = useLicenseRestrictions();
+	const { canCreateTeam, canUpdateTeamSettings, maxTeamsWithoutPremium } =
+		useLicenseRestrictions();
 
 	const canSave = isNewTeam ? canCreateTeam : canUpdateTeamSettings;
-	const saveTooltip = isNewTeam ? createTeamTooltip : updateTeamSettingsTooltip;
+
+	const premiumToolTip = isNewTeam
+		? `Free users can only create up to ${maxTeamsWithoutPremium} teams.`
+		: `Free users can only update team data for up to ${maxTeamsWithoutPremium} teams`;
+
+	const saveTooltip = canSave ? "" : premiumToolTip;
 
 	const validateTeamSettings = async (updatedTeamSettings: ITeamSettings) => {
 		return teamService.validateTeamSettings(updatedTeamSettings);

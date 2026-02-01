@@ -36,8 +36,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	const { forecastService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
-	const { canUseNewItemForecaster, newItemForecasterTooltip } =
-		useLicenseRestrictions();
+	const { canUseNewItemForecaster } = useLicenseRestrictions();
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -137,7 +136,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					onClearForecastResult={() => setNewItemForecastResult(null)}
 					workItemTypes={team.workItemTypes || []}
 					isDisabled={!canUseNewItemForecaster}
-					disabledMessage={newItemForecasterTooltip}
+					disabledMessage="Please obtain a premium license to use new item forecasting."
 				/>
 			</InputGroup>
 			<InputGroup title="Forecast Backtesting">
