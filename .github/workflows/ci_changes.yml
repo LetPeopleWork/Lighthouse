@@ -108,8 +108,16 @@ jobs:
               # On main branch, use the last successful workflow commit
               last_success_sha="${{ steps.last_success.outputs.commit_sha }}"
               if [ -n "$last_success_sha" ]; then
-                base_ref="$last_success_sha"
-                echo "Comparing against last successful workflow run at: $base_ref"
+                # Check if the commit actually exists (handles force push scenarios)
+                if git cat-file -e "$last_success_sha" 2>/dev/null; then
+                  base_ref="$last_success_sha"
+                  echo "Comparing against last successful workflow run at: $base_ref"
+                else
+                  echo "Warning: Last successful commit $last_success_sha not found in repository"
+                  echo "This can happen after a force push that rewrote history"
+                  echo "Falling back to previous commit"
+                  base_ref=$(git rev-parse HEAD^)
+                fi
               else
                 # Fallback to previous commit if no successful run found
                 base_ref=$(git rev-parse HEAD^)
