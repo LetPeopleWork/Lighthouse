@@ -13,11 +13,3 @@ export interface FeatureSelectorProps {
 	/** Storage key for persisting DataGrid state */
 	storageKey: string;
 }
-
-export interface FeatureSelectorRow {
-	id: number;
-	reference: string;
-	name: string;
-	selected: boolean;
-	feature: IFeature;
-}

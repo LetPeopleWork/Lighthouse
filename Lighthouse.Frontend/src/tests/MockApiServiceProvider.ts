@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IConfigurationService } from "../services/Api/ConfigurationService";
+import type { IDeliveryService } from "../services/Api/DeliveryService";
 import type { IFeatureService } from "../services/Api/FeatureService";
 import type { ILicensingService } from "../services/Api/LicensingService";
 import type { ILogService } from "../services/Api/LogService";
@@ -219,5 +220,16 @@ export const createMockLicensingService = (): ILicensingService => {
 		getLicenseStatus: vi.fn(),
 		importLicense: vi.fn(),
 		clearLicense: vi.fn(),
+	};
+};
+
+export const createMockDeliveryService = (): IDeliveryService => {
+	return {
+		getByPortfolio: vi.fn().mockResolvedValue([]),
+		create: vi.fn().mockResolvedValue(undefined),
+		update: vi.fn().mockResolvedValue(undefined),
+		delete: vi.fn().mockResolvedValue(undefined),
+		getRuleSchema: vi.fn().mockResolvedValue({ fields: [] }),
+		validateRules: vi.fn().mockResolvedValue([]),
 	};
 };

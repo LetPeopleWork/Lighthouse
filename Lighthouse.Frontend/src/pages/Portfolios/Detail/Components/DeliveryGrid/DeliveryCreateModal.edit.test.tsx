@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
+import { DeliverySelectionMode } from "../../../../../models/DeliveryRules";
 import type { IFeature } from "../../../../../models/Feature";
 import type { IPortfolio } from "../../../../../models/Portfolio/Portfolio";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
@@ -25,6 +26,27 @@ vi.mock("../../../../../services/TerminologyContext", () => ({
 					return key;
 			}
 		},
+	}),
+}));
+
+// Mock the useLicenseRestrictions hook
+vi.mock("../../../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		licenseStatus: {
+			hasLicense: false,
+			isValid: false,
+			canUsePremiumFeatures: false,
+		},
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canUpdateTeamSettings: true,
+		canUpdatePortfolioData: true,
+		canUpdateAllTeamsAndPortfolios: false,
+		createTeamTooltip: "",
+		updateTeamDataTooltip: "",
+		updateTeamSettingsTooltip: "",
+		updatePortfolioDataTooltip: "",
+		updateAllTeamsAndPortfoliosTooltip: "",
 	}),
 }));
 
@@ -96,6 +118,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		totalWork: 20,
 		featureLikelihoods: [],
 		completionDates: [],
+		selectionMode: DeliverySelectionMode.Manual,
 	};
 
 	const renderModal = (
@@ -193,6 +216,8 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 				name: "Existing Milestone",
 				date: oneDayLaterFormatted,
 				featureIds: [1, 2],
+				selectionMode: 0,
+				rules: undefined,
 			});
 		});
 	});
@@ -232,6 +257,8 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 				name: "New Milestone",
 				date: threeWeeksFromNowFormatted,
 				featureIds: [1],
+				selectionMode: 0,
+				rules: undefined,
 			});
 		});
 	});

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../models/Delivery";
+import { DeliverySelectionMode } from "../../models/DeliveryRules";
 import { DeliveryService } from "./DeliveryService";
 
 vi.mock("axios");
@@ -38,6 +39,7 @@ describe("DeliveryService", () => {
 						{ featureId: 2, likelihoodPercentage: 75.5 },
 					],
 					completionDates: [],
+					selectionMode: DeliverySelectionMode.Manual,
 				},
 				{
 					id: 2,
@@ -51,6 +53,7 @@ describe("DeliveryService", () => {
 					totalWork: 20,
 					featureLikelihoods: [{ featureId: 3, likelihoodPercentage: 60.0 }],
 					completionDates: [],
+					selectionMode: DeliverySelectionMode.Manual,
 				},
 			];
 
@@ -93,6 +96,8 @@ describe("DeliveryService", () => {
 					name,
 					date: date.toISOString(),
 					featureIds,
+					selectionMode: 0,
+					rules: undefined,
 				},
 			);
 		});
@@ -118,6 +123,8 @@ describe("DeliveryService", () => {
 					name,
 					date: date.toISOString(),
 					featureIds,
+					selectionMode: 0,
+					rules: undefined,
 				},
 			);
 		});

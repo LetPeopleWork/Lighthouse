@@ -1,6 +1,10 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useErrorSnackbar } from "../../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { Delivery } from "../../../../../models/Delivery";
+import type {
+	DeliverySelectionMode,
+	IDeliveryRuleCondition,
+} from "../../../../../models/DeliveryRules";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
@@ -129,6 +133,8 @@ export const useDeliveryManagement = ({
 		name: string;
 		date: string;
 		featureIds: number[];
+		selectionMode?: DeliverySelectionMode;
+		rules?: IDeliveryRuleCondition[];
 	}) => {
 		try {
 			await deliveryService.create(
@@ -136,6 +142,8 @@ export const useDeliveryManagement = ({
 				deliveryData.name,
 				new Date(deliveryData.date),
 				deliveryData.featureIds,
+				deliveryData.selectionMode,
+				deliveryData.rules,
 			);
 			setShowCreateModal(false);
 			await fetchDeliveries();
@@ -150,6 +158,8 @@ export const useDeliveryManagement = ({
 		name: string;
 		date: string;
 		featureIds: number[];
+		selectionMode?: DeliverySelectionMode;
+		rules?: IDeliveryRuleCondition[];
 	}) => {
 		try {
 			const wasExpanded = expandedDeliveries.has(deliveryData.id);
@@ -159,6 +169,8 @@ export const useDeliveryManagement = ({
 				deliveryData.name,
 				new Date(deliveryData.date),
 				deliveryData.featureIds,
+				deliveryData.selectionMode,
+				deliveryData.rules,
 			);
 			setSelectedDelivery(null);
 			setLoadedFeatures((prev) => {

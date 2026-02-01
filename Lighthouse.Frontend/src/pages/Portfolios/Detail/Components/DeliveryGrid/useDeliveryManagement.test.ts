@@ -26,6 +26,8 @@ const mockApiServiceContext = createMockApiServiceContext({
 		create: mockDeliveryService.create,
 		update: vi.fn(),
 		delete: mockDeliveryService.delete,
+		getRuleSchema: vi.fn(),
+		validateRules: vi.fn(),
 	},
 	featureService: mockFeatureService,
 });
@@ -419,6 +421,8 @@ describe("useDeliveryManagement", () => {
 				deliveryData.name,
 				new Date(deliveryData.date),
 				deliveryData.featureIds,
+				undefined,
+				undefined,
 			);
 			expect(result.current.showCreateModal).toBe(false);
 
@@ -486,6 +490,8 @@ describe("useDeliveryManagement", () => {
 				deliveryData.name,
 				new Date("2025-12-25"),
 				[1, 2],
+				undefined,
+				undefined,
 			);
 
 			expect(result.current.selectedDelivery).toBeNull();
@@ -607,6 +613,8 @@ describe("useDeliveryManagement", () => {
 				deliveryData.name,
 				new Date("2025-12-25"),
 				[3, 4],
+				undefined,
+				undefined,
 			);
 
 			// Should have called getByPortfolio twice more (fetchDeliveries + direct call)

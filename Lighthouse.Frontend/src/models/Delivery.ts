@@ -1,3 +1,8 @@
+import {
+	DeliveryRuleCondition,
+	DeliverySelectionMode,
+	type IDeliveryRuleCondition,
+} from "./DeliveryRules";
 import { WhenForecast } from "./Forecasts/WhenForecast";
 
 export interface IFeatureLikelihood {
@@ -17,6 +22,8 @@ export interface IDelivery {
 	totalWork: number;
 	featureLikelihoods: IFeatureLikelihood[];
 	completionDates: WhenForecast[];
+	selectionMode: DeliverySelectionMode;
+	rules?: IDeliveryRuleCondition[];
 }
 
 export class Delivery implements IDelivery {
@@ -31,6 +38,8 @@ export class Delivery implements IDelivery {
 	totalWork!: number;
 	featureLikelihoods!: IFeatureLikelihood[];
 	completionDates!: WhenForecast[];
+	selectionMode!: DeliverySelectionMode;
+	rules?: DeliveryRuleCondition[];
 
 	static fromBackend(data: IDelivery): Delivery {
 		console.log("Mapping delivery from backend:", data);
@@ -46,6 +55,10 @@ export class Delivery implements IDelivery {
 		delivery.remainingWork = data.remainingWork || 0;
 		delivery.totalWork = data.totalWork || 0;
 		delivery.featureLikelihoods = data.featureLikelihoods || [];
+		delivery.selectionMode = data.selectionMode ?? DeliverySelectionMode.Manual;
+		delivery.rules = data.rules?.map((r) =>
+			DeliveryRuleCondition.fromBackend(r),
+		);
 
 		delivery.completionDates = (data.completionDates || []).map(
 			(forecastData) => WhenForecast.fromBackend(forecastData),

@@ -28,6 +28,27 @@ vi.mock("../../../../../services/TerminologyContext", () => ({
 	}),
 }));
 
+// Mock the useLicenseRestrictions hook
+vi.mock("../../../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		licenseStatus: {
+			hasLicense: false,
+			isValid: false,
+			canUsePremiumFeatures: false,
+		},
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canUpdateTeamSettings: true,
+		canUpdatePortfolioData: true,
+		canUpdateAllTeamsAndPortfolios: false,
+		createTeamTooltip: "",
+		updateTeamDataTooltip: "",
+		updateTeamSettingsTooltip: "",
+		updatePortfolioDataTooltip: "",
+		updateAllTeamsAndPortfoliosTooltip: "",
+	}),
+}));
+
 describe("DeliveryCreateModal", () => {
 	const mockOnClose = vi.fn();
 	const mockOnSave = vi.fn();
@@ -141,17 +162,18 @@ describe("DeliveryCreateModal", () => {
 		expect(screen.queryByText("Add Delivery")).not.toBeInTheDocument();
 	});
 
-	it("should show validation error for empty name", async () => {
-		const user = userEvent.setup();
+	it("should have Save button disabled when name is empty", async () => {
 		renderModal();
 
-		const saveButton = screen.getByRole("button", { name: "Save" });
-		await user.click(saveButton);
+		await waitFor(() => {
+			expect(screen.getByText("Add Delivery")).toBeInTheDocument();
+		});
 
-		expect(screen.getByText("Delivery name is required")).toBeInTheDocument();
+		const saveButton = screen.getByRole("button", { name: "Save" });
+		expect(saveButton).toBeDisabled();
 	});
 
-	it("should show validation error for past date", async () => {
+	it("should have Save button disabled for past date", async () => {
 		const user = userEvent.setup();
 		renderModal();
 
@@ -168,14 +190,10 @@ describe("DeliveryCreateModal", () => {
 		await user.type(dateInput, pastDateString);
 
 		const saveButton = screen.getByRole("button", { name: "Save" });
-		await user.click(saveButton);
-
-		expect(
-			screen.getByText("Delivery date must be in the future"),
-		).toBeInTheDocument();
+		expect(saveButton).toBeDisabled();
 	});
 
-	it("should show validation error when no features are selected", async () => {
+	it("should have Save button disabled when no features are selected", async () => {
 		const user = userEvent.setup();
 		renderModal();
 
@@ -191,11 +209,7 @@ describe("DeliveryCreateModal", () => {
 		await user.type(dateInput, futureDateString);
 
 		const saveButton = screen.getByRole("button", { name: "Save" });
-		await user.click(saveButton);
-
-		expect(
-			screen.getByText("At least one feature must be selected"),
-		).toBeInTheDocument();
+		expect(saveButton).toBeDisabled();
 	});
 
 	it("should call onSave with correct data when form is valid", async () => {
@@ -229,6 +243,8 @@ describe("DeliveryCreateModal", () => {
 			name: "Test Delivery",
 			date: tomorrow.toISOString().split("T")[0],
 			featureIds: [1],
+			selectionMode: 0,
+			rules: undefined,
 		});
 	});
 
