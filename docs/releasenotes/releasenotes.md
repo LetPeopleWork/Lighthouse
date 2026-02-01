@@ -5,6 +5,37 @@ nav_order: 95
 ---
 
 
+# Lighthouse vNext
+
+## Rule-Based Delivery Feature Assignment (Premium)
+You can now define deliveries by **rules** instead of manually selecting features. This allows delivery contents to stay accurate as your portfolio changes, significantly reducing the time spent maintaining deliveries.
+
+### How it works
+- Switch between **Manual** and **Rule-Based** selection modes when creating or editing a delivery
+- Build rule sets using conditions that filter features by:
+  - Feature fields: Name, Type, State, Reference ID, Parent Reference ID, Tags
+  - Any additional fields defined on your work tracking system connection
+- Rules are combined with **AND** logic - all conditions must match
+- Operators include: **Equals**, **Not Equals**, and **Contains** (case-insensitive)
+- Validate your rules to preview which features match before saving
+- The **Save button is disabled** until rules are validated, ensuring you always see which features will be assigned
+
+### Improved edit experience
+- When editing an existing rule-based delivery, the dialog now **opens directly in Rule-Based mode** with your saved rules pre-loaded
+- You must re-validate your rules before saving, ensuring any rule changes are intentional
+
+### Matched features preview
+After validating rules, matched features are displayed in a **read-only grid** that reuses the same familiar interface as manual feature selection.
+
+### Automatic updates
+When you refresh your portfolio, rule-based deliveries are automatically re-evaluated. New matching features are added and non-matching features are removed, keeping your delivery contents in sync with your portfolio.
+
+### Requirements
+- Rule-based deliveries are a **Premium** feature
+- Manual selection remains available for all users
+
+---
+
 # Lighthouse v26.1.30.10
 
 ## MCS Back-Testing
