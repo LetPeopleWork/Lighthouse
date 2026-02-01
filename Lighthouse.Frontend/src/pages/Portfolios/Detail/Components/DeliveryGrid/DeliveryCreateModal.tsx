@@ -309,29 +309,36 @@ const isValidFutureDate = (date: string): boolean => {
 	return selectedDate > today;
 };
 
-// Helper function to get the first blocking validation error
-const getFirstBlockingError = (
-	name: string,
-	date: string,
-	selectionMode: DeliverySelectionMode,
-	selectedFeatureIds: number[],
-	rulesValidated: boolean,
-	matchedFeaturesLength: number,
-	deliveryTerm: string,
-	featureTerm: string,
-): string | null => {
+interface ValidationOptions {
+	name: string;
+	date: string;
+	selectionMode: DeliverySelectionMode;
+	selectedFeatureIds: number[];
+	rulesValidated: boolean;
+	matchedFeaturesLength: number;
+	deliveryTerm: string;
+	featureTerm: string;
+}
+
+const getFirstBlockingError = ({
+	name,
+	date,
+	selectionMode,
+	selectedFeatureIds,
+	rulesValidated,
+	matchedFeaturesLength,
+	deliveryTerm,
+	featureTerm,
+}: ValidationOptions): string | null => {
 	if (!name.trim()) {
 		return `${deliveryTerm} name is required`;
 	}
-
 	if (!date) {
 		return `${deliveryTerm} date is required`;
 	}
-
 	if (!isValidFutureDate(date)) {
 		return `${deliveryTerm} date must be in the future`;
 	}
-
 	if (selectionMode === DeliverySelectionMode.Manual) {
 		if (selectedFeatureIds.length === 0) {
 			return `At least one ${featureTerm.toLowerCase()} must be selected`;
@@ -345,7 +352,6 @@ const getFirstBlockingError = (
 			return "No features match the rules";
 		}
 	}
-
 	return null;
 };
 
@@ -724,29 +730,26 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 				}}
 			>
 				<Box sx={{ flex: 1, mr: 2 }}>
-					{getFirstBlockingError(
-						name,
-						date,
-						selectionMode,
-						selectedFeatureIds,
-						rulesValidated,
-						matchedFeatures.length,
-						deliveryTerm,
-						featureTerm,
-					) && (
-						<Alert severity="error" sx={{ py: 0 }}>
-							{getFirstBlockingError(
-								name,
-								date,
-								selectionMode,
-								selectedFeatureIds,
-								rulesValidated,
-								matchedFeatures.length,
-								deliveryTerm,
-								featureTerm,
-							)}
-						</Alert>
-					)}
+					{(() => {
+						const error = getFirstBlockingError({
+							name,
+							date,
+							selectionMode,
+							selectedFeatureIds,
+							rulesValidated,
+							matchedFeaturesLength: matchedFeatures.length,
+							deliveryTerm,
+							featureTerm,
+						});
+
+						return (
+							error && (
+								<Alert severity="error" sx={{ py: 0 }}>
+									{error}
+								</Alert>
+							)
+						);
+					})()}
 				</Box>
 				<Box sx={{ display: "flex", gap: 1 }}>
 					<Button onClick={onClose}>Cancel</Button>
