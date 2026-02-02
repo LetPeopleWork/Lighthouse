@@ -229,7 +229,10 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 						aria-labelledby="backtest-tab-0"
 					>
 						{activeTab === 0 && (
-							<BacktestResultDisplay backtestResult={backtestResult} />
+							<BacktestResultDisplay
+								backtestResult={backtestResult}
+								historicalThroughput={historicalThroughput}
+							/>
 						)}
 					</Box>
 					<Box
@@ -258,6 +261,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 												chartData={historicalThroughput}
 												startDate={historicalStartDate}
 												title="Historical Throughput"
+												displayTotal={true}
 												predictabilityData={predictabilityScore}
 											/>
 										</Box>
