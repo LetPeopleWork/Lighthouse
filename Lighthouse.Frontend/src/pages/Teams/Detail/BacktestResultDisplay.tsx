@@ -189,7 +189,7 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 							layout: "horizontal",
 						},
 					]}
-					height={300}
+					height={450}
 				>
 					<BarPlot />
 					<ChartsXAxis />

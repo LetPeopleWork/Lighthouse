@@ -227,6 +227,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 						hidden={activeTab !== 0}
 						id="backtest-tabpanel-0"
 						aria-labelledby="backtest-tab-0"
+						sx={{ minHeight: 550 }}
 					>
 						{activeTab === 0 && (
 							<BacktestResultDisplay
@@ -240,6 +241,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 						hidden={activeTab !== 1}
 						id="backtest-tabpanel-1"
 						aria-labelledby="backtest-tab-1"
+						sx={{ minHeight: 550 }}
 					>
 						{activeTab === 1 && (
 							<>
@@ -256,7 +258,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 								{historicalThroughput &&
 									!isLoadingHistorical &&
 									historicalStartDate && (
-										<Box sx={{ height: 400 }}>
+										<Box sx={{ height: 550 }}>
 											<BarRunChart
 												chartData={historicalThroughput}
 												startDate={historicalStartDate}
