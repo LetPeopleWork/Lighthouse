@@ -723,9 +723,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string GetIdForCustomFieldByProperty(string customField, string propertyIdentifier, JsonDocument allFields)
         {
-            var element = allFields.RootElement.EnumerateArray().SingleOrDefault(
-                f => f.GetProperty(propertyIdentifier).GetString() == customField
-            );
+            var elements = allFields.RootElement.EnumerateArray()
+                .Where(f => f.GetProperty(propertyIdentifier).GetString() == customField)
+                .ToList();
+
+            var element = new JsonElement();
+
+            switch (elements.Count)
+            {
+                case 0:
+                    // No Match - Return
+                    return string.Empty;
+                case 1:
+                    // Exactly one match - yaaay
+                    element = elements[0];
+                    break;
+                case > 1:
+                    // Multiple matches - prefer non-plugin system types
+                    var nonPluginField = elements.FirstOrDefault(f =>
+                    {
+                        if (!f.TryGetProperty("schema", out var schema) ||
+                            !schema.TryGetProperty("custom", out var custom))
+                        {
+                            return false;
+                        }
+
+                        var customType = custom.GetString() ?? "";
+                        return !customType.Contains("plugin.system.customfieldtypes");
+                    });
+
+                    element = nonPluginField.ValueKind != JsonValueKind.Undefined 
+                        ? nonPluginField 
+                        : elements[0];
+                    break;
+            }
 
             if (element.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
             {
