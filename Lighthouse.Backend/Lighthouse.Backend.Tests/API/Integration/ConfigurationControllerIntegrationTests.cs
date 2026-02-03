@@ -4,7 +4,7 @@ using System.Net;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class ConfigurationControllerAuthorizationTests()
+    public class ConfigurationControllerIntegrationTests()
         : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
         [Test]
@@ -21,9 +21,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var payload = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto>(),
-                Teams = new List<TeamSettingDto>(),
-                Projects = new List<PortfolioSettingDto>(),
+                WorkTrackingSystems = [],
+                Teams = [],
+                Projects = [],
             };
 
             var response = await Client.PostAsJsonAsync("/api/configuration/validate", payload);
