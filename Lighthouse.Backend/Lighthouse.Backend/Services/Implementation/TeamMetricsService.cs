@@ -6,34 +6,24 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class TeamMetricsService : BaseMetricsService, ITeamMetricsService
+    public class TeamMetricsService(
+        ILogger<TeamMetricsService> logger,
+        IWorkItemRepository workItemRepository,
+        IRepository<Feature> featureRepository,
+        IAppSettingService appSettingService,
+        IServiceProvider serviceProvider)
+        : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
+            ITeamMetricsService
     {
-        private readonly string throughputMetricIdentifier = "Throughput";
-        private readonly string featureWipMetricIdentifier = "FeatureWIP";
-        private readonly string wipMetricIdentifier = "WIP";
-
-        private readonly ILogger<TeamMetricsService> logger;
-        private readonly IWorkItemRepository workItemRepository;
-        private readonly IRepository<Feature> featureRepository;
-
-        public TeamMetricsService(
-            ILogger<TeamMetricsService> logger, 
-            IWorkItemRepository workItemRepository, 
-            IRepository<Feature> featureRepository, 
-            IAppSettingService appSettingService,
-            IServiceProvider serviceProvider)
-            : base(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider)
-        {
-            this.logger = logger;
-            this.workItemRepository = workItemRepository;
-            this.featureRepository = featureRepository;
-        }
+        private const string ThroughputMetricIdentifier = "Throughput";
+        private const string FeatureWipMetricIdentifier = "FeatureWIP";
+        private const string WipMetricIdentifier = "WIP";
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team)
         {
             logger.LogDebug("Getting Feature Wip for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists<IEnumerable<Feature>, Team>(team, featureWipMetricIdentifier, () =>
+            return GetFromCacheIfExists<IEnumerable<Feature>, Team>(team, FeatureWipMetricIdentifier, () =>
             {
                 var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
                 var featureReferences = activeWorkItemsForTeam.Select(wi => wi.ParentReferenceId).Distinct().ToList();
@@ -76,7 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting WIP for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists<IEnumerable<WorkItem>, Team>(team, wipMetricIdentifier, () =>
+            return GetFromCacheIfExists<IEnumerable<WorkItem>, Team>(team, WipMetricIdentifier, () =>
             {
                 var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team).ToList();
 
@@ -90,7 +80,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists(team, throughputMetricIdentifier, () =>
+            return GetFromCacheIfExists(team, ThroughputMetricIdentifier, () =>
             {
                 var startDate = DateTime.UtcNow.Date.AddDays(-(team.ThroughputHistory - 1));
                 var endDate = DateTime.UtcNow;
@@ -133,7 +123,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Created Items of type {WorkItemTypes} for Team {TeamName} between {StartDate} and {EndDate}", string.Join(", ", workItemTypes), team.Name, startDate.Date, endDate.Date);
 
-            var includedWorkItems = workItemTypes.Select(workItemTypes => workItemTypes.ToLowerInvariant()).ToList();
+            var includedWorkItems = workItemTypes.Select(itemTypes => itemTypes.ToLowerInvariant()).ToList();
 
             var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
             var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam.Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant())));
@@ -209,18 +199,20 @@ namespace Lighthouse.Backend.Services.Implementation
             InvalidateTeamMetrics(team);
 
             team.RefreshUpdateTime();
-            UpdateFeatureWIPForTeam(team);
+            UpdateFeatureWipForTeam(team);
 
             await workItemRepository.Save();
         }
 
-        private void UpdateFeatureWIPForTeam(Team team)
+        private void UpdateFeatureWipForTeam(Team team)
         {
-            if (team.AutomaticallyAdjustFeatureWIP)
+            if (!team.AutomaticallyAdjustFeatureWIP)
             {
-                var featureWip = GetCurrentFeaturesInProgressForTeam(team).Count();
-                team.FeatureWIP = featureWip;
+                return;
             }
+
+            var featureWip = GetCurrentFeaturesInProgressForTeam(team).Count();
+            team.FeatureWIP = featureWip;
         }
 
         private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)

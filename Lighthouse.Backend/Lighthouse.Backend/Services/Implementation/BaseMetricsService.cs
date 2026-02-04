@@ -2,26 +2,16 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public abstract class BaseMetricsService
+    public abstract class BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider)
     {
-        private static readonly Cache<string, object> metricsCache = new Cache<string, object>();
-        protected readonly int refreshRateInMinutes;
-        private readonly IServiceProvider serviceProvider;
-        private IForecastService? forecastService;
+        private static readonly Cache<string, object> MetricsCache = new();
 
-        protected BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider)
-        {
-            this.refreshRateInMinutes = refreshRateInMinutes;
-            this.serviceProvider = serviceProvider;
-        }
-
-        protected IForecastService ForecastService => forecastService ??= serviceProvider.GetRequiredService<IForecastService>();
+        private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();
 
         protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput, DateTime startDate, DateTime endDate)
         {
@@ -47,7 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return GenerateRunChartByDay(startDate, endDate, items, GetStartedIndexForItem);
         }
 
-        protected static Dictionary<int, List<WorkItemBase>> GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
+        private static Dictionary<int, List<WorkItemBase>> GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
         {
             var totalDays = (endDate - startDate).Days + 1;
 
@@ -81,22 +71,22 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
-        protected static int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)
+        private static int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.ClosedDate);
         }
 
-        protected static int GetCreatedIndexForItem(DateTime startDate, WorkItemBase item)
+        private static int GetCreatedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.CreatedDate);
         }
 
-        protected static int GetStartedIndexForItem(DateTime startDate, WorkItemBase item)
+        private static int GetStartedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.StartedDate);
         }
 
-        protected static int GetDateIndexBasedOnStartDate(DateTime startDate, DateTime? date)
+        private static int GetDateIndexBasedOnStartDate(DateTime startDate, DateTime? date)
         {
             if (!date.HasValue)
             {
@@ -106,7 +96,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return (date.Value.Date - startDate.Date).Days;
         }
 
-        protected static bool WasItemProgressOnDay(DateTime day, WorkItemBase item)
+        private static bool WasItemProgressOnDay(DateTime day, WorkItemBase item)
         {
             if (!item.StartedDate.HasValue || (!item.ClosedDate.HasValue && item.StateCategory == StateCategories.Done))
             {
@@ -142,10 +132,10 @@ namespace Lighthouse.Backend.Services.Implementation
         protected static void InvalidateMetrics<TEntity>(TEntity entity, ILogger logger) where TEntity : class, IEntity
         {
             logger.LogInformation("Invalidating Metrics for Entity Id: {EntityId}", entity.Id);
-            var entityKeys = metricsCache.Keys.Where(k => k != null && k.StartsWith($"{entity.Id}_")).ToList();
+            var entityKeys = MetricsCache.Keys.Where(k => k.StartsWith($"{entity.Id}_")).ToList();
             foreach (var entry in entityKeys)
             {
-                metricsCache.Remove(entry);
+                MetricsCache.Remove(entry);
             }
         }
 
@@ -163,13 +153,13 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private void StoreMetricInCache<TMetric>(string key, TMetric metric) where TMetric : class
         {
-            metricsCache.Remove(key);
-            metricsCache.Store(key, metric, TimeSpan.FromMinutes(refreshRateInMinutes));
+            MetricsCache.Remove(key);
+            MetricsCache.Store(key, metric, TimeSpan.FromMinutes(refreshRateInMinutes));
         }
 
         private static TMetric? GetMetricFromCache<TMetric>(string key) where TMetric : class
         {
-            var metric = metricsCache.Get(key);
+            var metric = MetricsCache.Get(key);
 
             return metric as TMetric;
         }

@@ -19,7 +19,7 @@ export const getAgeInDaysFromStart = (
 	);
 
 	const diffMs = referenceDateOnly - startDateOnly;
-	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 
 	// Ensure at least 1 day is returned (an item started today counts as 1)
 	return Math.max(1, diffDays);
