@@ -264,6 +264,9 @@ describe("PortfolioFeatureList component", () => {
 	})();
 
 	it("should render all features with correct data", async () => {
+		const { default: userEvent } = await import("@testing-library/user-event");
+		const user = userEvent.setup();
+
 		render(
 			<MockApiServiceProvider>
 				<MemoryRouter>
@@ -275,6 +278,11 @@ describe("PortfolioFeatureList component", () => {
 		// Wait for the grid to render
 		const grid = await screen.findByRole("grid");
 		expect(grid).toBeInTheDocument();
+
+		// Uncheck the toggle to show all features including completed ones
+		const toggle = screen.getByTestId("hide-completed-features-toggle");
+		const switchInput = toggle.querySelector('input[type="checkbox"]');
+		await user.click(switchInput as HTMLElement);
 
 		// Check that features are rendered (text might be split across elements)
 		expect(await screen.findByText(/FTR-1/)).toBeInTheDocument();
@@ -294,6 +302,9 @@ describe("PortfolioFeatureList component", () => {
 	});
 
 	it("should render the correct number of features", async () => {
+		const { default: userEvent } = await import("@testing-library/user-event");
+		const user = userEvent.setup();
+
 		render(
 			<MockApiServiceProvider>
 				<MemoryRouter>
@@ -305,6 +316,11 @@ describe("PortfolioFeatureList component", () => {
 		// Wait for the grid to render
 		const grid = await screen.findByRole("grid");
 		expect(grid).toBeInTheDocument();
+
+		// Uncheck the toggle to show all features including completed ones
+		const toggle = screen.getByTestId("hide-completed-features-toggle");
+		const switchInput = toggle.querySelector('input[type="checkbox"]');
+		await user.click(switchInput as HTMLElement);
 
 		// Check for all feature IDs and names
 		expect(await screen.findByText(/FTR-1/)).toBeInTheDocument();
@@ -331,5 +347,130 @@ describe("PortfolioFeatureList component", () => {
 		// Feature 2 uses default feature size
 		expect(await screen.findByText(/FTR-2/)).toBeInTheDocument();
 		expect(await screen.findByText(/Feature 2/)).toBeInTheDocument();
+	});
+
+	it("should have toggle checked by default (hide completed features)", async () => {
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<PortfolioFeatureList portfolio={portfolio} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		// Wait for toggle to render
+		const toggle = await screen.findByTestId("hide-completed-features-toggle");
+		const switchInput = toggle.querySelector('input[type="checkbox"]');
+
+		expect(switchInput).toBeChecked();
+	});
+
+	it("should hide completed features by default", async () => {
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<PortfolioFeatureList portfolio={portfolio} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		// Wait for features to load
+		await screen.findByText(/FTR-1/);
+
+		// Non-completed features should be visible (Feature 1 and 2)
+		expect(screen.getByText(/FTR-1/)).toBeInTheDocument();
+		expect(screen.getByText(/FTR-2/)).toBeInTheDocument();
+
+		// Completed feature should not be visible (Feature 3)
+		expect(screen.queryByText(/FTR-3/)).not.toBeInTheDocument();
+	});
+
+	it("should show completed features when toggle is unchecked", async () => {
+		const { default: userEvent } = await import("@testing-library/user-event");
+		const user = userEvent.setup();
+
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<PortfolioFeatureList portfolio={portfolio} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		// Wait for features to load
+		await screen.findByText(/FTR-1/);
+
+		// Completed feature should not be visible initially
+		expect(screen.queryByText(/FTR-3/)).not.toBeInTheDocument();
+
+		// Click the toggle to show completed features
+		const toggle = screen.getByTestId("hide-completed-features-toggle");
+		const switchInput = toggle.querySelector('input[type="checkbox"]');
+		await user.click(switchInput as HTMLElement);
+
+		// Now all features should be visible
+		expect(screen.getByText(/FTR-1/)).toBeInTheDocument();
+		expect(screen.getByText(/FTR-2/)).toBeInTheDocument();
+		expect(screen.getByText(/FTR-3/)).toBeInTheDocument();
+	});
+
+	it("should save toggle preference to localStorage when changed", async () => {
+		const { default: userEvent } = await import("@testing-library/user-event");
+		const user = userEvent.setup();
+
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<PortfolioFeatureList portfolio={portfolio} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		// Wait for component to render
+		await screen.findByTestId("hide-completed-features-toggle");
+
+		// Toggle should be checked by default, localStorage should have "true"
+		expect(
+			localStorage.getItem("lighthouse_hide_completed_features_portfolio_1"),
+		).toBe("true");
+
+		// Click the toggle to show completed features
+		const toggle = screen.getByTestId("hide-completed-features-toggle");
+		const switchInput = toggle.querySelector('input[type="checkbox"]');
+		await user.click(switchInput as HTMLElement);
+
+		// localStorage should now be "false"
+		expect(
+			localStorage.getItem("lighthouse_hide_completed_features_portfolio_1"),
+		).toBe("false");
+	});
+
+	it("should load toggle preference from localStorage on mount", async () => {
+		// Set localStorage to false before rendering
+		localStorage.setItem(
+			"lighthouse_hide_completed_features_portfolio_1",
+			"false",
+		);
+
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<PortfolioFeatureList portfolio={portfolio} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		// Wait for toggle to render
+		const toggle = await screen.findByTestId("hide-completed-features-toggle");
+		const switchInput = toggle.querySelector('input[type="checkbox"]');
+
+		// Toggle should be unchecked based on localStorage
+		expect(switchInput).not.toBeChecked();
+
+		// All features should be visible
+		await screen.findByText(/FTR-3/);
+		expect(screen.getByText(/FTR-1/)).toBeInTheDocument();
+		expect(screen.getByText(/FTR-2/)).toBeInTheDocument();
+		expect(screen.getByText(/FTR-3/)).toBeInTheDocument();
 	});
 });

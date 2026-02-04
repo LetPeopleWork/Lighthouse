@@ -34,7 +34,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const [featuresInProgress, setFeaturesInProgress] = useState<string[]>([]);
 	const [features, setFeatures] = useState<IFeature[]>([]);
 	const [hideCompletedFeatures, setHideCompletedFeatures] =
-		useState<boolean>(false);
+		useState<boolean>(true);
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -60,7 +60,10 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	// Load toggle preference from localStorage
 	useEffect(() => {
 		const storedPreference = localStorage.getItem(storageKey);
-		if (storedPreference !== null) {
+		if (storedPreference === null) {
+			// Set default value in localStorage if not present
+			localStorage.setItem(storageKey, "true");
+		} else {
 			setHideCompletedFeatures(storedPreference === "true");
 		}
 	}, [storageKey]);
