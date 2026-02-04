@@ -46,8 +46,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
 
-        [JsonRequired]
-        public int DoneItemsCutoffDays { get; set; }
+        public int DoneItemsCutoffDays { get; set; } = 365;
 
         public List<EntityReferenceDto> InvolvedTeams { get; set; } = new List<EntityReferenceDto>();
 

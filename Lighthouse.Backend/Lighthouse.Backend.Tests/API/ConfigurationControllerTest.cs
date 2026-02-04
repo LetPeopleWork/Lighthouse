@@ -18,9 +18,9 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> projectRepositoryMock;
 
-        private readonly List<WorkTrackingSystemConnection> workTrackingSystems = new List<WorkTrackingSystemConnection>();
-        private readonly List<Team> teams = new List<Team>();
-        private readonly List<Portfolio> projects = new List<Portfolio>();
+        private readonly List<WorkTrackingSystemConnection> workTrackingSystems = [];
+        private readonly List<Team> teams = [];
+        private readonly List<Portfolio> projects = [];
 
         private readonly JsonSerializerOptions deserializeOptions = new JsonSerializerOptions
         {
@@ -158,12 +158,12 @@ namespace Lighthouse.Backend.Tests.API
                 DataRetrievalValue = "SELECT * FROM WorkItems WHERE TeamId = 1",
                 UseFixedDatesForThroughput = false,
                 ThroughputHistory = 63,
-                WorkItemTypes = new List<string> { "User Story", "Task" },
-                ToDoStates = new List<string> { "To Do", "New" },
-                DoingStates = new List<string> { "Analysis", "Active", "Testing" },
-                DoneStates = new List<string> { "Done", "Closed" },
+                WorkItemTypes = ["User Story", "Task"],
+                ToDoStates = ["To Do", "New"],
+                DoingStates = ["Analysis", "Active", "Testing"],
+                DoneStates = ["Done", "Closed"],
                 WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id,
-                Tags = new List<string> { "Tag1", "Tag2" },
+                Tags = ["Tag1", "Tag2"],
                 FeatureWIP = 3,
                 AutomaticallyAdjustFeatureWIP = true,
                 ServiceLevelExpectationProbability = 73,
@@ -229,16 +229,16 @@ namespace Lighthouse.Backend.Tests.API
                 Id = 1,
                 Name = "Project A",
                 DataRetrievalValue = "SELECT * FROM WorkItems WHERE ProjectId = 1",
-                WorkItemTypes = new List<string> { "Epic", "Feature" },
-                ToDoStates = new List<string> { "To Do", "New" },
-                DoingStates = new List<string> { "In Progress", "Testing" },
-                DoneStates = new List<string> { "Done", "Closed" },
+                WorkItemTypes = ["Epic", "Feature"],
+                ToDoStates = ["To Do", "New"],
+                DoingStates = ["In Progress", "Testing"],
+                DoneStates = ["Done", "Closed"],
                 WorkTrackingSystemConnectionId = workTrackingSystem.Id,
-                Tags = new List<string> { "ProjectTag1", "ProjectTag2" },
+                Tags = ["ProjectTag1", "ProjectTag2"],
                 UsePercentileToCalculateDefaultAmountOfWorkItems = false,
                 DefaultAmountOfWorkItemsPerFeature = 14,
                 SizeEstimateAdditionalFieldDefinitionId = 1,
-                OverrideRealChildCountStates = new List<string> { "In Progress", "Testing" },
+                OverrideRealChildCountStates = ["In Progress", "Testing"],
                 OwningTeamId = team.Id,
                 OwningTeam = team,
                 FeatureOwnerAdditionalFieldDefinitionId = 2,
@@ -335,9 +335,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
+                Teams = [new TeamSettingDto(team)],
+                Projects = [new PortfolioSettingDto(project)],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -382,9 +382,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) { Id = 0 } },
-                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) { Id = 1 } },
-                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) { Id = 0 } },
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem) { Id = 0 }],
+                Teams = [new TeamSettingDto(team) { Id = 1 }],
+                Projects = [new PortfolioSettingDto(project) { Id = 0 }],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -426,9 +426,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<PortfolioSettingDto>(),
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
+                Teams = [new TeamSettingDto(team)],
+                Projects = [],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -465,9 +465,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<PortfolioSettingDto>(),
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
+                Teams = [new TeamSettingDto(team)],
+                Projects = [],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -500,8 +500,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
+                Projects = [new PortfolioSettingDto(project)],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -541,8 +541,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
+                Projects = [new PortfolioSettingDto(project)],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -582,8 +582,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Projects = new List<PortfolioSettingDto> { new PortfolioSettingDto(project) },
+                WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
+                Projects = [new PortfolioSettingDto(project)],
             };
 
             var response = subject.ValidateConfiguration(configuration);

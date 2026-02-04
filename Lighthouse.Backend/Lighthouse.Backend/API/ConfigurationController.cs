@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API
@@ -21,6 +22,8 @@ namespace Lighthouse.Backend.API
         private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             Converters = { new JsonStringEnumConverter() }
         };
 
@@ -59,11 +62,8 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        [HttpPost("validate")]
-        public ActionResult<ConfigurationValidationDto> ValidateConfiguration([FromBody] ConfigurationExport configurationExport)
+        public ActionResult<ConfigurationValidationDto> ValidateConfiguration(ConfigurationExport configurationExport)
         {
-            logger.LogInformation("Validating Configuration.");
-
             var validationResult = new ConfigurationValidationDto(configurationExport);
             ValidateWorkTrackingSystems(validationResult);
             ValidateTeams(configurationExport, validationResult);
@@ -71,6 +71,135 @@ namespace Lighthouse.Backend.API
 
             logger.LogInformation("Configuration validation completed successfully.");
             return Ok(validationResult);
+        }
+
+        [HttpPost("validate")]
+        public ActionResult<ConfigurationValidationDto> ValidateConfiguration([FromBody] JsonElement rawJson)
+        {
+            logger.LogInformation("Validating Configuration.");
+
+            var configurationExport = DeserializeConfigurationFromJson(rawJson.GetRawText());
+            return ValidateConfiguration(configurationExport);
+        }
+
+        private static ConfigurationExport DeserializeConfigurationFromJson(string rawJson)
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            var root = doc.RootElement;
+            
+            var needsMigration = CheckForMigrationNeed(root);
+
+            var finalJson = rawJson;
+            if (needsMigration)
+            {
+                finalJson = PatchOldConfiguration(rawJson);
+            }
+    
+            return JsonSerializer.Deserialize<ConfigurationExport>(finalJson, CachedJsonSerializerOptions) ?? throw new InvalidOperationException("Could not parse json file");
+        }
+
+        private static bool CheckForMigrationNeed(JsonElement root)
+        {
+            var needsMigration = false;
+            
+            if (!root.TryGetProperty(nameof(ConfigurationExport.WorkTrackingSystems), out var wtsArray) &&
+                !root.TryGetProperty("workTrackingSystems", out wtsArray))
+            {
+                return needsMigration;
+            }
+
+            foreach (var wts in wtsArray.EnumerateArray())
+            {
+                if (wts.TryGetProperty(nameof(WorkTrackingSystemConnectionDto.AuthenticationMethodKey), out _) ||
+                    wts.TryGetProperty("authenticationMethodKey", out _))
+                {
+                    continue;
+                }
+
+                needsMigration = true;
+                break;
+            }
+
+            return needsMigration;
+        }
+
+        private static string PatchOldConfiguration(string rawJson)
+        {
+            var jsonNode = JsonNode.Parse(rawJson);
+            
+            var workTrackingSystems = jsonNode[nameof(ConfigurationExport.WorkTrackingSystems)]?.AsArray() ??
+                                      jsonNode["workTrackingSystems"]?.AsArray();
+
+            if (workTrackingSystems == null)
+            {
+                return jsonNode.ToJsonString();
+            }
+
+            foreach (var wts in workTrackingSystems)
+            {
+                if (wts?[nameof(WorkTrackingSystemConnectionDto.AuthenticationMethodKey)] != null ||
+                    wts?["authenticationMethodKey"] != null)
+                {
+                    continue;
+                }
+
+                var systemType = wts[nameof(WorkTrackingSystemConnectionDto.WorkTrackingSystem)]?.GetValue<string>() ??
+                                wts["workTrackingSystem"]?.GetValue<string>();
+                
+                var options = wts[nameof(WorkTrackingSystemConnectionDto.Options)]?.AsArray() ??
+                             wts["options"]?.AsArray();
+                
+                var authMethod = DetermineAuthenticationMethod(systemType, options);
+                
+                var propertyName = wts["workTrackingSystem"] != null 
+                    ? "authenticationMethodKey"  // Input was camelCase
+                    : nameof(WorkTrackingSystemConnectionDto.AuthenticationMethodKey); // Input was PascalCase
+                    
+                wts[propertyName] = authMethod;
+            }
+
+            return jsonNode.ToJsonString();
+        }
+        
+        private static string DetermineAuthenticationMethod(string? systemType, JsonArray? options)
+        {
+            if (systemType == null)
+            {
+                return "BasicAuth";
+            }
+    
+            return systemType switch
+            {
+                "Csv" => "None",
+                "Jira" => HasApiTokenInOptions(options) ? "JiraApiToken" : "JiraBasicAuth",
+                "AzureDevOps" => "AzureDevOpsPersonalAccessToken",
+                "Linear" => "LinearApiKey",
+                _ => "BasicAuth"
+            };
+        }
+        
+        private static bool HasApiTokenInOptions(JsonArray? options)
+        {
+            if (options == null)
+            {
+                return false;
+            }
+    
+            foreach (var option in options)
+            {
+                var key = option?["Key"]?.GetValue<string>() ?? 
+                          option?["key"]?.GetValue<string>();
+                var value = option?["Value"]?.GetValue<string>() ?? 
+                            option?["value"]?.GetValue<string>();
+        
+                if (key != null && key.Equals("Api Token", StringComparison.OrdinalIgnoreCase) && 
+                    !string.IsNullOrEmpty(value))
+                {
+                    return true;
+                }
+            }
+    
+            return false;
         }
 
         private void ValidateProjects(ConfigurationExport configurationExport, ConfigurationValidationDto validationResult)

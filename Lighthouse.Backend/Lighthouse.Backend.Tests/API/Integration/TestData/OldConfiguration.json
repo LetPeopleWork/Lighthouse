@@ -1,0 +1,1825 @@
+{
+  "WorkTrackingSystems": [
+    {
+      "Id": 1,
+      "Name": "CSV Azure DevOps",
+      "WorkTrackingSystem": "Csv",
+      "Options": [
+        {
+          "Key": "Delimiter",
+          "Value": ",",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Date Time Format",
+          "Value": "d.M.yyyy HH:mm:ss",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Tag Separator",
+          "Value": ";",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "ID Column",
+          "Value": "ID",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Name Column",
+          "Value": "Title",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "State Column",
+          "Value": "State",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Type Column",
+          "Value": "Work Item Type",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Started Date Column",
+          "Value": "Activated Date",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Closed Date Column",
+          "Value": "Closed Date",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Created Date Column",
+          "Value": "Created Date",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Parent Reference Id Column",
+          "Value": "Parent",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Tags Column",
+          "Value": "Tags",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Url Column",
+          "Value": "Url",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Owning Team Column",
+          "Value": "",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Estimated Size Column",
+          "Value": "",
+          "IsSecret": false,
+          "IsOptional": true
+        }
+      ],
+      "DataSourceType": "File"
+    },
+    {
+      "Id": 2,
+      "Name": "CSV Azure DevOps",
+      "WorkTrackingSystem": "Csv",
+      "Options": [
+        {
+          "Key": "Delimiter",
+          "Value": ",",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Date Time Format",
+          "Value": "d.M.yyyy HH:mm:ss",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Tag Separator",
+          "Value": ";",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "ID Column",
+          "Value": "ID",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Name Column",
+          "Value": "Title",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "State Column",
+          "Value": "State",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Type Column",
+          "Value": "Work Item Type",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Started Date Column",
+          "Value": "Activated Date",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Closed Date Column",
+          "Value": "Closed Date",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Created Date Column",
+          "Value": "Created Date",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Parent Reference Id Column",
+          "Value": "Parent",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Tags Column",
+          "Value": "Tags",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Url Column",
+          "Value": "Url",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Owning Team Column",
+          "Value": "",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Estimated Size Column",
+          "Value": "",
+          "IsSecret": false,
+          "IsOptional": true
+        }
+      ],
+      "DataSourceType": "File"
+    },
+    {
+      "Id": 3,
+      "Name": "New Jira Connection",
+      "WorkTrackingSystem": "Jira",
+      "Options": [
+        {
+          "Key": "Jira Url",
+          "Value": "https://jira.letpeople.ch/",
+          "IsSecret": false,
+          "IsOptional": false
+        },
+        {
+          "Key": "Username",
+          "Value": "",
+          "IsSecret": false,
+          "IsOptional": true
+        },
+        {
+          "Key": "Api Token",
+          "Value": "",
+          "IsSecret": true,
+          "IsOptional": false
+        }
+      ],
+      "DataSourceType": "Query"
+    }
+  ],
+  "Teams": [
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": true,
+      "ThroughputHistoryStartDate": "2025-12-01T00:00:00Z",
+      "ThroughputHistoryEndDate": "2025-12-20T00:00:00Z",
+      "FeatureWIP": 11,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 1,
+      "Name": "Incredibles",
+      "WorkItemQuery": "cf[11102] = 114 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 12,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 2,
+      "Name": "Squirrel",
+      "WorkItemQuery": "cf[11102] = 110 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 4,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 3,
+      "Name": "Beyond Reason",
+      "WorkItemQuery": "cf[11102] = 106 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 4,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 4,
+      "Name": "Lancelot",
+      "WorkItemQuery": "cf[11102] = 105 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 4,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 5,
+      "Name": "The Core",
+      "WorkItemQuery": "cf[11102] = 104 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 3,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 6,
+      "Name": "FlowChill",
+      "WorkItemQuery": "cf[11102] = 111 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 4,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 7,
+      "Name": "Buffalo Wings",
+      "WorkItemQuery": "cf[11102] = 144 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 4,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 8,
+      "Name": "Stairway to Heaven",
+      "WorkItemQuery": "cf[11102] = 113 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 4,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 9,
+      "Name": "Red Rockets",
+      "WorkItemQuery": "cf[11102] = 112 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 0,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 10,
+      "Name": "King Kong",
+      "WorkItemQuery": "cf[11102] = 122 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem",
+        "PENG Task"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 0,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 11,
+      "Name": "Ferraris",
+      "WorkItemQuery": "cf[11102] = 75 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 0,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 12,
+      "Name": "The Bulldozers",
+      "WorkItemQuery": "cf[11102] = 99 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem",
+        "PENG Task"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 0,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 13,
+      "Name": "Tokyo Dream Team",
+      "WorkItemQuery": "cf[11102] = 108 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem",
+        "PENG Task"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 0,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 14,
+      "Name": "Seahawks",
+      "WorkItemQuery": "cf[11102] = 109 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem",
+        "PENG Task"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 0,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 15,
+      "Name": "Initiatives",
+      "WorkItemQuery": "issuetype = Initiative \nAND (resolution is EMPTY OR resolution not in (Declined, Duplicate, Incomplete, Invalid, \u0022Won\u0027t Do\u0022, \u0022Won\u0027t Fix\u0022, \u0022Cannot Reproduce\u0022))",
+      "WorkItemTypes": [
+        "Initiative"
+      ],
+      "ToDoStates": [
+        "New",
+        "Funnel",
+        "Analysis Pull Candidate"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Implementation Pull Candidate",
+        "Implementation",
+        "In Progress"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Release",
+        "Ecosystem Adoption",
+        "Impact Review"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 85,
+      "ServiceLevelExpectationRange": 180,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 1,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 16,
+      "Name": "Team WoW",
+      "WorkItemQuery": "cf[11102] = 95 and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Task",
+        "sub-task"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 1,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 17,
+      "Name": "Value Stream Payment",
+      "WorkItemQuery": "cf[11102] in (112, 113, 144, 145) and (resolution not in (Accepted,\u0022Cannot Reproduce\u0022,Declined,Duplicate,Incomplete,Invalid,\u0022Won\u0027t Do\u0022,\u0022Won\u0027t Fix\u0022) OR resolution is EMPTY )",
+      "WorkItemTypes": [
+        "Story",
+        "Defect",
+        "Task",
+        "Specification Task",
+        "Problem"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "In Progress",
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Review",
+        "Code Review",
+        "Waiting for Validation",
+        "Validation",
+        "Waiting for Feedback",
+        "Development",
+        "Verification",
+        "Review",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Resolved",
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "ThroughputHistory": 30,
+      "UseFixedDatesForThroughput": false,
+      "ThroughputHistoryStartDate": "2025-12-08T00:00:00Z",
+      "ThroughputHistoryEndDate": "2026-01-06T00:00:00Z",
+      "FeatureWIP": 1,
+      "AutomaticallyAdjustFeatureWIP": false,
+      "Id": 18,
+      "Name": "Ideas",
+      "WorkItemQuery": "issuetype = Idea",
+      "WorkItemTypes": [
+        "idea"
+      ],
+      "ToDoStates": [
+        "New"
+      ],
+      "DoingStates": [
+        "Hypothesis",
+        "Validation",
+        "Opportunity"
+      ],
+      "DoneStates": [
+        "Closed"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": ""
+    }
+  ],
+  "Projects": [
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 1,
+          "Name": "Incredibles"
+        },
+        {
+          "Id": 2,
+          "Name": "Squirrel"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 1,
+      "Name": "My Portfolio",
+      "WorkItemQuery": "Organisation = \u0022My Portfolio\u0022 AND status in (Implementation, Analysis)",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 3,
+          "Name": "Beyond Reason"
+        },
+        {
+          "Id": 4,
+          "Name": "Lancelot"
+        },
+        {
+          "Id": 5,
+          "Name": "The Core"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 2,
+      "Name": "Custom Portfolio",
+      "WorkItemQuery": "Organisation = \u0022Custom Portfolio\u0022 AND status = Implementation",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "customfield_10010"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 6,
+          "Name": "FlowChill"
+        },
+        {
+          "Id": 7,
+          "Name": "Buffalo Wings"
+        },
+        {
+          "Id": 8,
+          "Name": "Stairway to Heaven"
+        },
+        {
+          "Id": 9,
+          "Name": "Red Rockets"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 3,
+      "Name": "Delays",
+      "WorkItemQuery": "Organisation = \u0022Delays\u0022 AND status = Implementation",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 10,
+          "Name": "King Kong"
+        },
+        {
+          "Id": 12,
+          "Name": "The Bulldozers"
+        },
+        {
+          "Id": 13,
+          "Name": "Tokyo Dream Team"
+        },
+        {
+          "Id": 14,
+          "Name": "Seahawks"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 4,
+      "Name": "Platforms",
+      "WorkItemQuery": "Organisation in (\u0022Platforms\u0022) AND status = Implementation",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        "",
+        "On Hold"
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 10,
+          "Name": "King Kong"
+        },
+        {
+          "Id": 12,
+          "Name": "The Bulldozers"
+        },
+        {
+          "Id": 13,
+          "Name": "Tokyo Dream Team"
+        },
+        {
+          "Id": 14,
+          "Name": "Seahawks"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 5,
+      "Name": "Platforms Closed Epics",
+      "WorkItemQuery": "Organisation in (\u0022Platforms\u0022) AND status = Closed",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 3,
+          "Name": "Beyond Reason"
+        },
+        {
+          "Id": 4,
+          "Name": "Lancelot"
+        },
+        {
+          "Id": 5,
+          "Name": "The Core"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 6,
+      "Name": "Private Closed Epics",
+      "WorkItemQuery": "Organisation = \u0022Private Closed Epics\u0022 AND status = Closed",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 6,
+          "Name": "FlowChill"
+        },
+        {
+          "Id": 7,
+          "Name": "Buffalo Wings"
+        },
+        {
+          "Id": 8,
+          "Name": "Stairway to Heaven"
+        },
+        {
+          "Id": 9,
+          "Name": "Red Rockets"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 7,
+      "Name": "Customers",
+      "WorkItemQuery": "Organisation = \u0022Customers\u0022 AND status = Closed",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 10,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 1,
+          "Name": "Incredibles"
+        },
+        {
+          "Id": 2,
+          "Name": "Squirrel"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 8,
+      "Name": "Commercials",
+      "WorkItemQuery": "Organisation = \u0022Commercials\u0022 AND status = Closed",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 25,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 5,
+          "Name": "The Core"
+        },
+        {
+          "Id": 6,
+          "Name": "FlowChill"
+        },
+        {
+          "Id": 7,
+          "Name": "Buffalo Wings"
+        },
+        {
+          "Id": 8,
+          "Name": "Stairway to Heaven"
+        },
+        {
+          "Id": 9,
+          "Name": "Red Rockets"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 9,
+      "Name": "Bilbao",
+      "WorkItemQuery": "Initiative = Initiative-133",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Waiting for Validation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": ""
+    },
+    {
+      "Milestones": [],
+      "OverrideRealChildCountStates": [
+        ""
+      ],
+      "UnparentedItemsQuery": "",
+      "UsePercentileToCalculateDefaultAmountOfWorkItems": false,
+      "DefaultWorkItemPercentile": 85,
+      "PercentileHistoryInDays": 90,
+      "DefaultAmountOfWorkItemsPerFeature": 30,
+      "SizeEstimateField": "",
+      "InvolvedTeams": [
+        {
+          "Id": 1,
+          "Name": "Incredibles"
+        }
+      ],
+      "OwningTeam": null,
+      "FeatureOwnerField": "",
+      "Id": 10,
+      "Name": "Incredibles Epics",
+      "WorkItemQuery": "Organisation = \u0022Incredibles Epics\u0022 AND status in (Implementation, Analysis) AND cf[11102] = 114",
+      "WorkItemTypes": [
+        "Epic"
+      ],
+      "ToDoStates": [
+        "Open"
+      ],
+      "DoingStates": [
+        "Analysis",
+        "Waiting for Implementation",
+        "Implementation",
+        "Validation",
+        "On Hold"
+      ],
+      "DoneStates": [
+        "Closed",
+        "Resolved"
+      ],
+      "Tags": [
+        ""
+      ],
+      "BlockedStates": [
+        ""
+      ],
+      "BlockedTags": [
+        ""
+      ],
+      "ServiceLevelExpectationProbability": 0,
+      "ServiceLevelExpectationRange": 0,
+      "WorkTrackingSystemConnectionId": 3,
+      "SystemWIPLimit": 0,
+      "ParentOverrideField": "cf[10006]"
+    }
+  ]
+}

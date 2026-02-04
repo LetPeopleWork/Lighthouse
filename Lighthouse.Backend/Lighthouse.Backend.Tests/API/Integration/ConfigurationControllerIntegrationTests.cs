@@ -1,6 +1,10 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Tests.TestHelpers;
 using System.Net;
+using System.Text;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Tests.Services.Implementation.Licensing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
@@ -39,6 +43,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
+        }
+
+        [Test]
+        public async Task ValidateConfiguration_OldConfigurationFile_CanMigrateToLatestVersion()
+        {
+            var licenseService = ServiceProvider.GetService<ILicenseService>();
+            await licenseService.ImportLicense(TestLicenseData.ValidLicense);
+            
+            // Read the JSON file from TestData folder
+            var jsonFilePath = Path.Combine("API", "Integration", "TestData", "OldConfiguration.json");
+            var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
+    
+            // Create StringContent with the JSON
+            var payload = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            var response = await Client.PostAsync("/api/configuration/validate", payload);
+                
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         }
     }
 }

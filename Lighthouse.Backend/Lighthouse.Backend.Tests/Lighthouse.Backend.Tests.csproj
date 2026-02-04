@@ -81,6 +81,9 @@
 	  <None Update="Services\Implementation\Licensing\valid_not_expired_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="API\Integration\TestData\OldConfiguration.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 
