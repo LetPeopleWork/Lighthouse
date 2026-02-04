@@ -62,6 +62,7 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [ApiExplorerSettings(IgnoreApi =  true)]
         public ActionResult<ConfigurationValidationDto> ValidateConfiguration(ConfigurationExport configurationExport)
         {
             var validationResult = new ConfigurationValidationDto(configurationExport);
@@ -138,7 +139,7 @@ namespace Lighthouse.Backend.API
             foreach (var wts in workTrackingSystems)
             {
                 if (wts?[nameof(WorkTrackingSystemConnectionDto.AuthenticationMethodKey)] != null ||
-                    wts?["authenticationMethodKey"] != null)
+                    wts?["authenticationMethodKey"] != null || wts == null)
                 {
                     continue;
                 }
