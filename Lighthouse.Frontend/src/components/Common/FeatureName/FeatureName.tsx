@@ -1,21 +1,15 @@
-import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import GppMaybeOutlinedIcon from "@mui/icons-material/GppMaybeOutlined";
-import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
-import LoopOutlinedIcon from "@mui/icons-material/LoopOutlined";
 import { IconButton, Link, Tooltip } from "@mui/material";
 import React from "react";
 import type { IEntityReference } from "../../../models/EntityReference";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { StateCategory } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import StyledLink from "../StyledLink/StyledLink";
 
 interface FeatureNameProps {
 	name: string;
 	url: string;
-	stateCategory: StateCategory;
 	isUsingDefaultFeatureSize: boolean;
 	teamsWorkIngOnFeature: IEntityReference[];
 }
@@ -39,24 +33,9 @@ const TeamLinksList: React.FC<TeamLinksListProps> = ({ teams }) => {
 	);
 };
 
-interface StateCategoryIconProps {
-	stateCategory: StateCategory;
-}
-
-const StateCategoryIcon: React.FC<StateCategoryIconProps> = ({
-	stateCategory,
-}) => {
-	if (stateCategory === "ToDo") return <AssignmentOutlinedIcon />;
-	if (stateCategory === "Doing") return <LoopOutlinedIcon />;
-	if (stateCategory === "Done") return <CheckCircleOutlinedIcon />;
-	if (stateCategory === "Unknown") return <HelpOutlineOutlinedIcon />;
-	return null;
-};
-
 const FeatureName: React.FC<FeatureNameProps> = ({
 	name,
 	url,
-	stateCategory,
 	isUsingDefaultFeatureSize,
 	teamsWorkIngOnFeature,
 }) => {
@@ -109,11 +88,6 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 					</IconButton>
 				</Tooltip>
 			)}
-			<Tooltip title={`${featureTerm} State: ${stateCategory}`}>
-				<IconButton size="small" sx={{ ml: 1 }}>
-					<StateCategoryIcon stateCategory={stateCategory} />
-				</IconButton>
-			</Tooltip>
 		</span>
 	);
 };

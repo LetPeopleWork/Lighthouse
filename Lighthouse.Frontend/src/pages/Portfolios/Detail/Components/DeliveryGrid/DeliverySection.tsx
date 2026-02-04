@@ -85,7 +85,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					<FeatureName
 						name={row.name}
 						url={row.url ?? ""}
-						stateCategory={row.stateCategory}
 						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
 						teamsWorkIngOnFeature={[]}
 					/>
@@ -189,6 +188,15 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								}}
 							/>
 						)),
+			},
+			{
+				field: "state",
+				headerName: "State",
+				width: 150,
+				sortable: true,
+				renderCell: ({ row }) => {
+					return <span>{row.state}</span>;
+				},
 			},
 		],
 		[featureTerm, delivery, teams],

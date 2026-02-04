@@ -122,7 +122,6 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 						<FeatureName
 							name={getWorkItemName(row)}
 							url={row.url ?? ""}
-							stateCategory={row.stateCategory}
 							isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
 							teamsWorkIngOnFeature={portfolio.involvedTeams.filter((team) =>
 								featuresInProgress[team.id]?.includes(row.referenceId),
@@ -184,6 +183,15 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 					renderCell: ({ row }) => (
 						<ForecastInfoList title={""} forecasts={row.forecasts} />
 					),
+				},
+				{
+					field: "state",
+					headerName: "State",
+					width: 150,
+					sortable: true,
+					renderCell: ({ row }) => {
+						return <span>{row.state}</span>;
+					},
 				},
 			];
 			return baseColumns;

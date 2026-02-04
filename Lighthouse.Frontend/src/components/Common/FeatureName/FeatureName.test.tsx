@@ -35,27 +35,6 @@ describe("FeatureName", () => {
 		expect(linkElement.closest("a")).toHaveAttribute("href", "/feature/123");
 	});
 
-	test("displays correct icon for ToDo state", () => {
-		renderWithRouter(<FeatureName {...defaultProps} stateCategory="ToDo" />);
-
-		const tooltip = screen.getByLabelText("Feature State: ToDo");
-		expect(tooltip).toBeInTheDocument();
-	});
-
-	test("displays correct icon for Doing state", () => {
-		renderWithRouter(<FeatureName {...defaultProps} stateCategory="Doing" />);
-
-		const tooltip = screen.getByLabelText("Feature State: Doing");
-		expect(tooltip).toBeInTheDocument();
-	});
-
-	test("displays correct icon for Done state", () => {
-		renderWithRouter(<FeatureName {...defaultProps} stateCategory="Done" />);
-
-		const tooltip = screen.getByLabelText("Feature State: Done");
-		expect(tooltip).toBeInTheDocument();
-	});
-
 	test("displays warning icon when using default feature size", () => {
 		renderWithRouter(
 			<FeatureName {...defaultProps} isUsingDefaultFeatureSize={true} />,

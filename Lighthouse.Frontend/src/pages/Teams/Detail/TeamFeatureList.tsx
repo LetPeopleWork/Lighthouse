@@ -103,7 +103,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 					<FeatureName
 						name={getWorkItemName(row)}
 						url={row.url ?? ""}
-						stateCategory={row.stateCategory}
 						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
 						teamsWorkIngOnFeature={
 							featuresInProgress.includes(row.referenceId) ? [team] : []
@@ -172,6 +171,15 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 						))}
 					</Box>
 				),
+			},
+			{
+				field: "state",
+				headerName: "State",
+				width: 150,
+				sortable: true,
+				renderCell: ({ row }) => {
+					return <span>{row.state}</span>;
+				},
 			},
 		],
 		[featureTerm, team, featuresInProgress, parentMap, portfoliosTerm],
