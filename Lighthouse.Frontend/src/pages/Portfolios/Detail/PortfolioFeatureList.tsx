@@ -12,7 +12,6 @@ import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
-import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ParentWorkItemCell from "../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
@@ -187,20 +186,6 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 					),
 				},
 			];
-
-			// Add Updated On column
-			baseColumns.push({
-				field: "lastUpdated",
-				headerName: "Updated On",
-				width: 200,
-				type: "dateTime",
-				valueGetter: (value, _row) => {
-					return value instanceof Date ? value : new Date(`${value}`);
-				},
-				renderCell: ({ row }) => (
-					<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
-				),
-			});
 			return baseColumns;
 		}, [featureTerm, portfolio.involvedTeams, featuresInProgress, parentMap]);
 

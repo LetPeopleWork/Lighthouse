@@ -12,7 +12,6 @@ import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
-import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ParentWorkItemCell from "../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
@@ -172,20 +171,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 							</Box>
 						))}
 					</Box>
-				),
-			},
-			{
-				field: "lastUpdated",
-				headerName: "Updated On",
-				width: 200,
-				type: "dateTime",
-				valueGetter: (value: unknown) => {
-					if (value instanceof Date) return value;
-					if (typeof value === "string") return new Date(value);
-					return new Date();
-				},
-				renderCell: ({ row }) => (
-					<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
 				),
 			},
 		],
