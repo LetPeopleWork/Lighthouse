@@ -6,6 +6,7 @@ import {
 	Stack,
 	Tab,
 	Tabs,
+	Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
@@ -48,7 +49,10 @@ const TeamDetail: React.FC = () => {
 
 	let subscribedToUpdates = false;
 
-	const getInitialView = (tabParam: string | undefined): TeamViewType => {
+	const getInitialView = (
+		tabParam: string | undefined,
+		teamData: Team | undefined,
+	): TeamViewType => {
 		if (tabParam === "metrics") {
 			return "metrics";
 		}
@@ -61,6 +65,11 @@ const TeamDetail: React.FC = () => {
 			return "settings";
 		}
 
+		// If features tab is requested but team has no features, redirect to forecasts
+		if (tabParam === "features" && teamData?.features.length === 0) {
+			return "forecasts";
+		}
+
 		return "features";
 	};
 
@@ -68,7 +77,7 @@ const TeamDetail: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
 	const [activeView, setActiveView] = useState<TeamViewType>(
-		getInitialView(tab),
+		getInitialView(tab, undefined),
 	);
 
 	const { teamService, updateSubscriptionService, workTrackingSystemService } =
@@ -163,6 +172,16 @@ const TeamDetail: React.FC = () => {
 		};
 	}, [team, subscribedToUpdates, updateSubscriptionService, teamId, fetchTeam]);
 
+	// Redirect to forecasts if on features tab but team has no features
+	useEffect(() => {
+		if (team && activeView === "features" && team.features.length === 0) {
+			// Redirect to forecasts when features tab is requested but team has no features
+			const newView = "forecasts";
+			setActiveView(newView);
+			navigate(`/teams/${id}/${newView}`, { replace: true });
+		}
+	}, [team, activeView, id, navigate]);
+
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
 		newView: TeamViewType,
@@ -247,7 +266,22 @@ const TeamDetail: React.FC = () => {
 											onChange={handleViewChange}
 											aria-label="team view tabs"
 										>
-											<Tab label={featureTerm} value="features" />
+											<Tooltip
+												title={
+													team.features.length === 0
+														? `No ${featureTerm.toLowerCase()} available for this ${teamTerm.toLowerCase()}`
+														: ""
+												}
+												arrow
+											>
+												<span>
+													<Tab
+														label={featureTerm}
+														value="features"
+														disabled={team.features.length === 0}
+													/>
+												</span>
+											</Tooltip>
 											<Tab label="Forecasts" value="forecasts" />
 											<Tab label="Metrics" value="metrics" />
 											<Tab label="Settings" value="settings" />

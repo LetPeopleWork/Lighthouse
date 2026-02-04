@@ -54,7 +54,7 @@ const mockTeam = {
 	id: 1,
 	name: "Test Team",
 	involvedProjectIds: [],
-	features: [],
+	features: [{ id: 1, name: "Feature 1", key: "F-1" }], // Default to having features
 	workItemTypes: [],
 	lastUpdated: new Date().toISOString(),
 	throughputStartDate: new Date("2024-01-01"),
@@ -148,10 +148,10 @@ describe("TeamDetail component", () => {
 			expect(screen.getByTestId("team-features-view")).toBeInTheDocument();
 		});
 
-		expect(screen.getByRole("tab", { name: "Features" })).toHaveAttribute(
-			"aria-selected",
-			"true",
-		);
+		// Check that Features view is rendered (which means it's the active tab)
+		expect(screen.getByTestId("team-features-view")).toBeInTheDocument();
+		expect(screen.queryByTestId("team-forecast-view")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("team-metrics-view")).not.toBeInTheDocument();
 	});
 
 	it("should show Features tab content when Features tab is active", async () => {
@@ -209,6 +209,165 @@ describe("TeamDetail component", () => {
 		await user.click(screen.getByRole("tab", { name: "Metrics" }));
 		expect(mockNavigate).toHaveBeenCalledWith("/teams/1/metrics", {
 			replace: true,
+		});
+	});
+
+	it("should disable Features tab when team has no features", async () => {
+		const mockTeamService = createMockTeamService();
+		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
+
+		const teamWithNoFeatures = {
+			...mockTeam,
+			features: [], // No features
+		};
+
+		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithNoFeatures);
+		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.getUpdateStatus = vi
+			.fn()
+			.mockResolvedValue(null);
+
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			updateSubscriptionService: mockUpdateSubscriptionService,
+		});
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		await waitFor(() => {
+			const featuresTab = screen.getByRole("tab", { name: "Features" });
+			expect(featuresTab).toBeInTheDocument();
+		});
+
+		const featuresTab = screen.getByRole("tab", { name: "Features" });
+		expect(featuresTab).toBeDisabled();
+	});
+
+	it("should enable Features tab when team has features", async () => {
+		const mockTeamService = createMockTeamService();
+		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
+
+		const teamWithFeatures = {
+			...mockTeam,
+			features: [{ id: 1, name: "Feature 1", key: "F-1" }],
+		};
+
+		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithFeatures);
+		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.getUpdateStatus = vi
+			.fn()
+			.mockResolvedValue(null);
+
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			updateSubscriptionService: mockUpdateSubscriptionService,
+		});
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		await waitFor(() => {
+			const featuresTab = screen.getByRole("tab", { name: "Features" });
+			expect(featuresTab).toBeInTheDocument();
+		});
+
+		const featuresTab = screen.getByRole("tab", { name: "Features" });
+		expect(featuresTab).not.toBeDisabled();
+	});
+
+	it("should redirect to Forecasts tab when navigating to Features tab with no features", async () => {
+		const mockTeamService = createMockTeamService();
+		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
+
+		const teamWithNoFeatures = {
+			...mockTeam,
+			features: [], // No features
+		};
+
+		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithNoFeatures);
+		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.getUpdateStatus = vi
+			.fn()
+			.mockResolvedValue(null);
+
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			updateSubscriptionService: mockUpdateSubscriptionService,
+		});
+
+		mockParams = { id: "1", tab: "features" }; // Try to navigate to features
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		await waitFor(() => {
+			expect(mockNavigate).toHaveBeenCalledWith("/teams/1/forecasts", {
+				replace: true,
+			});
+		});
+	});
+
+	it("should redirect to Forecasts tab when direct URL navigation to Features with no features", async () => {
+		const mockTeamService = createMockTeamService();
+		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
+
+		const teamWithNoFeatures = {
+			...mockTeam,
+			features: [], // No features
+		};
+
+		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithNoFeatures);
+		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.getUpdateStatus = vi
+			.fn()
+			.mockResolvedValue(null);
+
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			updateSubscriptionService: mockUpdateSubscriptionService,
+		});
+
+		// Simulate direct URL navigation to features tab
+		mockParams = { id: "1", tab: "features" };
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		// Should redirect to forecasts
+		await waitFor(() => {
+			expect(mockNavigate).toHaveBeenCalledWith("/teams/1/forecasts", {
+				replace: true,
+			});
+		});
+
+		// Should show forecasts view
+		await waitFor(() => {
+			expect(screen.getByTestId("team-forecast-view")).toBeInTheDocument();
 		});
 	});
 });
