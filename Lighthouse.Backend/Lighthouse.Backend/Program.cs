@@ -503,7 +503,13 @@ namespace Lighthouse.Backend
             };
 
             var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
-            var urls = app.Urls.ToList();
+            var urls = app.Urls
+                .Select(url => url
+                    .Replace("http://[::]:", "http://localhost:")
+                    .Replace("https://[::]:", "https://localhost:")
+                    .Replace("http://0.0.0.0:", "http://localhost:")
+                    .Replace("https://0.0.0.0:", "https://localhost:"))
+                .ToList();
 
             var logFilePath = TryGetLogFilePath(builder.Configuration);
 
