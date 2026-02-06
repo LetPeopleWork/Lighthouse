@@ -146,7 +146,8 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	};
 
 	const minStartDate = dayjs().subtract(365, "day");
-	const maxEndDate = dayjs().subtract(14, "day");
+	const maxStartDate = dayjs().subtract(14, "day");
+	const maxEndDate = dayjs();
 
 	return (
 		<Grid container spacing={3}>
@@ -159,7 +160,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 								value={startDate}
 								onChange={(value) => setStartDate(value as dayjs.Dayjs | null)}
 								minDate={minStartDate}
-								maxDate={endDate?.subtract(14, "day") ?? maxEndDate}
+								maxDate={endDate?.subtract(14, "day") ?? maxStartDate}
 								format={getLocaleDateFormat()}
 								sx={{ width: "100%" }}
 							/>

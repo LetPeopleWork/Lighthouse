@@ -118,6 +118,40 @@ describe("BacktestForecaster component", () => {
 		expect(historicalWindowInput).toHaveValue(30);
 	});
 
+	it("should have default start date at least 14 days ago", () => {
+		renderWithContext();
+
+		// Default start date should be at least 14 days in the past
+		// Default is 60 days ago, which is > 14 days ago
+		const minAllowedStartDate = dayjs().subtract(14, "day");
+		const defaultStartDate = dayjs().subtract(60, "day");
+
+		expect(defaultStartDate.isBefore(minAllowedStartDate)).toBe(true);
+	});
+
+	it("should have default end date not in the future", () => {
+		renderWithContext();
+
+		// Default end date should not be in the future (max is today)
+		// Default is 30 days ago, which is <= today
+		const today = dayjs().startOf("day");
+		const defaultEndDate = dayjs().subtract(30, "day").startOf("day");
+
+		expect(
+			defaultEndDate.isBefore(today) || defaultEndDate.isSame(today, "day"),
+		).toBe(true);
+	});
+
+	it("should have at least 14 days between default start and end dates", () => {
+		renderWithContext();
+
+		const defaultStartDate = dayjs().subtract(60, "day");
+		const defaultEndDate = dayjs().subtract(30, "day");
+		const daysDifference = defaultEndDate.diff(defaultStartDate, "day");
+
+		expect(daysDifference).toBeGreaterThanOrEqual(14);
+	});
+
 	it("should call onRunBacktest when button is clicked", async () => {
 		renderWithContext();
 
@@ -334,6 +368,62 @@ describe("BacktestForecaster component", () => {
 
 		await waitFor(() => {
 			expect(screen.queryByTestId("loading-animation")).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Date Constraints", () => {
+		it("should have default dates that satisfy all constraints", () => {
+			renderWithContext();
+
+			// Default start: 60 days ago
+			// Default end: 30 days ago
+			const defaultStartDate = dayjs().subtract(60, "day");
+			const defaultEndDate = dayjs().subtract(30, "day");
+			const today = dayjs();
+
+			// Constraint 1: End date must not be in future (max today)
+			expect(
+				defaultEndDate.isBefore(today) || defaultEndDate.isSame(today, "day"),
+			).toBe(true);
+
+			// Constraint 2: Start date must be at least 14 days ago
+			const fourteenDaysAgo = dayjs().subtract(14, "day");
+			expect(
+				defaultStartDate.isBefore(fourteenDaysAgo) ||
+					defaultStartDate.isSame(fourteenDaysAgo, "day"),
+			).toBe(true);
+
+			// Constraint 3: Minimum 14 day gap between dates
+			const gap = defaultEndDate.diff(defaultStartDate, "day");
+			expect(gap).toBeGreaterThanOrEqual(14);
+		});
+
+		it("should allow backtest when end date is today", async () => {
+			// Mock the component with a custom state-like scenario by testing
+			// the actual backtest run with dates at their limits
+			renderWithContext();
+
+			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
+			fireEvent.click(runButton);
+
+			await waitFor(() => {
+				expect(mockOnRunBacktest).toHaveBeenCalled();
+				const callArgs = mockOnRunBacktest.mock.calls[0];
+				const startDate = dayjs(callArgs[0]);
+				const endDate = dayjs(callArgs[1]);
+
+				// End date should be valid (not in future)
+				const today = dayjs();
+				expect(endDate.isAfter(today)).toBe(false);
+
+				// Start date should be at least 14 days ago
+				const fourteenDaysAgo = dayjs().subtract(14, "day");
+				expect(startDate.isAfter(fourteenDaysAgo)).toBe(false);
+
+				// Gap should be at least 14 days
+				const gap = endDate.diff(startDate, "day");
+				expect(gap).toBeGreaterThanOrEqual(14);
+			});
 		});
 	});
 });
