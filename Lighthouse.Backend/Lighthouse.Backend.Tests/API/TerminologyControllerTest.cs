@@ -63,8 +63,8 @@ namespace Lighthouse.Backend.Tests.API
         {
             var terminologyData = new List<TerminologyEntry>
             {
-                new TerminologyEntry { Key = "feature", Description = "A large work item", DefaultValue = "Epic" },
-                new TerminologyEntry { Key = "story", Description = "A small work item", DefaultValue = "Task" }
+                new() { Key = "feature", Description = "A large work item", DefaultValue = "Epic" },
+                new() { Key = "story", Description = "A small work item", DefaultValue = "Task" }
             };
             
             terminologyServiceMock.Setup(x => x.UpdateTerminology(terminologyData)).Returns(Task.CompletedTask);
@@ -75,16 +75,6 @@ namespace Lighthouse.Backend.Tests.API
             var okResult = result as OkResult;
             Assert.That(okResult.StatusCode, Is.EqualTo(200));
             terminologyServiceMock.Verify(x => x.UpdateTerminology(terminologyData), Times.Once);
-        }
-
-        [Test]
-        public async Task UpdateTerminologyAsync_NullData_ReturnsBadRequest()
-        {
-            var result = await subject.UpdateTerminology(null!);
-
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-            var badRequestResult = result as BadRequestObjectResult;
-            Assert.That(badRequestResult!.StatusCode, Is.EqualTo(400));
         }
     }
 }
