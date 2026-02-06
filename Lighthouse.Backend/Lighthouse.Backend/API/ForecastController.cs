@@ -143,6 +143,7 @@ namespace Lighthouse.Backend.API
 
         public class ManualForecastInputDto
         {
+            [JsonRequired]
             public int RemainingItems { get; set; }
 
             public DateTime? TargetDate { get; set; }
