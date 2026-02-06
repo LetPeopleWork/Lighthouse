@@ -35,10 +35,31 @@ export class TeamDetailPage {
 		return await rows.count();
 	}
 
-	async forecast(howMany: number): Promise<number> {
+	async forecast(howMany: number, targetDate?: Date): Promise<number> {
 		await this.page
-			.getByLabel("Number of Work Items to Forecast")
+			.getByRole("spinbutton", { name: "Number of Work Items" })
 			.fill(`${howMany}`);
+
+		if (targetDate) {
+			const month = (targetDate.getMonth() + 1).toString();
+			const day = targetDate.getDate().toString();
+			const year = targetDate.getFullYear().toString();
+
+			const targetDateGroup = this.page
+				.getByRole("group", { name: "Target Date" })
+				.first();
+
+			await targetDateGroup
+				.getByRole("spinbutton", { name: "Month" })
+				.fill(month);
+
+			await targetDateGroup.getByRole("spinbutton", { name: "Day" }).fill(day);
+
+			await targetDateGroup
+				.getByRole("spinbutton", { name: "Year" })
+				.fill(year);
+		}
+
 		await this.page.getByRole("button", { name: "Forecast" }).first().click();
 
 		const likelihood =

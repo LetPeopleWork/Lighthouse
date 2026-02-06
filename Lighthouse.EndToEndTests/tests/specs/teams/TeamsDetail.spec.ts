@@ -61,7 +61,8 @@ testWithData(
 		await teamDetailPage.goToForecasts();
 
 		const howMany = 20;
-		const likelihood = await teamDetailPage.forecast(howMany);
+		const when = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+		const likelihood = await teamDetailPage.forecast(howMany, when);
 
 		expect(likelihood).toBeGreaterThan(0);
 	},
