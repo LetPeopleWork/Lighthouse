@@ -1,5 +1,5 @@
 import { Grid } from "@mui/material";
-import dayjs from "dayjs";
+import type dayjs from "dayjs";
 import type React from "react";
 import { useContext, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
@@ -21,9 +21,7 @@ interface TeamForecastViewProps {
 
 const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [remainingItems, setRemainingItems] = useState<number>(10);
-	const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(
-		dayjs().add(2, "week"),
-	);
+	const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(null);
 	const [manualForecastResult, setManualForecastResult] =
 		useState<ManualForecast | null>(null);
 
@@ -43,15 +41,15 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
 	const onRunManualForecast = async () => {
-		if (!team || !targetDate) {
+		if (!team) {
 			return;
 		}
 
 		try {
 			const manualForecast = await forecastService.runManualForecast(
 				team.id,
-				remainingItems,
-				targetDate?.toDate(),
+				remainingItems || 0,
+				targetDate?.toDate() ?? null,
 			);
 			setManualForecastResult(manualForecast);
 		} catch (error) {

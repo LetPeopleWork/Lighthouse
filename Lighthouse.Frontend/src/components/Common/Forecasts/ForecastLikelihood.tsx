@@ -31,7 +31,7 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({
 						fontSize: "0.875rem",
 					}}
 				>
-					Likelihood to close {remainingItems} Items until{" "}
+					Likelihood to close {remainingItems} Items by{" "}
 					<LocalDateTimeDisplay utcDate={targetDate} />:
 				</Typography>
 			)}

@@ -1,21 +1,15 @@
 ﻿namespace Lighthouse.Backend.API.DTO
 {
-    public class ManualForecastDto
+    public class ManualForecastDto(int remainingItems, DateTime? targetDate)
     {
-        public ManualForecastDto(int remainingItems, DateTime targetDate)
-        {
-            RemainingItems = remainingItems;
-            TargetDate = targetDate;
-        }
+        public int RemainingItems { get; } = remainingItems;
 
-        public int RemainingItems { get; }
-
-        public DateTime TargetDate { get; }
+        public DateTime? TargetDate { get; } = targetDate;
 
         public double Likelihood { get; set; }
 
-        public List<WhenForecastDto> WhenForecasts { get; } = new List<WhenForecastDto>();
+        public List<WhenForecastDto> WhenForecasts { get; } = [];
 
-        public List<ForecastDto> HowManyForecasts { get; } = new List<ForecastDto>();
+        public List<ForecastDto> HowManyForecasts { get; } = [];
     }
 }

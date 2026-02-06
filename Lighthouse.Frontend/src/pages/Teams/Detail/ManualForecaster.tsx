@@ -1,4 +1,10 @@
-import { TextField } from "@mui/material";
+import { Close } from "@mui/icons-material";
+import {
+	IconButton,
+	InputAdornment,
+	TextField,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -56,65 +62,99 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 
 	return (
 		<Grid container spacing={3}>
-			<Grid size={{ xs: 12 }}>
-				<Grid container spacing={2}>
-					<Grid size={{ xs: 4 }}>
-						<TextField
-							label={`Number of ${workItemsTerm} to Forecast`}
-							type="number"
-							fullWidth
-							value={remainingItems}
-							onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
-						/>
-					</Grid>
-					<Grid size={{ xs: 4 }}>
-						<LocalizationProvider dateAdapter={AdapterDayjs}>
-							<DatePicker
-								label="Target Date"
-								value={targetDate}
-								onChange={(value) =>
-									onTargetDateChange(value as dayjs.Dayjs | null)
-								}
-								minDate={dayjs()}
-								format={getLocaleDateFormat()}
-								sx={{ width: "100%" }}
-							/>
-						</LocalizationProvider>
-					</Grid>
-					<Grid size={{ xs: 4 }}>
-						<ActionButton
-							onClickHandler={onRunManualForecast}
-							buttonText="Forecast"
-						/>
-					</Grid>
-				</Grid>
-			</Grid>
-			<Grid size={{ xs: 12 }}>
-				{manualForecastResult && (
-					<Grid container spacing={2}>
-						<Grid size={{ xs: 4 }}>
-							<ForecastInfoList
-								title={`When will ${manualForecastResult.remainingItems} ${workItemsTerm} be done?`}
-								forecasts={manualForecastResult.whenForecasts}
-							/>
-						</Grid>
-						<Grid size={{ xs: 4 }}>
-							<ForecastInfoList
-								title={`How Many ${workItemsTerm} will you get done till ${manualForecastResult.targetDate.toLocaleDateString()}?`}
-								forecasts={manualForecastResult.howManyForecasts}
-							/>
-						</Grid>
-						{manualForecastResult.likelihood > 0 && (
-							<Grid size={{ xs: 4 }}>
-								<ForecastLikelihood
-									remainingItems={manualForecastResult.remainingItems}
-									targetDate={manualForecastResult.targetDate}
-									likelihood={manualForecastResult.likelihood}
+			<Grid size={{ xs: 12, md: 6 }}>
+				<Typography variant="subtitle2" gutterBottom>
+					When?
+				</Typography>
+				<TextField
+					label={`Number of ${workItemsTerm}`}
+					type="number"
+					fullWidth
+					value={remainingItems}
+					onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
+					slotProps={{
+						input: {
+							endAdornment: remainingItems > 0 && (
+								<InputAdornment position="end">
+									<IconButton
+										aria-label="Clear remaining items"
+										onClick={() => onRemainingItemsChange(0)}
+										edge="end"
+										size="small"
+									>
+										<Close />
+									</IconButton>
+								</InputAdornment>
+							),
+						},
+					}}
+				/>
+				{manualForecastResult?.whenForecasts &&
+					manualForecastResult.whenForecasts.length > 0 && (
+						<Grid container sx={{ mt: 2 }}>
+							<Grid size={{ xs: 12 }}>
+								<ForecastInfoList
+									title={`When will ${manualForecastResult.remainingItems} ${workItemsTerm} be done?`}
+									forecasts={manualForecastResult.whenForecasts}
 								/>
 							</Grid>
-						)}
+						</Grid>
+					)}
+			</Grid>
+			<Grid size={{ xs: 12, md: 6 }}>
+				<Typography variant="subtitle2" gutterBottom>
+					How Many?
+				</Typography>
+				<LocalizationProvider dateAdapter={AdapterDayjs}>
+					<DatePicker
+						label="Target Date"
+						value={targetDate}
+						onChange={(value) =>
+							onTargetDateChange(value as dayjs.Dayjs | null)
+						}
+						minDate={dayjs()}
+						format={getLocaleDateFormat()}
+						sx={{ width: "100%" }}
+						slotProps={{
+							field: { clearable: true },
+						}}
+					/>
+				</LocalizationProvider>
+				{manualForecastResult?.howManyForecasts &&
+					manualForecastResult.howManyForecasts.length > 0 && (
+						<Grid container sx={{ mt: 2 }}>
+							<Grid size={{ xs: 12 }}>
+								<ForecastInfoList
+									title={`How Many ${workItemsTerm} will you get done till ${manualForecastResult.targetDate.toLocaleDateString()}?`}
+									forecasts={manualForecastResult.howManyForecasts}
+								/>
+							</Grid>
+						</Grid>
+					)}
+			</Grid>
+			{manualForecastResult &&
+				manualForecastResult.likelihood > 0 &&
+				manualForecastResult.whenForecasts &&
+				manualForecastResult.whenForecasts.length > 0 &&
+				manualForecastResult.howManyForecasts &&
+				manualForecastResult.howManyForecasts.length > 0 && (
+					<Grid size={{ xs: 12 }}>
+						<ForecastLikelihood
+							remainingItems={manualForecastResult.remainingItems}
+							targetDate={manualForecastResult.targetDate}
+							likelihood={manualForecastResult.likelihood}
+						/>
 					</Grid>
 				)}
+			<Grid
+				size={{ xs: 12 }}
+				sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}
+			>
+				<ActionButton
+					onClickHandler={onRunManualForecast}
+					buttonText="Forecast"
+					disabled={!remainingItems && !targetDate}
+				/>
 			</Grid>
 		</Grid>
 	);

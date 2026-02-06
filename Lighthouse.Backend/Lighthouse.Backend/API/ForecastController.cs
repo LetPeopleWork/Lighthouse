@@ -12,22 +12,14 @@ namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ForecastController : ControllerBase
+    public class ForecastController(
+        IForecastUpdater forecastUpdater,
+        IForecastService forecastService,
+        IRepository<Team> teamRepository,
+        ITeamMetricsService teamMetricsService)
+        : ControllerBase
     {
-        private readonly IForecastUpdater forecastUpdater;
-        private readonly IForecastService forecastService;
-        private readonly IRepository<Team> teamRepository;
-        private readonly ITeamMetricsService teamMetricsService;
-
-        public ForecastController(IForecastUpdater forecastUpdater, IForecastService forecastService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
-        {
-            this.forecastUpdater = forecastUpdater;
-            this.forecastService = forecastService;
-            this.teamRepository = teamRepository;
-            this.teamMetricsService = teamMetricsService;
-        }
-
-        [HttpPost("update/{id}")]
+        [HttpPost("update/{id:int}")]
         public ActionResult UpdateForecastForProject(int id)
         {
             forecastUpdater.TriggerUpdate(id);
@@ -35,7 +27,7 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        [HttpPost("update-portfolios-for-team/{teamId}")]
+        [HttpPost("update-portfolios-for-team/{teamId:int}")]
         public ActionResult<bool> UpdateForecastsForTeamPortfolios(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
@@ -49,7 +41,7 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        [HttpPost("itemprediction/{id}")]
+        [HttpPost("itemprediction/{id:int}")]
         [LicenseGuard(RequirePremium = true)]
         public ActionResult<ManualForecastDto> RunItemCreationPrediction(int id, [FromBody] ItemCreationPredictionInputDto input)
         {
@@ -65,14 +57,14 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        [HttpPost("manual/{id}")]
+        [HttpPost("manual/{id:int}")]
         public async Task<ActionResult<ManualForecastDto>> RunManualForecastAsync(int id, [FromBody] ManualForecastInputDto input)
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
                 var manualForecast = new ManualForecastDto(input.RemainingItems, input.TargetDate);
 
-                var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
+                var timeToTargetDate = input.TargetDate.HasValue ? (input.TargetDate.Value - DateTime.Today).Days : 0;
 
                 if (input.RemainingItems > 0)
                 {
@@ -86,19 +78,21 @@ namespace Lighthouse.Backend.API
                     }
                 }
 
-                if (timeToTargetDate > 0)
+                if (timeToTargetDate <= 0)
                 {
-                    var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
-                    var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
-
-                    manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
+                    return manualForecast;
                 }
+
+                var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
+                var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
+
+                manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
 
                 return manualForecast;
             });
         }
 
-        [HttpPost("backtest/{teamId}")]
+        [HttpPost("backtest/{teamId:int}")]
         public ActionResult<BacktestResultDto> RunBacktest(int teamId, [FromBody] BacktestInputDto input)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
@@ -149,11 +143,9 @@ namespace Lighthouse.Backend.API
 
         public class ManualForecastInputDto
         {
-            [JsonRequired]
             public int RemainingItems { get; set; }
 
-            [JsonRequired]
-            public DateTime TargetDate { get; set; }
+            public DateTime? TargetDate { get; set; }
         }
 
         public class ItemCreationPredictionInputDto

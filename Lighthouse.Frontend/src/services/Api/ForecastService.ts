@@ -14,7 +14,7 @@ export interface IForecastService {
 	runManualForecast(
 		teamId: number,
 		remainingItems: number,
-		targetDate: Date,
+		targetDate: Date | null,
 	): Promise<ManualForecast>;
 
 	runItemPrediction(
@@ -40,7 +40,7 @@ export class ForecastService
 	async runManualForecast(
 		teamId: number,
 		remainingItems: number,
-		targetDate: Date,
+		targetDate: Date | null,
 	): Promise<ManualForecast> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IManualForecast>(

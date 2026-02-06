@@ -55,8 +55,20 @@ vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 }));
 
 vi.mock("./ManualForecaster", () => ({
-	default: ({ onRunManualForecast }: { onRunManualForecast: () => void }) => (
+	default: ({
+		remainingItems,
+		targetDate,
+		onRunManualForecast,
+	}: {
+		remainingItems: number;
+		targetDate: unknown;
+		onRunManualForecast: () => void;
+	}) => (
 		<div data-testid="manual-forecaster">
+			<span data-testid="remaining-items-value">{remainingItems}</span>
+			<span data-testid="target-date-value">
+				{targetDate ? "has-date" : "null"}
+			</span>
 			<button type="button" onClick={onRunManualForecast}>
 				Run Forecast
 			</button>
@@ -198,6 +210,56 @@ describe("TeamForecastView component", () => {
 		expect(screen.getByTestId("new-item-forecaster")).toBeInTheDocument();
 	});
 
+	describe("ManualForecaster with optional parameters", () => {
+		it("should initialize with remainingItems=10 and targetDate=null", () => {
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			expect(screen.getByTestId("remaining-items-value")).toHaveTextContent(
+				"10",
+			);
+			expect(screen.getByTestId("target-date-value")).toHaveTextContent("null");
+		});
+
+		it("should call forecast service with remainingItems and null when only remainingItems provided", async () => {
+			mockForecastService.runManualForecast.mockResolvedValueOnce({
+				remainingItems: 10,
+				targetDate: new Date(),
+				whenForecasts: [],
+				howManyForecasts: [],
+				likelihood: 0,
+			});
+
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			const runForecastButton = screen.getByText("Run Forecast");
+			fireEvent.click(runForecastButton);
+
+			await waitFor(() => {
+				expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
+					mockTeam.id,
+					10,
+					null,
+				);
+			});
+		});
+
+		it("should handle errors when forecast fails with partial parameters", async () => {
+			const errorMessage = "Forecast failed with partial parameters";
+			mockForecastService.runManualForecast.mockRejectedValueOnce(
+				new Error(errorMessage),
+			);
+
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
+
+			const runForecastButton = screen.getByText("Run Forecast");
+			fireEvent.click(runForecastButton);
+
+			await waitFor(() => {
+				expect(screen.getByText(errorMessage)).toBeInTheDocument();
+			});
+		});
+	});
+
 	it("should display error snackbar when forecast service fails", async () => {
 		const errorMessage = "Forecast service failed";
 		mockForecastService.runManualForecast.mockRejectedValueOnce(
@@ -216,7 +278,7 @@ describe("TeamForecastView component", () => {
 		expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
 			mockTeam.id,
 			10, // default remainingItems
-			expect.any(Date), // targetDate
+			null, // initial targetDate is null
 		);
 	});
 
