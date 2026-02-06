@@ -44,7 +44,7 @@ const TeamDetail: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
-	const { canUpdateTeamData, canUpdateTeamSettings, maxTeamsWithoutPremium } =
+	const { canUpdateTeamData, maxTeamsWithoutPremium } =
 		useLicenseRestrictions();
 
 	let subscribedToUpdates = false;
@@ -226,7 +226,7 @@ const TeamDetail: React.FC = () => {
 														}
 													}, true);
 												}}
-												disabled={!canUpdateTeamSettings}
+												disabled={!canUpdateTeamData}
 											/>
 											<SleQuickSetting
 												probability={team.serviceLevelExpectationProbability}
@@ -238,7 +238,7 @@ const TeamDetail: React.FC = () => {
 														settings.serviceLevelExpectationRange = range;
 													});
 												}}
-												disabled={!canUpdateTeamSettings}
+												disabled={!canUpdateTeamData}
 											/>
 											<SystemWipQuickSetting
 												wipLimit={team.systemWIPLimit}
@@ -247,7 +247,7 @@ const TeamDetail: React.FC = () => {
 														settings.systemWIPLimit = systemWip;
 													});
 												}}
-												disabled={!canUpdateTeamSettings}
+												disabled={!canUpdateTeamData}
 											/>
 											<FeatureWipQuickSetting
 												featureWip={team.featureWip}
@@ -256,7 +256,7 @@ const TeamDetail: React.FC = () => {
 														settings.featureWIP = featureWip;
 													}, true);
 												}}
-												disabled={!canUpdateTeamSettings}
+												disabled={!canUpdateTeamData}
 											/>
 										</QuickSettingsBar>
 									}
@@ -338,7 +338,7 @@ const TeamDetail: React.FC = () => {
 										validateTeamSettings={(settings) =>
 											teamService.validateTeamSettings(settings)
 										}
-										disableSave={!canUpdateTeamSettings}
+										disableSave={!canUpdateTeamData}
 										saveTooltip={`Free users can only update team settings for up to ${maxTeamsWithoutPremium} teams`}
 									/>
 								)}

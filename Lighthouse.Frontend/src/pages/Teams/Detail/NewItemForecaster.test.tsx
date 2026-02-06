@@ -222,23 +222,6 @@ describe("NewItemForecaster", () => {
 			// and that the clear function could be called (though we can't easily simulate the exact change)
 			expect(mockOnClearForecastResult).not.toThrow;
 		});
-
-		it("disables date inputs when component is disabled", () => {
-			const props = {
-				...defaultProps,
-				isDisabled: true,
-			};
-
-			renderWithLocalizationProvider(<NewItemForecaster {...props} />);
-
-			// Check for disabled state in the date picker containers
-			const datePickerGroups = screen.getAllByRole("group");
-
-			// Verify date pickers are disabled by checking for disabled class or attribute
-			datePickerGroups.forEach((group) => {
-				expect(group).toHaveClass(/Mui-disabled/);
-			});
-		});
 	});
 
 	describe("Work Item Type Management", () => {

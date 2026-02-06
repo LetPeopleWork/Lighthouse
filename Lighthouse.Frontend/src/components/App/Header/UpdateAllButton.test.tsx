@@ -19,7 +19,7 @@ describe("UpdateAllButton", () => {
 		vi.clearAllMocks();
 
 		mockUseLicenseRestrictions.mockReturnValue({
-			canUpdateAllTeamsAndPortfolios: true,
+			licenseStatus: { canUsePremiumFeatures: true },
 		} as ReturnType<typeof useLicenseRestrictions>);
 
 		mockUseUpdateAll.mockReturnValue({
@@ -78,7 +78,7 @@ describe("UpdateAllButton", () => {
 
 	it("should be disabled when user cannot update all teams and portfolios", () => {
 		mockUseLicenseRestrictions.mockReturnValue({
-			canUpdateAllTeamsAndPortfolios: false,
+			licenseStatus: { canUsePremiumFeatures: false },
 		} as ReturnType<typeof useLicenseRestrictions>);
 
 		render(<UpdateAllButton />);
@@ -115,7 +115,7 @@ describe("UpdateAllButton", () => {
 
 	it("should not call handleUpdateAll when disabled", async () => {
 		mockUseLicenseRestrictions.mockReturnValue({
-			canUpdateAllTeamsAndPortfolios: false,
+			licenseStatus: { canUsePremiumFeatures: false },
 		} as ReturnType<typeof useLicenseRestrictions>);
 
 		render(<UpdateAllButton />);

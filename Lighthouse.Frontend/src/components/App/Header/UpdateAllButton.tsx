@@ -17,13 +17,14 @@ interface UpdateAllButtonProps {
 const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 	const theme = useTheme();
 	const { handleUpdateAll, globalUpdateStatus } = useUpdateAll();
-	const { canUpdateAllTeamsAndPortfolios } = useLicenseRestrictions();
+	const { licenseStatus } = useLicenseRestrictions();
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
 	const isDisabled =
-		!canUpdateAllTeamsAndPortfolios || globalUpdateStatus.hasActiveUpdates;
+		!licenseStatus?.canUsePremiumFeatures ||
+		globalUpdateStatus.hasActiveUpdates;
 
 	const handleClick = async () => {
 		if (!isDisabled) {
@@ -73,7 +74,7 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 
 	return (
 		<LicenseTooltip
-			canUseFeature={canUpdateAllTeamsAndPortfolios}
+			canUseFeature={licenseStatus?.canUsePremiumFeatures ?? false}
 			defaultTooltip={`Update All ${teamsTerm} and ${portfoliosTerm}`}
 			premiumExtraInfo="Please obtain a premium license to update all teams and portfolios."
 		>

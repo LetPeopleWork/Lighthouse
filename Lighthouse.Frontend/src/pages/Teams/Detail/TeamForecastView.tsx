@@ -4,7 +4,6 @@ import type React from "react";
 import { useContext, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
@@ -34,7 +33,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	const { forecastService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
-	const { canUseNewItemForecaster } = useLicenseRestrictions();
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -67,7 +65,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		targetDate: Date,
 		workItemTypes: string[],
 	) => {
-		if (!team?.id || !canUseNewItemForecaster) {
+		if (!team?.id) {
 			return;
 		}
 
@@ -133,8 +131,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					onRunNewItemForecast={onRunNewItemForecast}
 					onClearForecastResult={() => setNewItemForecastResult(null)}
 					workItemTypes={team.workItemTypes || []}
-					isDisabled={!canUseNewItemForecaster}
-					disabledMessage="Please obtain a premium license to use new item forecasting."
 				/>
 			</InputGroup>
 			<InputGroup title="Forecast Backtesting">

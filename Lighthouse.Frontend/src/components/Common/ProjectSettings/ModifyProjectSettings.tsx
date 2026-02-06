@@ -54,7 +54,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
-	const { canUpdatePortfolioSettings, maxPortfoliosWithoutPremium } =
+	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
 		useLicenseRestrictions();
 
 	const handleTeamSelectionChange = (teamIds: number[]) => {
@@ -474,7 +474,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								onSave={handleSave}
 								inputsValid={formValid}
 								validationFailedMessage={`Validation failed - either the connection failed, the Query is invalid, or no ${featuresTerm} could be found. Check the logs for additional details."`}
-								disableSave={!canUpdatePortfolioSettings}
+								disableSave={!canUpdatePortfolioData}
 								saveTooltip={`Free users can only update portfolio data for up to ${maxPortfoliosWithoutPremium} portfolio`}
 							/>
 						</Grid>

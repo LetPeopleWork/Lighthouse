@@ -5,16 +5,9 @@ import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 interface LicenseRestrictions {
 	canCreateTeam: boolean;
 	canUpdateTeamData: boolean;
-	canUpdateTeamSettings: boolean;
 	canCreatePortfolio: boolean;
 	canUpdatePortfolioData: boolean;
-	canUpdatePortfolioSettings: boolean;
-	canUseNewItemForecaster: boolean;
-	canUpdateAllTeamsAndPortfolios: boolean;
-	teamCount: number;
-	portfolioCount: number;
 	licenseStatus: ILicenseStatus | null;
-	isLoading: boolean;
 	maxTeamsWithoutPremium: number;
 	maxPortfoliosWithoutPremium: number;
 }
@@ -28,7 +21,6 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 	);
 	const [teamCount, setTeamCount] = useState<number>(0);
 	const [portfolioCount, setPortfolioCount] = useState<number>(0);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
 
 	const { licensingService, teamService, portfolioService } =
 		useContext(ApiServiceContext);
@@ -36,7 +28,6 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				setIsLoading(true);
 				const [license, teams, portfolios] = await Promise.all([
 					licensingService.getLicenseStatus(),
 					teamService.getTeams(),
@@ -54,8 +45,6 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 				setLicenseStatus(null);
 				setTeamCount(0);
 				setPortfolioCount(0);
-			} finally {
-				setIsLoading(false);
 			}
 		};
 
@@ -67,16 +56,9 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		return {
 			canCreateTeam: true,
 			canUpdateTeamData: true,
-			canUpdateTeamSettings: true,
 			canCreatePortfolio: true,
 			canUpdatePortfolioData: true,
-			canUpdatePortfolioSettings: true,
-			canUseNewItemForecaster: true,
-			canUpdateAllTeamsAndPortfolios: true,
-			teamCount,
-			portfolioCount: portfolioCount,
 			licenseStatus,
-			isLoading,
 			maxTeamsWithoutPremium: MAX_TEAMS_WITHOUT_PREMIUM,
 			maxPortfoliosWithoutPremium: MAX_PORTFOLIOS_WITHOUT_PREMIUM,
 		};
@@ -87,16 +69,9 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		return {
 			canCreateTeam: true,
 			canUpdateTeamData: true,
-			canUpdateTeamSettings: true,
 			canCreatePortfolio: true,
 			canUpdatePortfolioData: true,
-			canUpdatePortfolioSettings: true,
-			canUseNewItemForecaster: true,
-			canUpdateAllTeamsAndPortfolios: true,
-			teamCount,
-			portfolioCount: portfolioCount,
 			licenseStatus,
-			isLoading,
 			maxTeamsWithoutPremium: MAX_TEAMS_WITHOUT_PREMIUM,
 			maxPortfoliosWithoutPremium: MAX_PORTFOLIOS_WITHOUT_PREMIUM,
 		};
@@ -105,27 +80,17 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 	// Non-premium users have team and portfolio count restrictions
 	const canCreateTeam = teamCount < MAX_TEAMS_WITHOUT_PREMIUM;
 	const canUpdateTeamData = teamCount <= MAX_TEAMS_WITHOUT_PREMIUM;
-	const canUpdateTeamSettings = teamCount <= MAX_TEAMS_WITHOUT_PREMIUM;
 
 	const canCreatePortfolio = portfolioCount < MAX_PORTFOLIOS_WITHOUT_PREMIUM;
 	const canUpdatePortfolioData =
-		portfolioCount <= MAX_PORTFOLIOS_WITHOUT_PREMIUM;
-	const canUpdatePortfolioSettings =
 		portfolioCount <= MAX_PORTFOLIOS_WITHOUT_PREMIUM;
 
 	return {
 		canCreateTeam,
 		canUpdateTeamData,
-		canUpdateTeamSettings,
 		canCreatePortfolio: canCreatePortfolio,
 		canUpdatePortfolioData: canUpdatePortfolioData,
-		canUpdatePortfolioSettings: canUpdatePortfolioSettings,
-		canUseNewItemForecaster: false,
-		canUpdateAllTeamsAndPortfolios: false,
-		teamCount,
-		portfolioCount: portfolioCount,
 		licenseStatus,
-		isLoading,
 		maxTeamsWithoutPremium: MAX_TEAMS_WITHOUT_PREMIUM,
 		maxPortfoliosWithoutPremium: MAX_PORTFOLIOS_WITHOUT_PREMIUM,
 	};

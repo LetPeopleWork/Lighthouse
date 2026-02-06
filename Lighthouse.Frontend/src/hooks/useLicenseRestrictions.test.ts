@@ -79,8 +79,6 @@ describe("useLicenseRestrictions", () => {
 		});
 	};
 
-	const neverResolvePromise = () => new Promise(() => {});
-
 	describe("Premium License Users", () => {
 		it("should allow all operations for premium users with any number of teams and Portfolios", async () => {
 			const premiumLicense: ILicenseStatus = {
@@ -99,19 +97,13 @@ describe("useLicenseRestrictions", () => {
 			const { result } = renderHook(() => useLicenseRestrictions());
 
 			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
+				expect(result.current.licenseStatus).not.toBe(null);
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canUpdateTeamSettings).toBe(true);
 			expect(result.current.canCreatePortfolio).toBe(true);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
-			expect(result.current.canUpdatePortfolioSettings).toBe(true);
-			expect(result.current.canUseNewItemForecaster).toBe(true);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(true);
-			expect(result.current.teamCount).toBe(5);
-			expect(result.current.portfolioCount).toBe(2);
 			expect(result.current.licenseStatus).toEqual(premiumLicense);
 		});
 	});
@@ -136,21 +128,14 @@ describe("useLicenseRestrictions", () => {
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
-
 			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
+				expect(result.current.licenseStatus).not.toBe(null);
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canUpdateTeamSettings).toBe(true);
 			expect(result.current.canCreatePortfolio).toBe(true);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
-			expect(result.current.canUpdatePortfolioSettings).toBe(true);
-			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
-			expect(result.current.teamCount).toBe(2);
-			expect(result.current.portfolioCount).toBe(0);
 		});
 
 		it("should block team creation when user has exactly 3 teams", async () => {
@@ -160,21 +145,14 @@ describe("useLicenseRestrictions", () => {
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
-
 			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
+				expect(result.current.licenseStatus).not.toBe(null);
 			});
 
 			expect(result.current.canCreateTeam).toBe(false);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canUpdateTeamSettings).toBe(true);
 			expect(result.current.canCreatePortfolio).toBe(true);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
-			expect(result.current.canUpdatePortfolioSettings).toBe(true);
-			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
-			expect(result.current.teamCount).toBe(3);
-			expect(result.current.portfolioCount).toBe(0);
 		});
 
 		it("should block all team operations when user has more than 3 teams", async () => {
@@ -184,21 +162,14 @@ describe("useLicenseRestrictions", () => {
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
-
 			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
+				expect(result.current.licenseStatus).not.toBe(null);
 			});
 
 			expect(result.current.canCreateTeam).toBe(false);
 			expect(result.current.canUpdateTeamData).toBe(false);
-			expect(result.current.canUpdateTeamSettings).toBe(false);
 			expect(result.current.canCreatePortfolio).toBe(true);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
-			expect(result.current.canUpdatePortfolioSettings).toBe(true);
-			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
-			expect(result.current.teamCount).toBe(5);
-			expect(result.current.portfolioCount).toBe(0);
 		});
 
 		it("should block Portfolio creation when user has exactly 1 Portfolio", async () => {
@@ -208,21 +179,14 @@ describe("useLicenseRestrictions", () => {
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
-
 			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
+				expect(result.current.licenseStatus).not.toBe(null);
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canUpdateTeamSettings).toBe(true);
 			expect(result.current.canCreatePortfolio).toBe(false);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
-			expect(result.current.canUpdatePortfolioSettings).toBe(true);
-			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
-			expect(result.current.teamCount).toBe(0);
-			expect(result.current.portfolioCount).toBe(1);
 		});
 
 		it("should block all portfolio operations when user has more than 1 portfolios", async () => {
@@ -232,21 +196,14 @@ describe("useLicenseRestrictions", () => {
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
-
 			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
+				expect(result.current.licenseStatus).not.toBe(null);
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canUpdateTeamSettings).toBe(true);
 			expect(result.current.canCreatePortfolio).toBe(false);
 			expect(result.current.canUpdatePortfolioData).toBe(false);
-			expect(result.current.canUpdatePortfolioSettings).toBe(false);
-			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
-			expect(result.current.teamCount).toBe(0);
-			expect(result.current.portfolioCount).toBe(2);
 		});
 
 		it("should handle API errors gracefully", async () => {
@@ -260,55 +217,11 @@ describe("useLicenseRestrictions", () => {
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
-			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
-			});
-
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canUpdateTeamSettings).toBe(true);
 			expect(result.current.canCreatePortfolio).toBe(true);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
-			expect(result.current.canUpdatePortfolioSettings).toBe(true);
-			expect(result.current.canUseNewItemForecaster).toBe(true);
-			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(true);
-			expect(result.current.teamCount).toBe(0);
-			expect(result.current.portfolioCount).toBe(0);
 			expect(result.current.licenseStatus).toBe(null);
-		});
-	});
-
-	describe("Loading State", () => {
-		it("should start with loading state true", () => {
-			mockLicensingService.getLicenseStatus.mockImplementation(
-				neverResolvePromise,
-			);
-			mockTeamService.getTeams.mockImplementation(neverResolvePromise);
-			mockPortfolioService.getPortfolios.mockImplementation(
-				neverResolvePromise,
-			);
-
-			const { result } = renderHook(() => useLicenseRestrictions());
-
-			expect(result.current.isLoading).toBe(true);
-		});
-
-		it("should set loading to false after data is fetched", async () => {
-			const license: ILicenseStatus = {
-				hasLicense: false,
-				isValid: false,
-				canUsePremiumFeatures: false,
-			};
-
-			mockLicensingService.getLicenseStatus.mockResolvedValue(license);
-			mockTeamService.getTeams.mockResolvedValue([]);
-			mockPortfolioService.getPortfolios.mockResolvedValue([]);
-
-			const { result } = renderHook(() => useLicenseRestrictions());
-
-			await waitFor(() => {
-				expect(result.current.isLoading).toBe(false);
-			});
 		});
 	});
 });

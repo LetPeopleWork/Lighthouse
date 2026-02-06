@@ -21,10 +21,10 @@ const EditTeamPage: React.FC = () => {
 	const { teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 
-	const { canCreateTeam, canUpdateTeamSettings, maxTeamsWithoutPremium } =
+	const { canCreateTeam, canUpdateTeamData, maxTeamsWithoutPremium } =
 		useLicenseRestrictions();
 
-	const canSave = isNewTeam ? canCreateTeam : canUpdateTeamSettings;
+	const canSave = isNewTeam ? canCreateTeam : canUpdateTeamData;
 
 	const premiumToolTip = isNewTeam
 		? `Free users can only create up to ${maxTeamsWithoutPremium} teams.`

@@ -6,7 +6,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
 import { useState } from "react";
-import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ItemListManager from "../../../components/Common/ItemListManager/ItemListManager";
@@ -24,8 +23,6 @@ interface NewItemForecasterProps {
 	) => Promise<void>;
 	onClearForecastResult?: () => void;
 	workItemTypes: string[];
-	isDisabled?: boolean;
-	disabledMessage?: string;
 }
 
 const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
@@ -33,8 +30,6 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 	onRunNewItemForecast,
 	onClearForecastResult,
 	workItemTypes,
-	isDisabled = false,
-	disabledMessage,
 }) => {
 	const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(
 		dayjs().subtract(30, "day"),
@@ -118,126 +113,114 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 
 	return (
 		<Grid container spacing={3}>
-			<LicenseTooltip
-				canUseFeature={!isDisabled}
-				defaultTooltip=""
-				premiumExtraInfo={disabledMessage}
-			>
-				<Grid size={{ xs: 12 }}>
-					<Grid container spacing={3}>
-						{/* Historical Data Section */}
-						<Grid size={{ xs: 6 }}>
-							<Typography variant="h6" gutterBottom>
-								Historical Data
-							</Typography>
-							<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-								Historical data that should be used for the forecast
-							</Typography>
-							<Grid container spacing={2}>
-								<Grid size={{ xs: 12 }}>
-									<LocalizationProvider dateAdapter={AdapterDayjs}>
-										<DatePicker
-											label="From"
-											value={startDate}
-											onChange={handleStartDateChange}
-											maxDate={endDate || undefined}
-											format={getLocaleDateFormat()}
-											sx={{ width: "100%" }}
-											disabled={isDisabled}
-										/>
-									</LocalizationProvider>
-								</Grid>
-								<Grid size={{ xs: 12 }}>
-									<LocalizationProvider dateAdapter={AdapterDayjs}>
-										<DatePicker
-											label="To"
-											value={endDate}
-											onChange={handleEndDateChange}
-											minDate={startDate || undefined}
-											maxDate={targetDate || undefined}
-											format={getLocaleDateFormat()}
-											sx={{ width: "100%" }}
-											disabled={isDisabled}
-										/>
-									</LocalizationProvider>
-								</Grid>
+			<Grid size={{ xs: 12 }}>
+				<Grid container spacing={3}>
+					{/* Historical Data Section */}
+					<Grid size={{ xs: 6 }}>
+						<Typography variant="h6" gutterBottom>
+							Historical Data
+						</Typography>
+						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+							Historical data that should be used for the forecast
+						</Typography>
+						<Grid container spacing={2}>
+							<Grid size={{ xs: 12 }}>
+								<LocalizationProvider dateAdapter={AdapterDayjs}>
+									<DatePicker
+										label="From"
+										value={startDate}
+										onChange={handleStartDateChange}
+										maxDate={endDate || undefined}
+										format={getLocaleDateFormat()}
+										sx={{ width: "100%" }}
+									/>
+								</LocalizationProvider>
 							</Grid>
-
-							{/* Target Date Section */}
-							<Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-								Target Date
-							</Typography>
-							<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-								How far into the future do you want to forecast
-							</Typography>
-							<LocalizationProvider dateAdapter={AdapterDayjs}>
-								<DatePicker
-									label="Target Date"
-									value={targetDate}
-									onChange={handleTargetDateChange}
-									minDate={endDate || dayjs()}
-									format={getLocaleDateFormat()}
-									sx={{ width: "100%" }}
-									disabled={isDisabled}
-								/>
-							</LocalizationProvider>
+							<Grid size={{ xs: 12 }}>
+								<LocalizationProvider dateAdapter={AdapterDayjs}>
+									<DatePicker
+										label="To"
+										value={endDate}
+										onChange={handleEndDateChange}
+										minDate={startDate || undefined}
+										maxDate={targetDate || undefined}
+										format={getLocaleDateFormat()}
+										sx={{ width: "100%" }}
+									/>
+								</LocalizationProvider>
+							</Grid>
 						</Grid>
 
-						{/* Work Item Types Section */}
-						<Grid size={{ xs: 6 }}>
-							<Typography variant="h6" gutterBottom>
-								Work Item Types
-							</Typography>
-							<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-								Select the work item types to include in the forecast. At least
-								one type must be selected.
-							</Typography>
-							<ItemListManager
-								title="Work Item Type"
-								items={selectedWorkItemTypes}
-								onAddItem={handleAddWorkItemType}
-								onRemoveItem={handleRemoveWorkItemType}
-								suggestions={workItemTypes}
-								isLoading={false}
+						{/* Target Date Section */}
+						<Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+							Target Date
+						</Typography>
+						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+							How far into the future do you want to forecast
+						</Typography>
+						<LocalizationProvider dateAdapter={AdapterDayjs}>
+							<DatePicker
+								label="Target Date"
+								value={targetDate}
+								onChange={handleTargetDateChange}
+								minDate={endDate || dayjs()}
+								format={getLocaleDateFormat()}
+								sx={{ width: "100%" }}
 							/>
+						</LocalizationProvider>
+					</Grid>
 
-							{/* Forecast Button - Fixed Position */}
-							<Grid container sx={{ mt: 3, mb: 2 }}>
-								<Grid
-									size={{ xs: 12 }}
-									sx={{ display: "flex", justifyContent: "flex-end" }}
-								>
-									<ActionButton
-										onClickHandler={handleRunForecast}
-										buttonText="Forecast"
-										disabled={
-											isDisabled ||
-											!startDate ||
-											!endDate ||
-											!targetDate ||
-											selectedWorkItemTypes.length === 0
-										}
-									/>
-								</Grid>
+					{/* Work Item Types Section */}
+					<Grid size={{ xs: 6 }}>
+						<Typography variant="h6" gutterBottom>
+							Work Item Types
+						</Typography>
+						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+							Select the work item types to include in the forecast. At least
+							one type must be selected.
+						</Typography>
+						<ItemListManager
+							title="Work Item Type"
+							items={selectedWorkItemTypes}
+							onAddItem={handleAddWorkItemType}
+							onRemoveItem={handleRemoveWorkItemType}
+							suggestions={workItemTypes}
+							isLoading={false}
+						/>
+
+						{/* Forecast Button - Fixed Position */}
+						<Grid container sx={{ mt: 3, mb: 2 }}>
+							<Grid
+								size={{ xs: 12 }}
+								sx={{ display: "flex", justifyContent: "flex-end" }}
+							>
+								<ActionButton
+									onClickHandler={handleRunForecast}
+									buttonText="Forecast"
+									disabled={
+										!startDate ||
+										!endDate ||
+										!targetDate ||
+										selectedWorkItemTypes.length === 0
+									}
+								/>
 							</Grid>
+						</Grid>
 
-							{/* Forecast Results */}
-							<Grid container spacing={2}>
-								<Grid size={{ xs: 12 }}>
-									{newItemForecastResult &&
-										!isDisabled &&
-										selectedWorkItemTypes.length > 0 && (
-											<ForecastInfoList
-												title={`How many ${selectedWorkItemTypes.join(", ")} ${workItemsTerm} will you add until ${targetDate?.format("YYYY-MM-DD")}?`}
-												forecasts={newItemForecastResult.howManyForecasts}
-											/>
-										)}
-								</Grid>
+						{/* Forecast Results */}
+						<Grid container spacing={2}>
+							<Grid size={{ xs: 12 }}>
+								{newItemForecastResult && selectedWorkItemTypes.length > 0 && (
+									<ForecastInfoList
+										title={`How many ${selectedWorkItemTypes.join(", ")} ${workItemsTerm} will you add until ${targetDate?.format("YYYY-MM-DD")}?`}
+										forecasts={newItemForecastResult.howManyForecasts}
+									/>
+								)}
 							</Grid>
 						</Grid>
 					</Grid>
 				</Grid>
-			</LicenseTooltip>
+			</Grid>
 		</Grid>
 	);
 };
