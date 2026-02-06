@@ -9,10 +9,12 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import { useLicenseRestrictions } from "../hooks/useLicenseRestrictions";
 import type { ITerminology } from "../models/Terminology";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { useTerminology } from "../services/TerminologyContext";
 import FeedbackDialog from "./App/Header/FeedbackDialog";
+import { LicenseTooltip } from "./App/License/LicenseToolTip";
 
 interface TerminologyConfigurationProps {
 	onClose?: () => void;
@@ -23,12 +25,15 @@ export const TerminologyConfiguration: React.FC<
 > = ({ onClose }) => {
 	const { terminologyService } = useContext(ApiServiceContext);
 	const { refetchTerminology } = useTerminology();
+	const { licenseStatus } = useLicenseRestrictions();
 	const [terminology, setTerminology] = useState<ITerminology[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
 	const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+
+	const isPremium = licenseStatus?.canUsePremiumFeatures ?? true;
 
 	const loadTerminology = useCallback(async () => {
 		try {
@@ -106,6 +111,15 @@ export const TerminologyConfiguration: React.FC<
 				</Alert>
 			)}
 
+			{!isPremium && (
+				<Alert severity="warning" sx={{ mb: 2 }}>
+					<Typography variant="body2">
+						Customizing terminology requires a premium license. You can view the
+						current terminology below, but editing is restricted to premium
+						users.
+					</Typography>
+				</Alert>
+			)}
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
 				Use your own terminology so it fits your use case. The naming will be
 				used throughout the application - changes will be applied immediately
@@ -126,6 +140,12 @@ export const TerminologyConfiguration: React.FC<
 							placeholder={term.description}
 							fullWidth
 							variant="outlined"
+							disabled={!isPremium}
+							slotProps={{
+								input: {
+									readOnly: !isPremium,
+								},
+							}}
 						/>
 					</Box>
 				))}
@@ -162,21 +182,29 @@ export const TerminologyConfiguration: React.FC<
 						Cancel
 					</Button>
 				)}
-				<Button
-					onClick={handleSave}
-					disabled={saving}
-					variant="contained"
-					color="primary"
+				<LicenseTooltip
+					canUseFeature={isPremium}
+					defaultTooltip=""
+					premiumExtraInfo="Please obtain a premium license to customize terminology."
 				>
-					{saving ? (
-						<>
-							<CircularProgress size={20} sx={{ mr: 1 }} />
-							Saving...
-						</>
-					) : (
-						"Save Configuration"
-					)}
-				</Button>
+					<span>
+						<Button
+							onClick={handleSave}
+							disabled={saving || !isPremium}
+							variant="contained"
+							color="primary"
+						>
+							{saving ? (
+								<>
+									<CircularProgress size={20} sx={{ mr: 1 }} />
+									Saving...
+								</>
+							) : (
+								"Save Configuration"
+							)}
+						</Button>
+					</span>
+				</LicenseTooltip>
 			</Box>
 		</Box>
 	);

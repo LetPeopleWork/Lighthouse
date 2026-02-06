@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,14 +7,9 @@ namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TerminologyController : ControllerBase
+    public class TerminologyController(ITerminologyService terminologyService) : ControllerBase
     {
-        private readonly ITerminologyService terminologyService;
-
-        public TerminologyController(ITerminologyService terminologyService)
-        {
-            this.terminologyService = terminologyService ?? throw new ArgumentNullException(nameof(terminologyService));
-        }
+        private readonly ITerminologyService terminologyService = terminologyService ?? throw new ArgumentNullException(nameof(terminologyService));
 
         [HttpGet("all")]
         public ActionResult<IEnumerable<TerminologyEntry>> GetAllTerminology()
@@ -23,13 +19,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut]
+        [LicenseGuard(RequirePremium =  true)]
         public async Task<ActionResult> UpdateTerminology([FromBody] IEnumerable<TerminologyEntry> terminology)
         {
-            if (terminology == null)
-            {
-                return BadRequest("Terminology data cannot be null");
-            }
-
             await terminologyService.UpdateTerminology(terminology);
             return Ok();
         }
