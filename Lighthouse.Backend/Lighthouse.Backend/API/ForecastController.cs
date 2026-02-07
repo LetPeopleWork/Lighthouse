@@ -42,7 +42,6 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("itemprediction/{id:int}")]
-        [LicenseGuard(RequirePremium = true)]
         public ActionResult<ManualForecastDto> RunItemCreationPrediction(int id, [FromBody] ItemCreationPredictionInputDto input)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
