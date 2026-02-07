@@ -7,34 +7,51 @@ nav_order: 95
 
 # Lighthouse vNext
 
-## Rule-Based Delivery Feature Assignment (Premium)
-You can now define deliveries by **rules** instead of manually selecting features. This allows delivery contents to stay accurate as your portfolio changes, significantly reducing the time spent maintaining deliveries.
+## Rule-Based Delivery Feature Assignment [**Premium Only**]
+You can now automatically assign Features to Deliveries using rule-based expressions instead of manual selection. Define rules using available fields (Type, State, Tags, any Additional Field) with operators like equals, contains, or not equals to create dynamic feature selection.
 
-### How it works
-- Switch between **Manual** and **Rule-Based** selection modes when creating or editing a delivery
-- Build rule sets using conditions that filter features by:
-  - Feature fields: Name, Type, State, Reference ID, Parent Reference ID, Tags
-  - Any additional fields defined on your work tracking system connection
-- Rules are combined with **AND** logic - all conditions must match
-- Operators include: **Equals**, **Not Equals**, and **Contains** (case-insensitive)
-- Validate your rules to preview which features match before saving
-- The **Save button is disabled** until rules are validated, ensuring you always see which features will be assigned
+![Rule Based Delivery](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/delivery_rule_based.png)
 
-### Improved edit experience
-- When editing an existing rule-based delivery, the dialog now **opens directly in Rule-Based mode** with your saved rules pre-loaded
-- You must re-validate your rules before saving, ensuring any rule changes are intentional
+When creating or editing a Delivery, switch to the expression editor to define your rules. Multiple rules are combined with AND logic. The system validates your expression and shows matching features before saving. Deliveries using expressions automatically update when the Portfolio refreshes, adding new matching features and removing those that no longer match.
 
-### Matched features preview
-After validating rules, matched features are displayed in a **read-only grid** that reuses the same familiar interface as manual feature selection.
+This feature is ideal for teams using FixVersions (Jira), Area Paths (Azure DevOps), or custom tags to organize their release planning.
 
-### Automatic updates
-When you refresh your portfolio, rule-based deliveries are automatically re-evaluated. New matching features are added and non-matching features are removed, keeping your delivery contents in sync with your portfolio.
+## MCS Backtesting Improvements
+The Forecast Backtesting visualization has been enhanced with improved clarity and usability:
+- Actual completion date now shown as a clear vertical line instead of an additional bar
+- Added the average forecast as a comparison value
+- Improved layout and spacing for the Predictability Score display
+- Fixed issue where backtesting time frames were incorrectly calculated
 
-### Requirements
-- Rule-based deliveries are a **Premium** feature
-- Manual selection remains available for all users
+These changes make it easier to evaluate forecast accuracy and understand the relationship between predictions and actual outcomes.
 
----
+## Changes to Premium Features
+- **Terminology Configuration** is now a premium feature
+- **New Work Item Prediction** (forecasting arrival of work) is now available in the Community Edition
+
+## Feature Management Improvements
+Managing features across teams and portfolios has been streamlined:
+- Completed features are now hidden by default to reduce clutter
+- Feature state is now visible in the feature list instead of just showing the State Category as an icon
+- Removed the "Updated on" column to simplify the view
+- Feature tabs are disabled on Teams that aren't part of any Portfolio
+
+## Other Improvements
+- Manual forecasts now allow you to specify either a target date OR remaining items, not requiring both
+- System startup now displays `localhost` URLs instead of `[::]` for better clarity
+- Fixed issue where Total Work Item Age widget didn't match the Work Item Age Run Chart
+- Fixed compatibility issue loading configurations from older Lighthouse versions
+- Resolved Jira custom field handling issue that could cause connection problems in case you had duplicate names of custom fields (thanks Jira...)
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+- [Ben Richards](https://www.linkedin.com/in/iambenrichards/)
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.30.10...v26.2.7.xx)
 
 # Lighthouse v26.1.30.10
 

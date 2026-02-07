@@ -73,6 +73,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Myriam Greger**](https://www.linkedin.com/in/myriam-greger/)
 - [**Chandan Bala**](https://www.linkedin.com/in/chandan-bala-7251b9242/)
 - [**Marat Kiniabulatov**](https://www.linkedin.com/in/maratkinyabulatov/)
+- [**Ben Richards**](https://www.linkedin.com/in/iambenrichards/)  
 ---
 
 ## Supporting Companies

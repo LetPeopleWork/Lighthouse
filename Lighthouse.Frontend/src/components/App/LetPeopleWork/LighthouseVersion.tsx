@@ -381,7 +381,7 @@ const LighthouseVersion: React.FC = () => {
 					</Typography>
 
 					<Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
-						© 2025 LetPeopleWork GmbH. Licensed under MIT License.
+						© 2026 LetPeopleWork GmbH. Licensed under MIT License.
 					</Typography>
 				</DialogContent>
 				<DialogActions>
