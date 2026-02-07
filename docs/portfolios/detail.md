@@ -106,16 +106,73 @@ Deliveries are named milestone dates for a portfolio that group a set of Feature
 
 ## Add a Delivery
 
-To add a delivery to a portfolio, open the portfolio and click the *Add Delivery* button. This opens the delivery form where you define the delivery name, target date and the features that should be part of that delivery.
+To add a delivery to a portfolio, open the portfolio and click the *Add Delivery* button. This opens the delivery form where you define the delivery name, target date and how features should be selected.
 
 ![Add Delivery](../assets/features/delivery_add.png)
 
+Lighthouse offers two ways to select features for a delivery:
+
+- **Manual Selection**: Manually pick specific features to include in the delivery. Features remain fixed unless you manually update them.
+- **Rule-Based Selection**: Define rules that automatically match features based on criteria from your work tracking system (Premium feature only).
+
+### Manual Delivery Creation
+
 - Click **Add Delivery** to open the form.
+- Ensure **Manual** mode is selected.
 - Fill the required fields: **Name** (a clear title for the delivery), **Date** (target delivery date), and **Features** (select one or more features to include).
 - Click **Save** to create the delivery. The new delivery will appear in the Deliveries list and can be edited or removed later.
 
 {: .note}
 You can select multiple features for a single delivery — Lighthouse will show delivery-level progress and the forecasted completion of each included feature.
+
+### Rule-Based Delivery Creation
+
+Rule-based deliveries provide a flexible, automated approach to feature selection by defining expressions that match features from your work tracking system. This creates a single source of truth — features are automatically included or excluded based on data already present in your work tracking system (such as tags, fixVersion in Jira, Area Paths in Azure DevOps, or custom fields).
+
+![Rule-Based Delivery](../assets/features/delivery_rule_based.png)
+
+{: .note}
+Rule-based deliveries are a **Premium feature** and require a Premium license.
+
+#### Creating a Rule-Based Delivery
+
+- Click **Add Delivery** to open the form.
+- Switch to **Rule-Based** mode by clicking the Rule-Based tab.
+- Fill in **Name** and **Date** as usual.
+- Click **Add Rule** to create your first rule condition.
+- For each rule, select:
+  - **Field**: Choose from available fields like Type, State, Tags, Name, ReferenceId, ParentReferenceId, or any custom fields defined in your work tracking system connection.
+  - **Operator**: Choose how to match the field value:
+    - **equals**: Exact match
+    - **notequals**: Does not match
+    - **contains**: Partial match (useful for tags or text fields)
+  - **Value**: Enter the value to match against (e.g., "Release-2.0" for tags, "Epic" for type).
+
+{: .note}
+You can add multiple rules (up to 20). All rules must be satisfied for a feature to be included (rules are combined with AND logic).
+
+#### Validating Rules
+
+Before saving, click **Validate Rules** to preview which features match your expression. The matched features will be displayed below the rule builder. At least one feature must match for the rules to be valid.
+
+{: .recommendation}
+> Use rule-based deliveries when your work tracking system already organizes features by delivery using fields like:
+> - **Jira**: fixVersion, labels, or custom fields
+> - **Azure DevOps**: Area Paths, tags, or iteration paths  
+> - **Custom Fields**: Any additional fields you've configured in Lighthouse
+>
+> This approach maintains your work tracking system as the single source of truth and automatically keeps deliveries up-to-date.
+
+#### Automatic Updates
+
+Rule-based deliveries are automatically updated every time the portfolio is refreshed (either manually or during periodic updates). The rules are re-evaluated against current portfolio features:
+- New features matching the rules are automatically added
+- Features no longer matching the rules are automatically removed
+
+This ensures your delivery always reflects the current state of your work tracking system without manual maintenance.
+
+{: .important}
+It's a binary choice — each delivery uses either Manual or Rule-Based selection. You cannot mix both approaches for a single delivery, though you can switch between modes when editing a delivery.
 
 ## After it's added
 
@@ -123,7 +180,11 @@ After creating a delivery it appears in the Deliveries view with its name, targe
 
 ![Delivery Details](../assets/features/delivery_detail.png)
 
-The delivery row shows the delivery name and date, an expand control to reveal included features and their statuses, and action buttons to edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
+The delivery row shows the delivery name and date, along with a visual indicator showing whether it's a manual or rule-based delivery:
+- **Manual deliveries** show a touch icon, indicating features are fixed
+- **Rule-based deliveries** show an automatic mode icon, indicating features update automatically based on rules
+
+The row also includes an expand control to reveal included features and their statuses, and action buttons to edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
 
 {: .recommendation}
 > Use deliveries to communicate release milestones and to group related features — this makes it easier to discuss release risk and progress with stakeholders.
