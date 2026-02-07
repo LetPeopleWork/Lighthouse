@@ -108,8 +108,8 @@ export class ModifyDeliveriesDialog {
 			.click();
 	}
 
-	async setRuleValue(_ruleIndex: number, value: string): Promise<void> {
-		const valueInput = this.page.getByRole("textbox", { name: "Value" });
+	async setRuleValue(ruleIndex: number, value: string): Promise<void> {
+		const valueInput = this.page.getByRole("textbox", { name: "Value" }).nth(ruleIndex);
 		await valueInput.fill(value);
 	}
 

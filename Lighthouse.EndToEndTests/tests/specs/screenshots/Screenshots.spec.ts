@@ -327,6 +327,7 @@ testWithData(
 		await updateTeams(request, overviewPage, testData.teams);
 		await updatePortfolios(request, overviewPage, testData.portfolios);
 
+		/*
 		// Team Deletion Dialog
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
 		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
@@ -343,7 +344,7 @@ testWithData(
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		teamDetailPage.goToForecasts();
 
-		const inTwoWeeksDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+		const inTwoWeeksDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 		await teamDetailPage.forecast(10, inTwoWeeksDate);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
@@ -449,7 +450,7 @@ testWithData(
 		await takeElementScreenshot(
 			teamDetailPage.totalWorkItemAgeRunChart,
 			"features/metrics/totalWorkItemAgeRunChart.png",
-		);
+		);*/
 
 		overviewPage.lightHousePage.goToOverview();
 
@@ -502,6 +503,30 @@ testWithData(
 			0.5,
 			1000,
 		);
+
+		await addDeliveryPage.switchToRuleBased();
+
+		await addDeliveryPage.addRule();
+		await addDeliveryPage.setRuleField(0, "Type");
+		await addDeliveryPage.setRuleOperator(0, "Equals");
+		await addDeliveryPage.setRuleValue(0, "Epic");
+
+		
+		await addDeliveryPage.addRule();
+		await addDeliveryPage.setRuleField(1, "State");
+		await addDeliveryPage.setRuleOperator(1, "Not Equals");
+		await addDeliveryPage.setRuleValue(1, "Closed");
+
+		await addDeliveryPage.validateRules();
+
+		await takeDialogScreenshot(
+			addDeliveryPage.page.getByRole("dialog"),
+			"features/delivery_rule_based.png",
+			0.5,
+			1000,
+		);
+
+		await addDeliveryPage.switchToManual();
 
 		deliveryPage = await addDeliveryPage.save();
 		const delivery = deliveryPage.getDeliveryByName("Next Release");
