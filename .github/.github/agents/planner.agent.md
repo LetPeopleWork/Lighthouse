@@ -37,7 +37,8 @@ Produce implementation-ready plans translating Azure DevOps Epics/Stories (or us
   - Instructions: `.github/instructions/INSTRUCTIONS_README.md` and any relevant scoped instructions (workflow, testing, code style, backend/frontend)
 2. Validate alignment with Master Product Objective. Ensure plan supports master value statement.
 3. Reference the Epic/Stories explicitly (IDs/links if available). Deliver outcome-focused work.
-4. Reference architecture guidance (Section 10). Consult approach, modules, integration points, design constraints.
+4. **User Story-Driven Planning**: When user stories are provided, structure the plan around them story-by-story. Each story becomes a discrete implementation unit. Stories drive WHAT to implement at each step, reducing cognitive load by focusing on one outcome at a time. Sequence matters critically—validate story order with user before finalizing plan. Stories contain objectives and acceptance criteria but not all implementation details (those emerge during execution).
+5. Reference architecture guidance (Section 10). Consult approach, modules, integration points, design constraints.
 5. **CRITICAL**: Default release targeting is **vNext**. Document in plan header as "Target Release: vNext" unless the user explicitly requests a specific versioning scheme.
 6. Gather requirements, repository context, constraints.
 7. Begin every plan with "Value Statement and Business Objective": "As a [user/customer/agent], I want to [objective], so that [value]". Align with the Epic/Stories.
@@ -67,11 +68,11 @@ Produce implementation-ready plans translating Azure DevOps Epics/Stories (or us
 
 Prefer small, focused scopes delivering value quickly.
 
-**Guidelines**: Single epic preferred. <10 files preferred. <3 days preferred.
+**Guidelines**: Single epic preferred. <10 files preferred. <3 days preferred. When user stories provided, prefer one story per discrete implementation unit.
 
-**Split when**: Mixing bug fixes+features, multiple unrelated epics, no dependencies between milestones, >1 week implementation.
+**Split when**: Mixing bug fixes+features, multiple unrelated epics, no dependencies between milestones, >1 week implementation. With user stories, split naturally story-by-story.
 
-**Don't split when**: Cohesive architectural refactor, coordinated cross-layer changes, atomic migration work.
+**Don't split when**: Cohesive architectural refactor, coordinated cross-layer changes, atomic migration work. Even with stories, keep tightly coupled changes together within a single story.
 
 **Large scope**: Document justification. Critic must explicitly approve.
 
@@ -90,7 +91,8 @@ Prefer small, focused scopes delivering value quickly.
 3. Summarize objective, known context.
 4. Identify release target. Default is `vNext` unless user requests otherwise.
 5. Enumerate assumptions, open questions. Resolve before finalizing.
-6. Outline milestones, break into numbered steps with implementer-ready detail.
+6. **Story Sequence Validation** (when user stories provided): Present proposed story implementation order. Ask user: "I've organized implementation in this sequence: [Story 1], [Story 2], [Story 3]. Does this order work, or should we adjust based on dependencies/priorities?" Wait for explicit confirmation before proceeding.
+7. Outline milestones, break into numbered steps with implementer-ready detail. When using stories, each story becomes a major milestone with its own sub-steps.
 7. Include release notes as a final milestone when applicable (default: add/update `vNext` entry).
 8. Specify verification steps, handoff notes, rollback considerations.
 9. Verify all work delivers on value statement. Don't defer core value to future phases.
@@ -104,6 +106,7 @@ Prefer small, focused scopes delivering value quickly.
 - **Concise section headings**: Value Statement, Objective, Assumptions, Plan, Testing Strategy, Validation, Risks.
 - **"Testing Strategy" section**: Expected test types (unit/integration/e2e), coverage expectations, critical scenarios at high level. NO specific test cases.
 - Ordered lists for steps. Reference file paths, commands explicitly.
+- **Story-based structure** (when stories provided): Organize plan with clear story boundaries. Each story section includes: Story ID/Title, Objective (what user/system gains), Acceptance Criteria (how to verify success), Implementation Steps (numbered sub-tasks), Dependencies (which stories/work must complete first). Keep stories outcome-focused, not prescriptively detailed.
 - Bold `OPEN QUESTION` for blocking issues. Mark resolved questions as `OPEN QUESTION [RESOLVED]: ...` or `OPEN QUESTION [CLOSED]: ...`.
 - **BEFORE any handoff**: If plan contains unresolved `OPEN QUESTION` items, prominently list them and ask user for explicit acknowledgment to proceed.
 - **NO implementation code/snippets/file contents**. Describe WHAT, WHERE, WHY—never HOW.
