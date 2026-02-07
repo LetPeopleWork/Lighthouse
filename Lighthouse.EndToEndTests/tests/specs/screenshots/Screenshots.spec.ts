@@ -343,7 +343,8 @@ testWithData(
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		teamDetailPage.goToForecasts();
 
-		await teamDetailPage.forecast(10);
+		const inTwoWeeksDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+		await teamDetailPage.forecast(10, inTwoWeeksDate);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
 		await teamDetailPage.forecastNewWorkItems(["Bug"]);
