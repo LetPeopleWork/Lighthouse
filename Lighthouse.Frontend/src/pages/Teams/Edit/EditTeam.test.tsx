@@ -127,6 +127,8 @@ describe("EditTeam", () => {
 			systemWIPLimit: 6,
 			blockedStates: [],
 			blockedTags: [],
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		});
 		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems.mockResolvedValue(
 			[],
@@ -161,6 +163,8 @@ describe("EditTeam", () => {
 			blockedStates: [],
 			blockedTags: ["Blocked"],
 			doneItemsCutoffDays: 0,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		};
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
@@ -199,6 +203,8 @@ describe("EditTeam", () => {
 			blockedStates: [],
 			blockedTags: [],
 			doneItemsCutoffDays: 0,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		};
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);

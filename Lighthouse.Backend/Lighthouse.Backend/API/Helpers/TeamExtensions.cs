@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.API.Helpers
                 team.DoneItemsCutoffDays = teamSetting.DoneItemsCutoffDays;
                 team.Tags = teamSetting.Tags;
                 team.SystemWIPLimit = teamSetting.SystemWIPLimit;
+                team.ProcessBehaviourChartBaselineStartDate = teamSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;
+                team.ProcessBehaviourChartBaselineEndDate = teamSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;
 
                 SyncStates(team, teamSetting);
                 SyncServiceLevelExpectation(team, teamSetting);

@@ -2,6 +2,7 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -60,6 +61,16 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(CheckTeamConstraint = true, TeamLimitOverride = 2)]
         public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting)
         {
+            var baselineValidation = BaselineValidationService.Validate(
+                teamSetting.ProcessBehaviourChartBaselineStartDate,
+                teamSetting.ProcessBehaviourChartBaselineEndDate,
+                teamSetting.DoneItemsCutoffDays);
+
+            if (!baselineValidation.IsValid)
+            {
+                return BadRequest(baselineValidation.ErrorMessage);
+            }
+
             teamSetting.Id = 0;
             var newTeam = new Team();
             newTeam.SyncTeamWithTeamSettings(teamSetting);

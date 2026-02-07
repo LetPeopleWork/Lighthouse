@@ -3,6 +3,7 @@ import {
 	Box,
 	Checkbox,
 	FormControlLabel,
+	Switch,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -16,7 +17,10 @@ import ItemListManager from "../ItemListManager/ItemListManager";
 
 interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
 	settings: T;
-	onSettingsChange: (key: keyof T, value: number | boolean | string[]) => void;
+	onSettingsChange: (
+		key: keyof T,
+		value: number | boolean | string[] | Date | null,
+	) => void;
 	showFeatureWip?: boolean;
 }
 
@@ -29,6 +33,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
+	const [isBaselineEnabled, setIsBaselineEnabled] = useState(false);
 	const [probabilityInputValue, setProbabilityInputValue] =
 		useState<string>("");
 
@@ -58,6 +63,10 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		setIsBlockedItemsEnabled(
 			(settings.blockedTags && settings.blockedTags.length > 0) ||
 				(settings.blockedStates && settings.blockedStates.length > 0),
+		);
+		setIsBaselineEnabled(
+			settings.processBehaviourChartBaselineStartDate != null &&
+				settings.processBehaviourChartBaselineEndDate != null,
 		);
 
 		// Initialize probability input value with current setting
@@ -195,6 +204,31 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			// Clear both blocked tags and blocked states when disabled
 			onSettingsChange("blockedTags" as keyof T, []);
 			onSettingsChange("blockedStates" as keyof T, []);
+		}
+	};
+
+	const handleBaselineToggle = (enabled: boolean) => {
+		setIsBaselineEnabled(enabled);
+
+		if (enabled) {
+			const endDate = new Date();
+			endDate.setDate(endDate.getDate() - 1);
+			const startDate = new Date();
+			startDate.setDate(startDate.getDate() - 15);
+			onSettingsChange(
+				"processBehaviourChartBaselineStartDate" as keyof T,
+				startDate,
+			);
+			onSettingsChange(
+				"processBehaviourChartBaselineEndDate" as keyof T,
+				endDate,
+			);
+		} else {
+			onSettingsChange(
+				"processBehaviourChartBaselineStartDate" as keyof T,
+				null,
+			);
+			onSettingsChange("processBehaviourChartBaselineEndDate" as keyof T, null);
 		}
 	};
 
@@ -412,6 +446,76 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							/>
 						</Grid>
 					</InputGroup>
+				</Grid>
+			)}
+
+			{/* Process Behaviour Chart Baseline Configuration */}
+			<Grid size={{ xs: 12 }}>
+				<FormControlLabel
+					control={
+						<Switch
+							checked={isBaselineEnabled}
+							onChange={(e) => handleBaselineToggle(e.target.checked)}
+						/>
+					}
+					label="Enable Process Behaviour Chart Baseline"
+				/>
+			</Grid>
+			{isBaselineEnabled && (
+				<Grid size={{ xs: 12 }}>
+					<TextField
+						label="Baseline Start Date"
+						type="date"
+						sx={{ mr: 2 }}
+						slotProps={{
+							inputLabel: { shrink: true },
+							htmlInput: {
+								max: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
+									.toISOString()
+									.slice(0, 10),
+							},
+						}}
+						defaultValue={
+							settings.processBehaviourChartBaselineStartDate
+								?.toISOString()
+								.slice(0, 10) ?? ""
+						}
+						onChange={(e) =>
+							onSettingsChange(
+								"processBehaviourChartBaselineStartDate" as keyof T,
+								new Date(e.target.value),
+							)
+						}
+					/>
+					<TextField
+						label="Baseline End Date"
+						type="date"
+						slotProps={{
+							inputLabel: { shrink: true },
+							htmlInput: {
+								min: settings.processBehaviourChartBaselineStartDate
+									? new Date(
+											settings.processBehaviourChartBaselineStartDate.getTime() +
+												14 * 24 * 60 * 60 * 1000,
+										)
+											.toISOString()
+											.slice(0, 10)
+									: undefined,
+								max: new Date().toISOString().slice(0, 10),
+							},
+						}}
+						defaultValue={
+							settings.processBehaviourChartBaselineEndDate
+								?.toISOString()
+								.slice(0, 10) ?? ""
+						}
+						onChange={(e) =>
+							onSettingsChange(
+								"processBehaviourChartBaselineEndDate" as keyof T,
+								new Date(e.target.value),
+							)
+						}
+					/>
 				</Grid>
 			)}
 		</InputGroup>

@@ -52,7 +52,19 @@ export class PortfolioService
 			const response = await this.apiService.get<IPortfolioSettings>(
 				`/portfolios/${id}/settings`,
 			);
-			return response.data;
+			const settings = response.data;
+
+			settings.processBehaviourChartBaselineStartDate = response.data
+				.processBehaviourChartBaselineStartDate
+				? new Date(response.data.processBehaviourChartBaselineStartDate)
+				: null;
+
+			settings.processBehaviourChartBaselineEndDate = response.data
+				.processBehaviourChartBaselineEndDate
+				? new Date(response.data.processBehaviourChartBaselineEndDate)
+				: null;
+
+			return settings;
 		});
 	}
 

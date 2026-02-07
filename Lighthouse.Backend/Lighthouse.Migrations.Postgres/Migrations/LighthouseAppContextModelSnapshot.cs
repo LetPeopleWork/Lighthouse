@@ -407,6 +407,12 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("PercentileHistoryInDays")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("ProcessBehaviourChartBaselineEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ProcessBehaviourChartBaselineStartDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("integer");
 
@@ -492,6 +498,12 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int?>("ParentOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ProcessBehaviourChartBaselineEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ProcessBehaviourChartBaselineStartDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("integer");

@@ -2,6 +2,7 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -53,6 +54,16 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(CheckPortfolioConstraint = true, PortfolioLimitOverride = 0)]
         public async Task<ActionResult<PortfolioSettingDto>> CreatePortfolio(PortfolioSettingDto portfolioSetting)
         {
+            var baselineValidation = BaselineValidationService.Validate(
+                portfolioSetting.ProcessBehaviourChartBaselineStartDate,
+                portfolioSetting.ProcessBehaviourChartBaselineEndDate,
+                portfolioSetting.DoneItemsCutoffDays);
+
+            if (!baselineValidation.IsValid)
+            {
+                return BadRequest(baselineValidation.ErrorMessage);
+            }
+
             portfolioSetting.Id = 0;
 
             var newPortfolio = new Portfolio();

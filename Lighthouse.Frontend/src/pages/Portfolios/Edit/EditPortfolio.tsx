@@ -70,6 +70,8 @@ const EditPortfolio: React.FC = () => {
 			blockedStates: [],
 			blockedTags: [],
 			doneItemsCutoffDays: 365,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		};
 
 		return defaultPortfolioSettings;

@@ -15,4 +15,6 @@ export interface IBaseSettings {
 	blockedStates: string[];
 	blockedTags: string[];
 	doneItemsCutoffDays: number;
+	processBehaviourChartBaselineStartDate: Date | null;
+	processBehaviourChartBaselineEndDate: Date | null;
 }

@@ -178,6 +178,8 @@ describe("ConfigurationService", () => {
 					blockedStates: ["Waiting for Peter"],
 					blockedTags: ["Blocked", "On Hold"],
 					doneItemsCutoffDays: 0,
+					processBehaviourChartBaselineStartDate: null,
+					processBehaviourChartBaselineEndDate: null,
 				},
 			],
 			projects: [
@@ -206,6 +208,8 @@ describe("ConfigurationService", () => {
 					blockedStates: ["Waiting for Peter"],
 					blockedTags: ["Blocked", "On Hold"],
 					doneItemsCutoffDays: 0,
+					processBehaviourChartBaselineStartDate: null,
+					processBehaviourChartBaselineEndDate: null,
 				},
 			],
 		};

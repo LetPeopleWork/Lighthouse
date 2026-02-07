@@ -53,6 +53,16 @@ export class TeamService extends BaseApiService implements ITeamService {
 				response.data.throughputHistoryEndDate,
 			);
 
+			teamSettings.processBehaviourChartBaselineStartDate = response.data
+				.processBehaviourChartBaselineStartDate
+				? new Date(response.data.processBehaviourChartBaselineStartDate)
+				: null;
+
+			teamSettings.processBehaviourChartBaselineEndDate = response.data
+				.processBehaviourChartBaselineEndDate
+				? new Date(response.data.processBehaviourChartBaselineEndDate)
+				: null;
+
 			return teamSettings;
 		});
 	}

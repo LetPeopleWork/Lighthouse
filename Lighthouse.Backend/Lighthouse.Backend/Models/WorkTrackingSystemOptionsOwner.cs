@@ -40,6 +40,10 @@ namespace Lighthouse.Backend.Models
 
         public abstract int DoneItemsCutoffDays { get; set; }
 
+        public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
+
+        public DateTime? ProcessBehaviourChartBaselineEndDate { get; set; }
+
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
 
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }

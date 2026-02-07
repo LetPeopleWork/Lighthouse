@@ -232,6 +232,68 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task CreateTeam_BaselineShorterThan14Days_ReturnsBadRequest()
+        {
+            var newTeamSettings = new TeamSettingDto
+            {
+                Name = "New Team",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreateTeam(newTeamSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task CreateTeam_BaselineEndInFuture_ReturnsBadRequest()
+        {
+            var newTeamSettings = new TeamSettingDto
+            {
+                Name = "New Team",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreateTeam(newTeamSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task CreateTeam_ValidBaseline_ReturnsOk()
+        {
+            var newTeamSettings = new TeamSettingDto
+            {
+                Name = "New Team",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                DoneItemsCutoffDays = 180,
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreateTeam(newTeamSettings);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        [Test]
         [TestCase(true)]
         [TestCase(false)]
         public async Task CreateTeam_GivenExistingTeamWithCSVWorkTrackingConnector_CanOnlyAddWithPremiumLicense(bool hasPremium)

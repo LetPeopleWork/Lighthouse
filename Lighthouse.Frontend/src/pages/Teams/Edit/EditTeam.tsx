@@ -91,6 +91,8 @@ const EditTeamPage: React.FC = () => {
 			blockedStates: [],
 			blockedTags: [],
 			doneItemsCutoffDays: 180,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		};
 
 		return defaultTeamSettings;

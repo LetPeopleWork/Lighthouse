@@ -27,6 +27,8 @@ namespace Lighthouse.Backend.API.DTO
             BlockedStates = workTrackingSystemOptionsOwner.BlockedStates;
             BlockedTags = workTrackingSystemOptionsOwner.BlockedTags;
             ParentOverrideAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId;
+            ProcessBehaviourChartBaselineStartDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineStartDate;
+            ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
         }
 
         [JsonRequired]
@@ -63,5 +65,9 @@ namespace Lighthouse.Backend.API.DTO
         public int SystemWIPLimit { get; set; }
 
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
+
+        public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
+
+        public DateTime? ProcessBehaviourChartBaselineEndDate { get; set; }
     }
 }

@@ -228,6 +228,79 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdatePortfolio_BaselineShorterThan14Days_ReturnsBadRequest()
+        {
+            var updatedPortfolioSettings = new PortfolioSettingDto
+            {
+                Id = 132,
+                Name = "Updated Portfolio",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdatePortfolio(132, updatedPortfolioSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_BaselineEndInFuture_ReturnsBadRequest()
+        {
+            var updatedPortfolioSettings = new PortfolioSettingDto
+            {
+                Id = 132,
+                Name = "Updated Portfolio",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdatePortfolio(132, updatedPortfolioSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_ValidBaseline_ReturnsOk()
+        {
+            var existingPortfolio = new Portfolio { Id = 132 };
+            var existingTeam = new Team { Id = 42, Name = "My Team" };
+
+            portfolioRepoMock.Setup(x => x.GetById(132)).Returns(existingPortfolio);
+            teamRepoMock.Setup(x => x.GetById(42)).Returns(existingTeam);
+
+            var updatedPortfolioSettings = new PortfolioSettingDto
+            {
+                Id = 132,
+                Name = "Updated Portfolio",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                DoneItemsCutoffDays = 180,
+                WorkTrackingSystemConnectionId = 1,
+                InvolvedTeams = [new EntityReferenceDto(existingTeam.Id, existingTeam.Name)],
+                OwningTeam = new EntityReferenceDto(existingTeam.Id, existingTeam.Name),
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdatePortfolio(132, updatedPortfolioSettings);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        [Test]
         public async Task UpdatePortfolio_PortfolioNotFound_ReturnsNotFoundResultAsync()
         {
             var subject = CreateSubject();

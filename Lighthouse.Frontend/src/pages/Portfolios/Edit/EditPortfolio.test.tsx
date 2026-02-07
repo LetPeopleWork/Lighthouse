@@ -154,6 +154,8 @@ describe("EditPortfolio", () => {
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 30,
 			doneItemsCutoffDays: 0,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		});
 		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems.mockResolvedValue(
 			[],
@@ -187,6 +189,8 @@ describe("EditPortfolio", () => {
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 30,
 			doneItemsCutoffDays: 0,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
@@ -229,6 +233,8 @@ describe("EditPortfolio", () => {
 			defaultWorkItemPercentile: 85,
 			percentileHistoryInDays: 30,
 			doneItemsCutoffDays: 0,
+			processBehaviourChartBaselineStartDate: null,
+			processBehaviourChartBaselineEndDate: null,
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(

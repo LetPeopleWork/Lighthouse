@@ -44,6 +44,8 @@ export function createMockTeamSettings(): ITeamSettings {
 		blockedStates: [],
 		blockedTags: [],
 		doneItemsCutoffDays: 180,
+		processBehaviourChartBaselineStartDate: null,
+		processBehaviourChartBaselineEndDate: null,
 	};
 }
 
@@ -73,6 +75,8 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		blockedStates: [],
 		blockedTags: [],
 		doneItemsCutoffDays: 365,
+		processBehaviourChartBaselineStartDate: null,
+		processBehaviourChartBaselineEndDate: null,
 	};
 }
 

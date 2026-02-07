@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -58,6 +59,16 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(CheckTeamConstraint = true)]
         public async Task<ActionResult<TeamSettingDto>> UpdateTeam(int teamId, TeamSettingDto teamSetting)
         {
+            var baselineValidation = BaselineValidationService.Validate(
+                teamSetting.ProcessBehaviourChartBaselineStartDate,
+                teamSetting.ProcessBehaviourChartBaselineEndDate,
+                teamSetting.DoneItemsCutoffDays);
+
+            if (!baselineValidation.IsValid)
+            {
+                return BadRequest(baselineValidation.ErrorMessage);
+            }
+
             return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
             {
                 if (team.WorkItemRelatedSettingsChanged(teamSetting))

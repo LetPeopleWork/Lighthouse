@@ -133,6 +133,68 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task CreatePortfolio_BaselineShorterThan14Days_ReturnsBadRequest()
+        {
+            var newPortfolioSetting = new PortfolioSettingDto
+            {
+                Name = "New Portfolio",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreatePortfolio(newPortfolioSetting);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task CreatePortfolio_BaselineEndInFuture_ReturnsBadRequest()
+        {
+            var newPortfolioSetting = new PortfolioSettingDto
+            {
+                Name = "New Portfolio",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreatePortfolio(newPortfolioSetting);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task CreatePortfolio_ValidBaseline_ReturnsOk()
+        {
+            var newPortfolioSetting = new PortfolioSettingDto
+            {
+                Name = "New Portfolio",
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                DoneItemsCutoffDays = 180,
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreatePortfolio(newPortfolioSetting);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        [Test]
         [TestCase(true)]
         [TestCase(false)]
         public async Task ValidatePortfolioSettings_GivenPortfolioSettings_ReturnsResultFromWorkItemService(bool expectedResult)

@@ -396,6 +396,74 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task UpdateTeam_BaselineShorterThan14Days_ReturnsBadRequest()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task UpdateTeam_BaselineEndInFuture_ReturnsBadRequest()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public async Task UpdateTeam_ValidBaseline_ReturnsOk()
+        {
+            var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
         private static Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };

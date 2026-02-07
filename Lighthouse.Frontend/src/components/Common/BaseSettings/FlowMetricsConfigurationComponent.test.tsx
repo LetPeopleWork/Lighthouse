@@ -957,6 +957,146 @@ describe("FlowMetricsConfigurationComponent", () => {
 		});
 	});
 
+	describe("Process Behaviour Chart Baseline Configuration", () => {
+		it("renders baseline toggle as unchecked when baseline dates are null", () => {
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: null,
+				processBehaviourChartBaselineEndDate: null,
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			const toggle = screen.getByLabelText(
+				"Enable Process Behaviour Chart Baseline",
+			);
+			expect(toggle).not.toBeChecked();
+		});
+
+		it("renders baseline toggle as checked when baseline dates are set", () => {
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: new Date("2025-01-01"),
+				processBehaviourChartBaselineEndDate: new Date("2025-01-20"),
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			const toggle = screen.getByLabelText(
+				"Enable Process Behaviour Chart Baseline",
+			);
+			expect(toggle).toBeChecked();
+		});
+
+		it("sets baseline dates when toggle is turned on", async () => {
+			const user = userEvent.setup();
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: null,
+				processBehaviourChartBaselineEndDate: null,
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			await user.click(
+				screen.getByLabelText("Enable Process Behaviour Chart Baseline"),
+			);
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"processBehaviourChartBaselineStartDate",
+				expect.any(Date),
+			);
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"processBehaviourChartBaselineEndDate",
+				expect.any(Date),
+			);
+		});
+
+		it("clears baseline dates when toggle is turned off", async () => {
+			const user = userEvent.setup();
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: new Date("2025-01-01"),
+				processBehaviourChartBaselineEndDate: new Date("2025-01-20"),
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			await user.click(
+				screen.getByLabelText("Enable Process Behaviour Chart Baseline"),
+			);
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"processBehaviourChartBaselineStartDate",
+				null,
+			);
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"processBehaviourChartBaselineEndDate",
+				null,
+			);
+		});
+
+		it("shows date pickers when baseline is enabled", () => {
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: new Date("2025-01-01"),
+				processBehaviourChartBaselineEndDate: new Date("2025-01-20"),
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			expect(screen.getByLabelText("Baseline Start Date")).toBeInTheDocument();
+			expect(screen.getByLabelText("Baseline End Date")).toBeInTheDocument();
+		});
+
+		it("does not show date pickers when baseline is disabled", () => {
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: null,
+				processBehaviourChartBaselineEndDate: null,
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			expect(
+				screen.queryByLabelText("Baseline Start Date"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByLabelText("Baseline End Date"),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	describe("Input Validation", () => {
 		it("should properly handle non-numeric input for systemWIPLimit", async () => {
 			const user = userEvent.setup();
