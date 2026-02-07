@@ -125,6 +125,7 @@ You select a historical time period by specifying:
 
 Lighthouse will then run a Monte Carlo Simulation as if it were the start date, using only the historical data available at that time. The result shows:
 - The forecasted "How Many" percentiles (50%, 70%, 85%, 95%)
+- The forecast if we would have used the average value
 - The **actual** throughput that occurred during that period
 
 This lets you see whether the actual outcome fell within the forecasted range, giving you confidence in future forecasts.
