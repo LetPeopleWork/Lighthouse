@@ -5,7 +5,7 @@ nav_order: 95
 ---
 
 
-# Lighthouse vNext
+# Lighthouse v26.2.7.2
 
 ## Rule-Based Delivery Feature Assignment [**Premium Only**]
 You can now automatically assign Features to Deliveries using rule-based expressions instead of manual selection. Define rules using available fields (Type, State, Tags, any Additional Field) with operators like equals, contains, or not equals to create dynamic feature selection.
@@ -51,7 +51,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
 - [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.30.10...v26.2.7.xx)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.1.30.10...v26.2.7.2)
 
 # Lighthouse v26.1.30.10
 
