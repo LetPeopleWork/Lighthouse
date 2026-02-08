@@ -316,11 +316,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = XmRCalculator.Calculate(baseline, display);
 
-            // All 5 points in the qualifying window should be marked
-            for (var i = 0; i < display.Length; i++)
-            {
-                AssertHasCause(result.SpecialCauseClassifications, i, SpecialCauseType.ModerateShift);
-            }
+            // Only points ABOVE average should be marked
+            // Index 3 (value 50 = average) should NOT be marked
+            AssertHasCause(result.SpecialCauseClassifications, 0, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 1, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateShift);
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 3, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 4, SpecialCauseType.ModerateShift);
         }
 
         [Test]
@@ -369,11 +371,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = XmRCalculator.Calculate(baseline, display);
 
-            // All 3 points in the qualifying window should be marked
-            for (var i = 0; i < display.Length; i++)
-            {
-                AssertHasCause(result.SpecialCauseClassifications, i, SpecialCauseType.ModerateChange);
-            }
+            // Only points ABOVE average should be marked (indices 0 and 2)
+            // Index 1 (value 50 = average) should NOT be marked
+            AssertHasCause(result.SpecialCauseClassifications, 0, SpecialCauseType.ModerateChange);
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 1, SpecialCauseType.ModerateChange);
+            AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateChange);
         }
 
         [Test]
@@ -514,41 +516,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void Calculate_Rule2_AllPointsInQualifyingWindowAreMarked()
+        public void Calculate_Rule2_OnlyMarksPointsAboveAverage()
         {
             // Rule 2: 2 of 3 successive beyond 2σ on same side
             // avg=50, MRbar=20, 2σ upper=85.46
             var baseline = new[] { 40, 60, 40, 60, 40, 60, 40, 60 };
             // display: [50, 90, 50, 90, 50]
-            // Window [1,2,3]: 90,50,90 → 2 of 3 > 85.46 → marks indices 1,2,3
+            // Window [1,2,3]: 90,50,90 → 2 of 3 > 85.46
+            // Only indices 1 and 3 (both > average) should be marked
+            // Index 2 (value 50 = average) should NOT be marked
             var display = new[] { 50, 90, 50, 90, 50 };
 
             var result = XmRCalculator.Calculate(baseline, display);
 
             AssertDoesNotHaveCause(result.SpecialCauseClassifications, 0, SpecialCauseType.ModerateChange);
             AssertHasCause(result.SpecialCauseClassifications, 1, SpecialCauseType.ModerateChange);
-            AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateChange);
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateChange);
             AssertHasCause(result.SpecialCauseClassifications, 3, SpecialCauseType.ModerateChange);
             AssertDoesNotHaveCause(result.SpecialCauseClassifications, 4, SpecialCauseType.ModerateChange);
         }
 
         [Test]
-        public void Calculate_Rule3_AllPointsInQualifyingWindowAreMarked()
+        public void Calculate_Rule3_OnlyMarksPointsAboveAverage()
         {
             // Rule 3: 4 of 5 successive beyond 1σ on same side
             // avg=50, MRbar=20, 1σ upper=67.73
             var baseline = new[] { 40, 60, 40, 60, 40, 60, 40, 60 };
             // display: [50, 70, 70, 70, 50, 70, 50]
-            // Window [1,2,3,4,5]: 70,70,70,50,70 → 4 of 5 > 67.73 → marks indices 1-5
+            // Window [1,2,3,4,5]: 70,70,70,50,70 → 4 of 5 > 67.73
+            // Only indices 1,2,3,5 (all > average) should be marked
+            // Index 4 (value 50 = average) should NOT be marked
             var display = new[] { 50, 70, 70, 70, 50, 70, 50 };
 
             var result = XmRCalculator.Calculate(baseline, display);
 
             AssertDoesNotHaveCause(result.SpecialCauseClassifications, 0, SpecialCauseType.ModerateShift);
-            for (var i = 1; i <= 5; i++)
-            {
-                AssertHasCause(result.SpecialCauseClassifications, i, SpecialCauseType.ModerateShift);
-            }
+            AssertHasCause(result.SpecialCauseClassifications, 1, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 3, SpecialCauseType.ModerateShift);
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 4, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 5, SpecialCauseType.ModerateShift);
             AssertDoesNotHaveCause(result.SpecialCauseClassifications, 6, SpecialCauseType.ModerateShift);
         }
 
@@ -638,6 +645,105 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             for (var i = 1; i < causes.Count; i++)
             {
                 Assert.That(causes[i], Is.GreaterThanOrEqualTo(causes[i - 1]));
+            }
+        }
+
+        [Test]
+        public void Calculate_ModerateChange_MixedSidesWithSufficientCounts_DoesNotTrigger()
+        {
+            // Even if we have 2+ points beyond 2σ in a window, if they're on opposite sides, no signal
+            // Baseline: 100, 110, 100, 110 → avg=105, MRbar=10, σ=8.865
+            // 2σ upper = 122.73, 2σ lower = 87.27
+            var baseline = new[] { 100, 110, 100, 110 };
+            // Window has 1 point way above and 1 point way below - opposite sides
+            var display = new[] { 125, 105, 80 };
+
+            var result = XmRCalculator.Calculate(baseline, display);
+
+            // Should NOT trigger because qualifying points are on opposite sides
+            for (var i = 0; i < display.Length; i++)
+            {
+                AssertDoesNotHaveCause(result.SpecialCauseClassifications, i, SpecialCauseType.ModerateChange);
+            }
+        }
+
+        [Test]
+        public void Calculate_ModerateShift_MixedSidesWithSufficientCounts_DoesNotTrigger()
+        {
+            // 4+ points beyond 1σ but on opposite sides → no signal
+            // Baseline: 100, 110, 100, 110 → avg=105, MRbar=10, σ=8.865
+            // 1σ upper = 113.87, 1σ lower = 96.13
+            var baseline = new[] { 100, 110, 100, 110 };
+            // 2 high, 2 low, 1 middle = 4 beyond 1σ but mixed sides
+            var display = new[] { 115, 90, 115, 90, 105 };
+
+            var result = XmRCalculator.Calculate(baseline, display);
+
+            // Should NOT trigger because qualifying points are on opposite sides
+            for (var i = 0; i < display.Length; i++)
+            {
+                AssertDoesNotHaveCause(result.SpecialCauseClassifications, i, SpecialCauseType.ModerateShift);
+            }
+        }
+
+        [Test]
+        public void Calculate_ModerateChange_OnlyMarksPointsOnCorrectSide()
+        {
+            // When 2 of 3 are beyond 2σ upper, only mark points above average (not the middle point)
+            // Baseline: avg=50, MRbar=20, 2σ upper=85.46
+            var baseline = new[] { 40, 60, 40, 60, 40, 60, 40, 60 };
+            // Window: [90, 45, 90] → 2 points beyond 2σ, but middle point is below average
+            var display = new[] { 90, 45, 90 };
+
+            var result = XmRCalculator.Calculate(baseline, display);
+
+            // Indices 0 and 2 should be marked (above average)
+            AssertHasCause(result.SpecialCauseClassifications, 0, SpecialCauseType.ModerateChange);
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 1, SpecialCauseType.ModerateChange);
+            AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateChange);
+        }
+
+        [Test]
+        public void Calculate_ModerateShift_OnlyMarksPointsOnCorrectSide()
+        {
+            // When 4 of 5 are beyond 1σ upper, only mark points above average
+            // Baseline: avg=50, MRbar=20, 1σ upper=67.73
+            var baseline = new[] { 40, 60, 40, 60, 40, 60, 40, 60 };
+            // Window: [70, 70, 70, 45, 70] → 4 beyond 1σ, but index 3 is below average
+            var display = new[] { 70, 70, 70, 45, 70 };
+
+            var result = XmRCalculator.Calculate(baseline, display);
+
+            // Indices 0,1,2,4 should be marked (above average)
+            AssertHasCause(result.SpecialCauseClassifications, 0, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 1, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.ModerateShift);
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 3, SpecialCauseType.ModerateShift);
+            AssertHasCause(result.SpecialCauseClassifications, 4, SpecialCauseType.ModerateShift);
+        }
+
+        [Test]
+        public void Calculate_SmallShift_PointExactlyOnAverageBreaksRun_Fixed()
+        {
+            // This test should now pass with the corrected logic
+            var baseline = new[] { 40, 60, 40, 60, 40, 60, 40, 60 };
+            var display = new[] { 55, 55, 55, 55, 55, 55, 55, 50, 55, 55, 55, 55, 55, 55, 55 };
+
+            var result = XmRCalculator.Calculate(baseline, display);
+
+            // First 7 points before the break
+            for (var i = 0; i < 7; i++)
+            {
+                AssertDoesNotHaveCause(result.SpecialCauseClassifications, i, SpecialCauseType.SmallShift);
+            }
+
+            // Point on average
+            AssertDoesNotHaveCause(result.SpecialCauseClassifications, 7, SpecialCauseType.SmallShift);
+
+            // Last 7 points after the break
+            for (var i = 8; i < 15; i++)
+            {
+                AssertDoesNotHaveCause(result.SpecialCauseClassifications, i, SpecialCauseType.SmallShift);
             }
         }
     }

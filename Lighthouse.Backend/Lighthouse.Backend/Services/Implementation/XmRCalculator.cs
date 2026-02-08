@@ -71,11 +71,11 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         private static IReadOnlyList<IReadOnlyList<SpecialCauseType>> ClassifyAllPoints(
-    int[] values,
-    double average,
-    double unpl,
-    double lnpl,
-    double sigma)
+            int[] values,
+            double average,
+            double unpl,
+            double lnpl,
+            double sigma)
         {
             var oneSigmaUpper = average + sigma;
             var twoSigmaUpper = average + 2 * sigma;
@@ -85,8 +85,8 @@ namespace Lighthouse.Backend.Services.Implementation
             var causeSets = InitializeCauseSets(values.Length);
 
             ApplyLargeChangeRule(values, unpl, lnpl, causeSets);
-            ApplyModerateChangeRule(values, twoSigmaUpper, twoSigmaLower, causeSets);
-            ApplyModerateShiftRule(values, oneSigmaUpper, oneSigmaLower, causeSets);
+            ApplyModerateChangeRule(values, twoSigmaUpper, twoSigmaLower, average, causeSets);
+            ApplyModerateShiftRule(values, oneSigmaUpper, oneSigmaLower, average, causeSets);
             ApplySmallShiftRule(values, average, causeSets);
 
             return ConvertCauseSetsToResult(causeSets);
@@ -123,17 +123,18 @@ namespace Lighthouse.Backend.Services.Implementation
             int[] values,
             double twoSigmaUpper,
             double twoSigmaLower,
+            double average,
             HashSet<SpecialCauseType>[] causeSets)
         {
             var isTwoSigmaLowerValid = twoSigmaLower > 0;
 
             for (var i = 2; i < values.Length; i++)
             {
-                CheckModerateChangeAbove(values, twoSigmaUpper, causeSets, i);
+                CheckModerateChangeAbove(values, twoSigmaUpper, average, causeSets, i);
 
                 if (isTwoSigmaLowerValid)
                 {
-                    CheckModerateChangeBelow(values, twoSigmaLower, causeSets, i);
+                    CheckModerateChangeBelow(values, twoSigmaLower, average, causeSets, i);
                 }
             }
         }
@@ -141,28 +142,62 @@ namespace Lighthouse.Backend.Services.Implementation
         private static void CheckModerateChangeAbove(
             int[] values,
             double twoSigmaUpper,
+            double average,
             HashSet<SpecialCauseType>[] causeSets,
             int endIndex)
         {
-            var countAbove = CountPointsBeyondThreshold(values, endIndex - 2, endIndex, twoSigmaUpper, above: true);
-
-            if (countAbove >= 2)
+            // Count points that are beyond 2-sigma upper
+            var countBeyondThreshold = 0;
+            for (var j = endIndex - 2; j <= endIndex; j++)
             {
-                MarkPointsInWindow(causeSets, endIndex - 2, endIndex, SpecialCauseType.ModerateChange);
+                if (values[j] > twoSigmaUpper)
+                {
+                    countBeyondThreshold++;
+                }
+            }
+
+            // Rule requires 2 of 3 beyond threshold
+            if (countBeyondThreshold >= 2)
+            {
+                // Mark only points that are above average (same side as the signal)
+                for (var j = endIndex - 2; j <= endIndex; j++)
+                {
+                    if (values[j] > average)
+                    {
+                        causeSets[j].Add(SpecialCauseType.ModerateChange);
+                    }
+                }
             }
         }
 
         private static void CheckModerateChangeBelow(
             int[] values,
             double twoSigmaLower,
+            double average,
             HashSet<SpecialCauseType>[] causeSets,
             int endIndex)
         {
-            var countBelow = CountPointsBeyondThreshold(values, endIndex - 2, endIndex, twoSigmaLower, above: false);
-
-            if (countBelow >= 2)
+            // Count points that are beyond 2-sigma lower
+            var countBeyondThreshold = 0;
+            for (var j = endIndex - 2; j <= endIndex; j++)
             {
-                MarkPointsInWindow(causeSets, endIndex - 2, endIndex, SpecialCauseType.ModerateChange);
+                if (values[j] < twoSigmaLower)
+                {
+                    countBeyondThreshold++;
+                }
+            }
+
+            // Rule requires 2 of 3 beyond threshold
+            if (countBeyondThreshold >= 2)
+            {
+                // Mark only points that are below average (same side as the signal)
+                for (var j = endIndex - 2; j <= endIndex; j++)
+                {
+                    if (values[j] < average)
+                    {
+                        causeSets[j].Add(SpecialCauseType.ModerateChange);
+                    }
+                }
             }
         }
 
@@ -170,17 +205,18 @@ namespace Lighthouse.Backend.Services.Implementation
             int[] values,
             double oneSigmaUpper,
             double oneSigmaLower,
+            double average,
             HashSet<SpecialCauseType>[] causeSets)
         {
             var isOneSigmaLowerValid = oneSigmaLower > 0;
 
             for (var i = 4; i < values.Length; i++)
             {
-                CheckModerateShiftAbove(values, oneSigmaUpper, causeSets, i);
+                CheckModerateShiftAbove(values, oneSigmaUpper, average, causeSets, i);
 
                 if (isOneSigmaLowerValid)
                 {
-                    CheckModerateShiftBelow(values, oneSigmaLower, causeSets, i);
+                    CheckModerateShiftBelow(values, oneSigmaLower, average, causeSets, i);
                 }
             }
         }
@@ -188,28 +224,62 @@ namespace Lighthouse.Backend.Services.Implementation
         private static void CheckModerateShiftAbove(
             int[] values,
             double oneSigmaUpper,
+            double average,
             HashSet<SpecialCauseType>[] causeSets,
             int endIndex)
         {
-            var countAbove = CountPointsBeyondThreshold(values, endIndex - 4, endIndex, oneSigmaUpper, above: true);
-
-            if (countAbove >= 4)
+            // Count points that are beyond 1-sigma upper
+            var countBeyondThreshold = 0;
+            for (var j = endIndex - 4; j <= endIndex; j++)
             {
-                MarkPointsInWindow(causeSets, endIndex - 4, endIndex, SpecialCauseType.ModerateShift);
+                if (values[j] > oneSigmaUpper)
+                {
+                    countBeyondThreshold++;
+                }
+            }
+
+            // Rule requires 4 of 5 beyond threshold
+            if (countBeyondThreshold >= 4)
+            {
+                // Mark only points that are above average (same side as the signal)
+                for (var j = endIndex - 4; j <= endIndex; j++)
+                {
+                    if (values[j] > average)
+                    {
+                        causeSets[j].Add(SpecialCauseType.ModerateShift);
+                    }
+                }
             }
         }
 
         private static void CheckModerateShiftBelow(
             int[] values,
             double oneSigmaLower,
+            double average,
             HashSet<SpecialCauseType>[] causeSets,
             int endIndex)
         {
-            var countBelow = CountPointsBeyondThreshold(values, endIndex - 4, endIndex, oneSigmaLower, above: false);
-
-            if (countBelow >= 4)
+            // Count points that are beyond 1-sigma lower
+            var countBeyondThreshold = 0;
+            for (var j = endIndex - 4; j <= endIndex; j++)
             {
-                MarkPointsInWindow(causeSets, endIndex - 4, endIndex, SpecialCauseType.ModerateShift);
+                if (values[j] < oneSigmaLower)
+                {
+                    countBeyondThreshold++;
+                }
+            }
+
+            // Rule requires 4 of 5 beyond threshold
+            if (countBeyondThreshold >= 4)
+            {
+                // Mark only points that are below average (same side as the signal)
+                for (var j = endIndex - 4; j <= endIndex; j++)
+                {
+                    if (values[j] < average)
+                    {
+                        causeSets[j].Add(SpecialCauseType.ModerateShift);
+                    }
+                }
             }
         }
 
@@ -238,36 +308,22 @@ namespace Lighthouse.Backend.Services.Implementation
 
             for (var j = startIndex; j <= endIndex; j++)
             {
-                if (values[j] <= average)
+                if (values[j] < average)
                 {
                     allAbove = false;
                 }
-
-                if (values[j] >= average)
+                else if (values[j] > average)
                 {
                     allBelow = false;
+                }
+                else  // values[j] == average
+                {
+                    // Point exactly on average breaks both runs
+                    return false;
                 }
             }
 
             return allAbove || allBelow;
-        }
-
-        private static int CountPointsBeyondThreshold(
-            int[] values,
-            int startIndex,
-            int endIndex,
-            double threshold,
-            bool above)
-        {
-            var count = 0;
-            for (var j = startIndex; j <= endIndex; j++)
-            {
-                if (above ? values[j] > threshold : values[j] < threshold)
-                {
-                    count++;
-                }
-            }
-            return count;
         }
 
         private static void MarkPointsInWindow(
@@ -286,11 +342,12 @@ namespace Lighthouse.Backend.Services.Implementation
             HashSet<SpecialCauseType>[] causeSets)
         {
             var result = new List<List<SpecialCauseType>>(causeSets.Length);
-            for (var i = 0; i < causeSets.Length; i++)
+            foreach (var cause in causeSets)
             {
-                result[i] = causeSets[i].Count > 0
-                    ? causeSets[i].OrderBy(c => c).ToList()
-                    : new List<SpecialCauseType>();
+                var list = cause.Count > 0
+                    ? cause.OrderBy(c => c).ToList()
+                    : [];
+                result.Add(list);
             }
 
             return result;
