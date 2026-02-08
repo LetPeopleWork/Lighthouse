@@ -2234,20 +2234,16 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("process-behaviour-chart-Work Items Throughput"),
+					screen.getByTestId("process-behaviour-chart-Throughput"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByTestId(
-						"process-behaviour-chart-Work Items Work In Progress",
-					),
+					screen.getByTestId("process-behaviour-chart-Work In Progress"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByTestId(
-						"process-behaviour-chart-Work Items Total Work Item Age",
-					),
+					screen.getByTestId("process-behaviour-chart-Total Work Item Age"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByTestId("process-behaviour-chart-Work Items Cycle Time"),
+					screen.getByTestId("process-behaviour-chart-Cycle Time"),
 				).toBeInTheDocument();
 			});
 		});
@@ -2279,14 +2275,14 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("process-behaviour-chart-Work Items Throughput"),
+					screen.getByTestId("process-behaviour-chart-Throughput"),
 				).toBeInTheDocument();
 			});
 
 			// Verify status is passed through
-			expect(
-				screen.getByTestId("pbc-status-Work Items Throughput"),
-			).toHaveTextContent("InsufficientData");
+			expect(screen.getByTestId("pbc-status-Throughput")).toHaveTextContent(
+				"InsufficientData",
+			);
 		});
 
 		it("calls PBC service methods with correct parameters", async () => {
@@ -2353,20 +2349,16 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("process-behaviour-chart-Features Throughput"),
+					screen.getByTestId("process-behaviour-chart-Throughput"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByTestId(
-						"process-behaviour-chart-Features Work In Progress",
-					),
+					screen.getByTestId("process-behaviour-chart-Work In Progress"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByTestId(
-						"process-behaviour-chart-Features Total Work Item Age",
-					),
+					screen.getByTestId("process-behaviour-chart-Total Work Item Age"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByTestId("process-behaviour-chart-Features Cycle Time"),
+					screen.getByTestId("process-behaviour-chart-Cycle Time"),
 				).toBeInTheDocument();
 			});
 		});
@@ -2399,25 +2391,25 @@ describe("BaseMetricsView component", () => {
 			await waitFor(() => {
 				// Throughput PBC should be shown (Ready)
 				expect(
-					screen.getByTestId("process-behaviour-chart-Work Items Throughput"),
+					screen.getByTestId("process-behaviour-chart-Throughput"),
 				).toBeInTheDocument();
 				// Total Work Item Age PBC should be shown (InsufficientData — baseline was set)
 				expect(
-					screen.getByTestId(
-						"process-behaviour-chart-Work Items Total Work Item Age",
-					),
+					screen.getByTestId("process-behaviour-chart-Total Work Item Age"),
 				).toBeInTheDocument();
 			});
 
 			// WIP PBC should NOT be shown (BaselineMissing)
 			expect(
 				screen.queryByTestId(
-					"process-behaviour-chart-Work Items Work In Progress",
+					"process-behaviour-chart-Work In Progress Process Behaviour Chart",
 				),
 			).not.toBeInTheDocument();
 			// Cycle Time PBC should NOT be shown (BaselineMissing)
 			expect(
-				screen.queryByTestId("process-behaviour-chart-Work Items Cycle Time"),
+				screen.queryByTestId(
+					"process-behaviour-chart-Cycle Time Process Behaviour Chart",
+				),
 			).not.toBeInTheDocument();
 		});
 
@@ -2445,11 +2437,11 @@ describe("BaseMetricsView component", () => {
 			);
 
 			await waitFor(() => {
+				expect(screen.getByTestId("pbc-status-Throughput")).toHaveTextContent(
+					"Ready",
+				);
 				expect(
-					screen.getByTestId("pbc-status-Work Items Throughput"),
-				).toHaveTextContent("Ready");
-				expect(
-					screen.getByTestId("pbc-data-points-Work Items Throughput"),
+					screen.getByTestId("pbc-data-points-Throughput"),
 				).toHaveTextContent("2");
 			});
 		});
