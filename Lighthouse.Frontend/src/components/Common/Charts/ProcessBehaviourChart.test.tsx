@@ -159,9 +159,9 @@ describe("ProcessBehaviourChart", () => {
 		it("renders chart title", () => {
 			const data = createReadyChartData();
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(<ProcessBehaviourChart data={data} title="Throughput" />);
 
-			expect(screen.getByText("Throughput PBC")).toBeDefined();
+			expect(screen.getByText("Throughput Process Behaviour Chart")).toBeDefined();
 		});
 
 		it("renders the chart when status is Ready", () => {
