@@ -196,8 +196,8 @@ You can click a chip (e.g. *Large Change*) to highlight points that match that s
 
 ## Learn More
 
-- https://demingalliance.org/resources/articles/process-behaviour-charts-an-introduction
-- https://leanpub.com/actionableagilemetricsii
+- [Deming Alliance](https://demingalliance.org/resources/articles/process-behaviour-charts-an-introduction)
+- [Actionable Agile Metrics for Predictability Volume II](https://leanpub.com/actionableagilemetricsii)
 
 # Predictability Score
 
