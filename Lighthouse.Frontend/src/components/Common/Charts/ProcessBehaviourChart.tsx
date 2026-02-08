@@ -84,7 +84,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 		return (
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">{title}</Typography>
+					<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
 					<Typography variant="body2" color="text.secondary">
 						{data.statusReason}
 					</Typography>
@@ -97,7 +97,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 		return (
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">{title}</Typography>
+					<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
 					<Typography variant="body2" color="text.secondary">
 						No data available
 					</Typography>
@@ -111,7 +111,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>
-				<Typography variant="h6">{title}</Typography>
+				<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
 
 				<Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: "wrap" }}>
 					<LegendChip

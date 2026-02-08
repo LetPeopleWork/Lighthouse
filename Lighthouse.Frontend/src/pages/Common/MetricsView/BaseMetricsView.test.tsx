@@ -7,6 +7,7 @@ import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
 } from "../../../models/Forecasts/ForecastPredictabilityScore";
+import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
@@ -285,6 +286,23 @@ vi.mock("../../../components/Common/Charts/TotalWorkItemAgeRunChart", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/ProcessBehaviourChart", () => ({
+	default: ({
+		data,
+		title,
+	}: {
+		data: ProcessBehaviourChartData;
+		title: string;
+	}) => (
+		<div data-testid={`process-behaviour-chart-${title}`}>
+			<div data-testid={`pbc-status-${title}`}>{data.status}</div>
+			<div data-testid={`pbc-data-points-${title}`}>
+				{data.dataPoints.length}
+			</div>
+		</div>
+	),
+}));
+
 // Mock DashboardHeader and Dashboard to capture dashboardId prop
 vi.mock("./DashboardHeader", () => ({
 	default: ({
@@ -512,6 +530,16 @@ describe("BaseMetricsView component", () => {
 	];
 
 	// Mock metrics service
+	const baselineMissingPbcData: ProcessBehaviourChartData = {
+		status: "BaselineMissing",
+		statusReason: "No baseline configured",
+		xAxisKind: "Date",
+		average: 0,
+		upperNaturalProcessLimit: 0,
+		lowerNaturalProcessLimit: 0,
+		dataPoints: [],
+	};
+
 	function createMockMetricsService<
 		T extends IWorkItem | IFeature = IWorkItem,
 	>() {
@@ -547,6 +575,10 @@ describe("BaseMetricsView component", () => {
 				})),
 			),
 			getTotalWorkItemAge: vi.fn().mockResolvedValue(150),
+			getThroughputPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getWipPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getTotalWorkItemAgePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getCycleTimePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1016,6 +1048,10 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockRejectedValue(new Error("API error")),
 			getTotalWorkItemAge: vi.fn().mockRejectedValue(new Error("API error")),
+			getThroughputPbc: vi.fn().mockRejectedValue(new Error("API error")),
+			getWipPbc: vi.fn().mockRejectedValue(new Error("API error")),
+			getTotalWorkItemAgePbc: vi.fn().mockRejectedValue(new Error("API error")),
+			getCycleTimePbc: vi.fn().mockRejectedValue(new Error("API error")),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1465,6 +1501,12 @@ describe("BaseMetricsView component", () => {
 					.fn()
 					.mockRejectedValue(new Error("Predictability API error")),
 				getTotalWorkItemAge: vi.fn().mockRejectedValue(new Error("API error")),
+				getThroughputPbc: vi.fn().mockRejectedValue(new Error("API error")),
+				getWipPbc: vi.fn().mockRejectedValue(new Error("API error")),
+				getTotalWorkItemAgePbc: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getCycleTimePbc: vi.fn().mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi
@@ -2095,6 +2137,321 @@ describe("BaseMetricsView component", () => {
 			const diffInDays =
 				(actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60 * 24);
 			expect(Math.abs(diffInDays - customDateRange)).toBeLessThan(1); // Within 1 day tolerance
+		});
+	});
+
+	describe("Process Behaviour Charts", () => {
+		const readyPbcData: ProcessBehaviourChartData = {
+			status: "Ready",
+			statusReason: "",
+			xAxisKind: "Date",
+			average: 5,
+			upperNaturalProcessLimit: 10,
+			lowerNaturalProcessLimit: 0,
+			dataPoints: [
+				{
+					xValue: "2025-01-01",
+					yValue: 5,
+					specialCause: "None",
+					workItemIds: [1, 2],
+				},
+				{
+					xValue: "2025-01-02",
+					yValue: 6,
+					specialCause: "None",
+					workItemIds: [3],
+				},
+			],
+		};
+
+		const insufficientDataPbcData: ProcessBehaviourChartData = {
+			status: "InsufficientData",
+			statusReason: "Need at least 8 data points in baseline period",
+			xAxisKind: "Date",
+			average: 0,
+			upperNaturalProcessLimit: 0,
+			lowerNaturalProcessLimit: 0,
+			dataPoints: [],
+		};
+
+		it("does not show PBC widgets when baseline is missing", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={mockMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for other data to load
+			await waitFor(() => {
+				expect(mockMetricsService.getThroughputPbc).toHaveBeenCalled();
+			});
+
+			// PBC widgets should not be present
+			expect(
+				screen.queryByTestId("process-behaviour-chart-Work Items Throughput"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId(
+					"process-behaviour-chart-Work Items Work In Progress",
+				),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId(
+					"process-behaviour-chart-Work Items Total Work Item Age",
+				),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("process-behaviour-chart-Work Items Cycle Time"),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows PBC widgets when baseline is configured and data is ready", async () => {
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+			pbcMetricsService.getThroughputPbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getWipPbc = vi.fn().mockResolvedValue(readyPbcData);
+			pbcMetricsService.getTotalWorkItemAgePbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getCycleTimePbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("process-behaviour-chart-Work Items Throughput"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId(
+						"process-behaviour-chart-Work Items Work In Progress",
+					),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId(
+						"process-behaviour-chart-Work Items Total Work Item Age",
+					),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Work Items Cycle Time"),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("shows PBC widgets with InsufficientData status (baseline is configured but not enough data)", async () => {
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+			pbcMetricsService.getThroughputPbc = vi
+				.fn()
+				.mockResolvedValue(insufficientDataPbcData);
+			pbcMetricsService.getWipPbc = vi
+				.fn()
+				.mockResolvedValue(insufficientDataPbcData);
+			pbcMetricsService.getTotalWorkItemAgePbc = vi
+				.fn()
+				.mockResolvedValue(insufficientDataPbcData);
+			pbcMetricsService.getCycleTimePbc = vi
+				.fn()
+				.mockResolvedValue(insufficientDataPbcData);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("process-behaviour-chart-Work Items Throughput"),
+				).toBeInTheDocument();
+			});
+
+			// Verify status is passed through
+			expect(
+				screen.getByTestId("pbc-status-Work Items Throughput"),
+			).toHaveTextContent("InsufficientData");
+		});
+
+		it("calls PBC service methods with correct parameters", async () => {
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(pbcMetricsService.getThroughputPbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+				expect(pbcMetricsService.getWipPbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+				expect(pbcMetricsService.getTotalWorkItemAgePbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+				expect(pbcMetricsService.getCycleTimePbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+		});
+
+		it("shows PBC widgets for Portfolio entity when baseline is configured", async () => {
+			const pbcMetricsService = createMockMetricsService<IFeature>();
+			delete (pbcMetricsService as unknown as Record<string, unknown>)
+				.getFeaturesInProgress;
+			pbcMetricsService.getThroughputPbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getWipPbc = vi.fn().mockResolvedValue(readyPbcData);
+			pbcMetricsService.getTotalWorkItemAgePbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getCycleTimePbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={pbcMetricsService}
+					title="Features"
+					defaultDateRange={90}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("process-behaviour-chart-Features Throughput"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId(
+						"process-behaviour-chart-Features Work In Progress",
+					),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId(
+						"process-behaviour-chart-Features Total Work Item Age",
+					),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Features Cycle Time"),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("shows only PBC widgets with non-BaselineMissing status in mixed scenario", async () => {
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+			pbcMetricsService.getThroughputPbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getWipPbc = vi
+				.fn()
+				.mockResolvedValue(baselineMissingPbcData);
+			pbcMetricsService.getTotalWorkItemAgePbc = vi
+				.fn()
+				.mockResolvedValue(insufficientDataPbcData);
+			pbcMetricsService.getCycleTimePbc = vi
+				.fn()
+				.mockResolvedValue(baselineMissingPbcData);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				// Throughput PBC should be shown (Ready)
+				expect(
+					screen.getByTestId("process-behaviour-chart-Work Items Throughput"),
+				).toBeInTheDocument();
+				// Total Work Item Age PBC should be shown (InsufficientData — baseline was set)
+				expect(
+					screen.getByTestId(
+						"process-behaviour-chart-Work Items Total Work Item Age",
+					),
+				).toBeInTheDocument();
+			});
+
+			// WIP PBC should NOT be shown (BaselineMissing)
+			expect(
+				screen.queryByTestId(
+					"process-behaviour-chart-Work Items Work In Progress",
+				),
+			).not.toBeInTheDocument();
+			// Cycle Time PBC should NOT be shown (BaselineMissing)
+			expect(
+				screen.queryByTestId("process-behaviour-chart-Work Items Cycle Time"),
+			).not.toBeInTheDocument();
+		});
+
+		it("passes correct data to PBC chart components", async () => {
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+			pbcMetricsService.getThroughputPbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getWipPbc = vi.fn().mockResolvedValue(readyPbcData);
+			pbcMetricsService.getTotalWorkItemAgePbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+			pbcMetricsService.getCycleTimePbc = vi
+				.fn()
+				.mockResolvedValue(readyPbcData);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("pbc-status-Work Items Throughput"),
+				).toHaveTextContent("Ready");
+				expect(
+					screen.getByTestId("pbc-data-points-Work Items Throughput"),
+				).toHaveTextContent("2");
+			});
 		});
 	});
 });

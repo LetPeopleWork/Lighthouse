@@ -6,6 +6,7 @@ import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePer
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/FeatureSizeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
+import ProcessBehaviourChart from "../../../components/Common/Charts/ProcessBehaviourChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
@@ -15,6 +16,7 @@ import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingC
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -79,6 +81,15 @@ export const BaseMetricsView = <
 	const [predictabilityData, setPredictabilityData] =
 		useState<IForecastPredictabilityScore | null>(null);
 
+	const [throughputPbcData, setThroughputPbcData] =
+		useState<ProcessBehaviourChartData | null>(null);
+	const [wipPbcData, setWipPbcData] =
+		useState<ProcessBehaviourChartData | null>(null);
+	const [totalWorkItemAgePbcData, setTotalWorkItemAgePbcData] =
+		useState<ProcessBehaviourChartData | null>(null);
+	const [cycleTimePbcData, setCycleTimePbcData] =
+		useState<ProcessBehaviourChartData | null>(null);
+
 	// URL state management for dates
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -125,6 +136,9 @@ export const BaseMetricsView = <
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+	const workInProgressTerm = getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
 	const dashboardId = `${"getFeaturesInProgress" in metricsService ? "Team" : "Project"}_${entity.id}`;
@@ -291,6 +305,87 @@ export const BaseMetricsView = <
 			setServiceLevelExpectation(sle);
 		}
 	}, [entity]);
+
+	useEffect(() => {
+		const fetchPbcData = async () => {
+			try {
+				const [throughputPbc, wipPbc, totalWorkItemAgePbc, cycleTimePbc] =
+					await Promise.all([
+						metricsService.getThroughputPbc(entity.id, startDate, endDate),
+						metricsService.getWipPbc(entity.id, startDate, endDate),
+						metricsService.getTotalWorkItemAgePbc(
+							entity.id,
+							startDate,
+							endDate,
+						),
+						metricsService.getCycleTimePbc(entity.id, startDate, endDate),
+					]);
+
+				setThroughputPbcData(throughputPbc);
+				setWipPbcData(wipPbc);
+				setTotalWorkItemAgePbcData(totalWorkItemAgePbc);
+				setCycleTimePbcData(cycleTimePbc);
+			} catch (error) {
+				console.error("Error fetching process behaviour chart data:", error);
+			}
+		};
+
+		fetchPbcData();
+	}, [entity, metricsService, startDate, endDate]);
+
+	const getPbcDashboardItems = (): DashboardItem[] => {
+		const pbcItems: DashboardItem[] = [];
+
+		const pbcConfigs: Array<{
+			id: string;
+			priority: number;
+			data: ProcessBehaviourChartData | null;
+			titleSuffix: string;
+		}> = [
+			{
+				id: "throughputPbc",
+				priority: 18,
+				data: throughputPbcData,
+				titleSuffix: throughputTerm,
+			},
+			{
+				id: "wipPbc",
+				priority: 19,
+				data: wipPbcData,
+				titleSuffix: workInProgressTerm,
+			},
+			{
+				id: "totalWorkItemAgePbc",
+				priority: 20,
+				data: totalWorkItemAgePbcData,
+				titleSuffix: `Total ${workItemAgeTerm}`,
+			},
+			{
+				id: "cycleTimePbc",
+				priority: 21,
+				data: cycleTimePbcData,
+				titleSuffix: cycleTimeTerm,
+			},
+		];
+
+		for (const config of pbcConfigs) {
+			if (config.data && config.data.status !== "BaselineMissing") {
+				pbcItems.push({
+					id: config.id,
+					priority: config.priority,
+					size: "large",
+					node: (
+						<ProcessBehaviourChart
+							data={config.data}
+							title={`${config.titleSuffix}`}
+						/>
+					),
+				});
+			}
+		}
+
+		return pbcItems;
+	};
 
 	const dashboardItems: DashboardItem[] = (() => {
 		const items: DashboardItem[] = [];
@@ -478,6 +573,9 @@ export const BaseMetricsView = <
 				),
 			});
 		}
+
+		// Process Behaviour Charts (conditional — hidden when baseline is not configured)
+		items.push(...getPbcDashboardItems());
 
 		return items;
 	})();

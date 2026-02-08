@@ -3,6 +3,7 @@ import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
 } from "../../models/Forecasts/ForecastPredictabilityScore";
+import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import type { IWorkItem } from "../../models/WorkItem";
@@ -44,6 +45,30 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 	): Promise<ForecastPredictabilityScore>;
 
 	getTotalWorkItemAge(id: number): Promise<number>;
+
+	getThroughputPbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData>;
+
+	getWipPbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData>;
+
+	getTotalWorkItemAgePbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData>;
+
+	getCycleTimePbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -197,6 +222,62 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<number>(
 				`/${this.api}/${id}/metrics/totalWorkItemAge`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getThroughputPbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviourChartData>(
+				`/${this.api}/${id}/metrics/throughput/pbc?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getWipPbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviourChartData>(
+				`/${this.api}/${id}/metrics/wipOverTime/pbc?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getTotalWorkItemAgePbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviourChartData>(
+				`/${this.api}/${id}/metrics/totalWorkItemAge/pbc?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getCycleTimePbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviourChartData>(
+				`/${this.api}/${id}/metrics/cycleTime/pbc?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return response.data;
