@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return classifications;
         }
 
-        private static IReadOnlyList<IReadOnlyList<SpecialCauseType>> ClassifyAllPoints(
+        private static List<List<SpecialCauseType>> ClassifyAllPoints(
             int[] values,
             double average,
             double unpl,
