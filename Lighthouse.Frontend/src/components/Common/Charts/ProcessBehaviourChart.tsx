@@ -115,9 +115,8 @@ const SpecialCauseMark = (props: Record<string, unknown>) => {
 	const causes = point?.specialCauses ?? [];
 	const highestCause = getHighestPriorityCause(causes);
 
-	const isSpecial = highestCause != null;
 	const isHighlighted =
-		selectedCause == null ? isSpecial : causes.includes(selectedCause);
+		selectedCause == null ? false : causes.includes(selectedCause);
 
 	const displayCause =
 		selectedCause != null && causes.includes(selectedCause)
