@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.MCP
             using (var scope = CreateServiceScope())
             {
                 var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
-                var projectMetricsService = GetServiceFromServiceScope<IProjectMetricsService>(scope);
+                var projectMetricsService = GetServiceFromServiceScope<IPortfolioMetricsService>(scope);
 
                 var project = GetProjectByName(projectName, projectRepo);
                 if (project == null)
@@ -229,10 +229,10 @@ namespace Lighthouse.Backend.MCP
                     return $"No project found with name {projectName}";
                 }
 
-                var cycleTimePercentiles = projectMetricsService.GetCycleTimePercentilesForProject(project, rangeStart, rangeEnd);
-                var cycleTimes = projectMetricsService.GetCycleTimeDataForProject(project, rangeStart, rangeEnd).Select(f => f.CycleTime);
-                var wip = projectMetricsService.GetFeaturesInProgressOverTimeForProject(project, rangeStart, rangeEnd);
-                var throughput = projectMetricsService.GetThroughputForProject(project, rangeStart, rangeEnd);
+                var cycleTimePercentiles = projectMetricsService.GetCycleTimePercentilesForPortfolio(project, rangeStart, rangeEnd);
+                var cycleTimes = projectMetricsService.GetCycleTimeDataForPortfolio(project, rangeStart, rangeEnd).Select(f => f.CycleTime);
+                var wip = projectMetricsService.GetFeaturesInProgressOverTimeForPortfolio(project, rangeStart, rangeEnd);
+                var throughput = projectMetricsService.GetThroughputForPortfolio(project, rangeStart, rangeEnd);
 
                 return ToJson(new
                 {

@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -515,6 +516,69 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedTotalAge));
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughputProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughputProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_TeamExists_ReturnsPbcFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedPbc = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = 5.0,
+                UpperNaturalProcessLimit = 10.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, SpecialCauseType.None, [1, 2])],
+            };
+            teamMetricsServiceMock.Setup(service => service.GetThroughputProcessBehaviourChart(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughputProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
             }
         }
 

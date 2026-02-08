@@ -8,6 +8,8 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         RunChartData GetCurrentThroughputForTeam(Team team);
 
+        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);

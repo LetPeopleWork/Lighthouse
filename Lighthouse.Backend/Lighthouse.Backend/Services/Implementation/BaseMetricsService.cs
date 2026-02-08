@@ -22,6 +22,84 @@ namespace Lighthouse.Backend.Services.Implementation
             return new ForecastPredictabilityScore(howManyForecast);
         }
 
+        protected static ProcessBehaviourChart BuildThroughputProcessBehaviourChart(
+            WorkTrackingSystemOptionsOwner owner,
+            DateTime displayStart,
+            DateTime displayEnd,
+            Func<DateTime, DateTime, RunChartData> getThroughput)
+        {
+            var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
+            var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
+
+            if (baselineStart == null && baselineEnd == null)
+            {
+                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "Baseline dates are not configured.");
+            }
+
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
+            if (!validation.IsValid)
+            {
+                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
+            }
+
+            var baselineThroughput = getThroughput(baselineStart!.Value, baselineEnd!.Value);
+            var displayThroughput = getThroughput(displayStart, displayEnd);
+
+            var baselineValues = ExtractDailyCounts(baselineThroughput);
+            var displayValues = ExtractDailyCounts(displayThroughput);
+
+            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues, clampLnplToZero: true);
+
+            var dataPoints = BuildDataPoints(displayThroughput, displayStart, xmrResult);
+
+            return new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = xmrResult.Average,
+                UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
+                LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                DataPoints = dataPoints,
+            };
+        }
+
+        private static double[] ExtractDailyCounts(RunChartData runChartData)
+        {
+            var totalDays = runChartData.History;
+            var values = new double[totalDays];
+
+            for (var i = 0; i < totalDays; i++)
+            {
+                values[i] = runChartData.GetCountOnDay(i);
+            }
+
+            return values;
+        }
+
+        private static ProcessBehaviourChartDataPoint[] BuildDataPoints(
+            RunChartData displayThroughput,
+            DateTime displayStart,
+            XmRResult xmrResult)
+        {
+            var totalDays = displayThroughput.History;
+            var dataPoints = new ProcessBehaviourChartDataPoint[totalDays];
+
+            for (var i = 0; i < totalDays; i++)
+            {
+                var date = displayStart.AddDays(i).ToString("yyyy-MM-dd");
+                var workItems = displayThroughput.WorkItemsPerUnitOfTime[i];
+                var workItemIds = workItems.Select(w => w.Id).ToArray();
+
+                dataPoints[i] = new ProcessBehaviourChartDataPoint(
+                    date,
+                    workItems.Count,
+                    xmrResult.SpecialCauseClassifications[i],
+                    workItemIds);
+            }
+
+            return dataPoints;
+        }
+
         protected static Dictionary<int, List<WorkItemBase>> GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetClosedIndexForItem);

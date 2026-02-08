@@ -295,7 +295,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
-            builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
+            builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();

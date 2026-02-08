@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<Feature> featureRepository,
         IWorkItemRepository workItemRepository,
-        IProjectMetricsService projectMetricsService)
+        IPortfolioMetricsService portfolioMetricsService)
         : IWorkItemService
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new Dictionary<int, int>();
@@ -207,7 +207,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 var historyInDays = project.PercentileHistoryInDays ?? 90;
                 var startDate = DateTime.UtcNow.AddDays(-historyInDays);
-                var closedFeatures = projectMetricsService.GetCycleTimeDataForProject(project, startDate, endDate);
+                var closedFeatures = portfolioMetricsService.GetCycleTimeDataForPortfolio(project, startDate, endDate);
 
                 var historicalFeatureSize = closedFeatures.Where(f => f.Size > 0).Select(f => f.Size);
 

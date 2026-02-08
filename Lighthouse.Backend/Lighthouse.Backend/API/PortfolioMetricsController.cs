@@ -7,20 +7,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/portfolios/{portfolioId}/metrics")]
-    [Route("api/projects/{portfolioId}/metrics")] // Backward Compatibility
+    [Route("api/portfolios/{portfolioId:int}/metrics")]
+    [Route("api/projects/{portfolioId:int}/metrics")] // Backward Compatibility
     [ApiController]
-    public class PortfolioMetricsController : ControllerBase
+    public class PortfolioMetricsController(
+        IRepository<Portfolio> portfolioRepository,
+        IPortfolioMetricsService portfolioMetricsService)
+        : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
-        private readonly IRepository<Portfolio> projectRepository;
-        private readonly IProjectMetricsService projectMetricsService;
-
-        public PortfolioMetricsController(IRepository<Portfolio> projectRepository, IProjectMetricsService projectMetricsService)
-        {
-            this.projectRepository = projectRepository;
-            this.projectMetricsService = projectMetricsService;
-        }
 
         [HttpGet("throughput")]
         public ActionResult<RunChartData> GetThroughput(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
@@ -30,8 +25,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
-                projectMetricsService.GetThroughputForProject(project, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetThroughputForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("started")]
@@ -42,7 +37,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) => projectMetricsService.GetStartedItemsForProject(project, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetStartedItemsForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("wipOverTime")]
@@ -53,16 +48,16 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
-                projectMetricsService.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetFeaturesInProgressOverTimeForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("currentwip")]
         public ActionResult<IEnumerable<FeatureDto>> GetInProgressFeatures(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = projectMetricsService.GetInProgressFeaturesForProject(project);
+                var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio);
                 return features.Select(f => new FeatureDto(f));
             });
         }
@@ -75,8 +70,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
-                projectMetricsService.GetCycleTimePercentilesForProject(project, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("cycleTimeData")]
@@ -87,9 +82,9 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = projectMetricsService.GetCycleTimeDataForProject(project, startDate, endDate);
+                var features = portfolioMetricsService.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate);
                 return features.Select(f => new FeatureDto(f));
             });
         }
@@ -102,9 +97,9 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = projectMetricsService.GetAllFeaturesForSizeChart(project, startDate, endDate);
+                var features = portfolioMetricsService.GetAllFeaturesForSizeChart(portfolio, startDate, endDate);
                 return features.Select(f => new FeatureDto(f));
             });
         }
@@ -117,8 +112,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
-                projectMetricsService.GetSizePercentilesForProject(project, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetSizePercentilesForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("multiitemforecastpredictabilityscore")]
@@ -129,16 +124,24 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, project =>
-            {
-                return projectMetricsService.GetMultiItemForecastPredictabilityScoreForProject(project, startDate, endDate);
-            });
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio => portfolioMetricsService.GetMultiItemForecastPredictabilityScoreForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("totalWorkItemAge")]
         public ActionResult<int> GetTotalWorkItemAge(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, projectMetricsService.GetTotalWorkItemAge);
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolioMetricsService.GetTotalWorkItemAge);
+        }
+
+        [HttpGet("throughput/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetThroughputProcessBehaviourChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate));
         }
     }
 }

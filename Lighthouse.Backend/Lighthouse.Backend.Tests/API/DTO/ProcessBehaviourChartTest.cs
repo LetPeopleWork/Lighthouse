@@ -3,12 +3,12 @@ using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
-    public class ProcessBehaviourChartDtoTest
+    public class ProcessBehaviourChartTest
     {
         [Test]
         public void NotReady_BaselineMissing_ReturnsCorrectStatus()
         {
-            var dto = ProcessBehaviourChartDto.NotReady(BaselineStatus.BaselineMissing, "No baseline configured.");
+            var dto = ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "No baseline configured.");
 
             using (Assert.EnterMultipleScope())
             {
@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void NotReady_InsufficientData_ReturnsCorrectStatus()
         {
-            var dto = ProcessBehaviourChartDto.NotReady(BaselineStatus.InsufficientData, "Not enough data points in baseline range.");
+            var dto = ProcessBehaviourChart.NotReady(BaselineStatus.InsufficientData, "Not enough data points in baseline range.");
 
             using (Assert.EnterMultipleScope())
             {
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void NotReady_BaselineInvalid_ReturnsCorrectStatus()
         {
-            var dto = ProcessBehaviourChartDto.NotReady(BaselineStatus.BaselineInvalid, "Baseline end date is in the future.");
+            var dto = ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, "Baseline end date is in the future.");
 
             using (Assert.EnterMultipleScope())
             {
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 new ProcessBehaviourChartDataPoint("2026-01-16T00:00:00Z", 8.0, SpecialCauseType.LargeChange, [103]),
             };
 
-            var dto = new ProcessBehaviourChartDto
+            var dto = new ProcessBehaviourChart
             {
                 Status = BaselineStatus.Ready,
                 StatusReason = string.Empty,
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var point = new ProcessBehaviourChartDataPoint("2026-01-15T14:30:00Z", 7.5, SpecialCauseType.SmallShift, [301]);
 
-            var dto = new ProcessBehaviourChartDto
+            var dto = new ProcessBehaviourChart
             {
                 Status = BaselineStatus.Ready,
                 XAxisKind = XAxisKind.DateTime,

@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
-        private Mock<IProjectMetricsService> projectMetricsServiceMock;
+        private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock = new Mock<IWorkTrackingConnector>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            projectMetricsServiceMock = new Mock<IProjectMetricsService>();
+            projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 features.Add(feature);
             }
 
-            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(features);
 
             var subject = CreateSubject();
@@ -277,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
-            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<Feature>());
 
             var subject = CreateSubject();

@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API
     public class PortfolioMetricsControllerTests
     {
         private Mock<IRepository<Portfolio>> projectRepository;
-        private Mock<IProjectMetricsService> projectMetricsService;
+        private Mock<IPortfolioMetricsService> projectMetricsService;
         private PortfolioMetricsController subject;
         private Portfolio project;
 
@@ -22,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             projectRepository = new Mock<IRepository<Portfolio>>();
-            projectMetricsService = new Mock<IProjectMetricsService>();
+            projectMetricsService = new Mock<IPortfolioMetricsService>();
             subject = new PortfolioMetricsController(projectRepository.Object, projectMetricsService.Object);
             
             project = new Portfolio
@@ -42,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API
             var endDate = new DateTime(2023, 1, 10);
             var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 0, 0, 1, 0, 0, 0, 0, 0, 0]));
             
-            projectMetricsService.Setup(x => x.GetThroughputForProject(project, startDate, endDate))
+            projectMetricsService.Setup(x => x.GetThroughputForPortfolio(project, startDate, endDate))
                 .Returns(expectedResult);
 
             var result = subject.GetThroughput(1, startDate, endDate);
@@ -112,7 +113,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
 
             var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
-            projectMetricsService.Setup(service => service.GetStartedItemsForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
+            projectMetricsService.Setup(service => service.GetStartedItemsForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
 
             var response = subject.GetStartedItems(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
@@ -133,7 +134,7 @@ namespace Lighthouse.Backend.Tests.API
             var endDate = new DateTime(2023, 1, 5);
             var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 2, 1, 1]));
             
-            projectMetricsService.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate))
+            projectMetricsService.Setup(x => x.GetFeaturesInProgressOverTimeForPortfolio(project, startDate, endDate))
                 .Returns(expectedResult);
 
             var result = subject.GetFeaturesInProgressOverTime(1, startDate, endDate);
@@ -154,7 +155,7 @@ namespace Lighthouse.Backend.Tests.API
                 new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1" }
             };
             
-            projectMetricsService.Setup(x => x.GetInProgressFeaturesForProject(project))
+            projectMetricsService.Setup(x => x.GetInProgressFeaturesForPortfolio(project))
                 .Returns(features);
 
             var result = subject.GetInProgressFeatures(1);
@@ -184,7 +185,7 @@ namespace Lighthouse.Backend.Tests.API
                 new PercentileValue(95, 6)
             };
             
-            projectMetricsService.Setup(x => x.GetCycleTimePercentilesForProject(project, startDate, endDate))
+            projectMetricsService.Setup(x => x.GetCycleTimePercentilesForPortfolio(project, startDate, endDate))
                 .Returns(percentiles);
 
             var result = subject.GetCycleTimePercentiles(1, startDate, endDate);
@@ -211,7 +212,7 @@ namespace Lighthouse.Backend.Tests.API
                 new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = DateTime.Now.AddDays(-5), ClosedDate = DateTime.Now }
             };
 
-            projectMetricsService.Setup(x => x.GetCycleTimeDataForProject(project, startDate, endDate))
+            projectMetricsService.Setup(x => x.GetCycleTimeDataForPortfolio(project, startDate, endDate))
                 .Returns(features);
 
             var result = subject.GetCycleTimeData(1, startDate, endDate);
@@ -239,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API
                 new PercentileValue(95, 6)
             };
 
-            projectMetricsService.Setup(x => x.GetSizePercentilesForProject(project, startDate, endDate))
+            projectMetricsService.Setup(x => x.GetSizePercentilesForPortfolio(project, startDate, endDate))
                 .Returns(percentiles);
 
             var result = subject.GetSizePercentiles(1, startDate, endDate);
@@ -292,7 +293,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var howManyForecast = new HowManyForecast();
             var expectedScore = new ForecastPredictabilityScore(howManyForecast);
-            projectMetricsService.Setup(service => service.GetMultiItemForecastPredictabilityScoreForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
+            projectMetricsService.Setup(service => service.GetMultiItemForecastPredictabilityScoreForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
 
             var response = subject.GetMultiItemForecastPredictabilityScore(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
@@ -404,6 +405,60 @@ namespace Lighthouse.Backend.Tests.API
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos, Is.Empty);
             };
+        }
+
+        [Test]
+        public void GetThroughputPbc_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetThroughputProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetThroughputProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_PortfolioExists_ReturnsPbcFromService()
+        {
+            var expectedPbc = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = 2.5,
+                UpperNaturalProcessLimit = 5.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, SpecialCauseType.None, [1, 2])],
+            };
+            projectMetricsService.Setup(service => service.GetThroughputProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var response = subject.GetThroughputProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
         }
     }
 }

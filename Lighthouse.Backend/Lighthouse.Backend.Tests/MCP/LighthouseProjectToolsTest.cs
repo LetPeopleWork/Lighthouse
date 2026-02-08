@@ -14,14 +14,14 @@ namespace Lighthouse.Backend.Tests.MCP
     {
         private Mock<IRepository<Portfolio>> projectRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
-        private Mock<IProjectMetricsService> projectMetricsServiceMock;
+        private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
             projectRepositoryMock = new Mock<IRepository<Portfolio>>();
             forecastServiceMock = new Mock<IForecastService>();
-            projectMetricsServiceMock = new Mock<IProjectMetricsService>();
+            projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
             SetupServiceProviderMock(projectRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(projectMetricsServiceMock.Object);
@@ -376,13 +376,13 @@ namespace Lighthouse.Backend.Tests.MCP
             projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
             
-            projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(mockCycleTimePercentiles);
-            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(mockCycleTimeData);
-            projectMetricsServiceMock.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetFeaturesInProgressOverTimeForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(mockWipData);
-            projectMetricsServiceMock.Setup(x => x.GetThroughputForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetThroughputForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(mockThroughputData);
 
             var subject = CreateSubject();
@@ -423,10 +423,10 @@ namespace Lighthouse.Backend.Tests.MCP
             }
 
             // Verify service calls were made
-            projectMetricsServiceMock.Verify(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
-            projectMetricsServiceMock.Verify(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
-            projectMetricsServiceMock.Verify(x => x.GetFeaturesInProgressOverTimeForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
-            projectMetricsServiceMock.Verify(x => x.GetThroughputForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetCycleTimePercentilesForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetFeaturesInProgressOverTimeForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetThroughputForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
         }
 
         [Test]
@@ -453,13 +453,13 @@ namespace Lighthouse.Backend.Tests.MCP
             projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
             
-            projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<PercentileValue>());
-            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<Feature>());
-            projectMetricsServiceMock.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetFeaturesInProgressOverTimeForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new RunChartData());
-            projectMetricsServiceMock.Setup(x => x.GetThroughputForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            projectMetricsServiceMock.Setup(x => x.GetThroughputForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new RunChartData());
 
             var subject = CreateSubject();
@@ -483,7 +483,7 @@ namespace Lighthouse.Backend.Tests.MCP
             }
 
             // Verify service calls were made with default date range
-            projectMetricsServiceMock.Verify(x => x.GetCycleTimePercentilesForProject(
+            projectMetricsServiceMock.Verify(x => x.GetCycleTimePercentilesForPortfolio(
                 project, 
                 It.Is<DateTime>(d => d.Date == DateTime.Now.AddDays(-90).Date),
                 It.Is<DateTime>(d => d.Date == DateTime.Now.Date)), 

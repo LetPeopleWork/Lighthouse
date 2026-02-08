@@ -54,12 +54,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
             var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
-            var projectMetricsService = serviceProvider.GetRequiredService<IProjectMetricsService>();
+            var projectMetricsService = serviceProvider.GetRequiredService<IPortfolioMetricsService>();
             var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
             var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
 
             await workItemService.UpdateFeaturesForProject(project);
-            projectMetricsService.InvalidateProjectMetrics(project);
+            projectMetricsService.InvalidatePortfolioMetrics(project);
 
             var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
             deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);

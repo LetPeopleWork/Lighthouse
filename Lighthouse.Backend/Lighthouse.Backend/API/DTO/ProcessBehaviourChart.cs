@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API.DTO
         SpecialCauseType SpecialCause,
         int[] WorkItemIds);
 
-    public record ProcessBehaviourChartDto
+    public record ProcessBehaviourChart
     {
         public BaselineStatus Status { get; init; }
 
@@ -41,9 +41,9 @@ namespace Lighthouse.Backend.API.DTO
 
         public ProcessBehaviourChartDataPoint[] DataPoints { get; init; } = [];
 
-        public static ProcessBehaviourChartDto NotReady(BaselineStatus status, string reason)
+        public static ProcessBehaviourChart NotReady(BaselineStatus status, string reason)
         {
-            return new ProcessBehaviourChartDto
+            return new ProcessBehaviourChart
             {
                 Status = status,
                 StatusReason = reason,

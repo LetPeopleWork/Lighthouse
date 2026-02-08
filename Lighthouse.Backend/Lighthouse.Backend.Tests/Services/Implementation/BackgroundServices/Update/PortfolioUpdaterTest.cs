@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IForecastService> forecastServiceMock;
-        private Mock<IProjectMetricsService> projectMetricsServiceMock;
+        private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
             workItemServiceMock = new Mock<IWorkItemService>();
-            projectMetricsServiceMock = new Mock<IProjectMetricsService>();
+            projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
 
             var tcs = new TaskCompletionSource<bool>();
-            projectMetricsServiceMock.Setup(x => x.InvalidateProjectMetrics(project))
+            projectMetricsServiceMock.Setup(x => x.InvalidatePortfolioMetrics(project))
                 .Callback(() => tcs.TrySetResult(true));
 
             await subject.StartAsync(CancellationToken.None);

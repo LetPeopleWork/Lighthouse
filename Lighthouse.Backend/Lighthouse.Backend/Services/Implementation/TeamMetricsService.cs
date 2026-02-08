@@ -107,6 +107,12 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        {
+            return BuildThroughputProcessBehaviourChart(team, startDate, endDate,
+                (s, e) => GetThroughputForTeam(team, s, e));
+        }
+
         public RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Started Items for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

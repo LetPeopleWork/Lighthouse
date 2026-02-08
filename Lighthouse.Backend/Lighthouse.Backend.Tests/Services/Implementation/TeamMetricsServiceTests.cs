@@ -924,6 +924,225 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(totalAge, Is.EqualTo(8));
         }
 
+        [Test]
+        public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.DataPoints, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_BaselineInvalid_ReturnsBaselineInvalid()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-5);
+            testTeam.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-2);
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.DataPoints, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_ReturnsReadyStatus()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-7).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_ReturnsCorrectNumberOfDataPoints()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-7).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            var expectedDays = (displayEnd - displayStart).Days + 1;
+            Assert.That(result.DataPoints, Has.Length.EqualTo(expectedDays));
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_ReturnsDateXAxisKind()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-7).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            Assert.That(result.XAxisKind, Is.EqualTo(XAxisKind.Date));
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_XValuesAreFormattedDates()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var displayEnd = new DateTime(2025, 1, 3, 0, 0, 0, DateTimeKind.Utc);
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints[0].XValue, Is.EqualTo("2025-01-01"));
+                Assert.That(result.DataPoints[1].XValue, Is.EqualTo("2025-01-02"));
+                Assert.That(result.DataPoints[2].XValue, Is.EqualTo("2025-01-03"));
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_YValuesMatchThroughputCounts()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-2).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.ClosedDate = displayStart;
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.ClosedDate = displayStart;
+
+            var item3 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item3.ClosedDate = displayEnd;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints[0].YValue, Is.EqualTo(2));
+                Assert.That(result.DataPoints[1].YValue, Is.EqualTo(0));
+                Assert.That(result.DataPoints[2].YValue, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_WorkItemIdsIncluded()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-1).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.ClosedDate = displayStart;
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.ClosedDate = displayStart;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints[0].WorkItemIds, Has.Length.EqualTo(2));
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item1.Id));
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item2.Id));
+                Assert.That(result.DataPoints[1].WorkItemIds, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_ComputesBaselineStatistics()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-3).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            // Add items in baseline period to create known statistics
+            for (var day = 0; day < 15; day++)
+            {
+                var closedDate = baselineStart.AddDays(day);
+                var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
+                item.ClosedDate = closedDate;
+            }
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.Average, Is.GreaterThan(0));
+                Assert.That(result.UpperNaturalProcessLimit, Is.GreaterThanOrEqualTo(result.Average));
+                Assert.That(result.LowerNaturalProcessLimit, Is.GreaterThanOrEqualTo(0));
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_LnplClampedToZero()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-1).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            // Sparse throughput in baseline creates conditions where LNPL would be negative
+            var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item.ClosedDate = baselineStart.AddDays(5);
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            Assert.That(result.LowerNaturalProcessLimit, Is.GreaterThanOrEqualTo(0));
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_OnlyStartDateSet_ReturnsBaselineInvalid()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-30);
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+        }
+
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
         {
             var workItem = new WorkItem

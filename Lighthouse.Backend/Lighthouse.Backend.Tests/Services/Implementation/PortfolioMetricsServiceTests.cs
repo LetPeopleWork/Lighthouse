@@ -15,21 +15,21 @@ using System.Linq.Expressions;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [TestFixture]
-    public class ProjectMetricsServiceTests
+    public class PortfolioMetricsServiceTests
     {
-        private Mock<ILogger<ProjectMetricsService>> logger;
+        private Mock<ILogger<PortfolioMetricsService>> logger;
         private Mock<IRepository<Feature>> featureRepository;
         private Mock<IAppSettingService> appSettingService;
         private Mock<IForecastService> forecastServiceMock;
 
-        private ProjectMetricsService subject;
+        private PortfolioMetricsService subject;
         private Portfolio project;
         private List<Feature> features;
 
         [SetUp]
         public void Setup()
         {
-            logger = new Mock<ILogger<ProjectMetricsService>>();
+            logger = new Mock<ILogger<PortfolioMetricsService>>();
             featureRepository = new Mock<IRepository<Feature>>();
             appSettingService = new Mock<IAppSettingService>();
 
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
 
-            subject = new ProjectMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object);
+            subject = new PortfolioMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                     It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             // Act
-            var result = subject.GetThroughputForProject(project, startDate, endDate);
+            var result = subject.GetThroughputForPortfolio(project, startDate, endDate);
 
             // Assert
             using (Assert.EnterMultipleScope())
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             // Act
-            var result = subject.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate);
+            var result = subject.GetFeaturesInProgressOverTimeForPortfolio(project, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
-            var throughput = subject.GetStartedItemsForProject(project, startDate, endDate);
+            var throughput = subject.GetStartedItemsForPortfolio(project, startDate, endDate);
 
             Assert.That(throughput.Total, Is.EqualTo(2));
         }
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetInProgressFeaturesForProject_ReturnsActiveFeatures()
         {
             // Act
-            var result = subject.GetInProgressFeaturesForProject(project).ToList();
+            var result = subject.GetInProgressFeaturesForPortfolio(project).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
 
-            var result = subject.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimePercentilesForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2077, 1, 1);
             var endDate = new DateTime(2077, 1, 31);
 
-            var result = subject.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimePercentilesForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -169,7 +169,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature1.AddOrUpdateWorkForTeam(team, 3, 5);
             feature2.AddOrUpdateWorkForTeam(team, 3, 15);
 
-            var result = subject.GetSizePercentilesForProject(project, startDate, endDate).ToList();
+            var result = subject.GetSizePercentilesForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2077, 1, 1);
             var endDate = new DateTime(2077, 1, 31);
 
-            var result = subject.GetSizePercentilesForProject(project, startDate, endDate).ToList();
+            var result = subject.GetSizePercentilesForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -203,7 +203,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
 
-            var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             closedFeatures.First().ClosedDate = DateTime.Now;
 
-            var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -245,7 +245,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             closedFeatures.First().ClosedDate = DateTime.Now.AddDays(-1);
 
-            var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void InvalidateProjectMetrics_DoesNotThrow()
         {
-            Assert.DoesNotThrow(() => subject.InvalidateProjectMetrics(project));
+            Assert.DoesNotThrow(() => subject.InvalidatePortfolioMetrics(project));
         }
 
         [Test]
@@ -277,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 10)).Returns(howManyForecast);
 
-            var score = subject.GetMultiItemForecastPredictabilityScoreForProject(project, startDate, endDate);
+            var score = subject.GetMultiItemForecastPredictabilityScoreForPortfolio(project, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {

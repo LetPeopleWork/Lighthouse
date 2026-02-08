@@ -120,5 +120,16 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetTotalWorkItemAge);
         }
+
+        [HttpGet("throughput/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetThroughputProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate));
+        }
     }
 }
