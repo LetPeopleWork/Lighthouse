@@ -91,8 +91,8 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 			)}
 
 			<LicenseTooltip
-				canUseFeature={saveTooltip === ""}
-				defaultTooltip={saveTooltip}
+				canUseFeature={!disableSave}
+				defaultTooltip=""
 				premiumExtraInfo={saveTooltip}
 			>
 				<span>
