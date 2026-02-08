@@ -34,6 +34,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 return new BaselineValidationResult(false, "Baseline end date must not be in the future.");
             }
 
+            if (doneItemsCutoffDays <= 0)
+            {
+                // CutOff = 0 means full history - no need to check
+                return new BaselineValidationResult(true);
+            }
+
             var cutoffDate = DateTime.UtcNow.Date.AddDays(-doneItemsCutoffDays);
             if (startDate.Value.Date < cutoffDate)
             {

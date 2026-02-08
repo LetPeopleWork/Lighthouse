@@ -131,5 +131,38 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate));
         }
+
+        [HttpGet("wipOverTime/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetWipProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate));
+        }
+
+        [HttpGet("totalWorkItemAge/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetTotalWorkItemAgeProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate));
+        }
+
+        [HttpGet("cycleTime/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetCycleTimeProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate));
+        }
     }
 }

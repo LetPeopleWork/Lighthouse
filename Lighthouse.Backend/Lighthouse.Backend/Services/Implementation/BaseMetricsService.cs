@@ -28,6 +28,15 @@ namespace Lighthouse.Backend.Services.Implementation
             DateTime displayEnd,
             Func<DateTime, DateTime, RunChartData> getThroughput)
         {
+            return BuildDailyRunChartProcessBehaviourChart(owner, displayStart, displayEnd, getThroughput);
+        }
+
+        protected static ProcessBehaviourChart BuildDailyRunChartProcessBehaviourChart(
+            WorkTrackingSystemOptionsOwner owner,
+            DateTime displayStart,
+            DateTime displayEnd,
+            Func<DateTime, DateTime, RunChartData> getRunChartData)
+        {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
 
@@ -42,15 +51,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
             }
 
-            var baselineThroughput = getThroughput(baselineStart!.Value, baselineEnd!.Value);
-            var displayThroughput = getThroughput(displayStart, displayEnd);
+            var baselineData = getRunChartData(baselineStart!.Value, baselineEnd!.Value);
+            var displayData = getRunChartData(displayStart, displayEnd);
 
-            var baselineValues = ExtractDailyCounts(baselineThroughput);
-            var displayValues = ExtractDailyCounts(displayThroughput);
+            var baselineValues = ExtractDailyCounts(baselineData);
+            var displayValues = ExtractDailyCounts(displayData);
 
             var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues, clampLnplToZero: true);
 
-            var dataPoints = BuildDataPoints(displayThroughput, displayStart, xmrResult);
+            var dataPoints = BuildDataPoints(displayData, displayStart, xmrResult);
 
             return new ProcessBehaviourChart
             {
@@ -63,10 +72,120 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        private static double[] ExtractDailyCounts(RunChartData runChartData)
+        protected static ProcessBehaviourChart BuildTotalWorkItemAgeProcessBehaviourChart(
+            WorkTrackingSystemOptionsOwner owner,
+            DateTime displayStart,
+            DateTime displayEnd,
+            Func<DateTime, DateTime, (int[] Values, int[][] WorkItemIdsPerDay)> getDailyValues)
+        {
+            var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
+            var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
+
+            if (baselineStart == null && baselineEnd == null)
+            {
+                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "Baseline dates are not configured.");
+            }
+
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
+            if (!validation.IsValid)
+            {
+                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
+            }
+
+            var baselineResult = getDailyValues(baselineStart!.Value, baselineEnd!.Value);
+            var displayResult = getDailyValues(displayStart, displayEnd);
+
+            var xmrResult = XmRCalculator.Calculate(baselineResult.Values, displayResult.Values, clampLnplToZero: true);
+
+            var totalDays = displayResult.Values.Length;
+            var dataPoints = new ProcessBehaviourChartDataPoint[totalDays];
+
+            for (var i = 0; i < totalDays; i++)
+            {
+                var date = displayStart.AddDays(i).ToString("yyyy-MM-dd");
+                dataPoints[i] = new ProcessBehaviourChartDataPoint(
+                    date,
+                    displayResult.Values[i],
+                    xmrResult.SpecialCauseClassifications[i],
+                    displayResult.WorkItemIdsPerDay[i]);
+            }
+
+            return new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = xmrResult.Average,
+                UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
+                LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                DataPoints = dataPoints,
+            };
+        }
+
+        protected static ProcessBehaviourChart BuildCycleTimeProcessBehaviourChart(
+            WorkTrackingSystemOptionsOwner owner,
+            DateTime displayStart,
+            DateTime displayEnd,
+            Func<DateTime, DateTime, IEnumerable<WorkItemBase>> getClosedItems)
+        {
+            var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
+            var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
+
+            if (baselineStart == null && baselineEnd == null)
+            {
+                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "Baseline dates are not configured.");
+            }
+
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
+            if (!validation.IsValid)
+            {
+                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
+            }
+
+            var baselineItems = getClosedItems(baselineStart!.Value, baselineEnd!.Value)
+                .Where(i => i.CycleTime > 0)
+                .OrderBy(i => i.ClosedDate)
+                .ThenBy(i => i.Id)
+                .ToList();
+
+            var displayItems = getClosedItems(displayStart, displayEnd)
+                .Where(i => i.CycleTime > 0)
+                .OrderBy(i => i.ClosedDate)
+                .ThenBy(i => i.Id)
+                .ToList();
+
+            var baselineValues = baselineItems.Select(i => i.CycleTime).ToArray();
+            var displayValues = displayItems.Select(i => i.CycleTime).ToArray();
+
+            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues, clampLnplToZero: false);
+
+            var dataPoints = new ProcessBehaviourChartDataPoint[displayItems.Count];
+
+            for (var i = 0; i < displayItems.Count; i++)
+            {
+                var item = displayItems[i];
+                var xValue = item.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                dataPoints[i] = new ProcessBehaviourChartDataPoint(
+                    xValue,
+                    item.CycleTime,
+                    xmrResult.SpecialCauseClassifications[i],
+                    [item.Id]);
+            }
+
+            return new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.DateTime,
+                Average = xmrResult.Average,
+                UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
+                LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                DataPoints = dataPoints,
+            };
+        }
+
+        private static int[] ExtractDailyCounts(RunChartData runChartData)
         {
             var totalDays = runChartData.History;
-            var values = new double[totalDays];
+            var values = new int[totalDays];
 
             for (var i = 0; i < totalDays; i++)
             {
@@ -131,6 +250,26 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return runChartData;
+        }
+
+        protected static (int[] Values, int[][] WorkItemIdsPerDay) GenerateTotalWorkItemAgeByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        {
+            var totalDays = (endDate - startDate).Days + 1;
+            var values = new int[totalDays];
+            var workItemIdsPerDay = new int[totalDays][];
+
+            for (var index = 0; index < totalDays; index++)
+            {
+                var currentDate = startDate.AddDays(index);
+                var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i));
+
+                var totalAge = itemsInProgressOnDay.Sum(item => (int)((currentDate.Date - item.StartedDate?.Date)?.TotalDays ?? 0) + 1);
+                
+                values[index] = totalAge;
+                workItemIdsPerDay[index] = itemsInProgressOnDay.Select(i => i.Id).ToArray();
+            }
+
+            return (values, workItemIdsPerDay);
         }
 
         protected static Dictionary<int, List<WorkItemBase>> GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)

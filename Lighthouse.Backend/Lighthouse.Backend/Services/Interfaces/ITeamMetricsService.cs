@@ -10,6 +10,12 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
 
+        ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+
+        ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+
+        ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);

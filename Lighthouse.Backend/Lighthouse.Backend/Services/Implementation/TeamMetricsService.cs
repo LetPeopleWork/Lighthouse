@@ -113,6 +113,24 @@ namespace Lighthouse.Backend.Services.Implementation
                 (s, e) => GetThroughputForTeam(team, s, e));
         }
 
+        public ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        {
+            return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
+                (s, e) => GetWorkInProgressOverTimeForTeam(team, s, e));
+        }
+
+        public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        {
+            return BuildTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate,
+                (s, e) => GetTotalWorkItemAgeOverTimeForTeam(team, s, e));
+        }
+
+        public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        {
+            return BuildCycleTimeProcessBehaviourChart(team, startDate, endDate,
+                (s, e) => GetClosedItemsForTeam(team, s, e));
+        }
+
         public RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Started Items for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
@@ -151,6 +169,18 @@ namespace Lighthouse.Backend.Services.Implementation
             var throughput = new RunChartData(wipOverTime);
 
             return throughput;
+        }
+
+        private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Total Work Item Age for over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
+            var wiaOverTime = GenerateTotalWorkItemAgeByDay(startDate, endDate, itemsFromTeam);
+
+            logger.LogDebug("Finished updating Total Work Item Age Over Time for Team {TeamName}", team.Name);
+
+            return wiaOverTime;
         }
 
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate)

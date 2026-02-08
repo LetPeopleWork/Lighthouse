@@ -112,6 +112,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void Validate_CutOffSetToZero_ReturnsValid()
+        {
+            // CutOff = 0 means full history
+            var start = DateTime.UtcNow.Date.AddDays(-60);
+            var end = DateTime.UtcNow.Date.AddDays(-30);
+
+            var result = BaselineValidationService.Validate(start, end, 0);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
         public void Validate_ValidBaseline_ReturnsValid()
         {
             var start = DateTime.UtcNow.Date.AddDays(-60);

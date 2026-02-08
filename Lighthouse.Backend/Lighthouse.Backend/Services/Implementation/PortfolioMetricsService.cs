@@ -40,6 +40,24 @@ namespace Lighthouse.Backend.Services.Implementation
                 (s, e) => GetThroughputForPortfolio(portfolio, s, e));
         }
 
+        public ProcessBehaviourChart GetWipProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            return BuildDailyRunChartProcessBehaviourChart(portfolio, startDate, endDate,
+                (s, e) => GetFeaturesInProgressOverTimeForPortfolio(portfolio, s, e));
+        }
+
+        public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            return BuildTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate,
+                (s, e) => GetTotalWorkItemAgeOverTime(portfolio, s, e));
+        }
+
+        public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            return BuildCycleTimeProcessBehaviourChart(portfolio, startDate, endDate,
+                (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e));
+        }
+
         public RunChartData GetFeaturesInProgressOverTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Features In Progress Over Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
@@ -57,6 +75,26 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Finished calculating Features In Progress Over Time for Portfolio {PortfolioName}", portfolio.Name);
 
             return new RunChartData(wipOverTime);
+        }
+
+        private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTime(Portfolio portfolio, DateTime startDate,
+            DateTime endDate)
+        {
+            logger.LogDebug("Getting Total Work Item Age Over Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            var features = featureRepository.GetAllByPredicate(f =>
+                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
+                    (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
+                .ToList();
+
+            var wiaOverTime = GenerateTotalWorkItemAgeByDay(
+                startDate,
+                endDate,
+                features);
+
+            logger.LogDebug("Finished calculating Total Work Item Age Over Time for Portfolio {PortfolioName}", portfolio.Name);
+
+            return wiaOverTime;
         }
 
         public RunChartData GetStartedItemsForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -148,8 +186,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var allFeatures = featureRepository.GetAllByPredicate(f =>
                     f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    (f.StateCategory == StateCategories.Done || 
-                     f.StateCategory == StateCategories.ToDo || 
+                    (f.StateCategory == StateCategories.Done ||
+                     f.StateCategory == StateCategories.ToDo ||
                      f.StateCategory == StateCategories.Doing))
                 .ToList();
 
@@ -188,7 +226,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var closedFeaturesOfPortfolio = featureRepository.GetAllByPredicate(f =>
                     f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    f.StateCategory == StateCategories.Done)    
+                    f.StateCategory == StateCategories.Done)
                 .ToList();
 
             return closedFeaturesOfPortfolio

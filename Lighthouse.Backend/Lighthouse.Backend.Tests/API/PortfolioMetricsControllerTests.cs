@@ -460,5 +460,143 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Value, Is.EqualTo(expectedPbc));
             }
         }
+
+        [Test]
+        public void GetWipPbc_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetWipProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetWipPbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetWipProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetWipPbc_PortfolioExists_ReturnsPbcFromService()
+        {
+            var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready };
+            projectMetricsService.Setup(service => service.GetWipProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var response = subject.GetWipProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgePbc_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgePbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgePbc_PortfolioExists_ReturnsPbcFromService()
+        {
+            var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready };
+            projectMetricsService.Setup(service => service.GetTotalWorkItemAgeProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimePbc_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetCycleTimeProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimePbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetCycleTimeProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimePbc_PortfolioExists_ReturnsPbcFromService()
+        {
+            var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready, XAxisKind = XAxisKind.DateTime };
+            projectMetricsService.Setup(service => service.GetCycleTimeProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var response = subject.GetCycleTimeProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
     }
 }

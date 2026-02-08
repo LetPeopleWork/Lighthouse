@@ -19,11 +19,13 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const double MovingRangeMultiplier = 2.66;
 
-        public static XmRResult Calculate(double[] baselineValues, double[] displayValues, bool clampLnplToZero)
+        public static XmRResult Calculate(int[] baselineValues, int[] displayValues, bool clampLnplToZero)
         {
             if (baselineValues.Length == 0)
             {
-                return new XmRResult(0, 0, 0, []);
+                var emptyClassifications = new SpecialCauseType[displayValues.Length];
+                Array.Fill(emptyClassifications, SpecialCauseType.None);
+                return new XmRResult(0, 0, 0, emptyClassifications);
             }
 
             var average = baselineValues.Average();
@@ -58,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         private static SpecialCauseType[] ClassifyAllPoints(
-            double[] values,
+            int[] values,
             double average,
             double unpl,
             double lnpl,
@@ -107,7 +109,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return classifications;
         }
 
-        private static bool IsModerateChange(double[] values, int index, double twoSigmaUpper, double twoSigmaLower)
+        private static bool IsModerateChange(int[] values, int index, double twoSigmaUpper, double twoSigmaLower)
         {
             if (index < 2)
             {
@@ -142,7 +144,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return countBelow >= 2;
         }
 
-        private static bool IsModerateShift(double[] values, int index, double oneSigmaUpper, double oneSigmaLower)
+        private static bool IsModerateShift(int[] values, int index, double oneSigmaUpper, double oneSigmaLower)
         {
             if (index < 4)
             {
@@ -177,7 +179,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return countBelow >= 4;
         }
 
-        private static bool IsSmallShift(double[] values, int index, double average)
+        private static bool IsSmallShift(int[] values, int index, double average)
         {
             if (index < 7)
             {

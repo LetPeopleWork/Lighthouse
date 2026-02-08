@@ -241,7 +241,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(kvp.Value, Has.Count.EqualTo(1));
                 }
             }
-            ;
         }
 
         [Test]
@@ -376,7 +375,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 1, 0, 0, 1]));
             }
-            ;
         }
 
         [Test]
@@ -414,7 +412,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 0, 0, 0, 1]));
             }
-            ;
         }
 
 
@@ -441,7 +438,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([0, 0, 0, 0, 0, 0, 0, 0]));
             }
-            ;
         }
 
         [Test]
@@ -515,7 +511,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(wipData.WorkItemsPerUnitOfTime[index], Has.Count.EqualTo(9 - index));
                 }
             }
-            ;
         }
 
         [Test]
@@ -578,7 +573,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(1));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Is.Empty);
             }
-            ;
         }
 
         [Test]
@@ -600,7 +594,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Has.Count.EqualTo(1));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[2], Has.Count.EqualTo(1));
             }
-            ;
         }
 
         [Test]
@@ -622,7 +615,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Has.Count.EqualTo(0));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[2], Has.Count.EqualTo(0));
             }
-            ;
         }
 
         [Test]
@@ -654,7 +646,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(cycleTimePercentiles[3].Percentile, Is.EqualTo(95));
                 Assert.That(cycleTimePercentiles[3].Value, Is.EqualTo(9));
             }
-            ;
         }
 
         [Test]
@@ -678,7 +669,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(cycleTimePercentiles[3].Percentile, Is.EqualTo(95));
                 Assert.That(cycleTimePercentiles[3].Value, Is.Zero);
             }
-            ;
         }
 
         [Test]
@@ -703,7 +693,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
             }
-            ;
         }
 
         [Test]
@@ -720,7 +709,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
                 Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(2));
             }
-            ;
         }
 
         [Test]
@@ -737,7 +725,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
                 Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(1));
             }
-            ;
         }
 
         [Test]
@@ -762,7 +749,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
             }
-            ;
         }
 
         [Test]
@@ -842,7 +828,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(percentile.Value, Is.EqualTo(expectedResult.Percentiles.Single(p => p.Percentile == percentile.Percentile).Value));
                 }
             }
-            ;
         }
 
         [Test]
@@ -1049,7 +1034,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.DataPoints[0].YValue, Is.EqualTo(2));
-                Assert.That(result.DataPoints[1].YValue, Is.EqualTo(0));
+                Assert.That(result.DataPoints[1].YValue, Is.Zero);
                 Assert.That(result.DataPoints[2].YValue, Is.EqualTo(1));
             }
         }
@@ -1141,6 +1126,321 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var result = subject.GetThroughputProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
 
             Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+        }
+
+        // --- WIP PBC Tests ---
+
+        [Test]
+        public void GetWipProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetWipProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.DataPoints, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetWipProcessBehaviourChart_ValidBaseline_ReturnsReadyWithDataPoints()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-3).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            // Add an in-progress item
+            var item = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            item.StartedDate = displayStart.AddDays(-1);
+            item.ClosedDate = null;
+
+            var result = subject.GetWipProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.XAxisKind, Is.EqualTo(XAxisKind.Date));
+                Assert.That(result.DataPoints, Has.Length.EqualTo(4));
+            }
+        }
+
+        [Test]
+        public void GetWipProcessBehaviourChart_ValidBaseline_YValuesMatchWipCounts()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-2).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            // Item in progress for entire display range
+            var item1 = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            item1.StartedDate = displayStart.AddDays(-1);
+            item1.ClosedDate = null;
+
+            // Item closed during display range
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = displayStart.AddDays(-1);
+            item2.ClosedDate = displayStart.AddDays(1);
+
+            var result = subject.GetWipProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints[0].YValue, Is.EqualTo(2)); // Both in progress on day 0
+                Assert.That(result.DataPoints[1].YValue, Is.EqualTo(1)); // item2 closed on day 1
+                Assert.That(result.DataPoints[2].YValue, Is.EqualTo(1)); // Only item1
+            }
+        }
+
+        [Test]
+        public void GetWipProcessBehaviourChart_ValidBaseline_LnplClampedToZero()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-1).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetWipProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            Assert.That(result.LowerNaturalProcessLimit, Is.GreaterThanOrEqualTo(0));
+        }
+
+        // --- Total Work Item Age PBC Tests ---
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.DataPoints, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_ValidBaseline_ReturnsReadyWithDataPoints()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-3).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.XAxisKind, Is.EqualTo(XAxisKind.Date));
+                Assert.That(result.DataPoints, Has.Length.EqualTo(4));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_ValidBaseline_AgeIncreasesOverTime()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-2).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            item.StartedDate = displayStart.AddDays(-5);
+            item.ClosedDate = null;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Age should increase each day
+                Assert.That(result.DataPoints[1].YValue, Is.GreaterThan(result.DataPoints[0].YValue));
+                Assert.That(result.DataPoints[2].YValue, Is.GreaterThan(result.DataPoints[1].YValue));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_ValidBaseline_WorkItemIdsIncluded()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-1).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            item.StartedDate = displayStart.AddDays(-1);
+            item.ClosedDate = null;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item.Id));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_ValidBaseline_LnplClampedToZero()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-1).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            Assert.That(result.LowerNaturalProcessLimit, Is.GreaterThanOrEqualTo(0));
+        }
+
+        // --- Cycle Time PBC Tests ---
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.DataPoints, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_ValidBaseline_ReturnsReadyWithDateTimeXAxis()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-7).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item.StartedDate = displayStart;
+            item.ClosedDate = displayStart.AddDays(3);
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.XAxisKind, Is.EqualTo(XAxisKind.DateTime));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_ValidBaseline_PerItemDataPoints()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-7).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = displayStart;
+            item1.ClosedDate = displayStart.AddDays(2);
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = displayStart;
+            item2.ClosedDate = displayStart.AddDays(5);
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints, Has.Length.EqualTo(2));
+                Assert.That(result.DataPoints[0].YValue, Is.EqualTo(item1.CycleTime));
+                Assert.That(result.DataPoints[1].YValue, Is.EqualTo(item2.CycleTime));
+                Assert.That(result.DataPoints[0].WorkItemIds, Is.EqualTo(new[] { item1.Id }));
+                Assert.That(result.DataPoints[1].WorkItemIds, Is.EqualTo(new[] { item2.Id }));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_ValidBaseline_OrderedByClosedDateThenId()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = DateTime.UtcNow.AddDays(-7).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            // item2 created first (lower ID), closed later
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = displayStart;
+            item1.ClosedDate = displayStart.AddDays(5);
+
+            // item2 created second (higher ID), closed earlier
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = displayStart;
+            item2.ClosedDate = displayStart.AddDays(2);
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Should be ordered by ClosedDate: item2 first, then item1
+                Assert.That(result.DataPoints[0].WorkItemIds[0], Is.EqualTo(item2.Id));
+                Assert.That(result.DataPoints[1].WorkItemIds[0], Is.EqualTo(item1.Id));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_ValidBaseline_XValuesAreIsoDateTimes()
+        {
+            var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
+            var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
+            var displayStart = new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+            var displayEnd = new DateTime(2025, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
+
+            var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item.StartedDate = displayStart;
+            item.ClosedDate = new DateTime(2025, 6, 5, 14, 30, 0, DateTimeKind.Utc);
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            Assert.That(result.DataPoints[0].XValue, Is.EqualTo("2025-06-05T14:30:00"));
         }
 
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
