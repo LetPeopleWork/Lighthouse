@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const double MovingRangeMultiplier = 2.66;
 
-        public static XmRResult Calculate(int[] baselineValues, int[] displayValues, bool clampLnplToZero)
+        public static XmRResult Calculate(int[] baselineValues, int[] displayValues)
         {
             if (baselineValues.Length == 0)
             {
@@ -47,14 +47,16 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var unpl = average + MovingRangeMultiplier * mrBar;
             var lnpl = average - MovingRangeMultiplier * mrBar;
+
+            // Zero-bounded data: clamp negative lower sigma lines to zero.
+            // When a sigma line is zero it is considered not drawn and
+            // any detection rule that depends on it becomes invalid.
+            lnpl = lnpl < 0 ? 0 : lnpl;
+
             var sigma = mrBar / 1.128;
 
-            if (clampLnplToZero && lnpl < 0)
-            {
-                lnpl = 0;
-            }
-
-            var specialCauseClassifications = ClassifyAllPoints(displayValues, average, unpl, lnpl, sigma);
+            var specialCauseClassifications = ClassifyAllPoints(
+                displayValues, average, unpl, lnpl, sigma);
 
             return new XmRResult(average, unpl, lnpl, specialCauseClassifications);
         }
@@ -67,36 +69,46 @@ namespace Lighthouse.Backend.Services.Implementation
             double sigma)
         {
             var oneSigmaUpper = average + sigma;
-            var oneSigmaLower = average - sigma;
             var twoSigmaUpper = average + 2 * sigma;
+
+            var oneSigmaLower = average - sigma;
             var twoSigmaLower = average - 2 * sigma;
+
+            twoSigmaLower = twoSigmaLower < 0 ? 0 : twoSigmaLower;
+            oneSigmaLower = oneSigmaLower < 0 ? 0 : oneSigmaLower;
+
+            // A sigma line at zero is not drawn → the below-side detection rule is invalid
+            var isLnplValid = lnpl > 0;
+            var isTwoSigmaLowerValid = twoSigmaLower > 0;
+            var isOneSigmaLowerValid = oneSigmaLower > 0;
 
             var classifications = new SpecialCauseType[values.Length];
 
             for (var i = 0; i < values.Length; i++)
             {
                 // Rule 1: Large Change — point beyond UNPL or below LNPL (highest priority)
-                if (values[i] > unpl || values[i] < lnpl)
+                if (values[i] > unpl || (isLnplValid && values[i] < lnpl))
                 {
                     classifications[i] = SpecialCauseType.LargeChange;
                     continue;
                 }
 
                 // Rule 2: Moderate Change — 2 of 3 successive points beyond 2σ on same side
-                if (IsModerateChange(values, i, twoSigmaUpper, twoSigmaLower))
+                if (IsModerateChange(values, i, twoSigmaUpper, twoSigmaLower, isTwoSigmaLowerValid))
                 {
                     classifications[i] = SpecialCauseType.ModerateChange;
                     continue;
                 }
 
                 // Rule 3: Moderate Shift — 4 of 5 successive points beyond 1σ on same side
-                if (IsModerateShift(values, i, oneSigmaUpper, oneSigmaLower))
+                if (IsModerateShift(values, i, oneSigmaUpper, oneSigmaLower, isOneSigmaLowerValid))
                 {
                     classifications[i] = SpecialCauseType.ModerateShift;
                     continue;
                 }
 
                 // Rule 4: Small Shift — 8+ successive points on the same side of average
+                // Average is never zero for flow data, so this rule is always valid
                 if (IsSmallShift(values, i, average))
                 {
                     classifications[i] = SpecialCauseType.SmallShift;
@@ -109,7 +121,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return classifications;
         }
 
-        private static bool IsModerateChange(int[] values, int index, double twoSigmaUpper, double twoSigmaLower)
+        private static bool IsModerateChange(int[] values, int index, double twoSigmaUpper, double twoSigmaLower, bool isTwoSigmaLowerValid)
         {
             if (index < 2)
             {
@@ -131,6 +143,11 @@ namespace Lighthouse.Backend.Services.Implementation
                 return true;
             }
 
+            if (!isTwoSigmaLowerValid)
+            {
+                return false;
+            }
+
             // Check below: 2 of 3 successive points beyond 2σ below average
             var countBelow = 0;
             for (var j = index - 2; j <= index; j++)
@@ -144,7 +161,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return countBelow >= 2;
         }
 
-        private static bool IsModerateShift(int[] values, int index, double oneSigmaUpper, double oneSigmaLower)
+        private static bool IsModerateShift(int[] values, int index, double oneSigmaUpper, double oneSigmaLower, bool isOneSigmaLowerValid)
         {
             if (index < 4)
             {
@@ -164,6 +181,11 @@ namespace Lighthouse.Backend.Services.Implementation
             if (countAbove >= 4)
             {
                 return true;
+            }
+
+            if (!isOneSigmaLowerValid)
+            {
+                return false;
             }
 
             // Check below: 4 of 5 successive points beyond 1σ below average

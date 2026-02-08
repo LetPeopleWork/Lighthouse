@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var baselineValues = ExtractDailyCounts(baselineData);
             var displayValues = ExtractDailyCounts(displayData);
 
-            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues, clampLnplToZero: true);
+            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues);
 
             var dataPoints = BuildDataPoints(displayData, displayStart, xmrResult);
 
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var baselineResult = getDailyValues(baselineStart!.Value, baselineEnd!.Value);
             var displayResult = getDailyValues(displayStart, displayEnd);
 
-            var xmrResult = XmRCalculator.Calculate(baselineResult.Values, displayResult.Values, clampLnplToZero: true);
+            var xmrResult = XmRCalculator.Calculate(baselineResult.Values, displayResult.Values);
 
             var totalDays = displayResult.Values.Length;
             var dataPoints = new ProcessBehaviourChartDataPoint[totalDays];
@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var baselineValues = baselineItems.Select(i => i.CycleTime).ToArray();
             var displayValues = displayItems.Select(i => i.CycleTime).ToArray();
 
-            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues, clampLnplToZero: false);
+            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues);
 
             var dataPoints = new ProcessBehaviourChartDataPoint[displayItems.Count];
 
