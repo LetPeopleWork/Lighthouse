@@ -418,6 +418,9 @@ export const BaseMetricsView = <
 							title={`${config.titleSuffix}`}
 							workItemLookup={workItemLookup}
 							useEqualSpacing={config.useEqualSpacing}
+							showHistoricalAge={
+								config.id === "totalWorkItemAgePbc" || config.id === "wipPbc"
+							}
 						/>
 					),
 				});

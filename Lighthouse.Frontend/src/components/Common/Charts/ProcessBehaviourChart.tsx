@@ -30,7 +30,10 @@ import type {
 	ProcessBehaviourChartDataPoint,
 	SpecialCauseType,
 } from "../../../models/Metrics/ProcessBehaviourChartData";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
+import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
 const specialCauseColors: Record<SpecialCauseType, string> = {
@@ -146,6 +149,7 @@ interface ProcessBehaviourChartProps {
 	title: string;
 	workItemLookup?: Map<number, IWorkItem>;
 	useEqualSpacing?: boolean;
+	showHistoricalAge?: boolean;
 }
 
 const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
@@ -153,6 +157,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 	title,
 	workItemLookup,
 	useEqualSpacing = false,
+	showHistoricalAge = false,
 }) => {
 	const theme = useTheme();
 
@@ -162,7 +167,12 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogItems, setDialogItems] = useState<IWorkItem[]>([]);
+	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 	const [dialogTitle, setDialogTitle] = useState("");
+
+	const { getTerm } = useTerminology();
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 
 	const availableSpecialCauses = useMemo(() => {
 		if (data.status !== "Ready") return new Set<SpecialCauseType>();
@@ -263,11 +273,11 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 
 			if (resolvedItems.length === 0) return;
 
-			const xLabel =
-				data.xAxisKind === "DateTime"
-					? new Date(point.xValue).toLocaleString()
-					: new Date(point.xValue).toLocaleDateString();
-			setDialogTitle(`${title} — ${xLabel}`);
+			const day = new Date(point.xValue);
+			setDialogTitle(`${title} — ${day.toLocaleDateString()}`);
+
+			setSelectedDate(day);
+
 			setDialogItems(resolvedItems);
 			setDialogOpen(true);
 		},
@@ -471,9 +481,15 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 				items={dialogItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				additionalColumnTitle="Cycle Time"
+				additionalColumnTitle={
+					showHistoricalAge ? `${workItemAgeTerm}` : cycleTimeTerm
+				}
 				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				additionalColumnContent={(item) =>
+					showHistoricalAge
+						? calculateHistoricalAge(item, selectedDate ?? new Date())
+						: item.cycleTime
+				}
 			/>
 		</>
 	);

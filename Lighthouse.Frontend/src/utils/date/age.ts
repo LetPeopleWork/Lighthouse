@@ -1,3 +1,5 @@
+import type { IWorkItem } from "../../models/WorkItem";
+
 export const getAgeInDaysFromStart = (
 	// support Date or ISO string inputs since API sometimes returns strings
 	startDate: Date | string,
@@ -31,6 +33,21 @@ export const calculateAgeFromStartForItem = (
 ): number => {
 	const ref = referenceDate ?? new Date();
 	return getAgeInDaysFromStart(startDate, ref);
+};
+
+/**
+ * Calculate the historical age of a work item on a specific date
+ * Age = days between startedDate and the historical date
+ * (An item started today has age 1, not 0)
+ *
+ * This matches the backend calculation: ((end.Date - start.Date).TotalDays) + 1
+ * We use UTC date-only comparison to avoid timezone issues.
+ */
+export const calculateHistoricalAge = (
+	item: IWorkItem,
+	historicalDate: Date,
+): number => {
+	return getAgeInDaysFromStart(item.startedDate, historicalDate);
 };
 
 export default getAgeInDaysFromStart;

@@ -634,7 +634,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             // Index 2: LargeChange (1) and ModerateChange (2) — should be in enum order
             var causes = result.SpecialCauseClassifications[2];
-            Assert.That(causes.Count, Is.GreaterThanOrEqualTo(2));
+            Assert.That(causes, Has.Count.GreaterThanOrEqualTo(2));
             for (var i = 1; i < causes.Count; i++)
             {
                 Assert.That(causes[i], Is.GreaterThanOrEqualTo(causes[i - 1]));

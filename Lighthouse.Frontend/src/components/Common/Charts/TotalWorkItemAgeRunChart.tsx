@@ -6,7 +6,7 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { getAgeInDaysFromStart } from "../../../utils/date/age";
+import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
 
@@ -15,21 +15,6 @@ interface TotalWorkItemAgeRunChartProps {
 	startDate: Date;
 	title?: string;
 }
-
-/**
- * Calculate the historical age of a work item on a specific date
- * Age = days between startedDate and the historical date
- * (An item started today has age 1, not 0)
- *
- * This matches the backend calculation: ((end.Date - start.Date).TotalDays) + 1
- * We use UTC date-only comparison to avoid timezone issues.
- */
-const calculateHistoricalAge = (
-	item: IWorkItem,
-	historicalDate: Date,
-): number => {
-	return getAgeInDaysFromStart(item.startedDate, historicalDate);
-};
 
 const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 	wipOverTimeData,

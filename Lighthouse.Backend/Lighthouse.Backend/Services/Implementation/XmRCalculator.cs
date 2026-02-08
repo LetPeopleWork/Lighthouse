@@ -282,16 +282,17 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private static IReadOnlyList<IReadOnlyList<SpecialCauseType>> ConvertCauseSetsToResult(
+        private static List<List<SpecialCauseType>> ConvertCauseSetsToResult(
             HashSet<SpecialCauseType>[] causeSets)
         {
-            var result = new SpecialCauseType[causeSets.Length][];
+            var result = new List<List<SpecialCauseType>>(causeSets.Length);
             for (var i = 0; i < causeSets.Length; i++)
             {
                 result[i] = causeSets[i].Count > 0
-                    ? causeSets[i].OrderBy(c => c).ToArray()
-                    : [];
+                    ? causeSets[i].OrderBy(c => c).ToList()
+                    : new List<SpecialCauseType>();
             }
+
             return result;
         }
     }
