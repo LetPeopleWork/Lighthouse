@@ -279,4 +279,36 @@ export class TeamDetailPage {
 			.filter({ hasText: /^Work Items Total Work Item Age Over Time.*$/ })
 			.nth(1);
 	}
+
+	get throughputProcessBehaviorChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-throughputPbc")
+			.locator("div")
+			.filter({ hasText: /^Throughput Process Behaviour Chart.*$/ })
+			.nth(1);
+	}
+
+	get workInProgressProcessBehaviorChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-wipPbc")
+			.locator("div")
+			.filter({ hasText: /^Work In Progress Process Behaviour Chart.*$/ })
+			.nth(1);
+	}
+
+	get totalWorkItemAgeProcessBehaviorChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAgePbc")
+			.locator("div")
+			.filter({ hasText: /^Total Work Item Age Process Behaviour Chart.*$/ })
+			.nth(1);
+	}
+
+	get cycleTimeProcessBehaviorChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-cycleTimePbc")
+			.locator("div")
+			.filter({ hasText: /^Cycle Time Process Behaviour Chart.*$/ })
+			.nth(1);
+	}
 }

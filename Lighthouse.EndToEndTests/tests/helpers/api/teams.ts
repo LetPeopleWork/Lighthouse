@@ -9,6 +9,9 @@ export async function createTeam(
 	states: { toDo: string[]; doing: string[]; done: string[] },
 	tags: string[],
 ): Promise<{ id: number; name: string }> {
+	const sixWeeksAgo = new Date(Date.now() - 6 * 7 * 24 * 60 * 60 * 1000);
+	const fourWeeksAgo = new Date(Date.now() - 4 * 7 * 24 * 60 * 60 * 1000);
+
 	const response = await api.post("/api/Teams", {
 		data: {
 			id: 0,
@@ -31,6 +34,8 @@ export async function createTeam(
 			blockedStates: [],
 			blockedTags: ["Blocked"],
 			doneItemsCutoffDays: 180,
+			processBehaviourChartBaselineStartDate: sixWeeksAgo,
+			processBehaviourChartBaselineEndDate: fourWeeksAgo,
 		},
 	});
 

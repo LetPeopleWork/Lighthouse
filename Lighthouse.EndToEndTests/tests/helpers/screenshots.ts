@@ -70,10 +70,10 @@ async function takeScreenshot(
 		maxDiffPercentage,
 	);
 
-	if (!matches) {
-		await fs.promises.rename(tempPath, finalPath);
-	} else {
+	if (matches) {
 		await fs.promises.unlink(tempPath);
+	} else {
+		await fs.promises.rename(tempPath, finalPath);
 	}
 }
 

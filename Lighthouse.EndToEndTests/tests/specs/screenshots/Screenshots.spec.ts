@@ -327,7 +327,6 @@ testWithData(
 		await updateTeams(request, overviewPage, testData.teams);
 		await updatePortfolios(request, overviewPage, testData.portfolios);
 
-		/*
 		// Team Deletion Dialog
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
 		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
@@ -450,7 +449,28 @@ testWithData(
 		await takeElementScreenshot(
 			teamDetailPage.totalWorkItemAgeRunChart,
 			"features/metrics/totalWorkItemAgeRunChart.png",
-		);*/
+		);
+
+		// PBCs
+		await takeElementScreenshot(
+			teamDetailPage.throughputProcessBehaviorChart,
+			"features/metrics/throughputProcessBehaviorChart.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.workInProgressProcessBehaviorChart,
+			"features/metrics/workInProgressProcessBehaviorChart.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.totalWorkItemAgeProcessBehaviorChart,
+			"features/metrics/totalWorkItemAgeProcessBehaviorChart.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.cycleTimeProcessBehaviorChart,
+			"features/metrics/cycleTimeProcessBehaviorChart.png",
+		);
 
 		overviewPage.lightHousePage.goToOverview();
 
@@ -511,7 +531,6 @@ testWithData(
 		await addDeliveryPage.setRuleOperator(0, "Equals");
 		await addDeliveryPage.setRuleValue(0, "Epic");
 
-		
 		await addDeliveryPage.addRule();
 		await addDeliveryPage.setRuleField(1, "State");
 		await addDeliveryPage.setRuleOperator(1, "Not Equals");

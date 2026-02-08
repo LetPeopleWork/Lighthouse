@@ -155,6 +155,50 @@ This widget will adjust based on the selected time range. If you want to know wh
 
 On the top right, you will see the *Predictability Score*. If you click on it, another widget is brought up:
 
+# Process Behaviour Charts
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Cycle Time, Throughput, WIP, Work Item Age |
+| **Affected by Filtering** | Yes |
+
+Process Behaviour Charts (PBCs) help you understand whether changes in your system are likely just normal variability, or whether you are seeing a *special cause* (something worth investigating).
+
+{: .important}
+These charts only appear if you configured a **Process Behaviour Chart Baseline** in your Team/Portfolio settings. If no baseline is set, Lighthouse will not show PBC widgets.
+
+Configure it here:
+- Team: [Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)
+- Portfolio: [Create/Edit Portfolios](../portfolios/edit.html#process-behaviour-chart-baseline)
+
+On each chart, Lighthouse visualizes:
+- **Average** line
+- **Natural process limits** (UNPL / LNPL)
+- **Special causes** (via the chips in the top-right)
+
+You can click a chip (e.g. *Large Change*) to highlight points that match that special-cause rule. Clicking on a data point opens a dialog with the work items that make up that point.
+
+## Cycle Time Process Behaviour Chart
+
+![Cycle Time Process Behaviour Chart](../assets/features/metrics/cycleTimeProcessBehaviorChart.png)
+
+## Throughput Process Behaviour Chart
+
+![Throughput Process Behaviour Chart](../assets/features/metrics/throughputProcessBehaviorChart.png)
+
+## Total Work Item Age Process Behaviour Chart
+
+![Total Work Item Age Process Behaviour Chart](../assets/features/metrics/totalWorkItemAgeProcessBehaviorChart.png)
+
+## Work In Progress Process Behaviour Chart
+
+![Work In Progress Process Behaviour Chart](../assets/features/metrics/workInProgressProcessBehaviorChart.png)
+
+## Learn More
+
+- https://demingalliance.org/resources/articles/process-behaviour-charts-an-introduction
+- https://leanpub.com/actionableagilemetricsii
+
 # Predictability Score
 
 |--------------|-------------------------|

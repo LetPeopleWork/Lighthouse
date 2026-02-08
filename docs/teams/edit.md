@@ -167,6 +167,16 @@ You can also specify states that indicate a blockage of your work. You can pick 
 {: .important}
 We do not recommend using states for identifying blocked work. Tags work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
 
+## Process Behaviour Chart Baseline
+Lighthouse can show **Process Behaviour Charts (PBC)** in the Metrics view. To enable them, configure a **baseline start** and **baseline end** date.
+
+{: .important}
+If no baseline is set, Lighthouse will **not** show Process Behaviour Charts.
+
+The baseline is used as the reference period to calculate the average and natural process limits and to highlight special-cause signals.
+
+See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts) for examples and screenshots.
+
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 

@@ -109,7 +109,9 @@ export class ModifyDeliveriesDialog {
 	}
 
 	async setRuleValue(ruleIndex: number, value: string): Promise<void> {
-		const valueInput = this.page.getByRole("textbox", { name: "Value" }).nth(ruleIndex);
+		const valueInput = this.page
+			.getByRole("textbox", { name: "Value" })
+			.nth(ruleIndex);
 		await valueInput.fill(value);
 	}
 
