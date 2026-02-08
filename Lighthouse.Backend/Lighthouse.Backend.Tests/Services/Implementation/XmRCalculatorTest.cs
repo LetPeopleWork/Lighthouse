@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result.Average, Is.EqualTo(25.0));
                 Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(51.6).Within(0.01));
-                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(0));
+                Assert.That(result.LowerNaturalProcessLimit, Is.Zero);
             }
         }
 
