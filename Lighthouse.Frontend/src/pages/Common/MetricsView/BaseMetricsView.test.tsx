@@ -2152,13 +2152,13 @@ describe("BaseMetricsView component", () => {
 				{
 					xValue: "2025-01-01",
 					yValue: 5,
-					specialCause: "None",
+					specialCauses: ["None"],
 					workItemIds: [1, 2],
 				},
 				{
 					xValue: "2025-01-02",
 					yValue: 6,
-					specialCause: "None",
+					specialCauses: ["None"],
 					workItemIds: [3],
 				},
 			],

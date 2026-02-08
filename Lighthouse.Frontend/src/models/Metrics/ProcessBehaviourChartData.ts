@@ -16,7 +16,7 @@ export type XAxisKind = "Date" | "DateTime";
 export type ProcessBehaviourChartDataPoint = {
 	readonly xValue: string;
 	readonly yValue: number;
-	readonly specialCause: SpecialCauseType;
+	readonly specialCauses: SpecialCauseType[];
 	readonly workItemIds: number[];
 };
 

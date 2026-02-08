@@ -445,7 +445,7 @@ namespace Lighthouse.Backend.Tests.API
                 Average = 2.5,
                 UpperNaturalProcessLimit = 5.0,
                 LowerNaturalProcessLimit = 0.0,
-                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, SpecialCauseType.None, [1, 2])],
+                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1, 2])],
             };
             projectMetricsService.Setup(service => service.GetThroughputProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 

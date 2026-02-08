@@ -51,8 +51,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var dataPoints = new[]
             {
-                new ProcessBehaviourChartDataPoint("2026-01-15T00:00:00Z", 5.0, SpecialCauseType.None, [101, 102]),
-                new ProcessBehaviourChartDataPoint("2026-01-16T00:00:00Z", 8.0, SpecialCauseType.LargeChange, [103]),
+                new ProcessBehaviourChartDataPoint("2026-01-15T00:00:00Z", 5.0, [], [101, 102]),
+                new ProcessBehaviourChartDataPoint("2026-01-16T00:00:00Z", 8.0, [SpecialCauseType.LargeChange], [103]),
             };
 
             var dto = new ProcessBehaviourChart
@@ -82,13 +82,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             int[] workItemIds = [201, 202, 203];
 
-            var point = new ProcessBehaviourChartDataPoint("2026-01-15T00:00:00Z", 3.0, SpecialCauseType.None, workItemIds);
+            var point = new ProcessBehaviourChartDataPoint("2026-01-15T00:00:00Z", 3.0, [], workItemIds);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(point.XValue, Is.EqualTo("2026-01-15T00:00:00Z"));
                 Assert.That(point.YValue, Is.EqualTo(3.0));
-                Assert.That(point.SpecialCause, Is.EqualTo(SpecialCauseType.None));
+                Assert.That(point.SpecialCauses, Is.Empty);
                 Assert.That(point.WorkItemIds, Is.EqualTo(workItemIds));
             }
         }
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void DataPoint_SupportsDateTimeXValue()
         {
-            var point = new ProcessBehaviourChartDataPoint("2026-01-15T14:30:00Z", 7.5, SpecialCauseType.SmallShift, [301]);
+            var point = new ProcessBehaviourChartDataPoint("2026-01-15T14:30:00Z", 7.5, [SpecialCauseType.SmallShift], [301]);
 
             var dto = new ProcessBehaviourChart
             {

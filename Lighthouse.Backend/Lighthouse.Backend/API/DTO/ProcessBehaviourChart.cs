@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API.DTO
     public record ProcessBehaviourChartDataPoint(
         string XValue,
         double YValue,
-        SpecialCauseType SpecialCause,
+        IEnumerable<SpecialCauseType> SpecialCauses,
         int[] WorkItemIds);
 
     public record ProcessBehaviourChart

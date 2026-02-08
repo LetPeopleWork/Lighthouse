@@ -80,6 +80,15 @@ const SpecialCauseMarkContext = createContext<SpecialCauseMarkContextValue>({
 	defaultColor: "",
 });
 
+const getHighestPriorityCause = (
+	causes: readonly SpecialCauseType[],
+): SpecialCauseType | null => {
+	for (const p of specialCausePriority) {
+		if (causes.includes(p)) return p;
+	}
+	return null;
+};
+
 const SpecialCauseMark = (props: Record<string, unknown>) => {
 	const { dataPoints, selectedCause, defaultColor } = useContext(
 		SpecialCauseMarkContext,
@@ -100,13 +109,22 @@ const SpecialCauseMark = (props: Record<string, unknown>) => {
 	} & Record<string, unknown>;
 
 	const point = dataPoints[dataIndex];
-	const cause = point?.specialCause ?? "None";
+	const causes = point?.specialCauses ?? [];
+	const highestCause = getHighestPriorityCause(causes);
 
-	const isSpecial = cause !== "None";
+	const isSpecial = highestCause != null;
 	const isHighlighted =
-		selectedCause == null ? isSpecial : cause === selectedCause;
+		selectedCause == null ? isSpecial : causes.includes(selectedCause);
 
-	const fill = isHighlighted ? specialCauseColors[cause] : defaultColor;
+	const displayCause =
+		selectedCause != null && causes.includes(selectedCause)
+			? selectedCause
+			: highestCause;
+
+	const fill =
+		isHighlighted && displayCause
+			? specialCauseColors[displayCause]
+			: defaultColor;
 	const radius = isHighlighted ? 6 : 4;
 
 	return (
@@ -150,8 +168,10 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 		if (data.status !== "Ready") return new Set<SpecialCauseType>();
 		const types = new Set<SpecialCauseType>();
 		for (const point of data.dataPoints) {
-			if (point.specialCause !== "None") {
-				types.add(point.specialCause);
+			for (const cause of point.specialCauses) {
+				if (cause !== "None") {
+					types.add(cause);
+				}
 			}
 		}
 		return types;

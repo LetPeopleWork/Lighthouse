@@ -564,7 +564,7 @@ namespace Lighthouse.Backend.Tests.API
                 Average = 5.0,
                 UpperNaturalProcessLimit = 10.0,
                 LowerNaturalProcessLimit = 0.0,
-                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, SpecialCauseType.None, [1, 2])],
+                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1, 2])],
             };
             teamMetricsServiceMock.Setup(service => service.GetThroughputProcessBehaviourChart(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
