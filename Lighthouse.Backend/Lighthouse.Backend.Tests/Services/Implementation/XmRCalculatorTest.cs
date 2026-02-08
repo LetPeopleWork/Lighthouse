@@ -14,9 +14,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Average, Is.EqualTo(0));
-                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(0));
-                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(0));
+                Assert.That(result.Average, Is.Zero);
+                Assert.That(result.UpperNaturalProcessLimit, Is.Zero);
+                Assert.That(result.LowerNaturalProcessLimit, Is.Zero);
                 Assert.That(result.SpecialCauseClassifications, Is.Empty);
             }
         }
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = XmRCalculator.Calculate(baseline, display, clampLnplToZero: true);
 
-            Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(0.0));
+            Assert.That(result.LowerNaturalProcessLimit, Is.Zero);
         }
 
         [Test]

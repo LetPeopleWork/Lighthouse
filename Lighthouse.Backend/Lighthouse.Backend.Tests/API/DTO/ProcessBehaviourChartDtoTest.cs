@@ -15,9 +15,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(dto.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
                 Assert.That(dto.StatusReason, Is.EqualTo("No baseline configured."));
                 Assert.That(dto.DataPoints, Is.Empty);
-                Assert.That(dto.Average, Is.EqualTo(0));
-                Assert.That(dto.UpperNaturalProcessLimit, Is.EqualTo(0));
-                Assert.That(dto.LowerNaturalProcessLimit, Is.EqualTo(0));
+                Assert.That(dto.Average, Is.Zero);
+                Assert.That(dto.UpperNaturalProcessLimit, Is.Zero);
+                Assert.That(dto.LowerNaturalProcessLimit, Is.Zero);
             }
         }
 
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(dto.XAxisKind, Is.EqualTo(XAxisKind.Date));
                 Assert.That(dto.Average, Is.EqualTo(6.5));
                 Assert.That(dto.UpperNaturalProcessLimit, Is.EqualTo(14.0));
-                Assert.That(dto.LowerNaturalProcessLimit, Is.EqualTo(0.0));
+                Assert.That(dto.LowerNaturalProcessLimit, Is.Zero);
                 Assert.That(dto.DataPoints, Has.Length.EqualTo(2));
             }
         }
@@ -80,14 +80,16 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void DataPoint_ContainsWorkItemIdsForDrillIn()
         {
-            var point = new ProcessBehaviourChartDataPoint("2026-01-15T00:00:00Z", 3.0, SpecialCauseType.None, [201, 202, 203]);
+            int[] workItemIds = [201, 202, 203];
+
+            var point = new ProcessBehaviourChartDataPoint("2026-01-15T00:00:00Z", 3.0, SpecialCauseType.None, workItemIds);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(point.XValue, Is.EqualTo("2026-01-15T00:00:00Z"));
                 Assert.That(point.YValue, Is.EqualTo(3.0));
                 Assert.That(point.SpecialCause, Is.EqualTo(SpecialCauseType.None));
-                Assert.That(point.WorkItemIds, Is.EqualTo(new[] { 201, 202, 203 }));
+                Assert.That(point.WorkItemIds, Is.EqualTo(workItemIds));
             }
         }
 
