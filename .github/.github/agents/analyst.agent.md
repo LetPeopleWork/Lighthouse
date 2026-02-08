@@ -4,7 +4,7 @@ name: Analyst
 target: vscode
 argument-hint: Describe the technical question, API, or system behavior to investigate
 tools: ['vscode/vscodeAPI', 'execute/runNotebookCell', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/getNotebookSummary', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search/changes', 'search/codebase', 'search/fileSearch', 'search/listDirectory', 'search/searchResults', 'search/textSearch', 'search/usages', 'web/fetch', 'web/githubRepo', 'ado/search_workitem', 'ado/wit_get_work_item', 'ado/wit_get_work_item_type', 'ado/wit_get_work_items_batch_by_ids', 'ado/wit_my_work_items', 'todo']
-model: GPT-5.1-Codex-Max
+model: GPT-5.2-Codex-Max
 handoffs:
   - label: Create Plan
     agent: Planner
