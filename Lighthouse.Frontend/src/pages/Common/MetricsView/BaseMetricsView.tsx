@@ -1,5 +1,5 @@
 import { Grid } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
@@ -333,6 +333,42 @@ export const BaseMetricsView = <
 		fetchPbcData();
 	}, [entity, metricsService, startDate, endDate]);
 
+	const workItemLookup = useMemo(() => {
+		const lookup = new Map<number, IWorkItem>();
+
+		// Helper to add items without duplicates
+		const addItems = (items: IWorkItem[]) => {
+			for (const item of items) {
+				if (!lookup.has(item.id)) {
+					lookup.set(item.id, item);
+				}
+			}
+		};
+
+		// Helper to extract all items from workItemsPerUnitOfTime structure
+		const extractWorkItems = (
+			workItemsPerUnitOfTime?: Record<string, IWorkItem[]>,
+		) => {
+			if (!workItemsPerUnitOfTime) return [];
+			return Object.values(workItemsPerUnitOfTime).flat();
+		};
+
+		// Add throughput items (these take priority, so added first without duplicate check)
+		const throughputItems = extractWorkItems(
+			throughputData?.workItemsPerUnitOfTime,
+		);
+		for (const item of throughputItems) {
+			lookup.set(item.id, item);
+		}
+
+		// Add remaining items (skip duplicates)
+		addItems(extractWorkItems(wipOverTimeData?.workItemsPerUnitOfTime));
+		addItems(cycleTimeData as unknown as IWorkItem[]);
+		addItems(inProgressItems);
+
+		return lookup;
+	}, [throughputData, wipOverTimeData, cycleTimeData, inProgressItems]);
+
 	const getPbcDashboardItems = (): DashboardItem[] => {
 		const pbcItems: DashboardItem[] = [];
 
@@ -341,6 +377,7 @@ export const BaseMetricsView = <
 			priority: number;
 			data: ProcessBehaviourChartData | null;
 			titleSuffix: string;
+			useEqualSpacing?: boolean;
 		}> = [
 			{
 				id: "throughputPbc",
@@ -365,6 +402,7 @@ export const BaseMetricsView = <
 				priority: 21,
 				data: cycleTimePbcData,
 				titleSuffix: cycleTimeTerm,
+				useEqualSpacing: true,
 			},
 		];
 
@@ -378,6 +416,8 @@ export const BaseMetricsView = <
 						<ProcessBehaviourChart
 							data={config.data}
 							title={`${config.titleSuffix}`}
+							workItemLookup={workItemLookup}
+							useEqualSpacing={config.useEqualSpacing}
 						/>
 					),
 				});

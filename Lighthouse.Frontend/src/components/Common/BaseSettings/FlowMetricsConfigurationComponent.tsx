@@ -5,6 +5,7 @@ import {
 	FormControlLabel,
 	Switch,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -458,13 +459,28 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							onChange={(e) => handleBaselineToggle(e.target.checked)}
 						/>
 					}
-					label="Enable Process Behaviour Chart Baseline"
+					label="Process Behaviour Chart"
 				/>
+				{isBaselineEnabled &&
+					settings.doneItemsCutoffDays > 0 &&
+					settings.processBehaviourChartBaselineStartDate != null &&
+					settings.processBehaviourChartBaselineStartDate <
+						new Date(
+							Date.now() - settings.doneItemsCutoffDays * 24 * 60 * 60 * 1000,
+						) && (
+						<Tooltip title="Work items older than the cutoff may be trimmed. This can affect done/resolved-item metrics (e.g., throughput and cycle time) and may make the baseline misleading.">
+							<WarningIcon
+								color="warning"
+								aria-label="Baseline cutoff warning"
+								sx={{ ml: 1, verticalAlign: "middle" }}
+							/>
+						</Tooltip>
+					)}
 			</Grid>
 			{isBaselineEnabled && (
 				<Grid size={{ xs: 12 }}>
 					<TextField
-						label="Baseline Start Date"
+						label="PBC Baseline Start"
 						type="date"
 						sx={{ mr: 2 }}
 						slotProps={{
@@ -488,7 +504,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 						}
 					/>
 					<TextField
-						label="Baseline End Date"
+						label="PBC Baseline End"
 						type="date"
 						slotProps={{
 							inputLabel: { shrink: true },

@@ -972,9 +972,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			const toggle = screen.getByLabelText(
-				"Enable Process Behaviour Chart Baseline",
-			);
+			const toggle = screen.getByLabelText("Process Behaviour Chart");
 			expect(toggle).not.toBeChecked();
 		});
 
@@ -992,9 +990,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			const toggle = screen.getByLabelText(
-				"Enable Process Behaviour Chart Baseline",
-			);
+			const toggle = screen.getByLabelText("Process Behaviour Chart");
 			expect(toggle).toBeChecked();
 		});
 
@@ -1013,9 +1009,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			await user.click(
-				screen.getByLabelText("Enable Process Behaviour Chart Baseline"),
-			);
+			await user.click(screen.getByLabelText("Process Behaviour Chart"));
 
 			expect(mockOnSettingsChange).toHaveBeenCalledWith(
 				"processBehaviourChartBaselineStartDate",
@@ -1042,9 +1036,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			await user.click(
-				screen.getByLabelText("Enable Process Behaviour Chart Baseline"),
-			);
+			await user.click(screen.getByLabelText("Process Behaviour Chart"));
 
 			expect(mockOnSettingsChange).toHaveBeenCalledWith(
 				"processBehaviourChartBaselineStartDate",
@@ -1070,8 +1062,8 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			expect(screen.getByLabelText("Baseline Start Date")).toBeInTheDocument();
-			expect(screen.getByLabelText("Baseline End Date")).toBeInTheDocument();
+			expect(screen.getByLabelText("PBC Baseline Start")).toBeInTheDocument();
+			expect(screen.getByLabelText("PBC Baseline End")).toBeInTheDocument();
 		});
 
 		it("does not show date pickers when baseline is disabled", () => {
@@ -1089,10 +1081,85 @@ describe("FlowMetricsConfigurationComponent", () => {
 			);
 
 			expect(
-				screen.queryByLabelText("Baseline Start Date"),
+				screen.queryByLabelText("PBC Baseline Start"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByLabelText("Baseline End Date"),
+				screen.queryByLabelText("PBC Baseline End"),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows cutoff warning when baseline start is before cutoff date", () => {
+			const oldStartDate = new Date();
+			oldStartDate.setDate(oldStartDate.getDate() - 200);
+			const endDate = new Date();
+			endDate.setDate(endDate.getDate() - 185);
+
+			const settings = {
+				...mockSettings,
+				doneItemsCutoffDays: 180,
+				processBehaviourChartBaselineStartDate: oldStartDate,
+				processBehaviourChartBaselineEndDate: endDate,
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			expect(
+				screen.getByLabelText("Baseline cutoff warning"),
+			).toBeInTheDocument();
+		});
+
+		it("does not show cutoff warning when cutoff is 0 (full history)", () => {
+			const oldStartDate = new Date();
+			oldStartDate.setDate(oldStartDate.getDate() - 400);
+			const endDate = new Date();
+			endDate.setDate(endDate.getDate() - 385);
+
+			const settings = {
+				...mockSettings,
+				doneItemsCutoffDays: 0,
+				processBehaviourChartBaselineStartDate: oldStartDate,
+				processBehaviourChartBaselineEndDate: endDate,
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			expect(
+				screen.queryByLabelText("Baseline cutoff warning"),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not show cutoff warning when baseline start is within cutoff range", () => {
+			const recentStartDate = new Date();
+			recentStartDate.setDate(recentStartDate.getDate() - 30);
+			const endDate = new Date();
+			endDate.setDate(endDate.getDate() - 15);
+
+			const settings = {
+				...mockSettings,
+				doneItemsCutoffDays: 180,
+				processBehaviourChartBaselineStartDate: recentStartDate,
+				processBehaviourChartBaselineEndDate: endDate,
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			expect(
+				screen.queryByLabelText("Baseline cutoff warning"),
 			).not.toBeInTheDocument();
 		});
 	});
