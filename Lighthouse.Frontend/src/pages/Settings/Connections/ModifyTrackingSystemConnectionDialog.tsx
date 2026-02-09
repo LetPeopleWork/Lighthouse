@@ -1,4 +1,5 @@
 import {
+	Alert,
 	Box,
 	Dialog,
 	DialogActions,
@@ -57,6 +58,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
 	const [validationKey, setValidationKey] = useState<number>(0);
+	const [fieldsModified, setFieldsModified] = useState<boolean>(false);
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
@@ -211,6 +213,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		const firstSystem = workTrackingSystems[0];
 		setSelectedWorkTrackingSystem(firstSystem);
 		setName(firstSystem.name);
+		setFieldsModified(false);
 
 		const initialMethod = getInitialAuthMethod(firstSystem);
 		setSelectedAuthMethod(initialMethod);
@@ -479,8 +482,17 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					}
 					fields={additionalFields}
 					onChange={setAdditionalFields}
-					onFieldsChanged={() => setValidationKey((prev) => prev + 1)}
+					onFieldsChanged={() => {
+						setValidationKey((prev) => prev + 1);
+						setFieldsModified(true);
+					}}
 				/>
+
+				{fieldsModified && (
+					<Alert severity="info" sx={{ mt: 2 }}>
+						Additional Fields will be loaded with the next refresh of data.
+					</Alert>
+				)}
 
 				{/* Other Options Section - only show when there are non-auth options */}
 				{otherOptions.length > 0 && (
