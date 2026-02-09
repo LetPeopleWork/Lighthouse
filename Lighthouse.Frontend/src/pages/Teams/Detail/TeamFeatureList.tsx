@@ -1,18 +1,15 @@
-import {
-	Box,
-	FormControlLabel,
-	Paper,
-	Switch,
-	TableContainer,
-} from "@mui/material";
+import { Box } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useContext, useEffect, useMemo, useState } from "react";
-import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
+import {
+	createForecastsColumn,
+	createParentColumn,
+	createStateColumn,
+} from "../../../components/Common/FeatureListDataGrid/columns";
+import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
-import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
-import ParentWorkItemCell from "../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
@@ -32,18 +29,12 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 
 	const [featuresInProgress, setFeaturesInProgress] = useState<string[]>([]);
 	const [features, setFeatures] = useState<IFeature[]>([]);
-	const [hideCompletedFeatures, setHideCompletedFeatures] =
-		useState<boolean>(true);
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
 	const parentMap = useParentWorkItems(features);
-
-	// Storage key for toggle
-	const storageKey = `lighthouse_hide_completed_features_team_${team.id}`;
 
 	// Load features
 	useEffect(() => {
@@ -56,17 +47,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		fetchFeatures();
 	}, [team.features, featureService]);
 
-	// Load toggle preference from localStorage
-	useEffect(() => {
-		const storedPreference = localStorage.getItem(storageKey);
-		if (storedPreference === null) {
-			// Set default value in localStorage if not present
-			localStorage.setItem(storageKey, "true");
-		} else {
-			setHideCompletedFeatures(storedPreference === "true");
-		}
-	}, [storageKey]);
-
 	// Fetch features in progress
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
@@ -76,19 +56,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 
 		fetchFeaturesInProgress();
 	}, [team, teamMetricsService]);
-
-	const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const newValue = event.target.checked;
-		setHideCompletedFeatures(newValue);
-		localStorage.setItem(storageKey, newValue.toString());
-	};
-
-	// Filter features based on the "hide completed" setting
-	const filteredFeatures = useMemo(() => {
-		return hideCompletedFeatures
-			? features.filter((feature) => feature.stateCategory !== "Done")
-			: features;
-	}, [features, hideCompletedFeatures]);
 
 	// Define columns
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
@@ -134,27 +101,8 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 					</Box>
 				),
 			},
-			{
-				field: "forecasts",
-				headerName: "Forecasts",
-				width: 200,
-				sortable: false,
-				renderCell: ({ row }) => (
-					<ForecastInfoList title={""} forecasts={row.forecasts} />
-				),
-			},
-			{
-				field: "parent",
-				headerName: "Parent",
-				width: 300,
-				sortable: false,
-				renderCell: ({ row }) => (
-					<ParentWorkItemCell
-						parentReference={row.parentWorkItemReference}
-						parentMap={parentMap}
-					/>
-				),
-			},
+			createForecastsColumn(),
+			createParentColumn(parentMap),
 			{
 				field: "projects",
 				headerName: portfoliosTerm,
@@ -172,41 +120,19 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 					</Box>
 				),
 			},
-			{
-				field: "state",
-				headerName: "State",
-				width: 150,
-				sortable: true,
-				renderCell: ({ row }) => {
-					return <span>{row.state}</span>;
-				},
-			},
+			createStateColumn(),
 		],
 		[featureTerm, team, featuresInProgress, parentMap, portfoliosTerm],
 	);
 
 	return (
-		<TableContainer component={Paper}>
-			<Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 2 }}>
-				<FormControlLabel
-					control={
-						<Switch
-							checked={hideCompletedFeatures}
-							onChange={handleToggleChange}
-							color="primary"
-							data-testid="hide-completed-features-toggle"
-						/>
-					}
-					label={`Hide Completed ${featuresTerm}`}
-				/>
-			</Box>
-			<DataGridBase
-				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
-				columns={columns}
-				storageKey={`team-features-${team.id}`}
-				loading={features.length === 0}
-			/>
-		</TableContainer>
+		<FeatureListDataGrid
+			features={features}
+			columns={columns}
+			storageKey={`team-features-${team.id}`}
+			hideCompletedStorageKey={`lighthouse_hide_completed_features_team_${team.id}`}
+			loading={features.length === 0}
+		/>
 	);
 };
 

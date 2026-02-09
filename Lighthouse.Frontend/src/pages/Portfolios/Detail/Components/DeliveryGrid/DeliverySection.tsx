@@ -11,17 +11,19 @@ import {
 	Chip,
 	IconButton,
 	Paper,
-	TableContainer,
 	Tooltip,
 	Typography,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useMemo } from "react";
-import DataGridBase from "../../../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
+import {
+	createForecastsColumn,
+	createStateColumn,
+} from "../../../../../components/Common/FeatureListDataGrid/columns";
+import FeatureListDataGrid from "../../../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
-import ForecastInfoList from "../../../../../components/Common/Forecasts/ForecastInfoList";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
@@ -31,6 +33,7 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import { getWorkItemName } from "../../../../../utils/featureName";
 
 interface DeliverySectionProps {
 	delivery: Delivery;
@@ -83,7 +86,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				flex: 1,
 				renderCell: ({ row }) => (
 					<FeatureName
-						name={row.name}
+						name={getWorkItemName(row)}
 						url={row.url ?? ""}
 						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
 						teamsWorkIngOnFeature={[]}
@@ -158,14 +161,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				),
 			},
 			{
-				field: "forecast",
-				headerName: "Forecast",
+				...createForecastsColumn("Forecast"),
 				minWidth: 100,
 				flex: 0.5,
-				sortable: false,
-				renderCell: ({ row }) => (
-					<ForecastInfoList title={""} forecasts={row.forecasts} />
-				),
+				width: undefined,
 			},
 			{
 				field: "likelihood",
@@ -189,15 +188,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							/>
 						)),
 			},
-			{
-				field: "state",
-				headerName: "State",
-				width: 150,
-				sortable: true,
-				renderCell: ({ row }) => {
-					return <span>{row.state}</span>;
-				},
-			},
+			createStateColumn(),
 		],
 		[featureTerm, delivery, teams],
 	);
@@ -414,19 +405,16 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								);
 							} else {
 								content = (
-									<TableContainer
-										component={Paper}
-										elevation={0}
-										sx={{ mx: 2, mb: 2 }}
-									>
-										<DataGridBase
-											rows={features as (IFeature & GridValidRowModel)[]}
+									<Box sx={{ mx: 2, mb: 2 }}>
+										<FeatureListDataGrid
+											features={features}
 											columns={columns}
 											storageKey={`delivery-features-${delivery.id}`}
+											hideCompletedStorageKey={`lighthouse_hide_completed_features_delivery_${delivery.id}`}
 											loading={false}
 											emptyStateMessage={`No ${featuresTerm} found`}
 										/>
-									</TableContainer>
+									</Box>
 								);
 							}
 							return content;
