@@ -5,6 +5,7 @@ import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import ModifyTrackingSystemConnectionDialog from "./ModifyTrackingSystemConnectionDialog";
 
 describe("ModifyTrackingSystemConnectionDialog", () => {
@@ -1231,6 +1232,98 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			await waitFor(() => {
 				const validateButton = screen.getByText("Validate");
 				expect(validateButton).not.toBeDisabled();
+			});
+		});
+	});
+
+	describe("403 Error Handling", () => {
+		it("should display custom error message when validation returns 403 status", async () => {
+			const error403 = new ApiError(403, "Forbidden");
+			const mockValidateFailing = vi.fn(() => Promise.reject(error403));
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={mockWorkTrackingSystems}
+					validateSettings={mockValidateFailing}
+				/>,
+			);
+
+			// Fill in required fields
+			fireEvent.change(screen.getByLabelText("Connection Name"), {
+				target: { value: "Test Connection" },
+			});
+			fireEvent.change(screen.getByLabelText("URL"), {
+				target: { value: "http://example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("Username"), {
+				target: { value: "user@example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("API Token"), {
+				target: { value: "test-token" },
+			});
+
+			// Click validate
+			fireEvent.click(screen.getByText("Validate"));
+
+			// Wait for validation to complete
+			await waitFor(() => {
+				expect(mockValidateFailing).toHaveBeenCalledTimes(1);
+			});
+
+			// Check that the custom 403 error message is displayed
+			await waitFor(() => {
+				expect(
+					screen.getByText(/exceeded the number of additional fields allowed/i),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("should show default error message for non-403 errors", async () => {
+			const error500 = new ApiError(500, "Internal Server Error");
+			const mockValidateFailing = vi.fn(() => Promise.reject(error500));
+
+			render(
+				<ModifyTrackingSystemConnectionDialog
+					open={true}
+					onClose={mockOnClose}
+					workTrackingSystems={mockWorkTrackingSystems}
+					validateSettings={mockValidateFailing}
+				/>,
+			);
+
+			// Fill in required fields
+			fireEvent.change(screen.getByLabelText("Connection Name"), {
+				target: { value: "Test Connection" },
+			});
+			fireEvent.change(screen.getByLabelText("URL"), {
+				target: { value: "http://example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("Username"), {
+				target: { value: "user@example.com" },
+			});
+			fireEvent.change(screen.getByLabelText("API Token"), {
+				target: { value: "test-token" },
+			});
+
+			// Click validate
+			fireEvent.click(screen.getByText("Validate"));
+
+			await waitFor(() => {
+				expect(mockValidateFailing).toHaveBeenCalledTimes(1);
+			});
+
+			// The custom 403 message should NOT appear
+			expect(
+				screen.queryByText(/exceeded the number of additional fields allowed/i),
+			).not.toBeInTheDocument();
+
+			// Default error message should appear instead
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Could not connect to the/i),
+				).toBeInTheDocument();
 			});
 		});
 	});

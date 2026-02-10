@@ -5,6 +5,7 @@ import {
 	Info as InfoIcon,
 } from "@mui/icons-material";
 import {
+	Alert,
 	Box,
 	Button,
 	Dialog,
@@ -20,6 +21,8 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
@@ -153,11 +156,14 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 	const [editingField, setEditingField] =
 		useState<IAdditionalFieldDefinition | null>(null);
 	const [tempIdCounter, setTempIdCounter] = useState(-1);
+	const { licenseStatus } = useLicenseRestrictions();
 
 	const isSupportedSystem =
 		workTrackingSystemType !== null &&
 		workTrackingSystemType !== "Linear" &&
 		workTrackingSystemType !== "Csv";
+
+	const canAddField = licenseStatus?.canUsePremiumFeatures || fields.length < 1;
 
 	const handleAddField = () => {
 		// Use negative IDs for new fields (will be assigned server-side)
@@ -216,16 +222,31 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 				<Typography variant="subtitle2" color="text.secondary">
 					Additional Fields
 				</Typography>
-				<Button
-					startIcon={<AddIcon />}
-					size="small"
-					onClick={handleAddField}
-					variant="outlined"
-					disabled={!isSupportedSystem}
+				<LicenseTooltip
+					canUseFeature={canAddField}
+					defaultTooltip="Add a custom field"
+					premiumExtraInfo="Free users can add 1 additional field."
 				>
-					Add Field
-				</Button>
+					<span>
+						<Button
+							startIcon={<AddIcon />}
+							size="small"
+							onClick={handleAddField}
+							variant="outlined"
+							disabled={!isSupportedSystem || !canAddField}
+						>
+							Add Field
+						</Button>
+					</span>
+				</LicenseTooltip>
 			</Box>
+
+			{!licenseStatus?.canUsePremiumFeatures && fields.length >= 1 && (
+				<Alert severity="info" sx={{ mt: 1, mb: 1 }}>
+					You've reached the limit of 1 additional field on the free plan.
+					Upgrade to premium to add more custom fields.
+				</Alert>
+			)}
 
 			{fields.length === 0 ? (
 				<Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>

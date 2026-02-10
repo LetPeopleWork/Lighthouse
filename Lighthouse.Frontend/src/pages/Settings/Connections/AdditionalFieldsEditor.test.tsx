@@ -1,16 +1,49 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import AdditionalFieldsEditor from "./AdditionalFieldsEditor";
+
+// Mock the useLicenseRestrictions hook
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: vi.fn(),
+}));
+
+const { useLicenseRestrictions } = await import(
+	"../../../hooks/useLicenseRestrictions"
+);
 
 describe("AdditionalFieldsEditor", () => {
 	const mockOnChange = vi.fn();
 	const mockOnFieldsChanged = vi.fn();
 
+	const mockPremiumLicense: ILicenseStatus = {
+		hasLicense: true,
+		isValid: true,
+		canUsePremiumFeatures: true,
+	};
+
+	const mockFreeLicense: ILicenseStatus = {
+		hasLicense: false,
+		isValid: false,
+		canUsePremiumFeatures: false,
+	};
+
 	beforeEach(() => {
 		mockOnChange.mockClear();
 		mockOnFieldsChanged.mockClear();
+
+		// Default to premium license for existing tests
+		vi.mocked(useLicenseRestrictions).mockReturnValue({
+			canCreateTeam: true,
+			canUpdateTeamData: true,
+			canCreatePortfolio: true,
+			canUpdatePortfolioData: true,
+			licenseStatus: mockPremiumLicense,
+			maxTeamsWithoutPremium: 3,
+			maxPortfoliosWithoutPremium: 1,
+		});
 	});
 
 	describe("Rendering", () => {
@@ -805,6 +838,278 @@ describe("AdditionalFieldsEditor", () => {
 				expect(infoLink).toHaveAttribute("target", "_blank");
 				expect(infoLink).toHaveAttribute("rel", "noopener noreferrer");
 			});
+		});
+	});
+
+	describe("License Restrictions", () => {
+		it("should disable Add Field button when free user has 1 field already", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockFreeLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Custom Field", reference: "custom.field" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			const addButton = screen.getByRole("button", { name: /add field/i });
+			expect(addButton).toBeDisabled();
+		});
+
+		it("should show license tooltip on disabled Add Field button for free users at limit", async () => {
+			const user = userEvent.setup();
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockFreeLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Custom Field", reference: "custom.field" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			const addButton = screen.getByRole("button", { name: /add field/i });
+			const spanWrapper = addButton.parentElement;
+
+			if (spanWrapper) {
+				await user.hover(spanWrapper);
+
+				await waitFor(() => {
+					expect(
+						screen.getByText(/This feature requires a/i),
+					).toBeInTheDocument();
+				});
+			}
+		});
+
+		it("should show alert message when free user is at limit", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockFreeLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Custom Field", reference: "custom.field" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			expect(
+				screen.getByText(/reached the limit of 1 additional field/i),
+			).toBeInTheDocument();
+		});
+
+		it("should allow premium users to add unlimited fields", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockPremiumLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Field 1", reference: "field.1" },
+				{ id: 2, displayName: "Field 2", reference: "field.2" },
+				{ id: 3, displayName: "Field 3", reference: "field.3" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			const addButton = screen.getByRole("button", { name: /add field/i });
+			expect(addButton).not.toBeDisabled();
+		});
+
+		it("should allow free users to add 1 field when they have 0 fields", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockFreeLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={[]}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			const addButton = screen.getByRole("button", { name: /add field/i });
+			expect(addButton).not.toBeDisabled();
+		});
+
+		it("should not show alert when free user has 0 fields", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockFreeLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={[]}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			expect(
+				screen.queryByText(/reached the limit of 1 additional field/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("should display all existing fields even when over limit for free users", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockFreeLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Field 1", reference: "field.1" },
+				{ id: 2, displayName: "Field 2", reference: "field.2" },
+				{ id: 3, displayName: "Field 3", reference: "field.3" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			// All 3 fields should be visible
+			expect(screen.getByText("Field 1")).toBeInTheDocument();
+			expect(screen.getByText("Field 2")).toBeInTheDocument();
+			expect(screen.getByText("Field 3")).toBeInTheDocument();
+
+			// But add button should be disabled
+			const addButton = screen.getByRole("button", { name: /add field/i });
+			expect(addButton).toBeDisabled();
+		});
+
+		it("should not show alert when premium user has many fields", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: mockPremiumLicense,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Field 1", reference: "field.1" },
+				{ id: 2, displayName: "Field 2", reference: "field.2" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			expect(
+				screen.queryByText(/reached the limit of 1 additional field/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("should handle null license status gracefully", () => {
+			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canCreatePortfolio: true,
+				canUpdatePortfolioData: true,
+				licenseStatus: null,
+				maxTeamsWithoutPremium: 3,
+				maxPortfoliosWithoutPremium: 1,
+			});
+
+			const fields: IAdditionalFieldDefinition[] = [
+				{ id: 1, displayName: "Field 1", reference: "field.1" },
+			];
+
+			render(
+				<AdditionalFieldsEditor
+					workTrackingSystemType="AzureDevOps"
+					fields={fields}
+					onChange={mockOnChange}
+					onFieldsChanged={mockOnFieldsChanged}
+				/>,
+			);
+
+			// Should disable when license is null and has 1+ fields (safe default)
+			const addButton = screen.getByRole("button", { name: /add field/i });
+			expect(addButton).toBeDisabled();
 		});
 	});
 });

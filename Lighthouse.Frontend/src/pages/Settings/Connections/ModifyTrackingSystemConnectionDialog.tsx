@@ -23,6 +23,7 @@ import type {
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
+import { ApiError } from "../../../services/Api/ApiError";
 import { useTerminology } from "../../../services/TerminologyContext";
 import AdditionalFieldsEditor from "./AdditionalFieldsEditor";
 
@@ -59,6 +60,9 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
 	const [validationKey, setValidationKey] = useState<number>(0);
 	const [fieldsModified, setFieldsModified] = useState<boolean>(false);
+	const [validationErrorMessage, setValidationErrorMessage] = useState<
+		string | null
+	>(null);
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
@@ -342,6 +346,8 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 	};
 
 	const handleValidate = async () => {
+		setValidationErrorMessage(null);
+
 		if (selectedWorkTrackingSystem && selectedAuthMethod) {
 			const settings: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
@@ -354,7 +360,16 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				additionalFieldDefinitions: additionalFields,
 			};
 
-			return await validateSettings(settings);
+			try {
+				return await validateSettings(settings);
+			} catch (error) {
+				if (error instanceof ApiError && error.code === 403) {
+					setValidationErrorMessage(
+						"You've exceeded the number of additional fields allowed on your plan.",
+					);
+				}
+				return false;
+			}
 		}
 
 		return false;
@@ -526,7 +541,10 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					onValidate={handleValidate}
 					onSave={handleSubmit}
 					inputsValid={inputsValid}
-					validationFailedMessage={`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`}
+					validationFailedMessage={
+						validationErrorMessage ??
+						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`
+					}
 					saveButtonText={workTrackingSystems.length === 1 ? "Save" : "Create"}
 					key={validationKey}
 				/>
