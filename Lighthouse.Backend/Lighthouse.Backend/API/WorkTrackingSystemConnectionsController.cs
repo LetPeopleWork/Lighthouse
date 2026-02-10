@@ -1,10 +1,12 @@
 ﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,16 +20,18 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<WorkTrackingSystemConnection> repository;
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
         private readonly ICryptoService cryptoService;
+        private readonly ILicenseService licenseService;
 
         private readonly bool isLinearIntegrationEnabled;
 
         public WorkTrackingSystemConnectionsController(
-            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, IRepository<OptionalFeature> optionalFeatureRepository)
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, IRepository<OptionalFeature> optionalFeatureRepository, ILicenseService licenseService)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
             this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.cryptoService = cryptoService;
+            this.licenseService = licenseService;
 
             var linearPreviewFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.LinearIntegrationKey);
             isLinearIntegrationEnabled = linearPreviewFeature?.Enabled ?? false;
@@ -65,6 +69,11 @@ namespace Lighthouse.Backend.API
         {
             newConnection.Id = 0;
             var connection = CreateConnectionFromDto(newConnection);
+            
+            if (!connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, null);
+            }
 
             repository.Add(connection);
             await repository.Save();
@@ -81,6 +90,11 @@ namespace Lighthouse.Backend.API
 
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(connectionDto.WorkTrackingSystem);
             var connection = CreateConnectionFromDto(connectionDto);
+
+            if (!connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, false);
+            }
 
             var isConnectionValid = await workItemService.ValidateConnection(connection);
 

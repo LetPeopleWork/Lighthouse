@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,9 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<ICryptoService> cryptoServiceMock;
 
-        private OptionalFeature linearIntegreationPreviewFeature;
+        private OptionalFeature linearIntegrationPreviewFeature;
+
+        private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
         public void Setup()
@@ -32,11 +35,12 @@ namespace Lighthouse.Backend.Tests.API
             repositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             cryptoServiceMock = new Mock<ICryptoService>();
+            licenseServiceMock = new Mock<ILicenseService>();
 
             cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => input);
             cryptoServiceMock.Setup(x => x.Decrypt(It.IsAny<string>())).Returns((string input) => input);
 
-            linearIntegreationPreviewFeature = new OptionalFeature { Enabled = true, Id = 12, Key = OptionalFeatureKeys.LinearIntegrationKey };
+            linearIntegrationPreviewFeature = new OptionalFeature { Enabled = true, Id = 12, Key = OptionalFeatureKeys.LinearIntegrationKey };
 
             workTrackingSystemsFactoryMock.Setup(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns((WorkTrackingSystems s) => new WorkTrackingSystemConnection { WorkTrackingSystem = s });
         }
@@ -72,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetSupportedWorkTrackingSystems_LinearIntegrationOff_SkipsLinearFromAvailableSystems()
         {
-            linearIntegreationPreviewFeature.Enabled = false;
+            linearIntegrationPreviewFeature.Enabled = false;
 
             var subject = CreateSubject();
 
@@ -159,6 +163,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(WorkTrackingSystems.Jira)]
         public async Task ValidateConnection_InvokesWorkItemService_ReturnsResult(WorkTrackingSystems workTrackingSystem)
         {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             var subject = CreateSubject();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
@@ -167,6 +172,8 @@ namespace Lighthouse.Backend.Tests.API
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
 
             var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = workTrackingSystem };
+            AddAdditionalFieldDefinitionToDto(connectionDto, 2);
+            
             var result = await subject.ValidateConnection(connectionDto);
 
             using (Assert.EnterMultipleScope())
@@ -176,6 +183,31 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_MoreThanOneAdditionalField_FailsIfNoPremium()
+        {
+            var subject = CreateSubject();
+
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(WorkTrackingSystems.Jira)).Returns(workTrackingConnectorServiceMock.Object);
+            
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            AddAdditionalFieldDefinitionToDto(connectionDto, 2);
+                
+            var result = await subject.ValidateConnection(connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ActionResult<bool>>());
+                var objectResult = result.Result as ObjectResult;
+
+                Assert.That(objectResult, Is.Not.Null);
+                Assert.That(objectResult.StatusCode, Is.EqualTo(403));
+                Assert.That(objectResult.Value, Is.False);
             }
         }
 
@@ -280,6 +312,9 @@ namespace Lighthouse.Backend.Tests.API
                 WorkTrackingSystem = system,
                 AuthenticationMethodKey = authMethodKey,
             };
+            
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            AddAdditionalFieldDefinitionToDto(newConnectionDto, 2);
 
             var subject = CreateSubject();
 
@@ -291,12 +326,48 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(connection?.AuthenticationMethodKey, Is.EqualTo(authMethodKey));
         }
 
+        [Test] public async Task CreateNewWorkTrackingSystemConnection_MoreThanOneAdditionalField_NoPremium_Fails()
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Connection",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud,
+            };
+
+            var subject = CreateSubject();
+            
+            AddAdditionalFieldDefinitionToDto(newConnectionDto, 2);
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+            
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ActionResult<WorkTrackingSystemConnectionDto>>());
+                var objectResult = result.Result as ObjectResult;
+
+                Assert.That(objectResult, Is.Not.Null);
+                Assert.That(objectResult.StatusCode, Is.EqualTo(403));
+                Assert.That(objectResult.Value, Is.Null);
+            }
+        }
+
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
             var optionalFeatureRepositoryMock = new Mock<IRepository<OptionalFeature>>();
-            optionalFeatureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(linearIntegreationPreviewFeature);
+            optionalFeatureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(linearIntegrationPreviewFeature);
 
-            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, optionalFeatureRepositoryMock.Object);
+            return new WorkTrackingSystemConnectionsController(
+                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, optionalFeatureRepositoryMock.Object, licenseServiceMock.Object);
+        }
+
+        private void AddAdditionalFieldDefinitionToDto(WorkTrackingSystemConnectionDto connectionDto,
+            int additionalFieldCount)
+        {
+            for (var count = 0; count < additionalFieldCount; count++)
+            {
+                connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto());
+            }
         }
     }
 }

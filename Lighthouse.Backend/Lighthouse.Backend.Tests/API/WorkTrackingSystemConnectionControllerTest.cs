@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -10,11 +11,14 @@ namespace Lighthouse.Backend.Tests.API
     public class WorkTrackingSystemConnectionControllerTest
     {
         private Mock<IRepository<WorkTrackingSystemConnection>> repositoryMock;
+        
+        private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            licenseServiceMock = new Mock<ILicenseService>();
         }
 
         [Test]
@@ -45,6 +49,37 @@ namespace Lighthouse.Backend.Tests.API
 
             repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_MoreThanOneAdditionalFieldAfterUpdate_ReturnsForbid()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Name = "Boring Old Name" };
+            existingConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "Option", Value = "Old Option Value" });
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition{Id = 1, Reference = "Ref", DisplayName = "Display" });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Fancy New Name" };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Option", Value = "Nobody expects the Spanish Inquisition" });
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto{ Id = 1,  Reference = "Ref", DisplayName = "Display" });
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto{ Id = 2, Reference = "Ref", DisplayName = "Ref" });
+            
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ActionResult<WorkTrackingSystemConnectionDto>>());
+                var objectResult = result.Result as ObjectResult;
+
+                Assert.That(objectResult, Is.Not.Null);
+                Assert.That(objectResult.StatusCode, Is.EqualTo(403));
+                Assert.That(objectResult.Value, Is.Null);
+            }
+
+            repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()), Times.Never);
+            repositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
         [Test]
@@ -162,7 +197,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object);
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, licenseServiceMock.Object);
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,13 +9,15 @@ namespace Lighthouse.Backend.API
 {
     [Route("api/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [ApiController]
-    public class WorkTrackingSystemConnectionController(IRepository<WorkTrackingSystemConnection> repository)
+    public class WorkTrackingSystemConnectionController(IRepository<WorkTrackingSystemConnection> repository, ILicenseService licenseService)
         : ControllerBase
     {
         [HttpPut]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
-            return await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async existingConnection =>
+            var isForbiddenAction = false;
+            
+            var result = await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async existingConnection =>
             {
                 existingConnection.Name = updatedConnection.Name;
 
@@ -32,11 +36,20 @@ namespace Lighthouse.Backend.API
 
                 UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions);
 
-                repository.Update(existingConnection);
-                await repository.Save();
-
+                if (existingConnection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
+                {
+                    repository.Update(existingConnection);
+                    await repository.Save();
+                }
+                else 
+                {
+                    isForbiddenAction = true;
+                }
+                
                 return new WorkTrackingSystemConnectionDto(existingConnection);
             });
+
+            return isForbiddenAction ? StatusCode(StatusCodes.Status403Forbidden, null) : result;
         }
 
         [HttpDelete]
