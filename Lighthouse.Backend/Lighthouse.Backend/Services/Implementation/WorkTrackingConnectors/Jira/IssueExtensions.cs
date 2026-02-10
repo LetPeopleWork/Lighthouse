@@ -7,31 +7,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     {
         public static string GetFieldValue(this JsonElement fields, string fieldKey)
         {
-            if (fields.TryGetProperty(fieldKey, out var field))
+            if (!fields.TryGetProperty(fieldKey, out var field))
+            {
+                return string.Empty;
+            }
+            
+            // It may be that we get back a JSON Object, e.g. for option fields. They need special treatment. If not, we just return the value.
+            if (field.ValueKind != JsonValueKind.Object)
             {
                 return field.ToString();
             }
 
-            return TryExtractingCustomField(fields, fieldKey);
-        }
-
-        private static string TryExtractingCustomField(JsonElement fields, string fieldKey)
-        {
-            /* This is done because of Jira's custom fields. In the JQL, we have to refer to them via "cf[<id>]".
-             * However, when we get it from the API, it's "customfield_<id>". This method tries to convert the key from cf[<id>] to customfield_<id>.
-             * This is stupid and I hate it. Do better Atlassian. */
-            var regex = new Regex(@"^cf\[(\d+)\]$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
-            var match = regex.Match(fieldKey);
-            if (match.Success)
+            if (field.TryGetProperty("value", out var valueProperty))
             {
-                var customFieldKey = "customfield_" + match.Groups[1].Value;
-                if (fields.TryGetProperty(customFieldKey, out var customField))
-                {
-                    return customField.ToString();
-                }
+                return valueProperty.ToString();
             }
-
-            return string.Empty;
+            
+            // If no "value" property, return the full object as string
+            return field.ToString();
         }
     }
 }
