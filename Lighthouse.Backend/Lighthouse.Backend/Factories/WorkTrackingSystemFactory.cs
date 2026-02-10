@@ -20,9 +20,6 @@ namespace Lighthouse.Backend.Factories
             var defaultOptions = CreateOptionsForWorkTrackingSystem(workTrackingSystem);
             newConnection.Options.AddRange(defaultOptions);
 
-            var defaultAdditionalFields = CreateAdditionalFieldsForWorkTrackingSystem(workTrackingSystem);
-            newConnection.AdditionalFieldDefinitions.AddRange(defaultAdditionalFields);
-
             return newConnection;
         }
 
@@ -226,70 +223,6 @@ namespace Lighthouse.Backend.Factories
                     Value = string.Empty,
                     IsSecret = true,
                     IsOptional = false,
-                }
-            ];
-        }
-
-        private List<AdditionalFieldDefinition> CreateAdditionalFieldsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
-        {
-            logger.LogDebug("Getting Default AdditionalFieldDefinitions for {WorkTrackingSystem}", workTrackingSystem);
-
-            return workTrackingSystem switch
-            {
-                WorkTrackingSystems.AzureDevOps => GetAdditionalFieldsForAzureDevOps(),
-                WorkTrackingSystems.Jira => GetAdditionalFieldsForJira(),
-                WorkTrackingSystems.Linear => [],
-                WorkTrackingSystems.Csv => [],
-                _ => throw new NotSupportedException("Selected Work Tracking System is Not Supported")
-            };
-        }
-
-        private static List<AdditionalFieldDefinition> GetAdditionalFieldsForAzureDevOps()
-        {
-            return
-            [
-                new AdditionalFieldDefinition
-                {
-                    Id = -1,
-                    DisplayName = "Iteration Path",
-                    Reference = "Iteration Path"
-                },
-                new AdditionalFieldDefinition
-                {
-                    Id = -2,
-                    DisplayName = "Area Path",
-                    Reference = "Area Path"
-                },
-                new AdditionalFieldDefinition
-                {
-                    Id = -3,
-                    DisplayName = "Size",
-                    Reference = "Size"
-                },
-            ];
-        }
-
-        private static List<AdditionalFieldDefinition> GetAdditionalFieldsForJira()
-        {
-            return
-            [
-                new AdditionalFieldDefinition
-                {
-                    Id = -1,
-                    DisplayName = "Fix Version",
-                    Reference = "Fix versions"
-                },
-                new AdditionalFieldDefinition
-                {
-                    Id = -2,
-                    DisplayName = "Components",
-                    Reference = "Components"
-                },
-                new AdditionalFieldDefinition
-                {
-                    Id = -3,
-                    DisplayName = "Sprint",
-                    Reference = "Sprint",
                 }
             ];
         }

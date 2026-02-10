@@ -5,19 +5,12 @@ using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing
 {
-    public class LicenseService : ILicenseService
+    public class LicenseService(
+        ILogger<LicenseService> logger,
+        IRepository<LicenseInformation> licenseRepository,
+        ILicenseVerifier licenseVerifier)
+        : ILicenseService
     {
-        private readonly ILogger<LicenseService> logger;
-        private readonly IRepository<LicenseInformation> licenseRepository;
-        private readonly ILicenseVerifier licenseVerifier;
-
-        public LicenseService(ILogger<LicenseService> logger, IRepository<LicenseInformation> licenseRepository, ILicenseVerifier licenseVerifier)
-        {
-            this.logger = logger;
-            this.licenseRepository = licenseRepository;
-            this.licenseVerifier = licenseVerifier;
-        }
-
         public async Task<LicenseInformation?> ImportLicense(string licenseContent)
         {
             try

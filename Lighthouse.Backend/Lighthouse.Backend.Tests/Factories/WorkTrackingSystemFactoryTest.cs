@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Factories
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
-                Assert.That(ContainsOption(connection.Options, LinearWorkTrackingOptionNames.ApiKey, true, false), Is.True);
+                Assert.That(ContainsOption(connection.Options, LinearWorkTrackingOptionNames.ApiKey, true), Is.True);
             }
         }
 
@@ -135,56 +135,6 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.UrlHeader), Is.EqualTo("Url"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.OwningTeamHeader), Is.EqualTo("Owning Team"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader), Is.EqualTo("Estimated Size"));
-            }
-        }
-
-        [Test]
-        public void CreateDefaultConnectionForWorkTrackingSystem_AzureDevOps_SeedsDefaultAdditionalFields()
-        {
-            var subject = CreateSubject();
-
-            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.AzureDevOps);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(connection.AdditionalFieldDefinitions, Has.Count.EqualTo(3));
-
-                var iterationPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Iteration Path");
-                Assert.That(iterationPath, Is.Not.Null);
-                Assert.That(iterationPath!.DisplayName, Is.EqualTo("Iteration Path"));
-
-                var areaPath = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Area Path");
-                Assert.That(areaPath, Is.Not.Null);
-                Assert.That(areaPath!.DisplayName, Is.EqualTo("Area Path"));
-
-                var size = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Size");
-                Assert.That(size, Is.Not.Null);
-                Assert.That(size!.DisplayName, Is.EqualTo("Size"));
-            }
-        }
-
-        [Test]
-        public void CreateDefaultConnectionForWorkTrackingSystem_Jira_SeedsDefaultAdditionalFields()
-        {
-            var subject = CreateSubject();
-
-            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Jira);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(connection.AdditionalFieldDefinitions, Has.Count.EqualTo(3));
-
-                var fixVersion = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Fix versions");
-                Assert.That(fixVersion, Is.Not.Null);
-                Assert.That(fixVersion!.DisplayName, Is.EqualTo("Fix Version"));
-
-                var component = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Components");
-                Assert.That(component, Is.Not.Null);
-                Assert.That(component!.DisplayName, Is.EqualTo("Components"));
-                
-                var sprint = connection.AdditionalFieldDefinitions.SingleOrDefault(f => f.Reference == "Sprint");
-                Assert.That(sprint, Is.Not.Null);
-                Assert.That(sprint!.DisplayName, Is.EqualTo("Sprint"));
             }
         }
 
