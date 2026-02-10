@@ -44,13 +44,14 @@ As with the *API Token*, the *Personal Access Token* is treated like a password 
 
 Lighthouse allows you to configure **Additional Fields** for Jira connections. These fields let you retrieve and display extra information from your Jira issues, including custom fields and built-in properties.
 
-### Default Additional Fields
-When you create a new Jira connection, Lighthouse automatically adds the following additional fields:
+{: .note}
+The community edition supports one additional field. You get unlimited with the premium license.
+
+### Example Additional Fields
+Following may be interesting additional fields for Jira:
 - **Fix Version** (`Fix versions`)
 - **Components** (`Components`)
 - **Sprint** (`Sprint`)
-
-You can add more fields or edit/remove these defaults as needed. These fields help you tailor Lighthouse to your organization's specific tracking needs.
 
 ### How to Add or Configure Additional Fields
 You can manage additional fields in the connection settings UI. When adding a field, you will be prompted for:

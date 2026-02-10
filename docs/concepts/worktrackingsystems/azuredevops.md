@@ -32,13 +32,14 @@ The Personal Access Token shall be treated like a password. Do not share this wi
 
 Lighthouse allows you to configure **Additional Fields** for Azure DevOps connections. These fields are used to retrieve and display extra information from your work items, such as custom properties or metadata that are not part of the default set.
 
-### Default Additional Fields
-When you create a new Azure DevOps connection, Lighthouse automatically adds the following additional fields:
+{: .note}
+The community edition supports one additional field. You get unlimited with the premium license.
+
+### Example Additional Fields
+Following may be interesting additional fields for Jira:
 - **Iteration Path** (`System.IterationPath`)
 - **Area Path** (`System.AreaPath`)
 - **Size** (`Microsoft.VSTS.Scheduling.Size`)
-
-You can add more fields or edit/remove these defaults as needed.
 
 ### How to Add or Configure Additional Fields
 You can manage additional fields in the connection settings UI. When adding a field, you will be prompted for:

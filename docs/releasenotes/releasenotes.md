@@ -4,6 +4,35 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Process Behaviour Charts
+Process Behaviour Charts (PBCs) help you understand whether changes in your system are likely just normal variability, or whether you are seeing a special cause (something worth investigating). Lighthouse now supports PBCs for both Teams and Portfolios, for Throughput, Cycle Time, Work In Progress, and Work Item Age.
+
+In order to get the chart, you must configure a *baseline* for your PBC. You do this in the [Team Settings](https://docs.lighthouse.letpeople.work/teams/edit.html#process-behaviour-chart-baseline) or [Portfolio Settings](https://docs.lighthouse.letpeople.work/portfolios/edit.html#process-behaviour-chart-baseline). Once you did this, the charts will appear in your [Metrics tab](https://docs.lighthouse.letpeople.work/metrics/widgets.html#process-behaviour-charts):
+
+![Cycle Time Process Behaviour Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleTimeProcessBehaviorChart.png)
+
+## Adjustments to Additional Fields Configuration
+If you add or modify the additional fields, you must make sure to refresh your teams and portfolios before the fields are loaded. This was not obvious, thus we added a small info box about it.
+
+In case of using an *Option Field* in Jira as additional field, Lighthouse was fetching too much information (a whole json object). This is fixed in this version and you get the exact value that is selected.
+
+Furthermore, we decided to make the additional fields part of the premium features. The additional fields allow to deal with customization from your Jira instance and will mainly be used for advanced features or quality of life improvements. For both those things we do have the premium model in place.
+
+Starting with this release, you are restricted to a single additional field if you are on the community version. This allows you to test various scenarios and features, to make sure it works with your work tracking system, while giving us a marketable feature to sell premium licenses.
+
+## Other Improvements and Bug Fixes
+- The *Feature List* for deliveries now also allows you to Hide completed Features
+- Update of various third party components
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.7.3...vNext)
+
 
 # Lighthouse v26.2.7.3
 
