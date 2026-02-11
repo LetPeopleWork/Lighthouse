@@ -838,7 +838,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
 
             var customFieldReferences = await GetCustomFieldMappings(client,
-                [JiraFieldNames.NamePropertyName, JiraFieldNames.KeyPropertyName],
+                [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
 
             return customFieldReferences;

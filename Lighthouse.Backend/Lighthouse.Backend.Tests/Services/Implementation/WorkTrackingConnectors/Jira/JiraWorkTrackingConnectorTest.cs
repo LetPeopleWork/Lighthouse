@@ -606,6 +606,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(new[] { "customrelationfield" }, true)]
         [TestCase(new[] { "MamboJambo" }, false)]
         [TestCase(new[] { "fixVersions", "Custom.NOTEXISTING" }, false)]
+        [TestCase(new[] { "customfield_10034" }, true)]
+        [TestCase(new[] { "com.atlassian.atlas.jira__project-status" }, true)]
         public async Task ValidateConnection_GivenAdditionalFields_ReturnsTrueOnlyIfFieldsExist(string[] additionalFields, bool expectedValidationResult)
         {
             var subject = CreateSubject();

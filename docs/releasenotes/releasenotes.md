@@ -18,6 +18,8 @@ If you add or modify the additional fields, you must make sure to refresh your t
 
 In case of using an *Option Field* in Jira as additional field, Lighthouse was fetching too much information (a whole json object). This is fixed in this version and you get the exact value that is selected.
 
+On top of that, you can now also specify the "id" of a field, next to the already supported "Key" and "Name" properties. This is useful as (some?) versions of Jira Data Center do not expose a key property. In most cases, id and key will actually be the same property (at least in Jira Cloud), so not much will change if you do not use Jira Data Center.
+
 Furthermore, we decided to make the additional fields part of the premium features. The additional fields allow to deal with customization from your Jira instance and will mainly be used for advanced features or quality of life improvements. For both those things we do have the premium model in place.
 
 Starting with this release, you are restricted to a single additional field if you are on the community version. This allows you to test various scenarios and features, to make sure it works with your work tracking system, while giving us a marketable feature to sell premium licenses.
