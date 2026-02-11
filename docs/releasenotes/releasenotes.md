@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.2.11.7
 
 ## Process Behaviour Charts
 Process Behaviour Charts (PBCs) help you understand whether changes in your system are likely just normal variability, or whether you are seeing a special cause (something worth investigating). Lighthouse now supports PBCs for both Teams and Portfolios, for Throughput, Cycle Time, Work In Progress, and Work Item Age.
@@ -33,7 +33,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.7.3...vNext)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.7.3...v26.2.11.7)
 
 
 # Lighthouse v26.2.7.3
