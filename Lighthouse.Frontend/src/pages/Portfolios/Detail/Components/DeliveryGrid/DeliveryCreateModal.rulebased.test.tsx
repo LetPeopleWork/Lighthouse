@@ -299,9 +299,16 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			let saveButton = screen.getByRole("button", { name: "Save" });
 			expect(saveButton).not.toBeDisabled();
 
-			// Modify the rule value
-			await user.clear(valueInput);
-			await user.type(valueInput, "different-tag");
+			// Modify the rule value - re-query the input since component may have re-rendered
+			const updatedValueInputWrapper = screen.getByTestId("rule-value-input-0");
+			const updatedValueInput = within(updatedValueInputWrapper).getByRole(
+				"textbox",
+			);
+
+			// Use fireEvent instead of userEvent to avoid timeout issues
+			fireEvent.change(updatedValueInput, {
+				target: { value: "different-tag" },
+			});
 
 			// Save button should be disabled again
 			saveButton = screen.getByRole("button", { name: "Save" });

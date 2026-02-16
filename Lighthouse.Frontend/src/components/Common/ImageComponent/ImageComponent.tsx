@@ -29,8 +29,14 @@ const ImageComponent: React.FC<ImageComponentProps> = ({ src, alt }) => {
 				height: "auto",
 				maxWidth: "100%",
 				objectFit: "contain",
-				aspectRatio: `${imageDimensions.width / imageDimensions.height}`,
-				maxHeight: `${imageDimensions.height}px`,
+				aspectRatio:
+					imageDimensions.width && imageDimensions.height
+						? imageDimensions.width / imageDimensions.height
+						: undefined,
+				maxHeight:
+					imageDimensions.height > 0
+						? `${imageDimensions.height}px`
+						: undefined,
 				borderRadius: 1,
 				boxShadow: 1,
 				marginTop: 2,

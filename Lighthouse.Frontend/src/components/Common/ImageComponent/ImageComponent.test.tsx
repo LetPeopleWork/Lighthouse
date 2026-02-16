@@ -1,5 +1,5 @@
-import { act, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import ImageComponent from "./ImageComponent";
 
 describe("ImageComponent", () => {
@@ -66,23 +66,27 @@ describe("ImageComponent", () => {
 			render(<ImageComponent src="test-image.jpg" />);
 		});
 
-		// Allow the mock Image onload to be called
+		// Allow the mock Image onload to be called and state to update
 		await act(async () => {
-			vi.runAllTimers();
+			await vi.runAllTimersAsync();
 		});
 
-		// Get the image after state update
-		const image = screen.getByRole("img");
-
-		// Check for aspect ratio - the computed value format may vary between browsers
-		// So check for either the calculated value or the actual expression
-		const style = window.getComputedStyle(image);
-		expect(
-			style.aspectRatio === "1.3333333333333333" ||
-				style.aspectRatio === "400 / 300" ||
-				image.style.aspectRatio === "1.3333333333333333",
-		).toBeTruthy();
-
 		vi.useRealTimers();
+
+		// Wait for the component to re-render with the updated dimensions
+		// Since JSDOM doesn't fully support aspect-ratio CSS or Emotion styles,
+		// we verify the dimensions were loaded by checking maxHeight which is set
+		// when dimensions are available
+		await waitFor(() => {
+			const image = screen.getByRole("img");
+			const computedStyle = globalThis.getComputedStyle(image);
+
+			// The maxHeight should be set to 300px (the mock image height)
+			// This confirms the image loaded and dimensions were applied
+			expect(
+				computedStyle.maxHeight === "300px" ||
+					image.style.maxHeight === "300px",
+			).toBeTruthy();
+		});
 	});
 });
