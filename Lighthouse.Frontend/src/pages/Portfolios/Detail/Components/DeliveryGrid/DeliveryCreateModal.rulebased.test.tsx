@@ -204,7 +204,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			expect(saveButton).toBeDisabled();
 		});
 
-		it("should enable Save button after successful rule validation", async () => {
+		it("should disable Save button when rule is modified after validation", async () => {
 			const user = userEvent.setup();
 			renderModal();
 
@@ -224,18 +224,17 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			await user.type(nameInput, "Test Delivery");
 
 			const dateInput = screen.getByLabelText("Delivery Date");
-			fireEvent.change(dateInput, {
-				target: { value: formatDateForInput(getTwoWeeksFromNow()) },
-			});
+			await user.clear(dateInput);
+			await user.type(dateInput, formatDateForInput(getTwoWeeksFromNow()));
 
-			// Add a rule
+			// Add a rule and fill it
 			const addRuleButton = screen.getByTestId("add-rule-button");
 			await user.click(addRuleButton);
 
 			// Find and fill the value input inside the TextField
 			const valueInputWrapper = screen.getByTestId("rule-value-input-0");
 			const valueInput = within(valueInputWrapper).getByRole("textbox");
-			fireEvent.change(valueInput, { target: { value: "test-tag" } });
+			await user.type(valueInput, "test-tag");
 
 			// Validate rules
 			const validateButton = screen.getByRole("button", {
@@ -248,9 +247,19 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 				expect(screen.getByTestId("matched-count")).toBeInTheDocument();
 			});
 
-			// Save button should now be enabled
+			// Save button should be enabled
 			const saveButton = screen.getByRole("button", { name: "Save" });
 			expect(saveButton).not.toBeDisabled();
+
+			// Modify the rule value
+			await user.clear(valueInput);
+			await user.type(valueInput, "different-tag");
+
+			// Wait for Save button to become disabled again
+			await waitFor(() => {
+				const saveButton = screen.getByRole("button", { name: "Save" });
+				expect(saveButton).toBeDisabled();
+			});
 		});
 
 		it("should disable Save button when rule is modified after validation", async () => {
@@ -273,9 +282,8 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			await user.type(nameInput, "Test Delivery");
 
 			const dateInput = screen.getByLabelText("Delivery Date");
-			fireEvent.change(dateInput, {
-				target: { value: formatDateForInput(getTwoWeeksFromNow()) },
-			});
+			await user.clear(dateInput);
+			await user.type(dateInput, formatDateForInput(getTwoWeeksFromNow()));
 
 			// Add a rule and fill it
 			const addRuleButton = screen.getByTestId("add-rule-button");
@@ -284,7 +292,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			// Find and fill the value input inside the TextField
 			const valueInputWrapper = screen.getByTestId("rule-value-input-0");
 			const valueInput = within(valueInputWrapper).getByRole("textbox");
-			fireEvent.change(valueInput, { target: { value: "test-tag" } });
+			await user.type(valueInput, "test-tag");
 
 			// Validate rules
 			const validateButton = screen.getByRole("button", {
@@ -301,16 +309,9 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			let saveButton = screen.getByRole("button", { name: "Save" });
 			expect(saveButton).not.toBeDisabled();
 
-			// Modify the rule value - re-query the input since component may have re-rendered
-			const updatedValueInputWrapper = screen.getByTestId("rule-value-input-0");
-			const updatedValueInput = within(updatedValueInputWrapper).getByRole(
-				"textbox",
-			);
-
-			// Use fireEvent instead of userEvent to avoid timeout issues
-			fireEvent.change(updatedValueInput, {
-				target: { value: "different-tag" },
-			});
+			// Modify the rule value
+			await user.clear(valueInput);
+			await user.type(valueInput, "different-tag");
 
 			// Save button should be disabled again
 			saveButton = screen.getByRole("button", { name: "Save" });
@@ -473,9 +474,8 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			await user.type(nameInput, "Test Delivery");
 
 			const dateInput = screen.getByLabelText("Delivery Date");
-			fireEvent.change(dateInput, {
-				target: { value: formatDateForInput(getTwoWeeksFromNow()) },
-			});
+			await user.clear(dateInput);
+			await user.type(dateInput, formatDateForInput(getTwoWeeksFromNow()));
 
 			// Add a rule and fill it
 			const addRuleButton = screen.getByTestId("add-rule-button");
@@ -484,7 +484,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			// Find and fill the value input inside the TextField
 			const valueInputWrapper = screen.getByTestId("rule-value-input-0");
 			const valueInput = within(valueInputWrapper).getByRole("textbox");
-			fireEvent.change(valueInput, { target: { value: "test-tag" } });
+			await user.type(valueInput, "test-tag");
 
 			// Validate rules
 			const validateButton = screen.getByRole("button", {
@@ -522,9 +522,8 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			await user.type(nameInput, "Test Delivery");
 
 			const dateInput = screen.getByLabelText("Delivery Date");
-			fireEvent.change(dateInput, {
-				target: { value: formatDateForInput(getTwoWeeksFromNow()) },
-			});
+			await user.clear(dateInput);
+			await user.type(dateInput, formatDateForInput(getTwoWeeksFromNow()));
 
 			// Add a rule and fill it
 			const addRuleButton = screen.getByTestId("add-rule-button");
@@ -533,7 +532,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			// Find and fill the value input inside the TextField
 			const valueInputWrapper = screen.getByTestId("rule-value-input-0");
 			const valueInput = within(valueInputWrapper).getByRole("textbox");
-			fireEvent.change(valueInput, { target: { value: "test-tag" } });
+			await user.type(valueInput, "test-tag");
 
 			// Validate rules
 			const validateButton = screen.getByRole("button", {
