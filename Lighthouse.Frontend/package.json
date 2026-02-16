@@ -54,7 +54,7 @@
 		"@vitest/coverage-v8": "^4.0.14",
 		"@vitest/spy": "^4.0.18",
 		"cross-env": "^10.1.0",
-		"jsdom": "^28.0.0",
+		"jsdom": "^28.1.0",
 		"parse5": "^8.0.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
