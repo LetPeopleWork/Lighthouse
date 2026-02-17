@@ -61,6 +61,17 @@ vi.mock("../../../../../hooks/useLicenseRestrictions", () => ({
 	}),
 }));
 
+// Mock FeatureGrid to avoid rendering heavy DataGrid in tests
+vi.mock("../../../../../components/Common/FeatureGrid", () => ({
+	FeatureGrid: ({ features }: { features: IFeature[] }) => (
+		<div data-testid="feature-grid-mock">
+			{features.map((f) => (
+				<div key={f.id}>{f.name}</div>
+			))}
+		</div>
+	),
+}));
+
 const createMockFeature = (
 	id: number,
 	name: string,
@@ -205,14 +216,13 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 		});
 
 		it("should enable Save button after successful rule validation", async () => {
-			const user = userEvent.setup();
 			renderModal();
 
 			// Switch to rule-based mode
 			const ruleBasedButton = screen.getByRole("button", {
 				name: "Rule-Based",
 			});
-			await user.click(ruleBasedButton);
+			fireEvent.click(ruleBasedButton);
 
 			// Wait for schema to load (rule builder appears)
 			await waitFor(() => {
@@ -230,7 +240,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 
 			// Add a rule
 			const addRuleButton = screen.getByTestId("add-rule-button");
-			await user.click(addRuleButton);
+			fireEvent.click(addRuleButton);
 
 			// Find and fill the value input inside the TextField
 			const valueInputWrapper = screen.getByTestId("rule-value-input-0");
@@ -241,9 +251,13 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			const validateButton = screen.getByRole("button", {
 				name: /validate rules/i,
 			});
-			await user.click(validateButton);
+			fireEvent.click(validateButton);
 
-			// Wait for validation to complete
+			// Wait for validation to complete and Save button to be enabled
+			await waitFor(() => {
+				expect(mockDeliveryService.validateRules).toHaveBeenCalled();
+			});
+
 			await waitFor(() => {
 				expect(screen.getByTestId("matched-count")).toBeInTheDocument();
 			});
