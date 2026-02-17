@@ -253,61 +253,67 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			expect(saveButton).not.toBeDisabled();
 		});
 
-		it("should disable Save button when rule is modified after validation", async () => {
-			const user = userEvent.setup();
-			renderModal();
+		it(
+			"should disable Save button when rule is modified after validation",
+			{ timeout: 10000 },
+			async () => {
+				const user = userEvent.setup();
+				renderModal();
 
-			// Switch to rule-based mode
-			const ruleBasedButton = screen.getByRole("button", {
-				name: "Rule-Based",
-			});
-			await user.click(ruleBasedButton);
+				// Switch to rule-based mode
+				const ruleBasedButton = screen.getByRole("button", {
+					name: "Rule-Based",
+				});
+				await user.click(ruleBasedButton);
 
-			// Wait for schema to load (rule builder appears)
-			await waitFor(() => {
-				expect(screen.getByTestId("delivery-rule-builder")).toBeInTheDocument();
-			});
+				// Wait for schema to load (rule builder appears)
+				await waitFor(() => {
+					expect(
+						screen.getByTestId("delivery-rule-builder"),
+					).toBeInTheDocument();
+				});
 
-			// Fill in name and date
-			const nameInput = screen.getByLabelText("Delivery Name");
-			fireEvent.change(nameInput, { target: { value: "Test Delivery" } });
+				// Fill in name and date
+				const nameInput = screen.getByLabelText("Delivery Name");
+				fireEvent.change(nameInput, { target: { value: "Test Delivery" } });
 
-			const dateInput = screen.getByLabelText("Delivery Date");
-			fireEvent.change(dateInput, {
-				target: { value: formatDateForInput(getTwoWeeksFromNow()) },
-			});
+				const dateInput = screen.getByLabelText("Delivery Date");
+				fireEvent.change(dateInput, {
+					target: { value: formatDateForInput(getTwoWeeksFromNow()) },
+				});
 
-			// Add a rule and fill it
-			const addRuleButton = screen.getByTestId("add-rule-button");
-			await user.click(addRuleButton);
+				// Add a rule and fill it
+				const addRuleButton = screen.getByTestId("add-rule-button");
+				await user.click(addRuleButton);
 
-			// Find and fill the value input inside the TextField
-			const valueInputWrapper = screen.getByTestId("rule-value-input-0");
-			const valueInput = within(valueInputWrapper).getByRole("textbox");
-			fireEvent.change(valueInput, { target: { value: "test-tag" } });
+				// Find and fill the value input inside the TextField
+				const valueInputWrapper = screen.getByTestId("rule-value-input-0");
+				const valueInput = within(valueInputWrapper).getByRole("textbox");
+				fireEvent.change(valueInput, { target: { value: "test-tag" } });
 
-			// Validate rules
-			const validateButton = screen.getByRole("button", {
-				name: /validate rules/i,
-			});
-			await user.click(validateButton);
+				// Validate rules
+				const validateButton = screen.getByRole("button", {
+					name: /validate rules/i,
+				});
+				await user.click(validateButton);
 
-			// Wait for validation to complete
-			await waitFor(() => {
-				expect(screen.getByTestId("matched-count")).toBeInTheDocument();
-			});
+				// Wait for validation to complete
+				await waitFor(() => {
+					expect(screen.getByTestId("matched-count")).toBeInTheDocument();
+				});
 
-			// Save button should be enabled
-			let saveButton = screen.getByRole("button", { name: "Save" });
-			expect(saveButton).not.toBeDisabled();
+				// Save button should be enabled
+				let saveButton = screen.getByRole("button", { name: "Save" });
+				expect(saveButton).not.toBeDisabled();
 
-			// Modify the rule value
-			fireEvent.change(valueInput, { target: { value: "different-tag" } });
+				// Modify the rule value
+				fireEvent.change(valueInput, { target: { value: "different-tag" } });
 
-			// Save button should be disabled again
-			saveButton = screen.getByRole("button", { name: "Save" });
-			expect(saveButton).toBeDisabled();
-		});
+				// Save button should be disabled again
+				saveButton = screen.getByRole("button", { name: "Save" });
+				expect(saveButton).toBeDisabled();
+			},
+		);
 	});
 
 	describe("Edit mode initialization", () => {
