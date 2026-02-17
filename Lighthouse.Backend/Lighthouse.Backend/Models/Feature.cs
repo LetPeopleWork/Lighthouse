@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Models
 
         public void AddOrUpdateWorkForTeam(Team team, int remainingWork, int totalItems)
         {
-            var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
+            var existingTeam = FeatureWork.SingleOrDefault(t => t.TeamId == team.Id);
             if (existingTeam == null)
             {
                 var featureWork = new FeatureWork(team, remainingWork, totalItems, this);
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Models
 
         public void RemoveTeamFromFeature(Team team)
         {
-            var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
+            var existingTeam = FeatureWork.SingleOrDefault(t => t.TeamId == team.Id);
             if (existingTeam != null)
             {
                 FeatureWork.Remove(existingTeam);
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Models
 
         public int GetRemainingWorkForTeam(Team team)
         {
-            var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
+            var existingTeam = FeatureWork.SingleOrDefault(t => t.TeamId == team.Id);
             if (existingTeam != null)
             {
                 return existingTeam.RemainingWorkItems;

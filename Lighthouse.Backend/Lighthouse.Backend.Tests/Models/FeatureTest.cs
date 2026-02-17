@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void GetFeatureSize_WhenFeautureUsesDefaultSize_ReturnsZero()
         {
-            var team = new Team { Name = "Team A" };
+            var team = new Team { Name = "Team A", Id = 12, };
 
             var subject = CreateSubject();
             subject.AddOrUpdateWorkForTeam(team, 5, 10);
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void GetFeatureSize_FeatureHasWorkOfOneTeam_ReturnsWorkOfThatTeam()
         {
-            var team = new Team { Name = "Team A" };
+            var team = new Team { Name = "Team A", Id = 12, };
             var subject = CreateSubject();
             subject.AddOrUpdateWorkForTeam(team, 5, 10);
 
@@ -145,8 +145,8 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void GetFeatureSize_FeatureHasWorkOfMultipleTeams_ReturnsSumOfWork()
         {
-            var teamA = new Team { Name = "Team A" };
-            var teamB = new Team { Name = "Team B" };
+            var teamA = new Team { Name = "Team A", Id = 12, };
+            var teamB = new Team { Name = "Team B", Id = 13, };
             
             var subject = CreateSubject();
             
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(size, Is.EqualTo(16));
         }
 
-        private Feature CreateSubject()
+        private static Feature CreateSubject()
         {
             return new Feature();
         }
