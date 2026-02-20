@@ -413,6 +413,31 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 										type: "line",
 										data: chartData.yValues,
 										color: defaultColor,
+										valueFormatter: (
+											value: number | null,
+											params: { dataIndex: number },
+										) => {
+											if (!useEqualSpacing) {
+												return `${value}`;
+											}
+
+											const index = params?.dataIndex ?? 0;
+											const point = data.dataPoints[index];
+
+											if (!point || !workItemLookup) {
+												return `${value}`;
+											}
+
+											const itemId = point.workItemIds?.[0];
+											const item =
+												itemId == null ? undefined : workItemLookup.get(itemId);
+
+											if (!item) {
+												return `${value}`;
+											}
+
+											return `${item.referenceId}: ${item.name}`;
+										},
 									},
 								]}
 								sx={{ flex: 1, minHeight: 0, height: "100%" }}
