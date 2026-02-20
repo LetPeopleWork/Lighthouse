@@ -416,10 +416,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("", "LGHTHSDMO-9", "")]
         [TestCase("MambooJamboo", "LGHTHSDMO-9", "")]
         [TestCase("customfield_10037", "LGHTHSDMO-9", "12.0")]
-        [TestCase("fixVersions", "LGHTHSDMO-9", "Elixir Project", false)]
-        [TestCase("FixVersions", "LGHTHSDMO-9", "Elixir Project", false)]
+        [TestCase("fixVersions", "LGHTHSDMO-9", "Elixir Project", true)]
+        [TestCase("FixVersions", "LGHTHSDMO-9", "Elixir Project", true)]
         [TestCase("labels", "LGHTHSDMO-5", "Phoenix", false)]
         [TestCase("labels", "LGHTHSDMO-5", "RebelRevolt", false)]
+        [TestCase("labels", "LGHTHSDMO-5", "Phoenix,RebelRevolt", true)]
         [TestCase("Favorite Team", "LGHTHSDMO-9", "Grasshopper Club Zurich")]
         public async Task GetFeaturesForProject_ReadsFeatureOwnerFieldCorrect(string fieldName, string issueKey, string expectedFeatureOwnerFieldValue, bool isExactValue = true)
         {

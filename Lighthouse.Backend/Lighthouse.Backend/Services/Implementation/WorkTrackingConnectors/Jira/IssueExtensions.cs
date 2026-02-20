@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -11,20 +10,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 return string.Empty;
             }
-            
-            // It may be that we get back a JSON Object, e.g. for option fields. They need special treatment. If not, we just return the value.
-            if (field.ValueKind != JsonValueKind.Object)
+
+            switch (field.ValueKind)
             {
-                return field.ToString();
+                case JsonValueKind.Array:
+                {
+                    var values = field.EnumerateArray()
+                        .Select(item => item.ValueKind switch
+                        {
+                            JsonValueKind.String => item.GetString() ?? string.Empty,
+                            JsonValueKind.Object => GetObjectDisplayValue(item),
+                            _ => item.ToString()
+                        });
+
+                    return string.Join(",", values);
+                }
+                case JsonValueKind.Object:
+                    return GetObjectDisplayValue(field);
+                default:
+                    return field.ToString();
+            }
+        }
+
+        private static string GetObjectDisplayValue(JsonElement obj)
+        {
+            if (obj.TryGetProperty("value", out var valueProp)){
+                return valueProp.ToString();
             }
 
-            if (field.TryGetProperty("value", out var valueProperty))
-            {
-                return valueProperty.ToString();
+            if (obj.TryGetProperty("name", out var nameProp)){
+                return nameProp.ToString();
+                
             }
-            
-            // If no "value" property, return the full object as string
-            return field.ToString();
+
+            return obj.ToString();
         }
     }
 }
