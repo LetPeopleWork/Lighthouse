@@ -42,7 +42,8 @@ const TeamDetail: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
-	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	const { canUpdateTeamData, maxTeamsWithoutPremium } =
 		useLicenseRestrictions();
@@ -266,22 +267,25 @@ const TeamDetail: React.FC = () => {
 											onChange={handleViewChange}
 											aria-label="team view tabs"
 										>
-											<Tooltip
-												title={
-													team.features.length === 0
-														? `No ${featureTerm.toLowerCase()} available for this ${teamTerm.toLowerCase()}`
-														: ""
+											<Tab
+												label={
+													<Tooltip
+														title={
+															team.features.length === 0
+																? `Add ${teamTerm} to a ${portfolioTerm} to see all ${featuresTerm} associated with the ${teamTerm}.`
+																: ""
+														}
+														arrow
+													>
+														<span style={{ pointerEvents: "auto" }}>
+															{featuresTerm}
+														</span>
+													</Tooltip>
 												}
-												arrow
-											>
-												<span>
-													<Tab
-														label={featureTerm}
-														value="features"
-														disabled={team.features.length === 0}
-													/>
-												</span>
-											</Tooltip>
+												value="features"
+												disabled={team.features.length === 0}
+												aria-label={featuresTerm}
+											/>
 											<Tab label="Forecasts" value="forecasts" />
 											<Tab label="Metrics" value="metrics" />
 											<Tab label="Settings" value="settings" />

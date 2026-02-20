@@ -42,8 +42,6 @@ export class Delivery implements IDelivery {
 	rules?: DeliveryRuleCondition[];
 
 	static fromBackend(data: IDelivery): Delivery {
-		console.log("Mapping delivery from backend:", data);
-
 		const delivery = new Delivery();
 		delivery.id = data.id;
 		delivery.name = data.name;

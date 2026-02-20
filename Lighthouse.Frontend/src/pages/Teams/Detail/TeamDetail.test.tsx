@@ -31,6 +31,7 @@ vi.mock("../../../services/TerminologyContext", () => ({
 			const terms: Record<string, string> = {
 				[TERMINOLOGY_KEYS.TEAM]: "Team",
 				[TERMINOLOGY_KEYS.FEATURES]: "Features",
+				[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
 			};
 			return terms[key] || key;
 		},
