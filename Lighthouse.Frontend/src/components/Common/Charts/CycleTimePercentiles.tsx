@@ -372,9 +372,11 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 				items={items}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				additionalColumnTitle={cycleTimeTerm}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				highlightColumn={{
+					title: cycleTimeTerm,
+					description: "days",
+					valueGetter: (item) => item.cycleTime,
+				}}
 				sle={serviceLevelExpectation?.value}
 			/>
 		</>

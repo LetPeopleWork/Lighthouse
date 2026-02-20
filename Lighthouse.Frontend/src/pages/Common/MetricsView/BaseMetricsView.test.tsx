@@ -301,6 +301,12 @@ vi.mock("../../../components/Common/Charts/ProcessBehaviourChart", () => ({
 			</div>
 		</div>
 	),
+	ProcessBehaviourChartType: {
+		Throughput: "Throughput",
+		WorkInProgress: "WorkInProgress",
+		TotalWorkItemAge: "TotalWorkItemAge",
+		CycleTime: "CycleTime",
+	},
 }));
 
 // Mock DashboardHeader and Dashboard to capture dashboardId prop

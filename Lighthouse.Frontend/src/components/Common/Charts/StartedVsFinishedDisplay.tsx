@@ -291,11 +291,12 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 				items={getAllWorkItems()}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				additionalColumnTitle={`${workItemAgeTerm}/${cycleTimeTerm}`}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) =>
-					item.cycleTime > 0 ? item.cycleTime : item.workItemAge
-				}
+				highlightColumn={{
+					title: `${workItemAgeTerm}/${cycleTimeTerm}`,
+					description: "days",
+					valueGetter: (item) =>
+						item.cycleTime > 0 ? item.cycleTime : item.workItemAge,
+				}}
 			/>
 		</>
 	);

@@ -160,17 +160,13 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				additionalColumnTitle={workItemAgeTerm}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => {
-					// Calculate historical age for the selected date or use
-					// the current reference date so the dialog shows a value
-					// consistent with the chart calculation.
-					if (selectedDate) {
-						return calculateHistoricalAge(item, selectedDate);
-					}
-
-					return calculateHistoricalAge(item, new Date());
+				highlightColumn={{
+					title: workItemAgeTerm,
+					description: "days",
+					valueGetter: (item) =>
+						selectedDate
+							? calculateHistoricalAge(item, selectedDate)
+							: calculateHistoricalAge(item, new Date()),
 				}}
 			/>
 		</>

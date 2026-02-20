@@ -7,13 +7,13 @@ vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
 		title,
 		items,
 		open,
-		additionalColumnTitle,
+		highlightColumn,
 		sle,
 	}: {
 		title?: string;
 		items?: unknown[];
 		open?: boolean;
-		additionalColumnTitle?: string;
+		highlightColumn?: HighlightColumnDefinition;
 		sle?: number;
 	}) => {
 		if (!open) return null;
@@ -21,7 +21,7 @@ vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
 			<div data-testid="mock-dialog">
 				<div>Title: {title}</div>
 				<div>Items: {Array.isArray(items) ? items.length : 0}</div>
-				<div>AdditionalTitle: {additionalColumnTitle}</div>
+				<div>Highlighted Column: {highlightColumn?.title}</div>
 				<div>SLE: {String(sle)}</div>
 			</div>
 		);
@@ -33,6 +33,7 @@ vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({ getTerm: () => "Age" }),
 }));
 
+import type { HighlightColumnDefinition } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
 import ItemsInProgress from "./ItemsInProgress";
 
@@ -94,8 +95,8 @@ describe("ItemsInProgress", () => {
 		expect(dialog).toBeInTheDocument();
 		expect(dialog).toHaveTextContent("Title: Todo");
 		expect(dialog).toHaveTextContent("Items: 1");
-		// Additional column title is provided by the mocked terminology hook
-		expect(dialog).toHaveTextContent("AdditionalTitle: Age");
+		// Highlighted column title is provided by the mocked terminology hook
+		expect(dialog).toHaveTextContent("Highlighted Column: Age");
 		expect(dialog).toHaveTextContent("SLE: 7");
 	});
 });

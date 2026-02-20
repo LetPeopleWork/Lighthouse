@@ -33,20 +33,28 @@ export interface WorkItemsDialogProps {
 	items: IWorkItem[];
 	open: boolean;
 	onClose: () => void;
-	additionalColumnTitle: string;
-	additionalColumnDescription: string;
-	additionalColumnContent: (workItem: IWorkItem) => number;
+	highlightColumn?: HighlightColumnDefinition;
 	sle?: number;
 }
+
+export interface HighlightColumnDefinition {
+	title: string;
+	description: string;
+	valueGetter: (workItem: IWorkItem) => number;
+}
+
+const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
+	title: "",
+	description: "",
+	valueGetter: () => 0,
+};
 
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,
 	items,
 	open,
 	onClose,
-	additionalColumnTitle,
-	additionalColumnDescription,
-	additionalColumnContent,
+	highlightColumn = emptyHighlightColumnDefinition,
 	sle,
 }) => {
 	const { getTerm } = useTerminology();
@@ -64,7 +72,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	);
 
 	const sortedItems = [...items].sort((a, b) => {
-		return additionalColumnContent(b) - additionalColumnContent(a);
+		return highlightColumn.valueGetter(b) - highlightColumn.valueGetter(a);
 	});
 
 	const getColumnColor = useCallback(
@@ -151,62 +159,62 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			});
 		}
 
-		// Add additional column
-		baseColumns.push({
-			field: "additionalColumn",
-			headerName: `${additionalColumnTitle} (${additionalColumnDescription})`,
-			width: 200,
-			sortable: true,
-			valueGetter: (_, row) => additionalColumnContent(row),
-			renderCell: ({ row }) => {
-				const value = additionalColumnContent(row);
-				return (
-					<Typography
-						variant="body2"
-						data-testid="additionalColumnContent"
-						sx={{
-							color: getColumnColor(value),
-							fontWeight: sle ? "bold" : "normal",
-							padding: "4px 8px",
-							borderRadius: 1,
-							display: "inline-flex",
-							alignItems: "center",
-							backgroundColor: (theme) => {
-								const timeColor = getColumnColor(value);
-								return timeColor
-									? hexToRgba(timeColor ?? theme.palette.text.primary, 0.1)
-									: "transparent";
-							},
-						}}
-					>
-						{value}
-						{row.isBlocked && (
-							<Tooltip title={`This ${workItemTerm} is ${blockedTerm}`}>
-								<BlockIcon
-									sx={{
-										color: "error.main",
-										fontSize: "1rem",
-										ml: 1,
-									}}
-								/>
-							</Tooltip>
-						)}
-					</Typography>
-				);
-			},
-		});
+		if (highlightColumn.title) {
+			// Add additional column
+			baseColumns.push({
+				field: "additionalColumn",
+				headerName: `${highlightColumn.title} (${highlightColumn.description})`,
+				width: 200,
+				sortable: true,
+				valueGetter: (_, row) => highlightColumn.valueGetter(row),
+				renderCell: ({ row }) => {
+					const value = highlightColumn.valueGetter(row);
+					return (
+						<Typography
+							variant="body2"
+							data-testid="additionalColumnContent"
+							sx={{
+								color: getColumnColor(value),
+								fontWeight: sle ? "bold" : "normal",
+								padding: "4px 8px",
+								borderRadius: 1,
+								display: "inline-flex",
+								alignItems: "center",
+								backgroundColor: (theme) => {
+									const timeColor = getColumnColor(value);
+									return timeColor
+										? hexToRgba(timeColor ?? theme.palette.text.primary, 0.1)
+										: "transparent";
+								},
+							}}
+						>
+							{value}
+							{row.isBlocked && (
+								<Tooltip title={`This ${workItemTerm} is ${blockedTerm}`}>
+									<BlockIcon
+										sx={{
+											color: "error.main",
+											fontSize: "1rem",
+											ml: 1,
+										}}
+									/>
+								</Tooltip>
+							)}
+						</Typography>
+					);
+				},
+			});
+		}
 
 		return baseColumns;
 	}, [
 		hasOwningTeams,
-		additionalColumnTitle,
-		additionalColumnDescription,
-		additionalColumnContent,
 		sle,
 		workItemTerm,
 		blockedTerm,
 		isFeature,
 		getColumnColor,
+		highlightColumn,
 	]);
 
 	return (

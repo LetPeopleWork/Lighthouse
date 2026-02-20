@@ -6,7 +6,9 @@ import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePer
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/FeatureSizeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
-import ProcessBehaviourChart from "../../../components/Common/Charts/ProcessBehaviourChart";
+import ProcessBehaviourChart, {
+	ProcessBehaviourChartType,
+} from "../../../components/Common/Charts/ProcessBehaviourChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
@@ -377,8 +379,18 @@ export const BaseMetricsView = <
 		addItems(cycleTimeData as unknown as IWorkItem[]);
 		addItems(inProgressItems);
 
+		for (const item of allFeaturesForSizeChart) {
+			lookup.set(item.id, item as unknown as IWorkItem);
+		}
+
 		return lookup;
-	}, [throughputData, wipOverTimeData, cycleTimeData, inProgressItems]);
+	}, [
+		throughputData,
+		wipOverTimeData,
+		cycleTimeData,
+		inProgressItems,
+		allFeaturesForSizeChart,
+	]);
 
 	const getPbcDashboardItems = (): DashboardItem[] => {
 		const pbcItems: DashboardItem[] = [];
@@ -388,39 +400,42 @@ export const BaseMetricsView = <
 			priority: number;
 			data: ProcessBehaviourChartData | null;
 			titleSuffix: string;
-			useEqualSpacing?: boolean;
+			type: ProcessBehaviourChartType;
 		}> = [
 			{
 				id: "throughputPbc",
 				priority: 18,
 				data: throughputPbcData,
 				titleSuffix: throughputTerm,
+				type: ProcessBehaviourChartType.Throughput,
 			},
 			{
 				id: "wipPbc",
 				priority: 19,
 				data: wipPbcData,
 				titleSuffix: workInProgressTerm,
+				type: ProcessBehaviourChartType.WorkInProgress,
 			},
 			{
 				id: "totalWorkItemAgePbc",
 				priority: 20,
 				data: totalWorkItemAgePbcData,
 				titleSuffix: `Total ${workItemAgeTerm}`,
+				type: ProcessBehaviourChartType.TotalWorkItemAge,
 			},
 			{
 				id: "cycleTimePbc",
 				priority: 21,
 				data: cycleTimePbcData,
 				titleSuffix: cycleTimeTerm,
-				useEqualSpacing: true,
+				type: ProcessBehaviourChartType.CycleTime,
 			},
 			{
 				id: "featureSizePbc",
 				priority: 22,
 				data: featureSizePbcData,
 				titleSuffix: `${featureTerm} Size`,
-				useEqualSpacing: true,
+				type: ProcessBehaviourChartType.FeatureSize,
 			},
 		];
 
@@ -435,10 +450,7 @@ export const BaseMetricsView = <
 							data={config.data}
 							title={`${config.titleSuffix}`}
 							workItemLookup={workItemLookup}
-							useEqualSpacing={config.useEqualSpacing}
-							showHistoricalAge={
-								config.id === "totalWorkItemAgePbc" || config.id === "wipPbc"
-							}
+							type={config.type}
 						/>
 					),
 				});

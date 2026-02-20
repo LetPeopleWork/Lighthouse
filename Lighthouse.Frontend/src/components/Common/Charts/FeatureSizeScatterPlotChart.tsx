@@ -399,6 +399,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const sizeTerm = "Size";
 
 	const percentiles = sizePercentileValues ?? [];
@@ -714,9 +715,11 @@ const FeatureSizeScatterPlotChart: React.FC<
 					title={dialogTitle}
 					items={selectedItems}
 					open={dialogOpen}
-					additionalColumnTitle={sizeTerm}
-					additionalColumnDescription="Child Items"
-					additionalColumnContent={(item) => (item as IFeature).size ?? ""}
+					highlightColumn={{
+						title: sizeTerm,
+						description: `Child ${workItemsTerm}`,
+						valueGetter: (item) => (item as IFeature).size ?? "",
+					}}
 					onClose={() => setDialogOpen(false)}
 				/>
 			)}

@@ -422,9 +422,11 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				additionalColumnTitle={cycleTimeTerm}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				highlightColumn={{
+					title: cycleTimeTerm,
+					description: "days",
+					valueGetter: (item) => item.cycleTime,
+				}}
 			/>
 		</>
 	) : (

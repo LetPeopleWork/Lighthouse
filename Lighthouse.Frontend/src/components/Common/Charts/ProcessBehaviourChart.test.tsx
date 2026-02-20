@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
-import ProcessBehaviourChart from "./ProcessBehaviourChart";
+import ProcessBehaviourChart, {
+	ProcessBehaviourChartType,
+} from "./ProcessBehaviourChart";
 
 // Mock Material UI
 vi.mock("@mui/material", async () => {
@@ -176,7 +178,13 @@ describe("ProcessBehaviourChart", () => {
 				dataPoints: [],
 			};
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByText(/No Baseline Configured/i)).toBeDefined();
 		});
@@ -193,7 +201,13 @@ describe("ProcessBehaviourChart", () => {
 				dataPoints: [],
 			};
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(
 				screen.getByText(/Baseline end date is in the future/i),
@@ -212,7 +226,13 @@ describe("ProcessBehaviourChart", () => {
 				dataPoints: [],
 			};
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByText(/Not enough data points/i)).toBeDefined();
 		});
@@ -222,7 +242,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders chart title", () => {
 			const data = createReadyChartData();
 
-			render(<ProcessBehaviourChart data={data} title="Throughput" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(
 				screen.getByText("Throughput Process Behaviour Chart"),
@@ -232,7 +258,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders the chart when status is Ready", () => {
 			const data = createReadyChartData();
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
 		});
@@ -249,7 +281,13 @@ describe("ProcessBehaviourChart", () => {
 				dataPoints: [],
 			};
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.queryByTestId("mock-chart-container")).toBeNull();
 		});
@@ -259,7 +297,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders average reference line always without toggle", () => {
 			const data = createReadyChartData({ average: 10 });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByTestId("reference-line-Average = 10.0")).toBeDefined();
 			expect(screen.queryByLabelText("Average visibility toggle")).toBeNull();
@@ -268,7 +312,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders UNPL reference line always without toggle", () => {
 			const data = createReadyChartData({ upperNaturalProcessLimit: 20 });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByTestId("reference-line-UNPL = 20.0")).toBeDefined();
 			expect(screen.queryByLabelText("UNPL visibility toggle")).toBeNull();
@@ -277,7 +327,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders LNPL reference line when value is greater than 0", () => {
 			const data = createReadyChartData({ lowerNaturalProcessLimit: 2 });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByTestId("reference-line-LNPL = 2.0")).toBeDefined();
 		});
@@ -285,7 +341,13 @@ describe("ProcessBehaviourChart", () => {
 		it("does not render LNPL reference line when value equals 0", () => {
 			const data = createReadyChartData({ lowerNaturalProcessLimit: 0 });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.queryByTestId("reference-line-LNPL")).toBeNull();
 		});
@@ -297,7 +359,13 @@ describe("ProcessBehaviourChart", () => {
 				lowerNaturalProcessLimit: 2.1,
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByText(/Average/)).toBeDefined();
 			expect(screen.getByText(/UNPL/)).toBeDefined();
@@ -324,7 +392,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByText("Large Change")).toBeDefined();
 		});
@@ -347,7 +421,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			const moderateShiftChip = screen.getByText("Moderate Shift");
 			expect(moderateShiftChip.closest("[aria-pressed='true']")).toBeDefined();
@@ -365,7 +445,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			const smallShiftChip = screen.getByText("Small Shift");
 			expect(
@@ -387,7 +473,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			const chip = screen.getByText("Large Change");
 			// Initially selected
@@ -415,7 +507,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			const largeChip = screen.getByText("Large Change");
 			const smallChip = screen.getByText("Small Shift");
@@ -442,7 +540,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.queryByText("Large Change")).toBeNull();
 			expect(screen.queryByText("Small Shift")).toBeNull();
@@ -471,6 +575,7 @@ describe("ProcessBehaviourChart", () => {
 				<ProcessBehaviourChart
 					data={data}
 					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
 					workItemLookup={new Map(mockItems.map((item) => [item.id, item]))}
 				/>,
 			);
@@ -499,6 +604,7 @@ describe("ProcessBehaviourChart", () => {
 				<ProcessBehaviourChart
 					data={data}
 					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
 					workItemLookup={new Map()}
 				/>,
 			);
@@ -525,6 +631,7 @@ describe("ProcessBehaviourChart", () => {
 				<ProcessBehaviourChart
 					data={data}
 					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
 					workItemLookup={new Map()}
 				/>,
 			);
@@ -540,7 +647,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders with date x-axis kind", () => {
 			const data = createReadyChartData({ xAxisKind: "Date" });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
 		});
@@ -564,7 +677,13 @@ describe("ProcessBehaviourChart", () => {
 				],
 			});
 
-			render(<ProcessBehaviourChart data={data} title="Cycle Time PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Cycle Time PBC"
+					type={ProcessBehaviourChartType.CycleTime}
+				/>,
+			);
 
 			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
 		});
@@ -574,7 +693,13 @@ describe("ProcessBehaviourChart", () => {
 		it("shows info icon with tooltip when status is Ready and baselineConfigured is false", () => {
 			const data = createReadyChartData({ baselineConfigured: false });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByLabelText("No Baseline Configured")).toBeDefined();
 		});
@@ -582,7 +707,13 @@ describe("ProcessBehaviourChart", () => {
 		it("does not show info icon when status is Ready and baselineConfigured is true", () => {
 			const data = createReadyChartData({ baselineConfigured: true });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.queryByLabelText("No Baseline Configured")).toBeNull();
 		});
@@ -592,7 +723,13 @@ describe("ProcessBehaviourChart", () => {
 		it("renders no data message when ready but empty data points", () => {
 			const data = createReadyChartData({ dataPoints: [] });
 
-			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
 
 			expect(screen.getByText(/No data available/i)).toBeDefined();
 		});
@@ -628,7 +765,7 @@ describe("ProcessBehaviourChart", () => {
 				<ProcessBehaviourChart
 					data={data}
 					title="Cycle Time PBC"
-					useEqualSpacing={true}
+					type={ProcessBehaviourChartType.CycleTime}
 				/>,
 			);
 

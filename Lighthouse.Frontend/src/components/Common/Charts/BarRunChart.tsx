@@ -210,9 +210,11 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				additionalColumnTitle={cycleTimeTerm}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				highlightColumn={{
+					title: cycleTimeTerm,
+					description: "days",
+					valueGetter: (item) => item.cycleTime,
+				}}
 			/>
 		</>
 	);

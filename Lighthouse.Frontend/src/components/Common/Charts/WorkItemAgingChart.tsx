@@ -438,9 +438,11 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				additionalColumnTitle={workItemAgeTerm}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.workItemAge}
+				highlightColumn={{
+					title: workItemAgeTerm,
+					description: "days",
+					valueGetter: (item) => item.workItemAge,
+				}}
 			/>
 		</>
 	) : (

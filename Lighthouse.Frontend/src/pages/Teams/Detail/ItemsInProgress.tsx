@@ -183,9 +183,11 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({ entries = [] }) => {
 					items={entries[openIndex].items}
 					open={openIndex !== null}
 					onClose={handleClose}
-					additionalColumnTitle={workItemAgeTerm}
-					additionalColumnDescription="days"
-					additionalColumnContent={(item) => item.workItemAge}
+					highlightColumn={{
+						title: workItemAgeTerm,
+						description: "days",
+						valueGetter: (item) => item.workItemAge,
+					}}
 					sle={entries[openIndex].sle}
 				/>
 			)}

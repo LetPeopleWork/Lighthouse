@@ -350,11 +350,12 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				additionalColumnTitle={`${cycleTimeTerm}/${workItemAgeTerm}`}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) =>
-					item.cycleTime > 0 ? item.cycleTime : item.workItemAge
-				}
+				highlightColumn={{
+					title: `${workItemAgeTerm}/${cycleTimeTerm}`,
+					description: "days",
+					valueGetter: (item) =>
+						item.cycleTime > 0 ? item.cycleTime : item.workItemAge,
+				}}
 			/>
 		</>
 	);

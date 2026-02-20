@@ -27,6 +27,7 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import type { IFeature } from "../../../models/Feature";
 import type {
 	ProcessBehaviourChartData,
 	ProcessBehaviourChartDataPoint,
@@ -145,20 +146,26 @@ const SpecialCauseMark = (props: Record<string, unknown>) => {
 	);
 };
 
+export enum ProcessBehaviourChartType {
+	Throughput,
+	CycleTime,
+	TotalWorkItemAge,
+	WorkInProgress,
+	FeatureSize,
+}
+
 interface ProcessBehaviourChartProps {
 	data: ProcessBehaviourChartData;
 	title: string;
 	workItemLookup?: Map<number, IWorkItem>;
-	useEqualSpacing?: boolean;
-	showHistoricalAge?: boolean;
+	type: ProcessBehaviourChartType;
 }
 
 const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 	data,
 	title,
 	workItemLookup,
-	useEqualSpacing = false,
-	showHistoricalAge = false,
+	type,
 }) => {
 	const theme = useTheme();
 
@@ -174,6 +181,39 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 	const { getTerm } = useTerminology();
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
+	const useEqualSpacing = useMemo(() => {
+		return (
+			type === ProcessBehaviourChartType.CycleTime ||
+			type === ProcessBehaviourChartType.FeatureSize
+		);
+	}, [type]);
+
+	const getHighlightColumnForType = (type: ProcessBehaviourChartType) => {
+		const highlightColumn = {
+			title: cycleTimeTerm,
+			description: "days",
+			valueGetter: (item: IWorkItem) => item.cycleTime,
+		};
+
+		switch (type) {
+			case ProcessBehaviourChartType.FeatureSize:
+				highlightColumn.title = `Size`;
+				highlightColumn.description = `Child ${workItemsTerm}`;
+				highlightColumn.valueGetter = (item: IWorkItem) =>
+					(item as IFeature).size ?? 0;
+				break;
+			case ProcessBehaviourChartType.TotalWorkItemAge:
+			case ProcessBehaviourChartType.WorkInProgress:
+				highlightColumn.title = workItemAgeTerm;
+				highlightColumn.valueGetter = (item: IWorkItem) =>
+					calculateHistoricalAge(item, selectedDate ?? new Date());
+				break;
+		}
+
+		return highlightColumn;
+	};
 
 	const availableSpecialCauses = useMemo(() => {
 		if (data.status !== "Ready") return new Set<SpecialCauseType>();
@@ -513,15 +553,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 				items={dialogItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				additionalColumnTitle={
-					showHistoricalAge ? `${workItemAgeTerm}` : cycleTimeTerm
-				}
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) =>
-					showHistoricalAge
-						? calculateHistoricalAge(item, selectedDate ?? new Date())
-						: item.cycleTime
-				}
+				highlightColumn={getHighlightColumnForType(type)}
 			/>
 		</>
 	);

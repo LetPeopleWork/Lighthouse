@@ -231,9 +231,11 @@ describe("WorkItemsDialog Component", () => {
 		title: "Test Dialog",
 		items: mockWorkItems,
 		open: true,
-		additionalColumnTitle: "Work Item Age",
-		additionalColumnDescription: "days",
-		additionalColumnContent: (item: IWorkItem) => item.workItemAge,
+		highlightColumn: {
+			title: "Work Item Age",
+			description: "days",
+			valueGetter: (item: IWorkItem) => item.workItemAge,
+		},
 		onClose: vi.fn(),
 	};
 
@@ -268,9 +270,11 @@ describe("WorkItemsDialog Component", () => {
 		render(
 			<WorkItemsDialog
 				{...defaultProps}
-				additionalColumnTitle="Cycle Time"
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				highlightColumn={{
+					title: "Cycle Time",
+					description: "days",
+					valueGetter: (item) => item.cycleTime,
+				}}
 			/>,
 		);
 
@@ -283,14 +287,7 @@ describe("WorkItemsDialog Component", () => {
 	});
 
 	test("displays items sorted by age in descending order with age metric", () => {
-		render(
-			<WorkItemsDialog
-				{...defaultProps}
-				additionalColumnTitle="Work Item Age"
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.workItemAge}
-			/>,
-		);
+		render(<WorkItemsDialog {...defaultProps} />);
 
 		// Get all row cells with age information
 		const cells = screen.getAllByTestId("additionalColumnContent");
@@ -305,9 +302,11 @@ describe("WorkItemsDialog Component", () => {
 		render(
 			<WorkItemsDialog
 				{...defaultProps}
-				additionalColumnTitle="Cycle Time"
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				highlightColumn={{
+					title: "Cycle Time",
+					description: "days",
+					valueGetter: (item) => item.cycleTime,
+				}}
 			/>,
 		);
 
@@ -376,9 +375,11 @@ describe("WorkItemsDialog Component", () => {
 		render(
 			<WorkItemsDialog
 				{...defaultProps}
-				additionalColumnTitle="Work Item Age/Cycle Time"
-				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime ?? item.workItemAge}
+				highlightColumn={{
+					title: "Work Item Age/Cycle Time",
+					description: "days",
+					valueGetter: (item) => item.cycleTime ?? item.workItemAge,
+				}}
 			/>,
 		);
 
@@ -454,9 +455,11 @@ describe("WorkItemsDialog Component", () => {
 			render(
 				<WorkItemsDialog
 					{...defaultProps}
-					additionalColumnTitle="Cycle Time"
-					additionalColumnDescription="days"
-					additionalColumnContent={(item) => item.cycleTime}
+					highlightColumn={{
+						title: "Cycle Time",
+						description: "days",
+						valueGetter: (item) => item.cycleTime,
+					}}
 					sle={10}
 				/>,
 			);
@@ -535,13 +538,7 @@ describe("WorkItemsDialog Component", () => {
 		});
 		test("blocked items are sorted correctly with time metrics", () => {
 			render(
-				<WorkItemsDialog
-					{...defaultProps}
-					items={mockBlockedWorkItems}
-					additionalColumnTitle="Work Item Age"
-					additionalColumnDescription="days"
-					additionalColumnContent={(item) => item.workItemAge}
-				/>,
+				<WorkItemsDialog {...defaultProps} items={mockBlockedWorkItems} />,
 			);
 
 			// Items should be sorted by age in descending order
@@ -558,9 +555,11 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={mockBlockedWorkItems}
-					additionalColumnTitle="Cycle Time"
-					additionalColumnDescription="days"
-					additionalColumnContent={(item) => item.cycleTime}
+					highlightColumn={{
+						title: "Cycle Time",
+						description: "days",
+						valueGetter: (item) => item.cycleTime,
+					}}
 				/>,
 			);
 
@@ -596,9 +595,6 @@ describe("WorkItemsDialog Component", () => {
 					{...defaultProps}
 					items={mockFeatures}
 					title="Features Dialog"
-					additionalColumnTitle="Work Item Age"
-					additionalColumnDescription="days"
-					additionalColumnContent={(item) => item.workItemAge}
 				/>,
 			);
 
