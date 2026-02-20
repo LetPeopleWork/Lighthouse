@@ -606,6 +606,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         [TestCase("", "370", "")]
         [TestCase("Microsoft.VSTS.Scheduling.Size", "370", "12")]
+        [TestCase("Size", "370", "12")]
+        [TestCase("size", "370", "12")]
         [TestCase("System.AreaPath", "370", "CMFTTestTeamProject")]
         [TestCase("System.Tags", "370", "Release1; TagTest")]
         public async Task GetFeaturesForProject_ReadsFeatureOwnerFieldCorrect(string fieldName, string workItemId, string expectedFeatureOwnerFieldValue)
@@ -709,6 +711,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [Test]
         [TestCase(new[] { "System.AreaPath" }, true)]
+        [TestCase(new[] { "system.AREAPATH" }, true)]
         [TestCase(new[] { "System.AreaPath", "System.IterationPath" }, true)]
         [TestCase(new[] { "Area Path", "Iteration Path" }, true)]
         [TestCase(new[] { "Custom.RemoteFeatureID" }, true)]

@@ -363,8 +363,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             foreach (var additionalFieldDefinition in additionalFieldDefinitions)
             {
                 var fieldReference = availableFields.SingleOrDefault(f =>
-                    f.Name == additionalFieldDefinition.Reference ||
-                    f.ReferenceName == additionalFieldDefinition.Reference)?.ReferenceName ?? string.Empty;
+                    string.Equals(f.Name, additionalFieldDefinition.Reference, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(f.ReferenceName, additionalFieldDefinition.Reference, StringComparison.OrdinalIgnoreCase))?.ReferenceName ?? string.Empty;
 
                 customFieldMappings.Add(additionalFieldDefinition.Id, fieldReference);
             }

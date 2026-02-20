@@ -724,7 +724,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static string GetIdForCustomFieldByProperty(string customField, string propertyIdentifier, JsonDocument allFields)
         {
             var elements = allFields.RootElement.EnumerateArray()
-                .Where(f => f.GetProperty(propertyIdentifier).GetString() == customField)
+                .Where(f => string.Equals(
+                    f.GetProperty(propertyIdentifier).GetString(),
+                    customField,
+                    StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             var element = new JsonElement();

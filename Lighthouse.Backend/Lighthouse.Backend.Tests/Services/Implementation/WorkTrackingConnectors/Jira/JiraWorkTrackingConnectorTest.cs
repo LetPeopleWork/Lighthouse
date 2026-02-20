@@ -417,6 +417,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("MambooJamboo", "LGHTHSDMO-9", "")]
         [TestCase("customfield_10037", "LGHTHSDMO-9", "12.0")]
         [TestCase("fixVersions", "LGHTHSDMO-9", "Elixir Project", false)]
+        [TestCase("FixVersions", "LGHTHSDMO-9", "Elixir Project", false)]
         [TestCase("labels", "LGHTHSDMO-5", "Phoenix", false)]
         [TestCase("labels", "LGHTHSDMO-5", "RebelRevolt", false)]
         [TestCase("Favorite Team", "LGHTHSDMO-9", "Grasshopper Club Zurich")]
@@ -600,7 +601,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [Test]
         [TestCase(new[] { "fixVersions" }, true)]
+        [TestCase(new[] { "FixVersions" }, true)]
         [TestCase(new[] { "Fix versions" }, true)]
+        [TestCase(new[] { "Fix Versions" }, true)]
         [TestCase(new[] { "fixVersions", "components" }, true)]
         [TestCase(new[] { "customfield_10038" }, true)]
         [TestCase(new[] { "customrelationfield" }, true)]
