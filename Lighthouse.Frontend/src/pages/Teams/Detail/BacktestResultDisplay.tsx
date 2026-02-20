@@ -190,6 +190,11 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 						},
 					]}
 					height={450}
+					sx={{
+						"& .MuiChartsReferenceLine-line": {
+							stroke: "text.primary",
+						},
+					}}
 				>
 					<BarPlot />
 					<ChartsXAxis />
@@ -200,7 +205,6 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 						label="Actual"
 						labelAlign="end"
 						lineStyle={{
-							stroke: "#000000",
 							strokeDasharray: "5 5",
 							strokeWidth: 2,
 						}}
