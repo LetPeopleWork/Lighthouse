@@ -407,7 +407,7 @@ export const BaseMetricsView = <
 		];
 
 		for (const config of pbcConfigs) {
-			if (config.data && config.data.status !== "BaselineMissing") {
+			if (config.data) {
 				pbcItems.push({
 					id: config.id,
 					priority: config.priority,

@@ -78,6 +78,39 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
+        public void ReadyDto_DefaultBaselineConfigured_IsTrue()
+        {
+            var dto = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                DataPoints = [],
+            };
+
+            Assert.That(dto.BaselineConfigured, Is.True);
+        }
+
+        [Test]
+        public void ReadyDto_BaselineConfigured_CanBeSetToFalse()
+        {
+            var dto = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                BaselineConfigured = false,
+                DataPoints = [],
+            };
+
+            Assert.That(dto.BaselineConfigured, Is.False);
+        }
+
+        [Test]
+        public void NotReady_BaselineConfigured_DefaultsToTrue()
+        {
+            var dto = ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, "reason");
+
+            Assert.That(dto.BaselineConfigured, Is.True);
+        }
+
+        [Test]
         public void DataPoint_ContainsWorkItemIdsForDrillIn()
         {
             int[] workItemIds = [201, 202, 203];

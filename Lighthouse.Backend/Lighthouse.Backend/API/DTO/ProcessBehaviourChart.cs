@@ -39,6 +39,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public double LowerNaturalProcessLimit { get; init; }
 
+        public bool BaselineConfigured { get; init; } = true;
+
         public ProcessBehaviourChartDataPoint[] DataPoints { get; init; } = [];
 
         public static ProcessBehaviourChart NotReady(BaselineStatus status, string reason)
@@ -51,6 +53,7 @@ namespace Lighthouse.Backend.API.DTO
                 Average = 0,
                 UpperNaturalProcessLimit = 0,
                 LowerNaturalProcessLimit = 0,
+                BaselineConfigured = true,
                 DataPoints = [],
             };
         }

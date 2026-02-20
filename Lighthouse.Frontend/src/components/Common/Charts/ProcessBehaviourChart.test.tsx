@@ -132,6 +132,7 @@ const createReadyChartData = (
 	average: 10,
 	upperNaturalProcessLimit: 20,
 	lowerNaturalProcessLimit: 2,
+	baselineConfigured: true,
 	dataPoints: [
 		{
 			xValue: "2026-01-15T00:00:00Z",
@@ -166,17 +167,18 @@ describe("ProcessBehaviourChart", () => {
 		it("renders baseline missing message when status is BaselineMissing", () => {
 			const data: ProcessBehaviourChartData = {
 				status: "BaselineMissing",
-				statusReason: "No baseline configured.",
+				statusReason: "No Baseline Configured.",
 				xAxisKind: "Date",
 				average: 0,
 				upperNaturalProcessLimit: 0,
 				lowerNaturalProcessLimit: 0,
+				baselineConfigured: false,
 				dataPoints: [],
 			};
 
 			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
 
-			expect(screen.getByText(/No baseline configured/i)).toBeDefined();
+			expect(screen.getByText(/No Baseline Configured/i)).toBeDefined();
 		});
 
 		it("renders baseline invalid message when status is BaselineInvalid", () => {
@@ -187,6 +189,7 @@ describe("ProcessBehaviourChart", () => {
 				average: 0,
 				upperNaturalProcessLimit: 0,
 				lowerNaturalProcessLimit: 0,
+				baselineConfigured: true,
 				dataPoints: [],
 			};
 
@@ -205,6 +208,7 @@ describe("ProcessBehaviourChart", () => {
 				average: 0,
 				upperNaturalProcessLimit: 0,
 				lowerNaturalProcessLimit: 0,
+				baselineConfigured: true,
 				dataPoints: [],
 			};
 
@@ -236,11 +240,12 @@ describe("ProcessBehaviourChart", () => {
 		it("does not render chart when status is not Ready", () => {
 			const data: ProcessBehaviourChartData = {
 				status: "BaselineMissing",
-				statusReason: "No baseline configured.",
+				statusReason: "No Baseline Configured",
 				xAxisKind: "Date",
 				average: 0,
 				upperNaturalProcessLimit: 0,
 				lowerNaturalProcessLimit: 0,
+				baselineConfigured: false,
 				dataPoints: [],
 			};
 
@@ -562,6 +567,24 @@ describe("ProcessBehaviourChart", () => {
 			render(<ProcessBehaviourChart data={data} title="Cycle Time PBC" />);
 
 			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
+		});
+	});
+
+	describe("No Baseline Configured Info Icon", () => {
+		it("shows info icon with tooltip when status is Ready and baselineConfigured is false", () => {
+			const data = createReadyChartData({ baselineConfigured: false });
+
+			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+
+			expect(screen.getByLabelText("No Baseline Configured")).toBeDefined();
+		});
+
+		it("does not show info icon when status is Ready and baselineConfigured is true", () => {
+			const data = createReadyChartData({ baselineConfigured: true });
+
+			render(<ProcessBehaviourChart data={data} title="Throughput PBC" />);
+
+			expect(screen.queryByLabelText("No Baseline Configured")).toBeNull();
 		});
 	});
 

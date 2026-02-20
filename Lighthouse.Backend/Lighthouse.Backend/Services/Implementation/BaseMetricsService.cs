@@ -39,16 +39,28 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
+            var baselineConfigured = baselineStart != null || baselineEnd != null;
 
-            if (baselineStart == null && baselineEnd == null)
+            if (!baselineConfigured)
             {
-                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "Baseline dates are not configured.");
+                baselineStart = displayStart;
+                baselineEnd = displayEnd;
             }
 
             var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
             if (!validation.IsValid)
             {
-                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
+                return new ProcessBehaviourChart
+                {
+                    Status = BaselineStatus.BaselineInvalid,
+                    StatusReason = validation.ErrorMessage,
+                    XAxisKind = XAxisKind.Date,
+                    Average = 0,
+                    UpperNaturalProcessLimit = 0,
+                    LowerNaturalProcessLimit = 0,
+                    BaselineConfigured = baselineConfigured,
+                    DataPoints = [],
+                };
             }
 
             var baselineData = getRunChartData(baselineStart!.Value, baselineEnd!.Value);
@@ -68,6 +80,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 Average = xmrResult.Average,
                 UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                 LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                BaselineConfigured = baselineConfigured,
                 DataPoints = dataPoints,
             };
         }
@@ -80,16 +93,28 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
+            var baselineConfigured = baselineStart != null || baselineEnd != null;
 
-            if (baselineStart == null && baselineEnd == null)
+            if (!baselineConfigured)
             {
-                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "Baseline dates are not configured.");
+                baselineStart = displayStart;
+                baselineEnd = displayEnd;
             }
 
             var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
             if (!validation.IsValid)
             {
-                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
+                return new ProcessBehaviourChart
+                {
+                    Status = BaselineStatus.BaselineInvalid,
+                    StatusReason = validation.ErrorMessage,
+                    XAxisKind = XAxisKind.Date,
+                    Average = 0,
+                    UpperNaturalProcessLimit = 0,
+                    LowerNaturalProcessLimit = 0,
+                    BaselineConfigured = baselineConfigured,
+                    DataPoints = [],
+                };
             }
 
             var baselineResult = getDailyValues(baselineStart!.Value, baselineEnd!.Value);
@@ -117,6 +142,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 Average = xmrResult.Average,
                 UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                 LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                BaselineConfigured = baselineConfigured,
                 DataPoints = dataPoints,
             };
         }
@@ -129,16 +155,28 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
+            var baselineConfigured = baselineStart != null || baselineEnd != null;
 
-            if (baselineStart == null && baselineEnd == null)
+            if (!baselineConfigured)
             {
-                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "Baseline dates are not configured.");
+                baselineStart = displayStart;
+                baselineEnd = displayEnd;
             }
 
             var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
             if (!validation.IsValid)
             {
-                return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineInvalid, validation.ErrorMessage);
+                return new ProcessBehaviourChart
+                {
+                    Status = BaselineStatus.BaselineInvalid,
+                    StatusReason = validation.ErrorMessage,
+                    XAxisKind = XAxisKind.DateTime,
+                    Average = 0,
+                    UpperNaturalProcessLimit = 0,
+                    LowerNaturalProcessLimit = 0,
+                    BaselineConfigured = baselineConfigured,
+                    DataPoints = [],
+                };
             }
 
             var baselineItems = getClosedItems(baselineStart!.Value, baselineEnd!.Value)
@@ -178,6 +216,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 Average = xmrResult.Average,
                 UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
                 LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                BaselineConfigured = baselineConfigured,
                 DataPoints = dataPoints,
             };
         }

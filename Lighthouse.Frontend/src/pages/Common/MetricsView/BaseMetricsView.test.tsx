@@ -532,11 +532,12 @@ describe("BaseMetricsView component", () => {
 	// Mock metrics service
 	const baselineMissingPbcData: ProcessBehaviourChartData = {
 		status: "BaselineMissing",
-		statusReason: "No baseline configured",
+		statusReason: "No Baseline Configured",
 		xAxisKind: "Date",
 		average: 0,
 		upperNaturalProcessLimit: 0,
 		lowerNaturalProcessLimit: 0,
+		baselineConfigured: false,
 		dataPoints: [],
 	};
 
@@ -2148,6 +2149,7 @@ describe("BaseMetricsView component", () => {
 			average: 5,
 			upperNaturalProcessLimit: 10,
 			lowerNaturalProcessLimit: 0,
+			baselineConfigured: true,
 			dataPoints: [
 				{
 					xValue: "2025-01-01",
@@ -2171,10 +2173,11 @@ describe("BaseMetricsView component", () => {
 			average: 0,
 			upperNaturalProcessLimit: 0,
 			lowerNaturalProcessLimit: 0,
+			baselineConfigured: true,
 			dataPoints: [],
 		};
 
-		it("does not show PBC widgets when baseline is missing", async () => {
+		it("shows PBC widgets even when status is BaselineMissing", async () => {
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockTeam}
@@ -2185,28 +2188,26 @@ describe("BaseMetricsView component", () => {
 				/>,
 			);
 
-			// Wait for other data to load
+			// PBC widgets should be present even with BaselineMissing status
 			await waitFor(() => {
-				expect(mockMetricsService.getThroughputPbc).toHaveBeenCalled();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Throughput"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Work In Progress"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Total Work Item Age"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Cycle Time"),
+				).toBeInTheDocument();
 			});
 
-			// PBC widgets should not be present
-			expect(
-				screen.queryByTestId("process-behaviour-chart-Work Items Throughput"),
-			).not.toBeInTheDocument();
-			expect(
-				screen.queryByTestId(
-					"process-behaviour-chart-Work Items Work In Progress",
-				),
-			).not.toBeInTheDocument();
-			expect(
-				screen.queryByTestId(
-					"process-behaviour-chart-Work Items Total Work Item Age",
-				),
-			).not.toBeInTheDocument();
-			expect(
-				screen.queryByTestId("process-behaviour-chart-Work Items Cycle Time"),
-			).not.toBeInTheDocument();
+			// Verify status is passed through
+			expect(screen.getByTestId("pbc-status-Throughput")).toHaveTextContent(
+				"BaselineMissing",
+			);
 		});
 
 		it("shows PBC widgets when baseline is configured and data is ready", async () => {
@@ -2363,7 +2364,7 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it("shows only PBC widgets with non-BaselineMissing status in mixed scenario", async () => {
+		it("shows all PBC widgets regardless of status in mixed scenario", async () => {
 			const pbcMetricsService = createMockMetricsService<IWorkItem>();
 			pbcMetricsService.getThroughputPbc = vi
 				.fn()
@@ -2389,28 +2390,31 @@ describe("BaseMetricsView component", () => {
 			);
 
 			await waitFor(() => {
-				// Throughput PBC should be shown (Ready)
+				// All PBC widgets should be shown regardless of status
 				expect(
 					screen.getByTestId("process-behaviour-chart-Throughput"),
 				).toBeInTheDocument();
-				// Total Work Item Age PBC should be shown (InsufficientData — baseline was set)
+				expect(
+					screen.getByTestId("process-behaviour-chart-Work In Progress"),
+				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("process-behaviour-chart-Total Work Item Age"),
 				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("process-behaviour-chart-Cycle Time"),
+				).toBeInTheDocument();
 			});
 
-			// WIP PBC should NOT be shown (BaselineMissing)
+			// Verify mixed statuses are passed through
+			expect(screen.getByTestId("pbc-status-Throughput")).toHaveTextContent(
+				"Ready",
+			);
 			expect(
-				screen.queryByTestId(
-					"process-behaviour-chart-Work In Progress Process Behaviour Chart",
-				),
-			).not.toBeInTheDocument();
-			// Cycle Time PBC should NOT be shown (BaselineMissing)
+				screen.getByTestId("pbc-status-Work In Progress"),
+			).toHaveTextContent("BaselineMissing");
 			expect(
-				screen.queryByTestId(
-					"process-behaviour-chart-Cycle Time Process Behaviour Chart",
-				),
-			).not.toBeInTheDocument();
+				screen.getByTestId("pbc-status-Total Work Item Age"),
+			).toHaveTextContent("InsufficientData");
 		});
 
 		it("passes correct data to PBC chart components", async () => {

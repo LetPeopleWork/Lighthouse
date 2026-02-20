@@ -53,8 +53,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetThroughputForProject_ReturnsRunChartDataWithCorrectValues()
         {
             // Arrange
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 10);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -69,15 +69,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.WorkItemsPerUnitOfTime, Has.Count.EqualTo(10));
                 Assert.That(result.Total, Is.EqualTo(2));
-            };
+            }
         }
 
         [Test]
         public void GetFeaturesInProgressOverTimeForProject_ReturnsCorrectRunChartData()
         {
             // Arrange
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 5);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -90,14 +90,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.WorkItemsPerUnitOfTime, Has.Count.EqualTo(5));
-            };
+            }
         }
 
         [Test]
         public void GetStartedItemsForProject_GivenStartDate_ReturnsStartedItemsPerDayFromThisRange()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 3);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 3, 0, 0, 0, DateTimeKind.Utc);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -118,15 +118,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(1));
-                Assert.That(result.First().ReferenceId, Is.EqualTo("F3"));
-            };
+                Assert.That(result[0].ReferenceId, Is.EqualTo("F3"));
+            }
         }
 
         [Test]
         public void GetCycleTimePercentilesForProject_ReturnsCorrectPercentileValues()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var result = subject.GetCycleTimePercentilesForPortfolio(project, startDate, endDate).ToList();
 
@@ -138,14 +138,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result[1].Percentile, Is.EqualTo(70));
                 Assert.That(result[2].Percentile, Is.EqualTo(85));
                 Assert.That(result[3].Percentile, Is.EqualTo(95));
-            };
+            }
         }
 
         [Test]
         public void GetCycleTimePercentilesForProject_NoClosedItems_ReturnsEmpty()
         {
-            var startDate = new DateTime(2077, 1, 1);
-            var endDate = new DateTime(2077, 1, 31);
+            var startDate = new DateTime(2077, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2077, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var result = subject.GetCycleTimePercentilesForPortfolio(project, startDate, endDate).ToList();
 
@@ -153,14 +153,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(0));
-            };
+            }
         }
 
         [Test]
         public void GetSizePercentilesForProject_ReturnsCorrectPercentileValues()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var feature1 = features[0];
             var feature2 = features[1];
@@ -179,14 +179,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result[1].Percentile, Is.EqualTo(70));
                 Assert.That(result[2].Percentile, Is.EqualTo(85));
                 Assert.That(result[3].Percentile, Is.EqualTo(95));
-            };
+            }
         }
 
         [Test]
         public void GetSizePercentilesForProject_NoClosedItems_ReturnsEmpty()
         {
-            var startDate = new DateTime(2077, 1, 1);
-            var endDate = new DateTime(2077, 1, 31);
+            var startDate = new DateTime(2077, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2077, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var result = subject.GetSizePercentilesForPortfolio(project, startDate, endDate).ToList();
 
@@ -194,14 +194,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(0));
-            };
+            }
         }
 
         [Test]
         public void GetCycleTimeDataForProject_ReturnsClosedFeatures()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
 
@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Has.Count.EqualTo(2));
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.True);
-            };
+            }
         }
 
         [Test]
@@ -232,7 +232,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Has.Count.EqualTo(1));
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.False);
-            };
+            }
         }
 
         [Test]
@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Has.Count.EqualTo(1));
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.False);
-            };
+            }
         }
 
         [Test]
@@ -265,8 +265,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetMultiItemForecastPredictabilityScoreForProject_ReturnsScoreBasedOnProjectssThroughputAndHowManyForecast()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 10);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -288,7 +288,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(percentile.Value, Is.EqualTo(expectedResult.Percentiles.Single(p => p.Percentile == percentile.Percentile).Value));
                 }
             }
-            ;
         }
 
         [Test]
@@ -449,8 +448,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetAllFeaturesForSizeChart_ReturnsOnlyDoneFeaturesInDateRange()
         {
             // Arrange
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -462,7 +461,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F3"), Is.True);
-            };
+            }
         }
 
         [Test]
@@ -477,10 +476,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features.Last().Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(project);
 
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -488,18 +487,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result, Has.Count.EqualTo(4)); // F1, F2 (Done), F3 (Doing), F4 (ToDo)
+                Assert.That(result, Has.Count.EqualTo(4)); // F1, F2 (Done), F3 (Doing), F4 (To-Do)
                 Assert.That(result.Any(f => f.ReferenceId == "F4"), Is.True);
                 Assert.That(result.Any(f => f.StateCategory == StateCategories.ToDo), Is.True);
-            };
+            }
         }
 
         [Test]
         public void GetAllFeaturesForSizeChart_IncludesDoingFeatures()
         {
             // Arrange
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -509,7 +508,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.Any(f => f.ReferenceId == "F3"), Is.True);
                 Assert.That(result.Any(f => f.StateCategory == StateCategories.Doing), Is.True);
-            };
+            }
         }
 
         [Test]
@@ -521,14 +520,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 5,
                 Name = "Feature 5",
                 ReferenceId = "F5",
-                StartedDate = new DateTime(2022, 12, 1),
-                ClosedDate = new DateTime(2022, 12, 15),
+                StartedDate = new DateTime(2022, 12, 1, 0, 0, 0, DateTimeKind.Utc),
+                ClosedDate = new DateTime(2022, 12, 15, 0, 0, 0, DateTimeKind.Utc),
                 StateCategory = StateCategories.Done,
             });
-            features.Last().Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(project);
 
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -537,7 +536,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.Any(f => f.ReferenceId == "F5"), Is.False);
-            };
+            }
         }
 
         [Test]
@@ -552,7 +551,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features.Last().Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(project);
 
             features.Add(new Feature
             {
@@ -562,10 +561,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features.Last().Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(project);
 
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -576,7 +575,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.Count(f => f.StateCategory == StateCategories.Done), Is.EqualTo(2)); // F1, F2
                 Assert.That(result.Count(f => f.StateCategory == StateCategories.Doing), Is.EqualTo(2)); // F3, F7
                 Assert.That(result.Count(f => f.StateCategory == StateCategories.ToDo), Is.EqualTo(1)); // F6
-            };
+            }
         }
 
         [Test]
@@ -592,7 +591,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features.Last().Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(project);
 
             features.Add(new Feature
             {
@@ -602,10 +601,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features.Last().Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(project);
 
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -616,7 +615,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Has.Count.EqualTo(2));
                 Assert.That(result.Any(f => f.StateCategory == StateCategories.ToDo), Is.True);
                 Assert.That(result.Any(f => f.StateCategory == StateCategories.Doing), Is.True);
-            };
+            }
         }
 
         [Test]
@@ -624,8 +623,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Arrange
             features.Clear();
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -634,7 +633,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -650,10 +649,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features.Last().Portfolios.Add(otherProject);
+            features[features.Count - 1].Portfolios.Add(otherProject);
 
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
@@ -662,7 +661,173 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.Any(f => f.ReferenceId == "F8"), Is.False);
+            }
+        }
+
+        // --- Process Behaviour Chart Tests ---
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetThroughputProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var result = subject.GetThroughputProcessBehaviourChart(project, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(31));
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_ValidBaseline_BaselineConfiguredIsTrue()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
+            project.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
+
+            var result = subject.GetThroughputProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
+
+            Assert.That(result.BaselineConfigured, Is.True);
+        }
+
+        [Test]
+        public void GetWipProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetWipProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetWipProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var result = subject.GetWipProcessBehaviourChart(project, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(31));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(project, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(31));
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            // Add a closed feature in the display range
+            var feature = new Feature
+            {
+                Id = 99,
+                Name = "Feature 99",
+                ReferenceId = "F99",
+                StartedDate = displayStart,
+                ClosedDate = displayStart.AddDays(5),
+                StateCategory = StateCategories.Done,
             };
+            feature.Portfolios.Add(project);
+            features.Add(feature);
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(project, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(1));
+            }
         }
 
         private void SetupTestData()

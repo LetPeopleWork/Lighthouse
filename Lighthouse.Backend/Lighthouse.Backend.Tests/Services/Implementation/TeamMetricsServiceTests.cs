@@ -910,7 +910,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
             testTeam.ProcessBehaviourChartBaselineStartDate = null;
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
@@ -919,8 +919,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
                 Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(31));
             }
         }
 
@@ -1131,7 +1151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         // --- WIP PBC Tests ---
 
         [Test]
-        public void GetWipProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        public void GetWipProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
             testTeam.ProcessBehaviourChartBaselineStartDate = null;
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
@@ -1140,8 +1160,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
                 Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetWipProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var result = subject.GetWipProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(31));
             }
         }
 
@@ -1221,7 +1261,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         // --- Total Work Item Age PBC Tests ---
 
         [Test]
-        public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
             testTeam.ProcessBehaviourChartBaselineStartDate = null;
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
@@ -1230,8 +1270,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
                 Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(31));
             }
         }
 
@@ -1323,7 +1383,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         // --- Cycle Time PBC Tests ---
 
         [Test]
-        public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_ReturnsBaselineMissing()
+        public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
             testTeam.ProcessBehaviourChartBaselineStartDate = null;
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
@@ -1332,8 +1392,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineMissing));
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
                 Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
+        {
+            testTeam.ProcessBehaviourChartBaselineStartDate = null;
+            testTeam.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item.StartedDate = displayStart;
+            item.ClosedDate = displayStart.AddDays(3);
+
+            var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.DataPoints, Has.Length.EqualTo(1));
             }
         }
 

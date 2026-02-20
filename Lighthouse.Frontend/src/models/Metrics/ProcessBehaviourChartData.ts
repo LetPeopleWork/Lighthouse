@@ -27,5 +27,6 @@ export type ProcessBehaviourChartData = {
 	readonly average: number;
 	readonly upperNaturalProcessLimit: number;
 	readonly lowerNaturalProcessLimit: number;
+	readonly baselineConfigured: boolean;
 	readonly dataPoints: ProcessBehaviourChartDataPoint[];
 };
