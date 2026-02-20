@@ -165,6 +165,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getWipPbc: vi.fn(),
 		getTotalWorkItemAgePbc: vi.fn(),
 		getCycleTimePbc: vi.fn(),
+		getFeatureSizePbc: vi.fn(),
 	};
 };
 

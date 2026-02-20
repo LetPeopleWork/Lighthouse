@@ -1,4 +1,5 @@
 import type { IFeature } from "../../models/Feature";
+import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import {
 	BaseMetricsService,
@@ -44,6 +45,20 @@ export class ProjectMetricsService
 			});
 
 			return features;
+		});
+	}
+
+	async getFeatureSizePbc(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviourChartData>(
+				`/portfolios/${projectId}/metrics/featureSize/pbc?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
 		});
 	}
 }

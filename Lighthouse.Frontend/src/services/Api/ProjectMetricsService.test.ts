@@ -275,4 +275,44 @@ describe("ProjectMetricsService", () => {
 			);
 		});
 	});
+
+	describe("getFeatureSizePbc", () => {
+		it("should call the correct API endpoint and return PBC data", async () => {
+			// Arrange
+			const mockPbcData = {
+				status: "Ready",
+				statusReason: "",
+				xAxisKind: "DateTime",
+				average: 8,
+				upperNaturalProcessLimit: 14,
+				lowerNaturalProcessLimit: 2,
+				baselineConfigured: false,
+				dataPoints: [
+					{
+						xValue: "2023-01-10T00:00:00",
+						yValue: 5,
+						specialCauses: [],
+						workItemIds: [1],
+					},
+				],
+			};
+			mockGet.mockResolvedValueOnce({ data: mockPbcData });
+
+			// Act
+			const result = await service.getFeatureSizePbc(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			// Assert
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/featureSize/pbc?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result).toEqual(mockPbcData);
+			expect(result.xAxisKind).toBe("DateTime");
+			expect(result.dataPoints).toHaveLength(1);
+			expect(result.dataPoints[0].yValue).toBe(5);
+		});
+	});
 });

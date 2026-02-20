@@ -598,5 +598,51 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Value, Is.EqualTo(expectedPbc));
             }
         }
+
+        [Test]
+        public void GetFeatureSizePbc_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetFeatureSizeProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizePbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetFeatureSizeProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizePbc_PortfolioExists_ReturnsPbcFromService()
+        {
+            var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready, XAxisKind = XAxisKind.DateTime };
+            projectMetricsService.Setup(service => service.GetFeatureSizeProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var response = subject.GetFeatureSizeProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
     }
 }

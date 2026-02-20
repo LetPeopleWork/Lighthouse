@@ -830,6 +830,113 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public void GetFeatureSizeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var result = subject.GetFeatureSizeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.BaselineConfigured, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeProcessBehaviourChart_NoFeaturesWithNonZeroSize_ReturnsInsufficientData()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            // Default test features have Size == 0 (no FeatureWork assigned)
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var feature = new Feature
+            {
+                Id = 99,
+                Name = "Feature 99",
+                ReferenceId = "F99",
+                StartedDate = displayStart,
+                ClosedDate = displayStart.AddDays(5),
+                StateCategory = StateCategories.Done,
+            };
+            feature.Portfolios.Add(project);
+            features.Add(feature);
+
+            var result = subject.GetFeatureSizeProcessBehaviourChart(project, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.InsufficientData));
+                Assert.That(result.DataPoints, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeProcessBehaviourChart_BaselineDatesNotSet_LongRange_WithFeaturesWithSize_ReturnsReady()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = null;
+            project.ProcessBehaviourChartBaselineEndDate = null;
+
+            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
+            var displayEnd = DateTime.UtcNow.Date;
+
+            var team = new Team();
+            var feature = new Feature
+            {
+                Id = 99,
+                Name = "Feature 99",
+                ReferenceId = "F99",
+                StartedDate = displayStart,
+                ClosedDate = displayStart.AddDays(5),
+                StateCategory = StateCategories.Done,
+            };
+            feature.AddOrUpdateWorkForTeam(team, 2, 10);
+            feature.Portfolios.Add(project);
+            features.Add(feature);
+
+            var result = subject.GetFeatureSizeProcessBehaviourChart(project, displayStart, displayEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(BaselineStatus.Ready));
+                Assert.That(result.BaselineConfigured, Is.False);
+                Assert.That(result.XAxisKind, Is.EqualTo(XAxisKind.DateTime));
+                Assert.That(result.DataPoints, Has.Length.EqualTo(1));
+                Assert.That(result.DataPoints[0].YValue, Is.EqualTo(10));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeProcessBehaviourChart_ValidBaseline_BaselineConfiguredIsTrue()
+        {
+            project.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
+            project.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
+
+            var team = new Team();
+            var baselineFeature = new Feature
+            {
+                Id = 98,
+                Name = "Baseline Feature",
+                ReferenceId = "FB",
+                StartedDate = project.ProcessBehaviourChartBaselineStartDate,
+                ClosedDate = project.ProcessBehaviourChartBaselineStartDate.Value.AddDays(5),
+                StateCategory = StateCategories.Done,
+            };
+            baselineFeature.AddOrUpdateWorkForTeam(team, 3, 8);
+            baselineFeature.Portfolios.Add(project);
+            features.Add(baselineFeature);
+
+            var result = subject.GetFeatureSizeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
+
+            Assert.That(result.BaselineConfigured, Is.True);
+        }
+
         private void SetupTestData()
         {
             project = new Portfolio

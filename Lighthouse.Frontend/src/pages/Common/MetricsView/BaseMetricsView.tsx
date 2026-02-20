@@ -89,6 +89,8 @@ export const BaseMetricsView = <
 		useState<ProcessBehaviourChartData | null>(null);
 	const [cycleTimePbcData, setCycleTimePbcData] =
 		useState<ProcessBehaviourChartData | null>(null);
+	const [featureSizePbcData, setFeatureSizePbcData] =
+		useState<ProcessBehaviourChartData | null>(null);
 
 	// URL state management for dates
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -138,6 +140,7 @@ export const BaseMetricsView = <
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const workInProgressTerm = getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
@@ -279,6 +282,13 @@ export const BaseMetricsView = <
 						endDate,
 					);
 				setAllFeaturesForSizeChart(allFeatures);
+
+				const featureSizePbc = await projectMetricsService.getFeatureSizePbc(
+					entity.id,
+					startDate,
+					endDate,
+				);
+				setFeatureSizePbcData(featureSizePbc);
 			} catch (error) {
 				console.error(`Error fetching Size Percentile Data:`, error);
 			}
@@ -287,7 +297,8 @@ export const BaseMetricsView = <
 		// Check if the service has the getAllFeaturesForSizeChart method (only ProjectMetricsService has this)
 		if (
 			"getAllFeaturesForSizeChart" in metricsService &&
-			"getSizePercentiles" in metricsService
+			"getSizePercentiles" in metricsService &&
+			"getFeatureSizePbc" in metricsService
 		) {
 			fetchSizePercentileData(metricsService as IProjectMetricsService);
 		}
@@ -402,6 +413,13 @@ export const BaseMetricsView = <
 				priority: 21,
 				data: cycleTimePbcData,
 				titleSuffix: cycleTimeTerm,
+				useEqualSpacing: true,
+			},
+			{
+				id: "featureSizePbc",
+				priority: 22,
+				data: featureSizePbcData,
+				titleSuffix: `${featureTerm} Size`,
 				useEqualSpacing: true,
 			},
 		];

@@ -87,6 +87,12 @@ export interface IProjectMetricsService extends IMetricsService<IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IFeature[]>;
+
+	getFeatureSizePbc(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData>;
 }
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>

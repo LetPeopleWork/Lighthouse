@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
+        ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
         RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         RunChartData GetFeaturesInProgressOverTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);

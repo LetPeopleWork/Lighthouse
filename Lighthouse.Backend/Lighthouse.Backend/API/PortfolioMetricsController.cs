@@ -176,5 +176,16 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate));
         }
+
+        [HttpGet("featureSize/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetFeatureSizeProcessBehaviourChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate));
+        }
     }
 }

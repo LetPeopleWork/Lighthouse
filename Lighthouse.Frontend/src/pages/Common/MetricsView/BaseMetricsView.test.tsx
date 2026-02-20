@@ -580,6 +580,7 @@ describe("BaseMetricsView component", () => {
 			getWipPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getTotalWorkItemAgePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getCycleTimePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getFeatureSizePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -591,6 +592,11 @@ describe("BaseMetricsView component", () => {
 				startDate: Date,
 				endDate: Date,
 			) => Promise<IFeature[]>;
+			getFeatureSizePbc?: (
+				id: number,
+				startDate: Date,
+				endDate: Date,
+			) => Promise<ProcessBehaviourChartData>;
 		};
 	}
 

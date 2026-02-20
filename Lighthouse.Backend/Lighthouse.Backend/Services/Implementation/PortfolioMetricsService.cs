@@ -58,6 +58,88 @@ namespace Lighthouse.Backend.Services.Implementation
                 (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e));
         }
 
+        public ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Feature Size Process Behaviour Chart for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            var baselineStart = portfolio.ProcessBehaviourChartBaselineStartDate;
+            var baselineEnd = portfolio.ProcessBehaviourChartBaselineEndDate;
+            var baselineConfigured = baselineStart != null || baselineEnd != null;
+
+            if (!baselineConfigured)
+            {
+                baselineStart = startDate;
+                baselineEnd = endDate;
+            }
+
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays);
+            if (!validation.IsValid)
+            {
+                return new ProcessBehaviourChart
+                {
+                    Status = BaselineStatus.BaselineInvalid,
+                    StatusReason = validation.ErrorMessage,
+                    XAxisKind = XAxisKind.DateTime,
+                    Average = 0,
+                    UpperNaturalProcessLimit = 0,
+                    LowerNaturalProcessLimit = 0,
+                    BaselineConfigured = baselineConfigured,
+                    DataPoints = [],
+                };
+            }
+
+            var baselineItems = GetFeaturesClosedInDateRange(portfolio, baselineStart!.Value, baselineEnd!.Value)
+                .Where(f => f.Size > 0)
+                .OrderBy(f => f.ClosedDate)
+                .ThenBy(f => f.Id)
+                .ToList();
+
+            var displayItems = GetFeaturesClosedInDateRange(portfolio, startDate, endDate)
+                .Where(f => f.Size > 0)
+                .OrderBy(f => f.ClosedDate)
+                .ThenBy(f => f.Id)
+                .ToList();
+
+            var baselineValues = baselineItems.Select(f => f.Size).ToArray();
+            var displayValues = displayItems.Select(f => f.Size).ToArray();
+
+            if (displayValues.Length == 0)
+            {
+                return new ProcessBehaviourChart
+                {
+                    Status = BaselineStatus.InsufficientData,
+                    StatusReason = "No closed features with a non-zero size were found in the selected date range.",
+                    XAxisKind = XAxisKind.DateTime,
+                    Average = 0,
+                    UpperNaturalProcessLimit = 0,
+                    LowerNaturalProcessLimit = 0,
+                    BaselineConfigured = baselineConfigured,
+                    DataPoints = [],
+                };
+            }
+
+            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues);
+
+            var dataPoints = new ProcessBehaviourChartDataPoint[displayItems.Count];
+            for (var i = 0; i < displayItems.Count; i++)
+            {
+                var feature = displayItems[i];
+                var xValue = feature.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                dataPoints[i] = new ProcessBehaviourChartDataPoint(xValue, feature.Size, xmrResult.SpecialCauseClassifications[i], [feature.Id]);
+            }
+
+            return new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.DateTime,
+                Average = xmrResult.Average,
+                UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
+                LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                BaselineConfigured = baselineConfigured,
+                DataPoints = dataPoints,
+            };
+        }
+
         public RunChartData GetFeaturesInProgressOverTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Features In Progress Over Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
