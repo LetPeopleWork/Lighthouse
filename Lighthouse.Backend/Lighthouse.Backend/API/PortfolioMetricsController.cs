@@ -198,5 +198,16 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetEstimationVsCycleTimeData(portfolio, startDate, endDate));
         }
+
+        [HttpGet("featureSizeEstimation")]
+        public ActionResult<FeatureSizeEstimationResponse> GetFeatureSizeEstimationData(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetFeatureSizeEstimationData(portfolio, startDate, endDate));
+        }
     }
 }

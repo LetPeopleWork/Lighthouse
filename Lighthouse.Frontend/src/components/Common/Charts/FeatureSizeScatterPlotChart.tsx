@@ -3,6 +3,8 @@ import {
 	CardContent,
 	Stack,
 	type Theme,
+	ToggleButton,
+	ToggleButtonGroup,
 	Typography,
 	useTheme,
 } from "@mui/material";
@@ -20,6 +22,7 @@ import type React from "react";
 import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IFeature } from "../../../models/Feature";
+import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { StateCategory } from "../../../models/WorkItem";
@@ -48,6 +51,7 @@ interface IGroupedFeature extends BaseGroupedItem<IFeature> {
 	state: string;
 	hasBlockedItems?: boolean;
 	type?: string;
+	estimationValue?: number;
 }
 
 type ScatterDatum = {
@@ -301,7 +305,10 @@ const getStateCategoryDisplayName = (stateCategory: StateCategory): string => {
 	return stateCategory;
 };
 
-const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
+const groupFeatures = (
+	items: IFeature[],
+	estimationLookup?: Map<number, number>,
+): IGroupedFeature[] => {
 	const groups: Record<string, IGroupedFeature> = {};
 
 	for (const item of items) {
@@ -314,6 +321,8 @@ const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 			cycleTime = 0;
 		}
 
+		const estimationValue = estimationLookup?.get(item.id);
+
 		const key = `${item.stateCategory ?? item.state ?? "Unknown"}-${cycleTime}-${item.size}`;
 
 		if (!groups[key]) {
@@ -322,6 +331,7 @@ const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 				size: item.size,
 				items: [],
 				state: item.stateCategory || item.state || "Unknown",
+				estimationValue,
 			};
 		}
 
@@ -334,6 +344,7 @@ const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 interface FeatureSizeScatterPlotChartProps {
 	sizeDataPoints: IFeature[];
 	sizePercentileValues?: IPercentileValue[];
+	estimationData?: IFeatureSizeEstimationResponse;
 }
 
 const createSeriesDataPoint = (
@@ -343,6 +354,7 @@ const createSeriesDataPoint = (
 	stateCategory: StateCategory,
 	colorMap: Record<string, string>,
 	theme: Theme,
+	useEstimationY = false,
 ) => {
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
 	const fillColor = hasBlockedItems
@@ -350,9 +362,14 @@ const createSeriesDataPoint = (
 		: colorMap[stateCategory] || theme.palette.primary.main;
 	const idx = allGroupedDataPoints.indexOf(group);
 
+	const yValue =
+		useEstimationY && group.estimationValue !== undefined
+			? group.estimationValue
+			: group.cycleTime;
+
 	return {
 		x: group.size,
-		y: group.cycleTime,
+		y: yValue,
 		groupIndex: idx,
 		groupKey: getGroupKey(group),
 		itemCount: group.items.length,
@@ -394,13 +411,36 @@ const formatSeriesValue = (
 
 const FeatureSizeScatterPlotChart: React.FC<
 	FeatureSizeScatterPlotChartProps
-> = ({ sizeDataPoints, sizePercentileValues = [] }) => {
+> = ({ sizeDataPoints, sizePercentileValues = [], estimationData }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const sizeTerm = "Size";
+
+	// Determine if estimation toggle should be shown
+	const showEstimationToggle =
+		estimationData?.status === "Ready" && !!estimationData?.estimationUnit;
+
+	type YAxisMode = "cycleTime" | "estimation";
+	const [yAxisMode, setYAxisMode] = useState<YAxisMode>(
+		showEstimationToggle ? "estimation" : "cycleTime",
+	);
+
+	// Build estimation lookup: featureId → estimationNumericValue
+	const estimationLookup = useMemo(() => {
+		if (!estimationData || estimationData.status !== "Ready") {
+			return undefined;
+		}
+		const lookup = new Map<number, number>();
+		for (const fe of estimationData.featureEstimations) {
+			lookup.set(fe.featureId, fe.estimationNumericValue);
+		}
+		return lookup;
+	}, [estimationData]);
+
+	const useEstimationYAxis = yAxisMode === "estimation" && showEstimationToggle;
 
 	const percentiles = sizePercentileValues ?? [];
 
@@ -448,22 +488,30 @@ const FeatureSizeScatterPlotChart: React.FC<
 		});
 		setFixedXAxisMax(xMax);
 
-		const cycleTimes = sizeDataPoints.map((item) => {
-			if (item.stateCategory === "Done") {
-				return item.cycleTime ?? 0;
-			}
-			if (item.stateCategory === "Doing") {
-				return item.workItemAge ?? 0;
-			}
-			return 0;
-		});
-		const maxCycleTime = Math.max(...cycleTimes, 0);
-		setFixedYAxisMax(maxCycleTime * 1.1);
-	}, [sizeDataPoints, percentiles]);
+		if (useEstimationYAxis && estimationLookup) {
+			const estimationValues = sizeDataPoints
+				.map((item) => estimationLookup.get(item.id) ?? 0)
+				.filter((v) => v > 0);
+			const maxEstimation = Math.max(...estimationValues, 0);
+			setFixedYAxisMax(maxEstimation * 1.1);
+		} else {
+			const cycleTimes = sizeDataPoints.map((item) => {
+				if (item.stateCategory === "Done") {
+					return item.cycleTime ?? 0;
+				}
+				if (item.stateCategory === "Doing") {
+					return item.workItemAge ?? 0;
+				}
+				return 0;
+			});
+			const maxCycleTime = Math.max(...cycleTimes, 0);
+			setFixedYAxisMax(maxCycleTime * 1.1);
+		}
+	}, [sizeDataPoints, percentiles, useEstimationYAxis, estimationLookup]);
 
 	const allGroupedDataPoints = useMemo(
-		() => groupFeatures(sizeDataPoints),
-		[sizeDataPoints],
+		() => groupFeatures(sizeDataPoints, estimationLookup),
+		[sizeDataPoints, estimationLookup],
 	);
 
 	const getGroupKey = useCallback(
@@ -535,6 +583,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 						stateCategory,
 						colorMap,
 						theme,
+						useEstimationYAxis,
 					),
 				);
 
@@ -575,6 +624,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 		getGroupKey,
 		groupKeyMap,
 		featuresTerm,
+		useEstimationYAxis,
 	]);
 
 	return sizeDataPoints.length > 0 ? (
@@ -586,7 +636,9 @@ const FeatureSizeScatterPlotChart: React.FC<
 					<Typography variant="h6">
 						{featuresTerm} {sizeTerm}
 					</Typography>
-					{(percentiles.length > 0 || stateCategories.length > 0) && (
+					{(percentiles.length > 0 ||
+						stateCategories.length > 0 ||
+						showEstimationToggle) && (
 						<Stack
 							direction="row"
 							spacing={1}
@@ -603,6 +655,38 @@ const FeatureSizeScatterPlotChart: React.FC<
 								visiblePercentiles={visiblePercentiles}
 								onTogglePercentile={togglePercentileVisibility}
 							/>
+							{showEstimationToggle && (
+								<ToggleButtonGroup
+									value={yAxisMode}
+									exclusive
+									onChange={(_e, newMode) => {
+										if (newMode !== null) {
+											setYAxisMode(newMode as YAxisMode);
+										}
+									}}
+									size="small"
+									aria-label="Y-axis mode"
+									sx={{
+										height: 28,
+										"& .MuiToggleButton-root": {
+											fontSize: "0.75rem",
+											py: 0,
+											px: 1,
+											textTransform: "none",
+										},
+									}}
+								>
+									<ToggleButton
+										value="estimation"
+										aria-label={estimationData?.estimationUnit ?? "Estimation"}
+									>
+										{estimationData?.estimationUnit ?? "Estimation"}
+									</ToggleButton>
+									<ToggleButton value="cycleTime" aria-label={cycleTimeTerm}>
+										{cycleTimeTerm}
+									</ToggleButton>
+								</ToggleButtonGroup>
+							)}
 							{stateCategories.length > 0 && (
 								<Stack
 									direction="row"
@@ -648,10 +732,20 @@ const FeatureSizeScatterPlotChart: React.FC<
 							{
 								id: "timeAxis",
 								scaleType: "linear",
-								label: `${cycleTimeTerm} (days)`,
+								label: useEstimationYAxis
+									? `${estimationData?.estimationUnit ?? "Estimation"}`
+									: `${cycleTimeTerm} (days)`,
 								min: 0,
 								max: fixedYAxisMax ?? undefined,
-								valueFormatter: integerValueFormatter,
+								valueFormatter:
+									useEstimationYAxis &&
+									estimationData?.useNonNumericEstimation &&
+									estimationData.categoryValues.length > 0
+										? (v: unknown) => {
+												const index = Math.round(v as number);
+												return estimationData.categoryValues[index] ?? "";
+											}
+										: integerValueFormatter,
 							},
 						]}
 						series={series}

@@ -11,6 +11,9 @@ You can now configure an estimation field on your Team and Portfolio settings an
 
 Once configured, a new **Estimation vs. Cycle Time** scatter plot appears in your Metrics tab, showing estimation values on the x-axis and cycle time on the y-axis. Click any data point to drill into the underlying work items.
 
+## Feature Size Chart – Estimation Y-Axis Toggle
+When an estimation field is configured, the **Feature Size** chart now lets you toggle the y-axis between estimation values and cycle time directly on the chart. If no estimation field is set, the chart continues to use cycle time as before.
+
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.11.7...vNext)
 
 # Lighthouse v26.2.11.7

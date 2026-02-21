@@ -168,6 +168,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getCycleTimePbc: vi.fn(),
 		getFeatureSizePbc: vi.fn(),
 		getEstimationVsCycleTimeData: vi.fn(),
+		getFeatureSizeEstimation: vi.fn(),
 	};
 };
 

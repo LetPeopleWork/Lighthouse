@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
+import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { testTheme } from "../../../tests/testTheme";
 import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
@@ -1069,6 +1070,210 @@ describe("FeatureSizeScatterPlotChart", () => {
 			); // The feature should be displayed at y=0
 			const container = screen.getByTestId("chart-container");
 			expect(container).toHaveAttribute("data-series-count", "1");
+		});
+	});
+
+	describe("estimation y-axis toggle", () => {
+		const estimationData: IFeatureSizeEstimationResponse = {
+			status: "Ready",
+			estimationUnit: "Story Points",
+			useNonNumericEstimation: false,
+			categoryValues: [],
+			featureEstimations: [
+				{
+					featureId: 1,
+					estimationNumericValue: 3,
+					estimationDisplayValue: "3",
+				},
+				{
+					featureId: 2,
+					estimationNumericValue: 8,
+					estimationDisplayValue: "8",
+				},
+				{
+					featureId: 3,
+					estimationNumericValue: 13,
+					estimationDisplayValue: "13",
+				},
+			],
+		};
+
+		it("should not show toggle when estimation data is not provided", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			expect(
+				screen.queryByRole("button", { name: /estimation/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /cycle time/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("should not show toggle when estimation status is NotConfigured", () => {
+			const notConfigured: IFeatureSizeEstimationResponse = {
+				status: "NotConfigured",
+				estimationUnit: null,
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				featureEstimations: [],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={notConfigured}
+				/>,
+			);
+
+			expect(
+				screen.queryByRole("button", { name: /estimation/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("should not show toggle when estimation unit is not set", () => {
+			const noUnit: IFeatureSizeEstimationResponse = {
+				status: "Ready",
+				estimationUnit: null,
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				featureEstimations: [
+					{
+						featureId: 1,
+						estimationNumericValue: 3,
+						estimationDisplayValue: "3",
+					},
+				],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={noUnit}
+				/>,
+			);
+
+			expect(
+				screen.queryByRole("button", { name: /estimation/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("should show toggle and default to estimation when estimation unit is set", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={estimationData}
+				/>,
+			);
+
+			// Should show y-axis toggle buttons
+			const estimationButton = screen.getByRole("button", {
+				name: /story points/i,
+			});
+			expect(estimationButton).toBeInTheDocument();
+
+			const cycleTimeButton = screen.getByRole("button", {
+				name: /cycle time/i,
+			});
+			expect(cycleTimeButton).toBeInTheDocument();
+		});
+
+		it("should use estimation values in scatter data when estimation mode is active", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={estimationData}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			expect(seriesAttr).toBeTruthy();
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+			// In estimation mode, y values should be estimation values (3, 8, 13)
+			const allDataPoints = series.flatMap(
+				(s: { data?: { y: number }[] }) => s.data ?? [],
+			);
+			const yValues = allDataPoints.map((d: { y: number }) => d.y);
+			expect(yValues).toContain(3);
+			expect(yValues).toContain(8);
+			expect(yValues).toContain(13);
+		});
+
+		it("should switch to cycle time values when cycle time toggle is clicked", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={estimationData}
+				/>,
+			);
+
+			// Click to switch to Cycle Time
+			const cycleTimeButton = screen.getByRole("button", {
+				name: /cycle time/i,
+			});
+			fireEvent.click(cycleTimeButton);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			expect(seriesAttr).toBeTruthy();
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+			// In cycle time mode, y values should be cycle time values (5, 12, 20)
+			const allDataPoints = series.flatMap(
+				(s: { data?: { y: number }[] }) => s.data ?? [],
+			);
+			const yValues = allDataPoints.map((d: { y: number }) => d.y);
+			expect(yValues).toContain(5);
+			expect(yValues).toContain(12);
+			expect(yValues).toContain(20);
+		});
+
+		it("should use non-numeric category values for estimation axis when in non-numeric mode", () => {
+			const nonNumericEstimation: IFeatureSizeEstimationResponse = {
+				status: "Ready",
+				estimationUnit: "T-Shirt",
+				useNonNumericEstimation: true,
+				categoryValues: ["XS", "S", "M", "L", "XL"],
+				featureEstimations: [
+					{
+						featureId: 1,
+						estimationNumericValue: 0,
+						estimationDisplayValue: "XS",
+					},
+					{
+						featureId: 2,
+						estimationNumericValue: 2,
+						estimationDisplayValue: "M",
+					},
+					{
+						featureId: 3,
+						estimationNumericValue: 4,
+						estimationDisplayValue: "XL",
+					},
+				],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={nonNumericEstimation}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			expect(seriesAttr).toBeTruthy();
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+			// y values should be ordinal indices (0, 2, 4)
+			const allDataPoints = series.flatMap(
+				(s: { data?: { y: number }[] }) => s.data ?? [],
+			);
+			const yValues = allDataPoints.map((d: { y: number }) => d.y);
+			expect(yValues).toContain(0);
+			expect(yValues).toContain(2);
+			expect(yValues).toContain(4);
 		});
 	});
 });

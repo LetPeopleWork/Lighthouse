@@ -694,5 +694,57 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Value, Is.EqualTo(expectedResponse));
             }
         }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetFeatureSizeEstimationData(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetFeatureSizeEstimationData(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_PortfolioExists_ReturnsDataFromService()
+        {
+            var expectedResponse = new FeatureSizeEstimationResponse(
+                EstimationVsCycleTimeStatus.Ready,
+                "Points",
+                false,
+                [],
+                [new FeatureEstimationDataPoint(1, 5.0, "5"), new FeatureEstimationDataPoint(2, 3.0, "3")]);
+
+            projectMetricsService.Setup(service => service.GetFeatureSizeEstimationData(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedResponse);
+
+            var response = subject.GetFeatureSizeEstimationData(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedResponse));
+            }
+        }
     }
 }

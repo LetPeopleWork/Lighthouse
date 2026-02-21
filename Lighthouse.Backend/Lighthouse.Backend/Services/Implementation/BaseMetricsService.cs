@@ -484,6 +484,72 @@ namespace Lighthouse.Backend.Services.Implementation
                 dataPoints);
         }
 
+        protected static FeatureSizeEstimationResponse BuildFeatureSizeEstimationResponse(
+            WorkTrackingSystemOptionsOwner owner,
+            IEnumerable<WorkItemBase> allFeatures)
+        {
+            if (owner.EstimationAdditionalFieldDefinitionId == null)
+            {
+                return new FeatureSizeEstimationResponse(
+                    EstimationVsCycleTimeStatus.NotConfigured,
+                    owner.EstimationUnit,
+                    owner.UseNonNumericEstimation,
+                    owner.EstimationCategoryValues,
+                    []);
+            }
+
+            var fieldId = owner.EstimationAdditionalFieldDefinitionId.Value;
+            var items = allFeatures.ToList();
+
+            if (items.Count == 0)
+            {
+                return new FeatureSizeEstimationResponse(
+                    EstimationVsCycleTimeStatus.NoData,
+                    owner.EstimationUnit,
+                    owner.UseNonNumericEstimation,
+                    owner.EstimationCategoryValues,
+                    []);
+            }
+
+            var estimates = items.Select(i =>
+            {
+                i.AdditionalFieldValues.TryGetValue(fieldId, out var value);
+                return value;
+            }).ToList();
+
+            var batchResult = EstimateNormalizer.NormalizeBatch(
+                estimates,
+                owner.UseNonNumericEstimation,
+                owner.EstimationCategoryValues);
+
+            var featureEstimations = new List<FeatureEstimationDataPoint>();
+
+            for (var i = 0; i < items.Count; i++)
+            {
+                var normResult = batchResult.Results[i];
+                if (normResult.Status != EstimateNormalizationStatus.Mapped)
+                {
+                    continue;
+                }
+
+                featureEstimations.Add(new FeatureEstimationDataPoint(
+                    items[i].Id,
+                    normResult.NumericValue,
+                    normResult.DisplayValue));
+            }
+
+            var status = featureEstimations.Count > 0
+                ? EstimationVsCycleTimeStatus.Ready
+                : EstimationVsCycleTimeStatus.NoData;
+
+            return new FeatureSizeEstimationResponse(
+                status,
+                owner.EstimationUnit,
+                owner.UseNonNumericEstimation,
+                owner.EstimationCategoryValues,
+                featureEstimations);
+        }
+
         private static Dictionary<int, List<WorkItemBase>> InitializeRunChartDictionary(int totalDays)
         {
             var runChartData = new Dictionary<int, List<WorkItemBase>>();

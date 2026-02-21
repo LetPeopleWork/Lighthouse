@@ -20,6 +20,7 @@ import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
+import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -98,6 +99,9 @@ export const BaseMetricsView = <
 
 	const [estimationVsCycleTimeData, setEstimationVsCycleTimeData] =
 		useState<IEstimationVsCycleTimeResponse | null>(null);
+
+	const [featureSizeEstimationData, setFeatureSizeEstimationData] =
+		useState<IFeatureSizeEstimationResponse | null>(null);
 
 	// URL state management for dates
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -296,6 +300,14 @@ export const BaseMetricsView = <
 					endDate,
 				);
 				setFeatureSizePbcData(featureSizePbc);
+
+				const featureSizeEstimation =
+					await projectMetricsService.getFeatureSizeEstimation(
+						entity.id,
+						startDate,
+						endDate,
+					);
+				setFeatureSizeEstimationData(featureSizeEstimation);
 			} catch (error) {
 				console.error(`Error fetching Size Percentile Data:`, error);
 			}
@@ -305,7 +317,8 @@ export const BaseMetricsView = <
 		if (
 			"getAllFeaturesForSizeChart" in metricsService &&
 			"getSizePercentiles" in metricsService &&
-			"getFeatureSizePbc" in metricsService
+			"getFeatureSizePbc" in metricsService &&
+			"getFeatureSizeEstimation" in metricsService
 		) {
 			fetchSizePercentileData(metricsService as IProjectMetricsService);
 		}
@@ -695,6 +708,7 @@ export const BaseMetricsView = <
 					<FeatureSizeScatterPlotChart
 						sizeDataPoints={allFeaturesForSizeChart}
 						sizePercentileValues={sizePercentileValues}
+						estimationData={featureSizeEstimationData ?? undefined}
 					/>
 				),
 			});

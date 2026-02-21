@@ -292,6 +292,14 @@ namespace Lighthouse.Backend.Services.Implementation
             return BuildEstimationVsCycleTimeResponse(portfolio, closedFeatures);
         }
 
+        public FeatureSizeEstimationResponse GetFeatureSizeEstimationData(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Feature Size Estimation Data for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            var allFeatures = GetAllFeaturesForSizeChart(portfolio, startDate, endDate);
+            return BuildFeatureSizeEstimationResponse(portfolio, allFeatures);
+        }
+
         public int GetTotalWorkItemAge(Portfolio portfolio)
         {
             logger.LogDebug("Getting Total Work Item Age for Portfolio {PortfolioName}", portfolio.Name);

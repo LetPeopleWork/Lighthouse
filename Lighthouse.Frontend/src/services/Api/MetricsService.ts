@@ -4,6 +4,7 @@ import {
 	type IForecastPredictabilityScore,
 } from "../../models/Forecasts/ForecastPredictabilityScore";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
+import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
@@ -100,6 +101,12 @@ export interface IProjectMetricsService extends IMetricsService<IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ProcessBehaviourChartData>;
+
+	getFeatureSizeEstimation(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeatureSizeEstimationResponse>;
 }
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>

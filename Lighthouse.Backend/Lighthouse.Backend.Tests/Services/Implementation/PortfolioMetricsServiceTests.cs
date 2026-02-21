@@ -937,6 +937,257 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result.BaselineConfigured, Is.True);
         }
 
+        #region GetFeatureSizeEstimationData
+
+        [Test]
+        public void GetFeatureSizeEstimationData_NoEstimationFieldConfigured_ReturnsNotConfigured()
+        {
+            project.EstimationAdditionalFieldDefinitionId = null;
+
+            var result = subject.GetFeatureSizeEstimationData(project, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NotConfigured));
+                Assert.That(result.FeatureEstimations, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_EstimationConfiguredButNoFeatures_ReturnsNoData()
+        {
+            project.EstimationAdditionalFieldDefinitionId = 42;
+            features.Clear();
+
+            var result = subject.GetFeatureSizeEstimationData(project, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NoData));
+                Assert.That(result.FeatureEstimations, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_NumericEstimates_ReturnsMappedFeatureEstimations()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            project.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            // Feature 1 is Done with an estimate
+            features[0].AdditionalFieldValues[fieldId] = "5";
+            features[0].ClosedDate = startDate.AddDays(3);
+
+            // Feature 3 is Doing with an estimate
+            features[2].AdditionalFieldValues[fieldId] = "3";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.FeatureEstimations, Has.Count.EqualTo(2));
+                Assert.That(result.FeatureEstimations.Any(e => e.FeatureId == features[0].Id && e.EstimationNumericValue == 5.0), Is.True);
+                Assert.That(result.FeatureEstimations.Any(e => e.FeatureId == features[2].Id && e.EstimationNumericValue == 3.0), Is.True);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_IncludesAllStates_NotJustClosedFeatures()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            // Add a ToDo feature with estimate
+            var todoFeature = new Feature
+            {
+                Id = 10,
+                Name = "ToDo Feature",
+                ReferenceId = "F10",
+                StateCategory = StateCategories.ToDo,
+            };
+            todoFeature.Portfolios.Add(project);
+            todoFeature.AdditionalFieldValues[fieldId] = "2";
+            features.Add(todoFeature);
+
+            // Done feature with estimate
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "5";
+
+            // Doing feature with estimate
+            features[2].AdditionalFieldValues[fieldId] = "8";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.FeatureEstimations, Has.Count.EqualTo(3));
+                Assert.That(result.FeatureEstimations.Any(e => e.FeatureId == todoFeature.Id), Is.True);
+                Assert.That(result.FeatureEstimations.Any(e => e.FeatureId == features[0].Id), Is.True);
+                Assert.That(result.FeatureEstimations.Any(e => e.FeatureId == features[2].Id), Is.True);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_NonNumericMode_ReturnsOrdinalValues()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            project.UseNonNumericEstimation = true;
+            project.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "M";
+
+            features[2].AdditionalFieldValues[fieldId] = "XL";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.UseNonNumericEstimation, Is.True);
+                Assert.That(result.CategoryValues, Is.EqualTo(new List<string> { "XS", "S", "M", "L", "XL" }));
+
+                var mEstimation = result.FeatureEstimations.First(e => e.FeatureId == features[0].Id);
+                Assert.That(mEstimation.EstimationNumericValue, Is.EqualTo(2)); // index of "M"
+                Assert.That(mEstimation.EstimationDisplayValue, Is.EqualTo("M"));
+
+                var xlEstimation = result.FeatureEstimations.First(e => e.FeatureId == features[2].Id);
+                Assert.That(xlEstimation.EstimationNumericValue, Is.EqualTo(4)); // index of "XL"
+                Assert.That(xlEstimation.EstimationDisplayValue, Is.EqualTo("XL"));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_InvalidAndMissingEstimates_ExcludedFromResults()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            project.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            // Feature 1: valid estimate
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "5";
+
+            // Feature 2: invalid estimate
+            features[1].ClosedDate = startDate.AddDays(7);
+            features[1].AdditionalFieldValues[fieldId] = "not-a-number";
+
+            // Feature 3 (Doing): no estimate at all (missing key)
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.FeatureEstimations, Has.Count.EqualTo(1));
+                Assert.That(result.FeatureEstimations[0].FeatureId, Is.EqualTo(features[0].Id));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_PassesEstimationUnit()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            project.EstimationUnit = "Story Points";
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "5";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            Assert.That(result.EstimationUnit, Is.EqualTo("Story Points"));
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_AllInvalidEstimates_ReturnsNoData()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            project.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "abc";
+
+            features[2].AdditionalFieldValues[fieldId] = "xyz";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NoData));
+                Assert.That(result.FeatureEstimations, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_DecimalEstimates_PreservesDecimals()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "3.5";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            Assert.That(result.FeatureEstimations[0].EstimationNumericValue, Is.EqualTo(3.5));
+        }
+
+        [Test]
+        public void GetFeatureSizeEstimationData_PerFeatureMapping_EachFeatureHasOwnEstimation()
+        {
+            const int fieldId = 42;
+            project.EstimationAdditionalFieldDefinitionId = fieldId;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            // Two features with the same estimate value still get separate entries
+            features[0].ClosedDate = startDate.AddDays(3);
+            features[0].AdditionalFieldValues[fieldId] = "5";
+
+            features[1].ClosedDate = startDate.AddDays(7);
+            features[1].AdditionalFieldValues[fieldId] = "5";
+
+            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.FeatureEstimations, Has.Count.EqualTo(2));
+                Assert.That(result.FeatureEstimations[0].FeatureId, Is.Not.EqualTo(result.FeatureEstimations[1].FeatureId));
+                Assert.That(result.FeatureEstimations[0].EstimationNumericValue, Is.EqualTo(5.0));
+                Assert.That(result.FeatureEstimations[1].EstimationNumericValue, Is.EqualTo(5.0));
+            }
+        }
+
+        #endregion
+
         private void SetupTestData()
         {
             project = new Portfolio

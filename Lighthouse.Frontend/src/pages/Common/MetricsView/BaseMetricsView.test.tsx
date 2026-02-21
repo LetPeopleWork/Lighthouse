@@ -7,6 +7,7 @@ import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
 } from "../../../models/Forecasts/ForecastPredictabilityScore";
+import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -600,6 +601,13 @@ describe("BaseMetricsView component", () => {
 			getTotalWorkItemAgePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getCycleTimePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getFeatureSizePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getFeatureSizeEstimation: vi.fn().mockResolvedValue({
+				status: "NotConfigured",
+				estimationUnit: null,
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				featureEstimations: [],
+			}),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -616,6 +624,11 @@ describe("BaseMetricsView component", () => {
 				startDate: Date,
 				endDate: Date,
 			) => Promise<ProcessBehaviourChartData>;
+			getFeatureSizeEstimation?: (
+				id: number,
+				startDate: Date,
+				endDate: Date,
+			) => Promise<IFeatureSizeEstimationResponse>;
 		};
 	}
 
