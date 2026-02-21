@@ -1,5 +1,4 @@
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -12,6 +11,7 @@ import {
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
+import ProgressTitle from "../../../components/Common/ProgressIndicator/ProgressTitle";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
@@ -127,31 +127,13 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 					<Box sx={{ width: "100%" }}>
 						<ProgressIndicator
 							title={
-								row.isUsingDefaultFeatureSize ? (
-									"Overall Progress"
-								) : (
-									<Button
-										variant="text"
-										size="small"
-										sx={{
-											p: 0,
-											minWidth: 0,
-											textTransform: "none",
-											textDecoration: "none",
-											"&:hover": { textDecoration: "underline" },
-										}}
-										onClick={async (event) => {
-											event.stopPropagation();
-											await handleShowFeatureDetails(row);
-										}}
-									>
-										Overall Progress
-										<FormatListBulletedIcon
-											fontSize="inherit"
-											sx={{ ml: 0.5 }}
-										/>
-									</Button>
-								)
+								<ProgressTitle
+									title="Overall Progress"
+									isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+									onShowDetails={async () =>
+										await handleShowFeatureDetails(row)
+									}
+								/>
 							}
 							progressableItem={{
 								remainingWork: row.getRemainingWorkForFeature(),

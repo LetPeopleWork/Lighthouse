@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock.Setup(x => x.GetById(It.IsAny<int>()))
                 .Returns((int id) => features.Union(parentFeatures).SingleOrDefault(f => f.Id == id));
 
-            workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>() ))
+            workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
         }
 
@@ -262,6 +262,8 @@ namespace Lighthouse.Backend.Tests.API
             workItems.Add(CreateWorkItem(2, "FTR-1886", "STORY-2", "Story 2"));
             workItems.Add(CreateWorkItem(3, "FTR-1000", "STORY-3", "Story 3"));
 
+            var expectedStories = new[] { "STORY-1", "STORY-2" };
+
             var subject = CreateSubject();
 
             var response = subject.GetFeatureWorkItems(1886);
@@ -275,7 +277,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var items = okResult.Value as IEnumerable<WorkItemDto>;
                 Assert.That(items?.Count(), Is.EqualTo(2));
-                Assert.That(items?.Select(x => x.ReferenceId), Is.EquivalentTo(new[] { "STORY-1", "STORY-2" }));
+                Assert.That(items?.Select(x => x.ReferenceId), Is.EquivalentTo(expectedStories));
             }
         }
 
