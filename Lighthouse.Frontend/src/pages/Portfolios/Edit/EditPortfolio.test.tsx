@@ -156,6 +156,7 @@ describe("EditPortfolio", () => {
 			doneItemsCutoffDays: 0,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		});
 		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems.mockResolvedValue(
 			[],
@@ -191,6 +192,7 @@ describe("EditPortfolio", () => {
 			doneItemsCutoffDays: 0,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
@@ -235,6 +237,7 @@ describe("EditPortfolio", () => {
 			doneItemsCutoffDays: 0,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(

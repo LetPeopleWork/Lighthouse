@@ -72,6 +72,7 @@ const EditPortfolio: React.FC = () => {
 			doneItemsCutoffDays: 365,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		};
 
 		return defaultPortfolioSettings;

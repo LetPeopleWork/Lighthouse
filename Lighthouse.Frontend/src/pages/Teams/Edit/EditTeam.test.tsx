@@ -165,6 +165,7 @@ describe("EditTeam", () => {
 			doneItemsCutoffDays: 0,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		};
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
@@ -205,6 +206,7 @@ describe("EditTeam", () => {
 			doneItemsCutoffDays: 0,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		};
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);

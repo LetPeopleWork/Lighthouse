@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Models
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
 
+        public int? EstimationAdditionalFieldDefinitionId { get; set; }
+
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
 
         public StateCategories MapStateToStateCategory(string state)

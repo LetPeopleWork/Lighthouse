@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.API.Helpers
                 team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
                 team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
                 team.DoneItemsCutoffDays = teamSetting.DoneItemsCutoffDays;
+                team.EstimationAdditionalFieldDefinitionId = teamSetting.EstimationAdditionalFieldDefinitionId;
                 team.Tags = teamSetting.Tags;
                 team.SystemWIPLimit = teamSetting.SystemWIPLimit;
                 team.ProcessBehaviourChartBaselineStartDate = teamSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;

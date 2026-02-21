@@ -30,6 +30,7 @@ const getMockTeam = (overrides?: Partial<ITeamSettings>): ITeamSettings => ({
 	doneItemsCutoffDays: 180,
 	processBehaviourChartBaselineStartDate: null,
 	processBehaviourChartBaselineEndDate: null,
+	estimationAdditionalFieldDefinitionId: null,
 	...overrides,
 });
 

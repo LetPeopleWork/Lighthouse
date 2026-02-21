@@ -93,6 +93,7 @@ const EditTeamPage: React.FC = () => {
 			doneItemsCutoffDays: 180,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
+			estimationAdditionalFieldDefinitionId: null,
 		};
 
 		return defaultTeamSettings;

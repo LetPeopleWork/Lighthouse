@@ -180,6 +180,7 @@ describe("ConfigurationService", () => {
 					doneItemsCutoffDays: 0,
 					processBehaviourChartBaselineStartDate: null,
 					processBehaviourChartBaselineEndDate: null,
+					estimationAdditionalFieldDefinitionId: null,
 				},
 			],
 			projects: [
@@ -210,6 +211,7 @@ describe("ConfigurationService", () => {
 					doneItemsCutoffDays: 0,
 					processBehaviourChartBaselineStartDate: null,
 					processBehaviourChartBaselineEndDate: null,
+					estimationAdditionalFieldDefinitionId: null,
 				},
 			],
 		};

@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -387,6 +387,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+                    b.Property<int?>("EstimationAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("FeatureOwnerAdditionalFieldDefinitionId")
                         .HasColumnType("integer");
 
@@ -488,6 +491,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.PrimitiveCollection<List<string>>("DoneStates")
                         .IsRequired()
                         .HasColumnType("text[]");
+
+                    b.Property<int?>("EstimationAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("integer");

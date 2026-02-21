@@ -17,4 +17,5 @@ export interface IBaseSettings {
 	doneItemsCutoffDays: number;
 	processBehaviourChartBaselineStartDate: Date | null;
 	processBehaviourChartBaselineEndDate: Date | null;
+	estimationAdditionalFieldDefinitionId: number | null;
 }

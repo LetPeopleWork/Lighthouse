@@ -29,6 +29,7 @@ namespace Lighthouse.Backend.API.DTO
             ParentOverrideAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId;
             ProcessBehaviourChartBaselineStartDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineStartDate;
             ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
+            EstimationAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId;
         }
 
         [JsonRequired]
@@ -69,5 +70,7 @@ namespace Lighthouse.Backend.API.DTO
         public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
 
         public DateTime? ProcessBehaviourChartBaselineEndDate { get; set; }
+
+        public int? EstimationAdditionalFieldDefinitionId { get; set; }
     }
 }

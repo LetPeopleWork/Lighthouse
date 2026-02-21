@@ -11,6 +11,7 @@ import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/Advanc
 import { useTerminology } from "../../../services/TerminologyContext";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
+import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
@@ -261,6 +262,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			"sizeEstimateAdditionalFieldDefinitionId",
 			"featureOwnerAdditionalFieldDefinitionId",
 			"parentOverrideAdditionalFieldDefinitionId",
+			"estimationAdditionalFieldDefinitionId",
 			"owningTeam",
 		];
 
@@ -455,6 +457,21 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<FlowMetricsConfigurationComponent
 							settings={projectSettings}
 							onSettingsChange={handleProjectSettingsChange}
+						/>
+
+						<EstimationFieldComponent
+							estimationFieldDefinitionId={
+								projectSettings?.estimationAdditionalFieldDefinitionId ?? null
+							}
+							onEstimationFieldChange={(value) =>
+								handleProjectSettingsChange(
+									"estimationAdditionalFieldDefinitionId",
+									value,
+								)
+							}
+							additionalFieldDefinitions={
+								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
+							}
 						/>
 
 						<AdvancedInputsComponent
