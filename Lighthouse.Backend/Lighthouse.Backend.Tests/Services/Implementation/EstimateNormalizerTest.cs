@@ -11,12 +11,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = EstimateNormalizer.Normalize("5", useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(5.0));
                 Assert.That(result.DisplayValue, Is.EqualTo("5"));
-            });
+            }
         }
 
         [Test]
@@ -24,12 +24,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = EstimateNormalizer.Normalize("3.5", useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(3.5));
                 Assert.That(result.DisplayValue, Is.EqualTo("3.5"));
-            });
+            }
         }
 
         [Test]
@@ -37,11 +37,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = EstimateNormalizer.Normalize("0.25", useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(0.25));
-            });
+            }
         }
 
         [Test]
@@ -49,11 +49,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = EstimateNormalizer.Normalize("0", useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.Zero);
-            });
+            }
         }
 
         [Test]
@@ -93,11 +93,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = EstimateNormalizer.Normalize("-1", useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(-1.0));
-            });
+            }
         }
 
         // --- Non-numeric mode: categorical-to-ordinal mapping ---
@@ -109,12 +109,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.Normalize("M", useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(2.0));
                 Assert.That(result.DisplayValue, Is.EqualTo("M"));
-            });
+            }
         }
 
         [Test]
@@ -124,11 +124,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.Normalize("XS", useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.Zero);
-            });
+            }
         }
 
         [Test]
@@ -138,11 +138,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.Normalize("XL", useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(4.0));
-            });
+            }
         }
 
         [Test]
@@ -152,11 +152,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.Normalize("XXL", useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Unmapped));
                 Assert.That(result.DisplayValue, Is.EqualTo("XXL"));
-            });
+            }
         }
 
         [Test]
@@ -194,12 +194,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.Normalize("medium", useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(1.0));
                 Assert.That(result.DisplayValue, Is.EqualTo("Medium"));
-            });
+            }
         }
 
         [Test]
@@ -209,11 +209,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.Normalize("  M  ", useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimateNormalizationStatus.Mapped));
                 Assert.That(result.NumericValue, Is.EqualTo(1.0));
-            });
+            }
         }
 
         // --- NormalizeBatch: batch normalization with diagnostics ---
@@ -225,14 +225,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.NormalizeBatch(estimates, useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.TotalCount, Is.EqualTo(5));
                 Assert.That(result.MappedCount, Is.EqualTo(3));
                 Assert.That(result.UnmappedCount, Is.Zero);
                 Assert.That(result.InvalidCount, Is.EqualTo(2));
                 Assert.That(result.Results, Has.Count.EqualTo(5));
-            });
+            }
         }
 
         [Test]
@@ -243,13 +243,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.NormalizeBatch(estimates, useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.TotalCount, Is.EqualTo(5));
                 Assert.That(result.MappedCount, Is.EqualTo(3));
                 Assert.That(result.UnmappedCount, Is.EqualTo(1));
                 Assert.That(result.InvalidCount, Is.EqualTo(1));
-            });
+            }
         }
 
         [Test]
@@ -257,14 +257,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = EstimateNormalizer.NormalizeBatch([], useNonNumeric: false, []);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.TotalCount, Is.Zero);
                 Assert.That(result.MappedCount, Is.Zero);
                 Assert.That(result.UnmappedCount, Is.Zero);
                 Assert.That(result.InvalidCount, Is.Zero);
                 Assert.That(result.Results, Is.Empty);
-            });
+            }
         }
 
         [Test]
@@ -275,12 +275,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = EstimateNormalizer.NormalizeBatch(estimates, useNonNumeric: true, categories);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Results[0].NumericValue, Is.EqualTo(2.0));
                 Assert.That(result.Results[1].NumericValue, Is.Zero);
                 Assert.That(result.Results[2].NumericValue, Is.EqualTo(1.0));
-            });
+            }
         }
     }
 }
