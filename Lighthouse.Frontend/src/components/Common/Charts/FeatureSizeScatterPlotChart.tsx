@@ -430,7 +430,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 
 	// Build estimation lookup: featureId → estimationNumericValue
 	const estimationLookup = useMemo(() => {
-		if (!estimationData || estimationData.status !== "Ready") {
+		if (estimationData?.status !== "Ready") {
 			return undefined;
 		}
 		const lookup = new Map<number, number>();
