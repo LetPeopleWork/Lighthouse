@@ -4,6 +4,15 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Estimation vs. Cycle Time
+You can now configure an estimation field on your Team and Portfolio settings and visualize how estimates correlate with cycle time. Configure numeric estimates (e.g., story points) or categorical estimates (e.g., T-shirt sizes like XS/S/M/L/XL) with explicit ordering.
+
+Once configured, a new **Estimation vs. Cycle Time** scatter plot appears in your Metrics tab, showing estimation values on the x-axis and cycle time on the y-axis. Click any data point to drill into the underlying work items.
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.11.7...vNext)
+
 # Lighthouse v26.2.11.7
 
 ## Process Behaviour Charts

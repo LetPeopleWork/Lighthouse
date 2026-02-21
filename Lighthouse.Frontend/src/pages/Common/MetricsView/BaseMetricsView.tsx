@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
+import EstimationVsCycleTimeChart from "../../../components/Common/Charts/EstimationVsCycleTimeChart";
 import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/FeatureSizeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import ProcessBehaviourChart, {
@@ -18,6 +19,7 @@ import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingC
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -93,6 +95,9 @@ export const BaseMetricsView = <
 		useState<ProcessBehaviourChartData | null>(null);
 	const [featureSizePbcData, setFeatureSizePbcData] =
 		useState<ProcessBehaviourChartData | null>(null);
+
+	const [estimationVsCycleTimeData, setEstimationVsCycleTimeData] =
+		useState<IEstimationVsCycleTimeResponse | null>(null);
 
 	// URL state management for dates
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -320,6 +325,23 @@ export const BaseMetricsView = <
 	}, [entity]);
 
 	useEffect(() => {
+		const fetchEstimationVsCycleTimeData = async () => {
+			try {
+				const data = await metricsService.getEstimationVsCycleTimeData(
+					entity.id,
+					startDate,
+					endDate,
+				);
+				setEstimationVsCycleTimeData(data);
+			} catch (error) {
+				console.error("Error fetching estimation vs cycle time data:", error);
+			}
+		};
+
+		fetchEstimationVsCycleTimeData();
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
 		const fetchPbcData = async () => {
 			try {
 				const [throughputPbc, wipPbc, totalWorkItemAgePbc, cycleTimePbc] =
@@ -379,6 +401,18 @@ export const BaseMetricsView = <
 		addItems(cycleTimeData as unknown as IWorkItem[]);
 		addItems(inProgressItems);
 
+		// Add work items from estimation vs cycle time data
+		if (estimationVsCycleTimeData?.status === "Ready") {
+			for (const point of estimationVsCycleTimeData.dataPoints) {
+				for (const id of point.workItemIds) {
+					if (!lookup.has(id)) {
+						// Items will be populated from other sources (throughput/cycleTime)
+						// since they're closed items in the same date range
+					}
+				}
+			}
+		}
+
 		for (const item of allFeaturesForSizeChart) {
 			lookup.set(item.id, item as unknown as IWorkItem);
 		}
@@ -390,6 +424,7 @@ export const BaseMetricsView = <
 		cycleTimeData,
 		inProgressItems,
 		allFeaturesForSizeChart,
+		estimationVsCycleTimeData,
 	]);
 
 	const getPbcDashboardItems = (): DashboardItem[] => {
@@ -631,6 +666,24 @@ export const BaseMetricsView = <
 					) : null,
 			},
 		);
+
+		// Estimation vs Cycle Time chart (conditional — hidden when not configured)
+		if (
+			estimationVsCycleTimeData &&
+			estimationVsCycleTimeData.status !== "NotConfigured"
+		) {
+			items.push({
+				id: "estimationVsCycleTime",
+				priority: 11.5,
+				size: "large",
+				node: (
+					<EstimationVsCycleTimeChart
+						data={estimationVsCycleTimeData}
+						workItemLookup={workItemLookup}
+					/>
+				),
+			});
+		}
 
 		// Feature size chart (conditional)
 		if (allFeaturesForSizeChart.length > 0) {

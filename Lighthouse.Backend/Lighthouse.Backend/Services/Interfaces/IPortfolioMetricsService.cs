@@ -34,6 +34,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetAllFeaturesForSizeChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
+        EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
         int GetTotalWorkItemAge(Portfolio portfolio);
 
         void InvalidatePortfolioMetrics(Portfolio portfolio);

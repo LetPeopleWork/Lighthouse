@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API
     [TestFixture]
     public class PortfolioMetricsControllerTests
     {
-        private Mock<IRepository<Portfolio>> projectRepository;
+        private Mock<IRepository<Portfolio>> portfolioRepository;
         private Mock<IPortfolioMetricsService> projectMetricsService;
         private PortfolioMetricsController subject;
         private Portfolio project;
@@ -22,9 +22,9 @@ namespace Lighthouse.Backend.Tests.API
         [SetUp]
         public void Setup()
         {
-            projectRepository = new Mock<IRepository<Portfolio>>();
+            portfolioRepository = new Mock<IRepository<Portfolio>>();
             projectMetricsService = new Mock<IPortfolioMetricsService>();
-            subject = new PortfolioMetricsController(projectRepository.Object, projectMetricsService.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object);
             
             project = new Portfolio
             {
@@ -32,15 +32,15 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Test Project"
             };
             
-            projectRepository.Setup(x => x.GetById(1)).Returns(project);
-            projectRepository.Setup(x => x.GetById(999)).Returns((Portfolio)null);
+            portfolioRepository.Setup(x => x.GetById(1)).Returns(project);
+            portfolioRepository.Setup(x => x.GetById(999)).Returns((Portfolio)null);
         }
 
         [Test]
         public void GetThroughput_WithValidInput_ReturnsOk()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 10);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
             var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 0, 0, 1, 0, 0, 0, 0, 0, 0]));
             
             projectMetricsService.Setup(x => x.GetThroughputForPortfolio(project, startDate, endDate))
@@ -53,14 +53,14 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult?.Value, Is.EqualTo(expectedResult));
-            };
+            }
         }
 
         [Test]
         public void GetThroughput_WithInvalidDateRange_ReturnsBadRequest()
         {
-            var startDate = new DateTime(2023, 1, 10);
-            var endDate = new DateTime(2023, 1, 1);  // End date before start date
+            var startDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);  // End date before start date
 
             var result = subject.GetThroughput(1, startDate, endDate);
 
@@ -70,8 +70,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetThroughput_WithInvalidProjectId_ReturnsNotFound()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 10);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             var result = subject.GetThroughput(999, startDate, endDate);
 
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -103,19 +103,19 @@ namespace Lighthouse.Backend.Tests.API
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
         public void GetStartedItems_TeamExists_GetsStartedItemsFromTeamMetricsService()
         {
-            var project = new Portfolio { Id = 1 };
-            projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
+            var portfolio = new Portfolio { Id = 1 };
+            portfolioRepository.Setup(repo => repo.GetById(1)).Returns(portfolio);
 
             var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
-            projectMetricsService.Setup(service => service.GetStartedItemsForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
+            projectMetricsService.Setup(service => service.GetStartedItemsForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
 
-            var response = subject.GetStartedItems(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetStartedItems(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
             using (Assert.EnterMultipleScope())
             {
@@ -124,14 +124,14 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
-            };
+            }
         }
 
         [Test]
         public void GetFeaturesInProgressOverTime_WithValidInput_ReturnsOk()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 5);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc);
             var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 2, 1, 1]));
             
             projectMetricsService.Setup(x => x.GetFeaturesInProgressOverTimeForPortfolio(project, startDate, endDate))
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult?.Value, Is.EqualTo(expectedResult));
-            };
+            }
         }
 
         [Test]
@@ -175,8 +175,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetCycleTimePercentiles_WithValidInput_ReturnsOk()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var percentiles = new List<PercentileValue>
             {
                 new PercentileValue(50, 3),
@@ -198,14 +198,14 @@ namespace Lighthouse.Backend.Tests.API
                 var returnedPercentiles = okResult?.Value as IEnumerable<PercentileValue>;
                 
                 Assert.That(returnedPercentiles?.Count(), Is.EqualTo(4));
-            };
+            }
         }
 
         [Test]
         public void GetCycleTimeData_WithValidInput_ReturnsOk()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var features = new List<Feature>
             {
                 new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = DateTime.Now.AddDays(-2), ClosedDate = DateTime.Now },
@@ -223,14 +223,14 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos?.Count(), Is.EqualTo(2));
-            };
+            }
         }
 
         [Test]
         public void GetSizePercentiles_WithValidInput_ReturnsOk()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var percentiles = new List<PercentileValue>
             {
@@ -254,7 +254,6 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(returnedPercentiles?.Count(), Is.EqualTo(4));
             }
-            ;
         }
 
         [Test]
@@ -268,7 +267,6 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-            ;
         }
 
         [Test]
@@ -282,20 +280,19 @@ namespace Lighthouse.Backend.Tests.API
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
             }
-            ;
         }
 
         [Test]
         public void GetMultiItemForecastPredictabilityScore_ProjectExists_GetsPredictabilityScoreFromTeamMetricsService()
         {
-            var project = new Portfolio { Id = 1 };
-            projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
+            var portfolio = new Portfolio { Id = 1 };
+            portfolioRepository.Setup(repo => repo.GetById(1)).Returns(portfolio);
 
             var howManyForecast = new HowManyForecast();
             var expectedScore = new ForecastPredictabilityScore(howManyForecast);
-            projectMetricsService.Setup(service => service.GetMultiItemForecastPredictabilityScoreForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
+            projectMetricsService.Setup(service => service.GetMultiItemForecastPredictabilityScoreForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
 
-            var response = subject.GetMultiItemForecastPredictabilityScore(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetMultiItemForecastPredictabilityScore(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
             using (Assert.EnterMultipleScope())
             {
@@ -341,11 +338,11 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetAllFeaturesForSizeChart_WithValidInput_ReturnsOk()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var features = new List<Feature>
             {
-                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StateCategory = StateCategories.Done, StartedDate = DateTime.Now.AddDays(-5), ClosedDate = new DateTime(2023, 1, 10) },
+                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StateCategory = StateCategories.Done, StartedDate = DateTime.Now.AddDays(-5), ClosedDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
                 new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StateCategory = StateCategories.Doing, StartedDate = DateTime.Now.AddDays(-3) },
                 new Feature { Id = 3, Name = "Feature 3", ReferenceId = "F3", StateCategory = StateCategories.ToDo }
             };
@@ -361,14 +358,14 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos?.Count(), Is.EqualTo(3));
-            };
+            }
         }
 
         [Test]
         public void GetAllFeaturesForSizeChart_WithInvalidDateRange_ReturnsBadRequest()
         {
-            var startDate = new DateTime(2023, 1, 31);
-            var endDate = new DateTime(2023, 1, 1);  // End date before start date
+            var startDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);  // End date before start date
 
             var result = subject.GetAllFeaturesForSizeChart(1, startDate, endDate);
 
@@ -378,8 +375,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetAllFeaturesForSizeChart_WithInvalidProjectId_ReturnsNotFound()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var result = subject.GetAllFeaturesForSizeChart(999, startDate, endDate);
 
@@ -389,8 +386,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetAllFeaturesForSizeChart_EmptyResult_ReturnsOkWithEmptyList()
         {
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var emptyFeatures = new List<Feature>();
 
             projectMetricsService.Setup(x => x.GetAllFeaturesForSizeChart(project, startDate, endDate))
@@ -404,7 +401,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos, Is.Empty);
-            };
+            }
         }
 
         [Test]
@@ -642,6 +639,59 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetEstimationVsCycleTimeData(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetEstimationVsCycleTimeData(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_PortfolioExists_ReturnsDataFromService()
+        {
+            var expectedResponse = new EstimationVsCycleTimeResponse(
+                EstimationVsCycleTimeStatus.Ready,
+                new EstimationVsCycleTimeDiagnostics(2, 2, 0, 0),
+                "Points",
+                false,
+                [],
+                [new EstimationVsCycleTimeDataPoint([1, 2], 3.0, "3", 5)]);
+
+            projectMetricsService.Setup(service => service.GetEstimationVsCycleTimeData(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedResponse);
+
+            var response = subject.GetEstimationVsCycleTimeData(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedResponse));
             }
         }
     }

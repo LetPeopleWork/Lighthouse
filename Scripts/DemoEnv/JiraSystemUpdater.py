@@ -10,6 +10,7 @@ args = parser.parse_args()
 API_TOKEN = args.api_token
 USERNAME = 'atlassian.pushchair@huser-berta.com'
 JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/3'
+STORY_POINT_VALUES = [1, 2, 3, 5, 8, 13, 23]
 
 # Target throughput for each team including "Epics"
 teams_targets = {
@@ -64,6 +65,7 @@ for team, throughput in teams_targets.items():
             "project": {"key": "LGHTHSDMO"},
             "summary": summary,
             "issuetype": {"name": item_type},
+            "customfield_10037": random.choice(STORY_POINT_VALUES)
         }
 
         if not is_epic:

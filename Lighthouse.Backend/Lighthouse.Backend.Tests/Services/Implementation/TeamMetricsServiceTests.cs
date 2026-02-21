@@ -1543,5 +1543,384 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             return workItem;
         }
+
+        #region GetEstimationVsCycleTimeData
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_NoEstimationFieldConfigured_ReturnsNotConfigured()
+        {
+            testTeam.EstimationAdditionalFieldDefinitionId = null;
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NotConfigured));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(0));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_EstimationConfiguredButNoClosedItems_ReturnsNoData()
+        {
+            testTeam.EstimationAdditionalFieldDefinitionId = 42;
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NoData));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(0));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_NumericEstimates_ReturnsMappedDataPoints()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(10);
+            item2.AdditionalFieldValues[fieldId] = "8";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.DataPoints, Has.Count.EqualTo(2));
+                Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(2));
+                Assert.That(result.Diagnostics.MappedCount, Is.EqualTo(2));
+                Assert.That(result.Diagnostics.UnmappedCount, Is.EqualTo(0));
+                Assert.That(result.Diagnostics.InvalidCount, Is.EqualTo(0));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_NumericEstimates_DataPointsHaveCorrectValues()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                var dataPoint = result.DataPoints[0];
+                Assert.That(dataPoint.EstimationNumericValue, Is.EqualTo(3.0));
+                Assert.That(dataPoint.EstimationDisplayValue, Is.EqualTo("3"));
+                Assert.That(dataPoint.CycleTime, Is.EqualTo(item1.CycleTime));
+                Assert.That(dataPoint.WorkItemIds, Does.Contain(item1.Id));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_DecimalEstimates_PreservesDecimals()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3.5";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            Assert.That(result.DataPoints[0].EstimationNumericValue, Is.EqualTo(3.5));
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_SameEstimateAndCycleTime_GroupsIntoSingleDataPoint()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(5);
+            item2.AdditionalFieldValues[fieldId] = "3";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints, Has.Count.EqualTo(1));
+                Assert.That(result.DataPoints[0].WorkItemIds, Has.Length.EqualTo(2));
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item1.Id));
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item2.Id));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_InvalidEstimate_ExcludedFromDataPoints()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(5);
+            item2.AdditionalFieldValues[fieldId] = "not-a-number";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.DataPoints, Has.Count.EqualTo(1));
+                Assert.That(result.Diagnostics.MappedCount, Is.EqualTo(1));
+                Assert.That(result.Diagnostics.InvalidCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_MissingEstimate_ExcludedFromDataPoints()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "5";
+
+            // item2 has no estimate value at all
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(3);
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints, Has.Count.EqualTo(1));
+                Assert.That(result.Diagnostics.MappedCount, Is.EqualTo(1));
+                Assert.That(result.Diagnostics.InvalidCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_AllInvalid_ReturnsNoData()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = false;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "abc";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NoData));
+                Assert.That(result.DataPoints, Is.Empty);
+                Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(1));
+                Assert.That(result.Diagnostics.InvalidCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_NonNumericMode_MapsCategoriesToOrdinalPositions()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = true;
+            testTeam.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(3);
+            item1.AdditionalFieldValues[fieldId] = "M";
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(7);
+            item2.AdditionalFieldValues[fieldId] = "XL";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
+                Assert.That(result.UseNonNumericEstimation, Is.True);
+                Assert.That(result.CategoryValues, Is.EqualTo(new[] { "XS", "S", "M", "L", "XL" }));
+                Assert.That(result.DataPoints, Has.Count.EqualTo(2));
+
+                var mDataPoint = result.DataPoints.First(dp => dp.EstimationDisplayValue == "M");
+                Assert.That(mDataPoint.EstimationNumericValue, Is.EqualTo(2));
+
+                var xlDataPoint = result.DataPoints.First(dp => dp.EstimationDisplayValue == "XL");
+                Assert.That(xlDataPoint.EstimationNumericValue, Is.EqualTo(4));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_NonNumericMode_UnmappedValuesExcludedFromDataPoints()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.UseNonNumericEstimation = true;
+            testTeam.EstimationCategoryValues = ["S", "M", "L"];
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(3);
+            item1.AdditionalFieldValues[fieldId] = "M";
+
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(5);
+            item2.AdditionalFieldValues[fieldId] = "XXL";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints, Has.Count.EqualTo(1));
+                Assert.That(result.Diagnostics.MappedCount, Is.EqualTo(1));
+                Assert.That(result.Diagnostics.UnmappedCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_ReturnsEstimationUnit()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.EstimationUnit = "Points";
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            Assert.That(result.EstimationUnit, Is.EqualTo("Points"));
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_OnlyIncludesItemsFromTeam()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+
+            var startDate = DateTime.UtcNow.AddDays(-30).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            // Different team
+            var item2 = AddWorkItem(StateCategories.Done, 2, string.Empty);
+            item2.StartedDate = startDate;
+            item2.ClosedDate = startDate.AddDays(5);
+            item2.AdditionalFieldValues[fieldId] = "5";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints, Has.Count.EqualTo(1));
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item1.Id));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_OnlyIncludesItemsInDateRange()
+        {
+            const int fieldId = 42;
+            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+
+            var startDate = DateTime.UtcNow.AddDays(-10).Date;
+            var endDate = DateTime.UtcNow.Date;
+
+            var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item1.StartedDate = startDate;
+            item1.ClosedDate = startDate.AddDays(5);
+            item1.AdditionalFieldValues[fieldId] = "3";
+
+            // Closed before start date
+            var item2 = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            item2.StartedDate = startDate.AddDays(-20);
+            item2.ClosedDate = startDate.AddDays(-15);
+            item2.AdditionalFieldValues[fieldId] = "5";
+
+            var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints, Has.Count.EqualTo(1));
+                Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item1.Id));
+            }
+        }
+
+        #endregion
     }
 }

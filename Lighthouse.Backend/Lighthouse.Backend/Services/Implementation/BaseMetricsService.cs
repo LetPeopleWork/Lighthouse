@@ -395,6 +395,95 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
+        protected static EstimationVsCycleTimeResponse BuildEstimationVsCycleTimeResponse(
+            WorkTrackingSystemOptionsOwner owner,
+            IEnumerable<WorkItemBase> closedItems)
+        {
+            if (owner.EstimationAdditionalFieldDefinitionId == null)
+            {
+                return new EstimationVsCycleTimeResponse(
+                    EstimationVsCycleTimeStatus.NotConfigured,
+                    new EstimationVsCycleTimeDiagnostics(0, 0, 0, 0),
+                    owner.EstimationUnit,
+                    owner.UseNonNumericEstimation,
+                    owner.EstimationCategoryValues,
+                    []);
+            }
+
+            var fieldId = owner.EstimationAdditionalFieldDefinitionId.Value;
+            var items = closedItems.ToList();
+
+            if (items.Count == 0)
+            {
+                return new EstimationVsCycleTimeResponse(
+                    EstimationVsCycleTimeStatus.NoData,
+                    new EstimationVsCycleTimeDiagnostics(0, 0, 0, 0),
+                    owner.EstimationUnit,
+                    owner.UseNonNumericEstimation,
+                    owner.EstimationCategoryValues,
+                    []);
+            }
+
+            var estimates = items.Select(i =>
+            {
+                i.AdditionalFieldValues.TryGetValue(fieldId, out var value);
+                return value;
+            }).ToList();
+            var batchResult = EstimateNormalizer.NormalizeBatch(
+                estimates,
+                owner.UseNonNumericEstimation,
+                owner.EstimationCategoryValues);
+
+            var diagnostics = new EstimationVsCycleTimeDiagnostics(
+                batchResult.TotalCount,
+                batchResult.MappedCount,
+                batchResult.UnmappedCount,
+                batchResult.InvalidCount);
+
+            // Group mapped items by (estimationNumericValue, cycleTime) to create data points
+            var dataPoints = new List<EstimationVsCycleTimeDataPoint>();
+            var groupedItems = new Dictionary<(double EstimationValue, int CycleTime), (string DisplayValue, List<int> WorkItemIds)>();
+
+            for (var i = 0; i < items.Count; i++)
+            {
+                var normResult = batchResult.Results[i];
+                if (normResult.Status != EstimateNormalizationStatus.Mapped)
+                {
+                    continue;
+                }
+
+                var key = (normResult.NumericValue, items[i].CycleTime);
+                if (!groupedItems.TryGetValue(key, out var group))
+                {
+                    group = (normResult.DisplayValue, new List<int>());
+                    groupedItems[key] = group;
+                }
+
+                group.WorkItemIds.Add(items[i].Id);
+            }
+
+            foreach (var kvp in groupedItems)
+            {
+                dataPoints.Add(new EstimationVsCycleTimeDataPoint(
+                    kvp.Value.WorkItemIds.ToArray(),
+                    kvp.Key.EstimationValue,
+                    kvp.Value.DisplayValue,
+                    kvp.Key.CycleTime));
+            }
+
+            var status = dataPoints.Count > 0
+                ? EstimationVsCycleTimeStatus.Ready
+                : EstimationVsCycleTimeStatus.NoData;
+
+            return new EstimationVsCycleTimeResponse(
+                status,
+                diagnostics,
+                owner.EstimationUnit,
+                owner.UseNonNumericEstimation,
+                owner.EstimationCategoryValues,
+                dataPoints);
+        }
+
         private static Dictionary<int, List<WorkItemBase>> InitializeRunChartDictionary(int totalDays)
         {
             var runChartData = new Dictionary<int, List<WorkItemBase>>();

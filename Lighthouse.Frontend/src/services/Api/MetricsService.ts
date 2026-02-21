@@ -3,6 +3,7 @@ import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
 } from "../../models/Forecasts/ForecastPredictabilityScore";
+import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
@@ -69,6 +70,12 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ProcessBehaviourChartData>;
+
+	getEstimationVsCycleTimeData(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IEstimationVsCycleTimeResponse>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -285,6 +292,21 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			const response = await this.apiService.get<ProcessBehaviourChartData>(
 				`/${this.api}/${id}/metrics/cycleTime/pbc?${this.getDateFormatString(startDate, endDate)}`,
 			);
+
+			return response.data;
+		});
+	}
+
+	async getEstimationVsCycleTimeData(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IEstimationVsCycleTimeResponse> {
+		return this.withErrorHandling(async () => {
+			const response =
+				await this.apiService.get<IEstimationVsCycleTimeResponse>(
+					`/${this.api}/${id}/metrics/estimationVsCycleTime?${this.getDateFormatString(startDate, endDate)}`,
+				);
 
 			return response.data;
 		});

@@ -213,6 +213,14 @@ namespace Lighthouse.Backend.Services.Implementation
             ];
         }
 
+        public EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Estimation vs Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+            return BuildEstimationVsCycleTimeResponse(team, closedItems);
+        }
+
         public int GetTotalWorkItemAge(Team team)
         {
             logger.LogDebug("Getting Total Work Item Age for Team {TeamName}", team.Name);

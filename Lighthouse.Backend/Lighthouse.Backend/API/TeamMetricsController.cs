@@ -164,5 +164,16 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate));
         }
+
+        [HttpGet("estimationVsCycleTime")]
+        public ActionResult<EstimationVsCycleTimeResponse> GetEstimationVsCycleTimeData(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetEstimationVsCycleTimeData(team, startDate, endDate));
+        }
     }
 }

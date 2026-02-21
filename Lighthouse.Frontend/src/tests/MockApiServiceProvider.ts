@@ -144,6 +144,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getWipPbc: vi.fn(),
 		getTotalWorkItemAgePbc: vi.fn(),
 		getCycleTimePbc: vi.fn(),
+		getEstimationVsCycleTimeData: vi.fn(),
 	};
 };
 
@@ -166,6 +167,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getTotalWorkItemAgePbc: vi.fn(),
 		getCycleTimePbc: vi.fn(),
 		getFeatureSizePbc: vi.fn(),
+		getEstimationVsCycleTimeData: vi.fn(),
 	};
 };
 

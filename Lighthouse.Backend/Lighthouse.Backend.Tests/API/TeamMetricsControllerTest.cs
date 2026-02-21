@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedThroughput));
-            };
+            }
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
-            };
+            }
         }
 
         [Test]
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
-            };
+            }
         }
 
         [Test]
@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
-            };
+            }
         }
 
         [Test]
@@ -255,7 +255,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -271,7 +271,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedPercentiles));
-            };
+            }
         }
 
         [Test]
@@ -315,7 +315,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -331,7 +331,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
@@ -370,7 +370,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
-            };
+            }
         }
 
         [Test]
@@ -386,7 +386,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -402,7 +402,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
@@ -425,7 +425,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedData));
-            };
+            }
         }
 
         [Test]
@@ -440,7 +440,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -455,7 +455,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            };
+            }
         }
 
         [Test]
@@ -477,7 +477,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedScore));
-            };
+            }
         }
 
         [Test]
@@ -744,6 +744,68 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetEstimationVsCycleTimeData(1337, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetEstimationVsCycleTimeData(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetEstimationVsCycleTimeData_TeamExists_ReturnsDataFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedResponse = new EstimationVsCycleTimeResponse(
+                EstimationVsCycleTimeStatus.Ready,
+                new EstimationVsCycleTimeDiagnostics(2, 2, 0, 0),
+                "Points",
+                false,
+                [],
+                [new EstimationVsCycleTimeDataPoint([1, 2], 3.0, "3", 5)]);
+
+            teamMetricsServiceMock.Setup(service => service.GetEstimationVsCycleTimeData(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedResponse);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetEstimationVsCycleTimeData(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedResponse));
             }
         }
 

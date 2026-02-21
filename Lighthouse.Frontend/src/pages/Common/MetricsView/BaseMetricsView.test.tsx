@@ -582,6 +582,19 @@ describe("BaseMetricsView component", () => {
 				})),
 			),
 			getTotalWorkItemAge: vi.fn().mockResolvedValue(150),
+			getEstimationVsCycleTimeData: vi.fn().mockResolvedValue({
+				status: "NotConfigured",
+				diagnostics: {
+					totalCount: 0,
+					mappedCount: 0,
+					unmappedCount: 0,
+					invalidCount: 0,
+				},
+				estimationUnit: null,
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				dataPoints: [],
+			}),
 			getThroughputPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getWipPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getTotalWorkItemAgePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
@@ -1065,6 +1078,9 @@ describe("BaseMetricsView component", () => {
 			getWipPbc: vi.fn().mockRejectedValue(new Error("API error")),
 			getTotalWorkItemAgePbc: vi.fn().mockRejectedValue(new Error("API error")),
 			getCycleTimePbc: vi.fn().mockRejectedValue(new Error("API error")),
+			getEstimationVsCycleTimeData: vi
+				.fn()
+				.mockRejectedValue(new Error("API error")),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1520,6 +1536,9 @@ describe("BaseMetricsView component", () => {
 					.fn()
 					.mockRejectedValue(new Error("API error")),
 				getCycleTimePbc: vi.fn().mockRejectedValue(new Error("API error")),
+				getEstimationVsCycleTimeData: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi
