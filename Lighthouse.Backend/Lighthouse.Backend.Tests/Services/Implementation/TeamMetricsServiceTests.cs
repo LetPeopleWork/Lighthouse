@@ -1557,7 +1557,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NotConfigured));
                 Assert.That(result.DataPoints, Is.Empty);
-                Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(0));
+                Assert.That(result.Diagnostics.TotalCount, Is.Zero);
             }
         }
 
@@ -1572,7 +1572,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.NoData));
                 Assert.That(result.DataPoints, Is.Empty);
-                Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(0));
+                Assert.That(result.Diagnostics.TotalCount, Is.Zero);
             }
         }
 
@@ -1604,8 +1604,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.DataPoints, Has.Count.EqualTo(2));
                 Assert.That(result.Diagnostics.TotalCount, Is.EqualTo(2));
                 Assert.That(result.Diagnostics.MappedCount, Is.EqualTo(2));
-                Assert.That(result.Diagnostics.UnmappedCount, Is.EqualTo(0));
-                Assert.That(result.Diagnostics.InvalidCount, Is.EqualTo(0));
+                Assert.That(result.Diagnostics.UnmappedCount, Is.Zero);
+                Assert.That(result.Diagnostics.InvalidCount, Is.Zero);
             }
         }
 
@@ -1797,11 +1797,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
 
+            var expectedCategories = new[] { "XS", "S", "M", "L", "XL" };
+            
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));
                 Assert.That(result.UseNonNumericEstimation, Is.True);
-                Assert.That(result.CategoryValues, Is.EqualTo(new[] { "XS", "S", "M", "L", "XL" }));
+                Assert.That(result.CategoryValues, Is.EqualTo(expectedCategories));
                 Assert.That(result.DataPoints, Has.Count.EqualTo(2));
 
                 var mDataPoint = result.DataPoints.First(dp => dp.EstimationDisplayValue == "M");
