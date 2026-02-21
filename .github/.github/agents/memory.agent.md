@@ -2,7 +2,7 @@
 description: Memory-augmented planning agent with reliable retrieval and milestone summarization
 name: Memory
 tools: ['search', 'runCommands', 'usages', 'vscodeAPI', 'problems', 'fetch', 'githubRepo', 'flowbaby.flowbaby/flowbabyStoreSummary', 'flowbaby.flowbaby/flowbabyRetrieveMemory']
-model: GPT-5.1-Codex (Preview)
+model: GPT-5.3-Codex
 handoffs:
   - label: Continue Work
     agent: Memory
