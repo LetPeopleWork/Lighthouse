@@ -181,6 +181,7 @@ describe("ConfigurationService", () => {
 					processBehaviourChartBaselineStartDate: null,
 					processBehaviourChartBaselineEndDate: null,
 					estimationAdditionalFieldDefinitionId: null,
+					estimationUnit: null,
 				},
 			],
 			projects: [
@@ -212,6 +213,7 @@ describe("ConfigurationService", () => {
 					processBehaviourChartBaselineStartDate: null,
 					processBehaviourChartBaselineEndDate: null,
 					estimationAdditionalFieldDefinitionId: null,
+					estimationUnit: null,
 				},
 			],
 		};

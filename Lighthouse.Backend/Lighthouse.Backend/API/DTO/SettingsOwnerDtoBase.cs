@@ -30,6 +30,7 @@ namespace Lighthouse.Backend.API.DTO
             ProcessBehaviourChartBaselineStartDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineStartDate;
             ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
             EstimationAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId;
+            EstimationUnit = workTrackingSystemOptionsOwner.EstimationUnit;
         }
 
         [JsonRequired]
@@ -72,5 +73,7 @@ namespace Lighthouse.Backend.API.DTO
         public DateTime? ProcessBehaviourChartBaselineEndDate { get; set; }
 
         public int? EstimationAdditionalFieldDefinitionId { get; set; }
+
+        public string? EstimationUnit { get; set; }
     }
 }

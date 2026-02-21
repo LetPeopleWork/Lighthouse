@@ -48,6 +48,8 @@ namespace Lighthouse.Backend.Models
 
         public int? EstimationAdditionalFieldDefinitionId { get; set; }
 
+        public string? EstimationUnit { get; set; }
+
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
 
         public StateCategories MapStateToStateCategory(string state)

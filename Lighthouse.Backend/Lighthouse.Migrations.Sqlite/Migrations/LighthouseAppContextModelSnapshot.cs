@@ -368,6 +368,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int?>("EstimationAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("EstimationUnit")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("FeatureOwnerAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER");
 
@@ -470,6 +473,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<int?>("EstimationAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("EstimationUnit")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("INTEGER");

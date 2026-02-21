@@ -80,4 +80,56 @@ describe("EstimationFieldComponent", () => {
 		fireEvent.click(screen.getByLabelText("toggle"));
 		expect(screen.getByText("Story Points")).toBeInTheDocument();
 	});
+
+	it("renders the estimation unit text field", () => {
+		const mockOnUnitChange = vi.fn();
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={null}
+				onEstimationFieldChange={mockOnChange}
+				estimationUnit={null}
+				onEstimationUnitChange={mockOnUnitChange}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		expect(screen.getByLabelText("Estimation Unit")).toBeInTheDocument();
+	});
+
+	it("calls onEstimationUnitChange when unit text is entered", () => {
+		const mockOnUnitChange = vi.fn();
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={null}
+				onEstimationFieldChange={mockOnChange}
+				estimationUnit=""
+				onEstimationUnitChange={mockOnUnitChange}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		fireEvent.change(screen.getByLabelText("Estimation Unit"), {
+			target: { value: "Points" },
+		});
+
+		expect(mockOnUnitChange).toHaveBeenCalledWith("Points");
+	});
+
+	it("displays the current estimation unit value", () => {
+		const mockOnUnitChange = vi.fn();
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={1}
+				onEstimationFieldChange={mockOnChange}
+				estimationUnit="Days"
+				onEstimationUnitChange={mockOnUnitChange}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		expect(screen.getByLabelText("Estimation Unit")).toHaveValue("Days");
+	});
 });

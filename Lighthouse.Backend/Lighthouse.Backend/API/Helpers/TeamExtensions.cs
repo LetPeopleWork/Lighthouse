@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.API.Helpers
                 team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
                 team.DoneItemsCutoffDays = teamSetting.DoneItemsCutoffDays;
                 team.EstimationAdditionalFieldDefinitionId = teamSetting.EstimationAdditionalFieldDefinitionId;
+                team.EstimationUnit = teamSetting.EstimationUnit;
                 team.Tags = teamSetting.Tags;
                 team.SystemWIPLimit = teamSetting.SystemWIPLimit;
                 team.ProcessBehaviourChartBaselineStartDate = teamSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;

@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.API.Helpers
             project.Tags = portfolioSetting.Tags;
             project.FeatureOwnerAdditionalFieldDefinitionId = portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId;
             project.EstimationAdditionalFieldDefinitionId = portfolioSetting.EstimationAdditionalFieldDefinitionId;
+            project.EstimationUnit = portfolioSetting.EstimationUnit;
             project.ParentOverrideAdditionalFieldDefinitionId = portfolioSetting.ParentOverrideAdditionalFieldDefinitionId;
             project.SystemWIPLimit = portfolioSetting.SystemWIPLimit;
             project.ProcessBehaviourChartBaselineStartDate = portfolioSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;

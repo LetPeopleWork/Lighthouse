@@ -53,5 +53,51 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(portfolio.EstimationAdditionalFieldDefinitionId, Is.Null);
         }
+
+        [Test]
+        public void SyncTeamWithTeamSettings_SyncsEstimationUnit()
+        {
+            var team = new Team();
+            var dto = new TeamSettingDto { EstimationUnit = "Points", WorkTrackingSystemConnectionId = 1 };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            Assert.That(team.EstimationUnit, Is.EqualTo("Points"));
+        }
+
+        [Test]
+        public void SyncTeamWithTeamSettings_ClearsEstimationUnitWhenNull()
+        {
+            var team = new Team { EstimationUnit = "Points" };
+            var dto = new TeamSettingDto { EstimationUnit = null, WorkTrackingSystemConnectionId = 1 };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            Assert.That(team.EstimationUnit, Is.Null);
+        }
+
+        [Test]
+        public void SyncWithPortfolioSettings_SyncsEstimationUnit()
+        {
+            var portfolio = new Portfolio();
+            var teamRepoMock = new Mock<IRepository<Team>>();
+            var dto = new PortfolioSettingDto { EstimationUnit = "T-Shirt", WorkTrackingSystemConnectionId = 1 };
+
+            portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
+
+            Assert.That(portfolio.EstimationUnit, Is.EqualTo("T-Shirt"));
+        }
+
+        [Test]
+        public void SyncWithPortfolioSettings_ClearsEstimationUnitWhenNull()
+        {
+            var portfolio = new Portfolio { EstimationUnit = "T-Shirt" };
+            var teamRepoMock = new Mock<IRepository<Team>>();
+            var dto = new PortfolioSettingDto { EstimationUnit = null, WorkTrackingSystemConnectionId = 1 };
+
+            portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
+
+            Assert.That(portfolio.EstimationUnit, Is.Null);
+        }
     }
 }

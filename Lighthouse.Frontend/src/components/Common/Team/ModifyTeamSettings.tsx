@@ -395,6 +395,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 									value,
 								)
 							}
+							estimationUnit={teamSettings?.estimationUnit ?? null}
+							onEstimationUnitChange={(value) =>
+								handleTeamSettingsChange("estimationUnit", value || null)
+							}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}

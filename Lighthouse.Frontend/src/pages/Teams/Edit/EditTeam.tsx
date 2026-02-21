@@ -94,6 +94,7 @@ const EditTeamPage: React.FC = () => {
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
 			estimationAdditionalFieldDefinitionId: null,
+			estimationUnit: null,
 		};
 
 		return defaultTeamSettings;

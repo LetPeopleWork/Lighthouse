@@ -263,6 +263,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			"featureOwnerAdditionalFieldDefinitionId",
 			"parentOverrideAdditionalFieldDefinitionId",
 			"estimationAdditionalFieldDefinitionId",
+			"estimationUnit",
 			"owningTeam",
 		];
 
@@ -468,6 +469,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 									"estimationAdditionalFieldDefinitionId",
 									value,
 								)
+							}
+							estimationUnit={projectSettings?.estimationUnit ?? null}
+							onEstimationUnitChange={(value) =>
+								handleProjectSettingsChange("estimationUnit", value || null)
 							}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
