@@ -19,4 +19,6 @@ export interface IBaseSettings {
 	processBehaviourChartBaselineEndDate: Date | null;
 	estimationAdditionalFieldDefinitionId: number | null;
 	estimationUnit: string | null;
+	useNonNumericEstimation: boolean;
+	estimationCategoryValues: string[];
 }

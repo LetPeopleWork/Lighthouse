@@ -132,4 +132,80 @@ describe("EstimationFieldComponent", () => {
 		fireEvent.click(screen.getByLabelText("toggle"));
 		expect(screen.getByLabelText("Estimation Unit")).toHaveValue("Days");
 	});
+
+	it("renders the non-numeric estimation toggle", () => {
+		const mockOnToggle = vi.fn();
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={1}
+				onEstimationFieldChange={mockOnChange}
+				useNonNumericEstimation={false}
+				onUseNonNumericEstimationChange={mockOnToggle}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		expect(
+			screen.getByLabelText("Use Non-Numeric Estimation"),
+		).toBeInTheDocument();
+	});
+
+	it("calls onUseNonNumericEstimationChange when toggle is clicked", () => {
+		const mockOnToggle = vi.fn();
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={1}
+				onEstimationFieldChange={mockOnChange}
+				useNonNumericEstimation={false}
+				onUseNonNumericEstimationChange={mockOnToggle}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		fireEvent.click(screen.getByLabelText("Use Non-Numeric Estimation"));
+
+		expect(mockOnToggle).toHaveBeenCalledWith(true);
+	});
+
+	it("shows category values list when non-numeric estimation is enabled", () => {
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={1}
+				onEstimationFieldChange={mockOnChange}
+				useNonNumericEstimation={true}
+				onUseNonNumericEstimationChange={vi.fn()}
+				estimationCategoryValues={["XS", "S", "M", "L", "XL"]}
+				onAddCategoryValue={vi.fn()}
+				onRemoveCategoryValue={vi.fn()}
+				onReorderCategoryValues={vi.fn()}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		expect(screen.getByText("Estimation Categories")).toBeInTheDocument();
+		expect(screen.getByText("XS")).toBeInTheDocument();
+		expect(screen.getByText("XL")).toBeInTheDocument();
+	});
+
+	it("does not show category values list when non-numeric estimation is disabled", () => {
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={1}
+				onEstimationFieldChange={mockOnChange}
+				useNonNumericEstimation={false}
+				onUseNonNumericEstimationChange={vi.fn()}
+				estimationCategoryValues={[]}
+				onAddCategoryValue={vi.fn()}
+				onRemoveCategoryValue={vi.fn()}
+				onReorderCategoryValues={vi.fn()}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+		expect(screen.queryByText("Estimation Categories")).not.toBeInTheDocument();
+	});
 });

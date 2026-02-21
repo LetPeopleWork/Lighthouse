@@ -84,5 +84,65 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(dto.EstimationUnit, Is.Null);
         }
+
+        [Test]
+        public void TeamSettingDto_FromTeam_MapsUseNonNumericEstimation()
+        {
+            var team = new Team { UseNonNumericEstimation = true };
+
+            var dto = new TeamSettingDto(team);
+
+            Assert.That(dto.UseNonNumericEstimation, Is.True);
+        }
+
+        [Test]
+        public void TeamSettingDto_FromTeam_DefaultUseNonNumericEstimationIsFalse()
+        {
+            var team = new Team();
+
+            var dto = new TeamSettingDto(team);
+
+            Assert.That(dto.UseNonNumericEstimation, Is.False);
+        }
+
+        [Test]
+        public void TeamSettingDto_FromTeam_MapsEstimationCategoryValues()
+        {
+            var team = new Team { EstimationCategoryValues = ["XS", "S", "M", "L", "XL"] };
+
+            var dto = new TeamSettingDto(team);
+
+            Assert.That(dto.EstimationCategoryValues, Is.EqualTo(new List<string> { "XS", "S", "M", "L", "XL" }));
+        }
+
+        [Test]
+        public void TeamSettingDto_FromTeam_EmptyEstimationCategoryValues()
+        {
+            var team = new Team();
+
+            var dto = new TeamSettingDto(team);
+
+            Assert.That(dto.EstimationCategoryValues, Is.Empty);
+        }
+
+        [Test]
+        public void PortfolioSettingDto_FromPortfolio_MapsUseNonNumericEstimation()
+        {
+            var portfolio = new Portfolio { UseNonNumericEstimation = true };
+
+            var dto = new PortfolioSettingDto(portfolio);
+
+            Assert.That(dto.UseNonNumericEstimation, Is.True);
+        }
+
+        [Test]
+        public void PortfolioSettingDto_FromPortfolio_MapsEstimationCategoryValues()
+        {
+            var portfolio = new Portfolio { EstimationCategoryValues = ["S", "M", "L"] };
+
+            var dto = new PortfolioSettingDto(portfolio);
+
+            Assert.That(dto.EstimationCategoryValues, Is.EqualTo(new List<string> { "S", "M", "L" }));
+        }
     }
 }

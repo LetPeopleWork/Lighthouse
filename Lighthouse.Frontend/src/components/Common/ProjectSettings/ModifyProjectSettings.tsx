@@ -474,6 +474,32 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onEstimationUnitChange={(value) =>
 								handleProjectSettingsChange("estimationUnit", value || null)
 							}
+							useNonNumericEstimation={
+								projectSettings?.useNonNumericEstimation ?? false
+							}
+							onUseNonNumericEstimationChange={(value) =>
+								handleProjectSettingsChange("useNonNumericEstimation", value)
+							}
+							estimationCategoryValues={
+								projectSettings?.estimationCategoryValues ?? []
+							}
+							onAddCategoryValue={(value) => {
+								const current = projectSettings?.estimationCategoryValues ?? [];
+								handleProjectSettingsChange("estimationCategoryValues", [
+									...current,
+									value.trim(),
+								]);
+							}}
+							onRemoveCategoryValue={(value) => {
+								const current = projectSettings?.estimationCategoryValues ?? [];
+								handleProjectSettingsChange(
+									"estimationCategoryValues",
+									current.filter((v) => v !== value),
+								);
+							}}
+							onReorderCategoryValues={(values) =>
+								handleProjectSettingsChange("estimationCategoryValues", values)
+							}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}

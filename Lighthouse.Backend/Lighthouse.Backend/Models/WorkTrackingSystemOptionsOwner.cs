@@ -50,6 +50,10 @@ namespace Lighthouse.Backend.Models
 
         public string? EstimationUnit { get; set; }
 
+        public bool UseNonNumericEstimation { get; set; }
+
+        public List<string> EstimationCategoryValues { get; set; } = [];
+
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
 
         public StateCategories MapStateToStateCategory(string state)

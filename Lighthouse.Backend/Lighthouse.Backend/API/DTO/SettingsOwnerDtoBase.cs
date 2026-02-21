@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.API.DTO
             ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
             EstimationAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId;
             EstimationUnit = workTrackingSystemOptionsOwner.EstimationUnit;
+            UseNonNumericEstimation = workTrackingSystemOptionsOwner.UseNonNumericEstimation;
+            EstimationCategoryValues = workTrackingSystemOptionsOwner.EstimationCategoryValues;
         }
 
         [JsonRequired]
@@ -75,5 +77,9 @@ namespace Lighthouse.Backend.API.DTO
         public int? EstimationAdditionalFieldDefinitionId { get; set; }
 
         public string? EstimationUnit { get; set; }
+
+        public bool UseNonNumericEstimation { get; set; }
+
+        public List<string> EstimationCategoryValues { get; set; } = [];
     }
 }

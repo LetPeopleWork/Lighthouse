@@ -390,6 +390,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("EstimationAdditionalFieldDefinitionId")
                         .HasColumnType("integer");
 
+                    b.PrimitiveCollection<List<string>>("EstimationCategoryValues")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<string>("EstimationUnit")
                         .HasColumnType("text");
 
@@ -441,6 +445,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<DateTime>("UpdateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("UseNonNumericEstimation")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("UsePercentileToCalculateDefaultAmountOfWorkItems")
                         .HasColumnType("boolean");
@@ -498,6 +505,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("EstimationAdditionalFieldDefinitionId")
                         .HasColumnType("integer");
 
+                    b.PrimitiveCollection<List<string>>("EstimationCategoryValues")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<string>("EstimationUnit")
                         .HasColumnType("text");
 
@@ -547,6 +558,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("UseFixedDatesForThroughput")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("UseNonNumericEstimation")
                         .HasColumnType("boolean");
 
                     b.PrimitiveCollection<List<string>>("WorkItemTypes")

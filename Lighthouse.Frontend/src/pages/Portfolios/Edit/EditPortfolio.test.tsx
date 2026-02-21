@@ -158,6 +158,8 @@ describe("EditPortfolio", () => {
 			processBehaviourChartBaselineEndDate: null,
 			estimationAdditionalFieldDefinitionId: null,
 			estimationUnit: null,
+			useNonNumericEstimation: false,
+			estimationCategoryValues: [],
 		});
 		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems.mockResolvedValue(
 			[],
@@ -195,6 +197,8 @@ describe("EditPortfolio", () => {
 			processBehaviourChartBaselineEndDate: null,
 			estimationAdditionalFieldDefinitionId: null,
 			estimationUnit: null,
+			useNonNumericEstimation: false,
+			estimationCategoryValues: [],
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
@@ -241,6 +245,8 @@ describe("EditPortfolio", () => {
 			processBehaviourChartBaselineEndDate: null,
 			estimationAdditionalFieldDefinitionId: null,
 			estimationUnit: null,
+			useNonNumericEstimation: false,
+			estimationCategoryValues: [],
 		};
 
 		mockPortfolioService.getPortfolioSettings.mockResolvedValue(

@@ -99,5 +99,51 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(portfolio.EstimationUnit, Is.Null);
         }
+
+        [Test]
+        public void SyncTeamWithTeamSettings_SyncsUseNonNumericEstimation()
+        {
+            var team = new Team();
+            var dto = new TeamSettingDto { UseNonNumericEstimation = true, WorkTrackingSystemConnectionId = 1 };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            Assert.That(team.UseNonNumericEstimation, Is.True);
+        }
+
+        [Test]
+        public void SyncTeamWithTeamSettings_SyncsEstimationCategoryValues()
+        {
+            var team = new Team();
+            var dto = new TeamSettingDto { EstimationCategoryValues = ["XS", "S", "M"], WorkTrackingSystemConnectionId = 1 };
+
+            team.SyncTeamWithTeamSettings(dto);
+
+            Assert.That(team.EstimationCategoryValues, Is.EqualTo(new List<string> { "XS", "S", "M" }));
+        }
+
+        [Test]
+        public void SyncWithPortfolioSettings_SyncsUseNonNumericEstimation()
+        {
+            var portfolio = new Portfolio();
+            var teamRepoMock = new Mock<IRepository<Team>>();
+            var dto = new PortfolioSettingDto { UseNonNumericEstimation = true, WorkTrackingSystemConnectionId = 1 };
+
+            portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
+
+            Assert.That(portfolio.UseNonNumericEstimation, Is.True);
+        }
+
+        [Test]
+        public void SyncWithPortfolioSettings_SyncsEstimationCategoryValues()
+        {
+            var portfolio = new Portfolio();
+            var teamRepoMock = new Mock<IRepository<Team>>();
+            var dto = new PortfolioSettingDto { EstimationCategoryValues = ["S", "M", "L"], WorkTrackingSystemConnectionId = 1 };
+
+            portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
+
+            Assert.That(portfolio.EstimationCategoryValues, Is.EqualTo(new List<string> { "S", "M", "L" }));
+        }
     }
 }

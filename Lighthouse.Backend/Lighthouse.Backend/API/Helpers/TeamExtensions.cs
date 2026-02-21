@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.API.Helpers
                 team.DoneItemsCutoffDays = teamSetting.DoneItemsCutoffDays;
                 team.EstimationAdditionalFieldDefinitionId = teamSetting.EstimationAdditionalFieldDefinitionId;
                 team.EstimationUnit = teamSetting.EstimationUnit;
+                team.UseNonNumericEstimation = teamSetting.UseNonNumericEstimation;
+                team.EstimationCategoryValues = teamSetting.EstimationCategoryValues;
                 team.Tags = teamSetting.Tags;
                 team.SystemWIPLimit = teamSetting.SystemWIPLimit;
                 team.ProcessBehaviourChartBaselineStartDate = teamSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;

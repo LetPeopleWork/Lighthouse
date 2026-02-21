@@ -399,6 +399,32 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onEstimationUnitChange={(value) =>
 								handleTeamSettingsChange("estimationUnit", value || null)
 							}
+							useNonNumericEstimation={
+								teamSettings?.useNonNumericEstimation ?? false
+							}
+							onUseNonNumericEstimationChange={(value) =>
+								handleTeamSettingsChange("useNonNumericEstimation", value)
+							}
+							estimationCategoryValues={
+								teamSettings?.estimationCategoryValues ?? []
+							}
+							onAddCategoryValue={(value) => {
+								const current = teamSettings?.estimationCategoryValues ?? [];
+								handleTeamSettingsChange("estimationCategoryValues", [
+									...current,
+									value.trim(),
+								]);
+							}}
+							onRemoveCategoryValue={(value) => {
+								const current = teamSettings?.estimationCategoryValues ?? [];
+								handleTeamSettingsChange(
+									"estimationCategoryValues",
+									current.filter((v) => v !== value),
+								);
+							}}
+							onReorderCategoryValues={(values) =>
+								handleTeamSettingsChange("estimationCategoryValues", values)
+							}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
