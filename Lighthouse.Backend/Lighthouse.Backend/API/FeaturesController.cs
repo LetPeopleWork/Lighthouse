@@ -11,10 +11,12 @@ namespace Lighthouse.Backend.API
     public class FeaturesController : ControllerBase
     {
         private readonly IRepository<Feature> featureRepository;
+        private readonly IWorkItemRepository workItemRepository;
 
-        public FeaturesController(IRepository<Feature> featureRepository)
+        public FeaturesController(IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository)
         {
             this.featureRepository = featureRepository;
+            this.workItemRepository = workItemRepository;
         }
 
         [HttpGet("ids")]
@@ -41,6 +43,19 @@ namespace Lighthouse.Backend.API
             var featureDetails = GetFeaturesByPredicate(f => featureReferences.Contains(f.ReferenceId));
 
             return Ok(featureDetails);
+        }
+
+        [HttpGet("{featureId:int}/workitems")]
+        public ActionResult<List<WorkItemDto>> GetFeatureWorkItems(int featureId)
+        {
+            return this.GetEntityByIdAnExecuteAction(featureRepository, featureId, feature =>
+            {
+                var items = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId)
+                    .Select(w => new WorkItemDto(w))
+                    .ToList();
+
+                return items;
+            });
         }
 
         private List<FeatureDto> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)

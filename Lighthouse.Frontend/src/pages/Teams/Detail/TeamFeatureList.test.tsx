@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { Team } from "../../../models/Team/Team";
+import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../../../services/Api/FeatureService";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
@@ -37,6 +38,9 @@ mockGetFeaturesInProgress.mockResolvedValue([]);
 
 const mockGetFeaturesByIds = vi.fn();
 mockFeatureService.getFeaturesByIds = mockGetFeaturesByIds;
+
+const mockGetFeatureWorkItems = vi.fn();
+mockFeatureService.getFeatureWorkItems = mockGetFeatureWorkItems;
 
 const MockApiServiceProvider = ({
 	children,
@@ -157,8 +161,27 @@ describe("TeamFeatureList component", () => {
 		})(),
 	];
 
+	const mockFeatureWorkItems: IWorkItem[] = [
+		{
+			id: 101,
+			referenceId: "STORY-101",
+			name: "Story 101",
+			type: "Story",
+			state: "Doing",
+			stateCategory: "Doing",
+			url: "https://example.com/story/101",
+			startedDate: new Date("2023-07-01"),
+			closedDate: new Date("2023-07-03"),
+			cycleTime: 3,
+			workItemAge: 5,
+			parentWorkItemReference: "FTR-1",
+			isBlocked: false,
+		},
+	];
+
 	beforeEach(() => {
 		mockGetFeaturesByIds.mockResolvedValue(mockFeatures);
+		mockGetFeatureWorkItems.mockResolvedValue(mockFeatureWorkItems);
 		// Mock matchMedia for MUI DataGrid
 		Object.defineProperty(globalThis, "matchMedia", {
 			writable: true,
@@ -266,5 +289,41 @@ describe("TeamFeatureList component", () => {
 		expect(
 			screen.getByTestId("hide-completed-features-toggle"),
 		).toBeInTheDocument();
+	});
+
+	it("should not render show details action", async () => {
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<TeamFeatureList team={team} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		await screen.findByText(/FTR-1/);
+
+		expect(
+			screen.queryByRole("button", { name: "(Show Details)" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("should open work items dialog when Total is clicked", async () => {
+		const { default: userEvent } = await import("@testing-library/user-event");
+		const user = userEvent.setup();
+
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<TeamFeatureList team={team} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		await screen.findByText(/FTR-1/);
+
+		await user.click(screen.getByRole("button", { name: "Total" }));
+
+		expect(mockGetFeatureWorkItems).toHaveBeenCalledWith(1);
+		expect(await screen.findByText("Story 101")).toBeInTheDocument();
 	});
 });

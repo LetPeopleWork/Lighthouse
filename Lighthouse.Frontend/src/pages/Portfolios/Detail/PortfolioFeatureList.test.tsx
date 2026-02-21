@@ -6,6 +6,7 @@ import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
+import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../../../services/Api/FeatureService";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
@@ -118,10 +119,29 @@ const MockApiServiceProvider = ({
 }: {
 	children: React.ReactNode;
 }) => {
+	const mockFeatureWorkItems: IWorkItem[] = [
+		{
+			id: 201,
+			referenceId: "STORY-201",
+			name: "Story 201",
+			type: "Story",
+			state: "Doing",
+			stateCategory: "Doing",
+			url: "https://example.com/story/201",
+			startedDate: new Date("2023-07-01"),
+			closedDate: new Date("2023-07-03"),
+			cycleTime: 3,
+			workItemAge: 5,
+			parentWorkItemReference: "FTR-1",
+			isBlocked: false,
+		},
+	];
+
 	const mockFeatureService: Partial<IFeatureService> = {
 		getFeaturesByIds: vi
 			.fn()
 			.mockResolvedValue([mockFeature1, mockFeature2, mockFeature3]),
+		getFeatureWorkItems: vi.fn().mockResolvedValue(mockFeatureWorkItems),
 	};
 
 	const mockContext = createMockApiServiceContext({
@@ -364,5 +384,23 @@ describe("PortfolioFeatureList component", () => {
 		expect(
 			screen.getByTestId("hide-completed-features-toggle"),
 		).toBeInTheDocument();
+	});
+
+	it("should open work items dialog when Overall Progress is clicked", async () => {
+		const { default: userEvent } = await import("@testing-library/user-event");
+		const user = userEvent.setup();
+
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<PortfolioFeatureList portfolio={portfolio} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		await screen.findByText(/FTR-1/);
+		await user.click(screen.getByRole("button", { name: "Overall Progress" }));
+
+		expect(await screen.findByText("Story 201")).toBeInTheDocument();
 	});
 });

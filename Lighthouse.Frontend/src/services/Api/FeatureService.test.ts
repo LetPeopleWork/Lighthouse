@@ -267,4 +267,35 @@ describe("FeatureService", () => {
 			expect(mockedAxios.get).toHaveBeenCalledWith(expectedUrl);
 		});
 	});
+
+	describe("getFeatureWorkItems", () => {
+		it("should get child work items for a feature", async () => {
+			const date = new Date();
+			const mockResponse = [
+				{
+					id: 11,
+					referenceId: "STORY-11",
+					name: "Story 11",
+					type: "Story",
+					state: "Doing",
+					stateCategory: "Doing",
+					url: "https://example.com/story/11",
+					startedDate: date,
+					closedDate: date,
+					cycleTime: 2,
+					workItemAge: 4,
+					parentWorkItemReference: "FTR-1",
+					isBlocked: false,
+				},
+			];
+
+			mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+			const workItems = await featureService.getFeatureWorkItems(1);
+
+			expect(workItems).toHaveLength(1);
+			expect(workItems[0].referenceId).toBe("STORY-11");
+			expect(mockedAxios.get).toHaveBeenCalledWith("/features/1/workitems");
+		});
+	});
 });

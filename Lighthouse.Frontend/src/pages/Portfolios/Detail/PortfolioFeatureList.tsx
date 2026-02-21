@@ -1,7 +1,8 @@
-import { Box } from "@mui/material";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import { Box, Button } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
@@ -12,10 +13,12 @@ import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
+import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
@@ -33,11 +36,31 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 		Record<string, string[]>
 	>({});
 	const [features, setFeatures] = useState<IFeature[]>([]);
+	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
+	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
+	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 
 	const parentMap = useParentWorkItems(features);
+
+	const handleShowFeatureDetails = useCallback(
+		async (feature: IFeature) => {
+			setSelectedFeature(feature);
+			setFeatureWorkItems([]);
+			setIsWorkItemsDialogOpen(true);
+
+			const items = await featureService.getFeatureWorkItems(feature.id);
+			setFeatureWorkItems(items);
+		},
+		[featureService],
+	);
+
+	const handleCloseWorkItemsDialog = () => {
+		setIsWorkItemsDialogOpen(false);
+		setSelectedFeature(null);
+	};
 
 	// Load features
 	useEffect(() => {
@@ -103,7 +126,33 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				renderCell: ({ row }) => (
 					<Box sx={{ width: "100%" }}>
 						<ProgressIndicator
-							title="Overall Progress"
+							title={
+								row.isUsingDefaultFeatureSize ? (
+									"Overall Progress"
+								) : (
+									<Button
+										variant="text"
+										size="small"
+										sx={{
+											p: 0,
+											minWidth: 0,
+											textTransform: "none",
+											textDecoration: "none",
+											"&:hover": { textDecoration: "underline" },
+										}}
+										onClick={async (event) => {
+											event.stopPropagation();
+											await handleShowFeatureDetails(row);
+										}}
+									>
+										Overall Progress
+										<FormatListBulletedIcon
+											fontSize="inherit"
+											sx={{ ml: 0.5 }}
+										/>
+									</Button>
+								)
+							}
 							progressableItem={{
 								remainingWork: row.getRemainingWorkForFeature(),
 								totalWork: row.getTotalWorkForFeature(),
@@ -133,17 +182,33 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 			createForecastsColumn(),
 			createStateColumn(),
 		],
-		[featureTerm, portfolio.involvedTeams, featuresInProgress, parentMap],
+		[
+			featureTerm,
+			portfolio.involvedTeams,
+			featuresInProgress,
+			parentMap,
+			handleShowFeatureDetails,
+		],
 	);
 
 	return (
-		<FeatureListDataGrid
-			features={features}
-			columns={columns}
-			storageKey={`portfolio-features-${portfolio.id}`}
-			hideCompletedStorageKey={`lighthouse_hide_completed_features_portfolio_${portfolio.id}`}
-			loading={features.length === 0}
-		/>
+		<>
+			<FeatureListDataGrid
+				features={features}
+				columns={columns}
+				storageKey={`portfolio-features-${portfolio.id}`}
+				hideCompletedStorageKey={`lighthouse_hide_completed_features_portfolio_${portfolio.id}`}
+				loading={features.length === 0}
+			/>
+			{selectedFeature && (
+				<WorkItemsDialog
+					title={`${getWorkItemName(selectedFeature)} Stories`}
+					items={featureWorkItems}
+					open={isWorkItemsDialogOpen}
+					onClose={handleCloseWorkItemsDialog}
+				/>
+			)}
+		</>
 	);
 };
 
