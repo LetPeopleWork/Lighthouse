@@ -27,7 +27,7 @@ For the Cycle Time PBC, we've adjusted the tooltip so that instead of the Cycle 
 
 Furthermore, there is a new PBC for Portfolios for the Feature Size:
 
-TODO IMAGE (featureSizeProcessBehaviourChart.png)
+![Feature Size Process Behaviour Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/featureSizeProcessBehaviourChart.png)
 
 Use this to see which Features were within the normal variability, and which ones are an indication of a special cause.
 
