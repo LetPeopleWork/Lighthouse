@@ -198,6 +198,11 @@ The baseline is used as the reference period to calculate the average and natura
 
 See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts) for examples and screenshots.
 
+# Estimation
+Chose an additional field that represents the estimation (if you have any). Additionally you can define the *unit*, for example Story Points, Ideal Days, T-Shirt Size, or whatever you use. If an estimation is configured, an additional chart will be rendered, that compares the Estimates with the Cycle Time.
+
+The assumption is that your estimate is numerical. However, if you have categorical values (like *T-Shirt Sizes*), you can specify the categories and drag them in order from lowest to highest.
+
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a portfolio without bothering.
 

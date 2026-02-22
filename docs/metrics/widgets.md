@@ -165,7 +165,7 @@ On the top right, you will see the *Predictability Score*. If you click on it, a
 Process Behaviour Charts (PBCs) help you understand whether changes in your system are likely just normal variability, or whether you are seeing a *special cause* (something worth investigating).
 
 {: .important}
-These charts only appear if you configured a **Process Behaviour Chart Baseline** in your Team/Portfolio settings. If no baseline is set, Lighthouse will not show PBC widgets.
+These charts need a *baseline* to work. You can configure the bsaeline in your Team/Portfolio settings. If no baseline is set, Lighthouse will use the selected time frame as a baseline. Please note that we recommend setting a baseline in order to make proper use of the PBC functionality.
 
 Configure it here:
 - Team: [Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)
@@ -193,6 +193,13 @@ You can click a chip (e.g. *Large Change*) to highlight points that match that s
 ## Work In Progress Process Behaviour Chart
 
 ![Work In Progress Process Behaviour Chart](../assets/features/metrics/workInProgressProcessBehaviorChart.png)
+
+## Feature Size Process Behaviour Chart
+
+![Feature Size Process Behaviour Chart](../assets/features/metrics/featureSizeProcessBehaviourChart.png)
+
+{: .note}
+The Feature Size PBC only exists for Portfolios.
 
 ## Learn More
 
@@ -261,6 +268,36 @@ This visual allows you to see patterns or outliers. Hovering over a dot will giv
 You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
 
 The chart also distinguishes items by type, using different colors for each item type. The legend allows you to show or hide specific item types.
+
+# Estimation vs. Cycle Time
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Cycle Time |
+| **Affected by Filtering** | Yes |
+
+This scatter plot helps you understand how work item estimates correlate with actual cycle time. By visualizing this relationship, you can spot whether your estimations are in any way trustworthy compared with actual time it took to deliver.
+
+![Estimation vs. Cycle Time](../assets/features/metrics/estimationVsCycleTime.png)
+
+## Configuration
+
+To use this chart, you first need to configure an estimation field in your Team or Portfolio settings. You can configure:
+- **Numeric estimates**: Story points, t-shirt sizes with numeric values, or any custom numeric field
+- **Categorical estimates**: T-shirt sizes (XS/S/M/L/XL) or other categorical fields with explicit ordering
+
+## Chart Layout
+
+The scatter plot displays:
+- **X-axis**: Estimation values (story points, t-shirt sizes, or custom estimates)
+- **Y-axis**: Cycle time (how long items took to complete)
+- Each dot or bubble represents one or more completed work items from the selected time range
+- Larger bubbles indicate multiple items with the same estimation and cycle time
+
+Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), you can click on any data point to drill into the underlying work items and see their details.
+
+{: .note}
+This chart only appears after you've configured an estimation field. If no estimation field is configured, the chart will not be visible.
 
 # Simplified Cumulative Flow Diagram (CFD)
 
@@ -331,6 +368,9 @@ This chart shows the size of your Features on a scatter plot, with the ability t
 The chart displays features from your selected time range, with:
 - **X-axis**: Feature size (number of child work items)
 - **Y-axis**: Time metric (varies by state - see below)
+
+{: .note}
+When an estimation field is configured, the **Feature Size** chart includes a toggle that lets you switch the y-axis between estimation values and cycle time directly on the chart. If no estimation field is set, the chart continues to use cycle time as before.
 
 ## State Filtering
 
