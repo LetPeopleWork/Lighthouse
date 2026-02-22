@@ -90,6 +90,11 @@ export async function createJiraConnection(
 			reference: "fixVersions",
 			displayName: "Fix Versions",
 		},
+		{
+			id: 0,
+			reference: "Size Estimate",
+			displayName: "Story Points",
+		},
 	];
 
 	return createWorkTrackingSystemConnection(api, {

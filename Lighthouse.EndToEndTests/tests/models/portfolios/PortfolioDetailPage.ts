@@ -80,6 +80,16 @@ export class PortfolioDetailPage {
 			.nth(1);
 	}
 
+	get featureSizeProcessBehaviourChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-featureSizePbc")
+			.locator("div")
+			.filter({
+				hasText: /^Feature Size Process Behaviour Chart.*$/,
+			})
+			.nth(1);
+	}
+
 	get totalWorkItemAgeWidget(): Locator {
 		return this.page
 			.getByTestId("dashboard-item-totalWorkItemAge")

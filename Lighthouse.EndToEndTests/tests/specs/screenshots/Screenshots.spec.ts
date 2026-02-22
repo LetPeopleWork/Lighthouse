@@ -504,6 +504,11 @@ testWithData(
 			"features/metrics/featuresize.png",
 		);
 
+		await takeElementScreenshot(
+			portfolioDetailPage.featureSizeProcessBehaviourChart,
+			"features/metrics/featureSizeProcessBehaviourChart.png",
+		);
+
 		let deliveryPage = await portfolioDetailPage.goToDeliveries();
 		const addDeliveryPage = await deliveryPage.addDelivery();
 		await addDeliveryPage.setDeliveryName("Next Release");
@@ -556,6 +561,31 @@ testWithData(
 			"features/delivery_detail.png",
 			5,
 			1000,
+		);
+	},
+);
+
+testWithData(
+	"Take @screenshot of Estimation vs Cycle Time Chart",
+	async ({ overviewPage, testData, request }) => {
+		await updateWorkTrackingSystems(overviewPage, testData.connections);
+		await updateTeams(request, overviewPage, testData.teams);
+
+		await overviewPage.lightHousePage.goToOverview();
+
+		const team = testData.teams[2];
+		const teamEditPage = await overviewPage.editTeam(team.name);
+
+		await teamEditPage.setEstimationField("Story Points");
+		await teamEditPage.validate();
+		await expect(teamEditPage.saveButton).toBeEnabled();
+		const teamDetailPage = await teamEditPage.save();
+
+		await teamDetailPage.goToMetrics();
+
+		await takeElementScreenshot(
+			teamDetailPage.estimationVsCycleTimeWidget,
+			"features/metrics/estimationVsCycleTime.png",
 		);
 	},
 );

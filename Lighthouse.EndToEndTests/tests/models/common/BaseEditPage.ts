@@ -209,6 +209,24 @@ export abstract class BaseEditPage<T> {
 		return options;
 	}
 
+	async setEstimationField(estimationField: string): Promise<void> {
+		await this.page.getByRole("heading", { name: "Estimation" }).click();
+
+		await this.estimationFieldCombobox.click();
+		await this.page.getByRole("option", { name: estimationField }).click();
+
+		await this.page
+			.getByRole("textbox", { name: "Estimation Unit" })
+			.fill(estimationField);
+	}
+
+	get estimationFieldCombobox(): Locator {
+		return this.page
+			.locator("div")
+			.filter({ hasText: /.*Estimation Field$/ })
+			.getByRole("combobox");
+	}
+
 	get parentOverrideCombobox(): Locator {
 		return this.page
 			.locator("div")

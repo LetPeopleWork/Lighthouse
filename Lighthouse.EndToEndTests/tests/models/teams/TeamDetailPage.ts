@@ -311,4 +311,12 @@ export class TeamDetailPage {
 			.filter({ hasText: /^Cycle Time Process Behaviour Chart.*$/ })
 			.nth(1);
 	}
+
+	get estimationVsCycleTimeWidget(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-estimationVsCycleTime")
+			.locator("div")
+			.filter({ hasText: /^Estimation vs. Cycle Time.*$/ })
+			.nth(1);
+	}
 }
