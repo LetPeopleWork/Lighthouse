@@ -15,7 +15,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                 name: "EstimationCategoryValues",
                 table: "Teams",
                 type: "text[]",
-                nullable: false);
+                nullable: false,
+                defaultValue: new List<string>());
 
             migrationBuilder.AddColumn<bool>(
                 name: "UseNonNumericEstimation",
@@ -28,7 +29,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                 name: "EstimationCategoryValues",
                 table: "Portfolios",
                 type: "text[]",
-                nullable: false);
+                nullable: false,
+                defaultValue: new List<string>());
 
             migrationBuilder.AddColumn<bool>(
                 name: "UseNonNumericEstimation",
