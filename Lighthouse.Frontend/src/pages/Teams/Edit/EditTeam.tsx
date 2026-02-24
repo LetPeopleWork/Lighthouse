@@ -90,7 +90,7 @@ const EditTeamPage: React.FC = () => {
 			parentOverrideAdditionalFieldDefinitionId: null,
 			blockedStates: [],
 			blockedTags: [],
-			doneItemsCutoffDays: 180,
+			doneItemsCutoffDays: 365,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
 			estimationAdditionalFieldDefinitionId: null,

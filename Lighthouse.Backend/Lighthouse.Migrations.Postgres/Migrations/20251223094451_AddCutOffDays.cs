@@ -15,7 +15,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                 table: "Teams",
                 type: "integer",
                 nullable: false,
-                defaultValue: 180);
+                defaultValue: 365);
 
             migrationBuilder.AddColumn<int>(
                 name: "DoneItemsCutoffDays",

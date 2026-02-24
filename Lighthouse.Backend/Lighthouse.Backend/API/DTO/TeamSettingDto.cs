@@ -39,6 +39,6 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
 
-        public int DoneItemsCutoffDays { get; set; } = 180;
+        public int DoneItemsCutoffDays { get; set; } = 365;
     }
 }
