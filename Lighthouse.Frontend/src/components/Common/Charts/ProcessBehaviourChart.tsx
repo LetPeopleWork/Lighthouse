@@ -315,7 +315,9 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 			if (resolvedItems.length === 0) return;
 
 			const day = new Date(point.xValue);
-			setDialogTitle(`${title} — ${day.toLocaleDateString()}`);
+			setDialogTitle(
+				`${title} — ${day.toLocaleDateString(undefined, { timeZone: "UTC" })}`,
+			);
 
 			setSelectedDate(day);
 
@@ -431,10 +433,12 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 														return data.xAxisKind === "DateTime"
 															? new Date(
 																	data.dataPoints[value].xValue,
-																).toLocaleString()
+																).toLocaleString(undefined, { timeZone: "UTC" })
 															: new Date(
 																	data.dataPoints[value].xValue,
-																).toLocaleDateString();
+																).toLocaleDateString(undefined, {
+																	timeZone: "UTC",
+																});
 													}
 													return String(value);
 												},
@@ -445,8 +449,12 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 												scaleType: "time" as const,
 												valueFormatter: (value: number) =>
 													data.xAxisKind === "DateTime"
-														? new Date(value).toLocaleString()
-														: new Date(value).toLocaleDateString(),
+														? new Date(value).toLocaleString(undefined, {
+																timeZone: "UTC",
+															})
+														: new Date(value).toLocaleDateString(undefined, {
+																timeZone: "UTC",
+															}),
 											},
 								]}
 								yAxis={[

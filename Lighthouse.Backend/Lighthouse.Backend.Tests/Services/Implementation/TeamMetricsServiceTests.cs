@@ -1524,7 +1524,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetCycleTimeProcessBehaviourChart(testTeam, displayStart, displayEnd);
 
-            Assert.That(result.DataPoints[0].XValue, Is.EqualTo("2025-06-05T14:30:00"));
+            Assert.That(result.DataPoints[0].XValue, Is.EqualTo("2025-06-05T14:30:00Z"));
         }
 
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)

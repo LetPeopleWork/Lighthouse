@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Services.Implementation
             for (var i = 0; i < displayItems.Count; i++)
             {
                 var item = displayItems[i];
-                var xValue = item.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                var xValue = item.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 dataPoints[i] = new ProcessBehaviourChartDataPoint(
                     xValue,
                     item.CycleTime,

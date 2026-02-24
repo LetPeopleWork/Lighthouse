@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.Services.Implementation
             for (var i = 0; i < displayItems.Count; i++)
             {
                 var feature = displayItems[i];
-                var xValue = feature.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                var xValue = feature.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 dataPoints[i] = new ProcessBehaviourChartDataPoint(xValue, feature.Size, xmrResult.SpecialCauseClassifications[i], [feature.Id]);
             }
 
