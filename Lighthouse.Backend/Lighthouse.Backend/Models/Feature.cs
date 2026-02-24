@@ -79,31 +79,38 @@ namespace Lighthouse.Backend.Models
 
         public void AddOrUpdateWorkForTeam(Team team, int remainingWork, int totalItems)
         {
-            var existingTeam = FeatureWork.SingleOrDefault(t => t.TeamId == team.Id);
-            if (existingTeam == null)
+            var existingEntries = FeatureWork.Where(t => t.TeamId == team.Id).ToList();
+
+            if (existingEntries.Count == 0)
             {
                 var featureWork = new FeatureWork(team, remainingWork, totalItems, this);
                 FeatureWork.Add(featureWork);
             }
             else
             {
-                existingTeam.RemainingWorkItems = remainingWork;
-                existingTeam.TotalWorkItems = totalItems;
+                // Remove duplicates if any exist (data corruption recovery)
+                for (var i = 1; i < existingEntries.Count; i++)
+                {
+                    FeatureWork.Remove(existingEntries[i]);
+                }
+
+                existingEntries[0].RemainingWorkItems = remainingWork;
+                existingEntries[0].TotalWorkItems = totalItems;
             }
         }
 
         public void RemoveTeamFromFeature(Team team)
         {
-            var existingTeam = FeatureWork.SingleOrDefault(t => t.TeamId == team.Id);
-            if (existingTeam != null)
+            var existingEntries = FeatureWork.Where(t => t.TeamId == team.Id).ToList();
+            foreach (var entry in existingEntries)
             {
-                FeatureWork.Remove(existingTeam);
+                FeatureWork.Remove(entry);
             }
         }
 
         public int GetRemainingWorkForTeam(Team team)
         {
-            var existingTeam = FeatureWork.SingleOrDefault(t => t.TeamId == team.Id);
+            var existingTeam = FeatureWork.FirstOrDefault(t => t.TeamId == team.Id);
             if (existingTeam != null)
             {
                 return existingTeam.RemainingWorkItems;
@@ -118,8 +125,8 @@ namespace Lighthouse.Backend.Models
 
             foreach (var forecast in forecasts)
             {
-                Forecast.Feature = this;
-                Forecast.FeatureId = Id;
+                forecast.Feature = this;
+                forecast.FeatureId = Id;
                 Forecasts.Add(forecast);
             }
         }

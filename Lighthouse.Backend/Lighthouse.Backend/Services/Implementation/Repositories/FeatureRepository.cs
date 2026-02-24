@@ -30,6 +30,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return GetAll().SingleOrDefault(f => f.Id == id);
         }
 
+        public override Feature? GetByPredicate(Func<Feature, bool> predicate)
+        {
+            return GetFeatures().AsEnumerable().SingleOrDefault(predicate);
+        }
+
         private IQueryable<Feature> GetFeatures()
         {
             return Context.Features

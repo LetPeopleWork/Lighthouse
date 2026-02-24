@@ -225,9 +225,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FeatureId");
-
                     b.HasIndex("TeamId");
+
+                    b.HasIndex("FeatureId", "TeamId")
+                        .IsUnique();
 
                     b.ToTable("FeatureWork");
                 });

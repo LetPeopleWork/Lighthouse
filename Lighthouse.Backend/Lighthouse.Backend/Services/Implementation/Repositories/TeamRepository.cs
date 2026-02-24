@@ -32,5 +32,26 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return GetAll()
                 .SingleOrDefault(t => t.Id == id);
         }
+
+        public override void Remove(int id)
+        {
+            logger.LogInformation("Removing Team with {Id} and associated FeatureWork", id);
+
+            var featureWorkToRemove = Context.Set<FeatureWork>()
+                .Where(fw => fw.TeamId == id)
+                .ToList();
+
+            if (featureWorkToRemove.Count > 0)
+            {
+                logger.LogInformation("Removing {Count} FeatureWork entries for Team {Id}", featureWorkToRemove.Count, id);
+                Context.Set<FeatureWork>().RemoveRange(featureWorkToRemove);
+            }
+
+            var teamToRemove = Context.Teams.Find(id);
+            if (teamToRemove != null)
+            {
+                Context.Teams.Remove(teamToRemove);
+            }
+        }
     }
 }

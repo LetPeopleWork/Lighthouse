@@ -77,6 +77,10 @@ namespace Lighthouse.Backend.Data
                 .HasForeignKey(fw => fw.FeatureId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<FeatureWork>()
+                .HasIndex(fw => new { fw.FeatureId, fw.TeamId })
+                .IsUnique();
+
             modelBuilder.Entity<Feature>()
                 .HasMany(f => f.Forecasts)
                 .WithOne(wf => wf.Feature)

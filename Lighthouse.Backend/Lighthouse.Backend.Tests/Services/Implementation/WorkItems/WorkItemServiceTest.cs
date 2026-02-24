@@ -840,7 +840,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            featureRepositoryMock.Verify(x => x.Update(parentFeature));
+            featureRepositoryMock.Verify(x => x.Update(It.IsAny<Feature>()), Times.Never());
             Assert.That(parentFeature.IsParentFeature, Is.True);
         }
 

@@ -276,7 +276,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             else
             {
                 featureFromDatabase.Update(feature);
-                featureRepository.Update(featureFromDatabase);
                 logger.LogDebug("Updated Existing Feature {FeatureName}", feature.Name);
             }
 

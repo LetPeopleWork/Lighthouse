@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.Tests.Models
 {
@@ -156,6 +157,77 @@ namespace Lighthouse.Backend.Tests.Models
             var size = subject.Size;
             
             Assert.That(size, Is.EqualTo(16));
+        }
+
+        [Test]
+        public void SetFeatureForecasts_SetsFeatureIdOnEachForecast()
+        {
+            var subject = CreateSubject();
+            subject.Id = 42;
+
+            var forecast1 = new WhenForecast { NumberOfItems = 5 };
+            var forecast2 = new WhenForecast { NumberOfItems = 10 };
+
+            subject.SetFeatureForecasts([forecast1, forecast2]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Forecasts, Has.Count.EqualTo(2));
+                Assert.That(subject.Forecasts[0].FeatureId, Is.EqualTo(42));
+                Assert.That(subject.Forecasts[1].FeatureId, Is.EqualTo(42));
+                Assert.That(subject.Forecasts[0].Feature, Is.SameAs(subject));
+                Assert.That(subject.Forecasts[1].Feature, Is.SameAs(subject));
+            }
+        }
+
+        [Test]
+        public void AddOrUpdateWorkForTeam_DuplicateTeamIdExists_UpdatesInsteadOfThrowing()
+        {
+            var team = new Team { Name = "Team A", Id = 12 };
+
+            var subject = CreateSubject();
+
+            // Simulate corrupt state: two FeatureWork rows for same team
+            subject.FeatureWork.Add(new FeatureWork(team, 3, 5, subject));
+            subject.FeatureWork.Add(new FeatureWork(team, 3, 5, subject));
+
+            // Should not throw, should handle gracefully
+            Assert.DoesNotThrow(() => subject.AddOrUpdateWorkForTeam(team, 2, 8));
+
+            var totalForTeam = subject.FeatureWork.Where(fw => fw.TeamId == team.Id).Sum(fw => fw.TotalWorkItems);
+            Assert.That(totalForTeam, Is.EqualTo(8));
+        }
+
+        [Test]
+        public void RemoveTeamFromFeature_DuplicateTeamIdExists_RemovesAllDuplicates()
+        {
+            var team = new Team { Name = "Team A", Id = 12 };
+
+            var subject = CreateSubject();
+
+            // Simulate corrupt state: two FeatureWork rows for same team
+            subject.FeatureWork.Add(new FeatureWork(team, 3, 5, subject));
+            subject.FeatureWork.Add(new FeatureWork(team, 3, 5, subject));
+
+            subject.RemoveTeamFromFeature(team);
+
+            Assert.That(subject.FeatureWork.Where(fw => fw.TeamId == team.Id), Is.Empty);
+        }
+
+        [Test]
+        public void GetRemainingWorkForTeam_DuplicateTeamIdExists_DoesNotThrow()
+        {
+            var team = new Team { Name = "Team A", Id = 12 };
+
+            var subject = CreateSubject();
+
+            // Simulate corrupt state: two FeatureWork rows for same team
+            subject.FeatureWork.Add(new FeatureWork(team, 3, 5, subject));
+            subject.FeatureWork.Add(new FeatureWork(team, 4, 6, subject));
+
+            var result = 0;
+            Assert.DoesNotThrow(() => result = subject.GetRemainingWorkForTeam(team));
+            Assert.That(result, Is.GreaterThanOrEqualTo(0));
         }
 
         private static Feature CreateSubject()
