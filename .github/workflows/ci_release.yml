@@ -65,27 +65,27 @@ jobs:
           cosign verify --certificate-identity="https://github.com/LetPeopleWork/Lighthouse/.github/workflows/ci_release.yml@refs/heads/main" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/$REPO_NAME:${{ inputs.fileversion }}
           cosign verify --certificate-identity="https://github.com/LetPeopleWork/Lighthouse/.github/workflows/ci_release.yml@refs/heads/main" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/$REPO_NAME:latest
       
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: LighthouseArtifacts/win-x64
           
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3
         with:
           name: Lighthouse-osx-dmg-${{ inputs.version }}
           path: LighthouseArtifacts/osx-dmg
 
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3
         with:
           name: Lighthouse-osx-app-${{ inputs.version }}
           path: LighthouseArtifacts/osx-app
 
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3
         with:
           name: Lighthouse-linux-x64-${{ inputs.version }}
           path: LighthouseArtifacts/linux-x64
 
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3
         with:
           name: Lighthouse-SBOM-${{ inputs.version }}
           path: LighthouseArtifacts/sbom
