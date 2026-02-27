@@ -75,7 +75,6 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		doneStates: ["Done"],
 		tags: [],
 		overrideRealChildCountStates: [""],
-		involvedTeams: [],
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,

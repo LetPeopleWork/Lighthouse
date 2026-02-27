@@ -527,7 +527,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ValidateConfiguration_ProjectLinksToTeamNotInConfiguration_ReturnsError()
+        public void ValidateConfiguration_ProjectLinksToTeamNotInConfiguration_ProjectHasNoValidationError()
         {
             var workTrackingSystem = AddWorkTrackingSystemConnection();
 
@@ -557,8 +557,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
-                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
-                Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Involved Team Not Found"));
+                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Update));
+                Assert.That(validationResult.Projects[0].ErrorMessage, Is.Empty);
             }
         }
 
@@ -599,7 +599,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
-                Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Owning Team must be involved in the project"));
+                Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Owning Team Not Found"));
             }
         }
 

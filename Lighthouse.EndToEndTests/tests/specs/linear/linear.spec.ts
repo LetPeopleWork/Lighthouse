@@ -133,13 +133,6 @@ test("should be able to handle a team defined in Linear", async ({
 			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
-		await test.step("Add Involved Teams Configuration", async () => {
-			await newPortfolioPage.selectTeam(newTeam.name);
-
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newPortfolioPage.validateButton).toBeDisabled();
-		});
-
 		await test.step("Add State Configuration", async () => {
 			await newPortfolioPage.resetStates(
 				{

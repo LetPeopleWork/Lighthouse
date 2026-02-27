@@ -15,7 +15,6 @@ import EstimationFieldComponent from "../EstimationField/EstimationFieldComponen
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
-import TeamsList from "../TeamsList/TeamsList";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
@@ -47,7 +46,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		IWorkTrackingSystemConnection[]
 	>([]);
 	const [teams, setTeams] = useState<ITeam[]>([]);
-	const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
 	const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [formValid, setFormValid] = useState<boolean>(false);
@@ -57,20 +55,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
 		useLicenseRestrictions();
-
-	const handleTeamSelectionChange = (teamIds: number[]) => {
-		setSelectedTeams(teamIds);
-
-		// Clear owning team if it's no longer in the selected teams
-		if (
-			projectSettings?.owningTeam &&
-			!teamIds.includes(projectSettings.owningTeam.id)
-		) {
-			setProjectSettings((prev) =>
-				prev ? { ...prev, owningTeam: undefined } : prev,
-			);
-		}
-	};
 
 	const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
 		const selectedWorkTrackingSystemName = event.target.value;
@@ -282,7 +266,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		const updatedSettings: IPortfolioSettings = {
 			...projectSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-			involvedTeams: teams.filter((team) => selectedTeams.includes(team.id)),
 		};
 
 		await saveProjectSettings(updatedSettings);
@@ -296,7 +279,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		const updatedSettings: IPortfolioSettings = {
 			...projectSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-			involvedTeams: teams.filter((team) => selectedTeams.includes(team.id)),
 		};
 		return await validateProjectSettings(updatedSettings);
 	};
@@ -319,7 +301,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 					projectSettings.toDoStates.length > 0 &&
 					projectSettings.doingStates.length > 0 &&
 					projectSettings.doneStates.length > 0;
-				const hasValidInvolvedTeams = selectedTeams.length > 0;
 
 				// Check that dataRetrievalValue is not empty (whether it's a query or CSV data)
 				const hasValidDataSource =
@@ -334,21 +315,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 					hasValidAmountOfWorkItemTypes &&
 					hasAllNecessaryStates &&
 					(modifyDefaultSettings ||
-						(hasValidInvolvedTeams &&
-							hasValidDataSource &&
-							selectedWorkTrackingSystem !== null));
+						(hasValidDataSource && selectedWorkTrackingSystem !== null));
 			}
 
 			setFormValid(isFormValid);
 		};
 
 		handleStateChange();
-	}, [
-		projectSettings,
-		selectedWorkTrackingSystem,
-		modifyDefaultSettings,
-		selectedTeams,
-	]);
+	}, [projectSettings, selectedWorkTrackingSystem, modifyDefaultSettings]);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -356,7 +330,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			try {
 				const settings = await getProjectSettings();
 				setProjectSettings(settings);
-				setSelectedTeams(settings.involvedTeams.map((team) => team.id));
 
 				const systems = await getWorkTrackingSystems();
 				setWorkTrackingSystems(systems);
@@ -406,14 +379,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							isForTeam={false}
 						/>
 
-						{!modifyDefaultSettings && (
-							<TeamsList
-								allTeams={teams}
-								selectedTeams={selectedTeams}
-								onSelectionChange={handleTeamSelectionChange}
-							/>
-						)}
-
 						<StatesList
 							toDoStates={projectSettings?.toDoStates || []}
 							onAddToDoState={handleAddToDoState}
@@ -447,9 +412,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<OwnershipComponent
 							projectSettings={projectSettings}
 							onProjectSettingsChange={handleProjectSettingsChange}
-							currentInvolvedTeams={teams.filter((team) =>
-								selectedTeams.includes(team.id),
-							)}
+							availableTeams={teams}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}

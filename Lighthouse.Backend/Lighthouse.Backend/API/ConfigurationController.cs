@@ -217,32 +217,18 @@ namespace Lighthouse.Backend.API
                     errorMessage = "Work Tracking System Not Found";
                     status = ValidationStatus.Error;
                 }
-                else
+                else if (project.OwningTeam != null)
                 {
-                    var linkedTeams = project.InvolvedTeams.Select(t => t.Id).ToList();
-                    if (project.OwningTeam != null && !linkedTeams.Contains(project.OwningTeam.Id))
+                    var owningTeamExists = configurationExport.Teams.Any(t => t.Id == project.OwningTeam.Id);
+                    if (!owningTeamExists)
                     {
-                        errorMessage = "Owning Team must be involved in the project";
+                        errorMessage = "Owning Team Not Found";
                         status = ValidationStatus.Error;
-                    }
-                    else
-                    {
-                        var isValid = ValidateLinkedTeams(configurationExport.Teams, linkedTeams);
-                        if (!isValid)
-                        {
-                            errorMessage = "Involved Team Not Found";
-                            status = ValidationStatus.Error;
-                        }
                     }
                 }
 
                 validationResult.UpdateProject(project.Id, status, errorMessage, id);
             }
-        }
-
-        private static bool ValidateLinkedTeams(IEnumerable<TeamSettingDto> teams, List<int> linkedTeams)
-        {
-            return teams.Any(t => linkedTeams.Contains(t.Id));
         }
 
         private void ValidateTeams(ConfigurationExport configurationExport, ConfigurationValidationDto validationResult)

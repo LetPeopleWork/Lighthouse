@@ -46,7 +46,6 @@ const EditPortfolio: React.FC = () => {
 		}
 
 		const defaultPortfolioSettings: IPortfolioSettings = {
-			involvedTeams: [],
 			overrideRealChildCountStates: [],
 			usePercentileToCalculateDefaultAmountOfWorkItems: true,
 			defaultAmountOfWorkItemsPerFeature: 10,

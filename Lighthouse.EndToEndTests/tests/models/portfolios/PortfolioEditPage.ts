@@ -150,14 +150,6 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 		return (await combobox.textContent()) ?? "";
 	}
 
-	async deselectTeam(teamName: string): Promise<void> {
-		await this.page.getByLabel(teamName).uncheck();
-	}
-
-	async selectTeam(teamName: string): Promise<void> {
-		await this.page.getByLabel(teamName).check();
-	}
-
 	async addNewWorkTrackingSystem(): Promise<
 		EditWorkTrackingSystemDialog<PortfolioEditPage>
 	> {

@@ -58,18 +58,6 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static void SyncTeams(Portfolio project, PortfolioSettingDto portfolioSetting, IRepository<Team> teamRepo)
         {
-            var teams = new List<Team>();
-            foreach (var teamDto in portfolioSetting.InvolvedTeams)
-            {
-                var team = teamRepo.GetById(teamDto.Id);
-                if (team != null)
-                {
-                    teams.Add(team);
-                }
-            }
-
-            project.UpdateTeams(teams);
-
             project.OwningTeam = null;
             if (portfolioSetting.OwningTeam != null)
             {

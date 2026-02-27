@@ -122,7 +122,6 @@ describe("ImportStep", () => {
 			states: [],
 			stateMappings: [],
 			teams: [],
-			involvedTeams: [], // Added this since it's used in the component
 		} as unknown as IPortfolioSettings,
 	];
 
@@ -514,10 +513,10 @@ describe("ImportStep", () => {
 		const workTrackingSystemsMap = new Map<number, number>();
 		const teamsMap = new Map<number, number>();
 
-		// Create mock project with involved teams
+		// Create mock project with owning team
 		const projectWithTeams = {
 			...mockProjects[0],
-			involvedTeams: [{ id: 1, name: "Team 1" }],
+			owningTeam: { id: 1, name: "Team 1" },
 		};
 
 		render(

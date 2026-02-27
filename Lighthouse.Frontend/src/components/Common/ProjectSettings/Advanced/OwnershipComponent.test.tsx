@@ -64,7 +64,7 @@ describe("OwnershipComponent", () => {
 			<OwnershipComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
-				currentInvolvedTeams={mockTeams}
+				availableTeams={mockTeams}
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -82,7 +82,7 @@ describe("OwnershipComponent", () => {
 			<OwnershipComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
-				currentInvolvedTeams={mockTeams}
+				availableTeams={mockTeams}
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -109,7 +109,7 @@ describe("OwnershipComponent", () => {
 			<OwnershipComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
-				currentInvolvedTeams={mockTeams}
+				availableTeams={mockTeams}
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -141,7 +141,7 @@ describe("OwnershipComponent", () => {
 			<OwnershipComponent
 				projectSettings={settingsWithTeam}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
-				currentInvolvedTeams={mockTeams}
+				availableTeams={mockTeams}
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -168,7 +168,7 @@ describe("OwnershipComponent", () => {
 			<OwnershipComponent
 				projectSettings={settingsWithField}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
-				currentInvolvedTeams={mockTeams}
+				availableTeams={mockTeams}
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);

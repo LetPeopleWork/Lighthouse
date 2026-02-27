@@ -8,11 +8,11 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public PortfolioDto(Portfolio project) : base(project)
+        public PortfolioDto(Portfolio portfolio) : base(portfolio)
         {
-            InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
+            InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos());
 
-            foreach (var feature in project.Features.OrderBy(f => f, new FeatureComparer()))
+            foreach (var feature in portfolio.Features.OrderBy(f => f, new FeatureComparer()))
             {
                 Features.Add(new EntityReferenceDto(feature.Id, feature.Name));
             }

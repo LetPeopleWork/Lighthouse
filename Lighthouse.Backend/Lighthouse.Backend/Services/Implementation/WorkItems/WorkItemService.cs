@@ -14,21 +14,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<Feature> featureRepository,
         IWorkItemRepository workItemRepository,
-        IPortfolioMetricsService portfolioMetricsService)
+        IPortfolioMetricsService portfolioMetricsService,
+        IRepository<Team> teamRepository)
         : IWorkItemService
     {
-        private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new();
 
-        public async Task UpdateFeaturesForProject(Portfolio project)
+        public async Task UpdateFeaturesForPortfolio(Portfolio portfolio)
         {
-            logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
+            logger.LogInformation("Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
-            await RefreshFeatures(project);
-            await RefreshParentFeatures(project);
+            await RefreshFeatures(portfolio);
+            await RefreshParentFeatures(portfolio);
 
-            await UpdateRemainingWorkForProject(project);
+            await UpdateRemainingWorkForPortfolio(portfolio);
 
-            logger.LogInformation("Done Updating Features for Project {ProjectName}", project.Name);
+            logger.LogInformation("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
         }
 
         public async Task UpdateWorkItemsForTeam(Team team)
@@ -37,9 +38,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await RefreshWorkItems(team);
 
-            foreach (var project in team.Portfolios)
+            foreach (var portfolio in team.Portfolios.ToList())
             {
-                await UpdateRemainingWorkForProject(project);
+                await UpdateRemainingWorkForPortfolio(portfolio);
             }
 
             logger.LogInformation("Done Updating Work Items for Team {TeamName}", team.Name);
@@ -82,17 +83,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await workItemRepository.Save();
         }
 
-        private async Task UpdateRemainingWorkForProject(Portfolio project)
+        private async Task UpdateRemainingWorkForPortfolio(Portfolio portfolio)
         {
-            logger.LogInformation("Updating Remaining Work for Project {ProjectName}", project.Name);
-            defaultWorkItemsBasedOnPercentile.Remove(project.Id);
+            logger.LogInformation("Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
+            defaultWorkItemsBasedOnPercentile.Remove(portfolio.Id);
 
-            RefreshRemainingWork(project);
-            ExtrapolateNotBrokenDownFeatures(project);
+            RefreshRemainingWork(portfolio);
+            AutoUpdateInvolvedTeams(portfolio);
+            ExtrapolateNotBrokenDownFeatures(portfolio);
 
             await featureRepository.Save();
 
-            logger.LogInformation("Done Updating Remaining Work for Project {ProjectName}", project.Name);
+            logger.LogInformation("Done Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
         }
 
         private void RefreshRemainingWork(Portfolio project)
@@ -104,7 +106,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 var allWorkForFeature = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId).ToList();
 
-                foreach (var team in project.Teams)
+                var teamsWithWork = allWorkForFeature
+                    .Where(w => w.Team != null)
+                    .Select(w => w.Team)
+                    .DistinctBy(t => t.Id)
+                    .ToList();
+
+                foreach (var team in teamsWithWork)
                 {
                     var totalWorkForFeatureForTeam = allWorkForFeature.Where(f => f.TeamId == team.Id).ToList();
                     var remainingWorkForFeatureForTeam = totalWorkForFeatureForTeam.Where(x => x.StateCategory != StateCategories.Done).ToList();
@@ -119,23 +127,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private void ExtrapolateNotBrokenDownFeatures(Portfolio project)
+        private static void AutoUpdateInvolvedTeams(Portfolio portfolio)
         {
-            foreach (var feature in project.GetFeaturesToOverrideWithDefaultSize())
+            var involvedTeams = portfolio.Features
+                .SelectMany(f => f.FeatureWork)
+                .Select(fw => fw.Team)
+                .DistinctBy(t => t.Id)
+                .ToList();
+
+            portfolio.UpdateTeams(involvedTeams);
+        }
+
+        private void ExtrapolateNotBrokenDownFeatures(Portfolio portfolio)
+        {
+            foreach (var feature in portfolio.GetFeaturesToOverrideWithDefaultSize())
             {
                 feature.ClearFeatureWork();
             }
 
-            logger.LogInformation("Extrapolating Not Broken Down Features for Project {ProjectName}", project.Name);
+            logger.LogInformation("Extrapolating Not Broken Down Features for Portfolio {PortfolioName}", portfolio.Name);
 
-            foreach (var feature in project.GetFeaturesToExtrapolate())
+            foreach (var feature in portfolio.GetFeaturesToExtrapolate())
             {
                 logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
 
-                var remainingWork = GetExtrapolatedRemainingWork(project, feature);
+                var remainingWork = GetExtrapolatedRemainingWork(portfolio, feature);
 
-                AssignExtrapolatedWorkToTeams(project, feature, remainingWork);
+                AssignExtrapolatedWorkToTeams(portfolio, feature, remainingWork);
 
                 logger.LogInformation("Added {RemainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
             }
@@ -143,7 +162,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
-            var owningTeams = portfolio.Teams.ToList();
+            var owningTeams = portfolio.Teams.Count > 0
+                ? portfolio.Teams.ToList()
+                : teamRepository.GetAll().ToList();
 
             if (portfolio.OwningTeam != null)
             {
@@ -158,7 +179,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             {
                 logger.LogInformation("Feature Owner Field for Project is configured - Getting value for Feature {FeatureName}: {OwnerValue}", feature.Name, featureOwnerValue);
 
-                var featureOwners = portfolio.Teams.Where(t => featureOwnerValue.Contains(t.Name)).ToList();
+                var featureOwners = teamRepository.GetAll().Where(t => featureOwnerValue.Contains(t.Name)).ToList();
 
                 logger.LogInformation("Found following teams defined in Feature Owner field: {Owners}", string.Join(",", featureOwners.Select(t => t.Name)));
                 if (featureOwners.Count > 0)
@@ -168,6 +189,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             var numberOfTeams = owningTeams.Count;
+            if (numberOfTeams == 0)
+            {
+                logger.LogWarning("No teams available for extrapolation of feature {FeatureName} in portfolio {PortfolioName}", feature.Name, portfolio.Name);
+                return;
+            }
+
             var buckets = SplitIntoBuckets(remainingWork, numberOfTeams);
             for (var index = 0; index < numberOfTeams; index++)
             {

@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepoMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
+        private Mock<IPortfolioUpdater> portfolioUpdaterMock;
 
         [SetUp]
         public void Setup()
@@ -25,6 +26,7 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
+            portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
         }
 
         [Test]
@@ -38,6 +40,27 @@ namespace Lighthouse.Backend.Tests.API
 
             teamRepositoryMock.Verify(x => x.Remove(teamId));
             teamRepositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task Delete_WhenTeamIsInvolvedInPortfolios_TriggersPortfolioUpdates()
+        {
+            const int teamId = 42;
+
+            var portfolio1 = CreatePortfolio(1, "Portfolio A");
+            var portfolio2 = CreatePortfolio(2, "Portfolio B");
+
+            var team = new Team { Id = teamId, Name = "Involved Team" };
+            team.Portfolios.Add(portfolio1);
+
+            teamRepositoryMock.Setup(x => x.GetById(teamId)).Returns(team);
+
+            var subject = CreateSubject(portfolios: [portfolio1, portfolio2]);
+
+            await subject.DeleteTeam(teamId);
+
+            portfolioUpdaterMock.Verify(x => x.TriggerUpdate(portfolio1.Id), Times.Once);
+            portfolioUpdaterMock.Verify(x => x.TriggerUpdate(portfolio2.Id), Times.Never);
         }
 
         [Test]
@@ -493,7 +516,7 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object);
         }
     }
 }

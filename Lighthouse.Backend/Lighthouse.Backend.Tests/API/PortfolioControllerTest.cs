@@ -171,7 +171,6 @@ namespace Lighthouse.Backend.Tests.API
                 DefaultAmountOfWorkItemsPerFeature = 10,
                 WorkTrackingSystemConnectionId = 202,
                 SizeEstimateAdditionalFieldDefinitionId = 1,
-                InvolvedTeams = [new EntityReferenceDto(existingTeam.Id, existingTeam.Name)],
                 OwningTeam = new EntityReferenceDto(existingTeam.Id, existingTeam.Name),
                 FeatureOwnerAdditionalFieldDefinitionId = 2,
                 ServiceLevelExpectationProbability = 95,
@@ -206,11 +205,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(portfolioSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(updatedPortfolioSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(portfolioSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedPortfolioSettings.WorkTrackingSystemConnectionId));
                 Assert.That(portfolioSettingDto.SizeEstimateAdditionalFieldDefinitionId, Is.EqualTo(updatedPortfolioSettings.SizeEstimateAdditionalFieldDefinitionId));
-
-                Assert.That(portfolioSettingDto.InvolvedTeams, Has.Count.EqualTo(1));
-                var teamDto = portfolioSettingDto.InvolvedTeams.Single();
-                Assert.That(teamDto.Id, Is.EqualTo(existingTeam.Id));
-                Assert.That(teamDto.Name, Is.EqualTo(existingTeam.Name));
 
                 Assert.That(portfolioSettingDto.OwningTeam.Id, Is.EqualTo(existingTeam.Id));
                 Assert.That(portfolioSettingDto.OwningTeam.Name, Is.EqualTo(existingTeam.Name));
@@ -290,7 +284,6 @@ namespace Lighthouse.Backend.Tests.API
                 ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
                 DoneItemsCutoffDays = 180,
                 WorkTrackingSystemConnectionId = 1,
-                InvolvedTeams = [new EntityReferenceDto(existingTeam.Id, existingTeam.Name)],
                 OwningTeam = new EntityReferenceDto(existingTeam.Id, existingTeam.Name),
             };
 

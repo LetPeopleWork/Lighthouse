@@ -190,7 +190,6 @@ describe("ConfigurationService", () => {
 				{
 					id: 3,
 					name: "Project X",
-					involvedTeams: [],
 					overrideRealChildCountStates: [],
 					usePercentileToCalculateDefaultAmountOfWorkItems: false,
 					defaultAmountOfWorkItemsPerFeature: 0,

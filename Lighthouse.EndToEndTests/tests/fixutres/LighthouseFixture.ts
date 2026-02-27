@@ -105,7 +105,6 @@ async function generateTestData(
 	const project1 = await createPortfolio(
 		request,
 		generateRandomName(),
-		[lighthouseDevTeam],
 		adoConnection.id,
 		'[System.TeamProject] = "Lighthouse"',
 		["Epic"],
@@ -115,7 +114,6 @@ async function generateTestData(
 	const project2 = await createPortfolio(
 		request,
 		generateRandomName(),
-		[lighthouseDevTeam, team2],
 		adoConnection.id,
 		'[System.TeamProject] = "Lighthouse Demo"',
 		["Epic"],
@@ -125,7 +123,6 @@ async function generateTestData(
 	const project3 = await createPortfolio(
 		request,
 		generateRandomName(),
-		[team3],
 		jiraConnection.id,
 		'project = "LGHTHSDMO" AND fixVersion = "Oberon Initiative"',
 		["Epic"],

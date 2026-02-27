@@ -187,16 +187,12 @@ const ImportStep: React.FC<ImportStepProps> = ({
 
 	const patchTeamsOfProjects = () => {
 		for (const project of newProjects.concat(updatedProjects)) {
-			const newTeams = project.involvedTeams;
-
-			for (const team of newTeams) {
-				const mappedTeamId = teamIdMapping.get(team.id);
+			if (project.owningTeam) {
+				const mappedTeamId = teamIdMapping.get(project.owningTeam.id);
 				if (mappedTeamId) {
-					team.id = mappedTeamId;
+					project.owningTeam.id = mappedTeamId;
 				}
 			}
-
-			project.involvedTeams = newTeams;
 		}
 	};
 

@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project));
+            workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(project));
         }
 
         [Test]
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Never);
+            workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(project), Times.Never);
         }
 
         [Test]
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once);
+            workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(project), Times.Once);
         }
 
         [Test]

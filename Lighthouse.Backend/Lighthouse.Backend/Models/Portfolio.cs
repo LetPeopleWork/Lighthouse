@@ -2,9 +2,9 @@
 {
     public class Portfolio : WorkTrackingSystemOptionsOwner
     {
-        public override List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
+        public override List<string> WorkItemTypes { get; set; } = ["Epic"];
 
-        public List<Team> Teams { get; } = new List<Team>();
+        public List<Team> Teams { get; } = [];
 
         public List<Feature> Features { get; } = [];
 
@@ -18,7 +18,7 @@
 
         public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
 
-        public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; } = false;
+        public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
 
         public int? PercentileHistoryInDays { get; set; } = 90;
 
@@ -26,7 +26,7 @@
 
         public override int DoneItemsCutoffDays { get; set; } = 365;
 
-        public List<string> OverrideRealChildCountStates { get; set; } = new List<string>();
+        public List<string> OverrideRealChildCountStates { get; set; } = [];
 
         public void UpdateFeatures(IEnumerable<Feature> features)
         {

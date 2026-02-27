@@ -35,7 +35,6 @@ testWithData(
 	"should disable validate button if not all mandatory fields are set",
 	async ({ testData, overviewPage }) => {
 		const portfolio = testData.portfolios[0];
-		const team = testData.teams[0];
 
 		const portfolioEditPage = await overviewPage.editPortfolio(portfolio);
 
@@ -66,14 +65,6 @@ testWithData(
 			await expect(portfolioEditPage.validateButton).toBeDisabled();
 
 			await portfolioEditPage.addWorkItemType("Epic");
-			await expect(portfolioEditPage.validateButton).toBeEnabled();
-		});
-
-		await test.step("Involved Teams should be mandatory and more than 1", async () => {
-			await portfolioEditPage.deselectTeam(team.name);
-			await expect(portfolioEditPage.validateButton).toBeDisabled();
-
-			await portfolioEditPage.selectTeam(team.name);
 			await expect(portfolioEditPage.validateButton).toBeEnabled();
 		});
 
@@ -172,37 +163,14 @@ testWithData(
 			expect(owningTeamValue).toBe("​");
 		});
 
-		await test.step("Only Involved Team and None can be selected as Owner", async () => {
+		await test.step("All Available Teams and None can be selected as Owner", async () => {
 			const availableOptions =
 				await portfolioEditPage.getPotentialOwningTeams();
 
-			expect(availableOptions).toContain("None");
-			expect(availableOptions).toContain(team1.name);
-			expect(availableOptions).not.toContain(team2.name);
-			expect(availableOptions).not.toContain(team3.name);
-		});
-
-		await test.step("Including more teams should allow to pick them as owners", async () => {
-			await portfolioEditPage.selectTeam(team2.name);
-			await portfolioEditPage.selectTeam(team3.name);
-
-			const availableOptions =
-				await portfolioEditPage.getPotentialOwningTeams();
 			expect(availableOptions).toContain("None");
 			expect(availableOptions).toContain(team1.name);
 			expect(availableOptions).toContain(team2.name);
 			expect(availableOptions).toContain(team3.name);
-		});
-
-		await test.step("Removing Owning Team from Involved Teams will reset Owning Team", async () => {
-			await portfolioEditPage.selectOwningTeam(team1.name);
-
-			let owningTeamValue = await portfolioEditPage.getSelectedOwningTeam();
-			expect(owningTeamValue).toBe(team1.name);
-
-			await portfolioEditPage.deselectTeam(team1.name);
-			owningTeamValue = await portfolioEditPage.getSelectedOwningTeam();
-			expect(owningTeamValue).toBe("​");
 		});
 	},
 );
@@ -220,7 +188,6 @@ const newTeamConfigurations = [
 			invalidStates: { toDo: ["New"], doing: ["Active"], done: ["Closed"] },
 			validQuery: 'project = "LGHTHSDMO" AND fixVersion = "Oberon Initiative"',
 			invalidQuery: 'project = "LGHTHSDMO" AND labels = "Lagunitas"',
-			involvedTeams: [2],
 		},
 		workTrackingSystemOptions: [
 			{ field: "Jira URL", value: "https://letpeoplework.atlassian.net" },
@@ -248,7 +215,6 @@ const newTeamConfigurations = [
 			validQuery:
 				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
 			invalidQuery: String.raw`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\Binary Blazers"`,
-			involvedTeams: [1],
 		},
 		workTrackingSystemOptions: [
 			{
@@ -283,18 +249,6 @@ for (const teamConfiguration of newTeamConfigurations) {
 					[],
 					teamConfiguration.portfolioConfiguration.validWorkItemTypes,
 				);
-
-				// Expect Validation to be disabled because mandatory config is still missing
-				await expect(newPortfolioPage.validateButton).toBeDisabled();
-			});
-
-			await test.step("Add Involved Teams Configuration", async () => {
-				for (const teamIndex of teamConfiguration.portfolioConfiguration
-					.involvedTeams) {
-					const team = testData.teams[teamIndex];
-
-					await newPortfolioPage.selectTeam(team.name);
-				}
 
 				// Expect Validation to be disabled because mandatory config is still missing
 				await expect(newPortfolioPage.validateButton).toBeDisabled();
@@ -369,25 +323,6 @@ for (const teamConfiguration of newTeamConfigurations) {
 					teamConfiguration.portfolioConfiguration.invalidWorkItemTypes,
 					teamConfiguration.portfolioConfiguration.validWorkItemTypes,
 				);
-			});
-
-			await test.step("Invalidate Involved Teams", async () => {
-				for (const teamIndex of teamConfiguration.portfolioConfiguration
-					.involvedTeams) {
-					const team = testData.teams[teamIndex];
-
-					await newPortfolioPage.deselectTeam(team.name);
-				}
-
-				await expect(newPortfolioPage.validateButton).toBeDisabled();
-				await expect(newPortfolioPage.saveButton).toBeDisabled();
-
-				for (const teamIndex of teamConfiguration.portfolioConfiguration
-					.involvedTeams) {
-					const team = testData.teams[teamIndex];
-
-					await newPortfolioPage.selectTeam(team.name);
-				}
 			});
 
 			await test.step("Invalidate States", async () => {
@@ -471,13 +406,6 @@ for (const wizardConfiguration of wizardConfigurations) {
 				await newPortfolioPage.setName(
 					`My New ${wizardConfiguration.name} Portfolio`,
 				);
-
-				for (const teamIndex of wizardConfiguration.portfolioConfiguration
-					.involvedTeams) {
-					const team = testData.teams[teamIndex];
-
-					await newPortfolioPage.selectTeam(team.name);
-				}
 			});
 
 			await test.step("Add Work Tracking System", async () => {

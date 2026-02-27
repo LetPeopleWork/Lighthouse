@@ -282,7 +282,6 @@ describe("ModifyProjectSettings", () => {
 	];
 
 	const projectSettings = createMockProjectSettings();
-	projectSettings.involvedTeams = teams;
 
 	beforeEach(() => {
 		mockGetWorkTrackingSystems.mockClear();
@@ -522,7 +521,6 @@ describe("ModifyProjectSettings", () => {
 		{ invalidValue: "Doing States", doingStates: [] },
 		{ invalidValue: "Done States", doneStates: [] },
 		{ invalidValue: "Work Item Query", dataRetrievalValue: "" },
-		{ invalidValue: "Involved Teams", involvedTeams: [] },
 		{
 			invalidValue: "Missing Historical Days",
 			usePercentileToCalculateDefaultAmountOfWorkItems: true,
@@ -545,7 +543,7 @@ describe("ModifyProjectSettings", () => {
 			};
 
 			mockGetProjectSettings.mockResolvedValue(invalidProjectSettings);
-			mockGetAllTeams.mockResolvedValue(invalidProjectSettings.involvedTeams);
+			mockGetAllTeams.mockResolvedValue(teams);
 
 			render(
 				<ModifyProjectSettings

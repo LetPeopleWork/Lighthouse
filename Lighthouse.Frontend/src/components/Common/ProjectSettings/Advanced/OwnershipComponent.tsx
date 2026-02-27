@@ -14,14 +14,14 @@ interface OwnershipComponentProps {
 		key: keyof IPortfolioSettings,
 		value: string | ITeam | number | null,
 	) => void;
-	currentInvolvedTeams: ITeam[];
+	availableTeams: ITeam[];
 	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 }
 
 const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 	projectSettings,
 	onProjectSettingsChange,
-	currentInvolvedTeams,
+	availableTeams,
 	additionalFieldDefinitions = [],
 }) => {
 	const { getTerm } = useTerminology();
@@ -35,10 +35,10 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 					label={`Owning ${teamTerm}`}
 					value={projectSettings?.owningTeam?.id ?? ""}
 					onChange={(teamId) => {
-						const team = currentInvolvedTeams.find((t) => t.id === teamId);
+						const team = availableTeams.find((t) => t.id === teamId);
 						onProjectSettingsChange("owningTeam", team || null);
 					}}
-					options={currentInvolvedTeams.map((team) => ({
+					options={availableTeams.map((team) => ({
 						id: team.id,
 						label: team.name,
 					}))}

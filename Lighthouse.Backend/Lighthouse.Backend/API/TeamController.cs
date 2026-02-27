@@ -16,7 +16,8 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> projectRepository,
         IRepository<Feature> featureRepository,
         IWorkItemRepository workItemRepository,
-        ITeamUpdater teamUpdateService)
+        ITeamUpdater teamUpdateService,
+        IPortfolioUpdater portfolioUpdater)
         : ControllerBase
     {
         [HttpGet]
@@ -50,8 +51,24 @@ namespace Lighthouse.Backend.API
         [HttpDelete]
         public async Task<IActionResult> DeleteTeam(int teamId)
         {
+            var team = teamRepository.GetById(teamId);
+            var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];
+
+            var owningPortfolioIds = projectRepository.GetAll()
+                .Where(p => p.OwningTeamId == teamId)
+                .Select(p => p.Id)
+                .ToList();
+
+            var allAffectedIds = affectedPortfolioIds.Union(owningPortfolioIds).Distinct().ToList();
+
             teamRepository.Remove(teamId);
             await teamRepository.Save();
+
+            foreach (var portfolioId in allAffectedIds)
+            {
+                portfolioUpdater.TriggerUpdate(portfolioId);
+            }
+
             return NoContent();
         }
 

@@ -17,9 +17,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
         private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
+        private Mock<IRepository<Team>> teamRepositoryMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
+        private List<Team> teams;
 
         [SetUp]
         public void SetUp()
@@ -28,15 +30,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
+            teamRepositoryMock = new Mock<IRepository<Team>>();
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
             workItems = [];
+            teams = [];
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
             workItemRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<WorkItem, bool>>()))
                 .Returns((Func<WorkItem, bool> predicate) => workItems.SingleOrDefault(predicate));
+            teamRepositoryMock.Setup(x => x.GetAll()).Returns(() => teams);
         }
 
         [Test]
@@ -52,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -77,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             Assert.That(project.Features, Is.Empty);
         }
@@ -102,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -138,7 +143,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -171,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => features.SingleOrDefault(predicate));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -197,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -251,7 +256,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .Returns(features);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -281,7 +286,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .Returns(new List<Feature>());
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -306,7 +311,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
@@ -327,7 +332,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
@@ -349,7 +354,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature1, 7, 0, team);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.Zero);
@@ -373,7 +378,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature2, 12, 12);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -400,7 +405,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature, 12, remainingWorkItems, team);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             var actualFeature = project.Features.Single();
             Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(remainingWorkItems));
@@ -418,7 +423,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             workTrackingConnectorMock.Verify(x => x.GetFeaturesForProject(project), Times.Exactly(1));
         }
@@ -443,7 +448,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature2, 12, remainingWorkItemsFeature2, team2);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             var actualFeature1 = project.Features[0];
             Assert.That(actualFeature1.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsFeature1));
@@ -470,7 +475,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam2, team2);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             var actualFeature = project.Features.Single();
             using (Assert.EnterMultipleScope())
@@ -490,14 +495,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42" };
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(testTeams) { ReferenceId = "42" };
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -520,14 +525,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             project.OwningTeam = team2;
 
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
-            var feature = new Feature(teams) { ReferenceId = "42" };
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(testTeams) { ReferenceId = "42" };
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -555,8 +560,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
-            var feature = new Feature(teams)
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(testTeams)
             {
                 ReferenceId = "42",
                 AdditionalFieldValues =
@@ -569,7 +574,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(portfolio);
+            await subject.UpdateFeaturesForPortfolio(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
@@ -595,8 +600,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             AddAdditionalField(portfolio, 12, "MyCustomField", "My Custom Field");
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
-            var feature = new Feature(teams)
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(testTeams)
             {
                 ReferenceId = "42",
                 AdditionalFieldValues =
@@ -609,7 +614,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(portfolio);
+            await subject.UpdateFeaturesForPortfolio(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
@@ -637,8 +642,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams)
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(testTeams)
             {
                 ReferenceId = "42",
                 AdditionalFieldValues =
@@ -651,7 +656,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(portfolio);
+            await subject.UpdateFeaturesForPortfolio(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
@@ -682,8 +687,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams)
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(testTeams)
             {
                 ReferenceId = "42",
                 AdditionalFieldValues =
@@ -696,7 +701,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(portfolio);
+            await subject.UpdateFeaturesForPortfolio(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
@@ -727,8 +732,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams)
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(testTeams)
             {
                 ReferenceId = "42",
                 AdditionalFieldValues =
@@ -741,7 +746,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(portfolio);
+            await subject.UpdateFeaturesForPortfolio(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
@@ -769,8 +774,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
-            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
-            var feature = new Feature(teams)
+            var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(testTeams)
             {
                 ReferenceId = "42",
                 AdditionalFieldValues =
@@ -783,7 +788,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(portfolio);
+            await subject.UpdateFeaturesForPortfolio(portfolio);
 
             using (Assert.EnterMultipleScope())
             {
@@ -815,7 +820,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 [parentFeature]);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             featureRepositoryMock.Verify(x => x.Add(parentFeature));
             Assert.That(parentFeature.IsParentFeature, Is.True);
@@ -838,7 +843,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 [parentFeature]);
 
             var subject = CreateSubject();
-            await subject.UpdateFeaturesForProject(project);
+            await subject.UpdateFeaturesForPortfolio(project);
 
             featureRepositoryMock.Verify(x => x.Update(It.IsAny<Feature>()), Times.Never());
             Assert.That(parentFeature.IsParentFeature, Is.True);
@@ -959,6 +964,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
             team.WorkTrackingSystemConnection = workTrackingConnection;
 
+            teams.Add(team);
+
             return team;
         }
 
@@ -1008,7 +1015,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
 
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object);
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object);
         }
     }
 }

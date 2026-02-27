@@ -3,22 +3,12 @@ import type { APIRequestContext } from "@playwright/test";
 export async function createPortfolio(
 	api: APIRequestContext,
 	portfolioName: string,
-	involvedTeams: { id: number; name: string }[],
 	workTrackingSystemConnectionId: number,
 	dataRetrievalValue: string,
 	workItemTypes: string[],
 	states: { toDo: string[]; doing: string[]; done: string[] },
 	tags: string[],
 ): Promise<{ id: number; name: string }> {
-	const involvedTeamsData = involvedTeams.map((team) => ({
-		id: team.id,
-		name: team.name,
-		featureWip: 1,
-		lastUpdated: new Date().toISOString(),
-		throughput: [],
-		tags: [],
-	}));
-
 	const response = await api.post("/api/portfolios", {
 		data: {
 			id: 0,
@@ -38,7 +28,6 @@ export async function createPortfolio(
 			sizeEstimateField: "",
 			owningTeam: null,
 			featureOwnerField: "",
-			involvedTeams: involvedTeamsData,
 			workTrackingSystemConnectionId: workTrackingSystemConnectionId,
 			serviceLevelExpectationProbability: 80,
 			serviceLevelExpectationRange: 25,

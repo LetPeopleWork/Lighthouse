@@ -2,7 +2,6 @@ import type { IBaseSettings } from "../Common/BaseSettings";
 import type { IEntityReference } from "../EntityReference";
 
 export interface IPortfolioSettings extends IBaseSettings {
-	involvedTeams: IEntityReference[];
 	owningTeam?: IEntityReference;
 
 	overrideRealChildCountStates: string[];
