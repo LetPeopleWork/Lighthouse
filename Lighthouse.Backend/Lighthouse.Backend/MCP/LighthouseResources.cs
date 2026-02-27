@@ -2,19 +2,16 @@
 
 namespace Lighthouse.Backend.MCP
 {
-    public sealed class LighthouseResources : LighthouseToolsBase, IDisposable
+    public sealed class LighthouseResources(IServiceScopeFactory serviceScopeFactory)
+        : LighthouseToolsBase(serviceScopeFactory), IDisposable
     {
-        private readonly HttpClient httpClient;
+        private readonly HttpClient httpClient = new();
 
-        public LighthouseResources(IServiceScopeFactory serviceScopeFactory) : base(serviceScopeFactory)
-        {
-            httpClient = new HttpClient();
-        }
-
+        private const string BaseUri = "https://docs.lighthouse.letpeople.work";
+        private const string HtmlMimeType = "text/html";
+        
         public ValueTask<ListResourcesResult> ListDocumentationResources()
         {
-            const string BaseUri = "https://docs.lighthouse.letpeople.work";
-            const string HtmlMimeType = "text/html";
 
             var resources = new List<Resource>
             {
@@ -92,7 +89,7 @@ namespace Lighthouse.Backend.MCP
                 {
                     Uri = uri,
                     MimeType = resource?.MimeType ?? "text/html",
-                    Blob = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(content))
+                    Blob = System.Text.Encoding.UTF8.GetBytes(content)
                 };
 
                 return new ReadResourceResult
@@ -108,7 +105,7 @@ namespace Lighthouse.Backend.MCP
 
         public void Dispose()
         {
-            httpClient?.Dispose();
+            httpClient.Dispose();
         }
     }
 }
