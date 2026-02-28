@@ -1,25 +1,45 @@
 import AddIcon from "@mui/icons-material/Add";
-import { Box, Container, Typography } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import {
+	Alert,
+	Box,
+	Container,
+	Fade,
+	IconButton,
+	Tooltip,
+	Typography,
+	useTheme,
+} from "@mui/material";
+import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useContext, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
+import DataGridBase from "../../components/Common/DataGrid/DataGridBase";
+import type { DataGridColumn } from "../../components/Common/DataGrid/types";
 import DataOverviewTable from "../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
+import OnboardingStepper from "../../components/Common/OnboardingStepper/OnboardingStepper";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
+import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../services/Api/ApiError";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../services/TerminologyContext";
 
 const OverviewDashboard: React.FC = () => {
 	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
 	const [teams, setTeams] = useState<Team[]>([]);
+	const [connections, setConnections] = useState<
+		IWorkTrackingSystemConnection[]
+	>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
@@ -29,9 +49,17 @@ const OverviewDashboard: React.FC = () => {
 	const [deleteType, setDeleteType] = useState<"portfolio" | "team" | null>(
 		null,
 	);
+	const [deleteConnectionDialogOpen, setDeleteConnectionDialogOpen] =
+		useState(false);
+	const [selectedConnection, setSelectedConnection] =
+		useState<IWorkTrackingSystemConnection | null>(null);
+	const [deleteConnectionError, setDeleteConnectionError] = useState<
+		string | null
+	>(null);
 
 	const location = useLocation();
 	const navigate = useNavigate();
+	const theme = useTheme();
 	const queryParams = new URLSearchParams(location.search);
 	const initialFilterText = queryParams.get("filter") ?? "";
 	const [filterText, setFilterText] = useState(initialFilterText);
@@ -40,7 +68,8 @@ const OverviewDashboard: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const { portfolioService, teamService } = useContext(ApiServiceContext);
+	const { portfolioService, teamService, workTrackingSystemService } =
+		useContext(ApiServiceContext);
 	const {
 		canCreatePortfolio,
 		canCreateTeam,
@@ -48,21 +77,26 @@ const OverviewDashboard: React.FC = () => {
 		maxTeamsWithoutPremium,
 	} = useLicenseRestrictions();
 
+	const hasConnections = connections.length > 0;
+	const hasTeams = teams.length > 0;
+
 	const fetchData = useCallback(async () => {
 		try {
 			setIsLoading(true);
-			const [portfolioData, teamData] = await Promise.all([
+			const [portfolioData, teamData, connectionData] = await Promise.all([
 				portfolioService.getPortfolios(),
 				teamService.getTeams(),
+				workTrackingSystemService.getConfiguredWorkTrackingSystems(),
 			]);
 			setPortfolios(portfolioData);
 			setTeams(teamData);
+			setConnections(connectionData);
 			setIsLoading(false);
 		} catch (error) {
 			console.error("Error fetching overview data:", error);
 			setHasError(true);
 		}
-	}, [portfolioService, teamService]);
+	}, [portfolioService, teamService, workTrackingSystemService]);
 
 	useEffect(() => {
 		fetchData();
@@ -103,6 +137,49 @@ const OverviewDashboard: React.FC = () => {
 		setDeleteType(null);
 	};
 
+	// Connection handlers
+	const handleAddConnection = async () => {
+		navigate("/connections/new");
+	};
+
+	const handleDeleteConnection = useCallback(
+		(connection: IWorkTrackingSystemConnection) => {
+			setSelectedConnection(connection);
+			setDeleteConnectionError(null);
+			setDeleteConnectionDialogOpen(true);
+		},
+		[],
+	);
+
+	const handleDeleteConnectionConfirmation = async (confirmed: boolean) => {
+		if (confirmed && selectedConnection?.id) {
+			try {
+				await workTrackingSystemService.deleteWorkTrackingSystemConnection(
+					selectedConnection.id,
+				);
+				setConnections((prev) =>
+					prev.filter((c) => c.id !== selectedConnection.id),
+				);
+				setDeleteConnectionDialogOpen(false);
+				setSelectedConnection(null);
+				setDeleteConnectionError(null);
+			} catch (error) {
+				if (error instanceof ApiError && error.code === 409) {
+					setDeleteConnectionError(error.message);
+				} else {
+					setDeleteConnectionError(
+						"Failed to delete connection. Please try again.",
+					);
+				}
+				return;
+			}
+		} else {
+			setDeleteConnectionDialogOpen(false);
+			setSelectedConnection(null);
+			setDeleteConnectionError(null);
+		}
+	};
+
 	// Update URL when filter changes
 	const handleFilterChange = (newFilterText: string) => {
 		setFilterText(newFilterText);
@@ -131,6 +208,88 @@ const OverviewDashboard: React.FC = () => {
 		navigate("/teams/new");
 	};
 
+	const connectionColumns: DataGridColumn<
+		IWorkTrackingSystemConnection & GridValidRowModel
+	>[] = useMemo(
+		() => [
+			{
+				field: "name",
+				headerName: "Name",
+				flex: 1,
+				hideable: false,
+				sortable: true,
+				renderCell: ({ row }) => (
+					<Link
+						to={`/connections/${row.id}/edit`}
+						style={{
+							textDecoration: "none",
+							color: theme.palette.primary.main,
+							fontWeight: "bold",
+						}}
+					>
+						{row.name}
+					</Link>
+				),
+			},
+			{
+				field: "workTrackingSystem",
+				headerName: "Type",
+				width: 180,
+				sortable: true,
+			},
+			{
+				field: "actions",
+				headerName: "Actions",
+				width: 150,
+				sortable: false,
+				hideable: false,
+				renderCell: ({ row }) => (
+					<Box
+						sx={{
+							display: "flex",
+							justifyContent: "flex-end",
+							gap: 1,
+							width: "100%",
+						}}
+					>
+						<Tooltip title="Edit">
+							<IconButton
+								component={Link}
+								to={`/connections/${row.id}/edit`}
+								size="medium"
+								sx={{
+									color: theme.palette.primary.main,
+									transition: "transform 0.2s",
+									"&:hover": { transform: "scale(1.1)" },
+								}}
+								data-testid="edit-connection-button"
+							>
+								<EditIcon fontSize="medium" />
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Delete">
+							<IconButton
+								onClick={() => handleDeleteConnection(row)}
+								size="medium"
+								sx={{
+									color: theme.palette.primary.main,
+									transition: "transform 0.2s",
+									"&:hover": { transform: "scale(1.1)" },
+								}}
+								data-testid="delete-connection-button"
+							>
+								<DeleteIcon fontSize="medium" />
+							</IconButton>
+						</Tooltip>
+					</Box>
+				),
+			},
+		],
+		[theme, handleDeleteConnection],
+	);
+
+	const hasPortfolios = portfolios.length > 0;
+
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 			<Container maxWidth={false}>
@@ -138,6 +297,19 @@ const OverviewDashboard: React.FC = () => {
 					filterText={filterText}
 					onFilterTextChange={handleFilterChange}
 				/>
+
+				{/* Onboarding stepper — visible when setup is incomplete */}
+				<Box sx={{ mt: 2 }}>
+					<OnboardingStepper
+						hasConnections={hasConnections}
+						hasTeams={hasTeams}
+						hasPortfolios={hasPortfolios}
+						canCreateTeam={canCreateTeam}
+						canCreatePortfolio={canCreatePortfolio}
+						teamTerm={teamTerm}
+						portfolioTerm={portfolioTerm}
+					/>
+				</Box>
 
 				{/* Header with Add buttons */}
 				<Box
@@ -157,40 +329,62 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ fontWeight: 600 }}
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
-						<LicenseTooltip
-							canUseFeature={canCreatePortfolio}
-							defaultTooltip=""
-							premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
+						<ActionButton
+							buttonText="Add Connection"
+							startIcon={<AddIcon />}
+							onClickHandler={handleAddConnection}
+							buttonVariant="contained"
+						/>
+						<Tooltip
+							title={
+								!hasConnections
+									? "Create a connection before adding a team"
+									: ""
+							}
 						>
 							<span>
-								<ActionButton
-									buttonText={`Add ${portfolioTerm}`}
-									startIcon={<AddIcon />}
-									onClickHandler={handleAddPortfolio}
-									buttonVariant="contained"
-									disabled={!canCreatePortfolio}
-								/>
+								<LicenseTooltip
+									canUseFeature={canCreateTeam}
+									defaultTooltip=""
+									premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
+								>
+									<span>
+										<ActionButton
+											buttonText={`Add ${teamTerm}`}
+											startIcon={<AddIcon />}
+											onClickHandler={handleAddTeam}
+											buttonVariant="contained"
+											disabled={!canCreateTeam || !hasConnections}
+										/>
+									</span>
+								</LicenseTooltip>
 							</span>
-						</LicenseTooltip>
-						<LicenseTooltip
-							canUseFeature={canCreateTeam}
-							defaultTooltip=""
-							premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
+						</Tooltip>
+						<Tooltip
+							title={!hasTeams ? "Create a team before adding a portfolio" : ""}
 						>
 							<span>
-								<ActionButton
-									buttonText={`Add ${teamTerm}`}
-									startIcon={<AddIcon />}
-									onClickHandler={handleAddTeam}
-									buttonVariant="contained"
-									disabled={!canCreateTeam}
-								/>
+								<LicenseTooltip
+									canUseFeature={canCreatePortfolio}
+									defaultTooltip=""
+									premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
+								>
+									<span>
+										<ActionButton
+											buttonText={`Add ${portfolioTerm}`}
+											startIcon={<AddIcon />}
+											onClickHandler={handleAddPortfolio}
+											buttonVariant="contained"
+											disabled={!canCreatePortfolio || !hasTeams}
+										/>
+									</span>
+								</LicenseTooltip>
 							</span>
-						</LicenseTooltip>
+						</Tooltip>
 					</Box>
 				</Box>
 
-				{/* Vertical layout for tables */}
+				{/* Vertical layout: Portfolios → Teams → Connections (bottom) */}
 				<Box
 					sx={{
 						display: "flex",
@@ -212,6 +406,63 @@ const OverviewDashboard: React.FC = () => {
 						onDelete={handleTeamDelete}
 						filterText={filterText}
 					/>
+
+					{/* Connections Section — styled consistently with Portfolios/Teams */}
+					<Container maxWidth={false} sx={{ pb: 4 }}>
+						<Box
+							sx={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								gap: 2,
+								mb: 2,
+							}}
+						>
+							<Typography
+								variant="h5"
+								sx={{
+									fontWeight: 600,
+									color: theme.palette.primary.main,
+									textTransform: "capitalize",
+								}}
+							>
+								Connections
+							</Typography>
+						</Box>
+
+						{connections.length === 0 && (
+							<Fade in={true} timeout={800}>
+								<Alert
+									severity="info"
+									variant="outlined"
+									sx={{
+										mb: 3,
+										borderRadius: 2,
+										boxShadow: theme.shadows[1],
+									}}
+									data-testid="no-connections-alert"
+								>
+									<Typography variant="body1">
+										No connections configured yet. Add a connection to get
+										started.
+									</Typography>
+								</Alert>
+							</Fade>
+						)}
+
+						{connections.length > 0 && (
+							<Box data-testid="connections-datagrid-container">
+								<DataGridBase
+									rows={
+										connections as (IWorkTrackingSystemConnection &
+											GridValidRowModel)[]
+									}
+									columns={connectionColumns}
+									storageKey="overview-connection-table"
+								/>
+							</Box>
+						)}
+					</Container>
 				</Box>
 
 				{selectedItem && (
@@ -219,6 +470,15 @@ const OverviewDashboard: React.FC = () => {
 						open={deleteDialogOpen}
 						itemName={selectedItem.name}
 						onClose={handleDeleteConfirmation}
+					/>
+				)}
+
+				{selectedConnection && deleteConnectionDialogOpen && (
+					<DeleteConfirmationDialog
+						open={deleteConnectionDialogOpen}
+						itemName={selectedConnection.name}
+						onClose={handleDeleteConnectionConfirmation}
+						errorMessage={deleteConnectionError ?? undefined}
 					/>
 				)}
 			</Container>

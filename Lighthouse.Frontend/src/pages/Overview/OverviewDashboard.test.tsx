@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { WorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
@@ -14,6 +15,7 @@ import {
 	createMockTeamService,
 	createMockTerminologyService,
 	createMockUpdateSubscriptionService,
+	createMockWorkTrackingSystemService,
 } from "../../tests/MockApiServiceProvider";
 import OverviewDashboard from "./OverviewDashboard";
 
@@ -37,14 +39,31 @@ vi.mock("../../hooks/useLicenseRestrictions", () => ({
 	}),
 }));
 
+const mockConnections = [
+	new WorkTrackingSystemConnection({
+		name: "My ADO Connection",
+		workTrackingSystem: "AzureDevOps",
+		options: [],
+		id: 1,
+	}),
+];
+
 const renderWithProviders = (
 	component: React.ReactElement,
 	overrides: Partial<IApiServiceContext> = {},
+	{
+		connections = mockConnections,
+		teams: teamOverrides,
+	}: {
+		connections?: WorkTrackingSystemConnection[];
+		teams?: { id: number; name: string }[];
+	} = {},
 ) => {
 	const mockPortfolioService = createMockPortfolioService();
 	const mockTeamService = createMockTeamService();
 	const mockTerminologyService = createMockTerminologyService();
 	const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
+	const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 
 	// Mock data for portfolios and teams
 	const mockPortfolios = [
@@ -74,40 +93,57 @@ const renderWithProviders = (
 		},
 	];
 
-	const mockTeams = [
-		{
-			id: 1,
-			name: "Test Team 1",
-			tags: [],
-			features: [],
-			projects: [],
-			lastUpdated: new Date(),
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			remainingFeatures: 0,
-			featureWip: 1,
-			useFixedDatesForThroughput: false,
-			throughputStartDate: new Date(),
-			throughputEndDate: new Date(),
-		},
-		{
-			id: 2,
-			name: "Test Team 2",
-			tags: [],
-			features: [],
-			projects: [],
-			lastUpdated: new Date(),
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			remainingFeatures: 0,
-			featureWip: 1,
-			useFixedDatesForThroughput: false,
-			throughputStartDate: new Date(),
-			throughputEndDate: new Date(),
-		},
-	];
+	const mockTeams = teamOverrides
+		? teamOverrides.map((t) => ({
+				id: t.id,
+				name: t.name,
+				tags: [],
+				features: [],
+				projects: [],
+				lastUpdated: new Date(),
+				serviceLevelExpectationProbability: 0,
+				serviceLevelExpectationRange: 0,
+				systemWIPLimit: 0,
+				remainingFeatures: 0,
+				featureWip: 1,
+				useFixedDatesForThroughput: false,
+				throughputStartDate: new Date(),
+				throughputEndDate: new Date(),
+			}))
+		: [
+				{
+					id: 1,
+					name: "Test Team 1",
+					tags: [],
+					features: [],
+					projects: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+					remainingFeatures: 0,
+					featureWip: 1,
+					useFixedDatesForThroughput: false,
+					throughputStartDate: new Date(),
+					throughputEndDate: new Date(),
+				},
+				{
+					id: 2,
+					name: "Test Team 2",
+					tags: [],
+					features: [],
+					projects: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+					remainingFeatures: 0,
+					featureWip: 1,
+					useFixedDatesForThroughput: false,
+					throughputStartDate: new Date(),
+					throughputEndDate: new Date(),
+				},
+			];
 
 	// Setup mock return values
 	mockPortfolioService.getPortfolios = vi
@@ -150,6 +186,12 @@ const renderWithProviders = (
 			hasActiveUpdates: false,
 			activeCount: 0,
 		});
+	mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems = vi
+		.fn()
+		.mockResolvedValue(connections);
+	mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+		.fn()
+		.mockResolvedValue([]);
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -163,6 +205,7 @@ const renderWithProviders = (
 		teamService: mockTeamService,
 		terminologyService: mockTerminologyService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
+		workTrackingSystemService: mockWorkTrackingSystemService,
 		licensingService: {
 			getLicenseStatus: vi.fn().mockResolvedValue({
 				canUsePremiumFeatures: true,
@@ -212,6 +255,7 @@ describe("OverviewDashboard", () => {
 		}); // Now check for the dashboard header and buttons
 		expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Add Team")).toBeInTheDocument();
+		expect(screen.getByText("Add Connection")).toBeInTheDocument();
 	});
 
 	it("shows main filter bar only", async () => {
@@ -221,6 +265,50 @@ describe("OverviewDashboard", () => {
 			// There should only be one textbox - the main filter (individual table filters are hidden)
 			const filterInputs = screen.getAllByRole("textbox");
 			expect(filterInputs.length).toBe(1); // Only the main filter
+		});
+	});
+
+	it("renders connections section with connection name", async () => {
+		renderWithProviders(<OverviewDashboard />);
+
+		await waitFor(() => {
+			expect(screen.getByText("My ADO Connection")).toBeInTheDocument();
+		});
+	});
+
+	it("shows empty state alert when no connections exist", async () => {
+		renderWithProviders(<OverviewDashboard />, {}, { connections: [] });
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(/No connections configured yet/),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("disables Add Team button when no connections exist", async () => {
+		renderWithProviders(
+			<OverviewDashboard />,
+			{},
+			{ connections: [], teams: [] },
+		);
+
+		await waitFor(() => {
+			const addTeamButton = screen.getByRole("button", {
+				name: "Add Team",
+			});
+			expect(addTeamButton).toBeDisabled();
+		});
+	});
+
+	it("disables Add Portfolio button when no teams exist", async () => {
+		renderWithProviders(<OverviewDashboard />, {}, { teams: [] });
+
+		await waitFor(() => {
+			const addPortfolioButton = screen.getByRole("button", {
+				name: "Add Portfolio",
+			});
+			expect(addPortfolioButton).toBeDisabled();
 		});
 	});
 });

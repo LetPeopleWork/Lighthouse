@@ -1,4 +1,5 @@
 import {
+	Alert,
 	Button,
 	Dialog,
 	DialogActions,
@@ -13,12 +14,14 @@ interface DeleteConfirmationDialogProps {
 	open: boolean;
 	itemName: string;
 	onClose: (confirmed: boolean) => void;
+	errorMessage?: string;
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 	open,
 	itemName,
 	onClose,
+	errorMessage,
 }) => {
 	const handleClose = (confirmed: boolean) => {
 		onClose(confirmed);
@@ -39,6 +42,15 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 				<DialogContentText id={alertDialogDescriptionId}>
 					Do you really want to delete {itemName}?
 				</DialogContentText>
+				{errorMessage && (
+					<Alert
+						severity="error"
+						sx={{ mt: 2 }}
+						data-testid="delete-error-alert"
+					>
+						{errorMessage}
+					</Alert>
+				)}
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={() => handleClose(false)} color="primary">

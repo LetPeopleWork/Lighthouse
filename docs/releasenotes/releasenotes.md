@@ -4,6 +4,19 @@ layout: home
 nav_order: 95
 ---
 
+# vNext
+
+## Write Back to Work Tracking Systems
+Lighthouse can now write data back to your work tracking systems. Configure write-back mappings on your connections to automatically update fields in Azure DevOps, Jira, or other supported systems when forecasts or features are updated. This enables teams to keep their work tracking systems in sync with Lighthouse's forecasting data without manual intervention.
+
+## Connections Moved to Overview
+Work tracking system connections have been moved from the Settings page to the Overview page, making them more accessible. The Overview now shows your configured connections alongside portfolios and teams, with full create, edit, and delete capabilities. Onboarding prerequisites are enforced: you must create a connection before adding a team, and a team before adding a portfolio.
+
+Connections that are in use by teams or portfolios are protected from accidental deletion with a clear error message.
+
+## Settings Renamed to System Settings
+The "Settings" page has been renamed to "System Settings" for clarity. The former "System Settings" tab within that page is now called "Configuration".
+
 # Lighthouse v26.2.22.1
 
 ## Visualizing Estimations

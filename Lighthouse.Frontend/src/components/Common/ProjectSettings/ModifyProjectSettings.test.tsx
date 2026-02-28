@@ -58,6 +58,7 @@ vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 								options: [],
 								authenticationMethodKey: "jira.cloud",
 								additionalFieldDefinitions: [],
+								writeBackMappingDefinitions: [],
 								workTrackingSystemGetDataRetrievalDisplayName: () =>
 									"JQL Query",
 							} as IWorkTrackingSystemConnection)
@@ -227,6 +228,7 @@ describe("ModifyProjectSettings", () => {
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
 			additionalFieldDefinitions: [],
+			writeBackMappingDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 		},
 		{
@@ -236,6 +238,7 @@ describe("ModifyProjectSettings", () => {
 			workTrackingSystem: "AzureDevOps",
 			authenticationMethodKey: "ado.pat",
 			additionalFieldDefinitions: [],
+			writeBackMappingDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 		},
 	];

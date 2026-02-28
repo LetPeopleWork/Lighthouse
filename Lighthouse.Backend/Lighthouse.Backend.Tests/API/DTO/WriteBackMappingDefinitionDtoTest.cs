@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var model = new WriteBackMappingDefinition
             {
                 Id = 42,
-                ValueSource = WriteBackValueSource.CycleTime,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.CycleTime",
                 TargetValueType = WriteBackTargetValueType.FormattedText,
@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.Id, Is.EqualTo(42));
-                Assert.That(subject.ValueSource, Is.EqualTo(WriteBackValueSource.CycleTime));
+                Assert.That(subject.ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(subject.AppliesTo, Is.EqualTo(WriteBackAppliesTo.Team));
                 Assert.That(subject.TargetFieldReference, Is.EqualTo("Custom.CycleTime"));
                 Assert.That(subject.TargetValueType, Is.EqualTo(WriteBackTargetValueType.FormattedText));
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var subject = new WriteBackMappingDefinitionDto
             {
                 Id = -1,
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age"
             };
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             connection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
                 Id = 42,
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge",
                 TargetValueType = WriteBackTargetValueType.FormattedText,
@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Assert.That(subject.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
                 Assert.That(subject.WriteBackMappingDefinitions[0].Id, Is.EqualTo(42));
-                Assert.That(subject.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAge));
+                Assert.That(subject.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(subject.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.WorkItemAge"));
             }
         }

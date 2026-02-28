@@ -9,7 +9,11 @@ namespace Lighthouse.Backend.API
 {
     [Route("api/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [ApiController]
-    public class WorkTrackingSystemConnectionController(IRepository<WorkTrackingSystemConnection> repository, ILicenseService licenseService)
+    public class WorkTrackingSystemConnectionController(
+        IRepository<WorkTrackingSystemConnection> repository,
+        IRepository<Team> teamRepository,
+        IRepository<Portfolio> portfolioRepository,
+        ILicenseService licenseService)
         : ControllerBase
     {
         [HttpPut]
@@ -73,6 +77,14 @@ namespace Lighthouse.Backend.API
             if (!repository.Exists(workTrackingSystemConnectionId))
             {
                 return NotFound();
+            }
+
+            var isReferencedByTeam = teamRepository.Exists(t => t.WorkTrackingSystemConnectionId == workTrackingSystemConnectionId);
+            var isReferencedByPortfolio = portfolioRepository.Exists(p => p.WorkTrackingSystemConnectionId == workTrackingSystemConnectionId);
+
+            if (isReferencedByTeam || isReferencedByPortfolio)
+            {
+                return Conflict("Cannot delete this connection because it is currently used by one or more teams or portfolios.");
             }
 
             repository.Remove(workTrackingSystemConnectionId);

@@ -26,10 +26,6 @@ namespace Lighthouse.Backend.Services.Implementation
             try
             {
                 var connection = team.WorkTrackingSystemConnection;
-                if (connection == null)
-                {
-                    return;
-                }
 
                 var mappings = connection.WriteBackMappingDefinitions
                     .Where(m => m.AppliesTo == WriteBackAppliesTo.Team)
@@ -80,10 +76,6 @@ namespace Lighthouse.Backend.Services.Implementation
             try
             {
                 var connection = portfolio.WorkTrackingSystemConnection;
-                if (connection == null)
-                {
-                    return;
-                }
 
                 var mappings = connection.WriteBackMappingDefinitions
                     .Where(m => m.AppliesTo == WriteBackAppliesTo.Portfolio)
@@ -174,8 +166,8 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             return source switch
             {
-                WriteBackValueSource.WorkItemAge when workItem.WorkItemAge > 0 => workItem.WorkItemAge.ToString(),
-                WriteBackValueSource.CycleTime when workItem.CycleTime > 0 => workItem.CycleTime.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when workItem.WorkItemAge > 0 => workItem.WorkItemAge.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when workItem.CycleTime > 0 => workItem.CycleTime.ToString(),
                 _ => null,
             };
         }
@@ -190,8 +182,8 @@ namespace Lighthouse.Backend.Services.Implementation
             return mapping.ValueSource switch
             {
                 WriteBackValueSource.FeatureSize => feature.Size.ToString(),
-                WriteBackValueSource.WorkItemAge when feature.WorkItemAge > 0 => feature.WorkItemAge.ToString(),
-                WriteBackValueSource.CycleTime when feature.CycleTime > 0 => feature.CycleTime.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when feature.WorkItemAge > 0 => feature.WorkItemAge.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when feature.CycleTime > 0 => feature.CycleTime.ToString(),
                 _ => null,
             };
         }
@@ -204,10 +196,6 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var forecast = feature.Forecast;
-            if (forecast == null)
-            {
-                return null;
-            }
 
             var percentile = GetPercentileFromSource(mapping.ValueSource);
             var daysToCompletion = forecast.GetProbability(percentile);

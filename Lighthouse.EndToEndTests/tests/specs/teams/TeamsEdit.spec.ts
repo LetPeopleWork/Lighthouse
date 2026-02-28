@@ -375,7 +375,9 @@ for (const wizardConfig of wizardConfiguration) {
 		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
 
 		await test.step(`Use Wizard to Select ${wizardConfig.name} Board`, async () => {
-			await newTeamPage.selectWorkTrackingSystem(newWorkTrackingSystemConnectionName);
+			await newTeamPage.selectWorkTrackingSystem(
+				newWorkTrackingSystemConnectionName,
+			);
 			const wizard = await newTeamPage.openBoardWizard(
 				wizardConfig.displayName,
 			);

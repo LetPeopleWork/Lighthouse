@@ -4,9 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Settings from "./Settings";
 
 // Mock the components used in the tabs
-vi.mock("./Connections/WorkTrackingSystemConnectionSettings", () => ({
-	default: () => <div>Work Tracking System Connection Settings</div>,
-}));
 vi.mock("./LogSettings/LogSettings", () => ({
 	default: () => <div>Log Settings</div>,
 }));
@@ -41,27 +38,33 @@ describe("Settings Component", () => {
 
 	it("should render the initial tab correctly", () => {
 		renderWithRouter();
-		expect(screen.getByTestId("work-tracking-panel")).toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).toBeVisible();
+	});
+
+	it("should render the heading as System Settings", () => {
+		renderWithRouter();
+		expect(
+			screen.getByRole("heading", { name: "System Settings" }),
+		).toBeInTheDocument();
 	});
 
 	it("should switch to demo data tab when demodata query parameter is provided", () => {
 		renderWithRouter(["/settings?tab=demodata"]);
 
 		expect(screen.getByTestId("demo-data-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 
-	it("should switch to System Settings tab when clicked", () => {
-		renderWithRouter();
-		fireEvent.click(screen.getByTestId("system-settings-tab"));
-		expect(screen.getByTestId("system-settings-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
+	it("should switch to Configuration tab via query parameter", () => {
+		renderWithRouter(["/settings?tab=configuration"]);
+
+		expect(screen.getByTestId("configuration-panel")).toBeVisible();
 	});
 
 	it("should switch to Logs tab when clicked", () => {
 		renderWithRouter();
 		fireEvent.click(screen.getByTestId("logs-tab"));
 		expect(screen.getByTestId("logs-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 });

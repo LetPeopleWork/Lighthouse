@@ -42,7 +42,7 @@ const Header: React.FC = () => {
 
 	const navigationLinks = [
 		{ path: "/", text: "Overview" },
-		{ path: "/settings", text: "Settings" },
+		{ path: "/settings", text: "System Settings" },
 	];
 
 	const drawer = (

@@ -34,10 +34,10 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
         {
             var subject = new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.CycleTime
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime
             };
 
-            Assert.That(subject.ValueSource, Is.EqualTo(WriteBackValueSource.CycleTime));
+            Assert.That(subject.ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
         }
 
         [Test]
@@ -57,13 +57,13 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
             var subject = new WriteBackMappingDefinition
             {
                 Id = 42,
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 TargetFieldReference = "original.field"
             };
 
             var originalStableId = subject.Id;
 
-            subject.ValueSource = WriteBackValueSource.CycleTime;
+            subject.ValueSource = WriteBackValueSource.FeatureSize;
             subject.TargetFieldReference = "changed.field";
 
             Assert.That(subject.Id, Is.EqualTo(originalStableId));
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
             var subject = new WorkTrackingSystemConnection();
             var mapping = new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge"
             };
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
-                Assert.That(subject.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAge));
+                Assert.That(subject.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(subject.WriteBackMappingDefinitions[0].AppliesTo, Is.EqualTo(WriteBackAppliesTo.Team));
                 Assert.That(subject.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.WorkItemAge"));
             }
@@ -109,12 +109,12 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
             var mapping = new WriteBackMappingDefinition
             {
                 Id = 42,
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 TargetFieldReference = "Custom.WorkItemAge"
             };
             subject.WriteBackMappingDefinitions.Add(mapping);
 
-            subject.WriteBackMappingDefinitions[0].ValueSource = WriteBackValueSource.CycleTime;
+            subject.WriteBackMappingDefinitions[0].ValueSource = WriteBackValueSource.FeatureSize;
 
             using (Assert.EnterMultipleScope())
             {
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
 
             subject.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 TargetFieldReference = "Custom.WorkItemAge"
             });
 

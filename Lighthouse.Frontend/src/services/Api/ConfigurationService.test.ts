@@ -151,6 +151,7 @@ describe("ConfigurationService", () => {
 					options: [],
 					authenticationMethodKey: "ado.pat",
 					additionalFieldDefinitions: [],
+					writeBackMappingDefinitions: [],
 					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 				},
 			],

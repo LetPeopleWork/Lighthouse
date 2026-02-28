@@ -15,6 +15,7 @@ import Header from "./components/App/Header/Header";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
+import EditConnection from "./pages/Connections/Edit/EditConnection";
 import PortfolioDetail from "./pages/Portfolios/Detail/PortfolioDetail";
 import EditPortfolio from "./pages/Portfolios/Edit/EditPortfolio";
 import TeamDetail from "./pages/Teams/Detail/TeamDetail";
@@ -80,6 +81,10 @@ const App: React.FC = () => {
 							>
 								<Routes>
 									<Route path="/" element={<OverviewDashboard />} />
+									<Route path="/connections">
+										<Route path="new" element={<EditConnection />} />
+										<Route path=":id/edit" element={<EditConnection />} />
+									</Route>
 									<Route path="/teams">
 										<Route path=":id/:tab?" element={<TeamDetail />} />
 										<Route path="edit/:id" element={<TeamEditRedirect />} />

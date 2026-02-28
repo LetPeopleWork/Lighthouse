@@ -1,5 +1,6 @@
 import type { IAdditionalFieldDefinition } from "./AdditionalFieldDefinition";
 import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
+import type { IWriteBackMappingDefinition } from "./WriteBackMappingDefinition";
 
 export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear" | "Csv";
 
@@ -37,6 +38,7 @@ export interface IWorkTrackingSystemConnection {
 	authenticationMethodDisplayName?: string;
 	availableAuthenticationMethods?: IAuthenticationMethod[];
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
+	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 }
 
 export class WorkTrackingSystemConnection
@@ -50,6 +52,7 @@ export class WorkTrackingSystemConnection
 	authenticationMethodDisplayName?: string;
 	availableAuthenticationMethods?: IAuthenticationMethod[];
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
+	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 
 	constructor(data: {
 		name: string;
@@ -60,6 +63,7 @@ export class WorkTrackingSystemConnection
 		authenticationMethodDisplayName?: string;
 		availableAuthenticationMethods?: IAuthenticationMethod[];
 		additionalFieldDefinitions?: IAdditionalFieldDefinition[];
+		writeBackMappingDefinitions?: IWriteBackMappingDefinition[];
 	}) {
 		this.id = data.id ?? null;
 		this.name = data.name;
@@ -69,6 +73,7 @@ export class WorkTrackingSystemConnection
 		this.authenticationMethodDisplayName = data.authenticationMethodDisplayName;
 		this.availableAuthenticationMethods = data.availableAuthenticationMethods;
 		this.additionalFieldDefinitions = data.additionalFieldDefinitions ?? [];
+		this.writeBackMappingDefinitions = data.writeBackMappingDefinitions ?? [];
 	}
 
 	workTrackingSystemGetDataRetrievalDisplayName(): string {

@@ -65,6 +65,7 @@ vi.mock(
 									id: 1,
 									name: "New System",
 									options: [],
+									writeBackMappingDefinitions: [],
 									workTrackingSystem: "Linear",
 									authenticationMethodKey: "linear.apikey",
 									workTrackingSystemGetDataRetrievalDisplayName: () =>
@@ -200,6 +201,7 @@ describe("ModifyTeamSettings", () => {
 			workTrackingSystem: "Jira",
 			authenticationMethodKey: "jira.cloud",
 			additionalFieldDefinitions: [],
+			writeBackMappingDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
 		},
 		{
@@ -209,6 +211,7 @@ describe("ModifyTeamSettings", () => {
 			workTrackingSystem: "AzureDevOps",
 			authenticationMethodKey: "ado.pat",
 			additionalFieldDefinitions: [],
+			writeBackMappingDefinitions: [],
 			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
 		},
 	];

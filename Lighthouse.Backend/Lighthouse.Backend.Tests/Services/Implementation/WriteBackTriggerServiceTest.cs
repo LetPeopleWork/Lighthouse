@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
@@ -90,21 +90,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_WorkItemAge_WritesOnlyDoingItems()
+        public async Task TriggerWriteBackForTeam_WorkItemAgeCycleTime_WritesAgeForDoingItems()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
 
             var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-5));
             var todoItem = CreateWorkItem("102", StateCategories.ToDo, team);
-            var doneItem = CreateWorkItem("103", StateCategories.Done, team, startedDate: DateTime.UtcNow.AddDays(-10), closedDate: DateTime.UtcNow);
 
-            SetupWorkItemsForTeam(team.Id, [doingItem, todoItem, doneItem]);
+            SetupWorkItemsForTeam(team.Id, [doingItem, todoItem]);
 
             var subject = CreateSubject();
 
@@ -122,20 +121,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_CycleTime_WritesOnlyDoneItems()
+        public async Task TriggerWriteBackForTeam_WorKItemAgeCycleTime_WritesCycleTimeForDoneItems()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.CycleTime,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.CycleTime",
             });
 
-            var doingItem = CreateWorkItem("201", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-3));
+            var toDo = CreateWorkItem("201", StateCategories.ToDo, team, startedDate: DateTime.UtcNow.AddDays(-3));
             var doneItem = CreateWorkItem("202", StateCategories.Done, team, startedDate: DateTime.UtcNow.AddDays(-7), closedDate: DateTime.UtcNow);
 
-            SetupWorkItemsForTeam(team.Id, [doingItem, doneItem]);
+            SetupWorkItemsForTeam(team.Id, [toDo, doneItem]);
 
             var subject = CreateSubject();
 
@@ -153,48 +152,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_MultipleMappings_WritesUpdatesForAll()
-        {
-            var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAge,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.CycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.CycleTime",
-            });
-
-            var doingItem = CreateWorkItem("301", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-4));
-            var doneItem = CreateWorkItem("302", StateCategories.Done, team, startedDate: DateTime.UtcNow.AddDays(-6), closedDate: DateTime.UtcNow);
-
-            SetupWorkItemsForTeam(team.Id, [doingItem, doneItem]);
-
-            var subject = CreateSubject();
-
-            await subject.TriggerWriteBackForTeam(team);
-
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    team.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
-                        updates.Count == 2 &&
-                        updates.Any(u => u.WorkItemId == "301" && u.TargetFieldReference == "Custom.Age") &&
-                        updates.Any(u => u.WorkItemId == "302" && u.TargetFieldReference == "Custom.CycleTime"))),
-                Times.Once);
-        }
-
-        [Test]
         public async Task TriggerWriteBackForTeam_NoMatchingWorkItems_DoesNotCallWriteBackService()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
@@ -212,12 +175,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_ExceptionOccurs_DoesNotThrow()
+        public void TriggerWriteBackForTeam_ExceptionOccurs_DoesNotThrow()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
@@ -240,7 +203,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
@@ -297,7 +260,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
@@ -480,7 +443,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_ExceptionOccurs_DoesNotThrow()
+        public void TriggerFeatureWriteBackForPortfolio_ExceptionOccurs_DoesNotThrow()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
@@ -575,7 +538,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_NullConnection_DoesNotThrow()
+        public void TriggerWriteBackForTeam_NullConnection_DoesNotThrow()
         {
             var team = new Team
             {
@@ -590,7 +553,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_NullConnection_DoesNotThrow()
+        public void TriggerFeatureWriteBackForPortfolio_NullConnection_DoesNotThrow()
         {
             var portfolio = new Portfolio
             {
@@ -605,7 +568,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_NullConnection_DoesNotThrow()
+        public void TriggerForecastWriteBackForPortfolio_NullConnection_DoesNotThrow()
         {
             var portfolio = new Portfolio
             {
@@ -625,7 +588,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
                 TargetFieldReference = "Custom.FeatureAge",
             });
@@ -657,7 +620,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.Age",
             });
@@ -777,25 +740,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 }
             }
 
-            if (simulationResults.Count > 0)
+            if (simulationResults.Count <= 0)
             {
-                var forecast = new WhenForecast
-                {
-                    TeamId = team.Id,
-                    Team = team,
-                    NumberOfItems = remainingItems,
-                    FeatureId = feature.Id,
-                    Feature = feature,
-                    TotalTrials = 100,
-                };
-
-                foreach (var kvp in simulationResults)
-                {
-                    forecast.SimulationResults.Add(new IndividualSimulationResult { Key = kvp.Key, Value = kvp.Value });
-                }
-
-                feature.Forecasts.Add(forecast);
+                return feature;
             }
+
+            var forecast = new WhenForecast
+            {
+                TeamId = team.Id,
+                Team = team,
+                NumberOfItems = remainingItems,
+                FeatureId = feature.Id,
+                Feature = feature,
+                TotalTrials = 100,
+            };
+
+            foreach (var kvp in simulationResults)
+            {
+                forecast.SimulationResults.Add(new IndividualSimulationResult { Key = kvp.Key, Value = kvp.Value });
+            }
+
+            feature.Forecasts.Add(forecast);
 
             return feature;
         }

@@ -295,36 +295,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(features, Has.Count.EqualTo(4));
         }
 
-        [Test]
-        public async Task DefaultAzureDevOpsConnection_CanLoadAdoFile()
-        {
-            await SeedDatabase();
-            var subject = CreateSubject();
-            var adoCsvConnection = GetWorkTrackingSystemRepository().GetByPredicate(x => x is { WorkTrackingSystem: WorkTrackingSystems.Csv, Name: "CSV Azure DevOps" }) ?? throw new InvalidOperationException("Azure DevOps CSV Connection not found");
-
-            var toDoStates = new List<string>{ "New" };
-            var doingStates = new List<string>{ "Active", "Resolved" };
-            var doneStates = new List<string>{ "Closed" };
-
-            var team = CreateTeam("adodata.csv");
-            team.WorkTrackingSystemConnection = adoCsvConnection;
-            team.ToDoStates = toDoStates;
-            team.DoingStates = doingStates;
-            team.DoneStates = doneStates;
-
-            var workItems = await subject.GetWorkItemsForTeam(team);
-            Assert.That(workItems.ToList(), Has.Count.EqualTo(95));
-
-            var project = CreateProject("adodata.csv");
-            project.ToDoStates = toDoStates;
-            project.DoingStates = doingStates;
-            project.DoneStates = doneStates;
-
-            project.WorkTrackingSystemConnection = adoCsvConnection;
-            var features = await subject.GetFeaturesForProject(project);
-            Assert.That(features.ToList(), Has.Count.EqualTo(14));
-        }
-
         private static void VerifyRequiredWorkItemFields(WorkItemBase workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
         {
             using (Assert.EnterMultipleScope())

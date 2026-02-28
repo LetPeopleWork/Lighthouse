@@ -1,6 +1,5 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
-import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
@@ -15,24 +14,16 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
-import { useTerminology } from "../../services/TerminologyContext";
-import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
 import LogSettings from "./LogSettings/LogSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
 
 const Settings: React.FC = () => {
-	const [value, setValue] = useState("10");
+	const [value, setValue] = useState("20");
 	const [mounted, setMounted] = useState(false);
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const location = useLocation();
-
-	const { getTerm } = useTerminology();
-	const workTrackingSystemConnectionSettingsTerm = getTerm(
-		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
-	);
 
 	useEffect(() => {
 		setMounted(true);
@@ -45,11 +36,9 @@ const Settings: React.FC = () => {
 		const tabMapping: { [key: string]: string } = {
 			demodata: "25",
 			"demo-data": "25",
+			configuration: "20",
 			system: "20",
-			teams: "30",
-			projects: "40",
 			logs: "99",
-			connections: "10",
 		};
 
 		if (tabParam && tabMapping[tabParam.toLowerCase()]) {
@@ -63,18 +52,10 @@ const Settings: React.FC = () => {
 
 	const tabConfig = [
 		{
-			value: "10",
-			label: workTrackingSystemConnectionSettingsTerm,
-			testId: "work-tracking-tab",
-			panelTestId: "work-tracking-panel",
-			icon: <SettingsIcon />,
-			component: <WorkTrackingSystemConnectionSettings />,
-		},
-		{
 			value: "20",
-			label: "System Settings",
-			testId: "system-settings-tab",
-			panelTestId: "system-settings-panel",
+			label: "Configuration",
+			testId: "configuration-tab",
+			panelTestId: "configuration-panel",
 			icon: <SettingsSystemDaydreamIcon />,
 			component: <SystemSettingsTab />,
 		},
@@ -116,7 +97,7 @@ const Settings: React.FC = () => {
 						},
 					}}
 				>
-					Settings
+					System Settings
 				</Typography>
 
 				<Paper

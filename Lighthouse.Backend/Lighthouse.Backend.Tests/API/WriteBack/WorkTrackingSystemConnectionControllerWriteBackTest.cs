@@ -12,12 +12,16 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
     public class WorkTrackingSystemConnectionControllerWriteBackTest
     {
         private Mock<IRepository<WorkTrackingSystemConnection>> repositoryMock;
+        private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            teamRepositoryMock = new Mock<IRepository<Team>>();
+            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
         }
@@ -40,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 var connection = okResult!.Value as WorkTrackingSystemConnectionDto;
 
                 Assert.That(connection!.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
-                Assert.That(connection.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAge));
+                Assert.That(connection.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(connection.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.WorkItemAge"));
             }
 
@@ -55,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             existingConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
                 Id = 99,
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge"
             });
@@ -67,7 +71,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             connectionDto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
             {
                 Id = 99,
-                ValueSource = WriteBackValueSource.CycleTime,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
                 TargetFieldReference = "Custom.CycleTime",
                 TargetValueType = WriteBackTargetValueType.FormattedText,
@@ -83,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 var connection = okResult!.Value as WorkTrackingSystemConnectionDto;
 
                 Assert.That(connection!.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
-                Assert.That(connection.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.CycleTime));
+                Assert.That(connection.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(connection.WriteBackMappingDefinitions[0].AppliesTo, Is.EqualTo(WriteBackAppliesTo.Portfolio));
                 Assert.That(connection.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.CycleTime"));
                 Assert.That(connection.WriteBackMappingDefinitions[0].DateFormat, Is.EqualTo("yyyy-MM-dd"));
@@ -97,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             existingConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
                 Id = 99,
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge"
             });
@@ -138,7 +142,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Option", Value = "Value" });
             connectionDto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "",
             });
@@ -185,7 +189,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             dto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Option", Value = "Value" });
             dto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge",
             });
@@ -194,7 +198,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
 
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, licenseServiceMock.Object);
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object);
         }
     }
 }

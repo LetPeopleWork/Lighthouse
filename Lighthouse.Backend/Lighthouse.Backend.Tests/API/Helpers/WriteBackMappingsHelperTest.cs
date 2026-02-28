@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             var mappings = Enumerable.Range(0, mappingCount)
                 .Select(_ => new WriteBackMappingDefinition
                 {
-                    ValueSource = WriteBackValueSource.WorkItemAge,
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
                     TargetFieldReference = "Custom.Field"
                 })

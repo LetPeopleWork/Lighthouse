@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new()
                 {
-                    ValueSource = WriteBackValueSource.WorkItemAge,
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
                     TargetFieldReference = "",
                 }
@@ -148,21 +148,73 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_DuplicateTargetFieldReference_ReturnsInvalid()
+        public void Validate_DuplicateTargetFieldReference_SameAppliesTo_ReturnsInvalid()
         {
             var mappings = new List<WriteBackMappingDefinition>
             {
                 new()
                 {
-                    ValueSource = WriteBackValueSource.WorkItemAge,
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
                     TargetFieldReference = "Custom.Field",
                 },
                 new()
                 {
-                    ValueSource = WriteBackValueSource.CycleTime,
+                    ValueSource = WriteBackValueSource.FeatureSize,
                     AppliesTo = WriteBackAppliesTo.Team,
                     TargetFieldReference = "Custom.Field",
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors.Any(e => e.Contains("duplicate", StringComparison.OrdinalIgnoreCase)), Is.True);
+            }
+        }
+
+        [Test]
+        public void Validate_SameTargetFieldReference_DifferentAppliesTo_ReturnsValid()
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    TargetFieldReference = "Custom.Field",
+                },
+                new()
+                {
+                    ValueSource = WriteBackValueSource.FeatureSize,
+                    AppliesTo = WriteBackAppliesTo.Portfolio,
+                    TargetFieldReference = "Custom.Field",
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_SameTargetFieldReference_SameAppliesTo_DifferentCase_ReturnsInvalid()
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Portfolio,
+                    TargetFieldReference = "Custom.Field",
+                },
+                new()
+                {
+                    ValueSource = WriteBackValueSource.FeatureSize,
+                    AppliesTo = WriteBackAppliesTo.Portfolio,
+                    TargetFieldReference = "custom.field",
                 }
             };
 
@@ -182,7 +234,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new()
                 {
-                    ValueSource = WriteBackValueSource.WorkItemAge,
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
                     TargetFieldReference = "Custom.WorkItemAge",
                     TargetValueType = WriteBackTargetValueType.FormattedText,
@@ -196,8 +248,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [TestCase(WriteBackValueSource.WorkItemAge)]
-        [TestCase(WriteBackValueSource.CycleTime)]
+        [TestCase(WriteBackValueSource.WorkItemAgeCycleTime)]
         [TestCase(WriteBackValueSource.FeatureSize)]
         public void Validate_NumericValueSource_AlwaysValidRegardlessOfDateSettings(WriteBackValueSource source)
         {
@@ -225,7 +276,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new()
                 {
-                    ValueSource = WriteBackValueSource.WorkItemAge,
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
                     TargetFieldReference = "Custom.WorkItemAge",
                 },

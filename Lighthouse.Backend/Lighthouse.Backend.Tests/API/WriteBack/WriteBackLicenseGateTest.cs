@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             };
             dto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge"
             });
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             };
             dto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
             {
-                ValueSource = WriteBackValueSource.WorkItemAge,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge"
             });

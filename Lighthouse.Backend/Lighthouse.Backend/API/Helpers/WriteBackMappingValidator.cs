@@ -33,14 +33,14 @@ namespace Lighthouse.Backend.API.Helpers
 
             var duplicates = mappings
                 .Where(m => !string.IsNullOrEmpty(m.TargetFieldReference))
-                .GroupBy(m => m.TargetFieldReference, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(m => new { FieldReference = m.TargetFieldReference.ToUpperInvariant(), m.AppliesTo })
                 .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
+                .Select(g => g.First().TargetFieldReference)
                 .ToList();
 
             foreach (var duplicate in duplicates)
             {
-                errors.Add($"Duplicate TargetFieldReference '{duplicate}' found. Each mapping must target a unique field.");
+                errors.Add($"Duplicate TargetFieldReference '{duplicate}' found for the same scope. Each mapping must target a unique field per scope.");
             }
 
             return new WriteBackMappingValidationResult(errors);

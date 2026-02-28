@@ -11,13 +11,16 @@ namespace Lighthouse.Backend.Tests.API
     public class WorkTrackingSystemConnectionControllerTest
     {
         private Mock<IRepository<WorkTrackingSystemConnection>> repositoryMock;
-        
+        private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            teamRepositoryMock = new Mock<IRepository<Team>>();
+            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
         }
 
@@ -136,6 +139,50 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task DeleteWorkTrackingSystemConnection_ReferencedByTeam_ReturnsConflictAsync()
+        {
+            repositoryMock.Setup(x => x.Exists(12)).Returns(true);
+            teamRepositoryMock.Setup(x => x.Exists(It.IsAny<Func<Team, bool>>())).Returns(true);
+            portfolioRepositoryMock.Setup(x => x.Exists(It.IsAny<Func<Portfolio, bool>>())).Returns(false);
+
+            var subject = CreateSubject();
+
+            var result = await subject.DeleteWorkTrackingSystemConnectionAsync(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ConflictObjectResult>());
+                var conflictResult = result as ConflictObjectResult;
+
+                Assert.That(conflictResult.StatusCode, Is.EqualTo(409));
+            }
+
+            repositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
+        }
+
+        [Test]
+        public async Task DeleteWorkTrackingSystemConnection_ReferencedByPortfolio_ReturnsConflictAsync()
+        {
+            repositoryMock.Setup(x => x.Exists(12)).Returns(true);
+            teamRepositoryMock.Setup(x => x.Exists(It.IsAny<Func<Team, bool>>())).Returns(false);
+            portfolioRepositoryMock.Setup(x => x.Exists(It.IsAny<Func<Portfolio, bool>>())).Returns(true);
+
+            var subject = CreateSubject();
+
+            var result = await subject.DeleteWorkTrackingSystemConnectionAsync(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ConflictObjectResult>());
+                var conflictResult = result as ConflictObjectResult;
+
+                Assert.That(conflictResult.StatusCode, Is.EqualTo(409));
+            }
+
+            repositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
+        }
+
+        [Test]
         public async Task UpdateWorkTrackingSystemConnection_EmptySecretValue_PreservesExistingSecretAsync()
         {
             var existingConnection = new WorkTrackingSystemConnection { Name = "Connection" };
@@ -197,7 +244,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, licenseServiceMock.Object);
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object);
         }
     }
 }

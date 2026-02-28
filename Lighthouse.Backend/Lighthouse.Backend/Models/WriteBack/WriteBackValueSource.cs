@@ -2,9 +2,7 @@ namespace Lighthouse.Backend.Models.WriteBack
 {
     public enum WriteBackValueSource
     {
-        WorkItemAge,
-
-        CycleTime,
+        WorkItemAgeCycleTime,
 
         FeatureSize,
 

@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var service = CreateService();
 
-            var result = await service.WriteFieldsToWorkItems(connection, updates);
+            _ = await service.WriteFieldsToWorkItems(connection, updates);
 
             connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
         }
