@@ -43,7 +43,7 @@ The Work Tracking System is the place where your backlog lives. Lighthouse is de
 Currently supported are [Jira](./worktrackingsystems/jira.html) and [Azure DevOps](./worktrackingsystems/azuredevops.html). The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
 
 ## Creating a Work Tracking System Connection
-You can create a new connection to your work tracking system either during the creation of your teams and portfolios, or via the Settings tab.
+You can create a new connection to your work tracking system via the Overview page.
 
 Once defined, you can reference them via name when you set up your teams and portfolio. What information is needed for the connection depends on the specific Work Tracking System, please check in the subpages for your system to get more detailed information.
 

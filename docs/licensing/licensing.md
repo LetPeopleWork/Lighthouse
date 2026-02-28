@@ -27,6 +27,7 @@ There are two kind of "Premium Features" that you unlock with a license. Some fe
 - Maximum of three teams per Lighthouse instance (compared to unlimited teams with a license)
 - Maximum of one portfolio per Lighthouse instance (compared to unlimited portfolios with a license)
 - No possibility to export and import the Lighthouse configuration through the settings
+- No possibility to configure [Mappings](../settings/worktrackingsystems.html#write-back-mappings) to sync metrics and forecasts back to your work tracking system
 
 {: .important}
 If you have more than the maximum amount of teams or portfolios, the continuous update for **all** teams and portfolios will stop, until you will get under the limit again.

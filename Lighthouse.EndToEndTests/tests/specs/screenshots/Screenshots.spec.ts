@@ -22,6 +22,10 @@ const updateWorkTrackingSystems = async (
 	overviewPage: OverviewPage,
 	workTrackingSystems: ModelIdentifier[],
 ) => {
+	// Force reload main page to ensure we have the latest data after API updates
+	await overviewPage.lightHousePage.goToSettings();
+	overviewPage = await overviewPage.lightHousePage.goToOverview();
+
 	const workTrackingSystemNames = [
 		{
 			name: "My Azure DevOps Connection",
@@ -241,40 +245,6 @@ test("Take @screenshot of licensing", async ({ overviewPage }) => {
 });
 
 test("Take @screenshot of setting pages", async ({ overviewPage }) => {
-	const workTrackingSystemEditPage = await overviewPage.addConnection();
-	const jiraUrl = "https://letpeoplework.atlassian.net";
-	const username = "atlassian.pushchair@huser-berta.com";
-	const wtsName = "My Jira Connection";
-
-	await workTrackingSystemEditPage.selectWorkTrackingSystem("Jira");
-	await workTrackingSystemEditPage.setWorkTrackingSystemOption(
-		"Jira URL",
-		jiraUrl,
-	);
-	await workTrackingSystemEditPage.setWorkTrackingSystemOption(
-		"Username (Email)",
-		username,
-	);
-	await workTrackingSystemEditPage.setWorkTrackingSystemOption(
-		"API Token",
-		TestConfig.JiraToken,
-	);
-
-	await workTrackingSystemEditPage.setConnectionName(wtsName);
-
-	await workTrackingSystemEditPage.validate();
-	await expect(workTrackingSystemEditPage.validateButton).toBeEnabled();
-	await expect(workTrackingSystemEditPage.createButton).toBeEnabled();
-	overviewPage = await workTrackingSystemEditPage.create();
-
-	const savedWorkTrackingSystem = overviewPage.getConnectionLink(wtsName);
-	await expect(savedWorkTrackingSystem).toBeVisible();
-
-	await takePageScreenshot(
-		overviewPage.page,
-		"settings/worktrackingsystems.png",
-	);
-
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 
 	const demoDataPage = await settingsPage.goToDemoData();
@@ -687,8 +657,8 @@ for (const {
 
 			await workTrackingSystemEditPage.scrollToTop();
 
-			await takeElementScreenshot(
-				workTrackingSystemEditPage.page.getByRole("dialog"),
+			await takePageScreenshot(
+				workTrackingSystemEditPage.page,
 				`concepts/worktrackingsystem_${workTrackingSystemName}.png`,
 				5,
 				1000,

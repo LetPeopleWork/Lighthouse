@@ -115,7 +115,7 @@ The terminology configuration allows you to customize the following terms:
 | **Teams** | Teams | Plural form of team | Squads, Crews, Groups, Departments |
 
 ### How to Configure
-1. Navigate to *Settings* → *System Settings*
+1. Navigate to *System Settings* → *Configuration*
 2. Locate the *Terminology Configuration* section
 3. For each term you want to customize:
    - View the current default value and description

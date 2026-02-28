@@ -19,7 +19,7 @@ The documentation is structured into chapters. In [Installation](./Installation/
 
 Under [Configuration](./Installation/configuration.html) you'll find all options that are supported. This includes various ways of how to configure Lighthouse itself, as well as how you can connect to Work Tracking Systems like Jira and Azure DevOps.
 
-[Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse. For specific product areas see the top-level sections: [Teams](./teams/teams.html), [Portfolios](./portfolios/portfolios.html), [Metrics](./metrics/metrics.html), [AI Integration](./aiintegration.html), and [Settings](./settings/settings.html).
+[Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse. For specific product areas see the top-level sections: [Teams](./teams/teams.html), [Portfolios](./portfolios/portfolios.html), [Metrics](./metrics/metrics.html), [AI Integration](./aiintegration.html), and [System Settings](./settings/settings.html).
 
 In [FAQ](./faq/faq.html) you find frequently asked questions.
 

@@ -1,20 +1,17 @@
 ---
-title: Settings
+title: System Settings
 layout: home
 nav_order: 50
 has_children: true
 ---
 
-# Settings
+# System Settings
 
 Lighthouse has various options to fine-tune it based on your needs. This section covers all the configurable aspects of Lighthouse to help you customize the application according to your organization's workflow and requirements.
 
 ## Configuration Areas
 
-### [Work Tracking Systems](worktrackingsystems.html)
-Configure and manage connections to external work tracking systems like Jira, Azure DevOps, and others. Set up new connections, modify existing ones, and adjust system-wide settings.
-
-### [System Settings](systemsettings.html)
+### [Configuration](systemsettings.html)
 General application settings that affect the overall Lighthouse behavior, including:
 - Configuration export/import
 - Optional features
