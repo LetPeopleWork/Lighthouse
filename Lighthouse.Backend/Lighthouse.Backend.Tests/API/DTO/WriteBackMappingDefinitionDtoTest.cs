@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var result = subject.ToModel();
 
-            Assert.That(result.Id, Is.EqualTo(0));
+            Assert.That(result.Id, Is.Zero);
         }
     }
 

@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
             var isForbiddenAction = false;
+            List<string>? validationErrors = null;
             
             var result = await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async existingConnection =>
             {
@@ -37,6 +38,13 @@ namespace Lighthouse.Backend.API
                 UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions);
                 UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions);
 
+                var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
+                if (!mappingValidation.IsValid)
+                {
+                    validationErrors = mappingValidation.Errors;
+                    return new WorkTrackingSystemConnectionDto(existingConnection);
+                }
+
                 if (existingConnection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
                     && existingConnection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService))
                 {
@@ -50,6 +58,11 @@ namespace Lighthouse.Backend.API
                 
                 return new WorkTrackingSystemConnectionDto(existingConnection);
             });
+
+            if (validationErrors is { Count: > 0 })
+            {
+                return BadRequest(validationErrors);
+            }
 
             return isForbiddenAction ? StatusCode(StatusCodes.Status403Forbidden, null) : result;
         }

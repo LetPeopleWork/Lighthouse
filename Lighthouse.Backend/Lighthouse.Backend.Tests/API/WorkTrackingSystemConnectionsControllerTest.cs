@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -349,6 +350,36 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(objectResult, Is.Not.Null);
                 Assert.That(objectResult.StatusCode, Is.EqualTo(403));
                 Assert.That(objectResult.Value, Is.Null);
+            }
+        }
+
+        [Test]
+        public async Task CreateNewWorkTrackingSystemConnection_InvalidWriteBackMappings_ReturnsBadRequest()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Connection",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+            };
+            newConnectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "MyKey", Value = "MyValue" });
+            newConnectionDto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
+            {
+                ValueSource = WriteBackValueSource.ForecastPercentile85,
+                AppliesTo = WriteBackAppliesTo.Portfolio,
+                TargetFieldReference = "Custom.Forecast85",
+                TargetValueType = WriteBackTargetValueType.FormattedText,
+                DateFormat = null
+            });
+
+            var subject = CreateSubject();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                repositoryMock.Verify(x => x.Save(), Times.Never());
             }
         }
 

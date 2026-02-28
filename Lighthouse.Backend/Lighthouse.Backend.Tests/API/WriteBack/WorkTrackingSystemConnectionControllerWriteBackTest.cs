@@ -127,6 +127,58 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             return connection;
         }
 
+        [Test]
+        public async Task UpdateConnection_InvalidWriteBackMappings_MissingTargetFieldReference_ReturnsBadRequest()
+        {
+            var existingConnection = CreateExistingConnection();
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Option", Value = "Value" });
+            connectionDto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
+            {
+                ValueSource = WriteBackValueSource.WorkItemAge,
+                AppliesTo = WriteBackAppliesTo.Team,
+                TargetFieldReference = "",
+            });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                repositoryMock.Verify(x => x.Save(), Times.Never());
+            }
+        }
+
+        [Test]
+        public async Task UpdateConnection_InvalidWriteBackMappings_FormattedTextWithoutDateFormat_ReturnsBadRequest()
+        {
+            var existingConnection = CreateExistingConnection();
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Option", Value = "Value" });
+            connectionDto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
+            {
+                ValueSource = WriteBackValueSource.ForecastPercentile85,
+                AppliesTo = WriteBackAppliesTo.Portfolio,
+                TargetFieldReference = "Custom.Forecast85",
+                TargetValueType = WriteBackTargetValueType.FormattedText,
+                DateFormat = null
+            });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                repositoryMock.Verify(x => x.Save(), Times.Never());
+            }
+        }
+
         private WorkTrackingSystemConnectionDto CreateConnectionDtoWithWriteBackMapping(int id)
         {
             var dto = new WorkTrackingSystemConnectionDto { Id = id, Name = "Connection" };
@@ -136,7 +188,6 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 ValueSource = WriteBackValueSource.WorkItemAge,
                 AppliesTo = WriteBackAppliesTo.Team,
                 TargetFieldReference = "Custom.WorkItemAge",
-                TargetValueType = WriteBackTargetValueType.FormattedText
             });
             return dto;
         }

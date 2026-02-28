@@ -69,6 +69,12 @@ namespace Lighthouse.Backend.API
         {
             newConnection.Id = 0;
             var connection = CreateConnectionFromDto(newConnection);
+
+            var mappingValidation = WriteBackMappingValidator.Validate(connection.WriteBackMappingDefinitions);
+            if (!mappingValidation.IsValid)
+            {
+                return BadRequest(mappingValidation.Errors);
+            }
             
             if (!connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
             {
