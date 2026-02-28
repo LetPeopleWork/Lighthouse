@@ -1,9 +1,11 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -132,6 +134,80 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return new BoardInformation();
             }
         }
+
+        public async Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
+        {
+            if (updates.Count == 0)
+            {
+                return new WriteBackResult();
+            }
+
+            var client = GetJiraRestClient(connection);
+            var results = await UpdateItems(updates, client);
+
+            return new WriteBackResult { ItemResults = results };
+        }
+
+        private async Task<List<WriteBackItemResult>> UpdateItems(IReadOnlyList<WriteBackFieldUpdate> updates, HttpClient client)
+        {
+            var results = new List<WriteBackItemResult>();
+            foreach (var update in updates)
+            {
+                try
+                {
+                    object fieldValue = double.TryParse(update.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var numericValue)
+                        ? numericValue
+                        : update.Value;
+
+                    var payload = JsonSerializer.Serialize(new
+                    {
+                        fields = new Dictionary<string, object> { [update.TargetFieldReference] = fieldValue }
+                    });
+
+                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                    var response = await client.PutAsync($"rest/api/2/issue/{update.WorkItemId}", content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        results.Add(new WriteBackItemResult
+                        {
+                            WorkItemId = update.WorkItemId,
+                            TargetFieldReference = update.TargetFieldReference,
+                            Success = true
+                        });
+                    }
+                    else
+                    {
+                        var errorBody = await response.Content.ReadAsStringAsync();
+                        logger.LogDebug("Jira write-back failed for {IssueKey}, field {FieldReference}: {StatusCode} - {ErrorBody}",
+                            update.WorkItemId, update.TargetFieldReference, response.StatusCode, errorBody);
+
+                        results.Add(new WriteBackItemResult
+                        {
+                            WorkItemId = update.WorkItemId,
+                            TargetFieldReference = update.TargetFieldReference,
+                            Success = false,
+                            ErrorMessage = $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}"
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug(ex, "Failed to write field {FieldReference} to issue {IssueKey}", update.TargetFieldReference, update.WorkItemId);
+
+                    results.Add(new WriteBackItemResult
+                    {
+                        WorkItemId = update.WorkItemId,
+                        TargetFieldReference = update.TargetFieldReference,
+                        Success = false,
+                        ErrorMessage = ex.Message
+                    });
+                }
+            }
+
+            return results;
+        }
+
 
         private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
         {
@@ -755,8 +831,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         return !customType.Contains("plugin.system.customfieldtypes");
                     });
 
-                    element = nonPluginField.ValueKind != JsonValueKind.Undefined 
-                        ? nonPluginField 
+                    element = nonPluginField.ValueKind != JsonValueKind.Undefined
+                        ? nonPluginField
                         : elements[0];
                     break;
             }

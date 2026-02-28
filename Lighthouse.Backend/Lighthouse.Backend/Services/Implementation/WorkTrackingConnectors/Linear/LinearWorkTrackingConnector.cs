@@ -2,6 +2,7 @@ using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
@@ -469,6 +470,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                             }}
                         }}
                     }}", type, cursorParam);
+        }
+
+        public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
+        {
+            throw new NotSupportedException("Write-back is not supported for Linear.");
         }
     }
 }

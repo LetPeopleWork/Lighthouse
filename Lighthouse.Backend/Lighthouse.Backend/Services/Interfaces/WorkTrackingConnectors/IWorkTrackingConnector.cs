@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
@@ -15,5 +16,7 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         Task<bool> ValidateTeamSettings(Team team);
 
         Task<bool> ValidatePortfolioSettings(Portfolio portfolio);
+
+        Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates);
     }
 }

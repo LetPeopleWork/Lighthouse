@@ -2,6 +2,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Globalization;
@@ -246,6 +247,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private static string GetTagSeparator(WorkTrackingSystemConnection connection)
         {
             return GetOptionByKey(connection, CsvWorkTrackingOptionNames.TagSeparator);
+        }
+
+        public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
+        {
+            throw new NotSupportedException("Write-back is not supported for CSV.");
         }
     }
 }

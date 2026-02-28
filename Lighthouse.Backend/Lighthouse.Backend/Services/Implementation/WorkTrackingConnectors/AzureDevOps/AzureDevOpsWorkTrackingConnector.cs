@@ -1,11 +1,14 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.VisualStudio.Services.WebApi.Patch;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System.Collections.Concurrent;
 using System.Net;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
@@ -200,6 +203,86 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 logger.LogError(ex, "Error getting board information for board {BoardId}", boardId);
                 return emptyInfo;
+            }
+        }
+
+        public async Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
+        {
+            if (updates.Count == 0)
+            {
+                return new WriteBackResult();
+            }
+
+            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
+            var witClient = GetWorkItemTrackingHttpClient(connection);
+            var results = await UpdateItemsInChunks(updates, url, witClient);
+
+            return new WriteBackResult { ItemResults = results };
+        }
+
+        private async Task<List<WriteBackItemResult>> UpdateItemsInChunks(IReadOnlyList<WriteBackFieldUpdate> updates, string url, WorkItemTrackingHttpClient witClient)
+        {
+            var results = new List<WriteBackItemResult>();
+
+            foreach (var batch in updates.Chunk(MaxChunkSize))
+            {
+                var batchTasks = batch.Select(async update =>
+                {
+                    return await UpdateItems(url, witClient, update);
+                });
+
+                results.AddRange(await Task.WhenAll(batchTasks));
+            }
+
+            return results;
+        }
+
+        private async Task<WriteBackItemResult> UpdateItems(string url, WorkItemTrackingHttpClient witClient, WriteBackFieldUpdate update)
+        {
+            if (!int.TryParse(update.WorkItemId, out var workItemId))
+            {
+                return new WriteBackItemResult
+                {
+                    WorkItemId = update.WorkItemId,
+                    TargetFieldReference = update.TargetFieldReference,
+                    Success = false,
+                    ErrorMessage = $"Work item ID '{update.WorkItemId}' is not a valid integer for Azure DevOps."
+                };
+            }
+
+            try
+            {
+                var patchDocument = new JsonPatchDocument
+                        {
+                            new JsonPatchOperation
+                            {
+                                Operation = Operation.Replace,
+                                Path = $"/fields/{update.TargetFieldReference}",
+                                Value = update.Value
+                            }
+                        };
+
+                await ExecuteWithThrottle(url, () =>
+                    witClient.UpdateWorkItemAsync(patchDocument, workItemId, suppressNotifications: true));
+
+                return new WriteBackItemResult
+                {
+                    WorkItemId = update.WorkItemId,
+                    TargetFieldReference = update.TargetFieldReference,
+                    Success = true
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Failed to write field {FieldReference} to work item {WorkItemId}", update.TargetFieldReference, update.WorkItemId);
+
+                return new WriteBackItemResult
+                {
+                    WorkItemId = update.WorkItemId,
+                    TargetFieldReference = update.TargetFieldReference,
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
             }
         }
 
