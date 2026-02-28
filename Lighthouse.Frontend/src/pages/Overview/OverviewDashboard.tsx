@@ -7,6 +7,7 @@ import {
 	Container,
 	Fade,
 	IconButton,
+	Link as MuiLink,
 	Tooltip,
 	Typography,
 	useTheme,
@@ -67,6 +68,8 @@ const OverviewDashboard: React.FC = () => {
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
 
 	const { portfolioService, teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
@@ -311,6 +314,7 @@ const OverviewDashboard: React.FC = () => {
 				<Box sx={{ mt: 2 }}>
 					<OnboardingStepper
 						hasConnections={hasConnections}
+						connectionTerm={connectionTerm}
 						hasTeams={hasTeams}
 						hasPortfolios={hasPortfolios}
 						canCreateTeam={canCreateTeam}
@@ -339,14 +343,16 @@ const OverviewDashboard: React.FC = () => {
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
 						<ActionButton
-							buttonText="Add Connection"
+							buttonText={`Add ${connectionTerm}`}
 							startIcon={<AddIcon />}
 							onClickHandler={handleAddConnection}
 							buttonVariant="contained"
 						/>
 						<Tooltip
 							title={
-								hasConnections ? "" : "Create a connection before adding a team"
+								hasConnections
+									? ""
+									: `Create a ${connectionTerm} before adding a ${teamTerm}`
 							}
 						>
 							<span>
@@ -433,7 +439,7 @@ const OverviewDashboard: React.FC = () => {
 									textTransform: "capitalize",
 								}}
 							>
-								Connections
+								{connectionsTerm}
 							</Typography>
 						</Box>
 
@@ -450,8 +456,42 @@ const OverviewDashboard: React.FC = () => {
 									data-testid="no-connections-alert"
 								>
 									<Typography variant="body1">
-										No connections configured yet. Add a connection to get
-										started.
+										No {connectionTerm} found.{" "}
+										<MuiLink
+											component={Link}
+											to="/settings?tab=demodata"
+											style={{
+												color: theme.palette.primary.main,
+												textDecoration: "none",
+												fontWeight: 500,
+											}}
+											sx={{
+												"&:hover": {
+													textDecoration: "underline",
+												},
+											}}
+										>
+											Load Demo Data
+										</MuiLink>{" "}
+										or{" "}
+										<MuiLink
+											href="https://docs.lighthouse.letpeople.work"
+											target="_blank"
+											rel="noopener noreferrer"
+											style={{
+												color: theme.palette.primary.main,
+												textDecoration: "none",
+												fontWeight: 500,
+											}}
+											sx={{
+												"&:hover": {
+													textDecoration: "underline",
+												},
+											}}
+										>
+											Check the documentation
+										</MuiLink>{" "}
+										for more information.
 									</Typography>
 								</Alert>
 							</Fade>

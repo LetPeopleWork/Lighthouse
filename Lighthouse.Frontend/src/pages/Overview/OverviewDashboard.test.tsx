@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { WorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	ApiServiceContext,
@@ -179,6 +180,20 @@ const renderWithProviders = (
 			description: "Term used for multiple teams",
 			value: "Teams",
 		},
+		{
+			id: 5,
+			key: TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM,
+			defaultValue: "Work Tracking System",
+			description: "Term used for work tracking system connections",
+			value: "Work Tracking System",
+		},
+		{
+			id: 6,
+			key: TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
+			defaultValue: "Work Tracking Systems",
+			description: "Term used for multiple work tracking system connections",
+			value: "Work Tracking Systems",
+		},
 	]);
 	mockUpdateSubscriptionService.getGlobalUpdateStatus = vi
 		.fn()
@@ -255,7 +270,7 @@ describe("OverviewDashboard", () => {
 		}); // Now check for the dashboard header and buttons
 		expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Add Team")).toBeInTheDocument();
-		expect(screen.getByText("Add Connection")).toBeInTheDocument();
+		expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
 	});
 
 	it("shows main filter bar only", async () => {
@@ -281,7 +296,7 @@ describe("OverviewDashboard", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText(/No connections configured yet/),
+				screen.getByText(/No Work Tracking System found/),
 			).toBeInTheDocument();
 		});
 	});

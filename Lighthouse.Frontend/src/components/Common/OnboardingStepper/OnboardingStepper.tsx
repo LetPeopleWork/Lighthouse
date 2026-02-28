@@ -21,6 +21,7 @@ interface OnboardingStepperProps {
 	canCreatePortfolio: boolean;
 	teamTerm: string;
 	portfolioTerm: string;
+	connectionTerm: string;
 }
 
 const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
@@ -31,6 +32,7 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 	canCreatePortfolio,
 	teamTerm,
 	portfolioTerm,
+	connectionTerm,
 }) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
@@ -50,21 +52,21 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 	const steps = [
 		{
 			label: "Connect",
-			description: "Set up a connection to your work tracking system.",
+			description: `Set up a ${connectionTerm} to connect with your data.`,
 			action: () => navigate("/connections/new"),
-			actionLabel: "Add Connection",
+			actionLabel: `Add ${connectionTerm}`,
 			enabled: true,
 		},
 		{
 			label: `Add ${teamTerm}`,
-			description: `Configure a ${teamTerm.toLowerCase()} to start tracking flow metrics.`,
+			description: `Configure a ${teamTerm} to start tracking flow metrics and run manual forecasts.`,
 			action: () => navigate("/teams/new"),
 			actionLabel: `Add ${teamTerm}`,
 			enabled: hasConnections && canCreateTeam,
 		},
 		{
 			label: `Add ${portfolioTerm}`,
-			description: `Group ${teamTerm.toLowerCase()}s into a ${portfolioTerm.toLowerCase()} for forecasting.`,
+			description: `Group ${teamTerm}s into a ${portfolioTerm} for Flight Level II metrics and continuous forecasting.`,
 			action: () => navigate("/portfolios/new"),
 			actionLabel: `Add ${portfolioTerm}`,
 			enabled: hasTeams && canCreatePortfolio,

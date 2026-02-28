@@ -21,6 +21,7 @@ const defaultProps = {
 	canCreatePortfolio: true,
 	teamTerm: "Team",
 	portfolioTerm: "Portfolio",
+	connectionTerm: "Connection",
 };
 
 describe("OnboardingStepper", () => {

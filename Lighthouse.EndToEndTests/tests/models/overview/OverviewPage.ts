@@ -79,7 +79,7 @@ export class OverviewPage {
 
 	async addConnection(): Promise<WorkTrackingSystemEditPage> {
 		await this.page
-			.getByRole("button", { name: "Add Connection" })
+			.getByRole("button", { name: "Add Work Tracking System" })
 			.first()
 			.click();
 
