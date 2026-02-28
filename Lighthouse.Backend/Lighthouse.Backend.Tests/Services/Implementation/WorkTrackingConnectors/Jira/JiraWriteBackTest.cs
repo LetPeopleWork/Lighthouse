@@ -316,21 +316,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, updates);
 
-            Assert.That(writeResult.AllSucceeded, Is.True);
-            Assert.That(writeResult.SuccessCount, Is.EqualTo(3));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writeResult.AllSucceeded, Is.True);
+                Assert.That(writeResult.SuccessCount, Is.EqualTo(3));
 
-            var dateReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 108);
-            Assert.That(dateReadBack, Is.Not.Null.And.Not.Empty);
-            var parsedDate = DateTime.Parse(dateReadBack!, CultureInfo.InvariantCulture);
-            Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
+                var dateReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 108);
+                Assert.That(dateReadBack, Is.Not.Null.And.Not.Empty);
+                var parsedDate = DateTime.Parse(dateReadBack!, CultureInfo.InvariantCulture);
+                Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
 
-            var textReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DescriptionField, 109);
-            Assert.That(textReadBack, Is.Not.Null.And.Not.Empty);
-            Assert.That(textReadBack, Does.Contain("2026"));
+                var textReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DescriptionField, 109);
+                Assert.That(textReadBack, Is.Not.Null.And.Not.Empty);
+                Assert.That(textReadBack, Does.Contain("2026"));
 
-            var numericReadBack = await ReadBackStoryAdditionalField(subject, connection, StoryId, AgeField, 110);
-            Assert.That(numericReadBack, Is.Not.Null.And.Not.Empty);
-            Assert.That(numericReadBack, Does.Contain("15"));
+                var numericReadBack = await ReadBackStoryAdditionalField(subject, connection, StoryId, AgeField, 110);
+                Assert.That(numericReadBack, Is.Not.Null.And.Not.Empty);
+                Assert.That(numericReadBack, Does.Contain("15"));
+            }
         }
 
         private static async Task<string?> ReadBackEpicAdditionalField(

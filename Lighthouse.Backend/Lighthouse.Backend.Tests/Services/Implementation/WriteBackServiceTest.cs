@@ -150,8 +150,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(result.ItemResults, Is.Empty);
                 Assert.That(result.AllSucceeded, Is.True);
-                Assert.That(result.SuccessCount, Is.EqualTo(0));
-                Assert.That(result.FailureCount, Is.EqualTo(0));
+                Assert.That(result.SuccessCount, Is.Zero);
+                Assert.That(result.FailureCount, Is.Zero);
             }
 
             connectorMock.Verify(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()), Times.Never);
