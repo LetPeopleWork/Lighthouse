@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { SystemSettingsPage } from "./SystemSettingsPage";
+import { SystemConfigurationPage } from "./SystemConfigurationPage";
 
 export class ImportDialog {
 	page: Page;
@@ -77,10 +77,10 @@ export class ImportDialog {
 		}
 	}
 
-	async close(): Promise<SystemSettingsPage> {
+	async close(): Promise<SystemConfigurationPage> {
 		await this.page.getByRole("button", { name: "Close" }).click();
 
-		return new SystemSettingsPage(this.page);
+		return new SystemConfigurationPage(this.page);
 	}
 
 	async toggleClearConfiguration(): Promise<void> {

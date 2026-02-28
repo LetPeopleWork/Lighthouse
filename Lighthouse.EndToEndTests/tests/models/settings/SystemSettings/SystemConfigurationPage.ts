@@ -4,7 +4,7 @@ import { ImportDialog } from "./ImportDialog";
 
 export type PeriodicRefreshSettingType = "Team" | "Feature" | "Forecast";
 
-export class SystemSettingsPage {
+export class SystemConfigurationPage {
 	page: Page;
 
 	constructor(page: Page) {

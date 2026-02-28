@@ -8,7 +8,7 @@ testWithData(
 	"Should Export and Import Correctly",
 	async ({ testData, overviewPage }) => {
 		const settingsPage = await overviewPage.lighthousePage.goToSettings();
-		const systemSettings = await settingsPage.goToSystemSettings();
+		const systemSettings = await settingsPage.goToSystemConfiguration();
 
 		const workTrackingSystems = testData.connections;
 		const teams = testData.teams;

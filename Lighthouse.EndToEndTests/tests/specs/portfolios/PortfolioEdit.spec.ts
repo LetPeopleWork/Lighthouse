@@ -403,32 +403,27 @@ for (const wizardConfiguration of wizardConfigurations) {
 			const newWorkTrackingSystemConnectionName = generateRandomName();
 
 			await test.step("Add Work Tracking System", async () => {
-				const settingsPage = await overviewPage.lightHousePage.goToSettings();
-				const workTrackingSystemsPage =
-					await settingsPage.goToWorkTrackingSystems();
+				const workTrackingSystemEditPage = await overviewPage.addConnection();
 
-				const newWorkTrackingSystemDialog =
-					await workTrackingSystemsPage.addNewWorkTrackingSystem();
-
-				await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
+				await workTrackingSystemEditPage.selectWorkTrackingSystem(
 					wizardConfiguration.name,
 				);
 
 				for (const option of wizardConfiguration.workTrackingSystemOptions) {
-					await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
+					await workTrackingSystemEditPage.setWorkTrackingSystemOption(
 						option.field,
 						option.value,
 					);
 				}
 
-				await newWorkTrackingSystemDialog.setConnectionName(
+				await workTrackingSystemEditPage.setConnectionName(
 					newWorkTrackingSystemConnectionName,
 				);
 
-				await newWorkTrackingSystemDialog.validate();
-				await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
+				await workTrackingSystemEditPage.validate();
+				await expect(workTrackingSystemEditPage.createButton).toBeEnabled();
 
-				await newWorkTrackingSystemDialog.create();
+				await workTrackingSystemEditPage.create();
 			});
 
 			overviewPage = await overviewPage.lightHousePage.goToOverview();

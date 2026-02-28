@@ -8,7 +8,7 @@ test("should be able to handle a team defined in Linear", async ({
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 
 	await test.step("Enable Linear Integration", async () => {
-		const featuresTab = await settingsPage.goToSystemSettings();
+		const featuresTab = await settingsPage.goToSystemConfiguration();
 
 		await featuresTab.enableFeature("LinearIntegration");
 	});
@@ -18,26 +18,20 @@ test("should be able to handle a team defined in Linear", async ({
 	};
 
 	await test.step("Create Linear Work Tracking System Connection", async () => {
-		const workTrackingSystemConnections =
-			await settingsPage.goToWorkTrackingSystems();
-		const addWorkTrackingSystemConnectionDialog =
-			await workTrackingSystemConnections.addNewWorkTrackingSystem();
+		await overviewPage.lightHousePage.goToOverview();
+		const workTrackingSystemEditPage = await overviewPage.addConnection();
 
-		await addWorkTrackingSystemConnectionDialog.selectWorkTrackingSystem(
-			"Linear",
-		);
+		await workTrackingSystemEditPage.selectWorkTrackingSystem("Linear");
 
-		await addWorkTrackingSystemConnectionDialog.setConnectionName(
-			workTrackingSystem.name,
-		);
+		await workTrackingSystemEditPage.setConnectionName(workTrackingSystem.name);
 
-		await addWorkTrackingSystemConnectionDialog.setWorkTrackingSystemOption(
+		await workTrackingSystemEditPage.setWorkTrackingSystemOption(
 			"API Key",
 			TestConfig.LinearApiKey,
 		);
 
-		await addWorkTrackingSystemConnectionDialog.validate();
-		await addWorkTrackingSystemConnectionDialog.create();
+		await workTrackingSystemEditPage.validate();
+		await workTrackingSystemEditPage.create();
 	});
 
 	const newTeam = { id: 0, name: "LighthouseDemo" };

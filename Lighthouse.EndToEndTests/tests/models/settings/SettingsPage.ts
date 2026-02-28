@@ -1,8 +1,7 @@
 import type { Page } from "@playwright/test";
 import { DemoDataPage } from "../teams/DemoDataPage";
 import { LogsPage } from "./Logs/LogsPage";
-import { SystemSettingsPage } from "./SystemSettings/SystemSettingsPage";
-import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
+import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
 
 export class SettingsPage {
 	page: Page;
@@ -11,22 +10,16 @@ export class SettingsPage {
 		this.page = page;
 	}
 
-	async goToWorkTrackingSystems(): Promise<WorkTrackingSystemsSettingsPage> {
-		await this.page.getByTestId("work-tracking-tab").click();
-
-		return new WorkTrackingSystemsSettingsPage(this.page);
-	}
-
 	async goToDemoData(): Promise<DemoDataPage> {
 		await this.page.getByTestId("demo-data-tab").click();
 
 		return new DemoDataPage(this.page);
 	}
 
-	async goToSystemSettings(): Promise<SystemSettingsPage> {
-		await this.page.getByTestId("system-settings-tab").click();
+	async goToSystemConfiguration(): Promise<SystemConfigurationPage> {
+		await this.page.getByTestId("configuration-tab").click();
 
-		return new SystemSettingsPage(this.page);
+		return new SystemConfigurationPage(this.page);
 	}
 
 	async goToLogs(): Promise<LogsPage> {

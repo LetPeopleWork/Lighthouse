@@ -3,6 +3,7 @@ import type { LighthousePage } from "../app/LighthousePage";
 import { PortfolioDeletionDialog } from "../portfolios/PortfolioDeletionDialog";
 import { PortfolioDetailPage } from "../portfolios/PortfolioDetailPage";
 import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
+import { WorkTrackingSystemEditPage } from "../settings/WorkTrackingSystems/WorkTrackingSystemEditPage";
 import { TeamDeletionDialog } from "../teams/TeamDeletionDialog";
 import { TeamDetailPage } from "../teams/TeamDetailPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
@@ -19,6 +20,7 @@ export class OverviewPage {
 	get lighthousePage(): LighthousePage {
 		return this.lightHousePage;
 	}
+
 	async search(searchTerm: string): Promise<void> {
 		await this.page.getByPlaceholder("Search").fill(searchTerm);
 	}
@@ -56,7 +58,10 @@ export class OverviewPage {
 	}
 
 	async addNewPortfolio(): Promise<PortfolioEditPage> {
-		await this.page.getByRole("button", { name: "Add Portfolio" }).click();
+		await this.page
+			.getByRole("button", { name: "Add Portfolio" })
+			.first()
+			.click();
 
 		return new PortfolioEditPage(this.page);
 	}
@@ -70,6 +75,39 @@ export class OverviewPage {
 		await portfolioDeleteIcon.click();
 
 		return new PortfolioDeletionDialog(this.page);
+	}
+
+	async addConnection(): Promise<WorkTrackingSystemEditPage> {
+		await this.page
+			.getByRole("button", { name: "Add Connection" })
+			.first()
+			.click();
+
+		return new WorkTrackingSystemEditPage(this.page);
+	}
+
+	async deleteConnection(connectionName: string): Promise<void> {
+		await this.search(connectionName);
+		const connectionDeleteIcon = this.page.getByLabel("Delete");
+		await connectionDeleteIcon.click();
+	}
+
+	async editConnection(
+		connectionName: string,
+	): Promise<WorkTrackingSystemEditPage> {
+		await this.search(connectionName);
+
+		const connectionEditIcon = this.page.getByLabel("Edit");
+		await connectionEditIcon.click();
+
+		return new WorkTrackingSystemEditPage(this.page);
+	}
+
+	getConnectionLink(connectionName: string): Locator {
+		const connectionLink = this.page.getByRole("link", {
+			name: connectionName,
+		});
+		return connectionLink;
 	}
 
 	async getTeamLink(teamName: string): Promise<Locator> {
@@ -96,7 +134,7 @@ export class OverviewPage {
 	}
 
 	async addNewTeam(): Promise<TeamEditPage> {
-		await this.page.getByRole("button", { name: "Add Team" }).click();
+		await this.page.getByRole("button", { name: "Add Team" }).first().click();
 
 		return new TeamEditPage(this.page);
 	}

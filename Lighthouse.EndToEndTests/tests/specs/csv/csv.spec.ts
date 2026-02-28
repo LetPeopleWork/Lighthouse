@@ -21,22 +21,14 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 	};
 
 	await test.step("Create CSV Connector", async () => {
-		const settingsPage = await overviewPage.lightHousePage.goToSettings();
+		const workTrackingSystemEditPage = await overviewPage.addConnection();
 
-		const workTrackingSystemConnections =
-			await settingsPage.goToWorkTrackingSystems();
+		await workTrackingSystemEditPage.selectWorkTrackingSystem("Csv");
 
-		const addWorkTrackingSystemConnectionDialog =
-			await workTrackingSystemConnections.addNewWorkTrackingSystem();
+		await workTrackingSystemEditPage.setConnectionName(workTrackingSystem.name);
 
-		await addWorkTrackingSystemConnectionDialog.selectWorkTrackingSystem("Csv");
-
-		await addWorkTrackingSystemConnectionDialog.setConnectionName(
-			workTrackingSystem.name,
-		);
-
-		await addWorkTrackingSystemConnectionDialog.validate();
-		await addWorkTrackingSystemConnectionDialog.create();
+		await workTrackingSystemEditPage.validate();
+		await workTrackingSystemEditPage.create();
 	});
 
 	await test.step("Create CSV Team with file upload", async () => {

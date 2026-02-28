@@ -35,14 +35,10 @@ const updateWorkTrackingSystems = async (
 		},
 	];
 
-	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();
-
 	for (const workTrackingSystem of workTrackingSystems) {
-		const editWorkTrackingSystem =
-			await workTrackingSystemsPage.modifyWorkTryckingSystem(
-				workTrackingSystem.name,
-			);
+		const editWorkTrackingSystem = await overviewPage.editConnection(
+			workTrackingSystem.name,
+		);
 
 		const wtsDetails =
 			workTrackingSystemNames[workTrackingSystems.indexOf(workTrackingSystem)];
@@ -124,7 +120,7 @@ testWithData(
 		await updatePortfolios(request, overviewPage, testData.portfolios);
 
 		const settingsPage = await overviewPage.lightHousePage.goToSettings();
-		const systemSettings = await settingsPage.goToSystemSettings();
+		const systemSettings = await settingsPage.goToSystemConfiguration();
 
 		const exportedConfigFileName = await systemSettings.exportConfiguration();
 
@@ -245,51 +241,46 @@ test("Take @screenshot of licensing", async ({ overviewPage }) => {
 });
 
 test("Take @screenshot of setting pages", async ({ overviewPage }) => {
-	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();
-
-	// Add new Work Tracking System
-	const workTrackingSystemDialog =
-		await workTrackingSystemsPage.addNewWorkTrackingSystem();
-
+	const workTrackingSystemEditPage = await overviewPage.addConnection();
 	const jiraUrl = "https://letpeoplework.atlassian.net";
 	const username = "atlassian.pushchair@huser-berta.com";
 	const wtsName = "My Jira Connection";
 
-	await workTrackingSystemDialog.selectWorkTrackingSystem("Jira");
-	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+	await workTrackingSystemEditPage.selectWorkTrackingSystem("Jira");
+	await workTrackingSystemEditPage.setWorkTrackingSystemOption(
 		"Jira URL",
 		jiraUrl,
 	);
-	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+	await workTrackingSystemEditPage.setWorkTrackingSystemOption(
 		"Username (Email)",
 		username,
 	);
-	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+	await workTrackingSystemEditPage.setWorkTrackingSystemOption(
 		"API Token",
 		TestConfig.JiraToken,
 	);
 
-	await workTrackingSystemDialog.setConnectionName(wtsName);
+	await workTrackingSystemEditPage.setConnectionName(wtsName);
 
-	await workTrackingSystemDialog.validate();
-	await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
-	await expect(workTrackingSystemDialog.createButton).toBeEnabled();
-	await workTrackingSystemDialog.create();
+	await workTrackingSystemEditPage.validate();
+	await expect(workTrackingSystemEditPage.validateButton).toBeEnabled();
+	await expect(workTrackingSystemEditPage.createButton).toBeEnabled();
+	overviewPage = await workTrackingSystemEditPage.create();
 
-	const savedWorkTrackingSystem =
-		workTrackingSystemsPage.getWorkTrackingSystem(wtsName);
+	const savedWorkTrackingSystem = overviewPage.getConnectionLink(wtsName);
 	await expect(savedWorkTrackingSystem).toBeVisible();
 
 	await takePageScreenshot(
-		workTrackingSystemsPage.page,
+		overviewPage.page,
 		"settings/worktrackingsystems.png",
 	);
+
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 
 	const demoDataPage = await settingsPage.goToDemoData();
 	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 
-	const systemSettings = await settingsPage.goToSystemSettings();
+	const systemSettings = await settingsPage.goToSystemConfiguration();
 
 	await takePageScreenshot(systemSettings.page, "settings/systemsettings.png");
 
@@ -676,34 +667,28 @@ for (const {
 				testData.portfolios.length < 1,
 				"Expected to have portfolios initiatilized to prevent tutorial page from being displayed",
 			);
-			const settingsPage = await overviewPage.lighthousePage.goToSettings();
-
-			const workTrackingSystemsPage =
-				await settingsPage.goToWorkTrackingSystems();
-
-			const workTrackingSystemDialog =
-				await workTrackingSystemsPage.addNewWorkTrackingSystem();
+			const workTrackingSystemEditPage = await overviewPage.addConnection();
 
 			// Wait for the dialog to be visible
-			await workTrackingSystemDialog.setConnectionName(
+			await workTrackingSystemEditPage.setConnectionName(
 				`My ${workTrackingSystemName} Connection`,
 			);
 
-			await workTrackingSystemDialog.selectWorkTrackingSystem(
+			await workTrackingSystemEditPage.selectWorkTrackingSystem(
 				workTrackingSystemName,
 			);
 
 			for (const option of workTrackingSystemOptions) {
-				await workTrackingSystemDialog.setWorkTrackingSystemOption(
+				await workTrackingSystemEditPage.setWorkTrackingSystemOption(
 					option.field,
 					option.value,
 				);
 			}
 
-			await workTrackingSystemDialog.scrollToTop();
+			await workTrackingSystemEditPage.scrollToTop();
 
 			await takeElementScreenshot(
-				workTrackingSystemDialog.page.getByRole("dialog"),
+				workTrackingSystemEditPage.page.getByRole("dialog"),
 				`concepts/worktrackingsystem_${workTrackingSystemName}.png`,
 				5,
 				1000,

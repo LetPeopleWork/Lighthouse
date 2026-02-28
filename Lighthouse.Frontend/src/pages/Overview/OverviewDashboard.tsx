@@ -289,6 +289,14 @@ const OverviewDashboard: React.FC = () => {
 		[theme, handleDeleteConnection],
 	);
 
+	const filteredConnections = useMemo(
+		() =>
+			connections.filter((c) =>
+				c.name.toLowerCase().includes(filterText.toLowerCase()),
+			),
+		[connections, filterText],
+	);
+
 	const hasPortfolios = portfolios.length > 0;
 
 	return (
@@ -338,9 +346,7 @@ const OverviewDashboard: React.FC = () => {
 						/>
 						<Tooltip
 							title={
-								hasConnections
-									? ""
-									: "Create a connection before adding a team"
+								hasConnections ? "" : "Create a connection before adding a team"
 							}
 						>
 							<span>
@@ -451,11 +457,24 @@ const OverviewDashboard: React.FC = () => {
 							</Fade>
 						)}
 
-						{connections.length > 0 && (
+						{connections.length > 0 && filteredConnections.length === 0 && (
+							<Fade in={true} timeout={500}>
+								<Alert
+									severity="warning"
+									variant="outlined"
+									sx={{ mb: 3, borderRadius: 2, boxShadow: theme.shadows[1] }}
+								>
+									No connections found matching the filter{" "}
+									<strong>{filterText}</strong>
+								</Alert>
+							</Fade>
+						)}
+
+						{connections.length > 0 && filteredConnections.length > 0 && (
 							<Box data-testid="connections-datagrid-container">
 								<DataGridBase
 									rows={
-										connections as (IWorkTrackingSystemConnection &
+										filteredConnections as (IWorkTrackingSystemConnection &
 											GridValidRowModel)[]
 									}
 									columns={connectionColumns}

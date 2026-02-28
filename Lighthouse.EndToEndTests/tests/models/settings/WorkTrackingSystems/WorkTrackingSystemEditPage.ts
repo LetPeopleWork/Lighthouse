@@ -1,23 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
-import type { PortfolioEditPage } from "../../portfolios/PortfolioEditPage";
-import type { TeamEditPage } from "../../teams/TeamEditPage";
-import type { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystemsSettingsPage";
+import { LighthousePage } from "../../app/LighthousePage";
+import { OverviewPage } from "../../overview/OverviewPage";
 
-export class EditWorkTrackingSystemDialog<
-	T extends PortfolioEditPage | TeamEditPage | WorkTrackingSystemsSettingsPage,
-> {
+export class WorkTrackingSystemEditPage {
 	page: Page;
-	createPageHandler: (page: Page) => T;
-	modifyExisting: boolean;
 
-	constructor(
-		page: Page,
-		createPageHandler: (page: Page) => T,
-		modifyExisting = false,
-	) {
+	constructor(page: Page) {
 		this.page = page;
-		this.createPageHandler = createPageHandler;
-		this.modifyExisting = modifyExisting;
 	}
 
 	async setConnectionName(name: string): Promise<void> {
@@ -38,20 +27,14 @@ export class EditWorkTrackingSystemDialog<
 		await this.page.getByLabel(optionName, { exact: true }).fill(optionValue);
 	}
 
-	async cancel(): Promise<T> {
-		await this.page.getByRole("button", { name: "Cancel" }).click();
-
-		return this.createPageHandler(this.page);
-	}
-
 	async validate(): Promise<void> {
 		await this.validateButton.click();
 	}
 
-	async create(): Promise<T> {
+	async create(): Promise<OverviewPage> {
 		await this.createButton.click();
 
-		return this.createPageHandler(this.page);
+		return new OverviewPage(this.page, new LighthousePage(this.page));
 	}
 
 	async scrollToTop(): Promise<void> {
@@ -66,7 +49,6 @@ export class EditWorkTrackingSystemDialog<
 	}
 
 	get createButton(): Locator {
-		const buttonName = this.modifyExisting ? "Save" : "Create";
-		return this.page.getByRole("button", { name: buttonName });
+		return this.page.getByRole("button", { name: "Save" });
 	}
 }
