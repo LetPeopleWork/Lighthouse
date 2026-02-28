@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     .ThenInclude(wtsc => wtsc.Options)
                 .Include(x => x.WorkTrackingSystemConnection)
                     .ThenInclude(wtsc => wtsc.AdditionalFieldDefinitions)
+                .Include(x => x.WorkTrackingSystemConnection)
+                    .ThenInclude(wtsc => wtsc.WriteBackMappingDefinitions)
                 .Include(x => x.Portfolios)
                     .ThenInclude(p => p.Features)
                         .ThenInclude(f => f.FeatureWork)

@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
+        private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
 
         private int idCounter;
 
@@ -37,6 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
+            writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
@@ -46,6 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(licenseServiceMock.Object);
             SetupServiceProviderMock(deliveryRepositoryMock.Object);
             SetupServiceProviderMock(deliveryRuleServiceMock.Object);
+            SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }
@@ -148,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             SetupRefreshSettings(10, 360);
 
-            SetupProjects([project, CreateProject(DateTime.Now)]);
+            SetupProjects(project, CreateProject(DateTime.Now));
 
             var subject = CreateSubject();
 
@@ -162,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var project = CreateProject(DateTime.Now.AddDays(-1));
             SetupRefreshSettings(10, 360);
-            SetupProjects([project, CreateProject(DateTime.Now)]);
+            SetupProjects(project, CreateProject(DateTime.Now));
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
 
@@ -203,6 +206,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(project.Id);
 
             deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_TriggersFeatureWriteBackForPortfolio()
+        {
+            var team = CreateTeam();
+
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            writeBackTriggerServiceMock.Verify(x => x.TriggerFeatureWriteBackForPortfolio(project), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_TriggersForecastWriteBackForPortfolio()
+        {
+            var team = CreateTeam();
+
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(project), Times.Once);
         }
 
         private void SetupProjects(params Portfolio[] projects)

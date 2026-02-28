@@ -14,6 +14,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IRepository<Portfolio>> projectRepositoryMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IForecastService> forecastServiceMock;
+        private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
 
         private int idCounter = 0;
 
@@ -23,10 +24,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             projectRepositoryMock = new Mock<IRepository<Portfolio>>();
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
+            writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
 
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(projectRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
+            SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
         }
 
         [Test]
@@ -51,7 +54,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             // Arrange
             var project = CreateProject();
-            var serviceProviderMock = new Mock<IServiceProvider>();
 
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
@@ -62,6 +64,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             // Assert
             forecastServiceMock.Verify(x => x.UpdateForecastsForProject(project), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldTriggerForecastWriteBackForPortfolio_WhenProjectIsFound()
+        {
+            var project = CreateProject();
+
+            projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
+
+            var subject = CreateSubject();
+
+            subject.TriggerUpdate(project.Id);
+
+            writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(project), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldNotTriggerWriteBack_WhenProjectNotFound()
+        {
+            projectRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((Portfolio)null);
+
+            var subject = CreateSubject();
+
+            subject.TriggerUpdate(1);
+
+            writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(It.IsAny<Portfolio>()), Times.Never);
         }
 
         [Test]

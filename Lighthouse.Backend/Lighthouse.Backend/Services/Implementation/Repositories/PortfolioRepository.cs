@@ -57,6 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .Include(f => f.Features).ThenInclude(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
                 .Include(p => p.WorkTrackingSystemConnection).ThenInclude(wtsc => wtsc.Options)
                 .Include(p => p.WorkTrackingSystemConnection).ThenInclude(wtsc => wtsc.AdditionalFieldDefinitions)
+                .Include(p => p.WorkTrackingSystemConnection).ThenInclude(wtsc => wtsc.WriteBackMappingDefinitions)
                 .Include(p => p.Teams);
         }
     }

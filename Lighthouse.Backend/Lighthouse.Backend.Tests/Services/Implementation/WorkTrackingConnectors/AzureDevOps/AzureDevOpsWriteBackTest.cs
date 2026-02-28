@@ -306,12 +306,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var cycleTimeValue = "7";
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = "362", TargetFieldReference = AgeField, Value = cycleTimeValue }
+                new WriteBackFieldUpdate { WorkItemId = "366", TargetFieldReference = AgeField, Value = cycleTimeValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, "362", AgeField, 107);
+            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, "366", AgeField, 107);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("7"));

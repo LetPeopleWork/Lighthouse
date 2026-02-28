@@ -305,6 +305,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
             builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
             builder.Services.AddScoped<IWriteBackService, WriteBackService>();
+            builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();
 
             builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();

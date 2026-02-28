@@ -65,7 +65,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
             await deliveryRepository.Save();
 
+            var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
+            await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
+
             await forecastUpdateService.UpdateForecastsForProject(project);
+
+            await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
         }
     }
 }

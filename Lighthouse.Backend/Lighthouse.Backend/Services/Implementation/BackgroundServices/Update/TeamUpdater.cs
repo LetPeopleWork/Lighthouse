@@ -44,6 +44,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             var teamDataService = serviceProvider.GetRequiredService<ITeamDataService>();
             await teamDataService.UpdateTeamData(team);
+
+            var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
+            await writeBackTriggerService.TriggerWriteBackForTeam(team);
         }
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)

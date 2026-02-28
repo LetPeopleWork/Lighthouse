@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<ITeamDataService> teamDataServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
 
         private int idCounter = 0;
 
@@ -28,11 +29,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             appSettingServiceMock = new Mock<IAppSettingService>();
             licenseServiceMock = new Mock<ILicenseService>();
             teamDataServiceMock = new Mock<ITeamDataService>();
+            writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
 
             SetupServiceProviderMock(teamRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(licenseServiceMock.Object);
             SetupServiceProviderMock(teamDataServiceMock.Object);
+            SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }
@@ -124,6 +127,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             await subject.StartAsync(CancellationToken.None);
 
             teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once);
+        }
+
+        [Test]
+        public async Task ExecuteAsync_ReadyToRefresh_TriggersWriteBackForTeam()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            writeBackTriggerServiceMock.Verify(x => x.TriggerWriteBackForTeam(team), Times.Once);
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)
