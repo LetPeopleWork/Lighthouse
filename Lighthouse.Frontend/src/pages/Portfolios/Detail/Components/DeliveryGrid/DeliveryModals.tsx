@@ -55,7 +55,8 @@ export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
 				<DeleteConfirmationDialog
 					open={deleteDialogOpen}
 					itemName={deliveryToDelete.name}
-					onClose={onDeleteConfirmation}
+					onCancel={() => onDeleteConfirmation(false)}
+					onConfirm={() => onDeleteConfirmation(true)}
 				/>
 			)}
 

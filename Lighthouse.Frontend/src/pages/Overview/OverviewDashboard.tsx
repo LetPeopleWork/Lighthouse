@@ -114,27 +114,29 @@ const OverviewDashboard: React.FC = () => {
 		setDeleteDialogOpen(true);
 	};
 
-	const handleDeleteConfirmation = async (confirmed: boolean) => {
-		if (confirmed && selectedItem && deleteType) {
-			try {
-				setIsLoading(true);
-
-				if (deleteType === "portfolio") {
-					await portfolioService.deletePortfolio(selectedItem.id);
-				} else if (deleteType === "team") {
-					await teamService.deleteTeam(selectedItem.id);
-				}
-
-				await fetchData();
-			} catch (error) {
-				console.error(`Error deleting ${deleteType}:`, error);
-				setHasError(true);
-			}
-		}
-
+	const closeDeleteDialog = useCallback(() => {
 		setDeleteDialogOpen(false);
 		setSelectedItem(null);
 		setDeleteType(null);
+	}, []);
+
+	const handleConfirmDelete = async () => {
+		if (!selectedItem || !deleteType) return;
+
+		try {
+			setIsLoading(true);
+			if (deleteType === "portfolio") {
+				await portfolioService.deletePortfolio(selectedItem.id);
+			} else if (deleteType === "team") {
+				await teamService.deleteTeam(selectedItem.id);
+			}
+			await fetchData();
+		} catch (error) {
+			console.error(`Error deleting ${deleteType}:`, error);
+			setHasError(true);
+		} finally {
+			closeDeleteDialog();
+		}
 	};
 
 	// Connection handlers
@@ -151,32 +153,31 @@ const OverviewDashboard: React.FC = () => {
 		[],
 	);
 
-	const handleDeleteConnectionConfirmation = async (confirmed: boolean) => {
-		if (confirmed && selectedConnection?.id) {
-			try {
-				await workTrackingSystemService.deleteWorkTrackingSystemConnection(
-					selectedConnection.id,
+	const closeDeleteConnectionDialog = useCallback(() => {
+		setDeleteConnectionDialogOpen(false);
+		setSelectedConnection(null);
+		setDeleteConnectionError(null);
+	}, []);
+
+	const handleConfirmDeleteConnection = async () => {
+		if (!selectedConnection?.id) return;
+
+		try {
+			await workTrackingSystemService.deleteWorkTrackingSystemConnection(
+				selectedConnection.id,
+			);
+			setConnections((prev) =>
+				prev.filter((c) => c.id !== selectedConnection.id),
+			);
+			closeDeleteConnectionDialog();
+		} catch (error) {
+			if (error instanceof ApiError && error.code === 409) {
+				setDeleteConnectionError(error.message);
+			} else {
+				setDeleteConnectionError(
+					"Failed to delete connection. Please try again.",
 				);
-				setConnections((prev) =>
-					prev.filter((c) => c.id !== selectedConnection.id),
-				);
-				setDeleteConnectionDialogOpen(false);
-				setSelectedConnection(null);
-				setDeleteConnectionError(null);
-			} catch (error) {
-				if (error instanceof ApiError && error.code === 409) {
-					setDeleteConnectionError(error.message);
-				} else {
-					setDeleteConnectionError(
-						"Failed to delete connection. Please try again.",
-					);
-				}
-				return;
 			}
-		} else {
-			setDeleteConnectionDialogOpen(false);
-			setSelectedConnection(null);
-			setDeleteConnectionError(null);
 		}
 	};
 
@@ -337,9 +338,9 @@ const OverviewDashboard: React.FC = () => {
 						/>
 						<Tooltip
 							title={
-								!hasConnections
-									? "Create a connection before adding a team"
-									: ""
+								hasConnections
+									? ""
+									: "Create a connection before adding a team"
 							}
 						>
 							<span>
@@ -361,7 +362,7 @@ const OverviewDashboard: React.FC = () => {
 							</span>
 						</Tooltip>
 						<Tooltip
-							title={!hasTeams ? "Create a team before adding a portfolio" : ""}
+							title={hasTeams ? "" : "Create a team before adding a portfolio"}
 						>
 							<span>
 								<LicenseTooltip
@@ -469,7 +470,8 @@ const OverviewDashboard: React.FC = () => {
 					<DeleteConfirmationDialog
 						open={deleteDialogOpen}
 						itemName={selectedItem.name}
-						onClose={handleDeleteConfirmation}
+						onConfirm={handleConfirmDelete}
+						onCancel={closeDeleteDialog}
 					/>
 				)}
 
@@ -477,7 +479,8 @@ const OverviewDashboard: React.FC = () => {
 					<DeleteConfirmationDialog
 						open={deleteConnectionDialogOpen}
 						itemName={selectedConnection.name}
-						onClose={handleDeleteConnectionConfirmation}
+						onConfirm={handleConfirmDeleteConnection}
+						onCancel={closeDeleteConnectionDialog}
 						errorMessage={deleteConnectionError ?? undefined}
 					/>
 				)}

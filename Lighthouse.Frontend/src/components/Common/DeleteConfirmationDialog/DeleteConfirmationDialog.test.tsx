@@ -7,7 +7,8 @@ describe("DeleteConfirmationDialog", () => {
 	const defaultProps = {
 		open: true,
 		itemName: "Test Item",
-		onClose: vi.fn(),
+		onCancel: vi.fn(),
+		onConfirm: vi.fn(),
 	};
 
 	beforeEach(() => {
@@ -32,27 +33,27 @@ describe("DeleteConfirmationDialog", () => {
 		expect(screen.getByText("Delete")).toBeInTheDocument();
 	});
 
-	it("calls onClose with false when Cancel button is clicked", async () => {
+	it("calls onCancel when Cancel button is clicked", async () => {
 		const user = userEvent.setup();
 		render(<DeleteConfirmationDialog {...defaultProps} />);
 
 		const cancelButton = screen.getByText("Cancel");
 		await user.click(cancelButton);
 
-		expect(defaultProps.onClose).toHaveBeenCalledWith(false);
+		expect(defaultProps.onCancel).toHaveBeenCalled();
 	});
 
-	it("calls onClose with true when Delete button is clicked", async () => {
+	it("calls onConfirm when Delete button is clicked", async () => {
 		const user = userEvent.setup();
 		render(<DeleteConfirmationDialog {...defaultProps} />);
 
 		const deleteButton = screen.getByText("Delete");
 		await user.click(deleteButton);
 
-		expect(defaultProps.onClose).toHaveBeenCalledWith(true);
+		expect(defaultProps.onConfirm).toHaveBeenCalled();
 	});
 
-	it("calls onClose with false when dialog is closed via Escape key", async () => {
+	it("calls onCancel when dialog is closed via Escape key", async () => {
 		const user = userEvent.setup();
 		render(<DeleteConfirmationDialog {...defaultProps} />);
 
@@ -61,7 +62,7 @@ describe("DeleteConfirmationDialog", () => {
 		// Simulate Escape key press
 		await user.keyboard("{Escape}");
 
-		expect(defaultProps.onClose).toHaveBeenCalledWith(false);
+		expect(defaultProps.onCancel).toHaveBeenCalled();
 	});
 
 	it("is not visible when open prop is false", () => {

@@ -13,27 +13,25 @@ import { useId } from "react";
 interface DeleteConfirmationDialogProps {
 	open: boolean;
 	itemName: string;
-	onClose: (confirmed: boolean) => void;
+	onConfirm: () => void;
+	onCancel: () => void;
 	errorMessage?: string;
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 	open,
 	itemName,
-	onClose,
+	onConfirm,
+	onCancel,
 	errorMessage,
 }) => {
-	const handleClose = (confirmed: boolean) => {
-		onClose(confirmed);
-	};
-
 	const alertDialogTitleId = useId();
 	const alertDialogDescriptionId = useId();
 
 	return (
 		<Dialog
 			open={open}
-			onClose={() => handleClose(false)}
+			onClose={onCancel}
 			aria-labelledby={alertDialogTitleId}
 			aria-describedby={alertDialogDescriptionId}
 		>
@@ -53,10 +51,10 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 				)}
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={() => handleClose(false)} color="primary">
+				<Button onClick={onCancel} color="primary">
 					Cancel
 				</Button>
-				<Button onClick={() => handleClose(true)} color="error" autoFocus>
+				<Button onClick={onConfirm} color="error" autoFocus>
 					Delete
 				</Button>
 			</DialogActions>
