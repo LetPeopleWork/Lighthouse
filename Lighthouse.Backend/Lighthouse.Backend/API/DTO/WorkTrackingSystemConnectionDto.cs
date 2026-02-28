@@ -27,6 +27,8 @@ namespace Lighthouse.Backend.API.DTO
             Options.AddRange(workTrackingSystemConnection.Options.Select(o => new WorkTrackingSystemConnectionOptionDto(o)));
             AdditionalFieldDefinitions.AddRange(
                 workTrackingSystemConnection.AdditionalFieldDefinitions.Select(f => new AdditionalFieldDefinitionDto(f)));
+            WriteBackMappingDefinitions.AddRange(
+                workTrackingSystemConnection.WriteBackMappingDefinitions.Select(m => new WriteBackMappingDefinitionDto(m)));
         }
 
         [JsonRequired]
@@ -47,5 +49,7 @@ namespace Lighthouse.Backend.API.DTO
         public List<WorkTrackingSystemConnectionOptionDto> Options { get; set; } = [];
 
         public List<AdditionalFieldDefinitionDto> AdditionalFieldDefinitions { get; set; } = [];
+
+        public List<WriteBackMappingDefinitionDto> WriteBackMappingDefinitions { get; set; } = [];
     }
 }

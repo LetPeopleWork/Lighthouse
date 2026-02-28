@@ -35,8 +35,10 @@ namespace Lighthouse.Backend.API
                 }
 
                 UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions);
+                UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions);
 
-                if (existingConnection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
+                if (existingConnection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
+                    && existingConnection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService))
                 {
                     repository.Update(existingConnection);
                     await repository.Save();
@@ -64,6 +66,38 @@ namespace Lighthouse.Backend.API
             await repository.Save();
 
             return Ok();
+        }
+
+        private static void UpdateWriteBackMappingDefinitions(
+            WorkTrackingSystemConnection existingConnection,
+            List<WriteBackMappingDefinitionDto> updatedMappings)
+        {
+            var existingById = existingConnection.WriteBackMappingDefinitions.ToDictionary(m => m.Id);
+            var updateIds = new HashSet<int>(updatedMappings.Where(m => m.Id != 0).Select(m => m.Id));
+
+            var toRemove = existingConnection.WriteBackMappingDefinitions
+                .Where(m => !updateIds.Contains(m.Id))
+                .ToList();
+            foreach (var mapping in toRemove)
+            {
+                existingConnection.WriteBackMappingDefinitions.Remove(mapping);
+            }
+
+            foreach (var mappingDto in updatedMappings)
+            {
+                if (mappingDto.Id != 0 && existingById.TryGetValue(mappingDto.Id, out var existingMapping))
+                {
+                    existingMapping.ValueSource = mappingDto.ValueSource;
+                    existingMapping.AppliesTo = mappingDto.AppliesTo;
+                    existingMapping.TargetFieldReference = mappingDto.TargetFieldReference;
+                    existingMapping.TargetValueType = mappingDto.TargetValueType;
+                    existingMapping.DateFormat = mappingDto.DateFormat;
+                }
+                else
+                {
+                    existingConnection.WriteBackMappingDefinitions.Add(mappingDto.ToModel());
+                }
+            }
         }
 
         private static void UpdateAdditionalFieldDefinitions(

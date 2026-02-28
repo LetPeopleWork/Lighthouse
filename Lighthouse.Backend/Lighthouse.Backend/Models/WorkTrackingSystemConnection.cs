@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+﻿using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
@@ -16,6 +17,8 @@ namespace Lighthouse.Backend.Models
         public List<WorkTrackingSystemConnectionOption> Options { get; } = [];
 
         public List<AdditionalFieldDefinition> AdditionalFieldDefinitions { get; } = [];
+
+        public List<WriteBackMappingDefinition> WriteBackMappingDefinitions { get; } = [];
 
         public string GetWorkTrackingSystemConnectionOptionByKey(string key)
         {

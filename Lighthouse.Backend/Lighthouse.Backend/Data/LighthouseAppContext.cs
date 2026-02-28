@@ -122,6 +122,11 @@ namespace Lighthouse.Backend.Data
                       .WithOne(afd => afd.WorkTrackingSystemConnection)
                       .HasForeignKey(afd => afd.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.WriteBackMappingDefinitions)
+                      .WithOne(wbm => wbm.WorkTrackingSystemConnection)
+                      .HasForeignKey(wbm => wbm.WorkTrackingSystemConnectionId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             var dictionaryConverter = new ValueConverter<Dictionary<int, string?>, string>(

@@ -14,7 +14,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             return Context.WorkTrackingSystemConnections
                 .Include(c => c.Options)
-                .Include(c => c.AdditionalFieldDefinitions);
+                .Include(c => c.AdditionalFieldDefinitions)
+                .Include(c => c.WriteBackMappingDefinitions);
         }
 
         public override WorkTrackingSystemConnection? GetById(int id)

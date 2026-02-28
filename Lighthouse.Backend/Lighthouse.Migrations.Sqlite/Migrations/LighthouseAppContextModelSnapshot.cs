@@ -699,6 +699,38 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("WorkTrackingSystemConnectionOption");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.WriteBack.WriteBackMappingDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppliesTo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DateFormat")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetFieldReference")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TargetValueType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ValueSource")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WorkTrackingSystemConnectionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkTrackingSystemConnectionId");
+
+                    b.ToTable("WriteBackMappingDefinition");
+                });
+
             modelBuilder.Entity("PortfolioTeam", b =>
                 {
                     b.Property<int>("PortfoliosId")
@@ -867,6 +899,17 @@ namespace Lighthouse.Backend.Migrations
                     b.Navigation("WorkTrackingSystemConnection");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.WriteBack.WriteBackMappingDefinition", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", "WorkTrackingSystemConnection")
+                        .WithMany("WriteBackMappingDefinitions")
+                        .HasForeignKey("WorkTrackingSystemConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkTrackingSystemConnection");
+                });
+
             modelBuilder.Entity("PortfolioTeam", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Portfolio", null)
@@ -921,6 +964,8 @@ namespace Lighthouse.Backend.Migrations
                     b.Navigation("AdditionalFieldDefinitions");
 
                     b.Navigation("Options");
+
+                    b.Navigation("WriteBackMappingDefinitions");
                 });
 #pragma warning restore 612, 618
         }

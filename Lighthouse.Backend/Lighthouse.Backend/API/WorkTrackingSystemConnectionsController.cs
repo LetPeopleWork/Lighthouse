@@ -75,6 +75,11 @@ namespace Lighthouse.Backend.API
                 return StatusCode(StatusCodes.Status403Forbidden, null);
             }
 
+            if (!connection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, null);
+            }
+
             repository.Add(connection);
             await repository.Save();
 
@@ -92,6 +97,11 @@ namespace Lighthouse.Backend.API
             var connection = CreateConnectionFromDto(connectionDto);
 
             if (!connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, false);
+            }
+
+            if (!connection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService))
             {
                 return StatusCode(StatusCodes.Status403Forbidden, false);
             }
@@ -174,6 +184,13 @@ namespace Lighthouse.Backend.API
                 var additionalField = fieldDto.ToModel();
                 
                 connection.AdditionalFieldDefinitions.Add(additionalField);
+            }
+
+            foreach (var mappingDto in connectionDto.WriteBackMappingDefinitions)
+            {
+                var mapping = mappingDto.ToModel();
+
+                connection.WriteBackMappingDefinitions.Add(mapping);
             }
 
             return connection;
