@@ -319,11 +319,15 @@ describe("OverviewDashboard", () => {
 	it("disables Add Portfolio button when no teams exist", async () => {
 		renderWithProviders(<OverviewDashboard />, {}, { teams: [] });
 
+		// Wait for loading to complete first (same pattern as other tests)
 		await waitFor(() => {
-			const addPortfolioButton = screen.getByRole("button", {
-				name: "Add Portfolio",
-			});
-			expect(addPortfolioButton).toBeDisabled();
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});
+
+		// Now assert the disabled state
+		const addPortfolioButton = screen.getByRole("button", {
+			name: "Add Portfolio",
+		});
+		expect(addPortfolioButton).toBeDisabled();
 	});
 });
