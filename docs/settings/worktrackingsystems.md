@@ -41,9 +41,7 @@ To override, simply toggle on the override button, and specify the desired timeo
 
 Additional Fields let you surface or map custom fields from your work tracking system into Lighthouse. Typical uses include selecting a *Size Estimate* field, a *Parent Override* field for feature grouping, or a *Feature Owner* field for reporting and filters.
 
-- For **Azure DevOps** you typically select the field's reference name (for example `Custom.MyEstimate`).
-- For **Jira** use the `customfield_XXXXX` key (for example `customfield_10234`).
-- Multi-value fields (for example Jira `labels` or `fixVersions`) are stored as comma-separated values in Lighthouse.
+See details for [Jira](../concepts/worktrackingsystems/jira.html) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html) in the respective sections.
 
 Additional Fields are used by the UI and reporting features and can also be targeted by Data Sync Mappings. When changing an existing connection, secret options (such as API tokens) will always need to be re-entered.
 
@@ -61,8 +59,8 @@ For each connection you can configure one or more *Mappings*. Each mapping defin
 | Setting | Description |
 |---------|-------------|
 | **Value Source** | The Lighthouse metric to write (see table below) |
-| **Target Field Reference** | The field identifier in your work tracking system where the value should be written (e.g. `Custom.FlowAge` in Azure DevOps, or `customfield_10200` in Jira) |
-| **Applies To** | Whether this mapping applies to *Team*-level items or *Portfolio*-level features |
+| **Target Field Reference** | The [Additional Field](#additional-fields) the value should be written to |
+| **Applies To** | Whether this mapping applies to *Team*-level work items or *Portfolio*-level features |
 | **Target Value Type** | The format to write: `Date` (ISO 8601, e.g. `2026-03-15`) or `Formatted Text` (a custom date pattern, e.g. `dd MMM yyyy`) |
 | **Date Format** | Required when *Target Value Type* is `Formatted Text`. Specify the pattern used to format the date value. |
 
