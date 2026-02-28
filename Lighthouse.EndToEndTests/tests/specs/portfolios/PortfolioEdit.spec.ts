@@ -400,19 +400,15 @@ for (const wizardConfiguration of wizardConfigurations) {
 				"Expected to have portfolio initiatilized to prevent tutorial page from being displayed",
 			);
 
-			let newPortfolioPage = await overviewPage.addNewPortfolio();
-
-			await test.step("Add Valid Configuration for new portfolio", async () => {
-				await newPortfolioPage.setName(
-					`My New ${wizardConfiguration.name} Portfolio`,
-				);
-			});
+			const newWorkTrackingSystemConnectionName = generateRandomName();
 
 			await test.step("Add Work Tracking System", async () => {
-				const newWorkTrackingSystemConnectionName = generateRandomName();
+				const settingsPage = await overviewPage.lightHousePage.goToSettings();
+				const workTrackingSystemsPage =
+					await settingsPage.goToWorkTrackingSystems();
 
 				const newWorkTrackingSystemDialog =
-					await newPortfolioPage.addNewWorkTrackingSystem();
+					await workTrackingSystemsPage.addNewWorkTrackingSystem();
 
 				await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
 					wizardConfiguration.name,
@@ -432,7 +428,20 @@ for (const wizardConfiguration of wizardConfigurations) {
 				await newWorkTrackingSystemDialog.validate();
 				await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
 
-				newPortfolioPage = await newWorkTrackingSystemDialog.create();
+				await newWorkTrackingSystemDialog.create();
+			});
+
+			overviewPage = await overviewPage.lightHousePage.goToOverview();
+			let newPortfolioPage = await overviewPage.addNewPortfolio();
+
+			await test.step("Add Valid Configuration for new portfolio", async () => {
+				await newPortfolioPage.setName(
+					`My New ${wizardConfiguration.name} Portfolio`,
+				);
+
+				await newPortfolioPage.selectWorkTrackingSystem(
+					newWorkTrackingSystemConnectionName,
+				);
 			});
 
 			await test.step(`Use ${wizardConfiguration.displayName} Wizard to Select Board`, async () => {

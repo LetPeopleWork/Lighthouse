@@ -29,7 +29,6 @@ if (typeof File !== "undefined" && !File.prototype.text) {
 describe("GeneralSettingsComponent", () => {
 	const mockOnSettingsChange = vi.fn();
 	const mockOnWorkTrackingSystemChange = vi.fn();
-	const mockOnNewWorkTrackingSystemConnectionAdded = vi.fn();
 
 	const testSettings = createMockTeamSettings();
 	testSettings.name = "Test Settings";
@@ -59,7 +58,6 @@ describe("GeneralSettingsComponent", () => {
 	beforeEach(() => {
 		mockOnSettingsChange.mockClear();
 		mockOnWorkTrackingSystemChange.mockClear();
-		mockOnNewWorkTrackingSystemConnectionAdded.mockClear();
 	});
 
 	it("renders correctly with provided settings", () => {
@@ -175,7 +173,6 @@ describe("GeneralSettingsComponent", () => {
 		);
 
 		expect(screen.getByRole("combobox")).toBeInTheDocument();
-		expect(screen.getByText(/Add New.*System/)).toBeInTheDocument();
 	});
 
 	it("calls onWorkTrackingSystemChange when switching work tracking systems", async () => {
@@ -213,9 +210,6 @@ describe("GeneralSettingsComponent", () => {
 							workTrackingSystems={mockWorkTrackingSystems}
 							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								mockOnNewWorkTrackingSystemConnectionAdded
-							}
 							showWorkTrackingSystemSelection={true}
 						/>
 					</TerminologyProvider>
@@ -269,9 +263,6 @@ describe("GeneralSettingsComponent", () => {
 							workTrackingSystems={mockWorkTrackingSystems}
 							selectedWorkTrackingSystem={null} // No previous system
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								mockOnNewWorkTrackingSystemConnectionAdded
-							}
 							showWorkTrackingSystemSelection={true}
 						/>
 					</TerminologyProvider>
@@ -293,60 +284,6 @@ describe("GeneralSettingsComponent", () => {
 			"dataRetrievalValue",
 			"",
 		);
-	});
-
-	it("opens ModifyTrackingSystemConnectionDialog when Add New button is clicked", async () => {
-		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
-		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
-			.fn()
-			.mockResolvedValue(mockWorkTrackingSystems);
-
-		const mockTerminologyService = createMockTerminologyService();
-		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
-			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
-			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
-		]);
-
-		const mockApiContext = createMockApiServiceContext({
-			workTrackingSystemService: mockWorkTrackingSystemService,
-			terminologyService: mockTerminologyService,
-		});
-
-		const queryClient = new QueryClient({
-			defaultOptions: {
-				queries: {
-					retry: false,
-				},
-			},
-		});
-
-		render(
-			<QueryClientProvider client={queryClient}>
-				<ApiServiceContext.Provider value={mockApiContext}>
-					<TerminologyProvider>
-						<GeneralSettingsComponent
-							settings={testSettings}
-							onSettingsChange={mockOnSettingsChange}
-							workTrackingSystems={mockWorkTrackingSystems}
-							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
-							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								mockOnNewWorkTrackingSystemConnectionAdded
-							}
-							showWorkTrackingSystemSelection={true}
-						/>
-					</TerminologyProvider>
-				</ApiServiceContext.Provider>
-			</QueryClientProvider>,
-		);
-
-		const addButton = screen.getByRole("button", { name: /Add New.*System/ });
-		await userEvent.click(addButton);
-
-		// Check that the dialog appears by looking for dialog title
-		await waitFor(() => {
-			expect(screen.getByText("Create New Connection")).toBeInTheDocument();
-		});
 	});
 
 	it("shows wizard button when selected work tracking system is CSV", () => {
@@ -389,9 +326,6 @@ describe("GeneralSettingsComponent", () => {
 							workTrackingSystems={[...mockWorkTrackingSystems, csvSystem]}
 							selectedWorkTrackingSystem={csvSystem}
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								mockOnNewWorkTrackingSystemConnectionAdded
-							}
 							showWorkTrackingSystemSelection={true}
 						/>
 					</TerminologyProvider>

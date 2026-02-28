@@ -2,7 +2,6 @@ import type { Locator, Page } from "@playwright/test";
 import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
 import { BoardWizard } from "../common/BoardWizard";
-import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
 import { TeamDetailPage } from "./TeamDetailPage";
 
 export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
@@ -64,19 +63,6 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 			.getByRole("button", { name: `Select ${workTrackingSystemType} Board` })
 			.click();
 		return new BoardWizard(this.page, (page) => new TeamEditPage(page));
-	}
-
-	async addNewWorkTrackingSystem(): Promise<
-		EditWorkTrackingSystemDialog<TeamEditPage>
-	> {
-		await this.page
-			.getByRole("button", { name: "Add New Work Tracking System" })
-			.click();
-
-		return new EditWorkTrackingSystemDialog(
-			this.page,
-			(page) => new TeamEditPage(page),
-		);
 	}
 
 	async triggerCsvWizard(): Promise<CsvUploadWizard<TeamEditPage>> {

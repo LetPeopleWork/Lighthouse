@@ -66,13 +66,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		setSelectedWorkTrackingSystem(selectedWorkTrackingSystem);
 	};
 
-	const handleOnNewWorkTrackingSystemConnectionAddedDialogClosed = async (
-		newConnection: IWorkTrackingSystemConnection,
-	) => {
-		setWorkTrackingSystems((prevSystems) => [...prevSystems, newConnection]);
-		setSelectedWorkTrackingSystem(newConnection);
-	};
-
 	const handleAddWorkItemType = (newWorkItemType: string) => {
 		if (newWorkItemType.trim()) {
 			setProjectSettings((prev) =>
@@ -366,9 +359,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							workTrackingSystems={workTrackingSystems}
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
 							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-							}
 							showWorkTrackingSystemSelection={!modifyDefaultSettings}
 						/>
 

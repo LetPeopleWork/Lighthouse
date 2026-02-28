@@ -2,7 +2,6 @@ import type { Locator, Page } from "@playwright/test";
 import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
 import { BoardWizard } from "../common/BoardWizard";
-import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
 import { PortfolioDetailPage } from "./PortfolioDetailPage";
 
 export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
@@ -148,19 +147,6 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.filter({ hasText: /.*Owning Team$/ })
 			.getByRole("combobox");
 		return (await combobox.textContent()) ?? "";
-	}
-
-	async addNewWorkTrackingSystem(): Promise<
-		EditWorkTrackingSystemDialog<PortfolioEditPage>
-	> {
-		await this.page
-			.getByRole("button", { name: "Add New Work Tracking System" })
-			.click();
-
-		return new EditWorkTrackingSystemDialog(
-			this.page,
-			(page) => new PortfolioEditPage(page),
-		);
 	}
 
 	async openBoardWizard(

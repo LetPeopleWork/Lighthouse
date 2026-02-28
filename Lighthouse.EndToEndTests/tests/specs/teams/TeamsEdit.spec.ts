@@ -1,7 +1,6 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test, testWithData } from "../../fixutres/LighthouseFixture";
 
-import { deleteWorkTrackingSystemConnectionByName } from "../../helpers/api/workTrackingSystemConnections";
 import { generateRandomName } from "../../helpers/names";
 
 const teamConfigurations = [
@@ -308,86 +307,6 @@ for (const {
 	);
 }
 
-for (const {
-	name: workTrackingSystemName,
-	dataRetrievalKey,
-	teamConfiguration,
-	workTrackingSystemOptions,
-} of newTeamConfigurations) {
-	test(`should allow to create a new team with a new Work Tracking System ${workTrackingSystemName}`, async ({
-		overviewPage,
-		request,
-	}) => {
-		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
-
-		await test.step("Add Valid Configuration for new team", async () => {
-			await newTeamPage.setName(`My New ${workTrackingSystemName} team`);
-			await newTeamPage.resetWorkItemTypes(
-				[],
-				teamConfiguration.validWorkItemTypes,
-			);
-			await newTeamPage.resetStates(
-				{
-					toDo: [],
-					doing: [],
-					done: [],
-				},
-				teamConfiguration.validStates,
-			);
-		});
-
-		const newWorkTrackingSystemConnectionName = generateRandomName();
-		await test.step("Add new Work Tracking System", async () => {
-			let newWorkTrackingSystemDialog =
-				await newTeamPage.addNewWorkTrackingSystem();
-
-			newTeamPage = await newWorkTrackingSystemDialog.cancel();
-
-			// No New Work Tracking System
-			await expect(newTeamPage.validateButton).toBeDisabled();
-
-			newWorkTrackingSystemDialog =
-				await newTeamPage.addNewWorkTrackingSystem();
-			await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
-				workTrackingSystemName,
-			);
-
-			for (const option of workTrackingSystemOptions) {
-				await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(
-					option.field,
-					option.value,
-				);
-			}
-
-			await newWorkTrackingSystemDialog.setConnectionName(
-				newWorkTrackingSystemConnectionName,
-			);
-
-			await newWorkTrackingSystemDialog.validate();
-			await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
-
-			newTeamPage = await newWorkTrackingSystemDialog.create();
-
-			await newTeamPage.setDataRetrievalValue(
-				teamConfiguration.validQuery,
-				dataRetrievalKey,
-			);
-
-			await expect(newTeamPage.validateButton).toBeEnabled();
-			await expect(newTeamPage.saveButton).toBeDisabled();
-
-			await newTeamPage.validate();
-			await expect(newTeamPage.validateButton).toBeEnabled();
-			await expect(newTeamPage.saveButton).toBeEnabled();
-		});
-
-		await deleteWorkTrackingSystemConnectionByName(
-			request,
-			newWorkTrackingSystemConnectionName,
-		);
-	});
-}
-
 const wizardConfiguration = [
 	{
 		name: "Jira",
@@ -422,13 +341,15 @@ for (const wizardConfig of wizardConfiguration) {
 	test(`should allow to create a new team through a ${wizardConfig.name} Wizard`, async ({
 		overviewPage,
 	}) => {
-		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
+		const newWorkTrackingSystemConnectionName = generateRandomName();
 
 		await test.step("Add Work Tracking System", async () => {
-			const newWorkTrackingSystemConnectionName = generateRandomName();
+			const settingsPage = await overviewPage.lightHousePage.goToSettings();
+			const workTrackingSystemsPage =
+				await settingsPage.goToWorkTrackingSystems();
 
 			const newWorkTrackingSystemDialog =
-				await newTeamPage.addNewWorkTrackingSystem();
+				await workTrackingSystemsPage.addNewWorkTrackingSystem();
 
 			await newWorkTrackingSystemDialog.selectWorkTrackingSystem(
 				wizardConfig.name,
@@ -448,10 +369,13 @@ for (const wizardConfig of wizardConfiguration) {
 			await newWorkTrackingSystemDialog.validate();
 			await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
 
-			newTeamPage = await newWorkTrackingSystemDialog.create();
+			await newWorkTrackingSystemDialog.create();
 		});
 
+		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
+
 		await test.step(`Use Wizard to Select ${wizardConfig.name} Board`, async () => {
+			await newTeamPage.selectWorkTrackingSystem(newWorkTrackingSystemConnectionName);
 			const wizard = await newTeamPage.openBoardWizard(
 				wizardConfig.displayName,
 			);

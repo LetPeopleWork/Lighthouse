@@ -231,13 +231,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		setSelectedWorkTrackingSystem(selectedWorkTrackingSystem);
 	};
 
-	const handleOnNewWorkTrackingSystemConnectionAddedDialogClosed = async (
-		newConnection: IWorkTrackingSystemConnection,
-	) => {
-		setWorkTrackingSystems((prevSystems) => [...prevSystems, newConnection]);
-		setSelectedWorkTrackingSystem(newConnection);
-	};
-
 	const handleSave = async () => {
 		if (!teamSettings) {
 			return;
@@ -338,9 +331,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							workTrackingSystems={workTrackingSystems}
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
 							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-							}
 							showWorkTrackingSystemSelection={!modifyDefaultSettings}
 						/>
 
