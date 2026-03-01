@@ -4,18 +4,48 @@ layout: home
 nav_order: 95
 ---
 
-# vNext
+# Lighthouse v26.2.28.12
 
-## Write Back to Work Tracking Systems
-Lighthouse can now write data back to your work tracking systems. Configure write-back mappings on your connections to automatically update fields in Azure DevOps, Jira, or other supported systems when forecasts or features are updated. This enables teams to keep their work tracking systems in sync with Lighthouse's forecasting data without manual intervention.
+## Write Back to Work Tracking Systems [Premium Only]
+Lighthouse can now write data back to your work tracking systems. You can configure mappings on your connections to automatically update fields in Azure DevOps, Jira, or other supported systems when forecasts or features are updated. This enables teams to keep their work tracking systems in sync with Lighthouse's forecasting data without manual intervention.
 
-## Connections Moved to Overview
+![Sync Mapping](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/DeliveryDateMapping.jpg)
+
+Currently, you can write back:
+- Work Item Age and Cycle Time (Team and Portfolio)
+- Feature Size (Portfolio only)
+- Forecasts per Feature (Portfolio only)
+
+The values are written to your system after every update of your Team and Portfolio.
+
+## Work Tracking Systems Adjustments
 Work tracking system connections have been moved from the Settings page to the Overview page, making them more accessible. The Overview now shows your configured connections alongside portfolios and teams, with full create, edit, and delete capabilities. Onboarding prerequisites are enforced: you must create a connection before adding a team, and a team before adding a portfolio.
 
-Connections that are in use by teams or portfolios are protected from accidental deletion with a clear error message.
+For new systems, an *Onboarding* is displayed to guide them through their first steps:
+*Create Connection* --> *Create Team* --> *Create Portfolio*
 
-## Settings Renamed to System Settings
-The "Settings" page has been renamed to "System Settings" for clarity. The former "System Settings" tab within that page is now called "Configuration".
+![Landing Page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/installation/landingpage.png)
+
+As the Work Tracking Systems contain more and more functionality (including the Sync functionality introduced in this release), they are displayed as a full page now instead of just a dialog. The side effect of this is, that you **cannot** create Work Tracking Systems as part of the Team or Portfolio creation.
+
+## Involved Teams in Portfolios
+Before, users had to manually select all teams that contributed to a Portfolio. This was adjusted, and Lighthouse is now automatically inferring which Teams are contributing any work to a Portfolio. This should simplify the setup, and allows you to simply add new teams (or new work to a team) and it will automatically be picked up as contributor to a Portfolio.
+
+## Other Improvements and Bug Fixes
+- The PBCs for Feature Size and Cycle Time were showing *Invalid Date* depending on your region - this should be working now in all regions
+- There were situations where Teams would stop updating, and were not deletable anymore. We tried to correct the root cause of this (although we are not 100% sure, as we could never reproduce it on our test environment)
+- The tab next to *Overview* is now called *System Settings*, to more clearly distinguish it from Team and Portfolio Settings
+- The Cut-Off date for Work Items on Team Level is now, by default, the same value as for Portfolios: 365 days
+- Update of various third party dependencies
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) 
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Manuel Opitz](https://www.linkedin.com/in/manuel-opitz-3812351a9/)
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.22.1...v26.2.28.12)
 
 # Lighthouse v26.2.22.1
 

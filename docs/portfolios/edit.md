@@ -58,12 +58,6 @@ You can remove types by hitting the remove icon, and add new ones by typing them
 You have to type the exact type name as it's used in your Work Tracking System. Make sure to use the exact spelling and casing. Spaces (for example in 'User Story') are supported.  
 While you can add multiple types, usually it makes sense to focus on a single one. Either use "Epics" or "Features", but dont mix them up.
 
-# Involved Teams
-Lighthouse will look for child items of the features for this portfolio in all team backlogs of the involved teams. Here you can specify which teams are involved in this portfolio. It will list all teams that are defined already and you can select as many as you want. You must select at least one team.
-
-{: .note}
-You can also select teams that do not have concrete work for any feature of this portfolio yet. That will allow you to define this team as a [Feature Owner](#ownership-settings) and will save you having to go modify the portfolio later on.
-
 # States
 In order for Lighthouse to judge whether an item is *done*, *in progress*, or not even started, you must specify which *states* map to which *category*.
 

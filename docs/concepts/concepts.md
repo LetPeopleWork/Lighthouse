@@ -72,7 +72,7 @@ Most often also the team level items are something like *User Stories* and *Bugs
 # Portfolios
 
 {: .definition}
-> A Portfolio as a collection of *Features*. A feature is a higher-level item that contains child-items. The child-items are the items that the [Teams](#teams) are working on. Each portfolio must have at least one involved team. Many teams can contribute to a single portfolio, and each team can be involved in many portfolios.
+> A Portfolio as a collection of *Features*. A feature is a higher-level item that contains child-items. The child-items are the items that the [Teams](#teams) are working on. Many teams can contribute to a single portfolio, and each team can be involved in many portfolios.
 
 Portfolios allow to scale your forecasts beyond the team level. When you need to answer when your collection of *Features* will be done, defining a portfolio is the way to go.
 
