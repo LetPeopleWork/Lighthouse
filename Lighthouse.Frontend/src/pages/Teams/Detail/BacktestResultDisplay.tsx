@@ -152,8 +152,9 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 				<ResultHeader variant="h6">Backtest Results</ResultHeader>
 				<Typography variant="body2" color="text.secondary">
 					Period: {backtestResult.startDate.toLocaleDateString()} to{" "}
-					{backtestResult.endDate.toLocaleDateString()} (
-					{backtestResult.historicalWindowDays} days of historical data)
+					{backtestResult.endDate.toLocaleDateString()} (historical data:{" "}
+					{backtestResult.historicalStartDate.toLocaleDateString()} to{" "}
+					{backtestResult.historicalEndDate.toLocaleDateString()})
 				</Typography>
 			</Grid>
 			<Grid size={{ xs: 12, md: 8 }}>

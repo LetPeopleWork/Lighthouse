@@ -29,7 +29,8 @@ export interface IForecastService {
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
-		historicalWindowDays: number,
+		historicalStartDate: Date,
+		historicalEndDate: Date,
 	): Promise<BacktestResult>;
 }
 
@@ -101,7 +102,8 @@ export class ForecastService
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
-		historicalWindowDays: number,
+		historicalStartDate: Date,
+		historicalEndDate: Date,
 	): Promise<BacktestResult> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IBacktestResult>(
@@ -109,7 +111,8 @@ export class ForecastService
 				{
 					startDate: this.formatDateOnly(startDate),
 					endDate: this.formatDateOnly(endDate),
-					historicalWindowDays: historicalWindowDays,
+					historicalStartDate: this.formatDateOnly(historicalStartDate),
+					historicalEndDate: this.formatDateOnly(historicalEndDate),
 				},
 			);
 			return this.deserializeBacktestResult(response.data);
@@ -127,7 +130,8 @@ export class ForecastService
 		return new BacktestResult(
 			new Date(data.startDate),
 			new Date(data.endDate),
-			data.historicalWindowDays,
+			new Date(data.historicalStartDate),
+			new Date(data.historicalEndDate),
 			percentiles,
 			data.actualThroughput,
 		);

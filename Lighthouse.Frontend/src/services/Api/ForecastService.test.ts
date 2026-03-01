@@ -477,12 +477,14 @@ describe("ForecastService", () => {
 			const teamId = 1;
 			const startDate = new Date("2023-06-01");
 			const endDate = new Date("2023-06-30");
-			const historicalWindowDays = 30;
+			const historicalStartDate = new Date("2023-05-01");
+			const historicalEndDate = new Date("2023-05-31");
 
 			const mockResponse: IBacktestResult = {
 				startDate: "2023-06-01",
 				endDate: "2023-06-30",
-				historicalWindowDays: 30,
+				historicalStartDate: "2023-05-01",
+				historicalEndDate: "2023-05-31",
 				percentiles: [
 					{ probability: 50, value: 10 },
 					{ probability: 70, value: 12 },
@@ -498,13 +500,15 @@ describe("ForecastService", () => {
 				teamId,
 				startDate,
 				endDate,
-				historicalWindowDays,
+				historicalStartDate,
+				historicalEndDate,
 			);
 
 			expect(result).toBeInstanceOf(BacktestResult);
 			expect(result.startDate).toEqual(new Date("2023-06-01"));
 			expect(result.endDate).toEqual(new Date("2023-06-30"));
-			expect(result.historicalWindowDays).toBe(30);
+			expect(result.historicalStartDate).toEqual(new Date("2023-05-01"));
+			expect(result.historicalEndDate).toEqual(new Date("2023-05-31"));
 			expect(result.percentiles).toHaveLength(4);
 			expect(result.percentiles[0]).toBeInstanceOf(HowManyForecast);
 			expect(result.percentiles[0].probability).toBe(50);
@@ -516,7 +520,8 @@ describe("ForecastService", () => {
 				{
 					startDate: "2023-06-01",
 					endDate: "2023-06-30",
-					historicalWindowDays,
+					historicalStartDate: "2023-05-01",
+					historicalEndDate: "2023-05-31",
 				},
 			);
 		});
@@ -525,12 +530,14 @@ describe("ForecastService", () => {
 			const teamId = 2;
 			const startDate = new Date("2023-07-15T14:30:00Z");
 			const endDate = new Date("2023-08-15T09:00:00Z");
-			const historicalWindowDays = 45;
+			const historicalStartDate = new Date("2023-06-15T00:00:00Z");
+			const historicalEndDate = new Date("2023-07-14T00:00:00Z");
 
 			const mockResponse: IBacktestResult = {
 				startDate: "2023-07-15",
 				endDate: "2023-08-15",
-				historicalWindowDays: 45,
+				historicalStartDate: "2023-06-15",
+				historicalEndDate: "2023-07-14",
 				percentiles: [{ probability: 50, value: 8 }],
 				actualThroughput: 9,
 			};
@@ -541,7 +548,8 @@ describe("ForecastService", () => {
 				teamId,
 				startDate,
 				endDate,
-				historicalWindowDays,
+				historicalStartDate,
+				historicalEndDate,
 			);
 
 			expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -549,7 +557,8 @@ describe("ForecastService", () => {
 				{
 					startDate: "2023-07-15",
 					endDate: "2023-08-15",
-					historicalWindowDays,
+					historicalStartDate: "2023-06-15",
+					historicalEndDate: "2023-07-14",
 				},
 			);
 		});
@@ -558,12 +567,14 @@ describe("ForecastService", () => {
 			const teamId = 3;
 			const startDate = new Date("2023-05-01");
 			const endDate = new Date("2023-05-31");
-			const historicalWindowDays = 30;
+			const historicalStartDate = new Date("2023-04-01");
+			const historicalEndDate = new Date("2023-04-30");
 
 			const mockResponse: IBacktestResult = {
 				startDate: "2023-05-01",
 				endDate: "2023-05-31",
-				historicalWindowDays: 30,
+				historicalStartDate: "2023-04-01",
+				historicalEndDate: "2023-04-30",
 				percentiles: [],
 				actualThroughput: 0,
 			};
@@ -574,7 +585,8 @@ describe("ForecastService", () => {
 				teamId,
 				startDate,
 				endDate,
-				historicalWindowDays,
+				historicalStartDate,
+				historicalEndDate,
 			);
 
 			expect(result.percentiles).toEqual([]);
@@ -585,7 +597,8 @@ describe("ForecastService", () => {
 			const teamId = 4;
 			const startDate = new Date("2023-04-01");
 			const endDate = new Date("2023-04-30");
-			const historicalWindowDays = 30;
+			const historicalStartDate = new Date("2023-03-01");
+			const historicalEndDate = new Date("2023-03-31");
 
 			mockedAxios.post.mockRejectedValueOnce(new Error("Backtest API error"));
 
@@ -594,7 +607,8 @@ describe("ForecastService", () => {
 					teamId,
 					startDate,
 					endDate,
-					historicalWindowDays,
+					historicalStartDate,
+					historicalEndDate,
 				),
 			).rejects.toThrow("Backtest API error");
 
@@ -603,7 +617,8 @@ describe("ForecastService", () => {
 				{
 					startDate: "2023-04-01",
 					endDate: "2023-04-30",
-					historicalWindowDays,
+					historicalStartDate: "2023-03-01",
+					historicalEndDate: "2023-03-31",
 				},
 			);
 		});
@@ -612,12 +627,14 @@ describe("ForecastService", () => {
 			const teamId = 5;
 			const startDate = new Date("2023-03-01");
 			const endDate = new Date("2023-03-31");
-			const historicalWindowDays = 60;
+			const historicalStartDate = new Date("2023-01-01");
+			const historicalEndDate = new Date("2023-02-28");
 
 			const mockResponse: IBacktestResult = {
 				startDate: "2023-03-01",
 				endDate: "2023-03-31",
-				historicalWindowDays: 60,
+				historicalStartDate: "2023-01-01",
+				historicalEndDate: "2023-02-28",
 				percentiles: [
 					{ probability: 50, value: 5 },
 					{ probability: 70, value: 7 },
@@ -633,7 +650,8 @@ describe("ForecastService", () => {
 				teamId,
 				startDate,
 				endDate,
-				historicalWindowDays,
+				historicalStartDate,
+				historicalEndDate,
 			);
 
 			expect(result.percentiles).toHaveLength(4);

@@ -3,7 +3,8 @@ import type { HowManyForecast, IHowManyForecast } from "./HowManyForecast";
 export interface IBacktestResult {
 	startDate: string;
 	endDate: string;
-	historicalWindowDays: number;
+	historicalStartDate: string;
+	historicalEndDate: string;
 	percentiles: IHowManyForecast[];
 	actualThroughput: number;
 }
@@ -11,20 +12,23 @@ export interface IBacktestResult {
 export class BacktestResult {
 	startDate: Date;
 	endDate: Date;
-	historicalWindowDays: number;
+	historicalStartDate: Date;
+	historicalEndDate: Date;
 	percentiles: HowManyForecast[];
 	actualThroughput: number;
 
 	constructor(
 		startDate: Date,
 		endDate: Date,
-		historicalWindowDays: number,
+		historicalStartDate: Date,
+		historicalEndDate: Date,
 		percentiles: HowManyForecast[],
 		actualThroughput: number,
 	) {
 		this.startDate = startDate;
 		this.endDate = endDate;
-		this.historicalWindowDays = historicalWindowDays;
+		this.historicalStartDate = historicalStartDate;
+		this.historicalEndDate = historicalEndDate;
 		this.percentiles = percentiles;
 		this.actualThroughput = actualThroughput;
 	}

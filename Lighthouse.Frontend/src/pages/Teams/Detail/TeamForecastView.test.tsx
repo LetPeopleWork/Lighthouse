@@ -139,7 +139,8 @@ vi.mock("./BacktestForecaster", () => ({
 		onRunBacktest: (
 			startDate: Date,
 			endDate: Date,
-			historicalWindowDays: number,
+			historicalStartDate: Date,
+			historicalEndDate: Date,
 		) => void;
 		backtestResult: unknown;
 		onClearBacktestResult?: () => void;
@@ -152,7 +153,15 @@ vi.mock("./BacktestForecaster", () => ({
 					startDate.setDate(startDate.getDate() - 60);
 					const endDate = new Date();
 					endDate.setDate(endDate.getDate() - 30);
-					onRunBacktest(startDate, endDate, 30);
+					const historicalStartDate = new Date();
+					historicalStartDate.setDate(historicalStartDate.getDate() - 90);
+					const historicalEndDate = new Date(startDate);
+					onRunBacktest(
+						startDate,
+						endDate,
+						historicalStartDate,
+						historicalEndDate,
+					);
 				}}
 			>
 				Run Backtest
@@ -467,7 +476,8 @@ describe("TeamForecastView component", () => {
 			const mockBacktestResult = {
 				startDate: new Date(),
 				endDate: new Date(),
-				historicalWindowDays: 30,
+				historicalStartDate: new Date(),
+				historicalEndDate: new Date(),
 				percentiles: [
 					{ probability: 50, value: 10 },
 					{ probability: 70, value: 12 },
@@ -489,7 +499,8 @@ describe("TeamForecastView component", () => {
 					mockTeam.id,
 					expect.any(Date),
 					expect.any(Date),
-					30,
+					expect.any(Date),
+					expect.any(Date),
 				);
 			});
 		});

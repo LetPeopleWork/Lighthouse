@@ -22,7 +22,8 @@ describe("BacktestResultDisplay component", () => {
 	const createMockResult = (actualThroughput: number): BacktestResult => ({
 		startDate: dayjs("2024-01-01").toDate(),
 		endDate: dayjs("2024-01-31").toDate(),
-		historicalWindowDays: 30,
+		historicalStartDate: new Date("2023-12-02"),
+		historicalEndDate: new Date("2024-01-01"),
 		percentiles: [
 			new HowManyForecast(50, 10),
 			new HowManyForecast(70, 12),
@@ -44,7 +45,7 @@ describe("BacktestResultDisplay component", () => {
 		render(<BacktestResultDisplay backtestResult={mockResult} />);
 
 		// Check that period info contains historical window days
-		expect(screen.getByText(/30 days of historical data/)).toBeInTheDocument();
+		expect(screen.getByText(/historical data:/)).toBeInTheDocument();
 	});
 
 	it("should display all percentile values in fixed order in the summary", () => {
@@ -115,7 +116,8 @@ describe("computeAverageForecast", () => {
 		const backtestResult = {
 			startDate: dayjs("2024-01-01").toDate(),
 			endDate: dayjs("2024-01-31").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: new Date("2023-12-02"),
+			historicalEndDate: new Date("2024-01-01"),
 			percentiles: [],
 			actualThroughput: 50,
 		};
@@ -136,7 +138,8 @@ describe("computeAverageForecast", () => {
 		const backtestResult = {
 			startDate: dayjs("2024-01-01").toDate(),
 			endDate: dayjs("2024-01-15").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: new Date("2023-12-02"),
+			historicalEndDate: new Date("2024-01-01"),
 			percentiles: [],
 			actualThroughput: 20,
 		};
@@ -155,7 +158,8 @@ describe("computeAverageForecast", () => {
 		const backtestResult = {
 			startDate: dayjs("2024-01-01").toDate(),
 			endDate: dayjs("2024-01-01").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: new Date("2023-12-02"),
+			historicalEndDate: new Date("2024-01-01"),
 			percentiles: [],
 			actualThroughput: 2,
 		};
@@ -180,7 +184,8 @@ describe("BacktestResultDisplay with historical throughput", () => {
 		backtestResult: {
 			startDate: dayjs("2024-01-01").toDate(),
 			endDate: dayjs("2024-01-31").toDate(), // 31 days inclusive
-			historicalWindowDays: 30,
+			historicalStartDate: new Date("2023-12-02"),
+			historicalEndDate: new Date("2024-01-01"),
 			percentiles: [
 				new HowManyForecast(50, 10),
 				new HowManyForecast(70, 12),
@@ -245,7 +250,8 @@ describe("BacktestResultDisplay with historical throughput", () => {
 		const mockResult = {
 			startDate: dayjs("2024-01-01").toDate(),
 			endDate: dayjs("2024-01-31").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: new Date("2023-12-02"),
+			historicalEndDate: new Date("2024-01-01"),
 			percentiles: [
 				new HowManyForecast(50, 10),
 				new HowManyForecast(70, 12),

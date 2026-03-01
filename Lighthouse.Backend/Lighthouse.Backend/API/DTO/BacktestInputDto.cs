@@ -10,6 +10,10 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public DateOnly EndDate { get; set; }
 
-        public int HistoricalWindowDays { get; set; } = 30;
+        [JsonRequired]
+        public DateOnly HistoricalStartDate { get; set; }
+
+        [JsonRequired]
+        public DateOnly HistoricalEndDate { get; set; }
     }
 }

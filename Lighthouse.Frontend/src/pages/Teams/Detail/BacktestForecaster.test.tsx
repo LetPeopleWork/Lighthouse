@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import { HowManyForecast } from "../../../models/Forecasts/HowManyForecast";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
+import { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
+	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
 import BacktestForecaster from "./BacktestForecaster";
 
@@ -51,17 +53,26 @@ describe("BacktestForecaster component", () => {
 	const mockOnClearBacktestResult = vi.fn();
 
 	const mockTeamMetricsService = createMockTeamMetricsService();
+	const mockTeamService = createMockTeamService();
 	const mockApiServiceContext = {
 		...createMockApiServiceContext({}),
 		teamMetricsService: mockTeamMetricsService,
+		teamService: mockTeamService,
 	};
 
+	const team = new Team();
+	team.id = 1;
+	team.useFixedDatesForThroughput = false;
+	team.throughputStartDate = dayjs().subtract(29, "day").toDate();
+	team.throughputEndDate = new Date();
+
 	const defaultProps = {
-		teamId: 1,
+		team: team,
 		onRunBacktest: mockOnRunBacktest as (
 			startDate: Date,
 			endDate: Date,
-			historicalWindowDays: number,
+			historicalStartDate: Date,
+			historicalEndDate: Date,
 		) => Promise<void>,
 		backtestResult: null as BacktestResult | null,
 		onClearBacktestResult: mockOnClearBacktestResult as () => void,
@@ -77,6 +88,15 @@ describe("BacktestForecaster component", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Default: team uses rolling period with 30 days
+		(
+			mockTeamService.getTeamSettings as ReturnType<typeof vi.fn>
+		).mockResolvedValue({
+			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
+		});
 		// Setup default mock responses
 		(
 			mockTeamMetricsService.getThroughput as ReturnType<typeof vi.fn>
@@ -162,7 +182,8 @@ describe("BacktestForecaster component", () => {
 			expect(mockOnRunBacktest).toHaveBeenCalledWith(
 				expect.any(Date),
 				expect.any(Date),
-				30,
+				expect.any(Date),
+				expect.any(Date),
 			);
 		});
 	});
@@ -215,7 +236,8 @@ describe("BacktestForecaster component", () => {
 		const mockResult: BacktestResult = {
 			startDate: dayjs().subtract(60, "day").toDate(),
 			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: dayjs().subtract(90, "day").toDate(),
+			historicalEndDate: dayjs().subtract(60, "day").toDate(),
 			percentiles: [
 				new HowManyForecast(50, 10),
 				new HowManyForecast(70, 12),
@@ -255,7 +277,8 @@ describe("BacktestForecaster component", () => {
 		const mockResult: BacktestResult = {
 			startDate: dayjs().subtract(60, "day").toDate(),
 			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: dayjs().subtract(90, "day").toDate(),
+			historicalEndDate: dayjs().subtract(60, "day").toDate(),
 			percentiles: [
 				new HowManyForecast(50, 10),
 				new HowManyForecast(70, 12),
@@ -283,7 +306,8 @@ describe("BacktestForecaster component", () => {
 		const mockResult: BacktestResult = {
 			startDate: dayjs().subtract(60, "day").toDate(),
 			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: dayjs().subtract(90, "day").toDate(),
+			historicalEndDate: dayjs().subtract(60, "day").toDate(),
 			percentiles: [
 				new HowManyForecast(50, 10),
 				new HowManyForecast(70, 12),
@@ -340,7 +364,8 @@ describe("BacktestForecaster component", () => {
 		const mockResult: BacktestResult = {
 			startDate: dayjs().subtract(60, "day").toDate(),
 			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalWindowDays: 30,
+			historicalStartDate: dayjs().subtract(90, "day").toDate(),
+			historicalEndDate: dayjs().subtract(60, "day").toDate(),
 			percentiles: [
 				new HowManyForecast(50, 10),
 				new HowManyForecast(70, 12),
@@ -423,6 +448,177 @@ describe("BacktestForecaster component", () => {
 				// Gap should be at least 14 days
 				const gap = endDate.diff(startDate, "day");
 				expect(gap).toBeGreaterThanOrEqual(14);
+			});
+		});
+	});
+
+	describe("Historical Window Mode Toggle", () => {
+		it("should render both mode toggle buttons", () => {
+			renderWithContext();
+
+			expect(screen.getByTestId("toggle-rolling")).toBeInTheDocument();
+			expect(screen.getByTestId("toggle-date-range")).toBeInTheDocument();
+		});
+
+		it("should show Historical Window (Days) field by default (rolling mode)", () => {
+			renderWithContext();
+
+			expect(
+				screen.getByLabelText(/Historical Window \(Days\)/i),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByText(/Historical Start Date/i),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByText(/Historical End Date/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("should show Historical Start and End Date pickers when switching to Date Range mode", async () => {
+			renderWithContext();
+
+			const dateRangeToggle = screen.getByTestId("toggle-date-range");
+			fireEvent.click(dateRangeToggle);
+
+			await waitFor(() => {
+				expect(
+					screen.getAllByText(/Historical Start Date/i).length,
+				).toBeGreaterThan(0);
+				expect(
+					screen.getAllByText(/Historical End Date/i).length,
+				).toBeGreaterThan(0);
+				expect(
+					screen.queryByLabelText(/Historical Window \(Days\)/i),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("should restore Historical Window field when switching back to Rolling Period", async () => {
+			renderWithContext();
+
+			fireEvent.click(screen.getByTestId("toggle-date-range"));
+			fireEvent.click(screen.getByTestId("toggle-rolling"));
+
+			await waitFor(() => {
+				expect(
+					screen.getByLabelText(/Historical Window \(Days\)/i),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("should pre-fill rolling window days from team settings", async () => {
+			const teamWith90DayWindow = new Team();
+			teamWith90DayWindow.id = 1;
+			teamWith90DayWindow.useFixedDatesForThroughput = false;
+			teamWith90DayWindow.throughputStartDate = dayjs()
+				.subtract(89, "day")
+				.toDate();
+			teamWith90DayWindow.throughputEndDate = new Date();
+
+			renderWithContext({ ...defaultProps, team: teamWith90DayWindow });
+
+			await waitFor(() => {
+				const windowInput = screen.getByLabelText(
+					/Historical Window \(Days\)/i,
+				);
+				expect(windowInput).toHaveValue(90);
+			});
+		});
+
+		it("should switch to Date Range mode when team settings use fixed dates", async () => {
+			const fixedDateTeam = new Team();
+			fixedDateTeam.id = 1;
+			fixedDateTeam.useFixedDatesForThroughput = true;
+			fixedDateTeam.throughputStartDate = dayjs().subtract(120, "day").toDate();
+			fixedDateTeam.throughputEndDate = dayjs().subtract(60, "day").toDate();
+
+			renderWithContext({ ...defaultProps, team: fixedDateTeam });
+
+			await waitFor(() => {
+				expect(
+					screen.getAllByText(/Historical Start Date/i).length,
+				).toBeGreaterThan(0);
+				expect(
+					screen.getAllByText(/Historical End Date/i).length,
+				).toBeGreaterThan(0);
+				expect(
+					screen.queryByLabelText(/Historical Window \(Days\)/i),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("should use rolling days when running backtest in Rolling Period mode", async () => {
+			renderWithContext();
+
+			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
+			fireEvent.click(runButton);
+
+			await waitFor(() => {
+				expect(mockOnRunBacktest).toHaveBeenCalledWith(
+					expect.any(Date),
+					expect.any(Date),
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+		});
+	});
+
+	describe("Actual Throughput Tab", () => {
+		const mockResultActual: BacktestResult = {
+			startDate: dayjs().subtract(60, "day").toDate(),
+			endDate: dayjs().subtract(30, "day").toDate(),
+			historicalStartDate: dayjs().subtract(90, "day").toDate(),
+			historicalEndDate: dayjs().subtract(60, "day").toDate(),
+			percentiles: [
+				new HowManyForecast(50, 10),
+				new HowManyForecast(70, 12),
+				new HowManyForecast(85, 15),
+				new HowManyForecast(95, 18),
+			],
+			actualThroughput: 12,
+		};
+
+		it("should display Actual Throughput tab when backtestResult is provided", async () => {
+			renderWithContext({ ...defaultProps, backtestResult: mockResultActual });
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("tab", { name: /Actual Throughput/i }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("should call getThroughput with backtestResult start/end dates for actual period", async () => {
+			renderWithContext({ ...defaultProps, backtestResult: mockResultActual });
+
+			await waitFor(() => {
+				// Called twice: once for historical window, once for actual period
+				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
+				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledWith(
+					1,
+					mockResultActual.startDate,
+					mockResultActual.endDate,
+				);
+			});
+		});
+
+		it("should render BarRunChart with 'Actual Throughput' title on the Actual Throughput tab", async () => {
+			renderWithContext({ ...defaultProps, backtestResult: mockResultActual });
+
+			await waitFor(() => {
+				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
+			});
+
+			const actualTab = screen.getByRole("tab", { name: /Actual Throughput/i });
+			fireEvent.click(actualTab);
+
+			await waitFor(() => {
+				const charts = screen.getAllByTestId("bar-run-chart");
+				const actualChart = charts.find((c) =>
+					c.textContent?.includes("Actual Throughput"),
+				);
+				expect(actualChart).toBeInTheDocument();
 			});
 		});
 	});

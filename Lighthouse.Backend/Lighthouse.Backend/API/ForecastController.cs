@@ -107,20 +107,20 @@ namespace Lighthouse.Backend.API
                 return BadRequest("EndDate must be at least 14 days after StartDate.");
             }
 
-            if (input.HistoricalWindowDays <= 0)
+            if (input.HistoricalEndDate > input.StartDate)
             {
-                return BadRequest("HistoricalWindowDays must be a positive number.");
+                return BadRequest("HistoricalEndDate must not be after StartDate.");
             }
 
-            if (input.HistoricalWindowDays > 365)
+            if (input.HistoricalStartDate >= input.HistoricalEndDate)
             {
-                return BadRequest("HistoricalWindowDays must not exceed 365.");
+                return BadRequest("HistoricalStartDate must be before HistoricalEndDate.");
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
-                var historyStart = input.StartDate.AddDays(-input.HistoricalWindowDays).ToDateTime(TimeOnly.MinValue);
-                var historyEnd = input.StartDate.ToDateTime(TimeOnly.MinValue);
+                var historyStart = input.HistoricalStartDate.ToDateTime(TimeOnly.MinValue);
+                var historyEnd = input.HistoricalEndDate.ToDateTime(TimeOnly.MinValue);
                 var historicalThroughput = teamMetricsService.GetThroughputForTeam(team, historyStart, historyEnd);
 
                 var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.API
                 var periodEnd = input.EndDate.ToDateTime(TimeOnly.MinValue);
                 var actualThroughput = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd);
 
-                var result = new BacktestResultDto(input.StartDate, input.EndDate, input.HistoricalWindowDays)
+                var result = new BacktestResultDto(input.StartDate, input.EndDate, input.HistoricalStartDate, input.HistoricalEndDate)
                 {
                     ActualThroughput = actualThroughput.Total
                 };

@@ -287,7 +287,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
                 EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
-                HistoricalWindowDays = 30
+                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60)),
+                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -313,7 +314,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7)), // Only 7 days ago, needs 14
                 EndDate = DateOnly.FromDateTime(DateTime.Today),
-                HistoricalWindowDays = 30
+                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-37)),
+                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -333,7 +335,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
                 EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-23)), // Only 7 days after start, needs 14
-                HistoricalWindowDays = 30
+                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60)),
+                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -342,7 +345,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void RunBacktest_HistoricalWindowDaysInvalid_ReturnsBadRequest()
+        public void RunBacktest_HistoricalEndDateAfterStartDate_ReturnsBadRequest()
         {
             var expectedTeam = new Team { Id = 12, Name = "Test Team" };
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
@@ -353,7 +356,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
                 EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
-                HistoricalWindowDays = 0 // Invalid
+                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60)),
+                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-20)), // After StartDate
             };
 
             var result = subject.RunBacktest(12, input);
@@ -362,7 +366,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void RunBacktest_HistoricalWindowDaysTooLarge_ReturnsBadRequest()
+        public void RunBacktest_HistoricalStartDateNotBeforeHistoricalEndDate_ReturnsBadRequest()
         {
             var expectedTeam = new Team { Id = 12, Name = "Test Team" };
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
@@ -373,7 +377,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
                 EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
-                HistoricalWindowDays = 400 // Exceeds 365 max
+                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)), // Same as HistoricalEndDate
+                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -389,14 +394,16 @@ namespace Lighthouse.Backend.Tests.API
 
             var startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60));
             var endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+            var historicalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-90));
+            var historicalEndDate = startDate;
             var forecastDays = endDate.DayNumber - startDate.DayNumber;
 
-            // Setup historical throughput (window before start) - 3 days with [2, 1, 3] items = 6 total
+            // Setup historical throughput - 3 days with [2, 1, 3] items = 6 total
             var historicalThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 1, 3]));
             teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
                 expectedTeam,
-                startDate.AddDays(-30).ToDateTime(TimeOnly.MinValue),
-                startDate.ToDateTime(TimeOnly.MinValue)))
+                historicalStartDate.ToDateTime(TimeOnly.MinValue),
+                historicalEndDate.ToDateTime(TimeOnly.MinValue)))
                 .Returns(historicalThroughput);
 
             // Setup actual throughput (in backtest period) - 3 days with [2, 3, 1] items = 6 total
@@ -418,7 +425,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 StartDate = startDate,
                 EndDate = endDate,
-                HistoricalWindowDays = 30
+                HistoricalStartDate = historicalStartDate,
+                HistoricalEndDate = historicalEndDate,
             };
 
             var result = subject.RunBacktest(12, input);
@@ -434,7 +442,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(backtestResult, Is.Not.Null);
                 Assert.That(backtestResult.StartDate, Is.EqualTo(startDate));
                 Assert.That(backtestResult.EndDate, Is.EqualTo(endDate));
-                Assert.That(backtestResult.HistoricalWindowDays, Is.EqualTo(30));
+                Assert.That(backtestResult.HistoricalStartDate, Is.EqualTo(historicalStartDate));
+                Assert.That(backtestResult.HistoricalEndDate, Is.EqualTo(historicalEndDate));
                 Assert.That(backtestResult.Percentiles, Has.Count.EqualTo(4));
                 Assert.That(backtestResult.ActualThroughput, Is.EqualTo(actualThroughput.Total));
             }

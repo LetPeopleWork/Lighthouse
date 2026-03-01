@@ -90,7 +90,8 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const onRunBacktest = async (
 		startDate: Date,
 		endDate: Date,
-		historicalWindowDays: number,
+		historicalStartDate: Date,
+		historicalEndDate: Date,
 	) => {
 		if (!team?.id) {
 			return;
@@ -101,7 +102,8 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				team.id,
 				startDate,
 				endDate,
-				historicalWindowDays,
+				historicalStartDate,
+				historicalEndDate,
 			);
 			setBacktestResult(result);
 		} catch (error) {
@@ -135,7 +137,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			</InputGroup>
 			<InputGroup title="Forecast Backtesting">
 				<BacktestForecaster
-					teamId={team.id}
+					team={team}
 					onRunBacktest={onRunBacktest}
 					backtestResult={backtestResult}
 					onClearBacktestResult={() => setBacktestResult(null)}
