@@ -972,7 +972,9 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			const toggle = screen.getByLabelText("Process Behaviour Chart");
+			const toggle = screen.getByLabelText(
+				"Set Baseline for Process Behaviour Chart",
+			);
 			expect(toggle).not.toBeChecked();
 		});
 
@@ -990,7 +992,9 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			const toggle = screen.getByLabelText("Process Behaviour Chart");
+			const toggle = screen.getByLabelText(
+				"Set Baseline for Process Behaviour Chart",
+			);
 			expect(toggle).toBeChecked();
 		});
 
@@ -1009,7 +1013,9 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			await user.click(screen.getByLabelText("Process Behaviour Chart"));
+			await user.click(
+				screen.getByLabelText("Set Baseline for Process Behaviour Chart"),
+			);
 
 			expect(mockOnSettingsChange).toHaveBeenCalledWith(
 				"processBehaviourChartBaselineStartDate",
@@ -1036,7 +1042,9 @@ describe("FlowMetricsConfigurationComponent", () => {
 				/>,
 			);
 
-			await user.click(screen.getByLabelText("Process Behaviour Chart"));
+			await user.click(
+				screen.getByLabelText("Set Baseline for Process Behaviour Chart"),
+			);
 
 			expect(mockOnSettingsChange).toHaveBeenCalledWith(
 				"processBehaviourChartBaselineStartDate",
@@ -1161,6 +1169,42 @@ describe("FlowMetricsConfigurationComponent", () => {
 			expect(
 				screen.queryByLabelText("Baseline cutoff warning"),
 			).not.toBeInTheDocument();
+		});
+
+		it("clears baseline dates and disables toggle when Clear button is clicked", async () => {
+			const user = userEvent.setup();
+			const settings = {
+				...mockSettings,
+				processBehaviourChartBaselineStartDate: new Date("2025-01-01"),
+				processBehaviourChartBaselineEndDate: new Date("2025-01-20"),
+			};
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+				/>,
+			);
+
+			const clearButton = screen.getByRole("button", {
+				name: /clear baseline/i,
+			});
+			await user.click(clearButton);
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"processBehaviourChartBaselineStartDate",
+				null,
+			);
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"processBehaviourChartBaselineEndDate",
+				null,
+			);
+
+			// Toggle should now be unchecked
+			const toggle = screen.getByLabelText(
+				"Set Baseline for Process Behaviour Chart",
+			);
+			expect(toggle).not.toBeChecked();
 		});
 	});
 

@@ -1,6 +1,7 @@
 import WarningIcon from "@mui/icons-material/Warning";
 import {
 	Box,
+	Button,
 	Checkbox,
 	FormControlLabel,
 	Switch,
@@ -233,6 +234,12 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		}
 	};
 
+	const handleBaselineClear = () => {
+		setIsBaselineEnabled(false);
+		onSettingsChange("processBehaviourChartBaselineStartDate" as keyof T, null);
+		onSettingsChange("processBehaviourChartBaselineEndDate" as keyof T, null);
+	};
+
 	// Get only "Doing" states for blocked states suggestions
 	const doingStatesSuggestions = settings.doingStates ?? [];
 
@@ -459,7 +466,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							onChange={(e) => handleBaselineToggle(e.target.checked)}
 						/>
 					}
-					label="Process Behaviour Chart"
+					label="Set Baseline for Process Behaviour Chart"
 				/>
 				{isBaselineEnabled &&
 					settings.doneItemsCutoffDays > 0 &&
@@ -532,6 +539,16 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							)
 						}
 					/>
+					<Button
+						variant="outlined"
+						color="warning"
+						size="small"
+						sx={{ ml: 2, verticalAlign: "bottom", mb: "3px" }}
+						onClick={handleBaselineClear}
+						aria-label="Clear Baseline"
+					>
+						Clear Baseline
+					</Button>
 				</Grid>
 			)}
 		</InputGroup>
