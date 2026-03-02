@@ -171,9 +171,7 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 						labelId="target-field-label"
 						label="Target Field"
 						value={additionalFieldDefinitionId ?? ""}
-						onChange={(e) =>
-							setAdditionalFieldDefinitionId(e.target.value as number)
-						}
+						onChange={(e) => setAdditionalFieldDefinitionId(e.target.value)}
 					>
 						{additionalFields.map((field) => (
 							<MenuItem key={field.id} value={field.id}>
