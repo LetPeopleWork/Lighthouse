@@ -21,7 +21,7 @@ export interface IWriteBackMappingDefinition {
 	id: number;
 	valueSource: WriteBackValueSource;
 	appliesTo: WriteBackAppliesTo;
-	targetFieldReference: string;
+	additionalFieldDefinitionId: number | null;
 	targetValueType: WriteBackTargetValueType;
 	dateFormat?: string | null;
 }

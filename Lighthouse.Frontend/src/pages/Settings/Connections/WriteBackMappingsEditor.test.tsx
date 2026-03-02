@@ -47,7 +47,7 @@ describe("WriteBackMappingsEditor", () => {
 		id: 1,
 		valueSource: WriteBackValueSource.WorkItemAgeCycleTime,
 		appliesTo: WriteBackAppliesTo.Team,
-		targetFieldReference: "Custom.WorkItemAge",
+		additionalFieldDefinitionId: 2,
 		targetValueType: WriteBackTargetValueType.Date,
 		dateFormat: null,
 	};
@@ -56,7 +56,7 @@ describe("WriteBackMappingsEditor", () => {
 		id: 2,
 		valueSource: WriteBackValueSource.ForecastPercentile85,
 		appliesTo: WriteBackAppliesTo.Portfolio,
-		targetFieldReference: "Custom.ForecastDate",
+		additionalFieldDefinitionId: 1,
 		targetValueType: WriteBackTargetValueType.FormattedText,
 		dateFormat: "yyyy-MM-dd",
 	};
@@ -193,7 +193,7 @@ describe("WriteBackMappingsEditor", () => {
 			expect(mockOnChange).toHaveBeenCalledTimes(1);
 			const newMappings = mockOnChange.mock.calls[0][0];
 			expect(newMappings).toHaveLength(1);
-			expect(newMappings[0].targetFieldReference).toBe("Custom.ForecastDate");
+			expect(newMappings[0].additionalFieldDefinitionId).toBe(1);
 			expect(newMappings[0].valueSource).toBe(
 				WriteBackValueSource.WorkItemAgeCycleTime,
 			);

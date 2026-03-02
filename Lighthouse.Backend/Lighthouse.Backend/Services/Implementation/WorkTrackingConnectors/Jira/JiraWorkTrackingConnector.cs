@@ -151,6 +151,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<List<WriteBackItemResult>> UpdateItems(IReadOnlyList<WriteBackFieldUpdate> updates, HttpClient client)
         {
             var results = new List<WriteBackItemResult>();
+
+            var additionalFieldReferences = await GetCustomFieldMappings(client,
+                [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
+                updates.Select(f => f.TargetFieldReference));
+            
             foreach (var update in updates)
             {
                 try
@@ -159,9 +164,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         ? numericValue
                         : update.Value;
 
+                    var fieldReference =
+                        additionalFieldReferences.TryGetValue(update.TargetFieldReference, out var reference)
+                            ? reference
+                            : update.TargetFieldReference;
+
                     var payload = JsonSerializer.Serialize(new
                     {
-                        fields = new Dictionary<string, object> { [update.TargetFieldReference] = fieldValue }
+                        fields = new Dictionary<string, object> { [fieldReference] = fieldValue }
                     });
 
                     var content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -777,7 +787,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var customFieldMappings = new Dictionary<string, string>();
 
-            foreach (var customField in customFields)
+            foreach (var customField in customFields.Distinct())
             {
                 var customFieldId = string.Empty;
 

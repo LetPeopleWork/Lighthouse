@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using System.Text.Json;
@@ -127,6 +128,14 @@ namespace Lighthouse.Backend.Data
                       .WithOne(wbm => wbm.WorkTrackingSystemConnection)
                       .HasForeignKey(wbm => wbm.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<WriteBackMappingDefinition>(entity =>
+            {
+                entity.HasOne(wbm => wbm.AdditionalFieldDefinition)
+                      .WithMany()
+                      .HasForeignKey(wbm => wbm.AdditionalFieldDefinitionId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             var dictionaryConverter = new ValueConverter<Dictionary<int, string?>, string>(

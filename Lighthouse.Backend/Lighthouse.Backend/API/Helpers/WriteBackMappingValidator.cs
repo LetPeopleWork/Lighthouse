@@ -18,29 +18,29 @@ namespace Lighthouse.Backend.API.Helpers
 
             foreach (var mapping in mappings)
             {
-                if (string.IsNullOrEmpty(mapping.TargetFieldReference))
+                if (mapping.AdditionalFieldDefinitionId is null or 0)
                 {
-                    errors.Add("TargetFieldReference is required for every write-back mapping.");
+                    errors.Add("An additional field is required for every write-back mapping.");
                 }
 
                 if (ForecastSources.Contains(mapping.ValueSource) &&
                     mapping.TargetValueType == WriteBackTargetValueType.FormattedText &&
                     string.IsNullOrEmpty(mapping.DateFormat))
                 {
-                    errors.Add($"DateFormat is required when TargetValueType is FormattedText for forecast sources (field: '{mapping.TargetFieldReference}').");
+                    errors.Add($"DateFormat is required when TargetValueType is FormattedText for forecast sources (field id: '{mapping.AdditionalFieldDefinitionId}').");
                 }
             }
 
             var duplicates = mappings
-                .Where(m => !string.IsNullOrEmpty(m.TargetFieldReference))
-                .GroupBy(m => new { FieldReference = m.TargetFieldReference.ToUpperInvariant(), m.AppliesTo })
+                .Where(m => m.AdditionalFieldDefinitionId is not null and not 0)
+                .GroupBy(m => new { m.AdditionalFieldDefinitionId, m.AppliesTo })
                 .Where(g => g.Count() > 1)
-                .Select(g => g.First().TargetFieldReference)
+                .Select(g => g.First().AdditionalFieldDefinitionId)
                 .ToList();
 
             foreach (var duplicate in duplicates)
             {
-                errors.Add($"Duplicate TargetFieldReference '{duplicate}' found for the same scope. Each mapping must target a unique field per scope.");
+                errors.Add($"Duplicate additional field (id: {duplicate}) found for the same scope. Each mapping must target a unique field per scope.");
             }
 
             return new WriteBackMappingValidationResult(errors);

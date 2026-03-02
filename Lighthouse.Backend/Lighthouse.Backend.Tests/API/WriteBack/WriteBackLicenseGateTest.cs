@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             {
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.WorkItemAge"
+                AdditionalFieldDefinitionId = 1
             });
 
             var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(dto);
@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             {
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.WorkItemAge"
+                AdditionalFieldDefinitionId = 1
             });
 
             var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(dto);

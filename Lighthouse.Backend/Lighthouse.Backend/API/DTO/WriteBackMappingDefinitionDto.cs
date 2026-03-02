@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.API.DTO
             Id = mapping.Id;
             ValueSource = mapping.ValueSource;
             AppliesTo = mapping.AppliesTo;
-            TargetFieldReference = mapping.TargetFieldReference;
+            AdditionalFieldDefinitionId = mapping.AdditionalFieldDefinitionId;
             TargetValueType = mapping.TargetValueType;
             DateFormat = mapping.DateFormat;
         }
@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public WriteBackAppliesTo AppliesTo { get; set; }
 
-        public string TargetFieldReference { get; set; } = string.Empty;
+        public int? AdditionalFieldDefinitionId { get; set; }
 
         public WriteBackTargetValueType TargetValueType { get; set; } = WriteBackTargetValueType.Date;
 
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.API.DTO
                 Id = Id,
                 ValueSource = ValueSource,
                 AppliesTo = AppliesTo,
-                TargetFieldReference = TargetFieldReference,
+                AdditionalFieldDefinitionId = AdditionalFieldDefinitionId,
                 TargetValueType = TargetValueType,
                 DateFormat = DateFormat
             };

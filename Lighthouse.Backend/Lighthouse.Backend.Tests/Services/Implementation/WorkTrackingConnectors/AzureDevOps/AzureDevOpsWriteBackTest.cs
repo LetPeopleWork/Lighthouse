@@ -12,8 +12,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class AzureDevOpsWriteBackTest
     {
         private const string TargetDateField = "Microsoft.VSTS.Scheduling.TargetDate";
+        private const string TargetDateFieldReference = "Target Date";
+        
         private const string AdditionalInfoField = "Custom.AdditionalInformation";
+        
         private const string AgeField = "Custom.Age";
+        private const string AgeFieldReference = "Age";
 
         private const string FeatureId = "370";
 
@@ -143,7 +147,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [Test]
         [Category("Integration")]
-        public async Task WriteDate_IsoFormat_WritesDateFieldAndReadBackMatches()
+        [TestCase(TargetDateField)]
+        [TestCase(TargetDateFieldReference)]
+        public async Task WriteDate_IsoFormat_WritesDateFieldAndReadBackMatches(string fieldReference)
         {
             var subject = CreateSubject();
             var connection = CreateWorkTrackingSystemConnection();
@@ -152,12 +158,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var isoValue = targetDate.ToString("o");
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = TargetDateField, Value = isoValue }
+                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = fieldReference, Value = isoValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, TargetDateField, 100);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, fieldReference, 100);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
@@ -277,7 +283,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [Test]
         [Category("Integration")]
-        public async Task WriteNumericValue_Age_WritesToStoryAndReadBackMatches()
+        [TestCase(AgeField)]
+        [TestCase(AgeFieldReference)]
+        public async Task WriteNumericValue_Age_WritesToStoryAndReadBackMatches(string fieldReference)
         {
             var subject = CreateSubject();
             var connection = CreateWorkTrackingSystemConnection();
@@ -285,12 +293,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var ageValue = "42";
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = "366", TargetFieldReference = AgeField, Value = ageValue }
+                new WriteBackFieldUpdate { WorkItemId = "366", TargetFieldReference = fieldReference, Value = ageValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, "366", AgeField, 106);
+            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, "366", fieldReference, 106);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("42"));

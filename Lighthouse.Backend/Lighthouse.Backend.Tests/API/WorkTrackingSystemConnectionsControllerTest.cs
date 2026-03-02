@@ -367,7 +367,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 ValueSource = WriteBackValueSource.ForecastPercentile85,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
+                AdditionalFieldDefinitionId = 1,
                 TargetValueType = WriteBackTargetValueType.FormattedText,
                 DateFormat = null
             });

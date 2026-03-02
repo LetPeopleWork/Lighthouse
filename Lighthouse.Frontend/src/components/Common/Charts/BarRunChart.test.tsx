@@ -55,7 +55,7 @@ vi.mock("@mui/x-charts", async () => {
 					) => (
 						<button
 							type="button"
-							key={`bar-item-${item.day}-${index}`}
+							key={`bar-item-${item.day}`}
 							data-testid={`bar-${index}`}
 							onClick={(e) => onItemClick?.(e, { dataIndex: index })}
 						>

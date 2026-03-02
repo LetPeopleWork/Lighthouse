@@ -51,12 +51,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerWriteBackForTeam_NoTeamLevelMappings_DoesNotCallWriteBackService()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.FeatureSize,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Size",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
 
             var subject = CreateSubject();
 
@@ -73,12 +69,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var subject = CreateSubject();
 
@@ -93,12 +85,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerWriteBackForTeam_WorkItemAgeCycleTime_WritesAgeForDoingItems()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-5));
             var todoItem = CreateWorkItem("102", StateCategories.ToDo, team);
@@ -124,12 +112,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerWriteBackForTeam_WorKItemAgeCycleTime_WritesCycleTimeForDoneItems()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.CycleTime",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.CycleTime"));
 
             var toDo = CreateWorkItem("201", StateCategories.ToDo, team, startedDate: DateTime.UtcNow.AddDays(-3));
             var doneItem = CreateWorkItem("202", StateCategories.Done, team, startedDate: DateTime.UtcNow.AddDays(-7), closedDate: DateTime.UtcNow);
@@ -155,12 +139,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerWriteBackForTeam_NoMatchingWorkItems_DoesNotCallWriteBackService()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var todoItem = CreateWorkItem("401", StateCategories.ToDo, team);
             SetupWorkItemsForTeam(team.Id, [todoItem]);
@@ -178,12 +158,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void TriggerWriteBackForTeam_ExceptionOccurs_DoesNotThrow()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var doingItem = CreateWorkItem("501", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-3));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
@@ -201,12 +177,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerWriteBackForTeam_ExceptionOccurs_LogsError()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var doingItem = CreateWorkItem("601", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-3));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
@@ -258,12 +230,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerFeatureWriteBackForPortfolio_NoPortfolioLevelMappings_DoesNotCallWriteBackService()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var subject = CreateSubject();
 
@@ -280,12 +248,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.FeatureSize,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Size",
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
 
             var subject = CreateSubject();
 
@@ -302,13 +266,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.ForecastPercentile85,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
-                TargetValueType = WriteBackTargetValueType.Date,
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
             var subject = CreateSubject();
 
@@ -323,12 +282,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerFeatureWriteBackForPortfolio_FeatureSize_WritesAllFeatures()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.FeatureSize,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Size",
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var feature1 = CreateFeature("F-1", StateCategories.Doing, team, remainingItems: 5, totalItems: 10);
@@ -354,13 +309,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerForecastWriteBackForPortfolio_ForecastPercentile_WritesDateForOpenFeatures()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.ForecastPercentile85,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
-                TargetValueType = WriteBackTargetValueType.Date,
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var openFeature = CreateFeatureWithForecast("F-10", StateCategories.Doing, team, daysAt85: 14);
@@ -389,14 +339,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerForecastWriteBackForPortfolio_ForecastAsFormattedText_UsesDateFormat()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.ForecastPercentile50,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast50",
-                TargetValueType = WriteBackTargetValueType.FormattedText,
-                DateFormat = "MM/dd/yyyy",
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile50, WriteBackAppliesTo.Portfolio, "Custom.Forecast50", WriteBackTargetValueType.FormattedText, "MM/dd/yyyy"));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var feature = CreateFeatureWithForecast("F-20", StateCategories.Doing, team, daysAt50: 10);
@@ -421,13 +365,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerForecastWriteBackForPortfolio_ForecastNotAvailable_SkipsFeature()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.ForecastPercentile85,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
-                TargetValueType = WriteBackTargetValueType.Date,
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var featureNoForecast = CreateFeature("F-30", StateCategories.Doing, team, remainingItems: 5, totalItems: 10);
@@ -446,12 +385,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void TriggerFeatureWriteBackForPortfolio_ExceptionOccurs_DoesNotThrow()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.FeatureSize,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Size",
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var feature = CreateFeature("F-40", StateCategories.Doing, team, remainingItems: 3, totalItems: 7);
@@ -470,19 +405,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerFeatureWriteBackForPortfolio_OnlyWritesNonForecastMappings()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.FeatureSize,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Size",
-            });
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.ForecastPercentile85,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
-                TargetValueType = WriteBackTargetValueType.Date,
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var feature = CreateFeatureWithForecast("F-50", StateCategories.Doing, team, remainingItems: 4, totalItems: 12, daysAt85: 20);
@@ -506,19 +432,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerForecastWriteBackForPortfolio_OnlyWritesForecastMappings()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.FeatureSize,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Size",
-            });
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.ForecastPercentile85,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
-                TargetValueType = WriteBackTargetValueType.Date,
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var feature = CreateFeatureWithForecast("F-50", StateCategories.Doing, team, remainingItems: 4, totalItems: 12, daysAt85: 20);
@@ -586,12 +503,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerFeatureWriteBackForPortfolio_WorkItemAge_WritesForDoingFeatures()
         {
             var portfolio = CreatePortfolioWithFeatures();
-            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.FeatureAge",
-            });
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Portfolio, "Custom.FeatureAge"));
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var doingFeature = CreateFeature("F-60", StateCategories.Doing, team, remainingItems: 3, totalItems: 5,
@@ -618,12 +531,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task TriggerWriteBackForTeam_LogsStartAndCompletion()
         {
             var team = CreateTeamWithWorkItems();
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
-            {
-                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age",
-            });
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
             var doingItem = CreateWorkItem("701", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-2));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
@@ -770,6 +679,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItemRepositoryMock
                 .Setup(r => r.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<WorkItem, bool>>>()))
                 .Returns(workItems.AsQueryable());
+        }
+
+        private static WriteBackMappingDefinition CreateMapping(
+            WriteBackValueSource valueSource, WriteBackAppliesTo appliesTo, string fieldReference,
+            WriteBackTargetValueType targetValueType = WriteBackTargetValueType.Date, string? dateFormat = null)
+        {
+            var fieldDef = new AdditionalFieldDefinition
+            {
+                Id = fieldReference.GetHashCode() & 0x7FFFFFFF,
+                DisplayName = fieldReference,
+                Reference = fieldReference
+            };
+
+            return new WriteBackMappingDefinition
+            {
+                ValueSource = valueSource,
+                AppliesTo = appliesTo,
+                AdditionalFieldDefinitionId = fieldDef.Id,
+                AdditionalFieldDefinition = fieldDef,
+                TargetValueType = targetValueType,
+                DateFormat = dateFormat,
+            };
         }
     }
 }

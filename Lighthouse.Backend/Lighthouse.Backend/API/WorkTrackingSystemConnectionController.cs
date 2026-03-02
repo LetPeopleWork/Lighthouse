@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.API
                 {
                     existingMapping.ValueSource = mappingDto.ValueSource;
                     existingMapping.AppliesTo = mappingDto.AppliesTo;
-                    existingMapping.TargetFieldReference = mappingDto.TargetFieldReference;
+                    existingMapping.AdditionalFieldDefinitionId = mappingDto.AdditionalFieldDefinitionId;
                     existingMapping.TargetValueType = mappingDto.TargetValueType;
                     existingMapping.DateFormat = mappingDto.DateFormat;
                 }

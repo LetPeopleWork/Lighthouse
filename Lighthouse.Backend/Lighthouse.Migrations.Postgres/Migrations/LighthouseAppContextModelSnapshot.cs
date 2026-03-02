@@ -739,14 +739,13 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("AppliesTo")
                         .HasColumnType("integer");
 
                     b.Property<string>("DateFormat")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TargetFieldReference")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("TargetValueType")
@@ -759,6 +758,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AdditionalFieldDefinitionId");
 
                     b.HasIndex("WorkTrackingSystemConnectionId");
 
@@ -935,11 +936,18 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WriteBack.WriteBackMappingDefinition", b =>
                 {
+                    b.HasOne("Lighthouse.Backend.Models.AdditionalFieldDefinition", "AdditionalFieldDefinition")
+                        .WithMany()
+                        .HasForeignKey("AdditionalFieldDefinitionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", "WorkTrackingSystemConnection")
                         .WithMany("WriteBackMappingDefinitions")
                         .HasForeignKey("WorkTrackingSystemConnectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("AdditionalFieldDefinition");
 
                     b.Navigation("WorkTrackingSystemConnection");
                 });

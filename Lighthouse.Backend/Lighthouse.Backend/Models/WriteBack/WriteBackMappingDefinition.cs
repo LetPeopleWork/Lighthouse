@@ -8,7 +8,9 @@ namespace Lighthouse.Backend.Models.WriteBack
 
         public WriteBackAppliesTo AppliesTo { get; set; }
 
-        public string TargetFieldReference { get; set; } = string.Empty;
+        public int? AdditionalFieldDefinitionId { get; set; }
+
+        public AdditionalFieldDefinition? AdditionalFieldDefinition { get; set; }
 
         public WriteBackTargetValueType TargetValueType { get; set; } = WriteBackTargetValueType.Date;
 

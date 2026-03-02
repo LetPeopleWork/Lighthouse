@@ -226,10 +226,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var batch in updates.Chunk(MaxChunkSize))
             {
-                var batchTasks = batch.Select(async update =>
-                {
-                    return await UpdateItems(url, witClient, update);
-                });
+                var batchTasks = batch.Select(async update => await UpdateItems(url, witClient, update));
 
                 results.AddRange(await Task.WhenAll(batchTasks));
             }

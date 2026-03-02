@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Id = 42,
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.CycleTime",
+                AdditionalFieldDefinitionId = 10,
                 TargetValueType = WriteBackTargetValueType.FormattedText,
                 DateFormat = "yyyy-MM-dd"
             };
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(subject.Id, Is.EqualTo(42));
                 Assert.That(subject.ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(subject.AppliesTo, Is.EqualTo(WriteBackAppliesTo.Team));
-                Assert.That(subject.TargetFieldReference, Is.EqualTo("Custom.CycleTime"));
+                Assert.That(subject.AdditionalFieldDefinitionId, Is.EqualTo(10));
                 Assert.That(subject.TargetValueType, Is.EqualTo(WriteBackTargetValueType.FormattedText));
                 Assert.That(subject.DateFormat, Is.EqualTo("yyyy-MM-dd"));
             }
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Id = 42,
                 ValueSource = WriteBackValueSource.ForecastPercentile85,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
+                AdditionalFieldDefinitionId = 20,
                 TargetValueType = WriteBackTargetValueType.Date,
                 DateFormat = null
             };
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(result.Id, Is.EqualTo(42));
                 Assert.That(result.ValueSource, Is.EqualTo(WriteBackValueSource.ForecastPercentile85));
                 Assert.That(result.AppliesTo, Is.EqualTo(WriteBackAppliesTo.Portfolio));
-                Assert.That(result.TargetFieldReference, Is.EqualTo("Custom.Forecast85"));
+                Assert.That(result.AdditionalFieldDefinitionId, Is.EqualTo(20));
                 Assert.That(result.TargetValueType, Is.EqualTo(WriteBackTargetValueType.Date));
                 Assert.That(result.DateFormat, Is.Null);
             }
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Id = -1,
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.Age"
+                AdditionalFieldDefinitionId = 30
             };
 
             var result = subject.ToModel();
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Id = 42,
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.WorkItemAge",
+                AdditionalFieldDefinitionId = 40,
                 TargetValueType = WriteBackTargetValueType.FormattedText,
                 DateFormat = "dd/MM/yyyy"
             });
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(subject.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
                 Assert.That(subject.WriteBackMappingDefinitions[0].Id, Is.EqualTo(42));
                 Assert.That(subject.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
-                Assert.That(subject.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.WorkItemAge"));
+                Assert.That(subject.WriteBackMappingDefinitions[0].AdditionalFieldDefinitionId, Is.EqualTo(40));
             }
         }
 

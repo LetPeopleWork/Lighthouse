@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.ForecastPercentile85,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Forecast85",
+                    AdditionalFieldDefinitionId = 1,
                     TargetValueType = WriteBackTargetValueType.Date,
                     DateFormat = null
                 }
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.ForecastPercentile85,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Forecast85",
+                    AdditionalFieldDefinitionId = 1,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = "yyyy-MM-dd"
                 }
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.ForecastPercentile85,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Forecast85",
+                    AdditionalFieldDefinitionId = 1,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = null
                 }
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.ForecastPercentile50,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Forecast50",
+                    AdditionalFieldDefinitionId = 1,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = ""
                 }
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_MissingTargetFieldReference_ReturnsInvalid()
+        public void Validate_MissingAdditionalFieldDefinitionId_ReturnsInvalid()
         {
             var mappings = new List<WriteBackMappingDefinition>
             {
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "",
+                    AdditionalFieldDefinitionId = null,
                 }
             };
 
@@ -119,7 +119,29 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Errors, Has.Count.EqualTo(1));
-                Assert.That(result.Errors[0], Does.Contain("TargetFieldReference"));
+                Assert.That(result.Errors[0], Does.Contain("additional field"));
+            }
+        }
+
+        [Test]
+        public void Validate_ZeroAdditionalFieldDefinitionId_ReturnsInvalid()
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinitionId = 0,
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Count.EqualTo(1));
             }
         }
 
@@ -132,7 +154,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.ForecastPercentile85,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "",
+                    AdditionalFieldDefinitionId = null,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = null
                 }
@@ -148,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_DuplicateTargetFieldReference_SameAppliesTo_ReturnsInvalid()
+        public void Validate_DuplicateAdditionalFieldDefinitionId_SameAppliesTo_ReturnsInvalid()
         {
             var mappings = new List<WriteBackMappingDefinition>
             {
@@ -156,13 +178,13 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "Custom.Field",
+                    AdditionalFieldDefinitionId = 1,
                 },
                 new()
                 {
                     ValueSource = WriteBackValueSource.FeatureSize,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "Custom.Field",
+                    AdditionalFieldDefinitionId = 1,
                 }
             };
 
@@ -176,7 +198,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_SameTargetFieldReference_DifferentAppliesTo_ReturnsValid()
+        public void Validate_SameAdditionalFieldDefinitionId_DifferentAppliesTo_ReturnsValid()
         {
             var mappings = new List<WriteBackMappingDefinition>
             {
@@ -184,47 +206,19 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "Custom.Field",
+                    AdditionalFieldDefinitionId = 1,
                 },
                 new()
                 {
                     ValueSource = WriteBackValueSource.FeatureSize,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Field",
+                    AdditionalFieldDefinitionId = 1,
                 }
             };
 
             var result = WriteBackMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.True);
-        }
-
-        [Test]
-        public void Validate_SameTargetFieldReference_SameAppliesTo_DifferentCase_ReturnsInvalid()
-        {
-            var mappings = new List<WriteBackMappingDefinition>
-            {
-                new()
-                {
-                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
-                    AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Field",
-                },
-                new()
-                {
-                    ValueSource = WriteBackValueSource.FeatureSize,
-                    AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "custom.field",
-                }
-            };
-
-            var result = WriteBackMappingValidator.Validate(mappings);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Errors.Any(e => e.Contains("duplicate", StringComparison.OrdinalIgnoreCase)), Is.True);
-            }
         }
 
         [Test]
@@ -236,7 +230,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "Custom.WorkItemAge",
+                    AdditionalFieldDefinitionId = 1,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = null
                 }
@@ -258,7 +252,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = source,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = $"Custom.{source}",
+                    AdditionalFieldDefinitionId = (int)source + 1,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = ""
                 }
@@ -278,13 +272,13 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 {
                     ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "Custom.WorkItemAge",
+                    AdditionalFieldDefinitionId = 1,
                 },
                 new()
                 {
                     ValueSource = WriteBackValueSource.ForecastPercentile85,
                     AppliesTo = WriteBackAppliesTo.Portfolio,
-                    TargetFieldReference = "Custom.Forecast",
+                    AdditionalFieldDefinitionId = 2,
                     TargetValueType = WriteBackTargetValueType.FormattedText,
                     DateFormat = null
                 }

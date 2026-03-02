@@ -139,7 +139,8 @@ export class WorkTrackingSystemService
 
 		return {
 			id: raw.id as number,
-			targetFieldReference: raw.targetFieldReference as string,
+			additionalFieldDefinitionId:
+				(raw.additionalFieldDefinitionId as number | null) ?? null,
 			dateFormat: (raw.dateFormat as string | null) ?? null,
 			valueSource:
 				typeof valueSource === "string"

@@ -20,11 +20,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasLicense);
 
             var mappings = Enumerable.Range(0, mappingCount)
-                .Select(_ => new WriteBackMappingDefinition
+                .Select(i => new WriteBackMappingDefinition
                 {
                     ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                     AppliesTo = WriteBackAppliesTo.Team,
-                    TargetFieldReference = "Custom.Field"
+                    AdditionalFieldDefinitionId = i + 1
                 })
                 .ToList();
 

@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
 
                 Assert.That(connection!.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
                 Assert.That(connection.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
-                Assert.That(connection.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.WorkItemAge"));
+                Assert.That(connection.WriteBackMappingDefinitions[0].AdditionalFieldDefinitionId, Is.EqualTo(1));
             }
 
             repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 Id = 99,
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.WorkItemAge"
+                AdditionalFieldDefinitionId = 1
             });
             repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
 
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 Id = 99,
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.CycleTime",
+                AdditionalFieldDefinitionId = 2,
                 TargetValueType = WriteBackTargetValueType.FormattedText,
                 DateFormat = "yyyy-MM-dd"
             });
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 Assert.That(connection!.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
                 Assert.That(connection.WriteBackMappingDefinitions[0].ValueSource, Is.EqualTo(WriteBackValueSource.WorkItemAgeCycleTime));
                 Assert.That(connection.WriteBackMappingDefinitions[0].AppliesTo, Is.EqualTo(WriteBackAppliesTo.Portfolio));
-                Assert.That(connection.WriteBackMappingDefinitions[0].TargetFieldReference, Is.EqualTo("Custom.CycleTime"));
+                Assert.That(connection.WriteBackMappingDefinitions[0].AdditionalFieldDefinitionId, Is.EqualTo(2));
                 Assert.That(connection.WriteBackMappingDefinitions[0].DateFormat, Is.EqualTo("yyyy-MM-dd"));
             }
         }
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
                 Id = 99,
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.WorkItemAge"
+                AdditionalFieldDefinitionId = 1
             });
             repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
 
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             {
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "",
+                AdditionalFieldDefinitionId = null,
             });
 
             var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
@@ -169,7 +169,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             {
                 ValueSource = WriteBackValueSource.ForecastPercentile85,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
-                TargetFieldReference = "Custom.Forecast85",
+                AdditionalFieldDefinitionId = 1,
                 TargetValueType = WriteBackTargetValueType.FormattedText,
                 DateFormat = null
             });
@@ -191,7 +191,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             {
                 ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
                 AppliesTo = WriteBackAppliesTo.Team,
-                TargetFieldReference = "Custom.WorkItemAge",
+                AdditionalFieldDefinitionId = 1,
             });
             return dto;
         }

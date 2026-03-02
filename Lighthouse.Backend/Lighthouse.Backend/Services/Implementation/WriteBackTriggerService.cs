@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private static List<WriteBackFieldUpdate> ResolveTeamUpdates(
+        private List<WriteBackFieldUpdate> ResolveTeamUpdates(
             List<WriteBackMappingDefinition> mappings,
             List<WorkItem> workItems)
         {
@@ -118,6 +118,15 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var mapping in mappings)
             {
+                var fieldReference = mapping.AdditionalFieldDefinition?.Reference;
+                if (string.IsNullOrEmpty(fieldReference))
+                {
+                    logger.LogWarning(
+                        "Skipping write-back mapping {MappingId}: AdditionalFieldDefinition is not resolved (Id: {FieldId})",
+                        mapping.Id, mapping.AdditionalFieldDefinitionId);
+                    continue;
+                }
+
                 foreach (var workItem in workItems)
                 {
                     var value = ResolveWorkItemValue(mapping.ValueSource, workItem);
@@ -126,7 +135,7 @@ namespace Lighthouse.Backend.Services.Implementation
                         updates.Add(new WriteBackFieldUpdate
                         {
                             WorkItemId = workItem.ReferenceId,
-                            TargetFieldReference = mapping.TargetFieldReference,
+                            TargetFieldReference = fieldReference,
                             Value = value,
                         });
                     }
@@ -136,7 +145,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return updates;
         }
 
-        private static List<WriteBackFieldUpdate> ResolvePortfolioUpdates(
+        private List<WriteBackFieldUpdate> ResolvePortfolioUpdates(
             List<WriteBackMappingDefinition> mappings,
             List<Feature> features)
         {
@@ -144,6 +153,15 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var mapping in mappings)
             {
+                var fieldReference = mapping.AdditionalFieldDefinition?.Reference;
+                if (string.IsNullOrEmpty(fieldReference))
+                {
+                    logger.LogWarning(
+                        "Skipping write-back mapping {MappingId}: AdditionalFieldDefinition is not resolved (Id: {FieldId})",
+                        mapping.Id, mapping.AdditionalFieldDefinitionId);
+                    continue;
+                }
+
                 foreach (var feature in features)
                 {
                     var value = ResolveFeatureValue(mapping, feature);
@@ -152,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation
                         updates.Add(new WriteBackFieldUpdate
                         {
                             WorkItemId = feature.ReferenceId,
-                            TargetFieldReference = mapping.TargetFieldReference,
+                            TargetFieldReference = fieldReference,
                             Value = value,
                         });
                     }

@@ -64,7 +64,8 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 	onSave,
 	onCancel,
 }) => {
-	const [targetFieldReference, setTargetFieldReference] = useState("");
+	const [additionalFieldDefinitionId, setAdditionalFieldDefinitionId] =
+		useState<number | null>(null);
 	const [valueSource, setValueSource] = useState<WriteBackValueSource>(
 		WriteBackValueSource.WorkItemAgeCycleTime,
 	);
@@ -77,13 +78,13 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 
 	useEffect(() => {
 		if (mapping) {
-			setTargetFieldReference(mapping.targetFieldReference);
+			setAdditionalFieldDefinitionId(mapping.additionalFieldDefinitionId);
 			setValueSource(mapping.valueSource);
 			setAppliesTo(mapping.appliesTo);
 			setTargetValueType(mapping.targetValueType);
 			setDateFormat(mapping.dateFormat ?? "");
 		} else {
-			setTargetFieldReference("");
+			setAdditionalFieldDefinitionId(null);
 			setValueSource(WriteBackValueSource.WorkItemAgeCycleTime);
 			setAppliesTo(WriteBackAppliesTo.Team);
 			setTargetValueType(WriteBackTargetValueType.Date);
@@ -142,14 +143,14 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 	};
 
 	const isValid =
-		targetFieldReference !== "" &&
+		additionalFieldDefinitionId !== null &&
 		(!showDateFormat || dateFormat.trim() !== "");
 
 	const handleSave = () => {
 		if (mapping) {
 			onSave({
 				...mapping,
-				targetFieldReference,
+				additionalFieldDefinitionId,
 				valueSource,
 				appliesTo,
 				targetValueType,
@@ -169,11 +170,13 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 					<Select
 						labelId="target-field-label"
 						label="Target Field"
-						value={targetFieldReference}
-						onChange={(e) => setTargetFieldReference(e.target.value)}
+						value={additionalFieldDefinitionId ?? ""}
+						onChange={(e) =>
+							setAdditionalFieldDefinitionId(e.target.value as number)
+						}
 					>
 						{additionalFields.map((field) => (
-							<MenuItem key={field.id} value={field.reference}>
+							<MenuItem key={field.id} value={field.id}>
 								{field.displayName}
 							</MenuItem>
 						))}
@@ -281,9 +284,9 @@ const WriteBackMappingsEditor: React.FC<WriteBackMappingsEditorProps> = ({
 
 	const hasAdditionalFields = additionalFields.length > 0;
 
-	const getFieldDisplayName = (reference: string): string => {
-		const field = additionalFields.find((f) => f.reference === reference);
-		return field?.displayName ?? reference;
+	const getFieldDisplayName = (fieldId: number | null): string => {
+		const field = additionalFields.find((f) => f.id === fieldId);
+		return field?.displayName ?? String(fieldId ?? "");
 	};
 
 	const handleAddMapping = () => {
@@ -291,7 +294,7 @@ const WriteBackMappingsEditor: React.FC<WriteBackMappingsEditorProps> = ({
 			id: tempIdCounter,
 			valueSource: WriteBackValueSource.WorkItemAgeCycleTime,
 			appliesTo: WriteBackAppliesTo.Team,
-			targetFieldReference: "",
+			additionalFieldDefinitionId: null,
 			targetValueType: WriteBackTargetValueType.Date,
 			dateFormat: null,
 		};
@@ -429,7 +432,9 @@ const WriteBackMappingsEditor: React.FC<WriteBackMappingsEditorProps> = ({
 							}
 						>
 							<ListItemText
-								primary={getFieldDisplayName(mapping.targetFieldReference)}
+								primary={getFieldDisplayName(
+									mapping.additionalFieldDefinitionId,
+								)}
 								secondary={getMappingSecondary(mapping)}
 							/>
 						</ListItem>
