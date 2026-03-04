@@ -160,46 +160,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 try
                 {
-                    object fieldValue = double.TryParse(update.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var numericValue)
-                        ? numericValue
-                        : update.Value;
-
-                    var fieldReference =
-                        additionalFieldReferences.TryGetValue(update.TargetFieldReference, out var reference)
-                            ? reference
-                            : update.TargetFieldReference;
-
-                    var payload = JsonSerializer.Serialize(new
-                    {
-                        fields = new Dictionary<string, object> { [fieldReference] = fieldValue }
-                    });
-
-                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                    var response = await client.PutAsync($"rest/api/2/issue/{update.WorkItemId}", content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        results.Add(new WriteBackItemResult
-                        {
-                            WorkItemId = update.WorkItemId,
-                            TargetFieldReference = update.TargetFieldReference,
-                            Success = true
-                        });
-                    }
-                    else
-                    {
-                        var errorBody = await response.Content.ReadAsStringAsync();
-                        logger.LogDebug("Jira write-back failed for {IssueKey}, field {FieldReference}: {StatusCode} - {ErrorBody}",
-                            update.WorkItemId, update.TargetFieldReference, response.StatusCode, errorBody);
-
-                        results.Add(new WriteBackItemResult
-                        {
-                            WorkItemId = update.WorkItemId,
-                            TargetFieldReference = update.TargetFieldReference,
-                            Success = false,
-                            ErrorMessage = $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}"
-                        });
-                    }
+                    await UpdateItem(client, update, additionalFieldReferences, results);
                 }
                 catch (Exception ex)
                 {
@@ -216,6 +177,51 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             return results;
+        }
+
+        private async Task UpdateItem(HttpClient client, WriteBackFieldUpdate update, Dictionary<string, string> additionalFieldReferences,
+            List<WriteBackItemResult> results)
+        {
+            object fieldValue = double.TryParse(update.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var numericValue)
+                ? numericValue
+                : update.Value;
+
+            var fieldReference =
+                additionalFieldReferences.TryGetValue(update.TargetFieldReference, out var reference)
+                    ? reference
+                    : update.TargetFieldReference;
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                fields = new Dictionary<string, object> { [fieldReference] = fieldValue }
+            });
+
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await client.PutAsync($"rest/api/latest/issue/{update.WorkItemId}?notifyUsers=false", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                results.Add(new WriteBackItemResult
+                {
+                    WorkItemId = update.WorkItemId,
+                    TargetFieldReference = update.TargetFieldReference,
+                    Success = true
+                });
+            }
+            else
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                logger.LogDebug("Jira write-back failed for {IssueKey}, field {FieldReference}: {StatusCode} - {ErrorBody}",
+                    update.WorkItemId, update.TargetFieldReference, response.StatusCode, errorBody);
+
+                results.Add(new WriteBackItemResult
+                {
+                    WorkItemId = update.WorkItemId,
+                    TargetFieldReference = update.TargetFieldReference,
+                    Success = false,
+                    ErrorMessage = $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}"
+                });
+            }
         }
 
 
