@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string DeliveryDateName = "Delivery Date";
         
         private const string AgeField = "customfield_10206";
-        private const string AgelFieldName = "Age";
+        private const string AgeFieldName = "Age";
         
         private const string EpicId = "LGHTHSDMO-1";
         private const string StoryId = "LGHTHSDMO-16";
@@ -265,7 +265,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         [Category("Integration")]
         [TestCase(AgeField)]
-        [TestCase(AgelFieldName)]
+        [TestCase(AgeFieldName)]
         public async Task WriteNumericValue_Age_WritesToStoryAndReadBackMatches(string ageFieldReference)
         {
             var subject = CreateSubject();
