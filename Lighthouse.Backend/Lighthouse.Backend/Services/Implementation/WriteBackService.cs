@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return result;
         }
 
-        private IReadOnlyList<WriteBackFieldUpdate> GetChangedFields(IReadOnlyList<WriteBackFieldUpdate> updates, WorkTrackingSystemConnection connection)
+        private List<WriteBackFieldUpdate> GetChangedFields(IReadOnlyList<WriteBackFieldUpdate> updates, WorkTrackingSystemConnection connection)
         {
             var allFeatures = featureRepository.GetAll();
             var allWorkItems = workItemRepository.GetAll();
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
             }
             
-            return actualUpdates.AsReadOnly();
+            return actualUpdates;
         }
     }
 }
