@@ -197,7 +197,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             });
 
             var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await client.PutAsync($"rest/api/latest/issue/{update.WorkItemId}?notifyUsers=false", content);
+            var response = await client.PutAsync($"rest/api/latest/issue/{update.WorkItemId}", content);
 
             if (response.IsSuccessStatusCode)
             {

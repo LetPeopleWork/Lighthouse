@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,6 +15,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock;
         private Mock<IWorkTrackingConnector> connectorMock;
         private Mock<ILogger<WriteBackService>> loggerMock;
+        
+        private Mock<IWorkItemRepository> workItemRepositoryMock;
+        private Mock<IRepository<Feature>>  featureRepositoryMock;
+
+        private List<WorkItem> workItems;
+
+        private List<Feature> features;
 
         [SetUp]
         public void Setup()
@@ -22,9 +30,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             connectorMock = new Mock<IWorkTrackingConnector>();
             loggerMock = new Mock<ILogger<WriteBackService>>();
 
+            workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            featureRepositoryMock = new  Mock<IRepository<Feature>>();
+
+            workItems = [];
+            features = [];
+
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
                 .Returns(connectorMock.Object);
+            
+            workItemRepositoryMock.Setup(x => x.GetAll()).Returns(workItems);
+            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
         }
 
         [Test]
@@ -33,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" }
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
             connectorMock
@@ -56,8 +73,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.Jira);
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "PROJ-1", TargetFieldReference = "customfield_10001", Value = "7" },
-                new() { WorkItemId = "PROJ-2", TargetFieldReference = "customfield_10001", Value = "3" }
+                CreateBackFieldUpdate("PROJ-1", "customfield_10001", "7", null, connection),
+                CreateBackFieldUpdate("PROJ-2", "customfield_10001", "3", null, connection),
             };
 
             connectorMock
@@ -83,9 +100,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
-            {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" },
-                new() { WorkItemId = "43", TargetFieldReference = "Custom.Age", Value = "10" }
+            {   
+                CreateBackFieldUpdate("42", "Custom.Age", "5", string.Empty, connection),
+                CreateBackFieldUpdate("43", "Custom.Age", "10", null, connection),
             };
 
             var expectedResult = new WriteBackResult
@@ -119,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" }
+                CreateBackFieldUpdate("42", "Custom.Age", "5", "3", connection),
             };
 
             connectorMock
@@ -140,11 +157,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task WriteFieldsToWorkItems_EmptyUpdates_ReturnsEmptyResult()
         {
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
-            var updates = new List<WriteBackFieldUpdate>();
 
             var service = CreateService();
 
-            var result = await service.WriteFieldsToWorkItems(connection, updates);
+            var result = await service.WriteFieldsToWorkItems(connection, new List<WriteBackFieldUpdate>());
 
             using (Assert.EnterMultipleScope())
             {
@@ -163,7 +179,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" }
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
             connectorMock
@@ -189,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             connection.Name = "My ADO Connection";
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" }
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
             connectorMock
@@ -228,7 +244,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" }
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
             connectorMock
@@ -261,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "42", TargetFieldReference = "Custom.Age", Value = "5" }
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
             connectorMock
@@ -284,9 +300,163 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public async Task WriteFieldsToWorkItems_AdditionalFieldHasSameValue_Skips()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                CreateBackFieldUpdate("42", "Custom.Age", "5", "5", connection),
+            };
+            
+            connection.AdditionalFieldDefinitions.Clear();
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
+                .ReturnsAsync(new WriteBackResult
+                {
+                    ItemResults = [new WriteBackItemResult { WorkItemId = "42", TargetFieldReference = "Custom.Age", Success = true }]
+                });
+
+            var service = CreateService();
+
+            _ = await service.WriteFieldsToWorkItems(connection, updates);
+
+            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_AdditionalFieldDoesNotExistForItem_Skips()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
+            };
+            
+            workItems.Single().AdditionalFieldValues.Clear();
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
+                .ReturnsAsync(new WriteBackResult
+                {
+                    ItemResults = [new WriteBackItemResult { WorkItemId = "42", TargetFieldReference = "Custom.Age", Success = true }]
+                });
+
+            var service = CreateService();
+
+            _ = await service.WriteFieldsToWorkItems(connection, updates);
+
+            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_AdditionalFieldDoesNotExistOnConnection_Skips()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
+            };
+            
+            connection.AdditionalFieldDefinitions.Clear();
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
+                .ReturnsAsync(new WriteBackResult
+                {
+                    ItemResults = [new WriteBackItemResult { WorkItemId = "42", TargetFieldReference = "Custom.Age", Success = true }]
+                });
+
+            var service = CreateService();
+
+            _ = await service.WriteFieldsToWorkItems(connection, updates);
+
+            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task WriteFieldsToWorkItems_AdditionalFieldIsNull_WritesValue(bool isFeature)
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection, isFeature),
+            };
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
+                .ReturnsAsync(new WriteBackResult
+                {
+                    ItemResults = [new WriteBackItemResult { WorkItemId = "42", TargetFieldReference = "Custom.Age", Success = true }]
+                });
+
+            var service = CreateService();
+
+            _ = await service.WriteFieldsToWorkItems(connection, updates);
+
+            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
+        }
+
+        private WriteBackFieldUpdate CreateBackFieldUpdate(string workItemReference, string targetFieldReference, string? newValue, string? oldValue, WorkTrackingSystemConnection connection, bool isFeature = false)
+        {
+            var additionalFieldId = AddAdditionalField(connection, targetFieldReference);
+            AddItem(workItemReference, additionalFieldId, oldValue, isFeature);
+
+            return new WriteBackFieldUpdate
+                { WorkItemId = workItemReference, TargetFieldReference = targetFieldReference, Value = newValue };
+        }
+
+        private void AddItem(string referenceId, int additionalFieldId, string? additionalFieldValue, bool isFeature = false)
+        {
+            var workItemBase = new WorkItemBase
+            {
+                ReferenceId = referenceId,
+                AdditionalFieldValues = new Dictionary<int, string?>
+                {
+                    { additionalFieldId, additionalFieldValue },
+                }
+            };
+
+            if (isFeature)
+            {
+                features.Add(new Feature(workItemBase));
+            }
+            else
+            {
+                workItems.Add(new WorkItem(workItemBase, new Team()));
+            }
+        }
+
+        private static int AddAdditionalField(WorkTrackingSystemConnection workTrackingSystemConnection, string additionalFieldReference)
+        {
+            var existingField =
+                workTrackingSystemConnection.AdditionalFieldDefinitions.SingleOrDefault(af =>
+                    af.Reference == additionalFieldReference);
+            
+            if (existingField != null)
+            {
+                return existingField.Id;
+            }
+            
+            var count = workTrackingSystemConnection.AdditionalFieldDefinitions.Count;
+
+            workTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = additionalFieldReference,
+                Id = count,
+                Reference = additionalFieldReference,
+                WorkTrackingSystemConnection = workTrackingSystemConnection,
+            });
+            
+            return count;
+        }
+
         private WriteBackService CreateService()
         {
-            return new WriteBackService(connectorFactoryMock.Object, loggerMock.Object);
+            return new WriteBackService(connectorFactoryMock.Object, loggerMock.Object, workItemRepositoryMock.Object, featureRepositoryMock.Object);
         }
 
         private static WorkTrackingSystemConnection CreateConnection(WorkTrackingSystems system)
