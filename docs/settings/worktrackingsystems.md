@@ -80,3 +80,7 @@ For each connection you can configure one or more *Mappings*. Each mapping defin
 2. Navigate to the *Mappings* section.
 3. Click *Add Mapping* and fill in the fields above.
 4. Save the connection.
+
+
+{: .important}
+If you are using Jira, and people have subscribed to updates on an Issue, they will get an email every time Lighthouse will write this value. At the moment, there is no way to not send the notification. Please be aware when you set this up.

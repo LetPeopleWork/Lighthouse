@@ -4,6 +4,34 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.3.9.4
+
+## Improvements for Write Back to Work Tracking Systems Functionality
+After shipping the first version of the sync functionality, this version brings small improvements based on the first feedback:
+- Additional Fields were not properly resolved, causing on Jira to fail writing back if you used the *key* of a field instead of the *id*. This is fixed now and you can reference your additional fields as you like
+- Instead of updating all the items always, Lighthouse will check if the value that it's going to write differs from what's already there. A write operation is only happening if the values are different, reducing the time for updates and the load on the system.
+
+Furthmore, we looked into disabling notifications on Jira on an update from Lighthouse. However, there is no realiable way to suppress the notifications if someone put themselves as a watcher on an Issue. Please be aware that an update operation may trigger a couple of emails if people subscribed to it...We're looking for potential workarounds for this issue and have updated the documentation with a warning.
+
+## MCS Backtesting
+The MCS Backtesting now allows you to select fixed dates instead of only a rolling window. This will make it easier to backtest with your actual settings, for example if you exclude a specific time period (like Christmas). The default setting will be based on your teams Forecast Configuration - if you have a rolling window it will be set to this, if you use fixed dates, it will automatically pick your current configuration of those.
+
+Furthmore, you will now be able to inspect the actual Throughput in a dedicated Run Chart, that was added as a third tab next to the MCS Backtesting Result and the Historical Throughput Run Chart.
+
+## Other Improvements and Bug Fixes
+- The Setting for the PBC Baseline is now properly labeled, as it was *Enable PBC* before, indicating it would not be enabled without a baseline
+- There is a *Clear* Button to clear the PBC Baseline
+- Improved various third party packages to their latest version
+
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.2.28.12...v26.3.9.4)
+
 # Lighthouse v26.2.28.12
 
 ## Write Back to Work Tracking Systems [Premium Only]
