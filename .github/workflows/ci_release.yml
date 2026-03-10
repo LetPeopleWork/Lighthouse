@@ -50,7 +50,7 @@ jobs:
       
           # Install Cosign
       - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad
+        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22
       
         # Sign the image using keyless signing (GitHub OIDC)
       - name: Sign Docker image with Cosign
