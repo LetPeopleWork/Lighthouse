@@ -6,12 +6,7 @@ namespace Lighthouse.Backend.Models
     {
         public override List<string> WorkItemTypes { get; set; } = ["Epic"];
 
-        public List<Team> Teams => Features
-            .SelectMany(f => f.FeatureWork)
-            .Select(fw => fw.Team)
-            .Where(t => t != null)
-            .DistinctBy(t => t.Id)
-            .ToList();
+        public List<Team> Teams => GetTeams();
 
         public List<Feature> Features { get; } = [];
 
@@ -50,5 +45,12 @@ namespace Lighthouse.Backend.Models
         {
             return Features.Where(f => OverrideRealChildCountStates.Contains(f.State));
         }
+
+        private List<Team> GetTeams() => Features
+            .SelectMany(f => f.FeatureWork)
+            .Select(fw => fw.Team)
+            .Where(t => t != null)
+            .DistinctBy(t => t.Id)
+            .ToList();
     }
 }

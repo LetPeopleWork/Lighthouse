@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
                 Assert.That(projectId, Is.EqualTo(project.Id));
                 Assert.That(projectName, Is.EqualTo(project.Name));
-                Assert.That(teamCount, Is.EqualTo(project.Teams.Count()));
+                Assert.That(teamCount, Is.EqualTo(project.Teams.Count));
                 Assert.That(featureCount, Is.EqualTo(project.Features.Count));
             }
         }
@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 int teamId = Convert.ToInt32(teamToVerify.Id);
                 string teamName = Convert.ToString(teamToVerify.Name);
 
-                var fistTeam = project.Teams.First();
+                var fistTeam = project.Teams[0];
                 Assert.That(teamId, Is.EqualTo(fistTeam.Id));
                 Assert.That(teamName, Is.EqualTo(fistTeam.Name));
             }

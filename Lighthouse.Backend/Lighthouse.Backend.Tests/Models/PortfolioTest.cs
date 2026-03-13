@@ -71,8 +71,11 @@ namespace Lighthouse.Backend.Tests.Models
                 new Feature(team, remainingItems: 2),
             ]);
 
-            Assert.That(subject.Teams.ToList(), Has.Count.EqualTo(1));
-            Assert.That(subject.Teams, Contains.Item(team));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Teams.ToList(), Has.Count.EqualTo(1));
+                Assert.That(subject.Teams, Contains.Item(team));
+            }
         }
 
         [Test]
