@@ -562,6 +562,45 @@ describe("BacktestForecaster component", () => {
 				);
 			});
 		});
+
+		it("should set historicalEndDate to one day before backtestStartDate in rolling mode", async () => {
+			renderWithContext();
+
+			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
+			fireEvent.click(runButton);
+
+			await waitFor(() => {
+				expect(mockOnRunBacktest).toHaveBeenCalled();
+			});
+
+			const callArgs = mockOnRunBacktest.mock.calls[0];
+			const backtestStartDate = dayjs(callArgs[0]);
+			const historicalEndDate = dayjs(callArgs[3]);
+
+			expect(
+				historicalEndDate.isSame(backtestStartDate.subtract(1, "day"), "day"),
+			).toBe(true);
+		});
+
+		it("should produce exactly N days of historical data in rolling mode", async () => {
+			renderWithContext();
+
+			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
+			fireEvent.click(runButton);
+
+			await waitFor(() => {
+				expect(mockOnRunBacktest).toHaveBeenCalled();
+			});
+
+			const callArgs = mockOnRunBacktest.mock.calls[0];
+			const historicalStartDate = dayjs(callArgs[2]);
+			const historicalEndDate = dayjs(callArgs[3]);
+
+			// Inclusive day count should equal the historical window (default 30)
+			const inclusiveDays =
+				historicalEndDate.diff(historicalStartDate, "day") + 1;
+			expect(inclusiveDays).toBe(30);
+		});
 	});
 
 	describe("Actual Throughput Tab", () => {

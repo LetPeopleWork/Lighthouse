@@ -203,7 +203,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 			effectiveHistoricalStartDate = historicalFixedStartDate.toDate();
 			effectiveHistoricalEndDate = historicalFixedEndDate.toDate();
 		} else {
-			effectiveHistoricalEndDate = startDate.toDate();
+			effectiveHistoricalEndDate = startDate.subtract(1, "day").toDate();
 			effectiveHistoricalStartDate = startDate
 				.subtract(historicalWindowDays, "day")
 				.toDate();
