@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Forecast
 {
     public interface IForecastService
     {
-        Task UpdateForecastsForProject(Portfolio portfolio);
+        Task UpdateForecastsForPortfolio(Portfolio portfolio);
 
         HowManyForecast HowMany(RunChartData throughput, int days);
 

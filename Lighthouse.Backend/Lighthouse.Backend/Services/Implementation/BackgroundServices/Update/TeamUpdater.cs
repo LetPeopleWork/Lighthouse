@@ -8,19 +8,16 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class TeamUpdater : UpdateServiceBase<Team>, ITeamUpdater
+    public class TeamUpdater(
+        ILogger<TeamUpdater> logger,
+        IServiceScopeFactory serviceScopeFactory,
+        IUpdateQueueService updateQueueService)
+        : UpdateServiceBase<Team>(logger, serviceScopeFactory, updateQueueService, UpdateType.Team), ITeamUpdater
     {
-        public TeamUpdater(ILogger<TeamUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
-            : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Team)
-        {
-        }
-
         protected override RefreshSettings GetRefreshSettings()
         {
-            using (var scope = CreateServiceScope())
-            {
-                return GetServiceFromServiceScope<IAppSettingService>(scope).GetTeamDataRefreshSettings();
-            }
+            using var scope = CreateServiceScope();
+            return GetServiceFromServiceScope<IAppSettingService>(scope).GetTeamDataRefreshSettings();
         }
 
         protected override async Task Update(int id, IServiceProvider serviceProvider)

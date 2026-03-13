@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var team = CreateTeam();
 
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             var feature = new Feature(team, 12) { ReferenceId = "12" };
 
             SetupWorkForFeature(feature, 1, 0, team);
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_GivenExistingFeatures_ClearsExistingFeatures()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
             var existingFeature = new Feature(team, 12) { Id = 12 };
 
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_UsesDefaultItems(string featureState, int remainingWork, int defaultWork, int expectedWork)
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
             project.DefaultAmountOfWorkItemsPerFeature = defaultWork;
             project.OverrideRealChildCountStates.Add("Analysis in Progress");
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_IsInDoneState_DoesNotUsesDefaultItems(int remainingWork, int totalWork, int expectedWork)
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
 
             project.DoneStates.Clear();
@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ItemWasMovedBack_UsesDefaultItems()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
 
             project.DefaultAmountOfWorkItemsPerFeature = 7;
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
 
@@ -217,10 +217,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         [Test]
         public async Task UpdateFeaturesForProject_NoWorkForAnyFeature_SplitsAcrossAllAvailableTeams()
         {
-            var team1 = CreateTeam();
-            var team2 = CreateTeam();
+            _ = CreateTeam();
+            _ = CreateTeam();
             
-            var portfolio = CreatePortfolio(team1, team2);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
 
             var feature1 = new Feature { ReferenceId = "42" };
@@ -235,7 +235,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             {
                 Assert.That(portfolio.Features, Has.Count.EqualTo(2));
                 
-                Assert.That(portfolio.Teams, Has.Count.EqualTo(2));
+                Assert.That(portfolio.Teams.ToList(), Has.Count.EqualTo(2));
 
                 foreach (var feature in portfolio.Features)   
                 {
@@ -258,7 +258,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_UseCalculatedDefault_AddsDefaultRemainingWorkBasedOnPercentileToFeature(int[] childItemCount, int percentile, int expectedValue)
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.PercentileHistoryInDays = 90;
@@ -303,7 +303,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.PercentileHistoryInDays = 45;
@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.SizeEstimateAdditionalFieldDefinitionId = 1;
 
@@ -354,7 +354,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.SizeEstimateAdditionalFieldDefinitionId = 1; // Size field configured and feature has size
 
@@ -375,7 +375,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_NoRemainingWork_HasTotalWork_DoesNotAddDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
 
@@ -398,7 +398,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            var project = CreatePortfolio(team1, team2);
+            var project = CreatePortfolio();
 
 
             project.DefaultAmountOfWorkItemsPerFeature = 12;
@@ -428,7 +428,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
 
 
             var remainingWorkItems = 12;
@@ -448,9 +448,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         [Test]
         public async Task UpdateFeaturesForProject_MultipleTeamsInvolved()
         {
-            var team1 = CreateTeam();
-            var team2 = CreateTeam();
-            var project = CreatePortfolio(team1, team2);
+            _ = CreateTeam();
+            _ = CreateTeam();
+            var project = CreatePortfolio();
 
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
@@ -467,8 +467,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreatePortfolio(team1, team2);
-
+            var project = CreatePortfolio();
 
             var remainingWorkItemsFeature1 = 12;
             var remainingWorkItemsFeature2 = 7;
@@ -495,8 +494,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreatePortfolio(team1, team2);
-
+            var project = CreatePortfolio();
 
             var remainingWorkItemsTeam1 = 12;
             var remainingWorkItemsTeam2 = 7;
@@ -524,9 +522,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreatePortfolio(team1, team2);
+            var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-
 
             var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(testTeams) { ReferenceId = "42" };
@@ -553,7 +550,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
-            var project = CreatePortfolio(team1, team2);
+            var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.OwningTeam = team2;
 
@@ -586,7 +583,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team2 = CreateTeam();
             team2.Name = "The Most Awesome";
 
-            var portfolio = CreatePortfolio(team1, team2);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.OwningTeam = null;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
@@ -626,7 +623,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team2 = CreateTeam();
             team2.Name = "The Most Awesome";
 
-            var portfolio = CreatePortfolio(team1, team2);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.OwningTeam = team1;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 12;
@@ -669,7 +666,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var portfolio = CreatePortfolio(team1, team2, team3);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
 
@@ -713,7 +710,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var portfolio = CreatePortfolio(team1, team2, team3);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
             portfolio.OwningTeam = team1;
@@ -758,7 +755,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var portfolio = CreatePortfolio(team1, team2, team3);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
             portfolio.OwningTeam = team1;
@@ -801,7 +798,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team3 = CreateTeam();
             team3.Name = "Other";
 
-            var portfolio = CreatePortfolio(team1, team2, team3);
+            var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 15;
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
 
@@ -840,7 +837,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_FeatureHasParent_StoresParentAsFeature()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
             var parentFeature = new Feature { ReferenceId = "1886" };
 
@@ -863,7 +860,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateFeaturesForProject_FeatureHasParent_FeatureAlreadyExists_UpdatesParentFeature()
         {
             var team = CreateTeam();
-            var project = CreatePortfolio(team);
+            var project = CreatePortfolio();
             var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
             var parentFeature = new Feature { ReferenceId = "1886" };
 
@@ -1014,12 +1011,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 });
         }
 
-        private Portfolio CreatePortfolio(params Team[] involvedTeams)
+        private Portfolio CreatePortfolio()
         {
-            return CreatePortfolio(DateTime.Now, involvedTeams);
+            return CreatePortfolio(DateTime.Now);
         }
 
-        private Portfolio CreatePortfolio(DateTime lastUpdateTime, params Team[] involvedTeams)
+        private Portfolio CreatePortfolio(DateTime lastUpdateTime)
         {
             var portfolio = new Portfolio
             {
@@ -1028,12 +1025,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             };
 
             portfolio.WorkItemTypes.Add("Feature");
-            portfolio.UpdateTeams(involvedTeams);
-
-            foreach (var team in involvedTeams)
-            {
-                team.Portfolios.Add(portfolio);
-            }
 
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
             portfolio.WorkTrackingSystemConnection = workTrackingConnection;

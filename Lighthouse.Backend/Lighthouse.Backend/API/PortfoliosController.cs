@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.API
     public class PortfoliosController(
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
-        IPortfolioUpdater workItemUpdateService,
+        IPortfolioUpdater portfolioUpdater,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
         : ControllerBase
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API
 
             foreach (var portfolio in portfolios)
             {
-                workItemUpdateService.TriggerUpdate(portfolio.Id);
+                portfolioUpdater.TriggerUpdate(portfolio.Id);
             }
 
             return Ok();

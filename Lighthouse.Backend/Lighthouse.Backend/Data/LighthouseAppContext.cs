@@ -140,9 +140,9 @@ namespace Lighthouse.Backend.Data
 
             var dictionaryConverter = new ValueConverter<Dictionary<int, string?>, string>(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => string.IsNullOrWhiteSpace(v) 
-                    ? new Dictionary<int, string?>() 
-                    : JsonSerializer.Deserialize<Dictionary<int, string?>>(v, (JsonSerializerOptions?)null) 
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new Dictionary<int, string?>()
+                    : JsonSerializer.Deserialize<Dictionary<int, string?>>(v, (JsonSerializerOptions?)null)
                       ?? new Dictionary<int, string?>()
             );
 
@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Data
                 .Property(f => f.AdditionalFieldValues)
                 .HasConversion(dictionaryConverter)
                 .Metadata.SetValueComparer(dictionaryComparer);
-                
+
             modelBuilder.Entity<Delivery>()
                 .HasOne(d => d.Portfolio)
                 .WithMany()

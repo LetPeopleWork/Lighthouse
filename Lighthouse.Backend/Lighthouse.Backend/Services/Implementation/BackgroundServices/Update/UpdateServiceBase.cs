@@ -5,21 +5,15 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public abstract class UpdateServiceBase<TEntity> : BackgroundService, IUpdateService where TEntity : class, IEntity
+    public abstract class UpdateServiceBase<TEntity>(
+        ILogger<UpdateServiceBase<TEntity>> logger,
+        IServiceScopeFactory serviceScopeFactory,
+        IUpdateQueueService updateQueueService,
+        UpdateType updateType)
+        : BackgroundService, IUpdateService
+        where TEntity : class, IEntity
     {
-        private readonly IServiceScopeFactory serviceScopeFactory;
-        private readonly IUpdateQueueService updateQueueService;
-        private readonly UpdateType updateType;
-
-        protected UpdateServiceBase(ILogger<UpdateServiceBase<TEntity>> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService, UpdateType updateType)
-        {
-            Logger = logger;
-            this.serviceScopeFactory = serviceScopeFactory;
-            this.updateQueueService = updateQueueService;
-            this.updateType = updateType;
-        }
-
-        protected ILogger<UpdateServiceBase<TEntity>> Logger { get; }
+        protected ILogger<UpdateServiceBase<TEntity>> Logger { get; } = logger;
 
         public void TriggerUpdate(int id)
         {
@@ -86,18 +80,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private void UpdateAll()
         {
-            using (var scope = CreateServiceScope())
-            {
-                var repository = GetServiceFromServiceScope<IRepository<TEntity>>(scope);
-                var refreshSettings = GetRefreshSettings();
+            using var scope = CreateServiceScope();
+            var repository = GetServiceFromServiceScope<IRepository<TEntity>>(scope);
+            var refreshSettings = GetRefreshSettings();
 
-                foreach (var entity in repository.GetAll().ToList())
+            foreach (var entity in repository.GetAll().ToList())
+            {
+                Logger.LogInformation("Checking last update for {Entity}", entity.Id);
+                if (ShouldUpdateEntity(entity, refreshSettings))
                 {
-                    Logger.LogInformation("Checking last update for {Entity}", entity.Id);
-                    if (ShouldUpdateEntity(entity, refreshSettings))
-                    {
-                        TriggerUpdate(entity.Id);
-                    }
+                    TriggerUpdate(entity.Id);
                 }
             }
         }

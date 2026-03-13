@@ -217,9 +217,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature = SetupFeature(team, 35);
             SetupFeatures(feature);
 
-            var project = CreateProject(feature);
+            var project = CreatePortfolio(feature);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -241,9 +241,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature2 = SetupFeature(team, 20);
 
             SetupFeatures(feature1, feature2);
-            var project = CreateProject(feature1, feature2);
+            var project = CreatePortfolio(feature1, feature2);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -270,9 +270,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature2 = SetupFeature(team, 15);
 
             SetupFeatures(feature1, feature2);
-            var project = CreateProject(feature1, feature2);
+            var project = CreatePortfolio(feature1, feature2);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -295,9 +295,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature3 = SetupFeature(team, 20);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject(feature1, feature2, feature3);
+            var project = CreatePortfolio(feature1, feature2, feature3);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -330,9 +330,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature3 = SetupFeature(team, 5);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject(feature1, feature2, feature3);
+            var project = CreatePortfolio(feature1, feature2, feature3);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -365,9 +365,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature2 = SetupFeature(team2, 20);
 
             SetupFeatures(feature1, feature2);
-            var project = CreateProject(feature1, feature2);
+            var project = CreatePortfolio(feature1, feature2);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -391,9 +391,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature3 = SetupFeature(team2, 7);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject(feature1, feature2, feature3);
+            var project = CreatePortfolio(feature1, feature2, feature3);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -422,9 +422,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature3 = SetupFeature(team2, 20);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject(feature1, feature2, feature3);
+            var project = CreatePortfolio(feature1, feature2, feature3);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -451,9 +451,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var feature1 = SetupFeature([(team1, 20, 37), (team2, 15, 17)]);
 
             SetupFeatures(feature1);
-            var project = CreateProject(feature1);
+            var project = CreatePortfolio(feature1);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -472,9 +472,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var feature = SetupFeature([(team, 20, 37)]);
             SetupFeatures(feature);
-            var project = CreateProject(feature);
+            var project = CreatePortfolio(feature);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             Assert.That(feature.Forecast.NumberOfItems, Is.EqualTo(20));
         }
@@ -489,9 +489,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var feature = SetupFeature([(team1, 20, 42), (team2, 15, 17)]);
             SetupFeatures(feature);
-            var project = CreateProject(feature);
+            var project = CreatePortfolio(feature);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -511,9 +511,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var feature = SetupFeature(team, 0);
             SetupFeatures(feature);
-            var project = CreateProject(feature);
+            var project = CreatePortfolio(feature);
 
-            await subject.UpdateForecastsForProject(project);
+            await subject.UpdateForecastsForPortfolio(project);
 
             using (Assert.EnterMultipleScope())
             {
@@ -569,24 +569,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             return team;
         }
 
-        private Portfolio CreateProject(params Feature[] features)
+        private Portfolio CreatePortfolio(params Feature[] features)
         {
-            var project = CreateProject(DateTime.UtcNow, features);
-            project.Teams.AddRange(features.SelectMany(f => f.Teams).Distinct());
+            var portfolio = CreatePortfolio(DateTime.UtcNow, features);
 
-            return project;
+            return portfolio;
         }
 
-        private Portfolio CreateProject(DateTime lastUpdatedTime, params Feature[] features)
+        private Portfolio CreatePortfolio(DateTime lastUpdatedTime, params Feature[] features)
         {
-            var project = new Portfolio
+            var portfolio = new Portfolio
             {
                 Name = "Project",
                 Id = idCounter++,
                 UpdateTime = lastUpdatedTime,
             };
-            project.UpdateFeatures(features);
-            return project;
+            
+            portfolio.UpdateFeatures(features);
+            
+            return portfolio;
         }
     }
 }

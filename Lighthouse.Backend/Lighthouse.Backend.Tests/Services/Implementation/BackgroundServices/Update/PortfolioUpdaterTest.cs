@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForProject(project));
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(project));
         }
 
         [Test]
@@ -183,13 +183,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team);
             SetupProjects(project);
 
-            var deliveries = new List<Delivery>();
-            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(deliveries);
+            var expectedDeliveries = new List<Delivery>();
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(expectedDeliveries);
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            deliveryRuleServiceMock.Verify(x => x.RecomputeRuleBasedDeliveries(project, deliveries), Times.Once);
+            deliveryRuleServiceMock.Verify(x => x.RecomputeRuleBasedDeliveries(project, expectedDeliveries), Times.Once);
         }
 
         [Test]
@@ -199,8 +199,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team);
             SetupProjects(project);
 
-            var deliveries = new List<Delivery>();
-            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(deliveries);
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(new List<Delivery>());
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -272,21 +271,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Portfolio CreateProject(DateTime lastUpdateTime, params Team[] teams)
         {
-            var project = new Portfolio
+            var portfolio = new Portfolio
             {
                 Id = idCounter++,
                 Name = "Release 1",
             };
 
-            project.WorkItemTypes.Add("Feature");
-            project.UpdateTeams(teams);
+            foreach (var team in teams)
+            {
+                var feature = new Feature(team, 12) { Id = idCounter++ };
+                portfolio.Features.Add(feature);
+            }
+
+            portfolio.WorkItemTypes.Add("Feature");
 
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
-            project.WorkTrackingSystemConnection = workTrackingConnection;
+            portfolio.WorkTrackingSystemConnection = workTrackingConnection;
 
-            project.UpdateTime = lastUpdateTime;
+            portfolio.UpdateTime = lastUpdateTime;
 
-            return project;
+            return portfolio;
         }
 
         private PortfolioUpdater CreateSubject()

@@ -38,8 +38,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         int GetTotalWorkItemAge(Team team);
 
-        void InvalidateTeamMetrics(Team team);
-
         Task UpdateTeamMetrics(Team team);
     }
 }

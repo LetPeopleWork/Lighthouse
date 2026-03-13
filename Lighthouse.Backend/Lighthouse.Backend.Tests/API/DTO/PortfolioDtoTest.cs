@@ -30,8 +30,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var team2 = new Team { Id = 2, Name = "Team 2" };
 
             var portfolio = new Portfolio();
-            portfolio.Teams.Add(team1);
-            portfolio.Teams.Add(team2);
+
+            portfolio.Features.Add(new Feature(team1, 12));
+            portfolio.Features.Add(new Feature(team2, 12));
 
             var subject = CreateSubject(portfolio);
 

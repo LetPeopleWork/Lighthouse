@@ -18,10 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         protected override RefreshSettings GetRefreshSettings()
         {
-            using (var scope = CreateServiceScope())
-            {
-                return GetServiceFromServiceScope<IAppSettingService>(scope).GetFeatureRefreshSettings();
-            }
+            using var scope = CreateServiceScope();
+            return GetServiceFromServiceScope<IAppSettingService>(scope).GetFeatureRefreshSettings();
         }
 
         protected override bool ShouldUpdateEntity(Portfolio entity, RefreshSettings refreshSettings)
@@ -68,7 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
 
-            await forecastUpdateService.UpdateForecastsForProject(project);
+            await forecastUpdateService.UpdateForecastsForPortfolio(project);
 
             await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
         }

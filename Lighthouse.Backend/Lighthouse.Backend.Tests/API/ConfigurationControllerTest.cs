@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private readonly List<WorkTrackingSystemConnection> workTrackingSystems = [];
         private readonly List<Team> teams = [];
-        private readonly List<Portfolio> projects = [];
+        private readonly List<Portfolio> portfolios = [];
 
         private readonly JsonSerializerOptions deserializeOptions = new JsonSerializerOptions
         {
@@ -48,10 +48,10 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
                 .Returns((Expression<Func<Team, bool>> predicate) => teams.Where(predicate.Compile()).AsQueryable());
 
-            projects.Clear();
-            projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
+            portfolios.Clear();
+            projectRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
             projectRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
-                .Returns((Expression<Func<Portfolio, bool>> predicate) => projects.Where(predicate.Compile()).AsQueryable());
+                .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.Where(predicate.Compile()).AsQueryable());
         }
 
         [Test]
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.API
             };
             teams.Add(team);
 
-            var project = new Portfolio
+            var portfolio = new Portfolio
             {
                 Id = 1,
                 Name = "Project A",
@@ -247,10 +247,8 @@ namespace Lighthouse.Backend.Tests.API
                 SystemWIPLimit = 1,
             };
 
-
-            project.Teams.Add(team);
-
-            projects.Add(project);
+            portfolio.UpdateFeatures([new Feature(team, 12)]);
+            portfolios.Add(portfolio);
 
             var subject = CreateSubject();
 
@@ -306,7 +304,7 @@ namespace Lighthouse.Backend.Tests.API
             teams.Add(team);
 
             var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
-            projects.Add(project);
+            portfolios.Add(project);
 
             await subject.DeleteConfiguration();
 
@@ -328,8 +326,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
-            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
-            project.Teams.Add(team);
+            var portfolio = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            portfolio.UpdateFeatures([new Feature(team, 42)]);
 
             var subject = CreateSubject();
 
@@ -337,7 +335,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
                 Teams = [new TeamSettingDto(team)],
-                Projects = [new PortfolioSettingDto(project)],
+                Projects = [new PortfolioSettingDto(portfolio)],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -360,7 +358,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
 
                 Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
-                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(portfolio.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.New));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.Empty);
             }
@@ -374,9 +372,9 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = 0 };
             teams.Add(team);
 
-            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 0 };
-            project.Teams.Add(team);
-            projects.Add(project);
+            var portfolio = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 0 };
+            portfolio.UpdateFeatures([new  Feature(team, 18)]);
+            portfolios.Add(portfolio);
 
             var subject = CreateSubject();
 
@@ -384,7 +382,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem) { Id = 0 }],
                 Teams = [new TeamSettingDto(team) { Id = 1 }],
-                Projects = [new PortfolioSettingDto(project) { Id = 0 }],
+                Projects = [new PortfolioSettingDto(portfolio) { Id = 0 }],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -407,7 +405,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
 
                 Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
-                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(portfolio.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Update));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
             }
@@ -494,7 +492,7 @@ namespace Lighthouse.Backend.Tests.API
             workTrackingSystems.Clear();
 
             var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 1337 };
-            projects.Add(project);
+            portfolios.Add(project);
 
             var subject = CreateSubject();
 
@@ -533,16 +531,16 @@ namespace Lighthouse.Backend.Tests.API
 
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
-            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
-            project.Teams.Add(team);
-            projects.Add(project);
+            var portfolio = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            portfolio.UpdateFeatures([new Feature(team, 86)]);
+            portfolios.Add(portfolio);
 
             var subject = CreateSubject();
 
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
-                Projects = [new PortfolioSettingDto(project)],
+                Projects = [new PortfolioSettingDto(portfolio)],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -556,7 +554,7 @@ namespace Lighthouse.Backend.Tests.API
                 var validationResult = okResult.Value as ConfigurationValidationDto;
 
                 Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
-                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(portfolio.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Update));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.Empty);
             }
@@ -572,18 +570,18 @@ namespace Lighthouse.Backend.Tests.API
 
             var team2 = new Team { Id = 2, Name = "Another Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
-            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
-            project.Teams.Add(team);
-            project.OwningTeam = team2;
+            var portfolio = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            portfolio.UpdateFeatures([new Feature(team, 12)]);
+            portfolio.OwningTeam = team2;
 
-            projects.Add(project);
+            portfolios.Add(portfolio);
 
             var subject = CreateSubject();
 
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = [new WorkTrackingSystemConnectionDto(workTrackingSystem)],
-                Projects = [new PortfolioSettingDto(project)],
+                Projects = [new PortfolioSettingDto(portfolio)],
             };
 
             var response = subject.ValidateConfiguration(configuration);
@@ -597,7 +595,7 @@ namespace Lighthouse.Backend.Tests.API
                 var validationResult = okResult.Value as ConfigurationValidationDto;
 
                 Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
-                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(portfolio.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Owning Team Not Found"));
             }

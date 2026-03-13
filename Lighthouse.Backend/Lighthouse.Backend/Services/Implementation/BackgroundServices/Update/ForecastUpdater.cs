@@ -7,14 +7,13 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class ForecastUpdater : UpdateServiceBase<Portfolio>, IForecastUpdater
+    public class ForecastUpdater(
+        ILogger<ForecastUpdater> logger,
+        IServiceScopeFactory serviceScopeFactory,
+        IUpdateQueueService updateQueueService)
+        : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts),
+            IForecastUpdater
     {
-        public ForecastUpdater(
-            ILogger<ForecastUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
-            : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts)
-        {
-        }
-
         protected override RefreshSettings GetRefreshSettings()
         {
             throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
@@ -27,19 +26,19 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
-            var projectRepository = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
+            var portfolioRepo = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
 
-            var project = projectRepository.GetById(id);
-            if (project == null)
+            var portfolio = portfolioRepo.GetById(id);
+            if (portfolio == null)
             {
                 return;
             }
 
             var forecastService = serviceProvider.GetRequiredService<IForecastService>();
-            await forecastService.UpdateForecastsForProject(project);
+            await forecastService.UpdateForecastsForPortfolio(portfolio);
 
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-            await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
+            await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(portfolio);
         }
     }
 }

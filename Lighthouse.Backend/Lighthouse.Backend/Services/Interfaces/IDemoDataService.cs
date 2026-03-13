@@ -6,6 +6,6 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         IEnumerable<DemoDataScenario> GetAllScenarios();
 
-        Task LoadScenarios(params DemoDataScenario[] scenarios);
+        Task LoadScenarios(params DemoDataScenario[] scenariosToLoad);
     }
 }

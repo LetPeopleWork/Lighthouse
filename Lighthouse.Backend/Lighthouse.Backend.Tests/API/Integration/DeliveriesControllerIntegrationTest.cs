@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 WorkTrackingSystemConnection =  workTrackingSystemConnection,
             };
             
-            portfolio.Teams.Add(team);
+            portfolio.UpdateFeatures([new Feature(team, 12){ Name = "Feature", Order = "12" }]);
             
             var portfolioRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);

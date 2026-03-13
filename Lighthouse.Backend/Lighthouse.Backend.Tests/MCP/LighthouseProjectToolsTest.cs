@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
                 Assert.That(projectId, Is.EqualTo(project.Id));
                 Assert.That(projectName, Is.EqualTo(project.Name));
-                Assert.That(teamCount, Is.EqualTo(project.Teams.Count));
+                Assert.That(teamCount, Is.EqualTo(project.Teams.Count()));
                 Assert.That(featureCount, Is.EqualTo(project.Features.Count));
             }
         }
@@ -137,8 +137,9 @@ namespace Lighthouse.Backend.Tests.MCP
                 int teamId = Convert.ToInt32(teamToVerify.Id);
                 string teamName = Convert.ToString(teamToVerify.Name);
 
-                Assert.That(teamId, Is.EqualTo(project.Teams[0].Id));
-                Assert.That(teamName, Is.EqualTo(project.Teams[0].Name));
+                var fistTeam = project.Teams.First();
+                Assert.That(teamId, Is.EqualTo(fistTeam.Id));
+                Assert.That(teamName, Is.EqualTo(fistTeam.Name));
             }
         }
 
@@ -175,15 +176,16 @@ namespace Lighthouse.Backend.Tests.MCP
 
         private Portfolio CreateProjectWithTeams()
         {
-            var project = CreateProject();
+            var portfolio = CreateProject();
             var team = new Team
             {
                 Id = 1,
                 Name = "Development Team",
                 WorkTrackingSystemConnectionId = 1
             };
-            project.Teams.Add(team);
-            return project;
+            
+            portfolio.UpdateFeatures([new Feature(team, 12)]);
+            return portfolio;
         }
 
         private Portfolio CreateProjectWithFeaturesAndForecasts()
@@ -347,9 +349,9 @@ namespace Lighthouse.Backend.Tests.MCP
 
             var mockCycleTimePercentiles = new List<PercentileValue>
             {
-                new PercentileValue(50, 5),
-                new PercentileValue(70, 8),
-                new PercentileValue(85, 12)
+                new(50, 5),
+                new(70, 8),
+                new(85, 12)
             };
 
             var mockCycleTimeData = new List<Feature>
@@ -360,17 +362,17 @@ namespace Lighthouse.Backend.Tests.MCP
 
             var mockWipData = new RunChartData(new Dictionary<int, List<WorkItemBase>>
             {
-                { 0, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem() } },
-                { 15, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem(), new WorkItem(), new WorkItem() } },
-                { 30, new List<WorkItemBase> { new WorkItem(), new WorkItem() } }
+                { 0, [new WorkItem(), new WorkItem(), new WorkItem()] },
+                { 15, [new WorkItem(), new WorkItem(), new WorkItem(), new WorkItem(), new WorkItem()] },
+                { 30, [new WorkItem(), new WorkItem()] }
             });
 
             var mockThroughputData = new RunChartData(new Dictionary<int, List<WorkItemBase>>
             {
-                { 0, new List<WorkItemBase>() },
-                { 10, new List<WorkItemBase> { new WorkItem(), new WorkItem() } },
-                { 20, new List<WorkItemBase> { new WorkItem() } },
-                { 30, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem() } }
+                { 0, [] },
+                { 10, [new WorkItem(), new WorkItem()] },
+                { 20, [new WorkItem()] },
+                { 30, [new WorkItem(), new WorkItem(), new WorkItem()] }
             });
 
             projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
@@ -492,16 +494,14 @@ namespace Lighthouse.Backend.Tests.MCP
 
         private Portfolio CreateProjectWithTeamsAndFeatures()
         {
-            var project = CreateProject();
+            var portfolio = CreateProject();
             
             // Add teams
             var team1 = new Team { Id = 1, Name = "Development Team", WorkTrackingSystemConnectionId = 1 };
             var team2 = new Team { Id = 2, Name = "QA Team", WorkTrackingSystemConnectionId = 1 };
-            project.Teams.Add(team1);
-            project.Teams.Add(team2);
             
             // Add features
-            var feature1 = new Feature
+            var feature1 = new Feature(team1, 0)
             {
                 Id = 1,
                 Name = "Feature 1",
@@ -512,7 +512,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 Url = "https://example.com/feature/1"
             };
             
-            var feature2 = new Feature
+            var feature2 = new Feature([(team1, 0, 2), (team2, 0, 5)])
             {
                 Id = 2,
                 Name = "Feature 2",
@@ -520,13 +520,13 @@ namespace Lighthouse.Backend.Tests.MCP
                 State = "Done",
                 StateCategory = StateCategories.Done,
                 OwningTeam = "Development Team",
-                Url = "https://example.com/feature/2"
+                Url = "https://example.com/feature/2",
             };
             
-            project.Features.Add(feature1);
-            project.Features.Add(feature2);
+            portfolio.Features.Add(feature1);
+            portfolio.Features.Add(feature2);
             
-            return project;
+            return portfolio;
         }
 
         private Feature CreateFeatureWithCycleTime(int id, string name, int cycleTime)

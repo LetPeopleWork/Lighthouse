@@ -1,10 +1,17 @@
-﻿namespace Lighthouse.Backend.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Lighthouse.Backend.Models
 {
     public class Portfolio : WorkTrackingSystemOptionsOwner
     {
         public override List<string> WorkItemTypes { get; set; } = ["Epic"];
 
-        public List<Team> Teams { get; } = [];
+        public List<Team> Teams => Features
+            .SelectMany(f => f.FeatureWork)
+            .Select(fw => fw.Team)
+            .Where(t => t != null)
+            .DistinctBy(t => t.Id)
+            .ToList();
 
         public List<Feature> Features { get; } = [];
 
@@ -32,16 +39,6 @@
         {
             Features.Clear();
             Features.AddRange(features);
-
-            RefreshUpdateTime();
-        }
-
-        public void UpdateTeams(IEnumerable<Team> teams)
-        {
-            Teams.Clear();
-            Teams.AddRange(teams);
-
-            RefreshUpdateTime();
         }
 
         public IEnumerable<Feature> GetFeaturesToExtrapolate()

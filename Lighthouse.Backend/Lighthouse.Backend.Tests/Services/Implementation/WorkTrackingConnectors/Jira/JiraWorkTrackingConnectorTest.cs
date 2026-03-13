@@ -693,8 +693,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("project = SomethingThatDoesNotExist", false)]
         public async Task ValidateProjectSettings_ValidConnectionSettings_ReturnsTrueIfFeaturesAreFound(string query, bool expectedValue)
         {
-            var team = CreateTeam("project = LGHTHSDMO");
-            var portfolio = CreatePortfolio(query, team);
+            var portfolio = CreatePortfolio(query);
 
             var subject = CreateSubject();
 
@@ -756,12 +755,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private Portfolio CreatePortfolio(string query, params Team[] teams)
+        private Portfolio CreatePortfolio(string query)
         {
-            return CreatePortfolioWithAdditionalFields(query, [], teams);
+            return CreatePortfolioWithAdditionalFields(query, []);
         }
 
-        private Portfolio CreatePortfolioWithAdditionalFields(string query, List<AdditionalFieldDefinition> additionalFieldDefs, params Team[] teams)
+        private Portfolio CreatePortfolioWithAdditionalFields(string query, List<AdditionalFieldDefinition> additionalFieldDefs)
         {
             var portfolio = new Portfolio
             {
@@ -780,8 +779,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             portfolio.ToDoStates.Clear();
             portfolio.ToDoStates.Add("To Do");
-
-            portfolio.UpdateTeams(teams);
 
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
             workTrackingSystemConnection.AdditionalFieldDefinitions.AddRange(additionalFieldDefs);

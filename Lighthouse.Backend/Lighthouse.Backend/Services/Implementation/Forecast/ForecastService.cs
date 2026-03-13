@@ -7,27 +7,15 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
-    public class ForecastService : IForecastService
+    public class ForecastService(
+        IRandomNumberService randomNumberService,
+        ILogger<ForecastService> logger,
+        ITeamMetricsService teamMetricsService,
+        IRepository<Feature> featureRepository)
+        : IForecastService
     {
         // Read from Env Vars or settings in future?
         private readonly int trials = 10_000;
-
-        private readonly IRandomNumberService randomNumberService;
-        private readonly ILogger<ForecastService> logger;
-        private readonly ITeamMetricsService teamMetricsService;
-        private readonly IRepository<Feature> featureRepository;
-
-        public ForecastService(
-            IRandomNumberService randomNumberService,
-            ILogger<ForecastService> logger,
-            ITeamMetricsService teamMetricsService,
-            IRepository<Feature> featureRepository)
-        {
-            this.randomNumberService = randomNumberService;
-            this.logger = logger;
-            this.teamMetricsService = teamMetricsService;
-            this.featureRepository = featureRepository;
-        }
 
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
         {
@@ -73,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return fakeFeature.Forecast;
         }
 
-        public async Task UpdateForecastsForProject(Portfolio portfolio)
+        public async Task UpdateForecastsForPortfolio(Portfolio portfolio)
         {
             await UpdateForecastsForTeams(portfolio.Teams);
         }
@@ -82,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         {
             logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
-            var features = featureRepository.GetAll().Where(f => f.Teams.Any(t => teams.Contains(t))).ToList();
+            var features = featureRepository.GetAll().Where(f => f.Teams.Any(teams.Contains)).ToList();
 
             logger.LogInformation("Features with involved of those team are: {Features}", string.Join(",", features.Select(f => f.Name)));
 

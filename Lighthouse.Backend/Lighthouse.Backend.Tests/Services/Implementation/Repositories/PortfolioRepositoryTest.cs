@@ -7,12 +7,8 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class PortfolioRepositoryTest : IntegrationTestBase
+    public class PortfolioRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public PortfolioRepositoryTest() : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         public async Task GetProjectById_ProjectHasInvolvedTeams_LoadsCorrectlyFromDatabase()
         {
@@ -38,7 +34,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             feature.FeatureWork.Add(new FeatureWork(team, 12, 37, feature));
 
             project.Features.Add(feature);
-            project.UpdateTeams([team]);
 
             // Act
             subject.Add(project);
@@ -51,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Assert.That(foundProject, Is.EqualTo(project));
                 Assert.That(foundProject.Teams.ToList(), Has.Count.EqualTo(1));
                 Assert.That(foundProject.Teams.Single().WorkTrackingSystemConnection.Options, Has.Count.EqualTo(1));
-            };
+            }
         }
 
         [Test]
@@ -82,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             {
                 Assert.That(foundProject, Is.EqualTo(project));
                 Assert.That(foundProject.Features, Has.Count.EqualTo(1));
-            };
+            }
         }
 
         [Test]
@@ -114,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Assert.That(foundProject.OverrideRealChildCountStates, Has.Count.EqualTo(2));
                 Assert.That(foundProject.OverrideRealChildCountStates, Does.Contain("New"));
                 Assert.That(foundProject.OverrideRealChildCountStates, Does.Contain("AnalysisInProgress"));
-            };
+            }
         }
 
         private PortfolioRepository CreateSubject()

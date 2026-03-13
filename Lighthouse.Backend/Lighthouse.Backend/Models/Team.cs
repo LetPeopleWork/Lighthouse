@@ -2,7 +2,7 @@
 {
     public class Team : WorkTrackingSystemOptionsOwner
     {
-        public override List<string> WorkItemTypes { get; set; } = new List<string> { "User Story", "Bug" };
+        public override List<string> WorkItemTypes { get; set; } = ["User Story", "Bug"];
 
         public int FeatureWIP { get; set; } = 1;
 

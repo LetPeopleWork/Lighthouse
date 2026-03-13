@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await UpdateRemainingWorkForPortfolio(portfolio);
 
+            portfolio.RefreshUpdateTime();
+
             logger.LogInformation("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
         }
 
@@ -92,9 +94,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             
             ExtrapolateNotBrokenDownFeatures(portfolio);
 
-            var involvedTeams = GetInvolvedTeams(portfolio);
-            portfolio.UpdateTeams(involvedTeams);
-
             await featureRepository.Save();
 
             logger.LogInformation("Done Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
@@ -130,17 +129,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private static List<Team> GetInvolvedTeams(Portfolio portfolio)
-        {
-            var involvedTeams = portfolio.Features
-                .SelectMany(f => f.FeatureWork)
-                .Select(fw => fw.Team)
-                .DistinctBy(t => t.Id)
-                .ToList();
-
-            return involvedTeams;
-        }
-
         private void ExtrapolateNotBrokenDownFeatures(Portfolio portfolio)
         {
             foreach (var feature in portfolio.GetFeaturesToOverrideWithDefaultSize())
@@ -165,7 +153,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
-            var involvedTeams = GetInvolvedTeams(portfolio);
+            var involvedTeams = portfolio.Teams.ToList();
             
             var owningTeams = involvedTeams.Count > 0
                 ? involvedTeams
@@ -276,21 +264,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return buckets;
         }
 
-        private async Task RefreshFeatures(Portfolio project)
+        private async Task RefreshFeatures(Portfolio portfolio)
         {
-            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var features = new List<Feature>();
 
-            foreach (var feature in await workItemService.GetFeaturesForProject(project))
+            foreach (var feature in await workItemService.GetFeaturesForProject(portfolio))
             {
                 var featureFromDatabase = AddOrUpdateFeature(feature);
 
-                AddProjectToFeature(featureFromDatabase, project);
+                AddProjectToFeature(featureFromDatabase, portfolio);
                 features.Add(featureFromDatabase);
             }
 
-            project.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
+            portfolio.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
 
             await featureRepository.Save();
         }

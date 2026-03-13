@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API
     public class PortfolioController(
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
-        IPortfolioUpdater workItemUpdateService)
+        IPortfolioUpdater portfolioUpdater)
         : ControllerBase
     {
         [HttpGet]
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(CheckPortfolioConstraint = true)]
         public ActionResult UpdateFeaturesForPortfolio(int portfolioId)
         {
-            workItemUpdateService.TriggerUpdate(portfolioId);
+            portfolioUpdater.TriggerUpdate(portfolioId);
 
             return Ok();
         }

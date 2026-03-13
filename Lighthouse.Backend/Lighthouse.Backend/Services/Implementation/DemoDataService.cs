@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class DemoDataService : IDemoDataService
     {
-        private readonly List<DemoDataScenario> scenarios = new List<DemoDataScenario>();
+        private readonly List<DemoDataScenario> scenarios = [];
 
         private readonly IRepository<Portfolio> projectRepository;
         private readonly IRepository<Team> teamRepository;
@@ -32,29 +32,29 @@ namespace Lighthouse.Backend.Services.Implementation
             return scenarios;
         }
 
-        public async Task LoadScenarios(params DemoDataScenario[] scenarios)
+        public async Task LoadScenarios(params DemoDataScenario[] scenariosToLoad)
         {
             await ClearExistingData();
 
             var workTrackingSystemConnection = await AddDemoWorkTrackingSystemConnection();
-            var addedTeams = await AddTeamsForScenarios(scenarios, workTrackingSystemConnection);
+            await AddTeamsForScenarios(scenariosToLoad, workTrackingSystemConnection);
 
-            await AddProjectsForSceanrios(scenarios, addedTeams, workTrackingSystemConnection);
+            await AddProjectsForSceanrios(scenariosToLoad, workTrackingSystemConnection);
         }
 
-        private async Task AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenarios, List<Team> teams, WorkTrackingSystemConnection workTrackingSystemConnection)
+        private async Task AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var addedProjects = new List<string>();
 
-            foreach (var scenario in scenarios)
+            foreach (var scenario in scenariosToLoad)
             {
-                AddProjectsForScenario(teams, workTrackingSystemConnection, addedProjects, scenario);
+                AddPortfoliosForScenario(workTrackingSystemConnection, addedProjects, scenario);
             }
 
             await projectRepository.Save();
         }
 
-        private void AddProjectsForScenario(List<Team> teams, WorkTrackingSystemConnection workTrackingSystemConnection, List<string> addedProjects, DemoDataScenario scenario)
+        private void AddPortfoliosForScenario(WorkTrackingSystemConnection workTrackingSystemConnection, List<string> addedProjects, DemoDataScenario scenario)
         {
             var projectNames = scenario.Projects.Distinct();
 
@@ -66,19 +66,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 project.WorkTrackingSystemConnection = workTrackingSystemConnection;
                 project.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
 
-                var teamsForProject = teams.Where(t => scenario.Teams.Contains(t.Name)).ToList();
-                project.UpdateTeams(teamsForProject);
-
                 projectRepository.Add(project);
 
                 addedProjects.Add(projectName);
             }
         }
 
-        private async Task<List<Team>> AddTeamsForScenarios(IEnumerable<DemoDataScenario> scenarios, WorkTrackingSystemConnection workTrackingSystemConnection)
+        private async Task AddTeamsForScenarios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            var teams = new List<Team>();
-            var teamNames = scenarios.SelectMany(s => s.Teams).Distinct();
+            var teamNames = scenariosToLoad.SelectMany(s => s.Teams).Distinct();
 
             foreach (var teamName in teamNames)
             {
@@ -87,14 +83,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 team.WorkTrackingSystemConnection = workTrackingSystemConnection;
                 team.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
 
-                teams.Add(team);
-
                 teamRepository.Add(team);
             }
 
             await teamRepository.Save();
-
-            return teams;
         }
 
         private async Task<WorkTrackingSystemConnection> AddDemoWorkTrackingSystemConnection()

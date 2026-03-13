@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.MCP
                     {
                         p.Id,
                         p.Name,
-                        TeamCount = p.Teams.Count,
+                        TeamCount = p.Teams.Count(),
                         FeatureCount = p.Features.Count
                     }));
             }
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.MCP
                     project.UsePercentileToCalculateDefaultAmountOfWorkItems,
                     project.PercentileHistoryInDays,
                     project.DefaultWorkItemPercentile,
-                    TeamCount = project.Teams.Count,
+                    TeamCount = project.Teams.Count(),
                     FeatureCount = project.Features.Count,
                     project.UpdateTime
                 });

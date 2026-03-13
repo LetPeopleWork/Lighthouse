@@ -60,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var portfolio = CreatePortfolio(42, "My Portfolio");
-            portfolio.UpdateTeams([team]);
 
             var feature = CreateFeature(portfolio, team, 12);
 
@@ -83,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var portfolio = CreatePortfolio(42, "My Portfolio");
-            portfolio.UpdateTeams([team]);
 
             var feature1 = CreateFeature(portfolio, team, 12);
             var feature2 = CreateFeature(portfolio, team, 42);
@@ -107,13 +105,11 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
-            portfolio1.UpdateTeams([team]);
 
             var feature1 = CreateFeature(portfolio1, team, 12);
             var feature2 = CreateFeature(portfolio1, team, 42);
 
             var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
-            portfolio2.UpdateTeams([team]);
 
             var feature3 = CreateFeature(portfolio2, team, 5);
 
@@ -136,14 +132,12 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team1 = CreateTeam(1, "Numero Uno");
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
-            portfolio1.UpdateTeams([team1]);
 
             var feature1 = CreateFeature(portfolio1, team1, 12);
             var feature2 = CreateFeature(portfolio1, team1, 42);
 
             var team2 = CreateTeam(2, "Una Mas");
             var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
-            portfolio2.UpdateTeams([team2]);
 
             var feature3 = CreateFeature(portfolio2, team2, 5);
 
@@ -420,10 +414,10 @@ namespace Lighthouse.Backend.Tests.API
             return new Portfolio { Id = id, Name = name };
         }
 
-        private static Feature CreateFeature(Portfolio project, Team team, int remainingWork)
+        private static Feature CreateFeature(Portfolio portfolio, Team team, int remainingWork)
         {
             var feature = new Feature(team, remainingWork);
-            project.Features.Add(feature);
+            portfolio.Features.Add(feature);
 
             return feature;
         }

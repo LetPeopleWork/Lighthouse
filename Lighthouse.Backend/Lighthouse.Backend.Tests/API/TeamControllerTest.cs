@@ -69,14 +69,11 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(1, "Numero Uno");
 
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
-            portfolio1.UpdateTeams([team]);
 
             var feature1 = CreateFeature(portfolio1, team, 12);
             var feature2 = CreateFeature(portfolio1, team, 42);
 
             var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
-            portfolio2.UpdateTeams([team]);
-
 
             var feature3 = CreateFeature(portfolio2, team, 5);
 

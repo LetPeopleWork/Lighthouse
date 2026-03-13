@@ -6,22 +6,13 @@ using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
 namespace Lighthouse.Backend.Services.Implementation.TeamData
 { 
-    public class TeamDataService : ITeamDataService
+    public class TeamDataService(
+        ILogger<TeamDataService> logger,
+        ITeamMetricsService teamMetricsService,
+        IWorkItemService workItemService,
+        IForecastUpdater forecastUpdater)
+        : ITeamDataService
     {
-        private readonly ILogger<TeamDataService> logger;
-        private readonly ITeamMetricsService teamMetricsService;
-        private readonly IWorkItemService workItemService;
-        private readonly IForecastUpdater forecastUpdater;
-
-        public TeamDataService(
-            ILogger<TeamDataService> logger, ITeamMetricsService teamMetricsService, IWorkItemService workItemService, IForecastUpdater forecastUpdater)
-        {
-            this.logger = logger;
-            this.teamMetricsService = teamMetricsService;
-            this.workItemService = workItemService;
-            this.forecastUpdater = forecastUpdater;
-        }
-
         public async Task UpdateTeamData(Team team)
         {
             logger.LogInformation("Updating Team Data for {TeamName}", team.Name);
@@ -29,9 +20,9 @@ namespace Lighthouse.Backend.Services.Implementation.TeamData
             await workItemService.UpdateWorkItemsForTeam(team);
             await teamMetricsService.UpdateTeamMetrics(team);
 
-            foreach (var project in team.Portfolios)
+            foreach (var portfolio in team.Portfolios)
             {
-                forecastUpdater.TriggerUpdate(project.Id);
+                forecastUpdater.TriggerUpdate(portfolio.Id);
             }
 
             logger.LogInformation("Finished updating Team Data for {TeamName}", team.Name);

@@ -7,12 +7,8 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class TeamRepositoryTest : IntegrationTestBase
+    public class TeamRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public TeamRepositoryTest() : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         public async Task GetTeamById_ExistingId_RetunrsCorrectTeam()
         {
@@ -46,7 +42,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Name = "Portfolio",
                 WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "PortfolioConnection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps }
             };
-            portfolio.Teams.Add(team);
+            portfolio.UpdateFeatures([new Feature(team, 12) { Name = "Feature", Order = "12" }]);
+            
             DatabaseContext.Portfolios.Add(portfolio);
             await DatabaseContext.SaveChangesAsync();
 
