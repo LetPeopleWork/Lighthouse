@@ -45,6 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("377", "", null)]
         [TestCase("365", "371", null)]
         [TestCase("375", "279", "Custom.RemoteFeatureID")]
+        [TestCase("365", "", "Custom.RemoteFeatureID")]
         public async Task GetWorkItemsForTeam_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentFieldReference)
         {
             var subject = CreateSubject();

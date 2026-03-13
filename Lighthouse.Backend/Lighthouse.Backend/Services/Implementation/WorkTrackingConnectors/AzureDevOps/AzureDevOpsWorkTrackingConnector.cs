@@ -775,8 +775,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var parentReference =
                 workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId);
+            
+            if (!string.IsNullOrEmpty(parentReference))
+            {
+                return parentReference;
+            }
 
-            return string.IsNullOrEmpty(parentReference) ? parentReferences[workItem.ReferenceId] : parentReference;
+            return parentReferences.TryGetValue(workItem.ReferenceId, out var reference) ? reference : string.Empty;
         }
 
         private static string ExtractFieldValue(AdoWorkItem adoWorkItem, string fieldName)
