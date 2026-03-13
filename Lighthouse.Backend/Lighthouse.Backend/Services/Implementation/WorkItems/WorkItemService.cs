@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private static IEnumerable<Team> GetInvolvedTeams(Portfolio portfolio)
+        private static List<Team> GetInvolvedTeams(Portfolio portfolio)
         {
             var involvedTeams = portfolio.Features
                 .SelectMany(f => f.FeatureWork)
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
-            var involvedTeams = GetInvolvedTeams(portfolio).ToList();
+            var involvedTeams = GetInvolvedTeams(portfolio);
             
             var owningTeams = involvedTeams.Count > 0
                 ? involvedTeams
