@@ -215,6 +215,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        public async Task UpdateFeaturesForProject_NoWorkForAnyFeature_SplitsAcrossAllAvailableTeams()
+        {
+            var team1 = CreateTeam();
+            var team2 = CreateTeam();
+            
+            var portfolio = CreatePortfolio(team1, team2);
+            portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            var feature1 = new Feature { ReferenceId = "42" };
+            var feature2 = new Feature { ReferenceId = "12" };
+
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+
+            var subject = CreateSubject();
+            await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.Features, Has.Count.EqualTo(2));
+                
+                Assert.That(portfolio.Teams, Has.Count.EqualTo(2));
+
+                foreach (var feature in portfolio.Features)   
+                {
+                    Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                    Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);   
+                    
+                    Assert.That(feature.Teams.ToList(), Has.Count.EqualTo(2));
+                }
+            }
+        }
+
+        [Test]
         [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 80, 8)]
         [TestCase(new[] { 2, 4, 10, 3, 4, 5, 9, 7, 8, 7 }, 80, 8)]
         [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 120, 10)]
@@ -811,7 +844,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
             var parentFeature = new Feature { ReferenceId = "1886" };
 
-            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => null);
+            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> _) => null);
 
             SetupWorkForFeature(feature, 1, 0, team);
 
@@ -969,7 +1002,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             return team;
         }
 
-        private void AddAdditionalField(Portfolio portfolio, int id, string reference,
+        private static void AddAdditionalField(Portfolio portfolio, int id, string reference,
             string displayName)
         {
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(
@@ -981,12 +1014,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 });
         }
 
-        private Portfolio CreatePortfolio(params Team[] teams)
+        private Portfolio CreatePortfolio(params Team[] involvedTeams)
         {
-            return CreatePortfolio(DateTime.Now, teams);
+            return CreatePortfolio(DateTime.Now, involvedTeams);
         }
 
-        private Portfolio CreatePortfolio(DateTime lastUpdateTime, params Team[] teams)
+        private Portfolio CreatePortfolio(DateTime lastUpdateTime, params Team[] involvedTeams)
         {
             var portfolio = new Portfolio
             {
@@ -995,9 +1028,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             };
 
             portfolio.WorkItemTypes.Add("Feature");
-            portfolio.UpdateTeams(teams);
+            portfolio.UpdateTeams(involvedTeams);
 
-            foreach (var team in teams)
+            foreach (var team in involvedTeams)
             {
                 team.Portfolios.Add(portfolio);
             }

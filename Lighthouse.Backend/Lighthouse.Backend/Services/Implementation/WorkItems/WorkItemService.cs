@@ -89,8 +89,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             defaultWorkItemsBasedOnPercentile.Remove(portfolio.Id);
 
             RefreshRemainingWork(portfolio);
-            AutoUpdateInvolvedTeams(portfolio);
+            
             ExtrapolateNotBrokenDownFeatures(portfolio);
+
+            var involvedTeams = GetInvolvedTeams(portfolio);
+            portfolio.UpdateTeams(involvedTeams);
 
             await featureRepository.Save();
 
@@ -127,7 +130,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private static void AutoUpdateInvolvedTeams(Portfolio portfolio)
+        private static IEnumerable<Team> GetInvolvedTeams(Portfolio portfolio)
         {
             var involvedTeams = portfolio.Features
                 .SelectMany(f => f.FeatureWork)
@@ -135,7 +138,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 .DistinctBy(t => t.Id)
                 .ToList();
 
-            portfolio.UpdateTeams(involvedTeams);
+            return involvedTeams;
         }
 
         private void ExtrapolateNotBrokenDownFeatures(Portfolio portfolio)
@@ -162,8 +165,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
-            var owningTeams = portfolio.Teams.Count > 0
-                ? portfolio.Teams.ToList()
+            var involvedTeams = GetInvolvedTeams(portfolio).ToList();
+            
+            var owningTeams = involvedTeams.Count > 0
+                ? involvedTeams
                 : teamRepository.GetAll().ToList();
 
             if (portfolio.OwningTeam != null)
