@@ -125,6 +125,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var expectedTeam = new Team();
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+            
             var forecast = new HowManyForecast();
 
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(forecast);
@@ -238,7 +239,21 @@ namespace Lighthouse.Backend.Tests.API
                 EndDate = DateTime.Now.AddDays(30)
             };
 
-            var expectedForecast = new HowManyForecast();
+            var simulationResult = new Dictionary<int, int>
+            {
+                {9, 1 },
+                {3, 1 },
+                {7, 2 },
+                {5, 4 },
+                {4, 2 },
+                {6, 4 },
+                {2, 1 },
+                {8, 2 },
+                {0, 17 },
+                {1, 5 },
+            };
+
+            var expectedForecast = new HowManyForecast(simulationResult, 1);
 
             forecastServiceMock.Setup(x => x.PredictWorkItemCreation(expectedTeam, itemCreationPredictionInput.WorkItemTypes, itemCreationPredictionInput.StartDate, itemCreationPredictionInput.EndDate, 30))
                 .Returns(expectedForecast);
@@ -254,9 +269,19 @@ namespace Lighthouse.Backend.Tests.API
 
                 var prediction = okResult.Value as ManualForecastDto;
 
-                Assert.That(prediction.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(prediction.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(prediction.Likelihood, Is.Zero);
+
+                var forecasts = prediction.HowManyForecasts;
+                Assert.That(forecasts, Has.Count.EqualTo(4));                
+                Assert.That(forecasts[0].Value, Is.GreaterThan(forecasts[1].Value));
+                Assert.That(forecasts[1].Value, Is.GreaterThan(forecasts[2].Value));
+                Assert.That(forecasts[2].Value, Is.GreaterThan(forecasts[3].Value));
+                
+                Assert.That(forecasts[0].Probability, Is.EqualTo(95));
+                Assert.That(forecasts[1].Probability, Is.EqualTo(85));
+                Assert.That(forecasts[2].Probability, Is.EqualTo(70));
+                Assert.That(forecasts[3].Probability, Is.EqualTo(50));
             }
         }
 

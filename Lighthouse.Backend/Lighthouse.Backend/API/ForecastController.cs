@@ -1,12 +1,12 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace Lighthouse.Backend.API
 {
@@ -50,7 +50,12 @@ namespace Lighthouse.Backend.API
                 var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
 
                 var howManyForecast = forecastService.PredictWorkItemCreation(team, input.WorkItemTypes, input.StartDate, input.EndDate, timeToTargetDate);
-                itemCreationPrediction.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
+                
+                // We want a "X or *less*" forecast, thus we "invert" the usual percentiles, and then adjust the probability 
+                var forecastDtos = howManyForecast.CreateForecastDtos(50, 30, 15, 5);
+                forecastDtos.ForEach(f => f.Probability = 100 - f.Probability);
+                
+                itemCreationPrediction.HowManyForecasts.AddRange(forecastDtos.OrderByDescending(x => x.Probability));
 
                 return itemCreationPrediction;
             });
