@@ -105,7 +105,7 @@ jobs:
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
+          timeout 30 bash -c 'until curl --silent --fail --insecure http://localhost:5000; do sleep 1; done'
           echo "Server is ready!"
 
           cat lighthouse.log
@@ -116,7 +116,7 @@ jobs:
           echo "Uploading license file..."
           curl --insecure -X POST \
             -F "file=@license.json" \
-            https://localhost:5001/api/license/import
+            http://localhost:5000/api/license/import
           echo "License uploaded successfully!"
   
       - name: Run Playwright tests
@@ -124,7 +124,7 @@ jobs:
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
-          LIGHTHOUSEURL: https://localhost:5001
+          LIGHTHOUSEURL: http://localhost:5000
   
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         if: ${{ !cancelled() }}
