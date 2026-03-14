@@ -56,13 +56,22 @@ jobs:
           name: Lighthouse-linux-x64-${{ inputs.version }}
           path: ./Lighthouse/linux-x64
 
-      - name: Place sidecar binary for Tauri
+      - name: Place sidecar binary and resources for Tauri
         run: |
-          TARGET_TRIPLE="x86_64-unknown-linux-gnu"
-          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
-          SIDECAR_PATH="${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
-          cp ./Lighthouse/linux-x64 "${SIDECAR_PATH}"
-          chmod +x "${SIDECAR_PATH}"
+            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+            RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+            
+            mkdir -p "${SIDECAR_DIR}"
+            mkdir -p "${RESOURCES_DIR}"
+            
+            # Sidecar binary
+            cp ./Lighthouse/linux-x64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+            
+            # Everything else as resources
+            cp -r ./Lighthouse/linux-x64/. "${RESOURCES_DIR}/"
+            rm "${RESOURCES_DIR}/Lighthouse"  # remove the binary itself, it's already the sidecar
 
       - name: Build Tauri AppImage
         uses: tauri-apps/tauri-action@v0
