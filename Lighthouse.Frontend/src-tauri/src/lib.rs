@@ -1,4 +1,4 @@
-use tauri::{Manager, Emitter, Runtime};
+use tauri::{Manager, Emitter};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandEvent;
 use regex::Regex;
@@ -40,6 +40,8 @@ pub fn run() {
                     match event {
                         CommandEvent::Stdout(line) => {
                             let out = String::from_utf8_lossy(&line);
+
+                            println!("[RAW BACKEND]: {}", out);
                             
                             // Always print to the terminal for debugging
                             print!("{}", out);
