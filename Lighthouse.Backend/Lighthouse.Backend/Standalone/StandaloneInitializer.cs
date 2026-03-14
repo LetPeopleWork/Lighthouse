@@ -12,10 +12,14 @@ namespace Lighthouse.Backend.Standalone
                 return;
             }
 
-            var binaryDir = Path.GetDirectoryName(Environment.ProcessPath);
-            if (!string.IsNullOrEmpty(binaryDir))
+            var resourcesDir = Environment.GetEnvironmentVariable("LIGHTHOUSE_RESOURCES_DIR");
+            var workingDir = !string.IsNullOrEmpty(resourcesDir) && Directory.Exists(resourcesDir)
+                ? resourcesDir
+                : Path.GetDirectoryName(Environment.ProcessPath);
+
+            if (!string.IsNullOrEmpty(workingDir))
             {
-                Directory.SetCurrentDirectory(binaryDir);
+                Directory.SetCurrentDirectory(workingDir);
             }
 
             var appDataDir = GetAppDataDirectory();

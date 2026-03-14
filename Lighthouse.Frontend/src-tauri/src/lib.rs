@@ -7,11 +7,18 @@ pub fn run() {
         .setup(|app| {
             let shell = app.shell();
 
-            let sidecar = shell.sidecar("Lighthouse.Backend")
+            let sidecar = shell
+                .sidecar("Lighthouse.Backend")
                 .expect("failed to create sidecar command");
 
+            let resource_dir = app
+                .path()
+                .resource_dir()
+                .expect("failed to get resource dir");
+
             let (mut rx, _child) = sidecar
-                .args(["--Standalone=true"])
+                .env("Standalone", "true")
+                .env("LIGHTHOUSE_RESOURCES_DIR", resource_dir.to_str().unwrap())
                 .spawn()
                 .expect("failed to spawn backend sidecar");
 
