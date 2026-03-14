@@ -86,30 +86,6 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
 
-  # Linux standalone (Tauri AppImage)
-  package-linux-standalone:
-    needs: [version, packageapp]
-    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/ci_package-linux-standalone.yml
-    name: Package Linux Standalone
-    permissions:
-      actions: write
-    with:
-      fileversion: ${{ needs.version.outputs.fileversion }}
-      version: ${{ needs.version.outputs.version }}
-
-  # Windows standalone (Tauri NSIS + MSI)
-  package-win-standalone:
-    needs: [version, packageapp]
-    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/ci_package-win-standalone.yml
-    name: Package Windows Standalone
-    permissions:
-      actions: write
-    with:
-      fileversion: ${{ needs.version.outputs.fileversion }}
-      version: ${{ needs.version.outputs.version }}
-
   # Linux verification with EndToEnd tests
   verifysqlite:
     needs: [frontend, backend, e2e, packageapp, version]
@@ -134,10 +110,58 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
+
+  # Linux standalone (Tauri AppImage)
+  package-linux-standalone:
+    needs: [version, packageapp]
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    uses: ./.github/workflows/ci_package-linux-standalone.yml
+    name: Package Linux Standalone
+    permissions:
+      actions: write
+    with:
+      fileversion: ${{ needs.version.outputs.fileversion }}
+      version: ${{ needs.version.outputs.version }}
+
+  # Windows standalone (Tauri NSIS + MSI)
+  package-win-standalone:
+    needs: [version, packageapp]
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    uses: ./.github/workflows/ci_package-win-standalone.yml
+    name: Package Windows Standalone
+    permissions:
+      actions: write
+    with:
+      fileversion: ${{ needs.version.outputs.fileversion }}
+      version: ${{ needs.version.outputs.version }}
+  
+  # Windows signing and verification
+  codesign-windows:
+    needs: [version, package-win-standalone]
+    # Run version even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    uses: ./.github/workflows/ci_codesign-windows.yml
+    name: Code Sign Windows App
+    permissions:
+      actions: write
+    secrets: inherit
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  verifywindows:
+    needs: [codesign-windows, version]
+    # Run version even if some prior jobs were skipped, but not if they failed
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    uses: ./.github/workflows/ci_verifywindows.yml
+    name: Verify Windows App
+    permissions:
+      actions: read
+    with:
+      version: ${{ needs.version.outputs.version }}
   
   # macOS standalone (Tauri DMG)
   package-macos-standalone:
-    needs: [version, verifysqlite, verifypostgres]
+    needs: [version, packageapp]
     # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_package-macos-standalone.yml
@@ -160,30 +184,6 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
-  
-  # Windows signing and verification
-  codesign-windows:
-    needs: [version, verifysqlite, verifypostgres, package-win-standalone]
-    # Run version even if some prior jobs were skipped, but not if they failed
-    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/ci_codesign-windows.yml
-    name: Code Sign Windows App
-    permissions:
-      actions: write
-    secrets: inherit
-    with:
-      version: ${{ needs.version.outputs.version }}
-
-  verifywindows:
-    needs: [codesign-windows, version]
-    # Run version even if some prior jobs were skipped, but not if they failed
-    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/ci_verifywindows.yml
-    name: Verify Windows App
-    permissions:
-      actions: read
-    with:
-      version: ${{ needs.version.outputs.version }}
 
   release:
     needs: [version, docker, sbom, verifymacos, verifywindows, package-linux-standalone]

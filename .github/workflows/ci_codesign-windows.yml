@@ -13,9 +13,6 @@ jobs:
     timeout-minutes: 15
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
-    environment:
-      name: CodeSign-Windows
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

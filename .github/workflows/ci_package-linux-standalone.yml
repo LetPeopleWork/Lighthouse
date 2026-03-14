@@ -13,8 +13,12 @@ on:
 jobs:
   package-linux-standalone:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     permissions:
       actions: write
+
+    environment:
+      name: "Package and Sign"
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

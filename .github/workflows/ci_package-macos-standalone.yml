@@ -17,7 +17,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     environment:
-      name: CodeSign-macOS
+      name: "Package and Sign"
 
     steps:
       - name: Checkout repository
