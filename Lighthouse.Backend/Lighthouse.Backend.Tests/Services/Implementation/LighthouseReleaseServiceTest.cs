@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(newReleases, Has.Count.EqualTo(2));
                 Assert.That(newReleases[0].Name, Is.EqualTo("Release4"));
                 Assert.That(newReleases[1].Name, Is.EqualTo("Release3"));
-            };
+            }
             
         }
 
@@ -209,7 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(distributionInfo.VariantId, Is.EqualTo(expectedVariantId));
                 Assert.That(distributionInfo.UpdateOwner, Is.EqualTo(expectedUpdateOwner));
-            };
+            }
         }
 
         private LighthouseReleaseService CreateSubject()

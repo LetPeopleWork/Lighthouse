@@ -1,0 +1,13 @@
+{
+  "identifier": "default",
+  "description": "Default capability for the Lighthouse standalone app",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-spawn",
+    "shell:allow-execute",
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
+    "shell:default"
+  ]
+}
