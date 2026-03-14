@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Standalone
             if (!string.IsNullOrEmpty(workingDir))
             {
                 Directory.SetCurrentDirectory(workingDir);
+                builder.Environment.ContentRootPath = workingDir;
             }
 
             var appDataDir = GetAppDataDirectory();
