@@ -108,6 +108,12 @@ jobs:
             cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
             rm "${RESOURCES_DIR}/Lighthouse"
 
+      - name: Import code signing certificates
+        uses: apple-actions/import-codesign-certs@b610f78488812c1e56b20e6df63ec42d833f2d14
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
       - name: Build Tauri app (signed + notarized)
         uses: tauri-apps/tauri-action@v0
         env:
