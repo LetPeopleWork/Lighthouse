@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Distribution;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -62,6 +63,14 @@ namespace Lighthouse.Backend.API
         {
             var result = await lighthouseReleaseService.InstallUpdate();
             return Ok(result);
+        }
+
+        [HttpGet("distribution")]
+        [ProducesResponseType<DistributionInfo>(StatusCodes.Status200OK)]
+        public ActionResult<DistributionInfo> GetDistributionInfo()
+        {
+            var distributionInfo = lighthouseReleaseService.GetDistributionInfo();
+            return Ok(distributionInfo);
         }
     }
 }

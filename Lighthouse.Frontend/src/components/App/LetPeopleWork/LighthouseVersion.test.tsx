@@ -21,6 +21,7 @@ const mockVersionService: IVersionService = {
 	getNewReleases: mockGetNewReleases,
 	isUpdateSupported: mockIsUpdateSupported,
 	installUpdate: mockInstallUpdate,
+	getDistributionInfo: vi.fn(),
 };
 
 vi.mock("./LatestReleaseInformationDialog", () => ({

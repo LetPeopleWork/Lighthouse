@@ -1,0 +1,51 @@
+{
+  "$schema": "./distribution-contract.schema.json",
+  "version": "1.0",
+  "variants": [
+    {
+      "variantId": "windows.server",
+      "os": "windows",
+      "artifactNames": [
+        "Lighthouse-win-x64.zip"
+      ],
+      "updateOwner": "lighthouse-internal",
+      "description": "Windows server distribution — self-hosted, updated via Lighthouse internal updater."
+    },
+    {
+      "variantId": "windows.standalone",
+      "os": "windows",
+      "artifactNames": [
+        "Lighthouse-win-standalone-x64.exe",
+        "Lighthouse-win-standalone-x64.msi"
+      ],
+      "updateOwner": "tauri",
+      "description": "Windows standalone app — Tauri-packaged, updated via Tauri updater."
+    },
+    {
+      "variantId": "macos.standalone",
+      "os": "macos",
+      "artifactNames": [
+        "Lighthouse-macos-standalone.dmg",
+        "Lighthouse-macos-standalone.app.tar.gz"
+      ],
+      "updateOwner": "tauri",
+      "description": "macOS standalone app — Tauri-packaged, updated via Tauri updater. Sparkle/appcast removed."
+    },
+    {
+      "variantId": "linux.server",
+      "os": "linux",
+      "artifactNames": [
+        "Lighthouse-linux-x64.zip"
+      ],
+      "updateOwner": "lighthouse-internal",
+      "description": "Linux server distribution — self-hosted, updated via Lighthouse internal updater."
+    },
+    {
+      "variantId": "docker.server",
+      "os": "docker",
+      "artifactNames": [],
+      "updateOwner": "none",
+      "description": "Docker container image — no self-update; managed via container orchestration."
+    }
+  ]
+}

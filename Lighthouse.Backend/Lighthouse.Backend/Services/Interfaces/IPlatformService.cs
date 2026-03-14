@@ -13,5 +13,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         SupportedPlatform Platform { get; }
         
         bool IsDevEnvironment { get; }
+        
+        bool IsStandalone { get; }
     }
 }

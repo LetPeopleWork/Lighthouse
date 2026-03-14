@@ -1,5 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DistributionInfo } from "../../models/Distribution/DistributionInfo";
 import {
 	type ILighthouseRelease,
 	LighthouseRelease,
@@ -68,5 +69,18 @@ describe("VersionService", () => {
 		expect(newReleases[0].name).toEqual("Release 1");
 		expect(newReleases[1].name).toEqual("Release 2");
 		expect(mockedAxios.get).toHaveBeenCalledWith("/version/new");
+	});
+
+	it("should get distribution info", async () => {
+		const mockDistributionInfo: DistributionInfo = {
+			variantId: "windows.server",
+			updateOwner: "lighthouse-internal",
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: mockDistributionInfo });
+
+		const distributionInfo = await versionService.getDistributionInfo();
+
+		expect(distributionInfo).toEqual(mockDistributionInfo);
+		expect(mockedAxios.get).toHaveBeenCalledWith("/version/distribution");
 	});
 });

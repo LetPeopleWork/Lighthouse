@@ -1,3 +1,4 @@
+import type { DistributionInfo } from "../../models/Distribution/DistributionInfo";
 import {
 	type ILighthouseRelease,
 	LighthouseRelease,
@@ -11,6 +12,7 @@ export interface IVersionService {
 	getNewReleases(): Promise<LighthouseRelease[]>;
 	isUpdateSupported(): Promise<boolean>;
 	installUpdate(): Promise<boolean>;
+	getDistributionInfo(): Promise<DistributionInfo>;
 }
 
 export class VersionService extends BaseApiService {
@@ -49,6 +51,15 @@ export class VersionService extends BaseApiService {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<boolean>(
 				"/version/installUpdate",
+			);
+			return response.data;
+		});
+	}
+
+	async getDistributionInfo(): Promise<DistributionInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<DistributionInfo>(
+				"/version/distribution",
 			);
 			return response.data;
 		});

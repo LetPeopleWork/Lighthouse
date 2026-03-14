@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Distribution;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
@@ -13,5 +14,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         bool IsUpdateSupported();
 
         Task<bool> InstallUpdate();
+
+        DistributionInfo GetDistributionInfo();
     }
 }

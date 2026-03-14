@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Distribution;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -29,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(version));
-            };
+            }
         }
 
         [Test]
@@ -43,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(404));
                 Assert.That(actual.Value, Is.EqualTo("404"));
-            };
+            }
         }
 
         [Test]
@@ -59,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(isUpdateAvailable));
-            };
+            }
         }
 
         [Test]
@@ -82,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API
                 var newReleases = okResult.Value as IEnumerable<LighthouseRelease>;
 
                 Assert.That(newReleases, Does.Contain(lighthouseRelease));
-            };
+            }
         }
 
         [Test]
@@ -100,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -118,7 +119,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(isSupported));
-            };
+            }
         }
 
         [Test]
@@ -136,7 +137,24 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(installResult));
-            };
+            }
+        }
+
+        [Test]
+        public void GetDistributionInfo_ReturnsDistributionInfoFromService()
+        {
+            var expectedInfo = new DistributionInfo("windows.server", "lighthouse-internal");
+            lighthouseReleaseServiceMock.Setup(x => x.GetDistributionInfo()).Returns(expectedInfo);
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = subject.GetDistributionInfo();
+            var actual = response.Result as ObjectResult;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(actual.StatusCode, Is.EqualTo(200));
+                Assert.That(actual.Value, Is.EqualTo(expectedInfo));
+            }
         }
     }
 }

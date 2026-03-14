@@ -173,6 +173,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(isSupported, Is.EqualTo(expectedResult));
         }
 
+        [Test]
+        [TestCase(SupportedPlatform.Windows)]
+        [TestCase(SupportedPlatform.Linux)]
+        public void IsUpdateSupported_StandaloneMode_ReturnsFalse(SupportedPlatform platform)
+        {
+            platformServiceMock.SetupGet(x => x.IsStandalone).Returns(true);
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+
+            var subject = CreateSubject();
+
+            var isSupported = subject.IsUpdateSupported();
+
+            Assert.That(isSupported, Is.False);
+        }
+
+        [Test]
+        [TestCase(SupportedPlatform.Windows, false, "windows.server", "lighthouse-internal")]
+        [TestCase(SupportedPlatform.Windows, true, "windows.standalone", "tauri")]
+        [TestCase(SupportedPlatform.Linux, false, "linux.server", "lighthouse-internal")]
+        [TestCase(SupportedPlatform.MacOS, false, "macos.server", "none")]
+        [TestCase(SupportedPlatform.MacOS, true, "macos.standalone", "tauri")]
+        [TestCase(SupportedPlatform.Docker, false, "docker.server", "none")]
+        public void GetDistributionInfo_ReturnsCorrectVariantAndUpdateOwner(
+            SupportedPlatform platform, bool isStandalone, string expectedVariantId, string expectedUpdateOwner)
+        {
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+            platformServiceMock.SetupGet(x => x.IsStandalone).Returns(isStandalone);
+
+            var subject = CreateSubject();
+
+            var distributionInfo = subject.GetDistributionInfo();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(distributionInfo.VariantId, Is.EqualTo(expectedVariantId));
+                Assert.That(distributionInfo.UpdateOwner, Is.EqualTo(expectedUpdateOwner));
+            };
+        }
+
         private LighthouseReleaseService CreateSubject()
         {
             return new LighthouseReleaseService(githubServiceMock.Object, assemblyServiceMock.Object, platformServiceMock.Object, Mock.Of<ILogger<LighthouseReleaseService>>());

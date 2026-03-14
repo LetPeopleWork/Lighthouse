@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lighthouse Distribution Contract",
+  "description": "Machine-readable distribution contract defining all release variants, their artifact identity, and update ownership. Published as a GitHub Release asset and consumed by CI, runtime/UI, and the website.",
+  "type": "object",
+  "required": ["version", "variants"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version for this contract format.",
+      "const": "1.0"
+    },
+    "variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["variantId", "os", "artifactNames", "updateOwner"],
+        "properties": {
+          "variantId": {
+            "type": "string",
+            "description": "Stable identifier for this distribution variant.",
+            "enum": [
+              "windows.server",
+              "windows.standalone",
+              "macos.standalone",
+              "linux.server",
+              "docker.server"
+            ]
+          },
+          "os": {
+            "type": "string",
+            "enum": ["windows", "macos", "linux", "docker"]
+          },
+          "artifactNames": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Canonical release asset filenames for this variant."
+          },
+          "updateOwner": {
+            "type": "string",
+            "enum": ["lighthouse-internal", "tauri", "none"],
+            "description": "Which component owns the update/install lifecycle for this variant."
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of this variant."
+          }
+        }
+      }
+    }
+  }
+}

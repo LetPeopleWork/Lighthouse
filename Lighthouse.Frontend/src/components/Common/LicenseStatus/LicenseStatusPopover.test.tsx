@@ -31,6 +31,7 @@ describe("LicenseStatusPopover", () => {
 			getNewReleases: vi.fn(),
 			isUpdateSupported: vi.fn(),
 			installUpdate: vi.fn(),
+			getDistributionInfo: vi.fn(),
 		};
 
 		// Mock window.open

@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Distribution;
 using Lighthouse.Backend.Services.Interfaces;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -91,12 +92,43 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public bool IsUpdateSupported()
         {
-            if (platformService.Platform == SupportedPlatform.Docker || platformService.Platform == SupportedPlatform.MacOS)
+            if (platformService.IsStandalone || platformService.Platform == SupportedPlatform.Docker || platformService.Platform == SupportedPlatform.MacOS)
             {
                 return false;
             }
 
             return true;
+        }
+
+        public DistributionInfo GetDistributionInfo()
+        {
+            var variantId = GetVariantId();
+            var updateOwner = platformService.IsStandalone ? "tauri" : GetServerUpdateOwner();
+            return new DistributionInfo(variantId, updateOwner);
+        }
+
+        private string GetVariantId()
+        {
+            var mode = platformService.IsStandalone ? "standalone" : "server";
+
+            return platformService.Platform switch
+            {
+                SupportedPlatform.Windows => $"windows.{mode}",
+                SupportedPlatform.MacOS => $"macos.{mode}",
+                SupportedPlatform.Linux => $"linux.{mode}",
+                SupportedPlatform.Docker => "docker.server",
+                _ => $"unknown.{mode}",
+            };
+        }
+
+        private string GetServerUpdateOwner()
+        {
+            return platformService.Platform switch
+            {
+                SupportedPlatform.Docker => "none",
+                SupportedPlatform.MacOS => "none",
+                _ => "lighthouse-internal",
+            };
         }
 
         public async Task<bool> InstallUpdate()
