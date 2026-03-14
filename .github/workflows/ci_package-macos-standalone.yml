@@ -20,7 +20,7 @@ jobs:
       APPLE_ID: ${{ secrets.APPLE_ID }}
       APPLE_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_BUNDLE_ID }}
+      APPLE_SIGNING_IDENTITY: "Developer ID Application: LetPeopleWork GmbH (${{ secrets.APPLE_TEAM_ID }})"
 
     environment:
       name: "Package and Sign"
