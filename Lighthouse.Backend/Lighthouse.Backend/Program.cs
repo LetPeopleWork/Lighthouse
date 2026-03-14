@@ -32,7 +32,6 @@ using System.Globalization;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
-using Lighthouse.Backend.macOS;
 using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using System.Reflection;
@@ -40,6 +39,7 @@ using System.Text;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Standalone;
 
 namespace Lighthouse.Backend
 {
@@ -54,13 +54,11 @@ namespace Lighthouse.Backend
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
 
-                MacInitializer.InitializePaths(builder);
+                StandaloneInitializer.InitializePaths(builder);
 
                 ConfigureLogging(builder);
                 Log.Information("Starting up Lighthouse!");
                 Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
-
-                MacInitializer.InitializeUpdates();
 
                 RegisterServices(builder);
                 ConfigureHttps(builder);
