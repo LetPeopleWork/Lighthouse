@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.Services.Implementation
         public PlatformService(IHostEnvironment hostEnvironment, IConfiguration configuration)
         {
             IsDevEnvironment = hostEnvironment.IsDevelopment();
-            IsStandalone = configuration.GetValue<bool>("Standalone");
+            IsStandalone = Environment.GetEnvironmentVariable("Standalone") == "true";
             SetPlatform();
         }
         
