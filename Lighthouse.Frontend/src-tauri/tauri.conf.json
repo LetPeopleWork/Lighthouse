@@ -38,16 +38,6 @@
 		"macOS": {
 			"entitlements": "entitlements.plist",
 			"minimumSystemVersion": "10.15"
-		},
-		"nsis": {
-			"installMode": "perMachine",
-			"languages": ["English"],
-			"allowDowngrades": false,
-			"displayLanguageSelector": false,
-			"installerIcon": "icons/icon.ico",
-			"createDesktopShortcut": true,
-			"createStartMenuShortcut": true,
-			"compression": "lzma"
 		}
 	},
 	"plugins": {}
