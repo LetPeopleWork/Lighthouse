@@ -42,6 +42,45 @@ jobs:
             exit 1
           }
 
+
+      - name: Download signed standalone artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: Lighthouse-win-standalone-x64-${{ inputs.version }}
+          path: ./publish-standalone
+
+      - name: Verify standalone signatures
+        shell: powershell
+        run: |
+          $targets = @(
+            (Get-ChildItem .\publish-standalone -Filter "Lighthouse.exe"     | Select-Object -First 1).FullName,
+            (Get-ChildItem .\publish-standalone -Filter "*-setup.exe"        | Select-Object -First 1).FullName,
+            (Get-ChildItem .\publish-standalone -Filter "*.msi" -Exclude "*.msi.zip" | Select-Object -First 1).FullName
+          )
+
+          $failed = $false
+          foreach ($path in $targets) {
+            if (-not $path -or -not (Test-Path $path)) {
+              Write-Error "Expected file not found (check artifact contents)"
+              Get-ChildItem .\publish-standalone
+              exit 1
+            }
+
+            Write-Host "`nVerifying: $path"
+            $sig = Get-AuthenticodeSignature $path
+            Write-Host "  Status:  $($sig.Status)"
+            Write-Host "  Subject: $($sig.SignerCertificate.Subject)"
+            Write-Host "  Issuer:  $($sig.SignerCertificate.Issuer)"
+
+            if ($sig.Status -ne "Valid") {
+              Write-Error "Signature not valid for $path"
+              $failed = $true
+            }
+          }
+
+          if ($failed) { exit 1 }
+          Write-Host "`nAll standalone signatures OK"
+
       - name: Run Lighthouse (sqlite)
         shell: bash
         run: |
@@ -61,7 +100,7 @@ jobs:
           
           echo "Waiting for service to start..."
           while [ $elapsed -lt $timeout ]; do
-            if curl -k -s -f https://localhost:5001 > /dev/null 2>&1; then
+            if curl -k -s -f http://localhost:5000 > /dev/null 2>&1; then
               echo "Service is up!"
               exit 0
             fi

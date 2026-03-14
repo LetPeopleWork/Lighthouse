@@ -118,7 +118,7 @@ jobs:
         run: |
           end=$((SECONDS+30))
           while [ $SECONDS -lt $end ]; do
-            if curl --silent --fail --insecure https://localhost:5001; then
+            if curl --silent --fail --insecure http://localhost:5000; then
               echo "Service is up!"
               exit 0
             fi
