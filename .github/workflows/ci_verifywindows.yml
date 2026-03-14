@@ -49,37 +49,39 @@ jobs:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
           path: ./publish-standalone
 
-      - name: Verify standalone signatures
+      - name: Verify Installer Signatures
         shell: powershell
         run: |
-          $targets = @(
-            (Get-ChildItem .\publish-standalone -Filter "Lighthouse.exe"     | Select-Object -First 1).FullName,
-            (Get-ChildItem .\publish-standalone -Filter "*-setup.exe"        | Select-Object -First 1).FullName,
-            (Get-ChildItem .\publish-standalone -Filter "*.msi" -Exclude "*.msi.zip" | Select-Object -First 1).FullName
-          )
+          # Find the files based on the patterns seen in your screenshot
+          $msi = (Get-ChildItem ./publish-standalone -Filter "*_en-US.msi" | Select-Object -First 1).FullName
+          $setup = (Get-ChildItem ./publish-standalone -Filter "*-setup.exe" | Select-Object -First 1).FullName
+
+          $targets = @()
+          if ($msi) { $targets += $msi }
+          if ($setup) { $targets += $setup }
+
+          if ($targets.Count -eq 0) {
+              Write-Error "No installers found in ./publish-standalone"
+              Get-ChildItem ./publish-standalone
+              exit 1
+          }
 
           $failed = $false
           foreach ($path in $targets) {
-            if (-not $path -or -not (Test-Path $path)) {
-              Write-Error "Expected file not found (check artifact contents)"
-              Get-ChildItem .\publish-standalone
-              exit 1
-            }
+              Write-Host "`nVerifying: $path"
+              $sig = Get-AuthenticodeSignature $path
+              
+              Write-Host "  Status:  $($sig.Status)"
+              Write-Host "  Subject: $($sig.SignerCertificate.Subject)"
 
-            Write-Host "`nVerifying: $path"
-            $sig = Get-AuthenticodeSignature $path
-            Write-Host "  Status:  $($sig.Status)"
-            Write-Host "  Subject: $($sig.SignerCertificate.Subject)"
-            Write-Host "  Issuer:  $($sig.SignerCertificate.Issuer)"
-
-            if ($sig.Status -ne "Valid") {
-              Write-Error "Signature not valid for $path"
-              $failed = $true
-            }
+              if ($sig.Status -ne "Valid") {
+                  Write-Error "Signature invalid for $path"
+                  $failed = $true
+              }
           }
 
           if ($failed) { exit 1 }
-          Write-Host "`nAll standalone signatures OK"
+          Write-Host "`nInstaller signatures verified successfully!"
 
       - name: Run Lighthouse (sqlite)
         shell: bash

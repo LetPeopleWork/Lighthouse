@@ -91,6 +91,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ""
+          APP_VERSION: ${{ inputs.fileversion }}
         with:
           projectPath: ./Lighthouse.Frontend
 
