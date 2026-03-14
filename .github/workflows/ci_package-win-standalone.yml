@@ -73,11 +73,11 @@ jobs:
         shell: bash
         run: |
             TARGET_FILE="Lighthouse.Frontend/src-tauri/tauri.conf.json"
-            
             if [ -f "$TARGET_FILE" ]; then
-            # Update the version and overwrite the original file
-            jq '.version = "${{ inputs.fileversion }}"' "$TARGET_FILE" > tmp.json && mv tmp.json "$TARGET_FILE"
-            echo "Successfully updated version to ${{ inputs.fileversion }} in $TARGET_FILE"
+            FULL_VERSION="${{ inputs.fileversion }}"
+            SEMVER=$(echo "$FULL_VERSION" | awk -F'.' '{print $1"."$2"."$3$4}')
+            jq --arg v "$SEMVER" '.version = $v' "$TARGET_FILE" > tmp.json && mv tmp.json "$TARGET_FILE"
+            echo "Successfully updated version to $SEMVER in $TARGET_FILE"
             else
             echo "Error: $TARGET_FILE not found!"
             exit 1
