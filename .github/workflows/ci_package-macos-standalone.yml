@@ -114,13 +114,26 @@ jobs:
             cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
             rm "${RESOURCES_DIR}/Lighthouse"
 
+      - name: Update Tauri Version
+        shell: bash
+        run: |
+            TARGET_FILE="Lighthouse.Frontend/src-tauri/tauri.conf.json"
+            
+            if [ -f "$TARGET_FILE" ]; then
+            # Update the version and overwrite the original file
+            jq '.version = "${{ inputs.fileversion }}"' "$TARGET_FILE" > tmp.json && mv tmp.json "$TARGET_FILE"
+            echo "Successfully updated version to ${{ inputs.fileversion }} in $TARGET_FILE"
+            else
+            echo "Error: $TARGET_FILE not found!"
+            exit 1
+            fi
+
       - name: Build Tauri app (signed + notarized)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APP_VERSION: ${{ inputs.fileversion }}
         with:
           projectPath: ./Lighthouse.Frontend
           args: --target universal-apple-darwin
