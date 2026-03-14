@@ -123,13 +123,13 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
   
-  # macOS signing and verification
-  codesign-macos:
+  # macOS standalone (Tauri DMG)
+  package-macos-standalone:
     needs: [version, verifysqlite, verifypostgres]
     # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/ci_codesign-macos.yml
-    name: Code Sign macOS App
+    uses: ./.github/workflows/ci_package-macos-standalone.yml
+    name: Package macOS Standalone
     permissions:
       actions: write
     with:
@@ -138,7 +138,7 @@ jobs:
     secrets: inherit
 
   verifymacos:
-    needs: [codesign-macos, version]
+    needs: [package-macos-standalone, version]
     # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_verifymacos.yml
@@ -147,7 +147,6 @@ jobs:
       actions: read
     with:
       version: ${{ needs.version.outputs.version }}
-      submission_id: ${{ needs.codesign-macos.outputs.submission_id }}
     secrets: inherit
   
   # Windows signing and verification

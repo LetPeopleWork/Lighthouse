@@ -34,7 +34,11 @@
 			"icons/icon.png"
 		],
 		"resources": ["resources/**/*"],
-		"externalBin": ["binaries/Lighthouse.Backend"]
+		"externalBin": ["binaries/Lighthouse.Backend"],
+		"macOS": {
+			"entitlements": "entitlements.plist",
+			"minimumSystemVersion": "10.15"
+		}
 	},
 	"plugins": {}
 }

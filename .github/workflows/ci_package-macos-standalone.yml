@@ -1,0 +1,152 @@
+name: Package macOS Standalone (Tauri)
+
+on:
+  workflow_call:
+    inputs:
+      fileversion:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  package-macos-standalone:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    environment:
+      name: CodeSign-macOS
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602
+        with:
+          dotnet-version: '10'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+
+      - name: Install Rust stable with universal targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Publish .NET backend for macOS targets
+        run: |
+          dotnet publish -c Release -r osx-x64 --self-contained \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfContained=true \
+            -p:Version=${{ inputs.fileversion }} \
+            -o ./publish/osx-x64 \
+            ./Lighthouse.Backend/Lighthouse.Backend
+
+          dotnet publish -c Release -r osx-arm64 --self-contained \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfContained=true \
+            -p:Version=${{ inputs.fileversion }} \
+            -o ./publish/osx-arm64 \
+            ./Lighthouse.Backend/Lighthouse.Backend
+
+      - name: Create universal binary
+        run: |
+          mkdir -p ./publish/osx-universal
+
+          # Merge single-file binaries into universal
+          lipo -create \
+            ./publish/osx-x64/Lighthouse \
+            ./publish/osx-arm64/Lighthouse \
+            -output ./publish/osx-universal/Lighthouse
+
+          # Copy remaining files from x64 build (appsettings, wwwroot, etc.)
+          cp -R ./publish/osx-x64/* ./publish/osx-universal/
+
+          chmod +x ./publish/osx-universal/Lighthouse
+
+      - name: Remove development settings
+        run: rm -f ./publish/osx-universal/appsettings.Development.json
+
+      - name: Place sidecar binary and resources for Tauri
+        run: |
+          TARGET_TRIPLE="universal-apple-darwin"
+          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+          RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+
+          mkdir -p "${SIDECAR_DIR}"
+          mkdir -p "${RESOURCES_DIR}"
+
+          # Sidecar binary (universal)
+          cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+
+          # Everything else as resources
+          cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
+          rm "${RESOURCES_DIR}/Lighthouse"  # remove the binary itself, it's already the sidecar
+
+      - name: Build Tauri app (signed + notarized)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ""
+        with:
+          projectPath: ./Lighthouse.Frontend
+          args: --target universal-apple-darwin
+
+      - name: Find and rename artifacts
+        run: |
+          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/universal-apple-darwin/release/bundle"
+
+          # Find DMG
+          DMG=$(find "$BUNDLE_DIR/dmg" -name "*.dmg" | head -1)
+          if [ -z "$DMG" ]; then
+            echo "ERROR: No DMG found in Tauri build output"
+            ls -laR "$BUNDLE_DIR/" || true
+            exit 1
+          fi
+          echo "Found DMG: ${DMG}"
+          cp "${DMG}" "./Lighthouse-${{ inputs.version }}.dmg"
+
+          # Find .app and create signed zip with ditto (preserves code signatures)
+          APP_DIR=$(find "$BUNDLE_DIR/macos" -name "*.app" -type d | head -1)
+          if [ -z "$APP_DIR" ]; then
+            echo "ERROR: No .app found in Tauri build output"
+            ls -laR "$BUNDLE_DIR/" || true
+            exit 1
+          fi
+          echo "Found .app: ${APP_DIR}"
+          ditto -c -k --keepParent "$APP_DIR" "./Lighthouse-${{ inputs.version }}.app.zip"
+
+      - name: Upload signed DMG artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: Lighthouse-osx-dmg-${{ inputs.version }}
+          path: ./Lighthouse-${{ inputs.version }}.dmg
+
+      - name: Upload signed app zip artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: Lighthouse-osx-app-${{ inputs.version }}
+          path: ./Lighthouse-${{ inputs.version }}.app.zip

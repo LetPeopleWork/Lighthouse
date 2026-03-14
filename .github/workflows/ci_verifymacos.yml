@@ -7,8 +7,9 @@ on:
         required: true
         type: string
       submission_id:
-        required: true
+        required: false
         type: string
+        default: ''
 
 jobs:
   verifymacos:
@@ -70,6 +71,7 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
 
       - name: Retrieve notarization info
+        if: inputs.submission_id != ''
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
@@ -77,11 +79,6 @@ jobs:
         run: |
           SUBMISSION_ID="${{ inputs.submission_id }}"
           echo "Using submission id: $SUBMISSION_ID"
-
-          if [ -z "$SUBMISSION_ID" ]; then
-            echo "Error: submission id missing"
-            exit 1
-          fi
 
           xcrun notarytool info "$SUBMISSION_ID" \
             --apple-id "$APPLE_ID" \

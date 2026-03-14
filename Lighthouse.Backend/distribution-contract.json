@@ -25,11 +25,11 @@
       "variantId": "macos.standalone",
       "os": "macos",
       "artifactNames": [
-        "Lighthouse-macos-standalone.dmg",
-        "Lighthouse-macos-standalone.app.tar.gz"
+        "Lighthouse-osx.dmg",
+        "Lighthouse-osx.app.zip"
       ],
       "updateOwner": "tauri",
-      "description": "macOS standalone app — Tauri-packaged, updated via Tauri updater. Sparkle/appcast removed."
+      "description": "macOS standalone app — Tauri-packaged, signed and notarized. Updated via Tauri updater."
     },
     {
       "variantId": "linux.server",
