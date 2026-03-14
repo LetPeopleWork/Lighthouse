@@ -1,3 +1,4 @@
+use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
