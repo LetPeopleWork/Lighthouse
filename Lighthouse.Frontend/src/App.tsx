@@ -3,6 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { useTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
+import { useEffect, useState } from "react";
 import {
 	Navigate,
 	Route,
@@ -26,13 +27,13 @@ import {
 	type IApiServiceContext,
 } from "./services/Api/ApiServiceContext";
 import { TerminologyProvider } from "./services/TerminologyContext";
+import { hasTauriBackendUrl, isTauriEnv } from "./utils/tauri";
 
-// Create a QueryClient instance with optimized defaults
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
-			staleTime: 1000 * 60 * 5, // 5 minutes default stale time
-			gcTime: 1000 * 60 * 30, // 30 minutes garbage collection time
+			staleTime: 1000 * 60 * 5,
+			gcTime: 1000 * 60 * 30,
 			retry: 2,
 			refetchOnWindowFocus: false,
 			refetchOnMount: true,
@@ -51,10 +52,114 @@ const PortfolioEditRedirect: React.FC = () => {
 	return <Navigate to={`/portfolios/${id}/settings`} replace />;
 };
 
+const initTauriListener = async (
+	onReady: () => void,
+): Promise<(() => void) | undefined> => {
+	try {
+		const { listen } = await import("@tauri-apps/api/event");
+		return await listen<string>("backend-ready", () => {
+			setTimeout(onReady, 200);
+		});
+	} catch (e) {
+		console.error("Failed to initialize Tauri event listener:", e);
+		onReady();
+		return undefined;
+	}
+};
+
 const App: React.FC = () => {
 	const theme = useTheme();
 	const apiServices: IApiServiceContext = getApiServices();
 
+	// --- 1. Splashscreen State ---
+	const [isBackendReady, setIsBackendReady] = useState(false);
+
+	useEffect(() => {
+		if (!isTauriEnv() || hasTauriBackendUrl()) {
+			setIsBackendReady(true);
+			return;
+		}
+
+		let unlistenFn: (() => void) | undefined;
+
+		initTauriListener(() => setIsBackendReady(true)).then((unlisten) => {
+			unlistenFn = unlisten;
+		});
+
+		return () => unlistenFn?.();
+	}, []);
+
+	// --- 2. Splashscreen UI ---
+	if (!isBackendReady) {
+		return (
+			<Box
+				sx={{
+					height: "100vh",
+					width: "100vw",
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					bgcolor: theme.palette.background.default,
+					color: theme.palette.text.secondary,
+				}}
+			>
+				<CssBaseline />
+				{/* Add a nice lighthouse icon or spinner here */}
+				<Box
+					component="img"
+					src="/icons/icon-512x512.png"
+					alt="Lighthouse Logo"
+					sx={{
+						width: 120,
+						height: 120,
+						mb: 4,
+						// Adding a subtle breathing animation
+						animation: "pulse 2.5s ease-in-out infinite",
+						filter: "drop-shadow(0px 0px 20px rgba(0,0,0,0.2))",
+					}}
+				/>
+
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						gap: 1,
+					}}
+				>
+					<Box
+						sx={{
+							fontWeight: 600,
+							fontSize: "1.2rem",
+							letterSpacing: "0.1rem",
+							color: theme.palette.text.primary,
+						}}
+					>
+						Lighthouse by LetPeopleWork
+					</Box>
+					<Box
+						sx={{
+							fontSize: "0.85rem",
+							color: theme.palette.text.secondary,
+							opacity: 0.8,
+						}}
+					>
+						Sorting the Poker Cards...
+					</Box>
+				</Box>
+				<style>{`
+                    @keyframes pulse {
+                        0% { opacity: 0.4; }
+                        50% { opacity: 1; }
+                        100% { opacity: 0.4; }
+                    }
+                `}</style>
+			</Box>
+		);
+	}
+
+	// --- 3. Main App UI ---
 	return (
 		<QueryClientProvider client={queryClient}>
 			<Router>
@@ -66,6 +171,9 @@ const App: React.FC = () => {
 								bgcolor: theme.palette.background.default,
 								color: theme.palette.text.primary,
 								transition: "background-color 0.3s ease, color 0.3s ease",
+								minHeight: "100vh", // Ensure container fills screen
+								display: "flex",
+								flexDirection: "column",
 							}}
 						>
 							<CssBaseline />
@@ -77,6 +185,7 @@ const App: React.FC = () => {
 									bgcolor: theme.palette.background.default,
 									pt: 2,
 									pb: 4,
+									flex: 1, // Push footer to bottom
 								}}
 							>
 								<Routes>

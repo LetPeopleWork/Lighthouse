@@ -12,6 +12,8 @@ mkdir -p "$RESOURCES_DIR"
 echo "Building .NET Backend..."
 dotnet publish ../Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj \
     -c Release \
+    -p:PublishSingleFile=true \
+    -p:IncludeNativeLibrariesForSelfExtract=true \
     -r linux-x64 \
     --self-contained true \
     -o ./temp_publish

@@ -2,25 +2,75 @@ import axios, { type AxiosInstance } from "axios";
 import { Feature, type IFeature } from "../../models/Feature";
 import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { type ITeam, Team } from "../../models/Team/Team";
+import {
+	createBackendReadyPromise,
+	getTauriBackendUrl,
+	isTauriEnv,
+} from "../../utils/tauri";
 import { ApiError } from "./ApiError";
+
+// Module-level — stable across all instances, no constructor async needed
+const { promise: backendReadyPromise, resolve: resolveBackendReady } =
+	createBackendReadyPromise();
+
+// Starts listening for the Tauri backend-ready event, or resolves immediately
+const initTauriDynamicPort = async (
+	onReady: (url: string) => void,
+): Promise<void> => {
+	if (!isTauriEnv()) {
+		resolveBackendReady();
+		return;
+	}
+
+	try {
+		const { listen } = await import("@tauri-apps/api/event");
+		await listen<string>("backend-ready", (event) => {
+			onReady(event.payload);
+			resolveBackendReady();
+		});
+	} catch (err) {
+		console.error("Failed to initialize Tauri listener", err);
+	}
+};
+
+let tauriInitialized = false;
+
+const setupBackendUrl = (apiService: AxiosInstance): void => {
+	const savedUrl = getTauriBackendUrl();
+
+	if (savedUrl) {
+		resolveBackendReady();
+		return;
+	}
+
+	if (tauriInitialized) return;
+	tauriInitialized = true;
+
+	initTauriDynamicPort((detectedUrl) => {
+		const fullUrl = `${detectedUrl}/api`;
+		globalThis.sessionStorage.setItem("TAURI_BACKEND_URL", fullUrl);
+		apiService.defaults.baseURL = fullUrl;
+		console.log(`[BaseApiService] 🚀 Backend Port Synced: ${fullUrl}`);
+	});
+};
 
 export class BaseApiService {
 	protected apiService: AxiosInstance;
 
 	constructor() {
-		let baseUrl = "/api";
-		if (import.meta.env.VITE_API_BASE_URL !== undefined) {
-			baseUrl = import.meta.env.VITE_API_BASE_URL;
-		}
+		const savedUrl = getTauriBackendUrl();
+		const baseUrl = savedUrl ?? import.meta.env.VITE_API_BASE_URL ?? "/api";
 
-		this.apiService = axios.create({
-			baseURL: baseUrl,
-		});
+		this.apiService = axios.create({ baseURL: baseUrl });
+
+		setupBackendUrl(this.apiService);
 	}
 
 	protected async withErrorHandling<T>(
 		asyncFunction: () => Promise<T>,
 	): Promise<T> {
+		await backendReadyPromise;
+
 		try {
 			return await asyncFunction();
 		} catch (error) {
@@ -34,40 +84,26 @@ export class BaseApiService {
 
 	private static createApiErrorFromAxios(err: unknown): ApiError | null {
 		if (!axios.isAxiosError(err)) return null;
-		const error = err;
-		const status = error.response?.status ?? "UNKNOWN";
-		let message = "An error occurred";
-		if (error.response) {
-			const data: unknown = error.response.data;
-			if (
-				data &&
-				typeof data === "object" &&
-				"message" in (data as Record<string, unknown>)
-			) {
-				interface HasMessage {
-					message?: unknown;
-				}
 
-				const messageValue = (data as HasMessage).message;
-				message = typeof messageValue === "string" ? messageValue : "";
-			} else if (data && typeof data === "string") {
-				message = data;
-			}
+		const status = err.response?.status ?? "UNKNOWN";
+		const data: unknown = err.response?.data;
+		let message = "An error occurred";
+
+		if (data && typeof data === "object" && "message" in data) {
+			const { message: msg } = data as { message?: unknown };
+			message = typeof msg === "string" ? msg : message;
+		} else if (typeof data === "string") {
+			message = data;
+		} else {
+			message = err.message ?? String(status);
 		}
 
-		if (!message || message.length === 0)
-			message = error.message ?? String(status);
-
 		console.error("API Error:", status, message);
-
 		return new ApiError(status, message);
 	}
 
 	protected static deserializeTeam(item: ITeam) {
-		if (item == null) {
-			return null;
-		}
-
+		if (item == null) return null;
 		return Team.fromBackend(item);
 	}
 
@@ -76,8 +112,6 @@ export class BaseApiService {
 	}
 
 	protected static deserializeFeatures(featureData: IFeature[]): Feature[] {
-		return featureData.map((feature: IFeature) => {
-			return Feature.fromBackend(feature);
-		});
+		return featureData.map((feature: IFeature) => Feature.fromBackend(feature));
 	}
 }

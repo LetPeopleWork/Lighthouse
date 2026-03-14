@@ -45,55 +45,79 @@ namespace Lighthouse.Backend
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
+
+            // Check if we are running as a Tauri Sidecar
+            var isStandalone = Environment.GetEnvironmentVariable("Standalone") == "true";
 
             try
             {
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
 
-                StandaloneInitializer.InitializePaths(builder);
+                if (isStandalone)
+                {
+                    StandaloneInitializer.InitializePaths(builder);
+                }
 
                 ConfigureLogging(builder);
-                Log.Information("Starting up Lighthouse!");
+                Log.Information("Starting up Lighthouse! Standalone Mode: {IsStandalone}", isStandalone);
                 Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
 
                 RegisterServices(builder);
-                ConfigureHttps(builder);
+               
+                if (!isStandalone)
+                {
+                    ConfigureHttps(builder);
+                }
+
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
                 var mcpFeature = TryGetOptionalFeature(builder);
-
                 ConfigureOptionalServices(builder, mcpFeature);
 
                 var app = builder.Build();
                 ConfigureApp(app, mcpFeature);
 
-                // Start the application in the background
-                _ = Task.Run(async () =>
+                if (isStandalone)
                 {
-                    await app.StartAsync();
+                    // Register the banner to print once the server is actually up
+                    app.Lifetime.ApplicationStarted.Register(() =>
+                    {
+                        PrintSystemInfo(app, builder);
+                    });
 
-                    // Wait a bit for the server to be fully ready
-                    await Task.Delay(500);
+                    Log.Information("Backend is ready. Starting web host...");
 
-                    // Print system info after startup
-                    PrintSystemInfo(app, builder);
-                });
+                    // This is the CRITICAL change: await the blocking run call
+                    await app.RunAsync();
+                }
+                else
+                {
+                    // Standard dev/production mode logic
+                    _ = Task.Run(async () =>
+                    {
+                        await app.StartAsync();
+                        await Task.Delay(500);
+                        PrintSystemInfo(app, builder);
+                    });
 
-                // Wait for shutdown signal
-                app.WaitForShutdown();
+                    await app.WaitForShutdownAsync();
+                }
             }
             catch (Exception ex)
             {
+                // Vital for sidecar debugging: ensure the error hits StdErr
+                await Console.Error.WriteLineAsync($"FATAL: {ex.Message}");
                 Log.Fatal(ex, "Application terminated unexpectedly");
+                Environment.Exit(1); // Force non-zero exit code on failure
             }
             finally
             {
-                Log.CloseAndFlush();
+                await Log.CloseAndFlushAsync();
             }
         }
 
@@ -312,7 +336,7 @@ namespace Lighthouse.Backend
 
             // MCP Resources
             builder.Services.AddScoped<LighthouseResources>();
-            
+
             // Seeding Services - Register in order they should run
             builder.Services.AddScoped<ISeeder, AppSettingSeeder>();
             builder.Services.AddScoped<ISeeder, OptionalFeatureSeeder>();
@@ -419,7 +443,7 @@ namespace Lighthouse.Backend
 
             logger.LogInformation("Migrating Database");
             context.Database.Migrate();
-            
+
             logger.LogInformation("Seeding Database");
             SeedDatabase(scope.ServiceProvider);
         }
@@ -427,13 +451,13 @@ namespace Lighthouse.Backend
         private static void SeedDatabase(IServiceProvider serviceProvider)
         {
             var seeders = serviceProvider.GetServices<ISeeder>();
-    
+
             foreach (var seeder in seeders)
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
         }
-        
+
         private static void ConfigureLogging(WebApplicationBuilder builder)
         {
             var fileSystemService = new FileSystemService();
@@ -442,8 +466,14 @@ namespace Lighthouse.Backend
 
             builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
 
+            var readerOptions = new ConfigurationReaderOptions(
+                typeof(FileLoggerConfigurationExtensions).Assembly,
+                typeof(ConsoleLoggerConfigurationExtensions).Assembly,
+                typeof(Serilog.Templates.ExpressionTemplate).Assembly
+            );
+
             var logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration, new ConfigurationReaderOptions(ConfigurationAssemblySource.AlwaysScanDllFiles))
+                .ReadFrom.Configuration(builder.Configuration, readerOptions)
                 .MinimumLevel.ControlledBy(serilogConfiguration.LoggingLevelSwitch)
                 .Enrich.FromLogContext()
                 .CreateLogger();
