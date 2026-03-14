@@ -86,20 +86,27 @@ jobs:
 
       - name: Place sidecar binary and resources for Tauri
         run: |
-          TARGET_TRIPLE="universal-apple-darwin"
-          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
-          RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+            TARGET_TRIPLE="universal-apple-darwin"
+            SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+            RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
 
-          mkdir -p "${SIDECAR_DIR}"
-          mkdir -p "${RESOURCES_DIR}"
+            mkdir -p "${SIDECAR_DIR}"
+            mkdir -p "${RESOURCES_DIR}"
 
-          # Sidecar binary (universal)
-          cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
-          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+            # Sidecar binary (universal) — used for the final merged bundle
+            cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
 
-          # Everything else as resources
-          cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
-          rm "${RESOURCES_DIR}/Lighthouse"  # remove the binary itself, it's already the sidecar
+            # ✅ Add arch-specific copies so each sub-build's script can find them
+            cp ./publish/osx-arm64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
+            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
+
+            cp ./publish/osx-x64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
+            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
+
+            # Everything else as resources
+            cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
+            rm "${RESOURCES_DIR}/Lighthouse"
 
       - name: Build Tauri app (signed + notarized)
         uses: tauri-apps/tauri-action@v0
