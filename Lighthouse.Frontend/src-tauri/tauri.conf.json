@@ -1,5 +1,5 @@
 {
-	"$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
+	"$schema": "https://schema.tauri.app/config/2",
 	"productName": "Lighthouse",
 	"version": "0.1.0",
 	"identifier": "letpeople.work.lighthouse",
@@ -39,7 +39,7 @@
 			"entitlements": "entitlements.plist",
 			"minimumSystemVersion": "10.15"
 		},
-		"windows": {
+		"nsis": {
 			"installMode": "perMachine",
 			"languages": ["English"],
 			"allowDowngrades": false,
