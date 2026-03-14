@@ -41,6 +41,15 @@
       "description": "Linux server distribution — self-hosted, updated via Lighthouse internal updater."
     },
     {
+      "variantId": "linux.standalone",
+      "os": "linux",
+      "artifactNames": [
+        "Lighthouse-linux-standalone.AppImage"
+      ],
+      "updateOwner": "tauri",
+      "description": "Linux standalone app — Tauri-packaged AppImage, updated via Tauri updater."
+    },
+    {
       "variantId": "docker.server",
       "os": "docker",
       "artifactNames": [],

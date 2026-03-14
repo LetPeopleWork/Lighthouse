@@ -87,6 +87,11 @@ jobs:
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
+          name: Lighthouse-linux-standalone-${{ inputs.version }}
+          path: LighthouseArtifacts/linux-standalone
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
           name: Lighthouse-SBOM-${{ inputs.version }}
           path: LighthouseArtifacts/sbom
 
@@ -110,9 +115,13 @@ jobs:
           files: LighthouseArtifacts/sbom
           dest: Lighthouse-SBOM.zip
 
+      - name: Prepare Linux standalone release file
+        run: |
+          cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage Lighthouse-linux-standalone.AppImage
+
       - uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip,Lighthouse-SBOM.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"

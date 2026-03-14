@@ -1,0 +1,92 @@
+name: Package Linux Standalone (Tauri AppImage)
+
+on:
+  workflow_call:
+    inputs:
+      fileversion:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  package-linux-standalone:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: '0'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602
+        with:
+          dotnet-version: '10'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: Lighthouse-linux-x64-${{ inputs.version }}
+          path: ./Lighthouse/linux-x64
+
+      - name: Place sidecar binary for Tauri
+        run: |
+          TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+          SIDECAR_PATH="${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+          cp ./Lighthouse/linux-x64 "${SIDECAR_PATH}"
+          chmod +x "${SIDECAR_PATH}"
+
+      - name: Build Tauri AppImage
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ""
+        with:
+          projectPath: ./Lighthouse.Frontend
+
+      - name: Find and rename AppImage
+        id: find-appimage
+        run: |
+          APPIMAGE=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage" | head -1)
+          if [ -z "$APPIMAGE" ]; then
+            echo "ERROR: No AppImage found in Tauri build output"
+            ls -la ./Lighthouse.Frontend/src-tauri/target/release/bundle/ || true
+            exit 1
+          fi
+          echo "Found AppImage: ${APPIMAGE}"
+          cp "${APPIMAGE}" ./Lighthouse-linux-standalone.AppImage
+          echo "appimage_path=./Lighthouse-linux-standalone.AppImage" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Linux standalone artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Lighthouse-linux-standalone-${{ inputs.version }}
+          path: ./Lighthouse-linux-standalone.AppImage

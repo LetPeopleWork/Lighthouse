@@ -192,6 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [TestCase(SupportedPlatform.Windows, false, "windows.server", "lighthouse-internal")]
         [TestCase(SupportedPlatform.Windows, true, "windows.standalone", "tauri")]
         [TestCase(SupportedPlatform.Linux, false, "linux.server", "lighthouse-internal")]
+        [TestCase(SupportedPlatform.Linux, true, "linux.standalone", "tauri")]
         [TestCase(SupportedPlatform.MacOS, false, "macos.server", "none")]
         [TestCase(SupportedPlatform.MacOS, true, "macos.standalone", "tauri")]
         [TestCase(SupportedPlatform.Docker, false, "docker.server", "none")]
