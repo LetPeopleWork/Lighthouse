@@ -4,6 +4,30 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.3.13.16
+
+## Invert Percentiles for New Item Forecasting
+The percentile display for the *New Item Forecasting* feature has been inverted. Previously, the percentiles were shown in a way that could be confusing. They are now displayed in a more intuitive order, making it easier to interpret the forecast results at a glance. This means, you read it now as follows: There is a *yy% chance* that we create *x items or less*
+
+This means that the higher the percentiles, the higher the number. The less risk you want to have, the more items you should be expecting.
+
+![Work Item Creation Forecast](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/creationforecast.png)
+
+## Other Improvements and Bug Fixes
+- Fixed an issue where the *Parent Override* setting was not being applied correctly on Azure DevOps connections and caused the update of teams to get stuck
+- Fixed an issue where *Involved Teams* were not respecting the Ownership Settings configured on a Portfolio
+- Fixed an issue where the automatic update of Portfolios was not refreshing the Features, causing stale data to be displayed
+- Fixed an issue in *MCS Backtesting* where the start date of the backtesting period was incorrectly included in both the Historical Throughput and the Actual Throughput charts
+- Updated various third party dependencies
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.9.4...v26.3.13.16)
+
 # Lighthouse v26.3.9.4
 
 ## Improvements for Write Back to Work Tracking Systems Functionality

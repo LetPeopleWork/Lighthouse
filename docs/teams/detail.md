@@ -105,10 +105,10 @@ This allows you to forecast a scenario like this one:
 *Based on the last 90 days, how many new bugs can we expect in the next 30 days?*
 
 The result will be a probabilistic one, where you get the usual percentiles:
-- 50% chance you will get 5 or more
-- 70% chance you will get 4 or more
-- 85% chance you will get 3 or more
-- 95% chance you will get 2 or more
+- 95% chance you will get 5 or less
+- 85% chance you will get 4 or less
+- 70% chance you will get 3 or less
+- 50% chance you will get 2 or less
 
 That may help you plan for the not plannable, as you can see that, based on your past, you will will have a good chance of 4 bug items making it into your backlog.
 
