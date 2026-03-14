@@ -92,6 +92,11 @@ jobs:
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
+          name: Lighthouse-win-standalone-x64-${{ inputs.version }}
+          path: LighthouseArtifacts/win-standalone
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
           name: Lighthouse-SBOM-${{ inputs.version }}
           path: LighthouseArtifacts/sbom
 
@@ -119,9 +124,29 @@ jobs:
         run: |
           cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage Lighthouse-linux-standalone.AppImage
 
+      - name: Prepare Windows standalone release files
+        run: |
+          # Find and rename setup EXE to canonical release name
+          SETUP_EXE=$(find LighthouseArtifacts/win-standalone -name "*-setup.exe" | head -1)
+          if [ -z "$SETUP_EXE" ]; then
+            echo "ERROR: No NSIS setup EXE found in win-standalone artifact"
+            ls -laR LighthouseArtifacts/win-standalone/ || true
+            exit 1
+          fi
+          cp "$SETUP_EXE" Lighthouse-win-standalone-x64.exe
+
+          # Find and rename MSI to canonical release name
+          MSI=$(find LighthouseArtifacts/win-standalone -name "*.msi" ! -name "*.msi.zip" | head -1)
+          if [ -z "$MSI" ]; then
+            echo "ERROR: No MSI found in win-standalone artifact"
+            ls -laR LighthouseArtifacts/win-standalone/ || true
+            exit 1
+          fi
+          cp "$MSI" Lighthouse-win-standalone-x64.msi
+
       - uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-SBOM.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.msi,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"

@@ -1,0 +1,131 @@
+name: Package Windows Standalone (Tauri)
+
+on:
+  workflow_call:
+    inputs:
+      fileversion:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  package-win-standalone:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    permissions:
+      actions: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: '0'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Download pre-built Windows backend
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: Lighthouse-win-x64-${{ inputs.version }}
+          path: ./Lighthouse/win-x64
+
+      - name: Place sidecar binary and resources for Tauri
+        shell: bash
+        run: |
+          TARGET_TRIPLE="x86_64-pc-windows-msvc"
+          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+          RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+
+          mkdir -p "${SIDECAR_DIR}"
+          mkdir -p "${RESOURCES_DIR}"
+
+          # Sidecar binary
+          cp ./Lighthouse/win-x64/Lighthouse.exe "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}.exe"
+
+          # Everything else as resources
+          cp -r ./Lighthouse/win-x64/. "${RESOURCES_DIR}/"
+          rm "${RESOURCES_DIR}/Lighthouse.exe"  # already placed as sidecar
+
+      - name: Build Tauri (unsigned)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ""
+        with:
+          projectPath: ./Lighthouse.Frontend
+
+      - name: Collect Tauri outputs
+        shell: bash
+        run: |
+          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/release/bundle"
+          OUTPUT_DIR="./standalone-output"
+          mkdir -p "${OUTPUT_DIR}"
+
+          echo "=== Tauri bundle contents ==="
+          find "${BUNDLE_DIR}" -type f || true
+
+          # App binary
+          APP_EXE="./Lighthouse.Frontend/src-tauri/target/release/Lighthouse.exe"
+          if [ -f "$APP_EXE" ]; then
+            cp "$APP_EXE" "${OUTPUT_DIR}/"
+            echo "Copied app binary"
+          fi
+
+          # NSIS installer
+          NSIS_EXE=$(find "${BUNDLE_DIR}/nsis" -name "*-setup.exe" 2>/dev/null | head -1)
+          if [ -z "$NSIS_EXE" ]; then
+            echo "ERROR: No NSIS setup EXE found"
+            exit 1
+          fi
+          cp "$NSIS_EXE" "${OUTPUT_DIR}/"
+          echo "Copied NSIS installer: $(basename "$NSIS_EXE")"
+
+          # NSIS updater zip + sig
+          for f in "${BUNDLE_DIR}"/nsis/*.nsis.zip "${BUNDLE_DIR}"/nsis/*.nsis.zip.sig; do
+            [ -f "$f" ] && cp "$f" "${OUTPUT_DIR}/" && echo "Copied $(basename "$f")"
+          done
+
+          # MSI installer
+          MSI=$(find "${BUNDLE_DIR}/msi" -name "*.msi" ! -name "*.msi.zip" 2>/dev/null | head -1)
+          if [ -z "$MSI" ]; then
+            echo "ERROR: No MSI found"
+            exit 1
+          fi
+          cp "$MSI" "${OUTPUT_DIR}/"
+          echo "Copied MSI: $(basename "$MSI")"
+
+          # MSI updater zip + sig
+          for f in "${BUNDLE_DIR}"/msi/*.msi.zip "${BUNDLE_DIR}"/msi/*.msi.zip.sig; do
+            [ -f "$f" ] && cp "$f" "${OUTPUT_DIR}/" && echo "Copied $(basename "$f")"
+          done
+
+          echo "=== Standalone output ==="
+          ls -la "${OUTPUT_DIR}/"
+
+      - name: Upload unsigned standalone artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: Lighthouse-win-standalone-x64-${{ inputs.version }}
+          path: ./standalone-output

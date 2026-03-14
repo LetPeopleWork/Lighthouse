@@ -10,7 +10,7 @@ on:
 jobs:
   codesign-windows:
     runs-on: [self-hosted, codesign]
-    timeout-minutes: 10
+    timeout-minutes: 15
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     environment:
@@ -20,38 +20,57 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: Download artifact
+      # Download both server and standalone artifacts
+      - name: Download server artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
-          path: ./artifacts/win-x64
+          path: ./artifacts/server
 
+      - name: Download standalone artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: Lighthouse-win-standalone-x64-${{ inputs.version }}
+          path: ./artifacts/standalone
+
+      # --- Sign on Windows (signtool) ---
       - name: Sign on Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $thumbprint = $env:CERT_THUMBPRINT
           if (-not $thumbprint) { throw "CERT_THUMBPRINT environment variable is not set" }
-          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe"
-          foreach ($file in $files) {
-              Write-Host "Signing $file with signtool.exe"
-              & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint /d "Lighthouse ${{ inputs.version }}" /du "https://letpeople.work/lighthouse" $file.FullName
+
+          function Sign-File($filePath) {
+              Write-Host "Signing $filePath with signtool.exe"
+              & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint /d "Lighthouse ${{ inputs.version }}" /du "https://letpeople.work/lighthouse" $filePath
+              if ($LASTEXITCODE -ne 0) { throw "signtool failed for $filePath" }
           }
+
+          # Server EXEs
+          $serverFiles = Get-ChildItem -Path ./artifacts/server -Filter "Lighthouse*.exe"
+          foreach ($file in $serverFiles) { Sign-File $file.FullName }
+
+          # Standalone EXEs (app binary + NSIS setup)
+          $standaloneExes = Get-ChildItem -Path ./artifacts/standalone -Filter "Lighthouse*.exe"
+          foreach ($file in $standaloneExes) { Sign-File $file.FullName }
+
+          # Standalone MSIs
+          $standaloneMsis = Get-ChildItem -Path ./artifacts/standalone -Filter "Lighthouse*.msi" | Where-Object { $_.Name -notlike "*.msi.zip*" }
+          foreach ($file in $standaloneMsis) { Sign-File $file.FullName }
         env:
           CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
 
+      # --- Sign on Linux (osslsigncode + YubiKey) ---
       - name: Sign on Linux
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          shopt -s globstar
-          # Ensure the intermediate cert is available in the working directory
           INTERMEDIATE_CERT="./tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt"
 
-          files=(./artifacts/win-x64/Lighthouse*.exe)
-          
-          for file in "${files[@]}"; do
-            echo "Signing $file with osslsigncode and intermediate chain"
+          sign_file() {
+            local file="$1"
+            echo "Signing ${file} with osslsigncode"
             osslsigncode sign \
               -pkcs11engine /usr/lib/engines-3/pkcs11.so \
               -pkcs11module /usr/lib/opensc-pkcs11.so \
@@ -64,19 +83,135 @@ jobs:
               -t http://timestamp.digicert.com \
               -in "$file" \
               -out "${file}.signed"
-            
             mv "${file}.signed" "$file"
+          }
+
+          # Server EXEs
+          for file in ./artifacts/server/Lighthouse*.exe; do
+            [ -f "$file" ] && sign_file "$file"
+          done
+
+          # Standalone EXEs (app binary + NSIS setup)
+          for file in ./artifacts/standalone/Lighthouse*.exe; do
+            [ -f "$file" ] && sign_file "$file"
+          done
+
+          # Standalone MSIs (exclude .msi.zip files)
+          for file in ./artifacts/standalone/*.msi; do
+            [ -f "$file" ] && [[ "$file" != *.msi.zip ]] && sign_file "$file"
           done
         env:
           YUBI_PIN: ${{ secrets.YUBI_PIN }}
 
-      - name: Delete unsigned artifact
+      # --- Re-zip updater bundles with signed content ---
+      - name: Re-zip NSIS updater bundle
+        shell: bash
+        run: |
+          NSIS_ZIP=$(find ./artifacts/standalone -maxdepth 1 -name "*.nsis.zip" 2>/dev/null | head -1)
+          if [ -z "$NSIS_ZIP" ]; then
+            echo "No NSIS updater zip found — skipping"
+            exit 0
+          fi
+
+          echo "Re-zipping ${NSIS_ZIP} with signed installer"
+          TEMP_DIR=$(mktemp -d)
+          unzip -o "$NSIS_ZIP" -d "$TEMP_DIR"
+
+          # Replace the setup exe inside with the signed version
+          SETUP_EXE=$(find ./artifacts/standalone -maxdepth 1 -name "*-setup.exe" | head -1)
+          if [ -n "$SETUP_EXE" ]; then
+            BASENAME=$(basename "$SETUP_EXE")
+            if [ -f "${TEMP_DIR}/${BASENAME}" ]; then
+              echo "Replacing ${BASENAME} in updater zip with signed version"
+              cp "$SETUP_EXE" "${TEMP_DIR}/${BASENAME}"
+            fi
+          fi
+
+          rm "$NSIS_ZIP"
+          (cd "$TEMP_DIR" && zip -r "${OLDPWD}/${NSIS_ZIP}" .)
+          rm -rf "$TEMP_DIR"
+
+      - name: Re-zip MSI updater bundle
+        shell: bash
+        run: |
+          MSI_ZIP=$(find ./artifacts/standalone -maxdepth 1 -name "*.msi.zip" 2>/dev/null | head -1)
+          if [ -z "$MSI_ZIP" ]; then
+            echo "No MSI updater zip found — skipping"
+            exit 0
+          fi
+
+          echo "Re-zipping ${MSI_ZIP} with signed MSI"
+          TEMP_DIR=$(mktemp -d)
+          unzip -o "$MSI_ZIP" -d "$TEMP_DIR"
+
+          # Replace the MSI inside with the signed version
+          SIGNED_MSI=$(find ./artifacts/standalone -maxdepth 1 -name "*.msi" ! -name "*.msi.zip" | head -1)
+          if [ -n "$SIGNED_MSI" ]; then
+            BASENAME=$(basename "$SIGNED_MSI")
+            if [ -f "${TEMP_DIR}/${BASENAME}" ]; then
+              echo "Replacing ${BASENAME} in updater zip with signed version"
+              cp "$SIGNED_MSI" "${TEMP_DIR}/${BASENAME}"
+            fi
+          fi
+
+          rm "$MSI_ZIP"
+          (cd "$TEMP_DIR" && zip -r "${OLDPWD}/${MSI_ZIP}" .)
+          rm -rf "$TEMP_DIR"
+
+      # --- Guard: assert at least one file was signed per category ---
+      - name: Verify signing coverage
+        shell: bash
+        run: |
+          SERVER_COUNT=0
+          STANDALONE_COUNT=0
+
+          for file in ./artifacts/server/Lighthouse*.exe; do
+            [ -f "$file" ] && SERVER_COUNT=$((SERVER_COUNT + 1))
+          done
+
+          for file in ./artifacts/standalone/Lighthouse*.exe; do
+            [ -f "$file" ] && STANDALONE_COUNT=$((STANDALONE_COUNT + 1))
+          done
+          for file in ./artifacts/standalone/*.msi; do
+            [ -f "$file" ] && [[ "$file" != *.msi.zip ]] && STANDALONE_COUNT=$((STANDALONE_COUNT + 1))
+          done
+
+          echo "Server files found: ${SERVER_COUNT}"
+          echo "Standalone files found: ${STANDALONE_COUNT}"
+
+          if [ "$SERVER_COUNT" -eq 0 ]; then
+            echo "ERROR: No server files were signed — glob pattern matched nothing"
+            ls -la ./artifacts/server/ || true
+            exit 1
+          fi
+
+          if [ "$STANDALONE_COUNT" -eq 0 ]; then
+            echo "ERROR: No standalone files were signed — glob pattern matched nothing"
+            ls -la ./artifacts/standalone/ || true
+            exit 1
+          fi
+
+          echo "Signing coverage OK: ${SERVER_COUNT} server file(s), ${STANDALONE_COUNT} standalone file(s)"
+
+      # --- Delete unsigned and upload signed artifacts ---
+      - name: Delete unsigned server artifact
         uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
 
-      - name: Upload signed artifact
+      - name: Upload signed server artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
-          path: ./artifacts/win-x64
+          path: ./artifacts/server
+
+      - name: Delete unsigned standalone artifact
+        uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b
+        with:
+          name: Lighthouse-win-standalone-x64-${{ inputs.version }}
+
+      - name: Upload signed standalone artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: Lighthouse-win-standalone-x64-${{ inputs.version }}
+          path: ./artifacts/standalone
