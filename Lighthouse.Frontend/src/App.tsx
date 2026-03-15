@@ -13,6 +13,7 @@ import {
 } from "react-router-dom";
 import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
+import SplashScreen from "./components/App/SplashScreen/SplashScreen";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
@@ -91,72 +92,7 @@ const App: React.FC = () => {
 
 	// --- 2. Splashscreen UI ---
 	if (!isBackendReady) {
-		return (
-			<Box
-				sx={{
-					height: "100vh",
-					width: "100vw",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					bgcolor: theme.palette.background.default,
-					color: theme.palette.text.secondary,
-				}}
-			>
-				<CssBaseline />
-				{/* Add a nice lighthouse icon or spinner here */}
-				<Box
-					component="img"
-					src="/icons/icon-512x512.png"
-					alt="Lighthouse Logo"
-					sx={{
-						width: 120,
-						height: 120,
-						mb: 4,
-						// Adding a subtle breathing animation
-						animation: "pulse 2.5s ease-in-out infinite",
-						filter: "drop-shadow(0px 0px 20px rgba(0,0,0,0.2))",
-					}}
-				/>
-
-				<Box
-					sx={{
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: 1,
-					}}
-				>
-					<Box
-						sx={{
-							fontWeight: 600,
-							fontSize: "1.2rem",
-							letterSpacing: "0.1rem",
-							color: theme.palette.text.primary,
-						}}
-					>
-						Lighthouse by LetPeopleWork
-					</Box>
-					<Box
-						sx={{
-							fontSize: "0.85rem",
-							color: theme.palette.text.secondary,
-							opacity: 0.8,
-						}}
-					>
-						Sorting the Poker Cards...
-					</Box>
-				</Box>
-				<style>{`
-                    @keyframes pulse {
-                        0% { opacity: 0.4; }
-                        50% { opacity: 1; }
-                        100% { opacity: 0.4; }
-                    }
-                `}</style>
-			</Box>
-		);
+		return <SplashScreen />;
 	}
 
 	// --- 3. Main App UI ---
