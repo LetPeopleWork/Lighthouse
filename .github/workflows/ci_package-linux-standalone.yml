@@ -122,12 +122,13 @@ jobs:
           echo "appimage_path=./Lighthouse-linux-standalone.AppImage" >> "$GITHUB_OUTPUT"
 
           # Collect updater archive and signature if they exist
-          APPIMAGE_TAR=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage.tar.gz" | head -1)
+          APPIMAGE_TAR=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.tar.gz" | head -1)
           if [ -n "$APPIMAGE_TAR" ]; then
             cp "$APPIMAGE_TAR" ./Lighthouse-linux-standalone.AppImage.tar.gz
             echo "Copied updater archive: $(basename $APPIMAGE_TAR)"
           fi
-          APPIMAGE_SIG=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage.tar.gz.sig" | head -1)
+          
+          APPIMAGE_SIG=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.tar.gz.sig" | head -1)
           if [ -n "$APPIMAGE_SIG" ]; then
             cp "$APPIMAGE_SIG" ./Lighthouse-linux-standalone.AppImage.tar.gz.sig
             echo "Copied updater signature: $(basename $APPIMAGE_SIG)"

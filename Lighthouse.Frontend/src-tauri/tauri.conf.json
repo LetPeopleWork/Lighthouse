@@ -33,6 +33,7 @@
 			"icons/icon.ico",
 			"icons/icon.png"
 		],
+		"createUpdaterArtifacts": true,
 		"resources": ["resources/**/*"],
 		"externalBin": ["binaries/Lighthouse.Backend"],
 		"macOS": {

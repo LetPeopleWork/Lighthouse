@@ -186,12 +186,13 @@ jobs:
           ditto -c -k --keepParent "$APP_DIR" "./Lighthouse-${{ inputs.version }}.app.zip"
 
           # Collect updater archive and signature (produced by Tauri when TAURI_SIGNING_PRIVATE_KEY is set)
-          UPDATER_TAR=$(find "$BUNDLE_DIR/macos" -name "*.app.tar.gz" 2>/dev/null | head -1)
+          UPDATER_TAR=$(find "$BUNDLE_DIR/macos" -name "*.tar.gz" | head -1)
           if [ -n "$UPDATER_TAR" ]; then
             cp "$UPDATER_TAR" "./Lighthouse-${{ inputs.version }}.app.tar.gz"
             echo "Copied updater archive: $(basename $UPDATER_TAR)"
           fi
-          UPDATER_SIG=$(find "$BUNDLE_DIR/macos" -name "*.app.tar.gz.sig" 2>/dev/null | head -1)
+          
+          UPDATER_SIG=$(find "$BUNDLE_DIR/macos" -name "*.tar.gz.sig" | head -1)
           if [ -n "$UPDATER_SIG" ]; then
             cp "$UPDATER_SIG" "./Lighthouse-${{ inputs.version }}.app.tar.gz.sig"
             echo "Copied updater signature: $(basename $UPDATER_SIG)"
