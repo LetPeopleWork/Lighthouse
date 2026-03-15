@@ -138,9 +138,14 @@ jobs:
       - name: Build update feed JSON
         run: |
           TAG="${{ needs.check-release.outputs.tag }}"
-          VERSION="${{ steps.release.outputs.version }}"
           PUB_DATE="${{ steps.release.outputs.pub_date }}"
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+
+          # Strip v prefix and collapse last two segments to match tauri.conf.json versioning
+          # e.g. v26.3.15.15 -> 26.3.1515
+          VERSION_RAW="${TAG#v}"
+          SEMVER=$(echo "$VERSION_RAW" | awk -F'.' '{print $1"."$2"."$3$4}')
+          echo "Tag: $TAG -> Tauri version: $SEMVER"
 
           LINUX_SIG=""
           [ -f /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig ] && \
@@ -165,7 +170,7 @@ jobs:
           NSIS_ZIP_NAME="${NSIS_ZIP_NAME:-Lighthouse_${TAG}_x64-setup.nsis.zip}"
 
           jq -n \
-            --arg version "$VERSION" \
+            --arg version "$SEMVER" \
             --rawfile notes /tmp/release_notes.md \
             --arg pub_date "$PUB_DATE" \
             --arg linux_url "${DOWNLOAD_URL}/Lighthouse-linux-standalone.AppImage.tar.gz" \
