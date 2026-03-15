@@ -98,39 +98,20 @@ jobs:
           TAG="${{ needs.check-release.outputs.tag }}"
           mkdir -p /tmp/sigs
 
-          echo "Downloading Linux updater signature..."
           gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
             --pattern "Lighthouse-linux-standalone.AppImage.tar.gz.sig" \
-            --dir /tmp/sigs 2>/dev/null || echo "WARN: Linux updater sig not found"
+            --dir /tmp/sigs 2>/dev/null || echo "WARN: Linux sig not found"
 
-          echo "Downloading macOS updater signature..."
-          MACOS_SIG=$(gh release view "${TAG}" \
+          gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
-            --json assets -q '.assets[].name' | grep '\.app\.tar\.gz\.sig$' | head -1)
-          if [ -n "$MACOS_SIG" ]; then
-            gh release download "${TAG}" \
-              --repo "${{ github.repository }}" \
-              --pattern "$MACOS_SIG" \
-              --dir /tmp/sigs
-            mv "/tmp/sigs/$MACOS_SIG" /tmp/sigs/macos-updater.sig
-          else
-            echo "WARN: macOS updater sig not found"
-          fi
+            --pattern "Lighthouse-osx.app.tar.gz.sig" \
+            --dir /tmp/sigs 2>/dev/null || echo "WARN: macOS sig not found"
 
-          echo "Downloading Windows NSIS updater signature..."
-          NSIS_SIG=$(gh release view "${TAG}" \
+          gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
-            --json assets -q '.assets[].name' | grep '\.nsis\.zip\.sig$' | head -1)
-          if [ -n "$NSIS_SIG" ]; then
-            gh release download "${TAG}" \
-              --repo "${{ github.repository }}" \
-              --pattern "$NSIS_SIG" \
-              --dir /tmp/sigs
-            mv "/tmp/sigs/$NSIS_SIG" /tmp/sigs/windows-nsis-updater.sig
-          else
-            echo "WARN: Windows NSIS updater sig not found"
-          fi
+            --pattern "Lighthouse-win-standalone-x64-setup.nsis.zip.sig" \
+            --dir /tmp/sigs 2>/dev/null || echo "WARN: Windows sig not found"
 
           echo "=== Downloaded signatures ==="
           ls -la /tmp/sigs/
@@ -147,27 +128,12 @@ jobs:
           SEMVER=$(echo "$VERSION_RAW" | awk -F'.' '{print $1"."$2"."$3$4}')
           echo "Tag: $TAG -> Tauri version: $SEMVER"
 
-          LINUX_SIG=""
-          [ -f /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig ] && \
-            LINUX_SIG=$(cat /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig)
+          LINUX_SIG=$(cat /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig 2>/dev/null || echo "")
+          MACOS_SIG=$(cat /tmp/sigs/Lighthouse-osx.app.tar.gz.sig 2>/dev/null || echo "")
+          WINDOWS_SIG=$(cat /tmp/sigs/Lighthouse-win-standalone-x64-setup.nsis.zip.sig 2>/dev/null || echo "")
 
-          MACOS_SIG=""
-          [ -f /tmp/sigs/macos-updater.sig ] && \
-            MACOS_SIG=$(cat /tmp/sigs/macos-updater.sig)
-
-          WINDOWS_SIG=""
-          [ -f /tmp/sigs/windows-nsis-updater.sig ] && \
-            WINDOWS_SIG=$(cat /tmp/sigs/windows-nsis-updater.sig)
-
-          MACOS_TAR_NAME=$(gh release view "${TAG}" \
-            --repo "${{ github.repository }}" \
-            --json assets -q '.assets[].name' | grep '\.app\.tar\.gz$' | head -1)
-          MACOS_TAR_NAME="${MACOS_TAR_NAME:-Lighthouse-${TAG}.app.tar.gz}"
-
-          NSIS_ZIP_NAME=$(gh release view "${TAG}" \
-            --repo "${{ github.repository }}" \
-            --json assets -q '.assets[].name' | grep '\.nsis\.zip$' | head -1)
-          NSIS_ZIP_NAME="${NSIS_ZIP_NAME:-Lighthouse_${TAG}_x64-setup.nsis.zip}"
+          MACOS_TAR_NAME="Lighthouse-osx.app.tar.gz"
+          NSIS_ZIP_NAME="Lighthouse-win-standalone-x64-setup.nsis.zip"
 
           jq -n \
             --arg version "$SEMVER" \
