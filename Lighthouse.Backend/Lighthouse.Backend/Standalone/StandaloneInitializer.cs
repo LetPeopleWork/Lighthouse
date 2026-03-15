@@ -13,44 +13,11 @@ namespace Lighthouse.Backend.Standalone
             }
 
             var resourcesDir = Environment.GetEnvironmentVariable("LIGHTHOUSE_RESOURCES_DIR");
+            HandleMacOsSpecificImports(resourcesDir);
 
             // List of places to look for appsettings.json
-            var searchPaths = new List<string>();
-            if (!string.IsNullOrEmpty(resourcesDir))
-            {
-                searchPaths.Add(resourcesDir);
-                searchPaths.Add(Path.Combine(resourcesDir, "resources")); // Common Tauri structure
-            }
-            searchPaths.Add(Path.GetDirectoryName(Environment.ProcessPath)!);
-
-            // Find the first directory that actually contains the config
-            var workingDir = searchPaths
-                .FirstOrDefault(p => Directory.Exists(p) && File.Exists(Path.Combine(p, "appsettings.json")));
-
-            if (!string.IsNullOrEmpty(workingDir))
-            {
-                Console.WriteLine($"DEBUG: Resolved Working Dir to: {workingDir}");
-                builder.Configuration.SetBasePath(workingDir);
-                builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-                Directory.SetCurrentDirectory(workingDir);
-                builder.Environment.ContentRootPath = workingDir;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    var existingDyldPath = Environment.GetEnvironmentVariable("DYLD_LIBRARY_PATH") ?? "";
-                    var newDyldPath = string.IsNullOrEmpty(existingDyldPath)
-                        ? workingDir
-                        : $"{workingDir}:{existingDyldPath}";
-                    Environment.SetEnvironmentVariable("DYLD_LIBRARY_PATH", newDyldPath);
-                    Console.WriteLine($"DEBUG: Set DYLD_LIBRARY_PATH to: {newDyldPath}");
-                }
-            }
-            else
-            {
-                // This will trigger the FATAL error with a better message if we still can't find it
-                throw new FileNotFoundException($"Could not find appsettings.json in any search paths: {string.Join(", ", searchPaths)}");
-            }
+            var workingDir = GetWorkingDirectory(resourcesDir);
+            SetWorkingDirectory(builder, workingDir);
 
             var appDataDir = GetAppDataDirectory();
             var logPath = Path.Combine(appDataDir, "logs", "log-.txt");
@@ -62,6 +29,69 @@ namespace Lighthouse.Backend.Standalone
             builder.Configuration["Serilog:WriteTo:0:Args:path"] = logPath;
             builder.Configuration["Database:ConnectionString"] = $"Data Source={dbPath}";
             builder.Configuration["Serilog:WriteTo:0:Args:path"] = logPath;
+        }
+
+        private static void SetWorkingDirectory(WebApplicationBuilder builder, string workingDir)
+        {
+            Console.WriteLine($"DEBUG: Resolved Working Dir to: {workingDir}");
+            builder.Configuration.SetBasePath(workingDir);
+            builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            Directory.SetCurrentDirectory(workingDir);
+            builder.Environment.ContentRootPath = workingDir;
+        }
+
+        private static string GetWorkingDirectory(string? resourcesDir)
+        {
+            var searchPaths = new List<string>();
+            if (!string.IsNullOrEmpty(resourcesDir))
+            {
+                searchPaths.Add(resourcesDir);
+                searchPaths.Add(Path.Combine(resourcesDir, "resources")); // Common Tauri structure
+            }
+            searchPaths.Add(Path.GetDirectoryName(Environment.ProcessPath)!);
+
+            var workingDir = searchPaths
+                .FirstOrDefault(p => Directory.Exists(p) && File.Exists(Path.Combine(p, "appsettings.json")));
+
+            if (string.IsNullOrEmpty(workingDir))
+            {
+                // This will trigger the FATAL error with a better message if we still can't find it
+                throw new FileNotFoundException($"Could not find appsettings.json in any search paths: {string.Join(", ", searchPaths)}");
+            }
+
+            return workingDir;
+        }
+
+        private static void HandleMacOsSpecificImports(string? resourcesDir)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || string.IsNullOrEmpty(resourcesDir))
+            {
+                return;
+            }
+
+            NativeLibrary.SetDllImportResolver(typeof(Microsoft.Data.Sqlite.SqliteConnection).Assembly, (libraryName, assembly, searchPath) =>
+            {
+                if (libraryName == "e_sqlite3")
+                {
+                    // In Tauri v2, if you put dylibs in 'resources', 
+                    // they are often at the root of resourcesDir
+                    var pathsToTry = new[]
+                    {
+                    Path.Combine(resourcesDir, "libe_sqlite3.dylib"),
+                    Path.Combine(resourcesDir, "e_sqlite3.dylib")
+                    };
+
+                    foreach (var path in pathsToTry)
+                    {
+                        if (File.Exists(path) && NativeLibrary.TryLoad(path, out var handle))
+                        {
+                            return handle;
+                        }
+                    }
+                }
+                return IntPtr.Zero;
+            });
         }
 
         private static string GetAppDataDirectory()

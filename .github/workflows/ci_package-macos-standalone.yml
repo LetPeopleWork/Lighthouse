@@ -81,11 +81,15 @@ jobs:
           TARGET_TRIPLE="universal-apple-darwin"
           SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
           RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+          UNIVERSAL_DIR="./publish/osx-universal"
 
           mkdir -p "${SIDECAR_DIR}"
           mkdir -p "${RESOURCES_DIR}"
 
           cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+          cp "$UNIVERSAL_DIR/libe_sqlite3.dylib" "$SIDECAR_DIR/" || true
+          cp "$UNIVERSAL_DIR/e_sqlite3.dylib" "$SIDECAR_DIR/" || true
+          
           chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
 
           cp ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
@@ -117,16 +121,20 @@ jobs:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-      - name: Pre-sign bundled dylibs
+      - name: Pre-sign bundled dylibs and binaries
         env:
             APPLE_SIGNING_IDENTITY: "Developer ID Application: LetPeopleWork GmbH (${{ secrets.APPLE_TEAM_ID }})"
         run: |
-            find Lighthouse.Frontend/src-tauri/resources -name "*.dylib" | while read lib; do
-            codesign --force --verify --verbose \
-                --sign "$APPLE_SIGNING_IDENTITY" \
-                --timestamp \
-                --options runtime \
-                "$lib"
+            # 1. Sign everything in the binaries folder (The actual sidecar)
+            find Lighthouse.Frontend/src-tauri/binaries -type f | while read item; do
+              echo "Signing sidecar: $item..."
+              codesign --force --verify --verbose --sign "$APPLE_SIGNING_IDENTITY" --timestamp --options runtime "$item"
+            done
+
+            # 2. Sign all dylibs in the resources folder
+            find Lighthouse.Frontend/src-tauri/resources -name "*.dylib" | while read item; do
+              echo "Signing dylib: $item..."
+              codesign --force --verify --verbose --sign "$APPLE_SIGNING_IDENTITY" --timestamp --options runtime "$item"
             done
 
       - name: Build Tauri app (signed + notarized)
