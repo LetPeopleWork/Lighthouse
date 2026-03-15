@@ -128,6 +128,24 @@ jobs:
             exit 1
             fi
 
+      - name: Import Apple Certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Pre-sign bundled dylibs
+        env:
+            APPLE_SIGNING_IDENTITY: "Developer ID Application: LetPeopleWork GmbH (${{ secrets.APPLE_TEAM_ID }})"
+        run: |
+            find Lighthouse.Frontend/src-tauri/resources -name "*.dylib" | while read lib; do
+            codesign --force --verify --verbose \
+                --sign "$APPLE_SIGNING_IDENTITY" \
+                --timestamp \
+                --options runtime \
+                "$lib"
+            done
+
       - name: Build Tauri app (signed + notarized)
         uses: tauri-apps/tauri-action@v0
         env:
