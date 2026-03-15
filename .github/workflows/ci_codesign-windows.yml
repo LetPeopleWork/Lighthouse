@@ -102,11 +102,9 @@ jobs:
             echo "No NSIS setup EXE found — skipping"
             exit 0
           fi
-
           echo "Re-generating Tauri updater signature for $(basename "$NSIS_EXE")"
           rm -f "${NSIS_EXE}.sig"
-          npx @tauri-apps/cli@2 signer sign --private-key "$TAURI_SIGNING_PRIVATE_KEY" "$NSIS_EXE"
-
+          npx -y @tauri-apps/cli@2 signer sign --private-key "$TAURI_SIGNING_PRIVATE_KEY" --password "" "$NSIS_EXE"
           if [ -f "${NSIS_EXE}.sig" ]; then
             echo "Successfully generated: $(basename "${NSIS_EXE}.sig")"
           else
@@ -124,11 +122,9 @@ jobs:
             echo "No MSI found — skipping"
             exit 0
           fi
-
           echo "Re-generating Tauri updater signature for $(basename "$MSI")"
           rm -f "${MSI}.sig"
-          npx @tauri-apps/cli@2 signer sign --private-key "$TAURI_SIGNING_PRIVATE_KEY" "$MSI"
-
+          npx -y @tauri-apps/cli@2 signer sign --private-key "$TAURI_SIGNING_PRIVATE_KEY" --password "" "$MSI"
           if [ -f "${MSI}.sig" ]; then
             echo "Successfully generated: $(basename "${MSI}.sig")"
           else
