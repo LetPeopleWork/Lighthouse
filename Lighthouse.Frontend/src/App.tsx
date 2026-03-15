@@ -68,15 +68,26 @@ const initTauriListener = async (
 	}
 };
 
+const SPLASH_MIN_MS = 5000;
+
 const App: React.FC = () => {
 	const theme = useTheme();
 	const apiServices: IApiServiceContext = getApiServices();
 
 	// --- 1. Splashscreen State ---
+	const isTauri = isTauriEnv() && !hasTauriBackendUrl();
 	const [isBackendReady, setIsBackendReady] = useState(false);
+	const [minTimeElapsed, setMinTimeElapsed] = useState(!isTauri);
+
+	// Only enforce the minimum display time when showing the splash (Tauri env)
+	useEffect(() => {
+		if (!isTauri) return;
+		const timer = setTimeout(() => setMinTimeElapsed(true), SPLASH_MIN_MS);
+		return () => clearTimeout(timer);
+	}, [isTauri]);
 
 	useEffect(() => {
-		if (!isTauriEnv() || hasTauriBackendUrl()) {
+		if (!isTauri) {
 			setIsBackendReady(true);
 			return;
 		}
@@ -88,10 +99,11 @@ const App: React.FC = () => {
 		});
 
 		return () => unlistenFn?.();
-	}, []);
+	}, [isTauri]);
 
 	// --- 2. Splashscreen UI ---
-	if (!isBackendReady) {
+	// Show until BOTH the backend is ready AND the minimum display time has passed
+	if (!isBackendReady || !minTimeElapsed) {
 		return <SplashScreen />;
 	}
 
