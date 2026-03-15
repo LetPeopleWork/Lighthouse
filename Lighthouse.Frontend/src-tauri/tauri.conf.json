@@ -41,5 +41,12 @@
 			"hardenedRuntime": true
 		}
 	},
-	"plugins": {}
+	"plugins": {
+		"updater": {
+			"endpoints": [
+				"https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/tauri-update.json"
+			],
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJFNzJFODUxMDkxNjQzQQpSV1E2WkpFUWhTN25Bdm5PYzlPQnR0Rzc5QWdjZTU2T2xyNllIUnMwdEczOWNaeXBiYXRXcC9QNQo="
+		}
+	}
 }

@@ -1,12 +1,16 @@
 use regex::Regex;
 use tauri::{Emitter, Manager};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_updater::UpdaterExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let shell = app.shell();
             let handle = app.handle().clone();
@@ -89,6 +93,82 @@ pub fn run() {
             // We store the child in Tauri's state so it lives as long as the app.
             // When Tauri shuts down, this state is dropped, and 'child' is killed.
             app.manage(child);
+
+            // 4. Check for updates (prompt-first)
+            let update_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                // Give the app time to fully start before checking
+                tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
+                let updater = match update_handle.updater() {
+                    Ok(updater) => updater,
+                    Err(e) => {
+                        eprintln!("[tauri-updater] Failed to create updater: {e}");
+                        return;
+                    }
+                };
+
+                match updater.check().await {
+                    Ok(Some(update)) => {
+                        println!(
+                            "[tauri-updater] Update available: {} -> {}",
+                            update.current_version, update.version
+                        );
+                        let dialog_handle = update_handle.clone();
+                        let version = update.version.clone();
+                        let confirmed = tokio::task::spawn_blocking(move || -> bool {
+                            dialog_handle
+                                .dialog()
+                                .message(format!(
+                                    "A new version of Lighthouse ({}) is available.\n\nWould you like to update now?",
+                                    version
+                                ))
+                                .title("Lighthouse Update Available")
+                                .kind(MessageDialogKind::Info)
+                                .buttons(MessageDialogButtons::OkCancelCustom(
+                                    "Update Now".into(),
+                                    "Later".into(),
+                                ))
+                                .blocking_show()
+                        })
+                        .await
+                        .unwrap_or(false);
+
+                        if confirmed {
+                            println!("[tauri-updater] User confirmed update, downloading...");
+                            if let Err(e) =
+                                update.download_and_install(|_, _| {}, || {}).await
+                            {
+                                eprintln!(
+                                    "[tauri-updater] Failed to install update: {e}"
+                                );
+                                let err_handle = update_handle.clone();
+                                let err_msg = format!(
+                                    "Update installation failed:\n\n{}",
+                                    e
+                                );
+                                let _ = tokio::task::spawn_blocking(move || {
+                                    err_handle
+                                        .dialog()
+                                        .message(err_msg)
+                                        .title("Update Failed")
+                                        .kind(MessageDialogKind::Error)
+                                        .blocking_show();
+                                })
+                                .await;
+                            }
+                        } else {
+                            println!("[tauri-updater] User deferred update");
+                        }
+                    }
+                    Ok(None) => {
+                        println!("[tauri-updater] No update available");
+                    }
+                    Err(e) => {
+                        eprintln!("[tauri-updater] Update check failed: {e}");
+                    }
+                }
+            });
 
             Ok(())
         })

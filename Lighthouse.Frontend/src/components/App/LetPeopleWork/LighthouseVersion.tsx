@@ -29,6 +29,7 @@ const LighthouseVersion: React.FC = () => {
 	const [hasError, setHasError] = useState(false);
 	const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
 	const [isUpdateSupported, setIsUpdateSupported] = useState(false);
+	const [updateOwner, setUpdateOwner] = useState<string>("");
 	const [showAboutDialog, setShowAboutDialog] = useState(false);
 	const [newReleases, setNewReleases] = useState<ILighthouseRelease[]>([]);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -88,6 +89,10 @@ const LighthouseVersion: React.FC = () => {
 				const versionData = await versionService.getCurrentVersion();
 				setVersion(versionData);
 
+				const distributionInfo =
+					await versionService.getDistributionInfo();
+				setUpdateOwner(distributionInfo.updateOwner);
+
 				const updateAvailable = await versionService.isUpdateAvailable();
 				setIsUpdateAvailable(updateAvailable);
 
@@ -95,8 +100,13 @@ const LighthouseVersion: React.FC = () => {
 					const releaseData = await versionService.getNewReleases();
 					setNewReleases(releaseData);
 
-					const updateSupported = await versionService.isUpdateSupported();
-					setIsUpdateSupported(updateSupported);
+					if (
+						distributionInfo.updateOwner === "lighthouse-internal"
+					) {
+						const updateSupported =
+							await versionService.isUpdateSupported();
+						setIsUpdateSupported(updateSupported);
+					}
 
 					// Show notification popup if user hasn't opted out for this version
 					if (
@@ -233,7 +243,7 @@ const LighthouseVersion: React.FC = () => {
 						<InfoIcon fontSize="small" />
 					</IconButton>
 				</Tooltip>
-				{isUpdateAvailable && (
+				{isUpdateAvailable && updateOwner === "lighthouse-internal" && (
 					<Tooltip title="New Version Available">
 						<IconButton
 							onClick={handleDialogOpen}

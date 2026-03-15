@@ -1,0 +1,185 @@
+name: Generate Tauri Update Feed
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to generate feed for (e.g. 26.1.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  generate-feed:
+    runs-on: ubuntu-latest
+    # Only generate feed for non-prerelease versions (stable-only policy)
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
+    steps:
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch release data
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          echo "Fetching release data for tag: ${TAG}"
+
+          RELEASE_JSON=$(gh api repos/${{ github.repository }}/releases/tags/${TAG})
+
+          VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+          NOTES=$(echo "$RELEASE_JSON" | jq -r '.body // ""')
+          PUB_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at')
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "pub_date=${PUB_DATE}" >> "$GITHUB_OUTPUT"
+
+          # Save notes to file to avoid escaping issues
+          echo "$NOTES" > /tmp/release_notes.md
+
+      - name: Download updater signatures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+          mkdir -p /tmp/sigs
+
+          # Linux: AppImage updater
+          echo "Downloading Linux updater signature..."
+          gh release download "${TAG}" \
+            --repo "${{ github.repository }}" \
+            --pattern "Lighthouse-linux-standalone.AppImage.tar.gz.sig" \
+            --dir /tmp/sigs 2>/dev/null || echo "WARN: Linux updater sig not found"
+
+          # macOS: app updater (version-tagged name from macOS workflow)
+          echo "Downloading macOS updater signature..."
+          # The macOS artifact is named Lighthouse-{version}.app.tar.gz.sig
+          MACOS_SIG=$(gh release view "${TAG}" --repo "${{ github.repository }}" --json assets -q '.assets[].name' | grep '\.app\.tar\.gz\.sig$' | head -1)
+          if [ -n "$MACOS_SIG" ]; then
+            gh release download "${TAG}" \
+              --repo "${{ github.repository }}" \
+              --pattern "$MACOS_SIG" \
+              --dir /tmp/sigs
+            # Rename to stable name for easier processing
+            mv "/tmp/sigs/$MACOS_SIG" /tmp/sigs/macos-updater.sig
+          else
+            echo "WARN: macOS updater sig not found"
+          fi
+
+          # Windows: NSIS updater (from codesign workflow re-signing)
+          echo "Downloading Windows NSIS updater signature..."
+          NSIS_SIG=$(gh release view "${TAG}" --repo "${{ github.repository }}" --json assets -q '.assets[].name' | grep '\.nsis\.zip\.sig$' | head -1)
+          if [ -n "$NSIS_SIG" ]; then
+            gh release download "${TAG}" \
+              --repo "${{ github.repository }}" \
+              --pattern "$NSIS_SIG" \
+              --dir /tmp/sigs
+            mv "/tmp/sigs/$NSIS_SIG" /tmp/sigs/windows-nsis-updater.sig
+          else
+            echo "WARN: Windows NSIS updater sig not found"
+          fi
+
+          echo "=== Downloaded signatures ==="
+          ls -la /tmp/sigs/
+
+      - name: Build update feed JSON
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${{ steps.release.outputs.version }}"
+          PUB_DATE="${{ steps.release.outputs.pub_date }}"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+
+          # Read notes
+          NOTES=$(cat /tmp/release_notes.md)
+
+          # Read signatures (empty string if file doesn't exist)
+          LINUX_SIG=""
+          if [ -f /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig ]; then
+            LINUX_SIG=$(cat /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig)
+          fi
+
+          MACOS_SIG=""
+          if [ -f /tmp/sigs/macos-updater.sig ]; then
+            MACOS_SIG=$(cat /tmp/sigs/macos-updater.sig)
+          fi
+
+          WINDOWS_SIG=""
+          if [ -f /tmp/sigs/windows-nsis-updater.sig ]; then
+            WINDOWS_SIG=$(cat /tmp/sigs/windows-nsis-updater.sig)
+          fi
+
+          # Determine macOS updater archive name
+          MACOS_TAR_NAME=$(gh release view "${TAG}" --repo "${{ github.repository }}" --json assets -q '.assets[].name' | grep '\.app\.tar\.gz$' | head -1)
+          MACOS_TAR_NAME="${MACOS_TAR_NAME:-Lighthouse-${TAG}.app.tar.gz}"
+
+          # Determine Windows NSIS updater archive name
+          NSIS_ZIP_NAME=$(gh release view "${TAG}" --repo "${{ github.repository }}" --json assets -q '.assets[].name' | grep '\.nsis\.zip$' | head -1)
+          NSIS_ZIP_NAME="${NSIS_ZIP_NAME:-Lighthouse_${TAG}_x64-setup.nsis.zip}"
+
+          # Build the JSON feed using jq for proper escaping
+          jq -n \
+            --arg version "$VERSION" \
+            --arg notes "$NOTES" \
+            --arg pub_date "$PUB_DATE" \
+            --arg linux_url "${DOWNLOAD_URL}/Lighthouse-linux-standalone.AppImage.tar.gz" \
+            --arg linux_sig "$LINUX_SIG" \
+            --arg darwin_url "${DOWNLOAD_URL}/${MACOS_TAR_NAME}" \
+            --arg darwin_sig "$MACOS_SIG" \
+            --arg windows_url "${DOWNLOAD_URL}/${NSIS_ZIP_NAME}" \
+            --arg windows_sig "$WINDOWS_SIG" \
+            '{
+              version: $version,
+              notes: $notes,
+              pub_date: $pub_date,
+              platforms: {
+                "linux-x86_64": {
+                  url: $linux_url,
+                  signature: $linux_sig
+                },
+                "darwin-aarch64": {
+                  url: $darwin_url,
+                  signature: $darwin_sig
+                },
+                "darwin-x86_64": {
+                  url: $darwin_url,
+                  signature: $darwin_sig
+                },
+                "windows-x86_64": {
+                  url: $windows_url,
+                  signature: $windows_sig
+                }
+              }
+            }' > /tmp/tauri-update.json
+
+          echo "=== Generated tauri-update.json ==="
+          cat /tmp/tauri-update.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload feed to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+
+          # Delete existing feed asset if present (allows re-running)
+          EXISTING=$(gh release view "${TAG}" --repo "${{ github.repository }}" --json assets -q '.assets[] | select(.name == "tauri-update.json") | .name')
+          if [ -n "$EXISTING" ]; then
+            echo "Deleting existing tauri-update.json from release"
+            gh release delete-asset "${TAG}" tauri-update.json --repo "${{ github.repository }}" --yes
+          fi
+
+          echo "Uploading tauri-update.json to release ${TAG}"
+          gh release upload "${TAG}" /tmp/tauri-update.json --repo "${{ github.repository }}"

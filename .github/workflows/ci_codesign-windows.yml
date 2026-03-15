@@ -155,6 +155,37 @@ jobs:
           (cd "$TEMP_DIR" && zip -r "${OLDPWD}/${MSI_ZIP}" .)
           rm -rf "$TEMP_DIR"
 
+      # --- Re-generate Tauri updater .sig for NSIS bundle after re-zipping ---
+      - name: Setup Node.js for Tauri CLI
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+
+      - name: Sign NSIS updater archive with Tauri signer
+        shell: bash
+        run: |
+          NSIS_ZIP=$(find ./artifacts/standalone -maxdepth 1 -name "*.nsis.zip" 2>/dev/null | head -1)
+          if [ -z "$NSIS_ZIP" ]; then
+            echo "No NSIS updater zip found — skipping Tauri signature generation"
+            exit 0
+          fi
+
+          echo "Generating Tauri updater signature for ${NSIS_ZIP}"
+
+          # Remove stale/empty .sig from initial build (was generated with empty key)
+          rm -f "${NSIS_ZIP}.sig"
+
+          npx @tauri-apps/cli@2 signer sign --private-key "$TAURI_SIGNING_PRIVATE_KEY" "${NSIS_ZIP}"
+
+          if [ -f "${NSIS_ZIP}.sig" ]; then
+            echo "Successfully generated signature: ${NSIS_ZIP}.sig"
+          else
+            echo "ERROR: Tauri signer did not produce a .sig file"
+            exit 1
+          fi
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+
       # --- Guard: assert at least one file was signed per category ---
       - name: Verify signing coverage
         shell: bash

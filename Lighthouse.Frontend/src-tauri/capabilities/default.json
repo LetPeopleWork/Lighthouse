@@ -12,6 +12,8 @@
 		{
 			"identifier": "shell:allow-spawn",
 			"allow": [{ "name": "binaries/Lighthouse.Backend", "sidecar": true }]
-		}
+		},
+		"updater:default",
+		"dialog:default"
 	]
 }

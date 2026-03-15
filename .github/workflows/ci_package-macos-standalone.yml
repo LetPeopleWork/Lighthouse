@@ -152,6 +152,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: ./Lighthouse.Frontend
           args: --target universal-apple-darwin
@@ -201,6 +202,18 @@ jobs:
           echo "Found .app: ${APP_DIR}"
           ditto -c -k --keepParent "$APP_DIR" "./Lighthouse-${{ inputs.version }}.app.zip"
 
+          # Collect updater archive and signature (produced by Tauri when TAURI_SIGNING_PRIVATE_KEY is set)
+          UPDATER_TAR=$(find "$BUNDLE_DIR/macos" -name "*.app.tar.gz" 2>/dev/null | head -1)
+          if [ -n "$UPDATER_TAR" ]; then
+            cp "$UPDATER_TAR" "./Lighthouse-${{ inputs.version }}.app.tar.gz"
+            echo "Copied updater archive: $(basename $UPDATER_TAR)"
+          fi
+          UPDATER_SIG=$(find "$BUNDLE_DIR/macos" -name "*.app.tar.gz.sig" 2>/dev/null | head -1)
+          if [ -n "$UPDATER_SIG" ]; then
+            cp "$UPDATER_SIG" "./Lighthouse-${{ inputs.version }}.app.tar.gz.sig"
+            echo "Copied updater signature: $(basename $UPDATER_SIG)"
+          fi
+
       - name: Upload signed DMG artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
@@ -212,3 +225,11 @@ jobs:
         with:
           name: Lighthouse-osx-app-${{ inputs.version }}
           path: ./Lighthouse-${{ inputs.version }}.app.zip
+
+      - name: Upload macOS updater artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: Lighthouse-osx-updater-${{ inputs.version }}
+          path: |
+            ./Lighthouse-${{ inputs.version }}.app.tar.gz
+            ./Lighthouse-${{ inputs.version }}.app.tar.gz.sig

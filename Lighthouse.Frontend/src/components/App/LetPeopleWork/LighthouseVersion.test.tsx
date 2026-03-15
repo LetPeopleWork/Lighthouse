@@ -14,6 +14,7 @@ const mockIsUpdateAvailable = vi.fn();
 const mockGetNewReleases = vi.fn();
 const mockIsUpdateSupported = vi.fn();
 const mockInstallUpdate = vi.fn();
+const mockGetDistributionInfo = vi.fn();
 
 const mockVersionService: IVersionService = {
 	getCurrentVersion: mockGetCurrentVersion,
@@ -21,7 +22,7 @@ const mockVersionService: IVersionService = {
 	getNewReleases: mockGetNewReleases,
 	isUpdateSupported: mockIsUpdateSupported,
 	installUpdate: mockInstallUpdate,
-	getDistributionInfo: vi.fn(),
+	getDistributionInfo: mockGetDistributionInfo,
 };
 
 vi.mock("./LatestReleaseInformationDialog", () => ({
@@ -75,6 +76,10 @@ describe("LighthouseVersion component", () => {
 		mockGetNewReleases.mockResolvedValue([]);
 		mockIsUpdateSupported.mockResolvedValue(false);
 		mockInstallUpdate.mockResolvedValue(false);
+		mockGetDistributionInfo.mockResolvedValue({
+			variantId: "windows.server",
+			updateOwner: "lighthouse-internal",
+		});
 	});
 
 	afterEach(() => {
@@ -317,5 +322,46 @@ describe("LighthouseVersion component", () => {
 		await waitFor(() => {
 			expect(screen.queryByText("About Lighthouse")).not.toBeInTheDocument();
 		});
+	});
+
+	it("does not render update button for standalone (tauri) distributions", async () => {
+		mockIsUpdateAvailable.mockResolvedValue(true);
+		mockGetDistributionInfo.mockResolvedValue({
+			variantId: "windows.standalone",
+			updateOwner: "tauri",
+		});
+
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
+
+		await screen.findByText("1.33.7");
+
+		const button = screen.queryByTestId("UpdateIcon");
+		expect(button).not.toBeInTheDocument();
+	});
+
+	it("does not call isUpdateSupported for standalone distributions", async () => {
+		mockIsUpdateAvailable.mockResolvedValue(true);
+		mockGetDistributionInfo.mockResolvedValue({
+			variantId: "linux.standalone",
+			updateOwner: "tauri",
+		});
+
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
+
+		await screen.findByText("1.33.7");
+
+		expect(mockIsUpdateSupported).not.toHaveBeenCalled();
 	});
 });

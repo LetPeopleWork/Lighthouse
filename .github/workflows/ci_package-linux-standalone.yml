@@ -104,7 +104,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ""
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: ./Lighthouse.Frontend
 
@@ -121,8 +121,23 @@ jobs:
           cp "${APPIMAGE}" ./Lighthouse-linux-standalone.AppImage
           echo "appimage_path=./Lighthouse-linux-standalone.AppImage" >> "$GITHUB_OUTPUT"
 
+          # Collect updater archive and signature if they exist
+          APPIMAGE_TAR=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage.tar.gz" | head -1)
+          if [ -n "$APPIMAGE_TAR" ]; then
+            cp "$APPIMAGE_TAR" ./Lighthouse-linux-standalone.AppImage.tar.gz
+            echo "Copied updater archive: $(basename $APPIMAGE_TAR)"
+          fi
+          APPIMAGE_SIG=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage.tar.gz.sig" | head -1)
+          if [ -n "$APPIMAGE_SIG" ]; then
+            cp "$APPIMAGE_SIG" ./Lighthouse-linux-standalone.AppImage.tar.gz.sig
+            echo "Copied updater signature: $(basename $APPIMAGE_SIG)"
+          fi
+
       - name: Upload Linux standalone artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: Lighthouse-linux-standalone-${{ inputs.version }}
-          path: ./Lighthouse-linux-standalone.AppImage
+          path: |
+            ./Lighthouse-linux-standalone.AppImage
+            ./Lighthouse-linux-standalone.AppImage.tar.gz
+            ./Lighthouse-linux-standalone.AppImage.tar.gz.sig
