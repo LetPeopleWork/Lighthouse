@@ -13,6 +13,19 @@ namespace Lighthouse.Backend.Standalone
             }
 
             var resourcesDir = Environment.GetEnvironmentVariable("LIGHTHOUSE_RESOURCES_DIR");
+            if (!string.IsNullOrEmpty(resourcesDir))
+            {
+                AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+                {
+                    var assemblyName = new System.Reflection.AssemblyName(args.Name).Name + ".dll";
+                    var assemblyPath = Path.Combine(resourcesDir, assemblyName);
+                    if (File.Exists(assemblyPath))
+                    {
+                        return System.Reflection.Assembly.LoadFrom(assemblyPath);
+                    }
+                    return null;
+                };
+            }
 
             // List of places to look for appsettings.json
             var searchPaths = new List<string>();

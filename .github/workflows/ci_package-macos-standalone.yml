@@ -72,6 +72,9 @@ jobs:
             -o ./publish/osx-arm64 \
             ./Lighthouse.Backend/Lighthouse.Backend
 
+          echo "=== osx-x64 publish output ==="
+          ls -la ./publish/osx-x64/
+
       - name: Create universal binary
         run: |
           mkdir -p ./publish/osx-universal
