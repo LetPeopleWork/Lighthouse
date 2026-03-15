@@ -70,6 +70,40 @@ jobs:
           echo "MOUNT_DIR=$MOUNT_DIR" >> $GITHUB_ENV
           echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
 
+      - name: Verify sidecar rpath and dylib presence
+        run: |
+          APP_PATH="$APP_PATH"
+          SIDECAR="$APP_PATH/Contents/MacOS/Lighthouse.Backend"
+          DYLIB="$APP_PATH/Contents/Resources/resources/libe_sqlite3.dylib"
+
+          echo "=== Sidecar binary ==="
+          if [ ! -f "$SIDECAR" ]; then
+            echo "ERROR: Sidecar not found at $SIDECAR"
+            exit 1
+          fi
+          ls -la "$SIDECAR"
+
+          echo "=== RPaths on sidecar ==="
+          otool -l "$SIDECAR" | grep -A3 LC_RPATH || echo "WARNING: No LC_RPATH entries found"
+
+          echo "=== dylib presence ==="
+          if [ ! -f "$DYLIB" ]; then
+            echo "ERROR: libe_sqlite3.dylib not found at $DYLIB"
+            echo "Contents of Resources/resources/:"
+            ls -la "$APP_PATH/Contents/Resources/resources/" || true
+            exit 1
+          fi
+          ls -la "$DYLIB"
+
+          echo "=== dylib architecture ==="
+          lipo -info "$DYLIB"
+
+          echo "=== dylib codesign ==="
+          codesign -dvvv "$DYLIB" || echo "WARNING: dylib not signed"
+
+          echo "=== sidecar codesign ==="
+          codesign -dvvv "$SIDECAR" || echo "WARNING: sidecar not signed"
+
       - name: Retrieve notarization info
         if: inputs.submission_id != ''
         env:
@@ -133,8 +167,14 @@ jobs:
           done
 
           echo "Timeout waiting for URL in logs"
-          ls -la "$LOG_DIR" 2>/dev/null || echo "Log dir missing"
+          echo "=== Log directory contents ==="
+          ls -la "$LOG_DIR" 2>/dev/null || echo "Log dir missing entirely"
+          echo "=== All log file contents ==="
           cat "$LOG_DIR"/* 2>/dev/null || true
+          echo "=== Running processes ==="
+          ps aux | grep -i lighthouse || true
+          echo "=== macOS crash logs ==="
+          find ~/Library/Logs/DiagnosticReports -name "Lighthouse*" -newer /tmp -exec cat {} \; 2>/dev/null || true
           exit 1
 
       - name: Verify log files
@@ -176,3 +216,6 @@ jobs:
           
           echo "Database file found: $DB_FILE"
           ls -la "$DB_DIR"
+          
+          echo "=== Full Application Support/Lighthouse contents ==="
+          find "$DB_DIR" -type f | sort

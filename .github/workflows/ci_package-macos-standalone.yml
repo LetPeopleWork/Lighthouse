@@ -66,11 +66,22 @@ jobs:
         run: |
           UNIVERSAL_DIR="./publish/osx-universal"
           mkdir -p "$UNIVERSAL_DIR"
+
+          # Copy x64 publish output as base (gets all supporting files)
+          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/. "$UNIVERSAL_DIR/"
+
+          # Overwrite with universal binary
           lipo -create \
             ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse \
             ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse \
             -output "$UNIVERSAL_DIR/Lighthouse"
-          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
+
+          # Overwrite with universal dylib
+          lipo -create \
+            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/libe_sqlite3.dylib \
+            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/libe_sqlite3.dylib \
+            -output "$UNIVERSAL_DIR/libe_sqlite3.dylib"
+
           chmod +x "$UNIVERSAL_DIR/Lighthouse"
 
       - name: Remove development settings
@@ -87,8 +98,6 @@ jobs:
           mkdir -p "${RESOURCES_DIR}"
 
           cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
-          cp "$UNIVERSAL_DIR/libe_sqlite3.dylib" "$SIDECAR_DIR/" || true
-          cp "$UNIVERSAL_DIR/e_sqlite3.dylib" "$SIDECAR_DIR/" || true
           
           chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
 
@@ -114,6 +123,35 @@ jobs:
             echo "Error: $TARGET_FILE not found!"
             exit 1
             fi
+
+      - name: Patch rpath on sidecar binaries
+        run: |
+          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+          
+          # The dylib lives in Contents/Resources/resources/ at runtime.
+          # @executable_path is Contents/MacOS/, so we go up one and into Resources/resources/
+          RPATH="@executable_path/../Resources/resources"
+
+          for binary in \
+            "${SIDECAR_DIR}/Lighthouse.Backend-universal-apple-darwin" \
+            "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin" \
+            "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"; do
+            
+            echo "Patching rpath on: $binary"
+            # Remove any stale rpath entries pointing to the old publish dir
+            existing_rpaths=$(otool -l "$binary" | grep -A2 LC_RPATH | grep path | awk '{print $2}' || true)
+            while IFS= read -r rp; do
+              [ -n "$rp" ] && install_name_tool -delete_rpath "$rp" "$binary" 2>/dev/null || true
+            done <<< "$existing_rpaths"
+            
+            # Add the correct runtime rpath
+            install_name_tool -add_rpath "$RPATH" "$binary"
+            
+            # Verify
+            echo "RPaths for $binary:"
+            otool -l "$binary" | grep -A2 LC_RPATH | grep path
+          done
+
 
       - name: Import Apple Certificate
         uses: apple-actions/import-codesign-certs@v3

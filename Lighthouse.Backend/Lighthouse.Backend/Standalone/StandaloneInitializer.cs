@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Standalone
             }
 
             var resourcesDir = Environment.GetEnvironmentVariable("LIGHTHOUSE_RESOURCES_DIR");
-            HandleMacOsSpecificImports(resourcesDir);
 
             // List of places to look for appsettings.json
             var workingDir = GetWorkingDirectory(resourcesDir);
@@ -61,37 +60,6 @@ namespace Lighthouse.Backend.Standalone
             }
 
             return workingDir;
-        }
-
-        private static void HandleMacOsSpecificImports(string? resourcesDir)
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || string.IsNullOrEmpty(resourcesDir))
-            {
-                return;
-            }
-
-            NativeLibrary.SetDllImportResolver(typeof(Microsoft.Data.Sqlite.SqliteConnection).Assembly, (libraryName, assembly, searchPath) =>
-            {
-                if (libraryName == "e_sqlite3")
-                {
-                    // In Tauri v2, if you put dylibs in 'resources', 
-                    // they are often at the root of resourcesDir
-                    var pathsToTry = new[]
-                    {
-                    Path.Combine(resourcesDir, "libe_sqlite3.dylib"),
-                    Path.Combine(resourcesDir, "e_sqlite3.dylib")
-                    };
-
-                    foreach (var path in pathsToTry)
-                    {
-                        if (File.Exists(path) && NativeLibrary.TryLoad(path, out var handle))
-                        {
-                            return handle;
-                        }
-                    }
-                }
-                return IntPtr.Zero;
-            });
         }
 
         private static string GetAppDataDirectory()
