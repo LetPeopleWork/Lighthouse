@@ -23,6 +23,11 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      
+      - name: Audit Frontend Dependencies
+        working-directory: ./Lighthouse.Frontend
+        run: pnpm audit --audit-level=low
+
       - name: Wait for SonarCloud Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
