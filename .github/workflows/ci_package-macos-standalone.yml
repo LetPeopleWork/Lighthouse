@@ -57,39 +57,27 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: ./Lighthouse.Frontend
 
-      - name: Publish .NET backend for macOS targets
-        run: |
-          dotnet publish -c Release -r osx-x64 --self-contained \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfContained=true \
-            -p:Version=${{ inputs.fileversion }} \
-            -o ./publish/osx-x64 \
-            ./Lighthouse.Backend/Lighthouse.Backend
-
-          dotnet publish -c Release -r osx-arm64 --self-contained \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfContained=true \
-            -p:Version=${{ inputs.fileversion }} \
-            -o ./publish/osx-arm64 \
-            ./Lighthouse.Backend/Lighthouse.Backend
-
-          echo "=== osx-x64 publish output ==="
-          ls -la ./publish/osx-x64/
+      - name: Build Backend (composite, publish osx targets)
+        uses: ./.github/actions/build-backend
+        with:
+          publish: 'true'
+          fileversion: ${{ inputs.fileversion }}
 
       - name: Create universal binary
         run: |
-          mkdir -p ./publish/osx-universal
+          UNIVERSAL_DIR="./publish/osx-universal"
+          mkdir -p "$UNIVERSAL_DIR"
 
-          # Merge single-file binaries into universal
           lipo -create \
-            ./publish/osx-x64/Lighthouse \
-            ./publish/osx-arm64/Lighthouse \
-            -output ./publish/osx-universal/Lighthouse
+            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse \
+            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse \
+            -output "$UNIVERSAL_DIR/Lighthouse"
 
-          # Copy remaining files from x64 build (appsettings, wwwroot, etc.)
-          cp -R ./publish/osx-x64/* ./publish/osx-universal/
+          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
+          chmod +x "$UNIVERSAL_DIR/Lighthouse"
 
-          chmod +x ./publish/osx-universal/Lighthouse
+          echo "=== Universal output ==="
+          ls -la "$UNIVERSAL_DIR/"
 
       - name: Remove development settings
         run: rm -f ./publish/osx-universal/appsettings.Development.json
@@ -117,9 +105,6 @@ jobs:
             # Everything else as resources
             cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
             rm "${RESOURCES_DIR}/Lighthouse"
-
-            cp ./Lighthouse.Backend/Migrations/Lighthouse.Migrations.Sqlite.dll "${RESOURCES_DIR}/"
-            cp ./Lighthouse.Backend/Migrations/Lighthouse.Migrations.Postgres.dll "${RESOURCES_DIR}/"
 
       - name: Update Tauri Version
         shell: bash
