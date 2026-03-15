@@ -99,16 +99,6 @@ jobs:
             echo "Error: $TARGET_FILE not found!"
             exit 1
             fi
-            
-      - name: Debug signing key presence
-        run: |
-          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
-            echo "ERROR: TAURI_SIGNING_PRIVATE_KEY is empty or not set"
-          else
-            echo "TAURI_SIGNING_PRIVATE_KEY is set (length: ${#TAURI_SIGNING_PRIVATE_KEY})"
-          fi
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Build Tauri AppImage
         uses: tauri-apps/tauri-action@v0
