@@ -63,6 +63,7 @@ jobs:
     with:
       fileversion: ${{ needs.version.outputs.fileversion }}
       version: ${{ needs.version.outputs.version }}
+      
   
   docker:
     needs: version
@@ -122,6 +123,7 @@ jobs:
     with:
       fileversion: ${{ needs.version.outputs.fileversion }}
       version: ${{ needs.version.outputs.version }}
+    secrets: inherit
 
   # Windows standalone (Tauri NSIS + MSI)
   package-win-standalone:
@@ -134,6 +136,7 @@ jobs:
     with:
       fileversion: ${{ needs.version.outputs.fileversion }}
       version: ${{ needs.version.outputs.version }}
+    secrets: inherit
   
   # Windows signing and verification
   codesign-windows:
