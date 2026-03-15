@@ -180,6 +180,19 @@ jobs:
           echo "Found .app: ${APP_DIR}"
           ditto -c -k --keepParent "$APP_DIR" "./Lighthouse-${{ inputs.version }}.app.zip"
 
+      - name: Staple notarization ticket to DMG
+        run: |
+          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/universal-apple-darwin/release/bundle"
+          DMG=$(find "$BUNDLE_DIR/dmg" -name "*.dmg" | head -1)
+          if [ -z "$DMG" ]; then
+            echo "ERROR: No DMG found to staple"
+            exit 1
+          fi
+          echo "Stapling notarization ticket to: $DMG"
+          xcrun stapler staple "$DMG"
+          echo "Verifying staple..."
+          xcrun stapler validate "$DMG"
+
       - name: Upload signed DMG artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
