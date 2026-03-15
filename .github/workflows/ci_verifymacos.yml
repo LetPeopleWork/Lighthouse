@@ -127,31 +127,15 @@ jobs:
             if [ -n "$LIGHTHOUSE_URL" ]; then
               echo "Found URL: $LIGHTHOUSE_URL"
               echo "LIGHTHOUSE_URL=$LIGHTHOUSE_URL" >> $GITHUB_ENV
-              break
-            fi
-            sleep 1
-          done
-
-          if [ -z "$LIGHTHOUSE_URL" ]; then
-            echo "Timeout waiting for URL in logs"
-            cat /tmp/lighthouse-stdout.log
-            exit 1
-          fi
-
-          echo "Waiting for service to respond at $LIGHTHOUSE_URL..."
-          end=$((SECONDS+30))
-          while [ $SECONDS -lt $end ]; do
-            if curl --silent --fail --insecure "$LIGHTHOUSE_URL"; then
               echo "Service is up!"
               exit 0
             fi
             sleep 1
           done
 
-          echo "Timeout waiting for service to respond"
+          echo "Timeout waiting for URL in logs"
           cat /tmp/lighthouse-stdout.log
           exit 1
-
 
       - name: Verify log files
         if: always()
