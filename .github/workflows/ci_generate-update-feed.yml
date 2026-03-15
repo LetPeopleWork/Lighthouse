@@ -100,7 +100,7 @@ jobs:
 
           gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
-            --pattern "Lighthouse-linux-standalone.AppImage.tar.gz.sig" \
+            --pattern "Lighthouse-linux-standalone.AppImage.sig" \
             --dir /tmp/sigs 2>/dev/null || echo "WARN: Linux sig not found"
 
           gh release download "${TAG}" \
@@ -126,7 +126,7 @@ jobs:
           SEMVER=$(echo "$VERSION_RAW" | awk -F'.' '{print $1"."$2"."$3$4}')
           echo "Tag: $TAG -> Tauri version: $SEMVER"
 
-          LINUX_SIG=$(cat /tmp/sigs/Lighthouse-linux-standalone.AppImage.tar.gz.sig 2>/dev/null || echo "")
+          LINUX_SIG=$(cat /tmp/sigs/Lighthouse-linux-standalone.AppImage.sig 2>/dev/null || echo "")
           MACOS_SIG=$(cat /tmp/sigs/Lighthouse-osx.app.tar.gz.sig 2>/dev/null || echo "")
           WINDOWS_SIG=$(cat /tmp/sigs/Lighthouse-win-standalone-x64.exe.sig 2>/dev/null || echo "")
 
@@ -134,7 +134,7 @@ jobs:
             --arg version "$SEMVER" \
             --rawfile notes /tmp/release_notes.md \
             --arg pub_date "$PUB_DATE" \
-            --arg linux_url "${DOWNLOAD_URL}/Lighthouse-linux-standalone.AppImage.tar.gz" \
+            --arg linux_url "${DOWNLOAD_URL}/Lighthouse-linux-standalone.AppImage" \
             --arg linux_sig "$LINUX_SIG" \
             --arg darwin_url "${DOWNLOAD_URL}/Lighthouse-osx.app.tar.gz" \
             --arg darwin_sig "$MACOS_SIG" \

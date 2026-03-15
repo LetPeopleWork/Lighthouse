@@ -129,12 +129,10 @@ jobs:
         run: |
           cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage Lighthouse-linux-standalone.AppImage
 
-          # Linux updater archive + signature
-          if [ -f LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.tar.gz ]; then
-            cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.tar.gz Lighthouse-linux-standalone.AppImage.tar.gz
-          fi
-          if [ -f LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.tar.gz.sig ]; then
-            cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.tar.gz.sig Lighthouse-linux-standalone.AppImage.tar.gz.sig
+          if [ -f LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.sig ]; then
+            cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.sig Lighthouse-linux-standalone.AppImage.sig
+          else
+            echo "WARN: No Linux updater sig found"
           fi
 
       - name: Prepare Windows standalone release files
@@ -184,7 +182,7 @@ jobs:
 
       - uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.exe.sig,Lighthouse-win-standalone-x64.msi,Lighthouse-win-standalone-x64.msi.sig,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-osx.app.tar.gz,Lighthouse-osx.app.tar.gz.sig,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-linux-standalone.AppImage.tar.gz,Lighthouse-linux-standalone.AppImage.tar.gz.sig,Lighthouse-SBOM.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.exe.sig,Lighthouse-win-standalone-x64.msi,Lighthouse-win-standalone-x64.msi.sig,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-osx.app.tar.gz,Lighthouse-osx.app.tar.gz.sig,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-linux-standalone.AppImage.sig,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"
