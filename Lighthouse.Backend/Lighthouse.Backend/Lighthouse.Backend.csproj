@@ -25,10 +25,6 @@
 	  <None Remove="Services\Implementation\Licensing\public_key.pem" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or '$(RuntimeIdentifier)' == 'osx-arm64'">
-		<ExcludeFromSingleFile Include="Lighthouse.Migrations.Sqlite.dll" />
-	</ItemGroup>
-
 	<ItemGroup>
 		<PackageReference Include="CsvHelper" Version="33.1.0" />
 		<PackageReference Include="GraphQL.Client" Version="6.1.0" />

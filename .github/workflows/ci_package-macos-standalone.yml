@@ -22,8 +22,9 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPLE_SIGNING_IDENTITY: "Developer ID Application: LetPeopleWork GmbH (${{ secrets.APPLE_TEAM_ID }})"
 
-    environment:
-      name: "Package and Sign"
+    # Re-enable once that crap is working properly - fml
+    #environment:
+    #  name: "Package and Sign"
 
     steps:
       - name: Checkout repository
@@ -116,6 +117,9 @@ jobs:
             # Everything else as resources
             cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
             rm "${RESOURCES_DIR}/Lighthouse"
+
+            cp ./Lighthouse.Backend/Migrations/Lighthouse.Migrations.Sqlite.dll "${RESOURCES_DIR}/"
+            cp ./Lighthouse.Backend/Migrations/Lighthouse.Migrations.Postgres.dll "${RESOURCES_DIR}/"
 
       - name: Update Tauri Version
         shell: bash
