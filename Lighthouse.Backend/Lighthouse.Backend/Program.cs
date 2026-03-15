@@ -73,27 +73,31 @@ namespace Lighthouse.Backend
                     ConfigureHttps(builder);
                 }
 
-                ConfigureServices(builder, isStandalone);
+                ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
                 var mcpFeature = TryGetOptionalFeature(builder);
                 ConfigureOptionalServices(builder, mcpFeature);
 
                 var app = builder.Build();
-                ConfigureApp(app, mcpFeature, isStandalone);
+                ConfigureApp(app, mcpFeature);
 
                 if (isStandalone)
                 {
+                    // Register the banner to print once the server is actually up
                     app.Lifetime.ApplicationStarted.Register(() =>
                     {
                         PrintSystemInfo(app, builder);
                     });
 
                     Log.Information("Backend is ready. Starting web host...");
+
+                    // This is the CRITICAL change: await the blocking run call
                     await app.RunAsync();
                 }
                 else
                 {
+                    // Standard dev/production mode logic
                     _ = Task.Run(async () =>
                     {
                         await app.StartAsync();
@@ -106,15 +110,17 @@ namespace Lighthouse.Backend
             }
             catch (Exception ex)
             {
+                // Vital for sidecar debugging: ensure the error hits StdErr
                 await Console.Error.WriteLineAsync($"FATAL: {ex.Message}");
                 Log.Fatal(ex, "Application terminated unexpectedly");
-                Environment.Exit(1);
+                Environment.Exit(1); // Force non-zero exit code on failure
             }
             finally
             {
                 await Log.CloseAndFlushAsync();
             }
         }
+
 
         private static OptionalFeature? TryGetOptionalFeature(WebApplicationBuilder builder)
         {
@@ -124,6 +130,7 @@ namespace Lighthouse.Backend
                 using var scope = serviceProvider.CreateScope();
                 var optionalFeatureRepository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
 
+                // Check if database is accessible
                 var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
                 if (dbContext.Database.CanConnect())
                 {
@@ -138,72 +145,61 @@ namespace Lighthouse.Backend
             return null;
         }
 
-        private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature, bool isStandalone)
+        private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
         {
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            else if (!isStandalone)
+            else
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-            }
 
-            if (!isStandalone)
+            app.UseCors("AllowAll");
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseCors("AllowAll");
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lighthouse API V1");
+                c.RoutePrefix = "api-docs";
+            });
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseRouting();
             app.UseAuthorization();
 
             app.MapControllers();
+
             app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
-            if (!isStandalone)
+            app.MapGet("/.well-known/security.txt", async context =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
+                var wwwroot = app.Environment.WebRootPath;
+                var filePath = Path.Combine(wwwroot, "security.txt");
+
+                if (!File.Exists(filePath))
                 {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lighthouse API V1");
-                    c.RoutePrefix = "api-docs";
-                });
+                    context.Response.StatusCode = 404;
+                    return;
+                }
 
-                app.MapGet("/.well-known/security.txt", async context =>
-                {
-                    var wwwroot = app.Environment.WebRootPath;
-                    var filePath = Path.Combine(wwwroot, "security.txt");
+                context.Response.ContentType = "text/plain; charset=utf-8";
+                await context.Response.SendFileAsync(filePath);
+            });
 
-                    if (!File.Exists(filePath))
-                    {
-                        context.Response.StatusCode = 404;
-                        return;
-                    }
-
-                    context.Response.ContentType = "text/plain; charset=utf-8";
-                    await context.Response.SendFileAsync(filePath);
-                });
-            }
+            app.UseSpa(spa =>
+            {
+                spa.Options.SourcePath = "wwwroot";
+                spa.Options.DefaultPage = "/index.html";
+            });
 
             if (mcpFeature?.Enabled ?? false)
             {
                 app.MapMcp();
-            }
-
-            if (!isStandalone)
-            {
-                app.UseDefaultFiles();
-                app.UseStaticFiles();
-                app.UseSpa(spa =>
-                {
-                    spa.Options.SourcePath = "wwwroot";
-                    spa.Options.DefaultPage = "/index.html";
-                });
             }
         }
 
@@ -216,6 +212,7 @@ namespace Lighthouse.Backend
         {
             if (mcpFeature?.Enabled ?? false)
             {
+                // Only configure MCP server if user has premium license
                 var tempServiceProvider = builder.Services.BuildServiceProvider();
                 using var scope = tempServiceProvider.CreateScope();
                 var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
@@ -246,39 +243,36 @@ namespace Lighthouse.Backend
             }
         }
 
-        private static void ConfigureServices(WebApplicationBuilder builder, bool isStandalone)
+        private static void ConfigureServices(WebApplicationBuilder builder)
         {
             builder.Services
-                .AddControllers()
-                .AddJsonOptions(options =>
+                .AddCors(options =>
+                {
+                    options.AddPolicy("AllowAll",
+                      corsPolicyBuilder =>
+                      {
+                          corsPolicyBuilder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                      });
+                })
+                .AddControllers().AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.JsonSerializerOptions.Converters.Add(new API.JsonConverters.UtcDateTimeConverter());
                 });
 
-            if (!isStandalone)
-            {
-                builder.Services.AddCors(options =>
-                {
-                    options.AddPolicy("AllowAll",
-                        corsPolicyBuilder =>
-                        {
-                            corsPolicyBuilder.AllowAnyOrigin()
-                                .AllowAnyMethod()
-                                .AllowAnyHeader();
-                        });
-                });
+            // Add Swagger services
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
-                builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen();
-            }
-
+            // Add SignalR
             builder.Services.AddSignalR()
-                .AddJsonProtocol(options =>
-                {
-                    options.PayloadSerializerOptions.Converters
-                        .Add(new JsonStringEnumConverter());
-                });
+                 .AddJsonProtocol(options =>
+                 {
+                     options.PayloadSerializerOptions.Converters
+                      .Add(new JsonStringEnumConverter());
+                 });
 
             builder.Services.ConfigureAll<HttpClientFactoryOptions>(o =>
             {
@@ -286,15 +280,15 @@ namespace Lighthouse.Backend
             });
 
             builder.Services
-                .AddHttpClient("Default")
-                .ConfigurePrimaryHttpMessageHandler(_ => new SocketsHttpHandler
-                {
-                    PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-                    PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
-                    MaxConnectionsPerServer = 100,
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                    EnableMultipleHttp2Connections = true
-                });
+            .AddHttpClient("Default")
+            .ConfigurePrimaryHttpMessageHandler(_ => new SocketsHttpHandler
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+                MaxConnectionsPerServer = 100,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                EnableMultipleHttp2Connections = true
+            });
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)
@@ -370,9 +364,11 @@ namespace Lighthouse.Backend
 
         private static void ConfigureDatabase(WebApplicationBuilder builder)
         {
+            // Configure database settings from appsettings.json
             builder.Services.Configure<DatabaseConfiguration>(
                 builder.Configuration.GetSection("Database"));
 
+            // Configure DbContext with options
             builder.Services.AddDbContext<LighthouseAppContext>((provider, options) =>
             {
                 var dbConfig = provider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
@@ -392,6 +388,7 @@ namespace Lighthouse.Backend
                                 npgsql.CommandTimeout(30);
                             });
 
+                        // Log slow queries in development
                         if (builder.Environment.IsDevelopment())
                         {
                             options.EnableSensitiveDataLogging();
@@ -399,6 +396,7 @@ namespace Lighthouse.Backend
                         }
                         break;
                     case "sqlite":
+                        // Ensure the directory for the SQLite database exists
                         var connectionStringBuilder = new SqliteConnectionStringBuilder(dbConfig.ConnectionString);
                         var dataSource = connectionStringBuilder.DataSource;
                         var directory = Path.GetDirectoryName(dataSource);
@@ -407,9 +405,11 @@ namespace Lighthouse.Backend
                             Directory.CreateDirectory(directory);
                         }
 
+                        // Create and configure SQLite connection with WAL mode
                         var connection = new SqliteConnection(dbConfig.ConnectionString);
                         connection.Open();
 
+                        // Enable WAL mode and other optimizations
                         using (var command = connection.CreateCommand())
                         {
                             command.CommandText = @"
@@ -437,6 +437,7 @@ namespace Lighthouse.Backend
                 return;
             }
 
+            // Run migration
             using var scope = builder.Services.BuildServiceProvider().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
@@ -484,6 +485,7 @@ namespace Lighthouse.Backend
 
         private static void ConfigureHttps(WebApplicationBuilder builder)
         {
+            // Configure Kestrel to use the certificate
             builder.WebHost.ConfigureKestrel(options =>
             {
                 options.ConfigureHttpsDefaults(httpsOptions =>
@@ -540,6 +542,7 @@ namespace Lighthouse.Backend
                 .ToList();
 
             var logFilePath = TryGetLogFilePath(builder.Configuration);
+
             var dbProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "Unknown";
 
             string Line(string emoji, string label, string value)
@@ -576,6 +579,7 @@ namespace Lighthouse.Backend
             info.Add("");
 
             var startupBannerBuilder = new StringBuilder();
+
             int maxLines = Math.Max(logo.Length, info.Count);
 
             for (int i = 0; i < maxLines; i++)
@@ -593,6 +597,7 @@ namespace Lighthouse.Backend
         {
             try
             {
+                // Try to get the file path from Serilog configuration
                 var writeTo = configuration.GetSection("Serilog:WriteTo");
                 foreach (var sink in writeTo.GetChildren())
                 {
