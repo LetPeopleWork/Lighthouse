@@ -67,44 +67,36 @@ jobs:
         run: |
           UNIVERSAL_DIR="./publish/osx-universal"
           mkdir -p "$UNIVERSAL_DIR"
-
           lipo -create \
             ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse \
             ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse \
             -output "$UNIVERSAL_DIR/Lighthouse"
-
           cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
           chmod +x "$UNIVERSAL_DIR/Lighthouse"
-
-          echo "=== Universal output ==="
-          ls -la "$UNIVERSAL_DIR/"
 
       - name: Remove development settings
         run: rm -f ./publish/osx-universal/appsettings.Development.json
 
       - name: Place sidecar binary and resources for Tauri
         run: |
-            TARGET_TRIPLE="universal-apple-darwin"
-            SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
-            RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+          TARGET_TRIPLE="universal-apple-darwin"
+          SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
+          RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
 
-            mkdir -p "${SIDECAR_DIR}"
-            mkdir -p "${RESOURCES_DIR}"
+          mkdir -p "${SIDECAR_DIR}"
+          mkdir -p "${RESOURCES_DIR}"
 
-            # Sidecar binary (universal) — used for the final merged bundle
-            cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
-            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+          cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
+          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
 
-            # ✅ Add arch-specific copies so each sub-build's script can find them
-            cp ./publish/osx-arm64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
-            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
+          cp ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
+          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
 
-            cp ./publish/osx-x64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
-            chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
+          cp ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
+          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
 
-            # Everything else as resources
-            cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
-            rm "${RESOURCES_DIR}/Lighthouse"
+          cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
+          rm "${RESOURCES_DIR}/Lighthouse"
 
       - name: Update Tauri Version
         shell: bash
