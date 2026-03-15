@@ -9,7 +9,7 @@ export default defineConfig({
     ],
     build: {
         outDir: '../Lighthouse.Backend/Lighthouse.Backend/wwwroot',
-        emptyOutDir: false,
+        emptyOutDir: true,
         minify: true,
     },
     base: '/'

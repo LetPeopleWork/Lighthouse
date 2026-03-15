@@ -163,7 +163,7 @@ namespace Lighthouse.Backend
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lighthouse API V1");
-                c.RoutePrefix = "api-docs";
+                c.RoutePrefix = "api/docs";
             });
 
             app.UseDefaultFiles();
