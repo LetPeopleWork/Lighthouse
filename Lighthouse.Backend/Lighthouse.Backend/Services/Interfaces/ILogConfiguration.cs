@@ -6,6 +6,8 @@
 
         string[] SupportedLogLevels { get; }
 
+        string? LogPath { get; }
+
         void SetLogLevel(string level);
 
         string GetLogs();

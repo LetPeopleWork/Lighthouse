@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DemoDataPage } from "../teams/DemoDataPage";
-import { LogsPage } from "./Logs/LogsPage";
+import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
 import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
 
 export class SettingsPage {
@@ -22,9 +22,9 @@ export class SettingsPage {
 		return new SystemConfigurationPage(this.page);
 	}
 
-	async goToLogs(): Promise<LogsPage> {
-		await this.page.getByTestId("logs-tab").click();
+	async goToSystemInfo(): Promise<SystemInfoPage> {
+		await this.page.getByTestId("system-info-tab").click();
 
-		return new LogsPage(this.page);
+		return new SystemInfoPage(this.page);
 	}
 }

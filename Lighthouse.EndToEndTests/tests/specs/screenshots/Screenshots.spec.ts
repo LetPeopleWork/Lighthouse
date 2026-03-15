@@ -278,7 +278,7 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		"settings/optionalfeatures.png",
 	);
 
-	const logs = await settingsPage.goToLogs();
+	const logs = await settingsPage.goToSystemInfo();
 	await takePageScreenshot(logs.page, "settings/logs.png");
 });
 

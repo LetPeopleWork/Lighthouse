@@ -29,6 +29,10 @@ import {
 	type ISuggestionService,
 	SuggestionService,
 } from "./SuggestionService";
+import {
+	type ISystemInfoService,
+	SystemInfoService,
+} from "./SystemInfoService";
 import { TeamMetricsService } from "./TeamMetricsService";
 import { type ITeamService, TeamService } from "./TeamService";
 import {
@@ -62,6 +66,7 @@ export interface IApiServiceContext {
 	demoDataService: IDemoDataService;
 	deliveryService: IDeliveryService;
 	wizardService: IWizardService;
+	systemInfoService: ISystemInfoService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -88,6 +93,7 @@ const defaultServices: IApiServiceContext = {
 	demoDataService: new DemoDataService(),
 	deliveryService: new DeliveryService(),
 	wizardService: new WizardService(),
+	systemInfoService: new SystemInfoService(),
 };
 
 export function getApiServices(): IApiServiceContext {

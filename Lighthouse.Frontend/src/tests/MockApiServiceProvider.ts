@@ -13,6 +13,7 @@ import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureSer
 import type { IPortfolioService } from "../services/Api/PortfolioService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
+import type { ISystemInfoService } from "../services/Api/SystemInfoService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { ITerminologyService } from "../services/Api/TerminologyService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
@@ -49,6 +50,8 @@ export const createMockApiServiceContext = (
 		demoDataService: null as unknown as IApiServiceContext["demoDataService"],
 		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
+		systemInfoService:
+			null as unknown as IApiServiceContext["systemInfoService"],
 		...overrides,
 	};
 };
@@ -244,5 +247,11 @@ export const createMockDeliveryService = (): IDeliveryService => {
 		delete: vi.fn().mockResolvedValue(undefined),
 		getRuleSchema: vi.fn().mockResolvedValue({ fields: [] }),
 		validateRules: vi.fn().mockResolvedValue([]),
+	};
+};
+
+export const createMockSystemInfoService = (): ISystemInfoService => {
+	return {
+		getSystemInfo: vi.fn(),
 	};
 };

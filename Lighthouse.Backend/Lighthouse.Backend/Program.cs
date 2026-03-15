@@ -63,8 +63,8 @@ namespace Lighthouse.Backend
                 }
 
                 ConfigureLogging(builder);
-                Log.Information("Starting up Lighthouse! Standalone Mode: {IsStandalone}", isStandalone);
-                Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
+                Log.Information("Starting up Lighthouse!");
+                Log.Information("Mode: {Mode}", isStandalone ? "Standalone (Tauri)" : "Server (ASP.NET Core)");
 
                 RegisterServices(builder);
 
@@ -356,6 +356,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
+            builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);

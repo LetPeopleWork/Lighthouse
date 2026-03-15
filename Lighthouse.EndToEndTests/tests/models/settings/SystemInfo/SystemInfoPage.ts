@@ -9,7 +9,7 @@ export type LogLevels =
 	| "Error"
 	| "Fatal";
 
-export class LogsPage {
+export class SystemInfoPage {
 	page: Page;
 
 	constructor(page: Page) {

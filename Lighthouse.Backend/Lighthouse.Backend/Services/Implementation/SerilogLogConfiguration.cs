@@ -39,6 +39,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public string[] SupportedLogLevels { get; }
 
+        public string? LogPath => string.IsNullOrEmpty(logFolderPath) ? null : logFolderPath;
+
         public string GetLogs()
         {
             if (string.IsNullOrEmpty(logFolderPath))

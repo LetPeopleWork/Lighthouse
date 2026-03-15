@@ -15,8 +15,8 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
-import LogSettings from "./LogSettings/LogSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
+import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
 
 const Settings: React.FC = () => {
 	const [value, setValue] = useState("20");
@@ -39,6 +39,8 @@ const Settings: React.FC = () => {
 			configuration: "20",
 			system: "20",
 			logs: "99",
+			systeminfo: "99",
+			"system-info": "99",
 		};
 
 		if (tabParam && tabMapping[tabParam.toLowerCase()]) {
@@ -69,11 +71,11 @@ const Settings: React.FC = () => {
 		},
 		{
 			value: "99",
-			label: "Logs",
-			testId: "logs-tab",
-			panelTestId: "logs-panel",
+			label: "System Info",
+			testId: "system-info-tab",
+			panelTestId: "system-info-panel",
 			icon: <ArticleIcon />,
-			component: <LogSettings />,
+			component: <SystemInfoSettings />,
 		},
 	];
 

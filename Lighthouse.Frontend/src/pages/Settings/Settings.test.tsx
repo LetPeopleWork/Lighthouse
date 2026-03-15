@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Settings from "./Settings";
 
 // Mock the components used in the tabs
-vi.mock("./LogSettings/LogSettings", () => ({
-	default: () => <div>Log Settings</div>,
+vi.mock("./SystemInfo/SystemInfoSettings", () => ({
+	default: () => <div>System Info Settings</div>,
 }));
 vi.mock("./DemoData/DemoDataSettings", () => ({
 	default: () => <div>Demo Data Settings</div>,
@@ -61,10 +61,10 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("configuration-panel")).toBeVisible();
 	});
 
-	it("should switch to Logs tab when clicked", () => {
+	it("should switch to System Info tab when clicked", () => {
 		renderWithRouter();
-		fireEvent.click(screen.getByTestId("logs-tab"));
-		expect(screen.getByTestId("logs-panel")).toBeVisible();
+		fireEvent.click(screen.getByTestId("system-info-tab"));
+		expect(screen.getByTestId("system-info-panel")).toBeVisible();
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 });
