@@ -89,8 +89,7 @@ const LighthouseVersion: React.FC = () => {
 				const versionData = await versionService.getCurrentVersion();
 				setVersion(versionData);
 
-				const distributionInfo =
-					await versionService.getDistributionInfo();
+				const distributionInfo = await versionService.getDistributionInfo();
 				setUpdateOwner(distributionInfo.updateOwner);
 
 				const updateAvailable = await versionService.isUpdateAvailable();
@@ -100,11 +99,8 @@ const LighthouseVersion: React.FC = () => {
 					const releaseData = await versionService.getNewReleases();
 					setNewReleases(releaseData);
 
-					if (
-						distributionInfo.updateOwner === "lighthouse-internal"
-					) {
-						const updateSupported =
-							await versionService.isUpdateSupported();
+					if (distributionInfo.updateOwner === "lighthouse-internal") {
+						const updateSupported = await versionService.isUpdateSupported();
 						setIsUpdateSupported(updateSupported);
 					}
 
