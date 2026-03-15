@@ -35,6 +35,16 @@ namespace Lighthouse.Backend.Standalone
 
                 Directory.SetCurrentDirectory(workingDir);
                 builder.Environment.ContentRootPath = workingDir;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    var existingDyldPath = Environment.GetEnvironmentVariable("DYLD_LIBRARY_PATH") ?? "";
+                    var newDyldPath = string.IsNullOrEmpty(existingDyldPath)
+                        ? workingDir
+                        : $"{workingDir}:{existingDyldPath}";
+                    Environment.SetEnvironmentVariable("DYLD_LIBRARY_PATH", newDyldPath);
+                    Console.WriteLine($"DEBUG: Set DYLD_LIBRARY_PATH to: {newDyldPath}");
+                }
             }
             else
             {
