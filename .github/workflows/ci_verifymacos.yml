@@ -111,7 +111,9 @@ jobs:
       - name: Run Lighthouse
         run: |
           echo "Starting Lighthouse..."
-          ./Lighthouse > lighthouse.log 2>&1 &
+          chmod +x ./lighthouse-standalone
+          chmod +x ./Lighthouse.Backend || true
+          ./lighthouse-standalone > lighthouse.log 2>&1 &
         working-directory: /Applications/Lighthouse.app/Contents/MacOS
 
       - name: Wait for Lighthouse to start
@@ -125,8 +127,8 @@ jobs:
             sleep 1
           done
           echo "Timeout waiting for service"
+          cat /Applications/Lighthouse.app/Contents/MacOS/lighthouse.log || true
           exit 1
-          cat lighthouse.log
         working-directory: /Applications/Lighthouse.app/Contents/MacOS
 
 
