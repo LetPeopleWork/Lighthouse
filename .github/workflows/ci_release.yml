@@ -157,14 +157,19 @@ jobs:
           fi
           cp "$MSI" Lighthouse-win-standalone-x64.msi
 
-          # Windows NSIS updater archive + signature (produced by codesign re-signing)
-          NSIS_ZIP=$(find LighthouseArtifacts/win-standalone -name "*.nsis.zip" | head -1)
-          if [ -n "$NSIS_ZIP" ]; then
-            cp "$NSIS_ZIP" Lighthouse-win-standalone-x64-setup.nsis.zip
-          fi
-          NSIS_SIG=$(find LighthouseArtifacts/win-standalone -name "*.nsis.zip.sig" | head -1)
+          # Windows updater sigs (Tauri v2: signs exe/msi directly, no zip)
+          NSIS_SIG=$(find LighthouseArtifacts/win-standalone -name "*-setup.exe.sig" | head -1)
           if [ -n "$NSIS_SIG" ]; then
-            cp "$NSIS_SIG" Lighthouse-win-standalone-x64-setup.nsis.zip.sig
+            cp "$NSIS_SIG" Lighthouse-win-standalone-x64.exe.sig
+          else
+            echo "WARN: No NSIS updater sig found"
+          fi
+
+          MSI_SIG=$(find LighthouseArtifacts/win-standalone -name "*.msi.sig" | head -1)
+          if [ -n "$MSI_SIG" ]; then
+            cp "$MSI_SIG" Lighthouse-win-standalone-x64.msi.sig
+          else
+            echo "WARN: No MSI updater sig found"
           fi
 
       - name: Prepare macOS updater release files
@@ -179,7 +184,7 @@ jobs:
 
       - uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.msi,Lighthouse-win-standalone-x64-setup.nsis.zip,Lighthouse-win-standalone-x64-setup.nsis.zip.sig,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-osx.app.tar.gz,Lighthouse-osx.app.tar.gz.sig,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-linux-standalone.AppImage.tar.gz,Lighthouse-linux-standalone.AppImage.tar.gz.sig,Lighthouse-SBOM.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.exe.sig,Lighthouse-win-standalone-x64.msi,Lighthouse-win-standalone-x64.msi.sig,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-osx.app.tar.gz,Lighthouse-osx.app.tar.gz.sig,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-linux-standalone.AppImage.tar.gz,Lighthouse-linux-standalone.AppImage.tar.gz.sig,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"

@@ -64,27 +64,23 @@ jobs:
           mkdir -p "${SIDECAR_DIR}"
           mkdir -p "${RESOURCES_DIR}"
 
-          # Sidecar binary
           cp ./Lighthouse/win-x64/Lighthouse.exe "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}.exe"
-
-          # Everything else as resources
           cp -r ./Lighthouse/win-x64/. "${RESOURCES_DIR}/"
-          rm "${RESOURCES_DIR}/Lighthouse.exe"  # already placed as sidecar
-
+          rm "${RESOURCES_DIR}/Lighthouse.exe"
 
       - name: Update Tauri Version
         shell: bash
         run: |
-            TARGET_FILE="Lighthouse.Frontend/src-tauri/tauri.conf.json"
-            if [ -f "$TARGET_FILE" ]; then
+          TARGET_FILE="Lighthouse.Frontend/src-tauri/tauri.conf.json"
+          if [ -f "$TARGET_FILE" ]; then
             FULL_VERSION="${{ inputs.fileversion }}"
             SEMVER=$(echo "$FULL_VERSION" | awk -F'.' '{print $1"."$2"."$3$4}')
             jq --arg v "$SEMVER" '.version = $v' "$TARGET_FILE" > tmp.json && mv tmp.json "$TARGET_FILE"
             echo "Successfully updated version to $SEMVER in $TARGET_FILE"
-            else
+          else
             echo "Error: $TARGET_FILE not found!"
             exit 1
-            fi
+          fi
 
       - name: Build Tauri (unsigned)
         uses: tauri-apps/tauri-action@v0
@@ -104,14 +100,7 @@ jobs:
           echo "=== Tauri bundle contents ==="
           find "${BUNDLE_DIR}" -type f || true
 
-          # App binary
-          APP_EXE="./Lighthouse.Frontend/src-tauri/target/release/Lighthouse.exe"
-          if [ -f "$APP_EXE" ]; then
-            cp "$APP_EXE" "${OUTPUT_DIR}/"
-            echo "Copied app binary"
-          fi
-
-          # NSIS installer
+          # NSIS installer + updater sig
           NSIS_EXE=$(find "${BUNDLE_DIR}/nsis" -name "*-setup.exe" 2>/dev/null | head -1)
           if [ -z "$NSIS_EXE" ]; then
             echo "ERROR: No NSIS setup EXE found"
@@ -120,12 +109,15 @@ jobs:
           cp "$NSIS_EXE" "${OUTPUT_DIR}/"
           echo "Copied NSIS installer: $(basename "$NSIS_EXE")"
 
-          # NSIS updater zip + sig
-          for f in "${BUNDLE_DIR}"/nsis/*.nsis.zip "${BUNDLE_DIR}"/nsis/*.nsis.zip.sig; do
-            [ -f "$f" ] && cp "$f" "${OUTPUT_DIR}/" && echo "Copied $(basename "$f")"
-          done
+          NSIS_SIG=$(find "${BUNDLE_DIR}/nsis" -name "*-setup.exe.sig" 2>/dev/null | head -1)
+          if [ -n "$NSIS_SIG" ]; then
+            cp "$NSIS_SIG" "${OUTPUT_DIR}/"
+            echo "Copied NSIS updater sig: $(basename "$NSIS_SIG")"
+          else
+            echo "WARN: No NSIS updater sig found"
+          fi
 
-          # MSI installer
+          # MSI installer + updater sig
           MSI=$(find "${BUNDLE_DIR}/msi" -name "*.msi" ! -name "*.msi.zip" 2>/dev/null | head -1)
           if [ -z "$MSI" ]; then
             echo "ERROR: No MSI found"
@@ -134,10 +126,13 @@ jobs:
           cp "$MSI" "${OUTPUT_DIR}/"
           echo "Copied MSI: $(basename "$MSI")"
 
-          # MSI updater zip + sig
-          for f in "${BUNDLE_DIR}"/msi/*.msi.zip "${BUNDLE_DIR}"/msi/*.msi.zip.sig; do
-            [ -f "$f" ] && cp "$f" "${OUTPUT_DIR}/" && echo "Copied $(basename "$f")"
-          done
+          MSI_SIG=$(find "${BUNDLE_DIR}/msi" -name "*.msi.sig" 2>/dev/null | head -1)
+          if [ -n "$MSI_SIG" ]; then
+            cp "$MSI_SIG" "${OUTPUT_DIR}/"
+            echo "Copied MSI updater sig: $(basename "$MSI_SIG")"
+          else
+            echo "WARN: No MSI updater sig found"
+          fi
 
           echo "=== Standalone output ==="
           ls -la "${OUTPUT_DIR}/"
