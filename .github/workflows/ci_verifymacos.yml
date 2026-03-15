@@ -110,31 +110,31 @@ jobs:
 
       - name: Run Lighthouse
         run: |
-          echo "Starting Lighthouse..."
-          chmod +x ./lighthouse-standalone
-          chmod +x ./Lighthouse.Backend || true
-          ./lighthouse-standalone > /tmp/lighthouse-stdout.log 2>&1 &
-          echo $! > /tmp/lighthouse.pid
-        working-directory: /Applications/Lighthouse.app/Contents/MacOS
+          echo "Starting Lighthouse app bundle..."
+          open -a /Applications/Lighthouse.app
+          echo "App launched"
 
       - name: Wait for Lighthouse to start
         run: |
-          echo "Waiting for URL to appear in logs..."
+          echo "Waiting for URL to appear in sidecar logs..."
+          LOG_DIR="$HOME/Library/Application Support/Lighthouse/logs"
           LIGHTHOUSE_URL=""
-          end=$((SECONDS+30))
+          end=$((SECONDS+60))  # give more time since frontend needs to boot first
           while [ $SECONDS -lt $end ]; do
-            LIGHTHOUSE_URL=$(grep -oE 'Url\s+: (https?://[^ ]+)' /tmp/lighthouse-stdout.log | head -1 | grep -oE 'https?://[^ ]+' || true)
-            if [ -n "$LIGHTHOUSE_URL" ]; then
-              echo "Found URL: $LIGHTHOUSE_URL"
-              echo "LIGHTHOUSE_URL=$LIGHTHOUSE_URL" >> $GITHUB_ENV
-              echo "Service is up!"
-              exit 0
+            if [ -d "$LOG_DIR" ]; then
+              LIGHTHOUSE_URL=$(grep -rhoE 'Url\s+: (https?://[^ ]+)' "$LOG_DIR"/ 2>/dev/null | head -1 | grep -oE 'https?://[^ ]+' || true)
+              if [ -n "$LIGHTHOUSE_URL" ]; then
+                echo "Found URL: $LIGHTHOUSE_URL"
+                echo "LIGHTHOUSE_URL=$LIGHTHOUSE_URL" >> $GITHUB_ENV
+                exit 0
+              fi
             fi
             sleep 1
           done
 
           echo "Timeout waiting for URL in logs"
-          cat /tmp/lighthouse-stdout.log
+          ls -la "$LOG_DIR" 2>/dev/null || echo "Log dir missing"
+          cat "$LOG_DIR"/* 2>/dev/null || true
           exit 1
 
       - name: Verify log files
