@@ -22,9 +22,8 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPLE_SIGNING_IDENTITY: "Developer ID Application: LetPeopleWork GmbH (${{ secrets.APPLE_TEAM_ID }})"
 
-    # Re-enable once that crap is working properly - fml
-    #environment:
-    #  name: "Package and Sign"
+    environment:
+      name: "Package and Sign"
 
     steps:
       - name: Checkout repository

@@ -113,53 +113,66 @@ jobs:
           echo "Starting Lighthouse..."
           chmod +x ./lighthouse-standalone
           chmod +x ./Lighthouse.Backend || true
-          ./lighthouse-standalone > lighthouse.log 2>&1 &
+          ./lighthouse-standalone > /tmp/lighthouse-stdout.log 2>&1 &
+          echo $! > /tmp/lighthouse.pid
         working-directory: /Applications/Lighthouse.app/Contents/MacOS
 
       - name: Wait for Lighthouse to start
         run: |
+          echo "Waiting for URL to appear in logs..."
+          LIGHTHOUSE_URL=""
           end=$((SECONDS+30))
           while [ $SECONDS -lt $end ]; do
-            if curl --silent --fail --insecure http://localhost:5000; then
+            LIGHTHOUSE_URL=$(grep -oE 'Url\s+: (https?://[^ ]+)' /tmp/lighthouse-stdout.log | head -1 | grep -oE 'https?://[^ ]+' || true)
+            if [ -n "$LIGHTHOUSE_URL" ]; then
+              echo "Found URL: $LIGHTHOUSE_URL"
+              echo "LIGHTHOUSE_URL=$LIGHTHOUSE_URL" >> $GITHUB_ENV
+              break
+            fi
+            sleep 1
+          done
+
+          if [ -z "$LIGHTHOUSE_URL" ]; then
+            echo "Timeout waiting for URL in logs"
+            cat /tmp/lighthouse-stdout.log
+            exit 1
+          fi
+
+          echo "Waiting for service to respond at $LIGHTHOUSE_URL..."
+          end=$((SECONDS+30))
+          while [ $SECONDS -lt $end ]; do
+            if curl --silent --fail --insecure "$LIGHTHOUSE_URL"; then
               echo "Service is up!"
               exit 0
             fi
             sleep 1
           done
-          echo "Timeout waiting for service"
-          cat /Applications/Lighthouse.app/Contents/MacOS/lighthouse.log || true
+
+          echo "Timeout waiting for service to respond"
+          cat /tmp/lighthouse-stdout.log
           exit 1
-        working-directory: /Applications/Lighthouse.app/Contents/MacOS
 
 
       - name: Verify log files
         if: always()
         run: |
-          LOG_DIR="$HOME/Library/Logs/Lighthouse"
+          LOG_DIR="$HOME/Library/Application Support/Lighthouse/logs"
           echo "Checking for log files in: $LOG_DIR"
           if [ ! -d "$LOG_DIR" ]; then
             echo "Error: Log directory $LOG_DIR does not exist"
             exit 1
           fi
-          
-          LOG_FILES=$(ls -la "$LOG_DIR"/*.txt 2>/dev/null | wc -l)
-          if [ "$LOG_FILES" -eq 0 ]; then
-            echo "Error: No log files found in $LOG_DIR"
-            ls -la "$LOG_DIR"
-            exit 1
-          fi
-          
-          echo "Found $LOG_FILES log file(s) in $LOG_DIR"
+
+          echo "Found files:"
           ls -la "$LOG_DIR"
 
-          for logfile in "$LOG_DIR"/*.txt; do
+          for logfile in "$LOG_DIR"/*; do
             if [ -f "$logfile" ]; then
               echo "=== Contents of $logfile ==="
               cat "$logfile"
               echo ""
             fi
           done
-
 
       - name: Verify database exists in correct directory
         run: |
