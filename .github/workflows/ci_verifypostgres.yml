@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+      JiraScopedTokenIntegrationTestToken: ${{ secrets.JIRASCOPEDTOKENINTEGRATIONTESTTOKEN }}
       AzureDevOpsLighthouseE2ETestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
       LinearAPIKey: ${{ secrets.LINEARAPIKEY }}
 

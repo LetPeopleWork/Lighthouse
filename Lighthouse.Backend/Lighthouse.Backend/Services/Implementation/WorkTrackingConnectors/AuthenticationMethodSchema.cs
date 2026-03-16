@@ -67,6 +67,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
                             new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = "Jira URL", IsSecret = false },
                             new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Personal Access Token", IsSecret = true }
                         ]
+                    },
+                    new AuthenticationMethod
+                    {
+                        Key = AuthenticationMethodKeys.JiraScopedToken,
+                        DisplayName = "Jira Cloud (Scoped Access Token)",
+                        Options =
+                        [
+                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = "Jira URL", IsSecret = false },
+                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Username, DisplayName = "Username (Email)", IsSecret = false },
+                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Scoped Access Token", IsSecret = true }
+                        ]
                     }
                 ]
             },

@@ -40,6 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
         private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
+        private static readonly ConcurrentDictionary<string, string> CloudIdCache = new();
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
@@ -88,7 +89,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             try
             {
-                var client = GetJiraRestClient(connection);
+                var client = await GetJiraRestClientAsync(connection);
                 var response = await client.GetAsync("rest/api/2/myself");
                 if (!response.IsSuccessStatusCode)
                 {
@@ -110,7 +111,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 logger.LogInformation("Getting Boards for System {ConnectionName}", workTrackingSystemConnection.Name);
-                var client = GetJiraRestClient(workTrackingSystemConnection);
+                var client = await GetJiraRestClientAsync(workTrackingSystemConnection);
 
                 return await GetBoardsFromJira(workTrackingSystemConnection, client);
             }
@@ -125,7 +126,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 logger.LogInformation("Getting Board Information for Board {BoardId}", boardId);
-                var client = GetJiraRestClient(workTrackingSystemConnection);
+                var client = await GetJiraRestClientAsync(workTrackingSystemConnection);
 
                 return await GetBoardInformationFromJira(client, boardId);
             }
@@ -142,7 +143,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return new WriteBackResult();
             }
 
-            var client = GetJiraRestClient(connection);
+            var client = await GetJiraRestClientAsync(connection);
             var results = await UpdateItems(updates, client);
 
             return new WriteBackResult { ItemResults = results };
@@ -155,7 +156,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var additionalFieldReferences = await GetCustomFieldMappings(client,
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 updates.Select(f => f.TargetFieldReference));
-            
+
             foreach (var update in updates)
             {
                 try
@@ -929,7 +930,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async Task<Dictionary<string, string>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
         {
-            var client = GetJiraRestClient(connection);
+            var client = await GetJiraRestClientAsync(connection);
             var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
 
             var customFieldReferences = await GetCustomFieldMappings(client,
@@ -942,7 +943,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, int? maxResultsOverride = null)
         {
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
-            var client = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
+            var client = await GetJiraRestClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var deployment = await GetDeploymentType(client, workItemQueryOwner.WorkTrackingSystemConnection);
 
@@ -1110,42 +1111,97 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return query;
         }
 
-        private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)
+        private async Task<HttpClient> GetJiraRestClientAsync(WorkTrackingSystemConnection connection)
         {
-            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var apiToken = cryptoService.Decrypt(encryptedApiToken);
-            var key = $"{url}|{encryptedApiToken}";
-
             var requestTimeoutInSeconds =
                 connection.GetWorkTrackingSystemConnectionOptionByKey<int>(JiraWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
 
-            var client = ClientCache.GetOrAdd(key, _ =>
-            {
-                var c = new HttpClient(SharedHandler)
-                {
-                    BaseAddress = new Uri(url),
-                    Timeout = TimeSpan.FromSeconds(requestTimeoutInSeconds)
-                };
-                return c;
-            });
+            var (baseUrl, cacheKey) = await ResolveBaseUrlAndCacheKeyAsync(connection, encryptedApiToken);
+            var client = GetOrCreateClient(cacheKey, baseUrl, requestTimeoutInSeconds);
 
-            if (connection.AuthenticationMethodKey == AuthenticationMethodKeys.JiraCloud)
+            SetAuthorizationHeader(client, connection, apiToken);
+
+            return client;
+        }
+
+        private async Task<(string BaseUrl, string CacheKey)> ResolveBaseUrlAndCacheKeyAsync(
+            WorkTrackingSystemConnection connection, string encryptedApiToken)
+        {
+            if (connection.AuthenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken)
+            {
+                var jiraUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+                var cloudId = await ResolveCloudIdAsync(jiraUrl);
+                var baseUrl = $"https://api.atlassian.com/ex/jira/{cloudId}/";
+                return (baseUrl, $"{baseUrl}|{encryptedApiToken}");
+            }
+
+            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+            return (url, $"{url}|{encryptedApiToken}");
+        }
+
+        private async Task<string> ResolveCloudIdAsync(string jiraUrl)
+        {
+            if (CloudIdCache.TryGetValue(jiraUrl, out var cachedCloudId))
+            {
+                logger.LogDebug("Resolved Cloud ID from cache for {Url}: {CloudId}", jiraUrl, cachedCloudId);
+                return cachedCloudId;
+            }
+
+            logger.LogDebug("Fetching Cloud ID from {Url}/_edge/tenant_info", jiraUrl);
+
+            using var tempClient = new HttpClient();
+            var response = await tempClient.GetAsync($"{jiraUrl}/_edge/tenant_info");
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var json = JsonDocument.Parse(body);
+
+            var cloudId = json.RootElement.GetProperty("cloudId").GetString()
+                ?? throw new InvalidOperationException(
+                    $"Could not resolve Jira Cloud ID from {jiraUrl}/_edge/tenant_info. " +
+                    "Ensure the URL points to a valid Jira Cloud instance.");
+
+            CloudIdCache[jiraUrl] = cloudId;
+            logger.LogDebug("Resolved Cloud ID for {Url}: {CloudId}", jiraUrl, cloudId);
+
+            return cloudId;
+        }
+
+        private HttpClient GetOrCreateClient(string cacheKey, string baseUrl, int timeoutInSeconds)
+        {
+            return ClientCache.GetOrAdd(cacheKey, _ => new HttpClient(SharedHandler)
+            {
+                BaseAddress = new Uri(baseUrl),
+                Timeout = TimeSpan.FromSeconds(timeoutInSeconds)
+            });
+        }
+
+        private static void SetAuthorizationHeader(
+            HttpClient client, WorkTrackingSystemConnection connection, string apiToken)
+        {
+            if (connection.AuthenticationMethodKey is
+                AuthenticationMethodKeys.JiraCloud or
+                AuthenticationMethodKeys.JiraScopedToken)
             {
                 var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
-                var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+                var encoded = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{apiToken}"));
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encoded);
             }
             else
             {
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
             }
-
-            return client;
         }
 
         private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
         {
+            if (connection.AuthenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken)
+            {
+                return JiraDeployment.Cloud;
+            }
+
             var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
 
             logger.LogDebug("Getting Deployment Type of Jira Instance for {Url}", baseUrl);

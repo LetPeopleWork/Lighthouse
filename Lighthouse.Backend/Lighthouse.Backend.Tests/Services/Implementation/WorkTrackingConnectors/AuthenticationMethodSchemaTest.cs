@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         [Test]
         [TestCase(WorkTrackingSystems.AzureDevOps, 1)]
-        [TestCase(WorkTrackingSystems.Jira, 2)]
+        [TestCase(WorkTrackingSystems.Jira, 3)]
         [TestCase(WorkTrackingSystems.Linear, 1)]
         [TestCase(WorkTrackingSystems.Csv, 1)]
         public void GetMethodsForSystem_ReturnsExpectedNumberOfMethods(WorkTrackingSystems system, int expectedCount)
@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(WorkTrackingSystems.AzureDevOps, AuthenticationMethodKeys.AzureDevOpsPat, "Personal Access Token")]
         [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraCloud, "Jira Cloud (API Token)")]
         [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraDataCenter, "Jira Data Center (Personal Access Token)")]
+        [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraScopedToken, "Jira Cloud (Scoped Access Token)")]
         [TestCase(WorkTrackingSystems.Linear, AuthenticationMethodKeys.LinearApiKey, "API Key")]
         [TestCase(WorkTrackingSystems.Csv, AuthenticationMethodKeys.None, "No Authentication")]
         public void GetDisplayName_ReturnsCorrectDisplayName(WorkTrackingSystems system, string key, string expectedDisplayName)
@@ -45,6 +46,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(method, Is.Not.Null);
             Assert.That(method!.Options.Any(o => o.Key == "Username"), Is.False);
+        }
+
+        [Test]
+        public void GetMethodByKey_JiraScopedToken_HasUrlOption()
+        {
+            var method = AuthenticationMethodSchema.GetMethodByKey(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraScopedToken);
+
+            Assert.That(method, Is.Not.Null);
+            Assert.That(method!.Options.Any(o => o.Key == "Jira Url"), Is.True);
+        }
+
+        [Test]
+        public void GetMethodByKey_JiraScopedToken_HasUsernameOption()
+        {
+            var method = AuthenticationMethodSchema.GetMethodByKey(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraScopedToken);
+
+            Assert.That(method, Is.Not.Null);
+            Assert.That(method!.Options.Any(o => o.Key == "Username"), Is.True);
         }
 
         [Test]

@@ -8,6 +8,7 @@ export const AuthenticationMethodKeys = {
 	AzureDevOpsPat: "ado.pat",
 	JiraCloud: "jira.cloud",
 	JiraDataCenter: "jira.datacenter",
+	JiraScopedToken: "jira.scopedtoken",
 	LinearApiKey: "linear.apikey",
 	None: "none",
 } as const;

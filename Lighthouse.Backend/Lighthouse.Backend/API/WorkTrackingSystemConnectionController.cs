@@ -17,28 +17,18 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpPut]
-        public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
+        public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(
+            int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
             var isForbiddenAction = false;
             List<string>? validationErrors = null;
-            
+
             var result = await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async existingConnection =>
             {
                 existingConnection.Name = updatedConnection.Name;
+                existingConnection.AuthenticationMethodKey = updatedConnection.AuthenticationMethodKey;
 
-                foreach (var option in updatedConnection.Options)
-                {
-                    var existingOption = existingConnection.Options.Single(o => o.Key == option.Key);
-                    
-                    // Preserve existing secret values when empty string is provided
-                    if (existingOption.IsSecret && string.IsNullOrEmpty(option.Value))
-                    {
-                        continue; // Skip update - keep existing encrypted value
-                    }
-                    
-                    existingOption.Value = option.Value;
-                }
-
+                MergeOptions(existingConnection, updatedConnection.Options);
                 UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions);
                 UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions);
 
@@ -49,17 +39,13 @@ namespace Lighthouse.Backend.API
                     return new WorkTrackingSystemConnectionDto(existingConnection);
                 }
 
-                if (existingConnection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
-                    && existingConnection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService))
+                (isForbiddenAction, var shouldSave) = CheckLicensePermissions(existingConnection);
+                if (shouldSave)
                 {
                     repository.Update(existingConnection);
                     await repository.Save();
                 }
-                else 
-                {
-                    isForbiddenAction = true;
-                }
-                
+
                 return new WorkTrackingSystemConnectionDto(existingConnection);
             });
 
@@ -91,6 +77,52 @@ namespace Lighthouse.Backend.API
             await repository.Save();
 
             return Ok();
+        }
+
+        private void MergeOptions(
+            WorkTrackingSystemConnection existingConnection,
+            IEnumerable<WorkTrackingSystemConnectionOptionDto> incomingOptions)
+        {
+            var incomingKeys = incomingOptions.Select(o => o.Key).ToHashSet();
+
+            var toRemove = existingConnection.Options.Where(o => !incomingKeys.Contains(o.Key)).ToList();
+            foreach (var removed in toRemove)
+            {
+                existingConnection.Options.Remove(removed);
+            }
+
+            foreach (var option in incomingOptions)
+            {
+                var existingOption = existingConnection.Options.SingleOrDefault(o => o.Key == option.Key);
+
+                if (existingOption == null)
+                {
+                    existingConnection.Options.Add(new WorkTrackingSystemConnectionOption
+                    {
+                        Key = option.Key,
+                        Value = option.Value,
+                        IsSecret = option.IsSecret,
+                        IsOptional = option.IsOptional,
+                    });
+                    continue;
+                }
+
+                if (existingOption.IsSecret && string.IsNullOrEmpty(option.Value))
+                {
+                    continue;
+                }
+
+                existingOption.Value = option.Value;
+            }
+        }
+
+        private (bool isForbidden, bool shouldSave) CheckLicensePermissions(
+            WorkTrackingSystemConnection connection)
+        {
+            var hasPermission = connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
+                && connection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService);
+
+            return (!hasPermission, hasPermission);
         }
 
         private static void UpdateWriteBackMappingDefinitions(

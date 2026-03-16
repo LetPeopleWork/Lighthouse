@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
         
         public const string JiraDataCenter = "jira.datacenter";
 
+        public const string JiraScopedToken = "jira.scopedtoken";
+
         // Linear
         public const string LinearApiKey = "linear.apikey";
 
