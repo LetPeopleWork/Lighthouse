@@ -85,7 +85,9 @@ namespace Lighthouse.Backend.API
         {
             var incomingKeys = incomingOptions.Select(o => o.Key).ToHashSet();
 
-            var toRemove = existingConnection.Options.Where(o => !incomingKeys.Contains(o.Key)).ToList();
+            // Only remove non-secret options that are no longer needed (e.g. switching auth method).
+            // Secret options are never removed here; they are preserved when the incoming value is empty.
+            var toRemove = existingConnection.Options.Where(o => !incomingKeys.Contains(o.Key) && !o.IsSecret).ToList();
             foreach (var removed in toRemove)
             {
                 existingConnection.Options.Remove(removed);
