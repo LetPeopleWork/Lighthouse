@@ -180,7 +180,7 @@ jobs:
             cp LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz.sig Lighthouse-osx.app.tar.gz.sig
           fi
 
-      - uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
+      - uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd
         with:
           artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.exe.sig,Lighthouse-win-standalone-x64.msi,Lighthouse-win-standalone-x64.msi.sig,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-osx.app.tar.gz,Lighthouse-osx.app.tar.gz.sig,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-linux-standalone.AppImage.sig,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
