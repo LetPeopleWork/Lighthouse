@@ -169,7 +169,7 @@ jobs:
           echo "Signing coverage OK: ${SERVER_COUNT} server file(s), ${STANDALONE_COUNT} standalone file(s)"
 
       - name: Delete unsigned server artifact
-        uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b
+        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
 
@@ -180,7 +180,7 @@ jobs:
           path: ./artifacts/server
 
       - name: Delete unsigned standalone artifact
-        uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b
+        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118
         with:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
 
