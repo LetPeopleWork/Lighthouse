@@ -49,6 +49,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetBoards_ReturnsCorrectBoards()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var boards = (await subject.GetBoards(connection)).ToList();
+
+            Assert.That(boards, Is.Empty);
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();

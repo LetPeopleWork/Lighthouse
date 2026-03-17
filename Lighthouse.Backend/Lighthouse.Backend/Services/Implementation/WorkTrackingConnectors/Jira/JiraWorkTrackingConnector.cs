@@ -1126,6 +1126,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return client;
         }
 
+
         private async Task<(string BaseUrl, string CacheKey)> ResolveBaseUrlAndCacheKeyAsync(
             WorkTrackingSystemConnection connection, string encryptedApiToken)
         {
