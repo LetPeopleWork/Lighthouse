@@ -7,7 +7,7 @@
 		"dev": "cross-env VITE_API_BASE_URL=http://localhost:5169/api vite",
 		"build": "tsc -b && vite build --outDir ../Lighthouse.Backend/Lighthouse.Backend/wwwroot",
 		"build-docker": "tsc -b && vite build --outDir ./dist",
-		"prebuild": "pnpm dlx @biomejs/biome check --write ./src",
+		"prebuild": "pnpm biome check --write ./src",
 		"preview": "vite preview",
 		"test": "vitest run --reporter=default",
 		"sonarreport": "vitest run --coverage",
@@ -67,6 +67,9 @@
 	"pnpm": {
 		"overrides": {
 			"immutable": ">=5.1.5"
-		}
+		},
+		"ignoredBuiltDependencies": [
+			"esbuild"
+		]
 	}
 }
