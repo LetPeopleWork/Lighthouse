@@ -1,6 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { SystemInfo } from "../../../models/SystemInfo/SystemInfo";
+
+vi.mock("@melloware/react-logviewer", () => ({
+	LazyLog: ({ text }: { text: string }) => (
+		<div data-testid="log-viewer">{text}</div>
+	),
+}));
+
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILogService } from "../../../services/Api/LogService";
 import type { ISystemInfoService } from "../../../services/Api/SystemInfoService";
