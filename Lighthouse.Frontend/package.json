@@ -7,7 +7,7 @@
 		"dev": "cross-env VITE_API_BASE_URL=http://localhost:5169/api vite",
 		"build": "tsc -b && vite build --outDir ../Lighthouse.Backend/Lighthouse.Backend/wwwroot",
 		"build-docker": "tsc -b && vite build --outDir ./dist",
-		"prebuild": "pnpm dlx @biomejs/biome check --write ./src",
+		"prebuild": "pnpm biome check --write ./src",
 		"preview": "vite preview",
 		"test": "vitest run --reporter=default",
 		"sonarreport": "vitest run --coverage",
@@ -16,7 +16,7 @@
 	"dependencies": {
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.1",
-		"@melloware/react-logviewer": "^6.3.5",
+		"@melloware/react-logviewer": "^6.4.1",
 		"@microsoft/signalr": "^10.0.0",
 		"@mui/icons-material": "^7.3.9",
 		"@mui/lab": "^7.0.0",
@@ -67,6 +67,9 @@
 	"pnpm": {
 		"overrides": {
 			"immutable": ">=5.1.5"
-		}
+		},
+		"ignoredBuiltDependencies": [
+			"esbuild"
+		]
 	}
 }
