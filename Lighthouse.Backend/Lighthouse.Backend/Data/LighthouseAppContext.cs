@@ -112,6 +112,12 @@ namespace Lighthouse.Backend.Data
                 .HasForeignKey(p => p.OwningTeamId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<WhenForecast>()
+                .HasOne(wf => wf.Team)
+                .WithMany()
+                .HasForeignKey(wf => wf.TeamId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<WorkTrackingSystemConnection>(entity =>
             {
                 entity.HasMany(e => e.Options)

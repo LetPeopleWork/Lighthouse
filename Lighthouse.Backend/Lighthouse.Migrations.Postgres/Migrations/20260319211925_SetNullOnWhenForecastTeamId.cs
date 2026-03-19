@@ -1,0 +1,41 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Lighthouse.Migrations.Postgres.Migrations
+{
+    /// <inheritdoc />
+    public partial class SetNullOnWhenForecastTeamId : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropForeignKey(
+                name: "FK_ForecastBase_Teams_TeamId",
+                table: "ForecastBase");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_ForecastBase_Teams_TeamId",
+                table: "ForecastBase",
+                column: "TeamId",
+                principalTable: "Teams",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropForeignKey(
+                name: "FK_ForecastBase_Teams_TeamId",
+                table: "ForecastBase");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_ForecastBase_Teams_TeamId",
+                table: "ForecastBase",
+                column: "TeamId",
+                principalTable: "Teams",
+                principalColumn: "Id");
+        }
+    }
+}

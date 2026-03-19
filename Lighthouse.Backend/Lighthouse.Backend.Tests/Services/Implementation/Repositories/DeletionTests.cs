@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
@@ -157,7 +159,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             featureRepository.Add(feature);
             await featureRepository.Save();
 
-            // Act
             teamRepository.Remove(team1.Id);
             await teamRepository.Save();
 
@@ -170,6 +171,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 var featureToVerify = featureRepository.GetAll().Single();
                 Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
             };
+        }
+
+        [Test]
+        public async Task TeamInProject_WithExistingForecasts_DeleteTeam_SucceedsAsync()
+        {
+            var team = new Team { Name = "MyTeam", WorkTrackingSystemConnection = workTrackingSystemConnection };
+
+            var teamRepository = ServiceProvider.GetService<IRepository<Team>>();
+            teamRepository.Add(team);
+            await teamRepository.Save();
+
+            var portfolio = new Portfolio { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection };
+            var projectRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
+            projectRepository.Add(portfolio);
+            await projectRepository.Save();
+
+            var feature = new Feature { Name = "My Feature", Order = "12" };
+            feature.Portfolios.Add(portfolio);
+            portfolio.Features.Add(feature);
+
+            var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
+            featureRepository.Add(feature);
+            await featureRepository.Save();
+
+            var whenForecast = new WhenForecast { FeatureId = feature.Id, TeamId = team.Id, NumberOfItems = 5 };
+            DatabaseContext.Set<WhenForecast>().Add(whenForecast);
+            await DatabaseContext.SaveChangesAsync();
+
+            // Clear the change tracker to simulate a fresh request context (the real bug scenario:
+            // the WhenForecast was created by a prior portfolio-update request; the team deletion
+            // is a new request with no prior tracked entities).
+            DatabaseContext.ChangeTracker.Clear();
+
+            teamRepository.Remove(team.Id);
+            await teamRepository.Save();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(teamRepository.GetAll().ToList(), Has.Count.EqualTo(0));
+                var remaining = DatabaseContext.Set<WhenForecast>().AsNoTracking().FirstOrDefault(wf => wf.Id == whenForecast.Id);
+                Assert.That(remaining?.TeamId, Is.Null);
+            }
         }
     }
 }
