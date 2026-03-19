@@ -24,7 +24,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public override void Remove(int id)
         {
             logger.LogInformation("Removing Project with {Id}", id);
-            var itemToRemove = Context.Portfolios.Find(id);
+            var itemToRemove = Context.Portfolios
+                .Include(p => p.Features)
+                    .ThenInclude(f => f.Portfolios)
+                .SingleOrDefault(p => p.Id == id);
 
             if (itemToRemove != null)
             {
