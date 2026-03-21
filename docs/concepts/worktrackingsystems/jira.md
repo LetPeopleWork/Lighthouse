@@ -27,8 +27,19 @@ Depending on whether you use Jira Cloud or Jira Data Center, you have different 
 ### Jira Cloud (API Token)
 You can find more information on how to create an Access Token in the [Atlassian Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
 
-{: .important}
-The API Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+### Jira Cloud (Scoped Access Token)
+While a regular API Token will grant you the same permissions as the user that creates is has, you can also use tokens with only specific *scopes*. This allows you to fine tune the permissions so you have detailed control over what is allowed and what is not allowed. If you are using Service Accounts, you must use a Scoped Access Token, as regular API Tokens aren't supported.
+
+#### Scopes
+The following scopes are needed for Lighthouse:
+- *read:jira-user*
+- *read:jira-work*
+
+If you want to syncronize back data from Lighthouse to Jira, you additionally need:
+- *write:jira-work*
+
+{: .note}
+With the Scoped Access Tokens, it's **not possible** to load any boards. This is a restriction by Jira, as the endpoint to load the boards does not support this method of authentication. Lighthouse will display "No Boards available" in that case. Either just manually configure your teams/portfolios, or start out with a personal API Token, and then switch to the scoped token once you are done with your configuration.
 
 ### Jira Data Center (Personal Access Token)
 The above description is true if you are working against a Jira Cloud instance. In case you are connecting to an on-premise Jira version (*Server* or *Data Center*), there are small differences.
@@ -38,8 +49,7 @@ Instead of an *API Token*, you have to provide a *Personal Access Token*. See th
 A *Personal Access Token* will not require you to specify a username, as it's part of the token itself.
 
 {: .important}
-As with the *API Token*, the *Personal Access Token* is treated like a password from Lighthouse.
-
+The API/Access Tokens shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 # Additional Fields
 
 Lighthouse allows you to configure **Additional Fields** for Jira connections. These fields let you retrieve and display extra information from your Jira issues, including custom fields and built-in properties.
