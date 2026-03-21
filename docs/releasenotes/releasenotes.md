@@ -13,9 +13,10 @@ Screenshot (manually)
 
 ## Scoped Access Token Support for Jira Connections
 Support for scoped tokens (e.g. when using service accounts)
-Screenshot (manually)
 
-Constraints (Boards), link to docs.
+![Scoped Token Access](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/ScopedAccessToken.png)
+
+Constraints (Boards not supported), link to docs --> https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#jira-cloud-scoped-access-token
 
 ## System Info
 Rename Logs --> System Info

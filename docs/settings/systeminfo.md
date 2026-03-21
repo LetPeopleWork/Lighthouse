@@ -1,15 +1,25 @@
 ---
-title: Logs
+title: System Info
 layout: home
-parent: Settings
+parent: System Settings
 nav_order: 6
 ---
 
-# Logs
+# System Info
+The *System Info* tab gives you an overview over your system:
+![System Info](../assets/settings/systeminfo.png)
+
+## System Info
+Here you can see details about the Lighthouse instance you are running.
+
+{: .note}
+You can click on any of the values, and it will copy them.
+
+You also have a link to the API documentation, which will bring you to a swagger page detailing all the API endpoints of Lighthouse.
+
+## Logs
 We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  
 For this case, you can check the *Logs*.
-
-![Logs](../assets/settings/logs.png)
 
 ## Log Level
 Log levels describe the level of detail that should end up in the log. The more "sensitive", the more messages will be added. Following *Log Levels* can be selected:

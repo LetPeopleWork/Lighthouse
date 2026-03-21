@@ -1,14 +1,14 @@
 ---
-title: System Settings
+title: Configuration
 layout: home
-parent: Settings
+parent: System Settings
 nav_order: 2
 ---
 
-# System Settings
-The System Settings Page shows some generally applicable settings that affect the overall Lighthouse behaviour.
+# Configuration
+The Configuration Page shows some generally applicable settings that affect the overall Lighthouse behaviour.
 
-![System Settings](../../assets/settings/systemsettings.png)
+![Configuration](../../assets/settings/configuration.png)
 
 ## Lighthouse Configuration
 This section allows you to export your configuration to a file, as well as import it back into your Lighthouse instance.

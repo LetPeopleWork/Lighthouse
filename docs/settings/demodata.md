@@ -1,7 +1,7 @@
 ---
 title: Demo Data
 layout: home
-parent: Settings
+parent: System Settings
 nav_order: 3
 ---
 

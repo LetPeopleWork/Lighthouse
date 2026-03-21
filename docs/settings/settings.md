@@ -11,7 +11,7 @@ Lighthouse has various options to fine-tune it based on your needs. This section
 
 ## Configuration Areas
 
-### [Configuration](systemsettings.html)
+### [Configuration](configuration.html)
 General application settings that affect the overall Lighthouse behavior, including:
 - Configuration export/import
 - Optional features
@@ -21,5 +21,5 @@ General application settings that affect the overall Lighthouse behavior, includ
 ### [Demo Data](demodata.html)
 Load sample scenarios to explore Lighthouse features or for training purposes. Various scenarios are available covering different team situations and use cases.
 
-### [Logs](logs.html)
-Access detailed logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.
+### [System Info](systeminfo.html)
+Access detailed information about your system as well as logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.

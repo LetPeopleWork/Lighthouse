@@ -252,7 +252,7 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 
 	const systemSettings = await settingsPage.goToSystemConfiguration();
 
-	await takePageScreenshot(systemSettings.page, "settings/systemsettings.png");
+	await takePageScreenshot(systemSettings.page, "settings/configuration.png");
 
 	await takeElementScreenshot(
 		systemSettings.lighthouseConfiguration,
@@ -279,7 +279,7 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 
 	const logs = await settingsPage.goToSystemInfo();
-	await takePageScreenshot(logs.page, "settings/logs.png");
+	await takePageScreenshot(logs.page, "settings/systeminfo.png");
 });
 
 testWithData(
