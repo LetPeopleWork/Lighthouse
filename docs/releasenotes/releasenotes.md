@@ -23,29 +23,33 @@ The Standalone edition is ideal for individual users who want a self-contained L
 
 | Platform | Package | Notes |
 |---|---|---|
-| **Windows** | NSIS Installer (`.exe`) | Recommended — installs to Program Files with auto-updater and uninstaller |
-| **Windows** | Portable (`.exe`) | No installation needed — run from any folder; updates are manual |
-| **macOS** | Universal App (`.dmg`) | Runs natively on both Apple Silicon and Intel; signed, notarized, and auto-updates |
+| **Windows** | NSIS Installer (`.exe`) and MSI Installer (`.msi`) | Recommended — installs to Program Files with auto-updater and uninstaller |
+| **macOS** | App Image (`.dmg`) and App Bundle (`.zip`) | Runs natively on both Apple Silicon and Intel; signed, notarized, and auto-updates |
 | **Linux** | AppImage (`.AppImage`) | Single-file, runs on most distributions without installation |
 
 For full installation instructions and guidance on choosing between Standalone and Server editions, see the [Installation docs](https://docs.lighthouse.letpeople.work/Installation/installation.html).
 
 ## Scoped Access Token Support for Jira Connections
-Support for scoped tokens (e.g. when using service accounts)
+Lighthouse now supports **Scoped Access Tokens** as an authentication method for Jira Cloud connections. Unlike regular API tokens — which inherit all permissions of the user who created them — scoped tokens let you grant only the specific permissions Lighthouse needs. This is especially useful in organizations using **service accounts**, where regular API tokens are not supported.
 
 ![Scoped Token Access](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/ScopedAccessToken.png)
 
-Constraints (Boards not supported), link to docs --> https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#jira-cloud-scoped-access-token
+The required scopes for read-only access are `read:jira-user` and `read:jira-work`. If you use the [Write Back](https://docs.lighthouse.letpeople.work/concepts/writeback.html) feature, you additionally need `write:jira-work`.
+
+{: .note}
+Due to a Jira restriction, the boards endpoint does not support scoped token authentication. If you are using a scoped token, Lighthouse will show "No Boards available" and the Board Wizard cannot be used. You can either configure your teams and portfolios manually, or use a personal API token for the initial setup and switch to a scoped token afterwards.
+
+For full setup instructions, see the [Jira documentation](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#jira-cloud-scoped-access-token).
 
 ## System Info
-Rename Logs --> System Info
-Show system details.
+The *Logs* tab in System Settings has been renamed to **System Info**. In addition to the existing log viewer, it now displays details about your running Lighthouse instance — such as version information and other system properties. Clicking any of the displayed values copies it to your clipboard, making it easy to share when reporting issues or reaching out for support. A direct link to the API documentation (Swagger) is also available from this page.
 
-[System Info](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/systeminfo.png)
+![System Info](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/systeminfo.png)
 
 
 ## Other Improvements and Bug Fixes
 - Fixed an issue where deleting a team caused an error in case you deleted a Portfolio that included this team
+- Removed fixed ports from config - plese check [the configuration](https://docs.lighthouse.letpeople.work/Installation/configuration.html#http--https-url) on how to set up https and override ports.
 - Updated various third party dependencies
 
 ## Contributions ❤️
