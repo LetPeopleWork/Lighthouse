@@ -58,6 +58,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 - [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
 - [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Manuel Opitz](https://www.linkedin.com/in/manuel-opitz-3812351a9/)
 
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.13.16...v26.3.20.4)
 
