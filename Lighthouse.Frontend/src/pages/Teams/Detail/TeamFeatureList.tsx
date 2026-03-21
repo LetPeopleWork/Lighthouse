@@ -90,14 +90,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				flex: 1,
 				hideable: false,
 				renderCell: ({ row }) => (
-					<FeatureName
-						name={getWorkItemName(row)}
-						url={row.url ?? ""}
-						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-						teamsWorkIngOnFeature={
-							featuresInProgress.includes(row.referenceId) ? [team] : []
-						}
-					/>
+					<FeatureName name={getWorkItemName(row)} url={row.url ?? ""} />
 				),
 			},
 			{
@@ -153,14 +146,13 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			},
 			createStateColumn(),
 		],
-		[
-			featureTerm,
-			team,
-			featuresInProgress,
-			parentMap,
-			portfoliosTerm,
-			handleShowFeatureDetails,
-		],
+		[featureTerm, team, parentMap, portfoliosTerm, handleShowFeatureDetails],
+	);
+
+	const getActiveWorkTeams = useCallback(
+		(row: IFeature) =>
+			featuresInProgress.includes(row.referenceId) ? [team] : [],
+		[featuresInProgress, team],
 	);
 
 	return (
@@ -171,6 +163,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				storageKey={`team-features-${team.id}`}
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_team_${team.id}`}
 				loading={features.length === 0}
+				getActiveWorkTeams={getActiveWorkTeams}
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog

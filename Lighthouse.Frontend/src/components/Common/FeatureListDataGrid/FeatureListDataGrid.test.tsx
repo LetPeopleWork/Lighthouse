@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import type { IEntityReference } from "../../../models/EntityReference";
 import { Feature } from "../../../models/Feature";
 import { createForecastsColumn, createStateColumn } from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
@@ -10,6 +11,7 @@ vi.mock("../../../services/TerminologyContext", () => ({
 		getTerm: (key: string) => {
 			if (key === "feature") return "Feature";
 			if (key === "features") return "Features";
+			if (key === "workItems") return "Work Items";
 			return "Unknown";
 		},
 	}),
@@ -21,6 +23,8 @@ const createFeature = (
 		name: string;
 		referenceId: string;
 		stateCategory: string;
+		remainingWork: { [key: number]: number };
+		isUsingDefaultFeatureSize: boolean;
 	}>,
 ): Feature => {
 	const feature = new Feature();
@@ -30,9 +34,10 @@ const createFeature = (
 	feature.stateCategory =
 		(overrides.stateCategory as Feature["stateCategory"]) ?? "ToDo";
 	feature.lastUpdated = new Date();
-	feature.isUsingDefaultFeatureSize = false;
+	feature.isUsingDefaultFeatureSize =
+		overrides.isUsingDefaultFeatureSize ?? false;
 	feature.projects = [];
-	feature.remainingWork = { 1: 5 };
+	feature.remainingWork = overrides.remainingWork ?? { 1: 5 };
 	feature.totalWork = { 1: 10 };
 	feature.forecasts = [];
 	feature.url = "";
@@ -78,6 +83,7 @@ describe("FeatureListDataGrid", () => {
 			name: "Done Feature",
 			referenceId: "FTR-3",
 			stateCategory: "Done",
+			remainingWork: {},
 		}),
 	];
 
@@ -199,5 +205,224 @@ describe("FeatureListDataGrid", () => {
 		const toggle = screen.getByTestId("hide-completed-features-toggle");
 		const switchInput = toggle.querySelector('input[type="checkbox"]');
 		expect(switchInput).not.toBeChecked();
+	});
+
+	it("should show a Done feature with remaining work when hideCompleted is true", async () => {
+		const featuresWithDoneHavingRemainingWork = [
+			createFeature({ id: 1, stateCategory: "ToDo" }),
+			createFeature({
+				id: 2,
+				stateCategory: "Done",
+				remainingWork: { 1: 3 },
+			}),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresWithDoneHavingRemainingWork}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		// Both the ToDo (Active) and the Done-with-remaining-work (Closed) should appear
+		const activeElements = await screen.findAllByText("Active");
+		expect(activeElements).toHaveLength(1);
+		expect(await screen.findByText("Closed")).toBeInTheDocument();
+	});
+
+	it("should hide a Done feature with no remaining work when hideCompleted is true", async () => {
+		const featuresWithDoneNoRemaining = [
+			createFeature({ id: 1, stateCategory: "ToDo" }),
+			createFeature({
+				id: 2,
+				stateCategory: "Done",
+				remainingWork: {},
+			}),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresWithDoneNoRemaining}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		const activeElements = await screen.findAllByText("Active");
+		expect(activeElements).toHaveLength(1);
+		expect(screen.queryByText("Closed")).not.toBeInTheDocument();
+	});
+
+	it("should show warning icon for Done feature with remaining work", async () => {
+		const featuresWithWarning = [
+			createFeature({
+				id: 1,
+				stateCategory: "Done",
+				remainingWork: { 1: 5 },
+			}),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresWithWarning}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		const warningIcon = await screen.findByTestId(
+			"warning-done-with-remaining-work",
+		);
+		expect(warningIcon).toBeInTheDocument();
+	});
+
+	it("should show warning icon for feature using default feature size", async () => {
+		const featuresWithDefaultSize = [
+			createFeature({
+				id: 1,
+				stateCategory: "ToDo",
+				isUsingDefaultFeatureSize: true,
+			}),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresWithDefaultSize}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		const warningIcon = await screen.findByTestId(
+			"warning-default-feature-size",
+		);
+		expect(warningIcon).toBeInTheDocument();
+	});
+
+	it("should not show warning icon for Done feature with no remaining work", async () => {
+		const featuresNoWarning = [
+			createFeature({ id: 1, stateCategory: "ToDo" }),
+			createFeature({
+				id: 2,
+				stateCategory: "Done",
+				remainingWork: {},
+			}),
+		];
+
+		localStorage.setItem("test-hide-completed", "false");
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresNoWarning}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		await screen.findByText("Closed");
+		expect(
+			screen.queryByTestId("warning-done-with-remaining-work"),
+		).not.toBeInTheDocument();
+	});
+
+	it("should not show warning icon for non-Done feature with remaining work", async () => {
+		const nonDoneFeatures = [
+			createFeature({ id: 1, stateCategory: "Doing", remainingWork: { 1: 3 } }),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={nonDoneFeatures}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		await screen.findAllByText("Active");
+		expect(
+			screen.queryByTestId("warning-done-with-remaining-work"),
+		).not.toBeInTheDocument();
+	});
+
+	it("should show active work indicator when getActiveWorkTeams returns teams", async () => {
+		const activeTeam: IEntityReference = { id: 1, name: "Team Alpha" };
+		const featuresWithActiveWork = [
+			createFeature({ id: 1, stateCategory: "Doing" }),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresWithActiveWork}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+					getActiveWorkTeams={() => [activeTeam]}
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(
+			await screen.findByTestId("active-work-indicator"),
+		).toBeInTheDocument();
+	});
+
+	it("should show no-active-work indicator when getActiveWorkTeams returns empty", async () => {
+		const featuresNoActiveWork = [
+			createFeature({ id: 1, stateCategory: "Doing" }),
+		];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={featuresNoActiveWork}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+					getActiveWorkTeams={() => []}
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(await screen.findByTestId("no-active-work")).toBeInTheDocument();
+	});
+
+	it("should not show active work indicator when getActiveWorkTeams prop is not provided", async () => {
+		const someFeatures = [createFeature({ id: 1, stateCategory: "Doing" })];
+
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={someFeatures}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		await screen.findAllByText("Active");
+		expect(
+			screen.queryByTestId("active-work-indicator"),
+		).not.toBeInTheDocument();
 	});
 });

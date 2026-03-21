@@ -13,6 +13,7 @@ import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
+import { createActiveWorkColumn, createWarningsColumn } from "./columns";
 import type { FeatureListDataGridProps } from "./types";
 
 const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
@@ -22,6 +23,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	hideCompletedStorageKey,
 	loading = false,
 	emptyStateMessage,
+	getActiveWorkTeams,
 }) => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -32,7 +34,11 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 
 	const filteredFeatures = useMemo(() => {
 		return hideCompleted
-			? features.filter((feature) => feature.stateCategory !== "Done")
+			? features.filter(
+					(feature) =>
+						feature.stateCategory !== "Done" ||
+						feature.getRemainingWorkForFeature() > 0,
+				)
 			: features;
 	}, [features, hideCompleted]);
 
@@ -53,7 +59,19 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			</Box>
 			<DataGridBase
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
-				columns={columns}
+				columns={(() => {
+					const [nameCol, ...restCols] = columns;
+					const warningsCol = createWarningsColumn();
+					const activeWorkCol = getActiveWorkTeams
+						? createActiveWorkColumn(getActiveWorkTeams)
+						: null;
+					return [
+						nameCol,
+						warningsCol,
+						...(activeWorkCol ? [activeWorkCol] : []),
+						...restCols,
+					];
+				})()}
 				storageKey={storageKey}
 				loading={loading}
 				emptyStateMessage={emptyStateMessage}

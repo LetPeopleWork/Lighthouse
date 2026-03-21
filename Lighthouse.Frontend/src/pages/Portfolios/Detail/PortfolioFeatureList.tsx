@@ -108,14 +108,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				width: 300,
 				flex: 1,
 				renderCell: ({ row }) => (
-					<FeatureName
-						name={getWorkItemName(row)}
-						url={row.url ?? ""}
-						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-						teamsWorkIngOnFeature={portfolio.involvedTeams.filter((team) =>
-							featuresInProgress[team.id]?.includes(row.referenceId),
-						)}
-					/>
+					<FeatureName name={getWorkItemName(row)} url={row.url ?? ""} />
 				),
 			},
 			{
@@ -164,13 +157,15 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 			createForecastsColumn(),
 			createStateColumn(),
 		],
-		[
-			featureTerm,
-			portfolio.involvedTeams,
-			featuresInProgress,
-			parentMap,
-			handleShowFeatureDetails,
-		],
+		[featureTerm, portfolio.involvedTeams, parentMap, handleShowFeatureDetails],
+	);
+
+	const getActiveWorkTeams = useCallback(
+		(row: IFeature) =>
+			portfolio.involvedTeams.filter((team) =>
+				featuresInProgress[team.id]?.includes(row.referenceId),
+			),
+		[portfolio.involvedTeams, featuresInProgress],
 	);
 
 	return (
@@ -181,6 +176,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				storageKey={`portfolio-features-${portfolio.id}`}
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_portfolio_${portfolio.id}`}
 				loading={features.length === 0}
+				getActiveWorkTeams={getActiveWorkTeams}
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog
