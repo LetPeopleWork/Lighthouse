@@ -7,9 +7,28 @@ nav_order: 95
 # Lighthouse v26.3.20.4
 
 ## Standalone Apps
-TODO: Describe what's new. Standalone vs. "Server" Editions.
 
-Screenshot (manually)
+Lighthouse now ships as a **native desktop application** for Windows, macOS, and Linux — no server setup, no browser, no terminal required.
+
+![Standalone Application](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/installation/standalone.png)
+
+The Standalone edition is ideal for individual users who want a self-contained Lighthouse experience on their own machine. It launches like any other desktop app and manages its own backend automatically.
+
+**What's included:**
+- Full Lighthouse feature set in a native window
+- Built-in automatic updater — the app checks for new releases on startup and prompts you before installing
+- No network configuration required
+
+**Available packages:**
+
+| Platform | Package | Notes |
+|---|---|---|
+| **Windows** | NSIS Installer (`.exe`) | Recommended — installs to Program Files with auto-updater and uninstaller |
+| **Windows** | Portable (`.exe`) | No installation needed — run from any folder; updates are manual |
+| **macOS** | Universal App (`.dmg`) | Runs natively on both Apple Silicon and Intel; signed, notarized, and auto-updates |
+| **Linux** | AppImage (`.AppImage`) | Single-file, runs on most distributions without installation |
+
+For full installation instructions and guidance on choosing between Standalone and Server editions, see the [Installation docs](https://docs.lighthouse.letpeople.work/Installation/installation.html).
 
 ## Scoped Access Token Support for Jira Connections
 Support for scoped tokens (e.g. when using service accounts)
@@ -22,11 +41,11 @@ Constraints (Boards not supported), link to docs --> https://docs.lighthouse.let
 Rename Logs --> System Info
 Show system details.
 
-Screenshot (e2e)
+[System Info](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/systeminfo.png)
 
 
 ## Other Improvements and Bug Fixes
-- Team Delete Issue
+- Fixed an issue where deleting a team caused an error in case you deleted a Portfolio that included this team
 - Updated various third party dependencies
 
 ## Contributions ❤️

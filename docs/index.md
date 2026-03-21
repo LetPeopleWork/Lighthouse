@@ -14,6 +14,21 @@ You can use it with a single team for doing manual "When" and "How Many" forecas
 
 Lighthouse is provided free of charge as open-source software by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, [please reach out](https://letpeople.work#contact).
 
+## Standalone and Server Edition
+
+Lighthouse is available in two editions to suit different needs:
+
+| | **Standalone** | **Server** |
+|---|---|---|
+| Best for | Individual use on a single machine | Teams sharing a central instance |
+| Installation | Native desktop app | Web server (binary or Docker) |
+| Multi-user access | ❌ Single user only | ✅ Unlimited concurrent users |
+| Auto-updates | ✅ Built-in | ✅ In-app notification |
+| Platforms | Windows, macOS, Linux | Windows, Linux, Docker |
+| Database | Local SQLite (one per system) | SQLite or PostgreSQL |
+
+See [Installation](./Installation/installation.html) for detailed setup and guidance on which edition to choose.
+
 ## Documentation Structure
 The documentation is structured into chapters. In [Installation](./Installation/installation.html) you can find information about how to get started with setting up Lighthouse.
 
