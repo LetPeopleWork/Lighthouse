@@ -1,9 +1,8 @@
 name: Generate Tauri Update Feed
 
 on:
-  # Enable schedule once we have the first proper release
-  # schedule:
-  #  - cron: '0 */6 * * *'
+  schedule:
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       include_prereleases:
