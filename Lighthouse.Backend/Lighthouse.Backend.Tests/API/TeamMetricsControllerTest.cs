@@ -434,9 +434,9 @@ namespace Lighthouse.Backend.Tests.API
         public void GetMultiItemForecastPredictabilityScore_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
-            
+
             var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now);
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
@@ -449,9 +449,9 @@ namespace Lighthouse.Backend.Tests.API
         public void GetMultiItemForecastPredictabilityScore_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var subject = CreateSubject();
-            
+
             var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now.AddDays(-1));
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Tests.API
             var howManyForecast = new HowManyForecast();
             var expectedScore = new ForecastPredictabilityScore(howManyForecast);
             teamMetricsServiceMock.Setup(service => service.GetMultiItemForecastPredictabilityScoreForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
-            
+
             var subject = CreateSubject();
             var response = subject.GetMultiItemForecastPredictabilityScore(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
@@ -811,8 +811,6 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        #region Blackout Day Annotations
-
         [Test]
         public void GetThroughput_WithBlackoutPeriods_IncludesBlackoutDayIndices()
         {
@@ -837,7 +835,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var result = (response.Result as OkObjectResult)?.Value as RunChartData;
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.BlackoutDayIndices, Is.EqualTo(new[] { 2, 3, 4 }));
+                Assert.That(result.BlackoutDayIndices, Is.EqualTo([2, 3, 4]));
             }
         }
 
@@ -986,8 +984,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.DataPoints[1].IsBlackout, Is.True);
             }
         }
-
-        #endregion
 
         private TeamMetricsController CreateSubject()
         {
