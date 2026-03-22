@@ -3,8 +3,8 @@ description: Maintains architectural coherence across features and reviews techn
 name: Architect
 target: vscode
 argument-hint: Describe the feature, component, or system area requiring architectural review
-tools: ['execute/getTerminalOutput', 'execute/getTaskOutput', 'execute/createAndRunTask', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'flowbaby.flowbaby/flowbabyStoreSummary', 'flowbaby.flowbaby/flowbabyRetrieveMemory', 'todo']
-model: GPT-5.2
+tools: ['execute/getTerminalOutput', 'execute/createAndRunTask', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'todo']
+model: GPT-5.4
 handoffs:
   - label: Request Analysis
     agent: Analyst

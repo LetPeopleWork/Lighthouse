@@ -4,7 +4,7 @@ name: Planner
 target: vscode
 argument-hint: Describe the feature, epic, or change to plan
 tools: ['execute/getTerminalOutput', 'execute/runInTerminal', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit', 'search', 'web', 'ado/*', 'todo']
-model: GPT-5.2
+model: GPT-5.4
 handoffs:
   - label: Validate Architectural Alignment
     agent: Architect
