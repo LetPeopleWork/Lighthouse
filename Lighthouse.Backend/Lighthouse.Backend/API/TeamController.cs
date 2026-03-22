@@ -17,7 +17,8 @@ namespace Lighthouse.Backend.API
         IRepository<Feature> featureRepository,
         IWorkItemRepository workItemRepository,
         ITeamUpdater teamUpdateService,
-        IPortfolioUpdater portfolioUpdater)
+        IPortfolioUpdater portfolioUpdater,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository)
         : ControllerBase
     {
         [HttpGet]
@@ -28,7 +29,12 @@ namespace Lighthouse.Backend.API
                 var allProjects = projectRepository.GetAll().ToList();
                 var allFeatures = featureRepository.GetAll().ToList();
 
-                return team.CreateTeamDto(allProjects, allFeatures);
+                var teamDto = team.CreateTeamDto(allProjects, allFeatures);
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var throughputSettings = team.GetThroughputSettings();
+                teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
+
+                return teamDto;
             });
         }
 

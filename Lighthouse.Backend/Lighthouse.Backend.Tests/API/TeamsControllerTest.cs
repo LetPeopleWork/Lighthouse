@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
 
         [SetUp]
         public void Setup()
@@ -34,6 +35,8 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock = new Mock<ILicenseService>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
         }
 
         [Test]
@@ -404,6 +407,41 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void GetTeams_WithBlackoutOverlap_SetsHasThroughputBlackoutOverlapTrue()
+        {
+            var team = CreateTeam(1, "Team 1");
+            team.ThroughputHistory = 30;
+
+            var throughputSettings = team.GetThroughputSettings();
+            var midPoint = throughputSettings.StartDate.AddDays(10);
+
+            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns([
+                new BlackoutPeriod { Start = DateOnly.FromDateTime(midPoint), End = DateOnly.FromDateTime(midPoint.AddDays(2)) }
+            ]);
+
+            var subject = CreateSubject([team]);
+            var results = subject.GetTeams().ToList();
+
+            Assert.That(results.Single().HasThroughputBlackoutOverlap, Is.True);
+        }
+
+        [Test]
+        public void GetTeams_WithoutBlackoutOverlap_SetsHasThroughputBlackoutOverlapFalse()
+        {
+            var team = CreateTeam(1, "Team 1");
+            team.ThroughputHistory = 30;
+
+            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns([
+                new BlackoutPeriod { Start = new DateOnly(2020, 1, 1), End = new DateOnly(2020, 1, 5) }
+            ]);
+
+            var subject = CreateSubject([team]);
+            var results = subject.GetTeams().ToList();
+
+            Assert.That(results.Single().HasThroughputBlackoutOverlap, Is.False);
+        }
+
         private static Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };
@@ -433,7 +471,7 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
             return new TeamsController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object, blackoutPeriodRepositoryMock.Object);
         }
     }
 }

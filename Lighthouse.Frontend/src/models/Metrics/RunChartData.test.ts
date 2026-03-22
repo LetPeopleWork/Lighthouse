@@ -51,4 +51,28 @@ describe("Throughput", () => {
 			RangeError,
 		);
 	});
+
+	it("should store blackoutDayIndices when provided", () => {
+		const throughputData = [10, 20, 30];
+		const blackoutIndices = [0, 2];
+		const throughput = new RunChartData(
+			generateWorkItemMapForRunChart(throughputData),
+			throughputData.length,
+			60,
+			blackoutIndices,
+		);
+
+		expect(throughput.blackoutDayIndices).toEqual([0, 2]);
+	});
+
+	it("should default blackoutDayIndices to empty array", () => {
+		const throughputData = [10, 20, 30];
+		const throughput = new RunChartData(
+			generateWorkItemMapForRunChart(throughputData),
+			throughputData.length,
+			60,
+		);
+
+		expect(throughput.blackoutDayIndices).toEqual([]);
+	});
 });

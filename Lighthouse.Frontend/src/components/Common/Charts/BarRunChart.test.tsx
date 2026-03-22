@@ -518,3 +518,76 @@ describe("Predictability Score functionality", () => {
 		).toBeInTheDocument();
 	});
 });
+
+describe("Blackout Day visualization", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("should pass two series to BarChart when blackout days exist", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+			[1],
+		);
+
+		render(
+			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+		);
+
+		const chartProps = screen.getByTestId("chartProps");
+		expect(chartProps).toHaveTextContent('"seriesLength":2');
+	});
+
+	it("should still pass two series when no blackout days exist", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+
+		render(
+			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+		);
+
+		const chartProps = screen.getByTestId("chartProps");
+		expect(chartProps).toHaveTextContent('"seriesLength":2');
+	});
+
+	it("should set normalValue to null for blackout days in dataset", async () => {
+		const { BarChart } = vi.mocked(await import("@mui/x-charts"));
+
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+			[1],
+		);
+
+		render(
+			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
+		);
+
+		const lastCall = BarChart.mock.calls[BarChart.mock.calls.length - 1];
+		const dataset = lastCall[0].dataset as Array<{
+			normalValue: number | null;
+			blackoutValue: number | null;
+		}>;
+
+		// Day 0: not blackout - normalValue should have value, blackoutValue null
+		expect(dataset[0].normalValue).not.toBeNull();
+		expect(dataset[0].blackoutValue).toBeNull();
+
+		// Day 1: blackout - normalValue should be null, blackoutValue should have value
+		expect(dataset[1].normalValue).toBeNull();
+		expect(dataset[1].blackoutValue).not.toBeNull();
+
+		// Day 2: not blackout
+		expect(dataset[2].normalValue).not.toBeNull();
+		expect(dataset[2].blackoutValue).toBeNull();
+	});
+});

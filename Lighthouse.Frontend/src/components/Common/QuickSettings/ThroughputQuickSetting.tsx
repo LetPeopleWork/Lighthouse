@@ -27,6 +27,7 @@ type ThroughputQuickSettingProps = {
 		endDate: Date | null,
 	) => Promise<void>;
 	disabled?: boolean;
+	hasBlackoutOverlap?: boolean;
 };
 
 const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
@@ -35,6 +36,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	endDate: initialEndDate,
 	onSave,
 	disabled = false,
+	hasBlackoutOverlap = false,
 }) => {
 	const theme = useTheme();
 	const terminology = useTerminology();
@@ -76,15 +78,19 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	]);
 
 	const getTooltipText = (): string => {
+		const blackoutSuffix = hasBlackoutOverlap
+			? " (Blackout days within window — excluded from forecast)"
+			: "";
+
 		if (!initialUseFixedDates && initialThroughputHistory <= 0) {
 			return `${throughputTerm}: Not set`;
 		}
 
 		if (initialUseFixedDates && initialStartDate && initialEndDate) {
-			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}`;
+			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}${blackoutSuffix}`;
 		}
 
-		return `${throughputTerm}: Rolling ${initialThroughputHistory} days`;
+		return `${throughputTerm}: Rolling ${initialThroughputHistory} days${blackoutSuffix}`;
 	};
 
 	const isUnset = !initialUseFixedDates && initialThroughputHistory <= 0;
@@ -190,6 +196,16 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		}
 	};
 
+	const getIconColor = (): string => {
+		if (isUnset) {
+			return theme.palette.action.disabled;
+		}
+		if (hasBlackoutOverlap) {
+			return theme.palette.warning.main;
+		}
+		return theme.palette.primary.main;
+	};
+
 	return (
 		<>
 			<Tooltip title={getTooltipText()} arrow>
@@ -200,9 +216,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 						disabled={disabled}
 						aria-label={getTooltipText()}
 						sx={{
-							color: isUnset
-								? theme.palette.action.disabled
-								: theme.palette.primary.main,
+							color: getIconColor(),
 							"&:hover": {
 								backgroundColor: "action.hover",
 							},

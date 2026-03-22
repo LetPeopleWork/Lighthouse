@@ -7,6 +7,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 export interface ChartDataItem {
 	day: string;
 	value: number;
+	isBlackout: boolean;
 }
 
 export interface BaseRunChartProps {
@@ -27,6 +28,8 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
+	const blackoutSet = new Set(chartData.blackoutDayIndices ?? []);
+
 	const data = Array.from({ length: chartData.history }, (_, index) => {
 		const targetDate = new Date(startDate);
 		// Use UTC methods to avoid timezone issues with dates from backend
@@ -35,6 +38,7 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 		return {
 			day: targetDate.toLocaleDateString(),
 			value: chartData.getValueOnDay(index),
+			isBlackout: blackoutSet.has(index),
 		};
 	});
 

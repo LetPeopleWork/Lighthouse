@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ namespace Lighthouse.Backend.API
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
+        private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IRepository<BlackoutPeriod> blackoutPeriodRepository)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
+            this.blackoutPeriodRepository = blackoutPeriodRepository;
         }
 
         [HttpGet("throughput")]
@@ -29,7 +32,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputForTeam(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var data = teamMetricsService.GetThroughputForTeam(team, startDate, endDate);
+                data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
+                return data;
+            });
         }
 
         [HttpGet("started")]
@@ -40,7 +48,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetStartedItemsForTeam(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var data = teamMetricsService.GetStartedItemsForTeam(team, startDate, endDate);
+                data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
+                return data;
+            });
         }
 
         [HttpGet("wipOverTime")]
@@ -51,7 +64,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetWorkInProgressOverTimeForTeam(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var data = teamMetricsService.GetWorkInProgressOverTimeForTeam(team, startDate, endDate);
+                data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
+                return data;
+            });
         }
 
         [HttpGet("featuresInProgress")]
@@ -129,7 +147,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                AnnotateBlackoutDays(teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)));
         }
 
         [HttpGet("wipOverTime/pbc")]
@@ -140,7 +159,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                AnnotateBlackoutDays(teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate)));
         }
 
         [HttpGet("totalWorkItemAge/pbc")]
@@ -151,7 +171,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                AnnotateBlackoutDays(teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate)));
         }
 
         [HttpGet("cycleTime/pbc")]
@@ -162,7 +183,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                AnnotateBlackoutDays(teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)));
         }
 
         [HttpGet("estimationVsCycleTime")]
@@ -174,6 +196,18 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetEstimationVsCycleTimeData(team, startDate, endDate));
+        }
+
+        private int[] GetBlackoutDayIndicesArray(DateTime startDate, DateTime endDate)
+        {
+            var blackoutPeriods = blackoutPeriodRepository.GetAll();
+            return blackoutPeriods.GetBlackoutDayIndices(startDate, endDate).OrderBy(i => i).ToArray();
+        }
+
+        private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart)
+        {
+            var blackoutPeriods = blackoutPeriodRepository.GetAll();
+            return blackoutPeriods.AnnotateBlackoutDays(chart);
         }
     }
 }

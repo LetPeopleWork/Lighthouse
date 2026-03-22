@@ -4,6 +4,7 @@ export interface IRunChartData {
 	history: number;
 	workItemsPerUnitOfTime: { [key: number]: IWorkItem[] };
 	total: number;
+	blackoutDayIndices: number[];
 	getValueOnDay(day: number): number;
 }
 
@@ -11,15 +12,18 @@ export class RunChartData implements IRunChartData {
 	workItemsPerUnitOfTime: { [key: number]: IWorkItem[] };
 	history: number;
 	total: number;
+	blackoutDayIndices: number[];
 
 	constructor(
 		workItemsPerUnitOfTime: { [key: number]: IWorkItem[] },
 		history: number,
 		total: number,
+		blackoutDayIndices: number[] = [],
 	) {
 		this.workItemsPerUnitOfTime = workItemsPerUnitOfTime;
 		this.history = history;
 		this.total = total;
+		this.blackoutDayIndices = blackoutDayIndices;
 	}
 
 	getValueOnDay(day: number): number {

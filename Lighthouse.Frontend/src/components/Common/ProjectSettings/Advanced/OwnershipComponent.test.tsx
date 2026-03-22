@@ -30,6 +30,7 @@ describe("OwnershipComponent", () => {
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			workItemTypes: ["User Story", "Bug"],
+			hasThroughputBlackoutOverlap: false,
 		},
 		{
 			id: 2,
@@ -47,6 +48,7 @@ describe("OwnershipComponent", () => {
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			workItemTypes: ["Task", "Feature"],
+			hasThroughputBlackoutOverlap: false,
 		},
 	];
 

@@ -10,6 +10,7 @@ export interface ITeam extends IFeatureOwner {
 	throughputStartDate: Date;
 	throughputEndDate: Date;
 	workItemTypes: string[];
+	hasThroughputBlackoutOverlap: boolean;
 }
 
 export class Team implements ITeam {
@@ -25,6 +26,8 @@ export class Team implements ITeam {
 	featureWip = 0;
 
 	useFixedDatesForThroughput = false;
+
+	hasThroughputBlackoutOverlap = false;
 
 	serviceLevelExpectationProbability = 0;
 	serviceLevelExpectationRange = 0;

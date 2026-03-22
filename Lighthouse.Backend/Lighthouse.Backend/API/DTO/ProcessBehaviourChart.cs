@@ -23,7 +23,8 @@ namespace Lighthouse.Backend.API.DTO
         string XValue,
         double YValue,
         IEnumerable<SpecialCauseType> SpecialCauses,
-        int[] WorkItemIds);
+        int[] WorkItemIds,
+        bool IsBlackout = false);
 
     public record ProcessBehaviourChart
     {

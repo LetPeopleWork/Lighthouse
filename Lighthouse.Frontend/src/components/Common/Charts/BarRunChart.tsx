@@ -148,7 +148,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 								}
 								dataset={data.map((item, index) => ({
 									day: item.day,
-									value: item.value,
+									normalValue: item.isBlackout ? null : item.value,
+									blackoutValue: item.isBlackout ? item.value : null,
 									index: index,
 								}))}
 								yAxis={[
@@ -169,8 +170,9 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 								]}
 								series={[
 									{
-										dataKey: "value",
+										dataKey: "normalValue",
 										color: theme.palette.primary.main,
+										label: workItemsTerm,
 										valueFormatter: (
 											_value: number | null,
 											params: { dataIndex: number },
@@ -191,7 +193,32 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 											return `No Closed ${workItemsTerm}`;
 										},
 									},
+									{
+										dataKey: "blackoutValue",
+										color: theme.palette.action.disabled,
+										label: "Blackout",
+										valueFormatter: (
+											_value: number | null,
+											params: { dataIndex: number },
+										) => {
+											const index = params?.dataIndex ?? 0;
+											const numberOfClosedItems =
+												chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
+
+											if (numberOfClosedItems === 1) {
+												const item = chartData.workItemsPerUnitOfTime[index][0];
+												return `${getWorkItemName(item)} (Blackout Day)`;
+											}
+
+											if (numberOfClosedItems > 0) {
+												return `${numberOfClosedItems} Closed ${workItemsTerm} (Blackout Day)`;
+											}
+
+											return `No Closed ${workItemsTerm} (Blackout Day)`;
+										},
+									},
 								]}
+								hideLegend={true}
 								// height is controlled by parent card/grid; allow flexible sizing
 							/>
 						</Box>

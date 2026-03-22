@@ -46,6 +46,7 @@ describe("TeamFeaturesView component", () => {
 		serviceLevelExpectationRange: 14,
 		systemWIPLimit: 3,
 		remainingFeatures: 5,
+		hasThroughputBlackoutOverlap: false,
 	} as Team;
 
 	const mockApiServiceContext = createMockApiServiceContext({});

@@ -72,6 +72,10 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 				{(data) => {
 					const xLabels = data.map((item) => item.day);
 					const yValues = data.map((item) => item.value);
+					const hasBlackout = data.some((item) => item.isBlackout);
+					const blackoutValues = data.map((item) =>
+						item.isBlackout ? item.value : null,
+					);
 
 					return (
 						<Box
@@ -146,23 +150,37 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 												params: { dataIndex: number },
 											) => {
 												const index = params?.dataIndex ?? 0;
+												const isBlackout = data[index]?.isBlackout ?? false;
 												const numberOfItems =
 													chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
+
+												const suffix = isBlackout ? " (Blackout Day)" : "";
 
 												if (numberOfItems === 1) {
 													const item =
 														chartData.workItemsPerUnitOfTime[index][0];
-													return `${getWorkItemName(item)} (Click for details)`;
+													return `${getWorkItemName(item)} (Click for details)${suffix}`;
 												}
 
 												if (numberOfItems > 0) {
-													return `${numberOfItems} ${workItemsTerm} in Progress (Click for details)`;
+													return `${numberOfItems} ${workItemsTerm} in Progress (Click for details)${suffix}`;
 												}
 
-												return `No ${workItemsTerm} in Progress`;
+												return `No ${workItemsTerm} in Progress${suffix}`;
 											},
 										},
+										...(hasBlackout
+											? [
+													{
+														data: blackoutValues,
+														color: theme.palette.action.disabled,
+														showMark: true,
+														label: "Blackout" as const,
+													},
+												]
+											: []),
 									]}
+									hideLegend={true}
 									// height controlled by parent; allow flexible sizing
 								>
 									{wipLimitVisible &&

@@ -21,7 +21,8 @@ namespace Lighthouse.Backend.API
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
         ITeamUpdater teamUpdateService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
-        ILicenseService licenseService)
+        ILicenseService licenseService,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository)
         : ControllerBase
     {
         [HttpGet]
@@ -32,10 +33,13 @@ namespace Lighthouse.Backend.API
             var allTeams = teamRepository.GetAll().ToList();
             var allProjects = projectRepository.GetAll().ToList();
             var allFeatures = featureRepository.GetAll().ToList();
+            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
             foreach (var team in allTeams)
             {
                 var teamDto = team.CreateTeamDto(allProjects, allFeatures);
+                var throughputSettings = team.GetThroughputSettings();
+                teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
 
                 teamDtos.Add(teamDto);
             }

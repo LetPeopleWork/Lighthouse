@@ -141,24 +141,28 @@ const createReadyChartData = (
 			yValue: 5,
 			specialCauses: [],
 			workItemIds: [101],
+			isBlackout: false,
 		},
 		{
 			xValue: "2026-01-16T00:00:00Z",
 			yValue: 12,
 			specialCauses: [],
 			workItemIds: [102, 103],
+			isBlackout: false,
 		},
 		{
 			xValue: "2026-01-17T00:00:00Z",
 			yValue: 8,
 			specialCauses: ["LargeChange"],
 			workItemIds: [104],
+			isBlackout: false,
 		},
 		{
 			xValue: "2026-01-18T00:00:00Z",
 			yValue: 15,
 			specialCauses: [],
 			workItemIds: [105],
+			isBlackout: false,
 		},
 	],
 	...overrides,
@@ -770,6 +774,73 @@ describe("ProcessBehaviourChart", () => {
 			);
 
 			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
+		});
+	});
+
+	describe("Blackout Day Visualization", () => {
+		it("renders chart when data points include isBlackout flag", () => {
+			const data = createReadyChartData({
+				dataPoints: [
+					{
+						xValue: "2026-01-15T00:00:00Z",
+						yValue: 5,
+						specialCauses: [],
+						workItemIds: [101],
+						isBlackout: false,
+					},
+					{
+						xValue: "2026-01-16T00:00:00Z",
+						yValue: 12,
+						specialCauses: [],
+						workItemIds: [102],
+						isBlackout: true,
+					},
+					{
+						xValue: "2026-01-17T00:00:00Z",
+						yValue: 8,
+						specialCauses: [],
+						workItemIds: [103],
+						isBlackout: false,
+					},
+				],
+			});
+
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
+
+			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
+		});
+
+		it("passes blackoutColor in mark context via ChartContainer series", async () => {
+			const { ChartContainer } = vi.mocked(await import("@mui/x-charts"));
+
+			const data = createReadyChartData({
+				dataPoints: [
+					{
+						xValue: "2026-01-15T00:00:00Z",
+						yValue: 5,
+						specialCauses: [],
+						workItemIds: [101],
+						isBlackout: true,
+					},
+				],
+			});
+
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Throughput PBC"
+					type={ProcessBehaviourChartType.Throughput}
+				/>,
+			);
+
+			// ChartContainer should be called (chart renders)
+			expect(ChartContainer).toHaveBeenCalled();
 		});
 	});
 });

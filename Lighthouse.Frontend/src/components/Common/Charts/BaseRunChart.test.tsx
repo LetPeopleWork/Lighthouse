@@ -114,4 +114,54 @@ describe("BaseRunChart component", () => {
 
 		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
+
+	it("should set isBlackout flag based on blackoutDayIndices", () => {
+		const rawData = [10, 20, 30, 40, 50];
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			150,
+			[1, 3],
+		);
+		const startDate = new Date("2023-01-01");
+		let passedData: { value: number; day: string; isBlackout: boolean }[] = [];
+
+		render(
+			<BaseRunChart chartData={mockChartData} startDate={startDate}>
+				{(data) => {
+					passedData = data;
+					return <div data-testid="chart-content" />;
+				}}
+			</BaseRunChart>,
+		);
+
+		expect(passedData.length).toBe(5);
+		expect(passedData[0].isBlackout).toBe(false);
+		expect(passedData[1].isBlackout).toBe(true);
+		expect(passedData[2].isBlackout).toBe(false);
+		expect(passedData[3].isBlackout).toBe(true);
+		expect(passedData[4].isBlackout).toBe(false);
+	});
+
+	it("should set all isBlackout to false when blackoutDayIndices is empty", () => {
+		const rawData = [10, 20, 30];
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+		const startDate = new Date("2023-01-01");
+		let passedData: { value: number; day: string; isBlackout: boolean }[] = [];
+
+		render(
+			<BaseRunChart chartData={mockChartData} startDate={startDate}>
+				{(data) => {
+					passedData = data;
+					return <div data-testid="chart-content" />;
+				}}
+			</BaseRunChart>,
+		);
+
+		expect(passedData.every((d) => d.isBlackout === false)).toBe(true);
+	});
 });

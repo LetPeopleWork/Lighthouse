@@ -18,6 +18,7 @@ export type ProcessBehaviourChartDataPoint = {
 	readonly yValue: number;
 	readonly specialCauses: SpecialCauseType[];
 	readonly workItemIds: number[];
+	readonly isBlackout?: boolean;
 };
 
 export type ProcessBehaviourChartData = {

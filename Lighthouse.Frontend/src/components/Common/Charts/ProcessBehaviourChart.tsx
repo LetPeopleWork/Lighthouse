@@ -78,12 +78,14 @@ type SpecialCauseMarkContextValue = {
 	readonly dataPoints: readonly ProcessBehaviourChartDataPoint[];
 	readonly selectedCause: SpecialCauseType | null;
 	readonly defaultColor: string;
+	readonly blackoutColor: string;
 };
 
 const SpecialCauseMarkContext = createContext<SpecialCauseMarkContextValue>({
 	dataPoints: [],
 	selectedCause: null,
 	defaultColor: "",
+	blackoutColor: "",
 });
 
 const getHighestPriorityCause = (
@@ -96,7 +98,7 @@ const getHighestPriorityCause = (
 };
 
 const SpecialCauseMark = (props: Record<string, unknown>) => {
-	const { dataPoints, selectedCause, defaultColor } = useContext(
+	const { dataPoints, selectedCause, defaultColor, blackoutColor } = useContext(
 		SpecialCauseMarkContext,
 	);
 	const {
@@ -126,10 +128,16 @@ const SpecialCauseMark = (props: Record<string, unknown>) => {
 			? selectedCause
 			: highestCause;
 
-	const fill =
-		isHighlighted && displayCause
-			? specialCauseColors[displayCause]
-			: defaultColor;
+	const isBlackout = point?.isBlackout ?? false;
+
+	const getMarkFill = () => {
+		if (isHighlighted && displayCause) {
+			return specialCauseColors[displayCause];
+		}
+		return isBlackout ? blackoutColor : defaultColor;
+	};
+
+	const fill = getMarkFill();
 	const radius = isHighlighted ? 6 : 4;
 
 	return (
@@ -256,8 +264,14 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 			dataPoints: data.dataPoints,
 			selectedCause: selectedSpecialCause,
 			defaultColor,
+			blackoutColor: theme.palette.action.disabled,
 		}),
-		[data.dataPoints, selectedSpecialCause, defaultColor],
+		[
+			data.dataPoints,
+			selectedSpecialCause,
+			defaultColor,
+			theme.palette.action.disabled,
+		],
 	);
 
 	const chartData = useMemo(() => {

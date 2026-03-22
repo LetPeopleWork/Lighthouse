@@ -15,12 +15,15 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
+        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
 
         [SetUp]
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
+            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
         }
 
         [Test]
@@ -809,9 +812,187 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        #region Blackout Day Annotations
+
+        [Test]
+        public void GetThroughput_WithBlackoutPeriods_IncludesBlackoutDayIndices()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 10);
+
+            var throughputData = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+            teamMetricsServiceMock.Setup(s => s.GetThroughputForTeam(team, startDate, endDate)).Returns(throughputData);
+
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Start = new DateOnly(2025, 1, 3), End = new DateOnly(2025, 1, 5) } }.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetThroughput(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = (response.Result as OkObjectResult)?.Value as RunChartData;
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.BlackoutDayIndices, Is.EqualTo(new[] { 2, 3, 4 }));
+            }
+        }
+
+        [Test]
+        public void GetThroughput_NoBlackoutPeriods_BlackoutDayIndicesEmpty()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 10);
+
+            var throughputData = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3]));
+            teamMetricsServiceMock.Setup(s => s.GetThroughputForTeam(team, startDate, endDate)).Returns(throughputData);
+
+            var subject = CreateSubject();
+            var response = subject.GetThroughput(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = (response.Result as OkObjectResult)?.Value as RunChartData;
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.BlackoutDayIndices, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_WithBlackoutPeriods_AnnotatesDataPointsWithIsBlackout()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 3);
+
+            var pbcChart = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = 5.0,
+                UpperNaturalProcessLimit = 10.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints =
+                [
+                    new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1]),
+                    new ProcessBehaviourChartDataPoint("2025-01-02", 5, [], [2]),
+                    new ProcessBehaviourChartDataPoint("2025-01-03", 4, [], [3]),
+                ],
+            };
+            teamMetricsServiceMock.Setup(s => s.GetThroughputProcessBehaviourChart(team, startDate, endDate)).Returns(pbcChart);
+
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Start = new DateOnly(2025, 1, 2), End = new DateOnly(2025, 1, 2) } }.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetThroughputProcessBehaviourChart(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = (response.Result as OkObjectResult)?.Value as ProcessBehaviourChart;
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.DataPoints[0].IsBlackout, Is.False);
+                Assert.That(result.DataPoints[1].IsBlackout, Is.True);
+                Assert.That(result.DataPoints[2].IsBlackout, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetThroughputPbc_NoBlackoutPeriods_NoDataPointsMarkedAsBlackout()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 2);
+
+            var pbcChart = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = 5.0,
+                UpperNaturalProcessLimit = 10.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints =
+                [
+                    new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1]),
+                    new ProcessBehaviourChartDataPoint("2025-01-02", 5, [], [2]),
+                ],
+            };
+            teamMetricsServiceMock.Setup(s => s.GetThroughputProcessBehaviourChart(team, startDate, endDate)).Returns(pbcChart);
+
+            var subject = CreateSubject();
+            var response = subject.GetThroughputProcessBehaviourChart(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = (response.Result as OkObjectResult)?.Value as ProcessBehaviourChart;
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.DataPoints.All(dp => !dp.IsBlackout), Is.True);
+            }
+        }
+
+        [Test]
+        public void GetCycleTimePbc_WithBlackoutOnClosedDate_AnnotatesDataPoint()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 5);
+
+            var pbcChart = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.DateTime,
+                Average = 3.0,
+                UpperNaturalProcessLimit = 6.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints =
+                [
+                    new ProcessBehaviourChartDataPoint("2025-01-02T10:00:00Z", 2, [], [1]),
+                    new ProcessBehaviourChartDataPoint("2025-01-04T14:00:00Z", 4, [], [2]),
+                ],
+            };
+            teamMetricsServiceMock.Setup(s => s.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)).Returns(pbcChart);
+
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Start = new DateOnly(2025, 1, 4), End = new DateOnly(2025, 1, 4) } }.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetCycleTimeProcessBehaviourChart(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = (response.Result as OkObjectResult)?.Value as ProcessBehaviourChart;
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.DataPoints[0].IsBlackout, Is.False);
+                Assert.That(result.DataPoints[1].IsBlackout, Is.True);
+            }
+        }
+
+        #endregion
+
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object);
         }
     }
 }

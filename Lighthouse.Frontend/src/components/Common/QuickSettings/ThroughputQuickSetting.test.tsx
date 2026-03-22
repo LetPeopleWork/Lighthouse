@@ -15,6 +15,7 @@ const getMockProps = (
 			endDate: Date | null,
 		) => Promise<void>;
 		disabled: boolean;
+		hasBlackoutOverlap: boolean;
 	}>,
 ) => ({
 	useFixedDates: false,
@@ -22,6 +23,7 @@ const getMockProps = (
 	endDate: null,
 	onSave: vi.fn().mockResolvedValue(undefined),
 	disabled: false,
+	hasBlackoutOverlap: false,
 	...overrides,
 });
 
@@ -340,5 +342,63 @@ describe("ThroughputQuickSetting", () => {
 		await user.keyboard("{Enter}");
 
 		expect(mockOnSave).not.toHaveBeenCalled();
+	});
+
+	it("should show blackout overlap indicator in tooltip when hasBlackoutOverlap is true", () => {
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({
+					startDate,
+					endDate,
+					hasBlackoutOverlap: true,
+				})}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", {
+				name: /Blackout days within window/i,
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("should not show blackout indicator when hasBlackoutOverlap is false", () => {
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ startDate, endDate, hasBlackoutOverlap: false })}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: /Rolling 30 days/i }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /Blackout/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("should show blackout indicator in tooltip for fixed dates", () => {
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-31");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({
+					useFixedDates: true,
+					startDate,
+					endDate,
+					hasBlackoutOverlap: true,
+				})}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", {
+				name: /Fixed dates.*Blackout days within window/i,
+			}),
+		).toBeInTheDocument();
 	});
 });

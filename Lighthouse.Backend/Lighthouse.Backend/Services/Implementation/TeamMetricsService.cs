@@ -287,12 +287,12 @@ namespace Lighthouse.Backend.Services.Implementation
             var endDate = DateTime.UtcNow.Date;
             var rollingStart = endDate.AddDays(-(effectiveDaysNeeded - 1));
 
-            var blackoutDayIndices = GetBlackoutDayIndices(rollingStart, endDate, blackoutPeriods);
+            var blackoutDayIndices = blackoutPeriods.GetBlackoutDayIndices(rollingStart, endDate);
             while ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count < effectiveDaysNeeded)
             {
                 var deficit = effectiveDaysNeeded - ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count);
                 rollingStart = rollingStart.AddDays(-deficit);
-                blackoutDayIndices = GetBlackoutDayIndices(rollingStart, endDate, blackoutPeriods);
+                blackoutDayIndices = blackoutPeriods.GetBlackoutDayIndices(rollingStart, endDate);
             }
 
             var rollingThroughput = GetThroughputForTeam(team, rollingStart, endDate);
@@ -308,38 +308,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static RunChartData FilterBlackoutDaysFromRunChart(RunChartData runChart, DateTime startDate, DateTime endDate, List<BlackoutPeriod> blackoutPeriods)
         {
-            var blackoutDayIndices = GetBlackoutDayIndices(startDate, endDate, blackoutPeriods);
+            var blackoutDayIndices = blackoutPeriods.GetBlackoutDayIndices(startDate, endDate);
             return FilterBlackoutDays(runChart, blackoutDayIndices);
-        }
-
-        internal static HashSet<int> GetBlackoutDayIndices(DateTime startDate, DateTime endDate, IEnumerable<BlackoutPeriod> blackoutPeriods)
-        {
-            var indices = new HashSet<int>();
-            var totalDays = (endDate.Date - startDate.Date).Days + 1;
-
-            foreach (var period in blackoutPeriods)
-            {
-                var periodStart = period.Start.ToDateTime(TimeOnly.MinValue);
-                var periodEnd = period.End.ToDateTime(TimeOnly.MinValue);
-
-                var overlapStart = periodStart < startDate.Date ? startDate.Date : periodStart;
-                var overlapEnd = periodEnd > endDate.Date ? endDate.Date : periodEnd;
-
-                if (overlapStart > overlapEnd)
-                {
-                    continue;
-                }
-
-                var startIndex = (overlapStart - startDate.Date).Days;
-                var endIndex = (overlapEnd - startDate.Date).Days;
-
-                for (var i = startIndex; i <= endIndex && i < totalDays; i++)
-                {
-                    indices.Add(i);
-                }
-            }
-
-            return indices;
         }
 
         internal static RunChartData FilterBlackoutDays(RunChartData runChart, HashSet<int> blackoutDayIndices)

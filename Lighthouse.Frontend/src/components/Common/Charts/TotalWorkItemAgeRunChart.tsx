@@ -33,7 +33,13 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 
 	// Calculate total age for each day
 	const chartData = useMemo(() => {
-		const data: Array<{ day: string; value: number; itemCount: number }> = [];
+		const blackoutSet = new Set(wipOverTimeData.blackoutDayIndices ?? []);
+		const data: Array<{
+			day: string;
+			value: number;
+			itemCount: number;
+			isBlackout: boolean;
+		}> = [];
 
 		for (let dayIndex = 0; dayIndex < wipOverTimeData.history; dayIndex++) {
 			const items = wipOverTimeData.workItemsPerUnitOfTime[dayIndex] || [];
@@ -59,6 +65,7 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				day: dayLabel,
 				value: totalAge,
 				itemCount: items.length,
+				isBlackout: blackoutSet.has(dayIndex),
 			});
 		}
 
@@ -97,6 +104,10 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				{() => {
 					const xLabels = chartData.map((item) => item.day);
 					const yValues = chartData.map((item) => item.value);
+					const hasBlackout = chartData.some((item) => item.isBlackout);
+					const blackoutValues = chartData.map((item) =>
+						item.isBlackout ? item.value : null,
+					);
 
 					return (
 						<LineChart
@@ -136,20 +147,36 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 											return "No data";
 										}
 
-										const { value: totalAge, itemCount } = dataPoint;
+										const {
+											value: totalAge,
+											itemCount,
+											isBlackout,
+										} = dataPoint;
+										const suffix = isBlackout ? " (Blackout Day)" : "";
 
 										if (itemCount === 0) {
-											return "No items in progress";
+											return `No items in progress${suffix}`;
 										}
 
 										if (itemCount === 1) {
-											return `${totalAge} days total (1 item) - Click for details`;
+											return `${totalAge} days total (1 item) - Click for details${suffix}`;
 										}
 
-										return `${totalAge} days total (${itemCount} items) - Click for details`;
+										return `${totalAge} days total (${itemCount} items) - Click for details${suffix}`;
 									},
 								},
+								...(hasBlackout
+									? [
+											{
+												data: blackoutValues,
+												color: theme.palette.action.disabled,
+												showMark: true,
+												label: "Blackout" as const,
+											},
+										]
+									: []),
 							]}
+							hideLegend={true}
 						/>
 					);
 				}}

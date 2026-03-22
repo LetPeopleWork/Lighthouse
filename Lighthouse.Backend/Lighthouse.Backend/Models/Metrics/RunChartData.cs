@@ -23,5 +23,7 @@
         {
             return WorkItemsPerUnitOfTime[day].Count;
         }
+
+        public int[] BlackoutDayIndices { get; set; } = [];
     }
 }

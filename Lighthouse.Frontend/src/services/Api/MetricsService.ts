@@ -134,6 +134,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				response.data.workItemsPerUnitOfTime,
 				response.data.history,
 				response.data.total,
+				response.data.blackoutDayIndices,
 			);
 		});
 	}
@@ -152,6 +153,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				response.data.workItemsPerUnitOfTime,
 				response.data.history,
 				response.data.total,
+				response.data.blackoutDayIndices,
 			);
 		});
 	}
@@ -170,6 +172,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				response.data.workItemsPerUnitOfTime,
 				response.data.history,
 				response.data.total,
+				response.data.blackoutDayIndices,
 			);
 		});
 	}
