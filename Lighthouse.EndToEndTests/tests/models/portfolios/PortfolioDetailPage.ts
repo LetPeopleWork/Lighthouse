@@ -16,19 +16,20 @@ export class PortfolioDetailPage {
 	}
 
 	getFeatureInProgressIcon(feature: string): Locator {
-		const inProgressIcon = this.page
-			.getByRole("gridcell", { name: feature })
-			.getByRole("button")
-			.first();
-		return inProgressIcon;
+		return this.page
+			.getByRole("row")
+			.filter({
+				has: this.page.getByRole("gridcell").filter({ hasText: feature }),
+			})
+			.getByTestId("active-work-indicator");
 	}
 
-	getFeatureIsDefaultSize(featureName: string): Locator {
-		const defaultSizeIcon = this.page
-			.getByRole("gridcell")
+	getFeatureHasWarning(featureName: string): Locator {
+		const warningIcon = this.page
+			.getByRole("row")
 			.filter({ hasText: featureName })
-			.getByLabel("No child Work Items were found for");
-		return defaultSizeIcon;
+			.getByTestId("warning-default-feature-size");
+		return warningIcon;
 	}
 
 	getTeamLinkForFeature(teamName: string, index: number): Locator {

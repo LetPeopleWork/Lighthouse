@@ -82,7 +82,7 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 					}
 
 					if (feature.defaultSize) {
-						const defaultSizeIcon = portfolioDetailPage.getFeatureIsDefaultSize(
+						const defaultSizeIcon = portfolioDetailPage.getFeatureHasWarning(
 							feature.name,
 						);
 						await expect(defaultSizeIcon).toBeVisible();
