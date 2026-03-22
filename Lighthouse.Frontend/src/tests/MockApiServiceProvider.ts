@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
+import type { IBlackoutPeriodService } from "../services/Api/BlackoutPeriodService";
 import type { IConfigurationService } from "../services/Api/ConfigurationService";
 import type { IDeliveryService } from "../services/Api/DeliveryService";
 import type { IFeatureService } from "../services/Api/FeatureService";
@@ -52,6 +53,8 @@ export const createMockApiServiceContext = (
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
 		systemInfoService:
 			null as unknown as IApiServiceContext["systemInfoService"],
+		blackoutPeriodService:
+			null as unknown as IApiServiceContext["blackoutPeriodService"],
 		...overrides,
 	};
 };
@@ -253,5 +256,14 @@ export const createMockDeliveryService = (): IDeliveryService => {
 export const createMockSystemInfoService = (): ISystemInfoService => {
 	return {
 		getSystemInfo: vi.fn(),
+	};
+};
+
+export const createMockBlackoutPeriodService = (): IBlackoutPeriodService => {
+	return {
+		getAll: vi.fn().mockResolvedValue([]),
+		create: vi.fn(),
+		update: vi.fn(),
+		delete: vi.fn(),
 	};
 };

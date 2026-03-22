@@ -21,6 +21,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
+import BlackoutPeriodsSettings from "./BlackoutPeriodsSettings";
 import ImportConfigurationDialog from "./ImportConfiguration/ImportConfigurationDialog";
 
 const SystemSettingsTab: React.FC = () => {
@@ -128,6 +129,12 @@ const SystemSettingsTab: React.FC = () => {
 						a valid license to access these features.
 					</Alert>
 				)}
+			</InputGroup>
+
+			<InputGroup title="Blackout Periods" initiallyExpanded={true}>
+				<BlackoutPeriodsSettings
+					isPremium={licenseStatus?.canUsePremiumFeatures ?? false}
+				/>
 			</InputGroup>
 
 			<InputGroup title="Optional Features" initiallyExpanded={true}>

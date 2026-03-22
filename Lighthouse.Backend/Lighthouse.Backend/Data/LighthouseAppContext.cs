@@ -36,6 +36,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<Delivery> Deliveries { get; set; } = null!;
 
+        public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; } = null!;
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database
@@ -177,6 +179,11 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Delivery>()
                 .HasMany(d => d.Features)
                 .WithMany();
+
+            modelBuilder.Entity<BlackoutPeriod>().HasKey(bp => bp.Id);
+            modelBuilder.Entity<BlackoutPeriod>()
+                .Property(bp => bp.Id)
+                .ValueGeneratedOnAdd();
         }
 
         public override int SaveChanges()

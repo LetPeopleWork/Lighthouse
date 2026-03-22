@@ -5,6 +5,10 @@ import {
 	UpdateSubscriptionService,
 } from "../UpdateSubscriptionService";
 import {
+	BlackoutPeriodService,
+	type IBlackoutPeriodService,
+} from "./BlackoutPeriodService";
+import {
 	ConfigurationService,
 	type IConfigurationService,
 } from "./ConfigurationService";
@@ -67,6 +71,7 @@ export interface IApiServiceContext {
 	deliveryService: IDeliveryService;
 	wizardService: IWizardService;
 	systemInfoService: ISystemInfoService;
+	blackoutPeriodService: IBlackoutPeriodService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -94,6 +99,7 @@ const defaultServices: IApiServiceContext = {
 	deliveryService: new DeliveryService(),
 	wizardService: new WizardService(),
 	systemInfoService: new SystemInfoService(),
+	blackoutPeriodService: new BlackoutPeriodService(),
 };
 
 export function getApiServices(): IApiServiceContext {

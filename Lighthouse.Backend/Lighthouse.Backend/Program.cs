@@ -303,6 +303,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
             builder.Services.AddScoped<IRepository<TerminologyEntry>, TerminologyRepository>();
             builder.Services.AddScoped<IRepository<LicenseInformation>, LicenseInformationRepository>();
+            builder.Services.AddScoped<IRepository<BlackoutPeriod>, BlackoutPeriodRepository>();
             builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 
             // Factories
@@ -323,6 +324,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();
+            builder.Services.AddScoped<IBlackoutPeriodService, BlackoutPeriodService>();
             builder.Services.AddScoped<ILicenseService, LicenseService>();
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();

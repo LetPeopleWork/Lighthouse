@@ -96,6 +96,29 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("AppSettings");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.BlackoutPeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BlackoutPeriods");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
                 {
                     b.Property<int>("Id")

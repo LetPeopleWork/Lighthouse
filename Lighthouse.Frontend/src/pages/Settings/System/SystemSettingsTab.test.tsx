@@ -10,6 +10,7 @@ import type { ITerminologyService } from "../../../services/Api/TerminologyServi
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
+	createMockBlackoutPeriodService,
 	createMockConfigurationService,
 	createMockLicensingService,
 	createMockOptionalFeatureService,
@@ -46,6 +47,10 @@ const mockGetLicenseStatus = vi.fn();
 const mockLicensingService: ILicensingService = createMockLicensingService();
 mockLicensingService.getLicenseStatus = mockGetLicenseStatus;
 
+const mockBlackoutPeriodService = createMockBlackoutPeriodService();
+const mockGetAllBlackoutPeriods = vi.fn();
+mockBlackoutPeriodService.getAll = mockGetAllBlackoutPeriods;
+
 const MockApiServiceProvider = ({
 	children,
 }: {
@@ -57,6 +62,7 @@ const MockApiServiceProvider = ({
 		configurationService: mockConfigurationService,
 		terminologyService: mockTerminologyService,
 		licensingService: mockLicensingService,
+		blackoutPeriodService: mockBlackoutPeriodService,
 	});
 
 	const queryClient = new QueryClient({
@@ -86,6 +92,8 @@ const renderWithMockApiProvider = () => {
 describe("SystemSettingsTab Component", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
+
+		mockGetAllBlackoutPeriods.mockResolvedValue([]);
 
 		mockGetAllFeatures.mockResolvedValue([
 			{

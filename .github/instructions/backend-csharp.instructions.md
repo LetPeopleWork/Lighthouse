@@ -556,3 +556,4 @@ public User CreateUser(
 - Follow TDD strictly for all C# code
 - Use dependency injection for behavior contracts
 - Prefer options objects for complex parameters
+- Use existing CreateMigration powershell script to create EF Migrations for all supported database providers
