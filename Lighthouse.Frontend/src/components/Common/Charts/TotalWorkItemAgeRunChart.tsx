@@ -9,6 +9,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
+import BlackoutOverlay from "./BlackoutOverlay";
 
 interface TotalWorkItemAgeRunChartProps {
 	wipOverTimeData: RunChartData;
@@ -33,13 +34,7 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 
 	// Calculate total age for each day
 	const chartData = useMemo(() => {
-		const blackoutSet = new Set(wipOverTimeData.blackoutDayIndices ?? []);
-		const data: Array<{
-			day: string;
-			value: number;
-			itemCount: number;
-			isBlackout: boolean;
-		}> = [];
+		const data: Array<{ day: string; value: number; itemCount: number }> = [];
 
 		for (let dayIndex = 0; dayIndex < wipOverTimeData.history; dayIndex++) {
 			const items = wipOverTimeData.workItemsPerUnitOfTime[dayIndex] || [];
@@ -65,7 +60,6 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				day: dayLabel,
 				value: totalAge,
 				itemCount: items.length,
-				isBlackout: blackoutSet.has(dayIndex),
 			});
 		}
 
@@ -104,10 +98,10 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				{() => {
 					const xLabels = chartData.map((item) => item.day);
 					const yValues = chartData.map((item) => item.value);
-					const hasBlackout = chartData.some((item) => item.isBlackout);
-					const blackoutValues = chartData.map((item) =>
-						item.isBlackout ? item.value : null,
-					);
+					const blackoutSet = new Set(wipOverTimeData.blackoutDayIndices ?? []);
+					const blackoutLabels = chartData
+						.filter((_, index) => blackoutSet.has(index))
+						.map((item) => item.day);
 
 					return (
 						<LineChart
@@ -147,37 +141,23 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 											return "No data";
 										}
 
-										const {
-											value: totalAge,
-											itemCount,
-											isBlackout,
-										} = dataPoint;
-										const suffix = isBlackout ? " (Blackout Day)" : "";
+										const { value: totalAge, itemCount } = dataPoint;
 
 										if (itemCount === 0) {
-											return `No items in progress${suffix}`;
+											return "No items in progress";
 										}
 
 										if (itemCount === 1) {
-											return `${totalAge} days total (1 item) - Click for details${suffix}`;
+											return `${totalAge} days total (1 item) - Click for details`;
 										}
 
-										return `${totalAge} days total (${itemCount} items) - Click for details${suffix}`;
+										return `${totalAge} days total (${itemCount} items) - Click for details`;
 									},
 								},
-								...(hasBlackout
-									? [
-											{
-												data: blackoutValues,
-												color: theme.palette.action.disabled,
-												showMark: true,
-												label: "Blackout" as const,
-											},
-										]
-									: []),
 							]}
-							hideLegend={true}
-						/>
+						>
+							<BlackoutOverlay blackoutDayLabels={blackoutLabels} />
+						</LineChart>
 					);
 				}}
 			</BaseRunChart>

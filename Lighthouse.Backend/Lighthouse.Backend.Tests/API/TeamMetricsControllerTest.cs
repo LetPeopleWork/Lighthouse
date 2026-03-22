@@ -3,7 +3,6 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -820,8 +819,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = new DateTime(2025, 1, 1);
-            var endDate = new DateTime(2025, 1, 10);
+            var startDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2025, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             var throughputData = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
             teamMetricsServiceMock.Setup(s => s.GetThroughputForTeam(team, startDate, endDate)).Returns(throughputData);
@@ -848,8 +847,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = new DateTime(2025, 1, 1);
-            var endDate = new DateTime(2025, 1, 10);
+            var startDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2025, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             var throughputData = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3]));
             teamMetricsServiceMock.Setup(s => s.GetThroughputForTeam(team, startDate, endDate)).Returns(throughputData);
@@ -873,8 +872,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = new DateTime(2025, 1, 1);
-            var endDate = new DateTime(2025, 1, 3);
+            var startDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2025, 1, 3, 0, 0, 0, DateTimeKind.Utc);
 
             var pbcChart = new ProcessBehaviourChart
             {
@@ -916,8 +915,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = new DateTime(2025, 1, 1);
-            var endDate = new DateTime(2025, 1, 2);
+            var startDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2025, 1, 2, 0, 0, 0, DateTimeKind.Utc);
 
             var pbcChart = new ProcessBehaviourChart
             {
@@ -953,8 +952,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = new DateTime(2025, 1, 1);
-            var endDate = new DateTime(2025, 1, 5);
+            var startDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2025, 1, 5, 0, 0, 0, DateTimeKind.Utc);
 
             var pbcChart = new ProcessBehaviourChart
             {

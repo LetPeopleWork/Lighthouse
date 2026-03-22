@@ -102,6 +102,11 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 	),
 }));
 
+// Mock PbcBlackoutOverlay to avoid chart context dependency
+vi.mock("./PbcBlackoutOverlay", () => ({
+	default: vi.fn(() => <div data-testid="blackout-overlay" />),
+}));
+
 // Mock hexToRgba
 vi.mock("../../../utils/theme/colors", () => ({
 	hexToRgba: vi.fn((color, _opacity) => color),

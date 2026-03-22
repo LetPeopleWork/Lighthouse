@@ -50,6 +50,21 @@ vi.mock("@mui/material", async () => {
 	};
 });
 
+// Mock BlackoutOverlay to avoid chart context dependency
+vi.mock("./BlackoutOverlay", () => ({
+	default: vi.fn(({ blackoutDayLabels }) =>
+		blackoutDayLabels.length > 0 ? (
+			<div data-testid="blackout-overlay">
+				{blackoutDayLabels.map((label: string) => (
+					<span key={label} data-testid={`blackout-day-${label}`}>
+						{label}
+					</span>
+				))}
+			</div>
+		) : null,
+	),
+}));
+
 // Helper function for regular rendering
 const renderWithTheme = (ui: React.ReactElement) => {
 	return render(ui);

@@ -30,10 +30,15 @@ vi.mock("./BaseRunChart", () => ({
 		return (
 			<div data-testid="base-run-chart">
 				{title && <h6>{title}</h6>}
-				{children({})}
+				{children([])}
 			</div>
 		);
 	}),
+}));
+
+// Mock BlackoutOverlay to avoid chart context dependency
+vi.mock("./BlackoutOverlay", () => ({
+	default: vi.fn(() => null),
 }));
 
 describe("TotalWorkItemAgeRunChart", () => {

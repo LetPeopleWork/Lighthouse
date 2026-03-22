@@ -81,6 +81,21 @@ vi.mock("./PredictabilityScore", () => ({
 	)),
 }));
 
+// Mock BlackoutOverlay to avoid chart context dependency
+vi.mock("./BlackoutOverlay", () => ({
+	default: vi.fn(({ blackoutDayLabels }) =>
+		blackoutDayLabels.length > 0 ? (
+			<div data-testid="blackout-overlay">
+				{blackoutDayLabels.map((label: string) => (
+					<span key={label} data-testid={`blackout-day-${label}`}>
+						{label}
+					</span>
+				))}
+			</div>
+		) : null,
+	),
+}));
+
 // Function to generate mock work items
 function generateMockWorkItems(count: number): IWorkItem[] {
 	return Array.from({ length: count }, (_, i) => ({
@@ -524,7 +539,7 @@ describe("Blackout Day visualization", () => {
 		vi.clearAllMocks();
 	});
 
-	it("should pass two series to BarChart when blackout days exist", () => {
+	it("should pass a single series to BarChart regardless of blackout days", () => {
 		const rawData = [10, 20, 30];
 		const mockThroughputData = new RunChartData(
 			generateWorkItemMapForRunChart(rawData),
@@ -538,10 +553,10 @@ describe("Blackout Day visualization", () => {
 		);
 
 		const chartProps = screen.getByTestId("chartProps");
-		expect(chartProps).toHaveTextContent('"seriesLength":2');
+		expect(chartProps).toHaveTextContent('"seriesLength":1');
 	});
 
-	it("should still pass two series when no blackout days exist", () => {
+	it("should pass a single series when no blackout days exist", () => {
 		const rawData = [10, 20, 30];
 		const mockThroughputData = new RunChartData(
 			generateWorkItemMapForRunChart(rawData),
@@ -554,10 +569,10 @@ describe("Blackout Day visualization", () => {
 		);
 
 		const chartProps = screen.getByTestId("chartProps");
-		expect(chartProps).toHaveTextContent('"seriesLength":2');
+		expect(chartProps).toHaveTextContent('"seriesLength":1');
 	});
 
-	it("should set normalValue to null for blackout days in dataset", async () => {
+	it("should preserve all values in dataset without splitting for blackout days", async () => {
 		const { BarChart } = vi.mocked(await import("@mui/x-charts"));
 
 		const rawData = [10, 20, 30];
@@ -574,20 +589,12 @@ describe("Blackout Day visualization", () => {
 
 		const lastCall = BarChart.mock.calls[BarChart.mock.calls.length - 1];
 		const dataset = lastCall[0].dataset as Array<{
-			normalValue: number | null;
-			blackoutValue: number | null;
+			value: number;
 		}>;
 
-		// Day 0: not blackout - normalValue should have value, blackoutValue null
-		expect(dataset[0].normalValue).not.toBeNull();
-		expect(dataset[0].blackoutValue).toBeNull();
-
-		// Day 1: blackout - normalValue should be null, blackoutValue should have value
-		expect(dataset[1].normalValue).toBeNull();
-		expect(dataset[1].blackoutValue).not.toBeNull();
-
-		// Day 2: not blackout
-		expect(dataset[2].normalValue).not.toBeNull();
-		expect(dataset[2].blackoutValue).toBeNull();
+		// All days should have their value preserved in a single field
+		expect(dataset[0].value).toBe(10);
+		expect(dataset[1].value).toBe(20);
+		expect(dataset[2].value).toBe(30);
 	});
 });

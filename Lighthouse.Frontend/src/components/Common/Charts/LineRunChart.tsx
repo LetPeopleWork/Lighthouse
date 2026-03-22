@@ -10,6 +10,7 @@ import { getWorkItemName } from "../../../utils/featureName";
 import { hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
+import BlackoutOverlay from "./BlackoutOverlay";
 
 interface LineRunChartProps {
 	chartData: RunChartData;
@@ -72,10 +73,9 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 				{(data) => {
 					const xLabels = data.map((item) => item.day);
 					const yValues = data.map((item) => item.value);
-					const hasBlackout = data.some((item) => item.isBlackout);
-					const blackoutValues = data.map((item) =>
-						item.isBlackout ? item.value : null,
-					);
+					const blackoutLabels = data
+						.filter((item) => item.isBlackout)
+						.map((item) => item.day);
 
 					return (
 						<Box
@@ -150,39 +150,26 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 												params: { dataIndex: number },
 											) => {
 												const index = params?.dataIndex ?? 0;
-												const isBlackout = data[index]?.isBlackout ?? false;
 												const numberOfItems =
 													chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
-
-												const suffix = isBlackout ? " (Blackout Day)" : "";
 
 												if (numberOfItems === 1) {
 													const item =
 														chartData.workItemsPerUnitOfTime[index][0];
-													return `${getWorkItemName(item)} (Click for details)${suffix}`;
+													return `${getWorkItemName(item)} (Click for details)`;
 												}
 
 												if (numberOfItems > 0) {
-													return `${numberOfItems} ${workItemsTerm} in Progress (Click for details)${suffix}`;
+													return `${numberOfItems} ${workItemsTerm} in Progress (Click for details)`;
 												}
 
-												return `No ${workItemsTerm} in Progress${suffix}`;
+												return `No ${workItemsTerm} in Progress`;
 											},
 										},
-										...(hasBlackout
-											? [
-													{
-														data: blackoutValues,
-														color: theme.palette.action.disabled,
-														showMark: true,
-														label: "Blackout" as const,
-													},
-												]
-											: []),
 									]}
-									hideLegend={true}
 									// height controlled by parent; allow flexible sizing
 								>
+									<BlackoutOverlay blackoutDayLabels={blackoutLabels} />
 									{wipLimitVisible &&
 										wipLimit !== undefined &&
 										wipLimit >= 1 && (

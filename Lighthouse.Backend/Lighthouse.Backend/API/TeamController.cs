@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.API
     public class TeamController(
         IRepository<Team> teamRepository,
         IRepository<Portfolio> projectRepository,
-        IRepository<Feature> featureRepository,
         IWorkItemRepository workItemRepository,
         ITeamUpdater teamUpdateService,
         IPortfolioUpdater portfolioUpdater,
@@ -26,10 +25,9 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
-                var allProjects = projectRepository.GetAll().ToList();
-                var allFeatures = featureRepository.GetAll().ToList();
+                var allPortfolios = projectRepository.GetAll().ToList();
 
-                var teamDto = team.CreateTeamDto(allProjects, allFeatures);
+                var teamDto = team.CreateTeamDto(allPortfolios);
                 var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                 var throughputSettings = team.GetThroughputSettings();
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);

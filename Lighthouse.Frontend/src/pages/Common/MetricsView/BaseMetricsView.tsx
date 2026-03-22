@@ -1,5 +1,5 @@
 import { Grid } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
@@ -16,6 +16,7 @@ import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWor
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
+import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
@@ -26,6 +27,7 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type {
 	IMetricsService,
 	IProjectMetricsService,
@@ -62,6 +64,8 @@ export const BaseMetricsView = <
 	additionalItems = [],
 	doingStates,
 }: BaseMetricsViewProps<T, E>) => {
+	const { blackoutPeriodService } = useContext(ApiServiceContext);
+	const [blackoutPeriods, setBlackoutPeriods] = useState<IBlackoutPeriod[]>([]);
 	const [throughputData, setThroughputData] = useState<RunChartData | null>(
 		null,
 	);
@@ -177,6 +181,19 @@ export const BaseMetricsView = <
 		setEndDate(date);
 		updateDateParams(startDate, date);
 	};
+
+	useEffect(() => {
+		const fetchBlackoutPeriods = async () => {
+			try {
+				const periods = await blackoutPeriodService.getAll();
+				setBlackoutPeriods(periods);
+			} catch {
+				// Blackout periods are optional; silently fall back to empty
+			}
+		};
+
+		fetchBlackoutPeriods();
+	}, [blackoutPeriodService]);
 
 	useEffect(() => {
 		const fetchPredictabilityData = async () => {
@@ -598,6 +615,7 @@ export const BaseMetricsView = <
 						cycleTimeDataPoints={cycleTimeData}
 						percentileValues={percentileValues}
 						serviceLevelExpectation={serviceLevelExpectation}
+						blackoutPeriods={blackoutPeriods}
 					/>
 				),
 			},

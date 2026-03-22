@@ -18,6 +18,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
+import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -40,6 +41,7 @@ import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
+import TimeBlackoutOverlay from "./TimeBlackoutOverlay";
 
 interface IGroupedWorkItem {
 	closedDateTimestamp: number;
@@ -132,12 +134,14 @@ interface CycleTimeScatterPlotChartProps {
 	percentileValues: IPercentileValue[];
 	cycleTimeDataPoints: IWorkItem[];
 	serviceLevelExpectation?: IPercentileValue | null;
+	blackoutPeriods?: IBlackoutPeriod[];
 }
 
 const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	percentileValues,
 	cycleTimeDataPoints,
 	serviceLevelExpectation = null,
+	blackoutPeriods = [],
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -373,6 +377,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 						<ChartsXAxis />
 						<ChartsYAxis />
+						<TimeBlackoutOverlay
+							blackoutPeriods={blackoutPeriods}
+							axisId="timeAxis"
+						/>
 						<ScatterPlot
 							slots={{
 								marker: (props) =>

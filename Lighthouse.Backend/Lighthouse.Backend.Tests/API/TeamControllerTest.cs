@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
-        private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepoMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
@@ -24,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
@@ -73,16 +71,16 @@ namespace Lighthouse.Backend.Tests.API
 
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
 
-            var feature1 = CreateFeature(portfolio1, team, 12);
-            var feature2 = CreateFeature(portfolio1, team, 42);
+            CreateFeature(portfolio1, team, 12);
+            CreateFeature(portfolio1, team, 42);
 
             var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
 
-            var feature3 = CreateFeature(portfolio2, team, 5);
+            CreateFeature(portfolio2, team, 5);
 
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
 
-            var subject = CreateSubject([team], [portfolio1, portfolio2], [feature1, feature2, feature3]);
+            var subject = CreateSubject([team], [portfolio1, portfolio2]);
 
             var result = subject.GetTeam(1);
 
@@ -538,26 +536,22 @@ namespace Lighthouse.Backend.Tests.API
             return new Portfolio { Id = id, Name = name };
         }
 
-        private static Feature CreateFeature(Portfolio portfolio, Team team, int remainingWork)
+        private static void CreateFeature(Portfolio portfolio, Team team, int remainingWork)
         {
             var feature = new Feature(team, remainingWork);
             portfolio.Features.Add(feature);
-
-            return feature;
         }
 
-        private TeamController CreateSubject(Team[]? teams = null, Portfolio[]? portfolios = null, Feature[]? features = null)
+        private TeamController CreateSubject(Team[]? teams = null, Portfolio[]? portfolios = null)
         {
             teams ??= [];
             portfolios ??= [];
-            features ??= [];
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
-            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object);
         }
     }
 }

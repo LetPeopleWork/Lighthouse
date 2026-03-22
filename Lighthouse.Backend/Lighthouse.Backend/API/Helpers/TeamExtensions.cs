@@ -7,14 +7,15 @@ namespace Lighthouse.Backend.API.Helpers
     {
         extension(Team team)
         {
-            public TeamDto CreateTeamDto(List<Portfolio> allProjects, List<Feature> allFeatures)
+            public TeamDto CreateTeamDto(List<Portfolio> allPortfolios)
             {
                 var teamDto = new TeamDto(team);
 
-                var projects = allProjects.Where(p => p.Teams.Any(t => t.Id == team.Id)).Select(t => new EntityReferenceDto(t.Id, t.Name));
-                var features = allFeatures.Where(f => f.FeatureWork.Exists(rw => rw.TeamId == team.Id)).Select(f => new EntityReferenceDto(f.Id, f.Name));
+                var portfolios = allPortfolios.Where(p => p.Teams.Any(t => t.Id == team.Id));
+                var portfolioReferences = portfolios.Select(t => new EntityReferenceDto(t.Id, t.Name));
+                var features = portfolios.SelectMany(f => f.Features).Where(f => f.FeatureWork.Exists(rw => rw.TeamId == team.Id)).Select(f => new EntityReferenceDto(f.Id, f.Name));
 
-                teamDto.Portfolios.AddRange(projects);
+                teamDto.Portfolios.AddRange(portfolioReferences);
                 teamDto.Features.AddRange(features);
                 return teamDto;
             }

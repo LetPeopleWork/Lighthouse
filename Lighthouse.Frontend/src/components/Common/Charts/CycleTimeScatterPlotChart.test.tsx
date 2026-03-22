@@ -50,6 +50,11 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 	}),
 }));
 
+// Mock TimeBlackoutOverlay to avoid chart context dependency
+vi.mock("./TimeBlackoutOverlay", () => ({
+	default: vi.fn(() => null),
+}));
+
 // Mock the MUI-X Charts and expose series prop for assertions
 vi.mock("@mui/x-charts", async () => {
 	const actual = await vi.importActual("@mui/x-charts");

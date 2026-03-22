@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
-        private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
@@ -30,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             licenseServiceMock = new Mock<ILicenseService>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
@@ -64,9 +62,9 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(1, "Numero Uno");
             var portfolio = CreatePortfolio(42, "My Portfolio");
 
-            var feature = CreateFeature(portfolio, team, 12);
+            CreateFeature(portfolio, team, 12);
 
-            var subject = CreateSubject([team], [portfolio], [feature]);
+            var subject = CreateSubject([team], [portfolio]);
 
             var results = subject.GetTeams().ToList();
 
@@ -86,10 +84,10 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(1, "Numero Uno");
             var portfolio = CreatePortfolio(42, "My Portfolio");
 
-            var feature1 = CreateFeature(portfolio, team, 12);
-            var feature2 = CreateFeature(portfolio, team, 42);
+            CreateFeature(portfolio, team, 12);
+            CreateFeature(portfolio, team, 42);
 
-            var subject = CreateSubject([team], [portfolio], [feature1, feature2]);
+            var subject = CreateSubject([team], [portfolio]);
 
             var results = subject.GetTeams().ToList();
 
@@ -109,14 +107,14 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(1, "Numero Uno");
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
 
-            var feature1 = CreateFeature(portfolio1, team, 12);
-            var feature2 = CreateFeature(portfolio1, team, 42);
+            CreateFeature(portfolio1, team, 12);
+            CreateFeature(portfolio1, team, 42);
 
             var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
 
-            var feature3 = CreateFeature(portfolio2, team, 5);
+            CreateFeature(portfolio2, team, 5);
 
-            var subject = CreateSubject([team], [portfolio1, portfolio2], [feature1, feature2, feature3]);
+            var subject = CreateSubject([team], [portfolio1, portfolio2]);
 
             var results = subject.GetTeams().ToList();
 
@@ -136,15 +134,15 @@ namespace Lighthouse.Backend.Tests.API
             var team1 = CreateTeam(1, "Numero Uno");
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
 
-            var feature1 = CreateFeature(portfolio1, team1, 12);
-            var feature2 = CreateFeature(portfolio1, team1, 42);
+            CreateFeature(portfolio1, team1, 12);
+            CreateFeature(portfolio1, team1, 42);
 
             var team2 = CreateTeam(2, "Una Mas");
             var portfolio2 = CreatePortfolio(13, "My Other Portfolio");
 
-            var feature3 = CreateFeature(portfolio2, team2, 5);
+            CreateFeature(portfolio2, team2, 5);
 
-            var subject = CreateSubject([team1, team2], [portfolio1, portfolio2], [feature1, feature2, feature3]);
+            var subject = CreateSubject([team1, team2], [portfolio1, portfolio2]);
 
             var results = subject.GetTeams().ToList();
 
@@ -452,26 +450,22 @@ namespace Lighthouse.Backend.Tests.API
             return new Portfolio { Id = id, Name = name };
         }
 
-        private static Feature CreateFeature(Portfolio portfolio, Team team, int remainingWork)
+        private static void CreateFeature(Portfolio portfolio, Team team, int remainingWork)
         {
             var feature = new Feature(team, remainingWork);
             portfolio.Features.Add(feature);
-
-            return feature;
         }
 
-        private TeamsController CreateSubject(Team[]? teams = null, Portfolio[]? portfolios = null, Feature[]? features = null)
+        private TeamsController CreateSubject(Team[]? teams = null, Portfolio[]? portfolios = null)
         {
             teams ??= [];
             portfolios ??= [];
-            features ??= [];
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
-            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
             return new TeamsController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object, blackoutPeriodRepositoryMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object, blackoutPeriodRepositoryMock.Object);
         }
     }
 }

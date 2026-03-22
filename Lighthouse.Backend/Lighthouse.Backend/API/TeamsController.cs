@@ -16,8 +16,7 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class TeamsController(
         IRepository<Team> teamRepository,
-        IRepository<Portfolio> projectRepository,
-        IRepository<Feature> featureRepository,
+        IRepository<Portfolio> portfolioRepository,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
         ITeamUpdater teamUpdateService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
@@ -31,13 +30,12 @@ namespace Lighthouse.Backend.API
             var teamDtos = new List<TeamDto>();
 
             var allTeams = teamRepository.GetAll().ToList();
-            var allProjects = projectRepository.GetAll().ToList();
-            var allFeatures = featureRepository.GetAll().ToList();
+            var allPortfolios = portfolioRepository.GetAll().ToList();
             var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
             foreach (var team in allTeams)
             {
-                var teamDto = team.CreateTeamDto(allProjects, allFeatures);
+                var teamDto = team.CreateTeamDto(allPortfolios);
                 var throughputSettings = team.GetThroughputSettings();
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
 

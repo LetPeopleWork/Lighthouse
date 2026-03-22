@@ -38,6 +38,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { calculateHistoricalAge } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import PbcBlackoutOverlay from "./PbcBlackoutOverlay";
 
 const specialCauseColors: Record<SpecialCauseType, string> = {
 	None: "",
@@ -78,14 +79,12 @@ type SpecialCauseMarkContextValue = {
 	readonly dataPoints: readonly ProcessBehaviourChartDataPoint[];
 	readonly selectedCause: SpecialCauseType | null;
 	readonly defaultColor: string;
-	readonly blackoutColor: string;
 };
 
 const SpecialCauseMarkContext = createContext<SpecialCauseMarkContextValue>({
 	dataPoints: [],
 	selectedCause: null,
 	defaultColor: "",
-	blackoutColor: "",
 });
 
 const getHighestPriorityCause = (
@@ -98,7 +97,7 @@ const getHighestPriorityCause = (
 };
 
 const SpecialCauseMark = (props: Record<string, unknown>) => {
-	const { dataPoints, selectedCause, defaultColor, blackoutColor } = useContext(
+	const { dataPoints, selectedCause, defaultColor } = useContext(
 		SpecialCauseMarkContext,
 	);
 	const {
@@ -128,16 +127,10 @@ const SpecialCauseMark = (props: Record<string, unknown>) => {
 			? selectedCause
 			: highestCause;
 
-	const isBlackout = point?.isBlackout ?? false;
-
-	const getMarkFill = () => {
-		if (isHighlighted && displayCause) {
-			return specialCauseColors[displayCause];
-		}
-		return isBlackout ? blackoutColor : defaultColor;
-	};
-
-	const fill = getMarkFill();
+	const fill =
+		isHighlighted && displayCause
+			? specialCauseColors[displayCause]
+			: defaultColor;
 	const radius = isHighlighted ? 6 : 4;
 
 	return (
@@ -264,14 +257,8 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 			dataPoints: data.dataPoints,
 			selectedCause: selectedSpecialCause,
 			defaultColor,
-			blackoutColor: theme.palette.action.disabled,
 		}),
-		[
-			data.dataPoints,
-			selectedSpecialCause,
-			defaultColor,
-			theme.palette.action.disabled,
-		],
+		[data.dataPoints, selectedSpecialCause, defaultColor],
 	);
 
 	const chartData = useMemo(() => {
@@ -329,9 +316,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 			if (resolvedItems.length === 0) return;
 
 			const day = new Date(point.xValue);
-			setDialogTitle(
-				`${title} — ${day.toLocaleDateString(undefined, { timeZone: "UTC" })}`,
-			);
+			setDialogTitle(`${title} — ${day.toLocaleDateString()}`);
 
 			setSelectedDate(day);
 
@@ -447,12 +432,10 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 														return data.xAxisKind === "DateTime"
 															? new Date(
 																	data.dataPoints[value].xValue,
-																).toLocaleString(undefined, { timeZone: "UTC" })
+																).toLocaleString()
 															: new Date(
 																	data.dataPoints[value].xValue,
-																).toLocaleDateString(undefined, {
-																	timeZone: "UTC",
-																});
+																).toLocaleDateString();
 													}
 													return String(value);
 												},
@@ -463,12 +446,8 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 												scaleType: "time" as const,
 												valueFormatter: (value: number) =>
 													data.xAxisKind === "DateTime"
-														? new Date(value).toLocaleString(undefined, {
-																timeZone: "UTC",
-															})
-														: new Date(value).toLocaleDateString(undefined, {
-																timeZone: "UTC",
-															}),
+														? new Date(value).toLocaleString()
+														: new Date(value).toLocaleDateString(),
 											},
 								]}
 								yAxis={[
@@ -514,6 +493,10 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 							>
 								<ChartsXAxis axisId="xAxis" />
 								<ChartsYAxis axisId="yAxis" />
+								<PbcBlackoutOverlay
+									dataPoints={data.dataPoints}
+									useEqualSpacing={useEqualSpacing}
+								/>
 								<LinePlot />
 								<MarkPlot
 									slots={{ mark: SpecialCauseMark }}
