@@ -425,7 +425,7 @@ namespace Lighthouse.Backend.Tests.API
 
             // Setup historical throughput - 3 days with [2, 1, 3] items = 6 total
             var historicalThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 1, 3]));
-            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
+            teamMetricsServiceMock.Setup(x => x.GetBlackoutAwareThroughputForTeam(
                 expectedTeam,
                 historicalStartDate.ToDateTime(TimeOnly.MinValue),
                 historicalEndDate.ToDateTime(TimeOnly.MinValue)))

@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 {
     public interface ITeamMetricsService
     {
-        RunChartData GetCurrentThroughputForTeam(Team team);
+        RunChartData GetCurrentThroughputForTeamForecast(Team team);
 
         ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
 
@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
 
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 

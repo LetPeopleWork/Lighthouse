@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             foreach (var team in teams)
             {
-                var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
+                var throughput = teamMetricsService.GetCurrentThroughputForTeamForecast(team);
 
                 if (throughput.Total > 0)
                 {

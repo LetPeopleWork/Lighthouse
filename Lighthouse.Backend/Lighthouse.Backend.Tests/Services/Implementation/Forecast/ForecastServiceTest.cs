@@ -564,7 +564,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Id = idCounter++,
             };
 
-            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(throughput)));
+            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeamForecast(team)).Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(throughput)));
 
             return team;
         }

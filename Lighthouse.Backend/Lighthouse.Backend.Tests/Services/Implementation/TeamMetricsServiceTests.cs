@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
+        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
 
         private Team testTeam;
 
@@ -31,6 +32,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             forecastServiceMock = new Mock<IForecastService>();
+            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<BlackoutPeriod>().AsQueryable());
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
@@ -41,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns(forecastServiceMock.Object);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object);
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodRepositoryMock.Object);
 
             workItems = new List<WorkItem>();
 
@@ -203,7 +206,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, string.Empty);
             AddWorkItem(StateCategories.Unknown, 1, string.Empty);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.Zero);
         }
@@ -213,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Done, 2, string.Empty);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.Zero);
         }
@@ -229,7 +232,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 workItem.ClosedDate = DateTime.UtcNow.AddDays(-i);
             }
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             using (Assert.EnterMultipleScope())
             {
@@ -257,7 +260,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Before
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-11);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.EqualTo(1));
         }
@@ -269,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(11);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.EqualTo(1));
         }
@@ -292,7 +295,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // After
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.EqualTo(3));
         }
@@ -445,11 +448,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Done, 1, string.Empty);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
             Assert.That(throughput.Total, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
-            throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.EqualTo(1));
         }
@@ -459,13 +462,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Done, 1, string.Empty);
 
-            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
             Assert.That(throughput.Total, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             subject.InvalidateTeamMetrics(testTeam);
 
-            throughput = subject.GetCurrentThroughputForTeam(testTeam);
+            throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.EqualTo(2));
         }
@@ -1921,6 +1924,220 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.DataPoints, Has.Count.EqualTo(1));
                 Assert.That(result.DataPoints[0].WorkItemIds, Does.Contain(item1.Id));
             }
+        }
+
+        #endregion
+
+        #region Blackout Period Filtering
+
+        [Test]
+        public void GetCurrentThroughputForTeam_RollingWindow_NoBlackoutPeriods_BehaviorUnchanged()
+        {
+            testTeam.ThroughputHistory = 10;
+
+            for (var i = 0; i < 10; i++)
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-i);
+            }
+
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughput.Total, Is.EqualTo(10));
+                Assert.That(throughput.History, Is.EqualTo(10));
+            }
+        }
+
+        [Test]
+        public void GetCurrentThroughputForTeam_RollingWindow_WithBlackoutDays_ExcludesBlackoutDays()
+        {
+            testTeam.ThroughputHistory = 10;
+
+            for (var i = 0; i < 12; i++)
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-i);
+            }
+
+            // Blackout 2 days ago and 3 days ago
+            var blackoutStart = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3));
+            var blackoutEnd = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = blackoutStart, End = blackoutEnd } }.AsQueryable());
+
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughput.History, Is.EqualTo(10));
+            }
+        }
+
+        [Test]
+        public void GetCurrentThroughputForTeam_RollingWindow_WithBlackoutDays_ThroughputExcludesBlackoutDayItems()
+        {
+            testTeam.ThroughputHistory = 5;
+
+            // Day 0 (today): 1 item
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow;
+            // Day -1: 1 item
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
+            // Day -2: 1 item (BLACKOUT)
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-2);
+            // Day -3: 1 item
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-3);
+            // Day -4: 1 item
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-4);
+            // Day -5: 1 item (extended window)
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-5);
+
+            var blackoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = blackoutDate, End = blackoutDate } }.AsQueryable());
+
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // 5 effective days (day -2 excluded, window extended to include day -5)
+                Assert.That(throughput.History, Is.EqualTo(5));
+                // 5 items from the 5 non-blackout days
+                Assert.That(throughput.Total, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetCurrentThroughputForTeam_FixedWindow_WithBlackoutDays_ReducesSamples()
+        {
+            testTeam.UseFixedDatesForThroughput = true;
+            testTeam.ThroughputHistoryStartDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            testTeam.ThroughputHistoryEndDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            // Add items on specific dates
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 2, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 3, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            // Blackout Apr 4-6 (3 days)
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) } }.AsQueryable());
+
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // 10 calendar days - 3 blackout days = 7 effective days
+                Assert.That(throughput.History, Is.EqualTo(7));
+                // Item on Apr 5 is excluded (inside blackout), items on Apr 1,2,3,8,10 remain
+                Assert.That(throughput.Total, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetBlackoutAwareThroughputForTeam_ExcludesBlackoutDays()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 2, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            // Blackout Apr 4-6
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) } }.AsQueryable());
+
+            var throughput = subject.GetBlackoutAwareThroughputForTeam(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // 10 days - 3 blackout days = 7 effective days
+                Assert.That(throughput.History, Is.EqualTo(7));
+                // Item on Apr 5 excluded
+                Assert.That(throughput.Total, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void GetBlackoutAwareThroughputForTeam_NoBlackoutPeriods_ReturnsSameAsGetThroughputForTeam()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            var throughput = subject.GetBlackoutAwareThroughputForTeam(testTeam, startDate, endDate);
+            var normalThroughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughput.History, Is.EqualTo(normalThroughput.History));
+                Assert.That(throughput.Total, Is.EqualTo(normalThroughput.Total));
+            }
+        }
+
+        [Test]
+        public void GetCurrentThroughputForTeam_RollingWindow_MultipleBlackoutPeriods_ExcludesAll()
+        {
+            testTeam.ThroughputHistory = 5;
+
+            for (var i = 0; i < 10; i++)
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-i);
+            }
+
+            // Two separate blackout periods
+            var blackout1Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
+            var blackout1End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
+            var blackout2Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-5));
+            var blackout2End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-5));
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[]
+                {
+                    new BlackoutPeriod { Id = 1, Start = blackout1Start, End = blackout1End },
+                    new BlackoutPeriod { Id = 2, Start = blackout2Start, End = blackout2End }
+                }.AsQueryable());
+
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughput.History, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScoreForTeam_WithBlackoutDays_UsesBlackoutAwareThroughput()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 2, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            // Blackout Apr 4-6 (3 days)
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
+                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) } }.AsQueryable());
+
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
+                .Returns((RunChartData throughput, int days) =>
+                {
+                    // Verify the throughput passed to HowMany has blackout days excluded
+                    Assert.That(throughput.History, Is.EqualTo(7));
+                    return new HowManyForecast();
+                });
+
+            subject.GetMultiItemForecastPredictabilityScoreForTeam(testTeam, startDate, endDate);
+
+            forecastServiceMock.Verify(x => x.HowMany(It.Is<RunChartData>(t => t.History == 7), It.IsAny<int>()), Times.Once);
         }
 
         #endregion

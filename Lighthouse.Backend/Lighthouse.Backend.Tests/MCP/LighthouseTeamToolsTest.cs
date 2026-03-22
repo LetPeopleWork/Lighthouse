@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.MCP
             teamRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Team, bool>>())).Returns(team);
 
             var throughput = new RunChartData();
-            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(throughput);
+            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeamForecast(team)).Returns(throughput);
 
             var targetDate = DateTime.Today.AddDays(14);
             var expectedDays = 14;

@@ -11,7 +11,8 @@ namespace Lighthouse.Backend.Services.Implementation
         IWorkItemRepository workItemRepository,
         IRepository<Feature> featureRepository,
         IAppSettingService appSettingService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository)
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
             ITeamMetricsService
     {
@@ -76,22 +77,22 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public RunChartData GetCurrentThroughputForTeam(Team team)
+        public RunChartData GetCurrentThroughputForTeamForecast(Team team)
         {
             logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
 
             return GetFromCacheIfExists(team, ThroughputMetricIdentifier, () =>
             {
-                var startDate = DateTime.UtcNow.Date.AddDays(-(team.ThroughputHistory - 1));
-                var endDate = DateTime.UtcNow;
-
                 if (team.UseFixedDatesForThroughput)
                 {
-                    startDate = team.ThroughputHistoryStartDate ?? startDate;
-                    endDate = team.ThroughputHistoryEndDate ?? endDate;
+                    var endDate = DateTime.UtcNow.Date;
+                    var startDate = team.ThroughputHistoryStartDate ?? endDate.AddDays(-(team.ThroughputHistory - 1));
+                    var fixedEndDate = team.ThroughputHistoryEndDate ?? endDate;
+
+                    return GetBlackoutAwareThroughputForTeam(team, startDate, fixedEndDate);
                 }
 
-                return GetThroughputForTeam(team, startDate, endDate);
+                return GetBlackoutAwareThroughputForTeam(team, team.ThroughputHistory);
             }, logger);
         }
 
@@ -105,6 +106,13 @@ namespace Lighthouse.Backend.Services.Implementation
             var throughput = new RunChartData(throughputByDay);
 
             return throughput;
+        }
+
+        public RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            var throughput = GetThroughputForTeam(team, startDate, endDate);
+            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+            return FilterBlackoutDaysFromRunChart(throughput, startDate, endDate, blackoutPeriods);
         }
 
         public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
@@ -185,7 +193,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate)
         {
-            var throughput = GetThroughputForTeam(team, startDate, endDate);
+            var throughput = GetBlackoutAwareThroughputForTeam(team, startDate, endDate);
             return GetMultiItemForecastPredictabilityScore(throughput, startDate, endDate);
         }
 
@@ -270,6 +278,103 @@ namespace Lighthouse.Backend.Services.Implementation
         private IEnumerable<WorkItem> GetInProgressWorkItemsForTeam(Team team)
         {
             return workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
+        }
+
+        private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int effectiveDaysNeeded)
+        {
+            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+
+            var endDate = DateTime.UtcNow.Date;
+            var rollingStart = endDate.AddDays(-(effectiveDaysNeeded - 1));
+
+            var blackoutDayIndices = GetBlackoutDayIndices(rollingStart, endDate, blackoutPeriods);
+            while ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count < effectiveDaysNeeded)
+            {
+                var deficit = effectiveDaysNeeded - ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count);
+                rollingStart = rollingStart.AddDays(-deficit);
+                blackoutDayIndices = GetBlackoutDayIndices(rollingStart, endDate, blackoutPeriods);
+            }
+
+            var rollingThroughput = GetThroughputForTeam(team, rollingStart, endDate);
+            var filtered = FilterBlackoutDays(rollingThroughput, blackoutDayIndices);
+
+            if (filtered.History > effectiveDaysNeeded)
+            {
+                filtered = TrimToLatestDays(filtered, effectiveDaysNeeded);
+            }
+
+            return filtered;
+        }
+
+        private static RunChartData FilterBlackoutDaysFromRunChart(RunChartData runChart, DateTime startDate, DateTime endDate, List<BlackoutPeriod> blackoutPeriods)
+        {
+            var blackoutDayIndices = GetBlackoutDayIndices(startDate, endDate, blackoutPeriods);
+            return FilterBlackoutDays(runChart, blackoutDayIndices);
+        }
+
+        internal static HashSet<int> GetBlackoutDayIndices(DateTime startDate, DateTime endDate, IEnumerable<BlackoutPeriod> blackoutPeriods)
+        {
+            var indices = new HashSet<int>();
+            var totalDays = (endDate.Date - startDate.Date).Days + 1;
+
+            foreach (var period in blackoutPeriods)
+            {
+                var periodStart = period.Start.ToDateTime(TimeOnly.MinValue);
+                var periodEnd = period.End.ToDateTime(TimeOnly.MinValue);
+
+                var overlapStart = periodStart < startDate.Date ? startDate.Date : periodStart;
+                var overlapEnd = periodEnd > endDate.Date ? endDate.Date : periodEnd;
+
+                if (overlapStart > overlapEnd)
+                {
+                    continue;
+                }
+
+                var startIndex = (overlapStart - startDate.Date).Days;
+                var endIndex = (overlapEnd - startDate.Date).Days;
+
+                for (var i = startIndex; i <= endIndex && i < totalDays; i++)
+                {
+                    indices.Add(i);
+                }
+            }
+
+            return indices;
+        }
+
+        internal static RunChartData FilterBlackoutDays(RunChartData runChart, HashSet<int> blackoutDayIndices)
+        {
+            var filteredData = new Dictionary<int, List<WorkItemBase>>();
+            var newIndex = 0;
+
+            for (var i = 0; i < runChart.History; i++)
+            {
+                if (!blackoutDayIndices.Contains(i))
+                {
+                    filteredData[newIndex] = runChart.WorkItemsPerUnitOfTime[i];
+                    newIndex++;
+                }
+            }
+
+            return new RunChartData(filteredData);
+        }
+
+        internal static RunChartData TrimToLatestDays(RunChartData runChart, int daysToKeep)
+        {
+            if (runChart.History <= daysToKeep)
+            {
+                return runChart;
+            }
+
+            var offset = runChart.History - daysToKeep;
+            var trimmedData = new Dictionary<int, List<WorkItemBase>>();
+
+            for (var i = 0; i < daysToKeep; i++)
+            {
+                trimmedData[i] = runChart.WorkItemsPerUnitOfTime[offset + i];
+            }
+
+            return new RunChartData(trimmedData);
         }
     }
 }

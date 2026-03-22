@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.API
                     return manualForecast;
                 }
 
-                var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
+                var throughput = teamMetricsService.GetCurrentThroughputForTeamForecast(team);
                 var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
 
                 manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.API
             {
                 var historyStart = input.HistoricalStartDate.ToDateTime(TimeOnly.MinValue);
                 var historyEnd = input.HistoricalEndDate.ToDateTime(TimeOnly.MinValue);
-                var historicalThroughput = teamMetricsService.GetThroughputForTeam(team, historyStart, historyEnd);
+                var historicalThroughput = teamMetricsService.GetBlackoutAwareThroughputForTeam(team, historyStart, historyEnd);
 
                 var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);
 

@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.MCP
                     return $"No team found with name {teamName}";
                 }
 
-                var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
+                var throughput = teamMetricsService.GetCurrentThroughputForTeamForecast(team);
                 var timeToTargetDate = (untilWhen - DateTime.Today).Days;
                 var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
 
