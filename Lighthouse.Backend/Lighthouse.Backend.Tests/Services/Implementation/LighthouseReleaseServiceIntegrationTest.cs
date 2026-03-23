@@ -71,6 +71,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var subject = CreateSubject();
 
             await subject.InstallUpdate();
+            
+            // Need to wait a bit for the script to be executed
+            await Task.Delay(150);
 
             processServiceMock.Verify(x => x.Exit(0), Times.Once);
         }
