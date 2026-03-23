@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Net;
 using Moq.Protected;
 
@@ -89,6 +90,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var subject = CreateSubject();
 
             await subject.InstallUpdate();
+            
+            // Need to wait a bit for the script to be executed
+            await Task.Delay(150);
 
             Assert.That(capturedStartInfo, Is.Not.Null);
 
@@ -112,22 +116,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateMockHttpClient());
         }
         
-        private static HttpClient CreateMockHttpClient(HttpStatusCode statusCode = HttpStatusCode.OK, byte[]? content = null)
+        private static HttpClient CreateMockHttpClient()
         {
             var handlerMock = new Mock<HttpMessageHandler>();
+
             handlerMock
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
+                .ReturnsAsync((HttpRequestMessage request, CancellationToken _) =>
                 {
-                    StatusCode = statusCode,
-                    Content = new ByteArrayContent(content ?? Array.Empty<byte>())
+                    // Extract the "filename" from the end of the URL
+                    // e.g., https://example.com/Lighthouse-v1.zip -> Lighthouse-v1.zip
+                    var fileNameFromUrl = Path.GetFileName(request.RequestUri?.LocalPath) ?? "default.zip";
+            
+                    // Create a valid ZIP containing a dummy file named after the URL
+                    var zipBytes = CreateMockZipBytes($"{fileNameFromUrl}.txt", "Mocked content");
+
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new ByteArrayContent(zipBytes)
+                    };
                 });
 
             return new HttpClient(handlerMock.Object);
+        }
+        
+        private static byte[] CreateMockZipBytes(string fileName, string content)
+        {
+            using var ms = new MemoryStream();
+            using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+            {
+                var entry = archive.CreateEntry(fileName);
+                using var entryStream = entry.Open();
+                using var writer = new StreamWriter(entryStream);
+                writer.Write(content);
+            }
+            return ms.ToArray();
         }
     }
 }
