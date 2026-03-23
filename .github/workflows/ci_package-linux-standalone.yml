@@ -118,12 +118,12 @@ jobs:
             exit 1
           fi
           echo "Found AppImage: ${APPIMAGE}"
-          cp "${APPIMAGE}" ./Lighthouse-linux-standalone.AppImage
-          echo "appimage_path=./Lighthouse-linux-standalone.AppImage" >> "$GITHUB_OUTPUT"
+          cp "${APPIMAGE}" ./Lighthouse-standalone.AppImage
+          echo "appimage_path=./Lighthouse-standalone.AppImage" >> "$GITHUB_OUTPUT"
 
           APPIMAGE_SIG=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage.sig" ! -name "*.tar.gz.sig" | head -1)
           if [ -n "$APPIMAGE_SIG" ]; then
-            cp "$APPIMAGE_SIG" ./Lighthouse-linux-standalone.AppImage.sig
+            cp "$APPIMAGE_SIG" ./Lighthouse-standalone.AppImage.sig
             echo "Copied updater signature: $(basename $APPIMAGE_SIG)"
           else
             echo "WARN: No AppImage updater sig found"
@@ -134,5 +134,5 @@ jobs:
         with:
           name: Lighthouse-linux-standalone-${{ inputs.version }}
           path: |
-            ./Lighthouse-linux-standalone.AppImage
-            ./Lighthouse-linux-standalone.AppImage.sig
+            ./Lighthouse-standalone.AppImage
+            ./Lighthouse-standalone.AppImage.sig

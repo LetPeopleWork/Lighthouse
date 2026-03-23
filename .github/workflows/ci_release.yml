@@ -108,17 +108,17 @@ jobs:
       - uses: vimtor/action-zip@5407800dfb2b1b37d48df912330cb22f4ab6f422
         with:
           files: LighthouseArtifacts/win-x64
-          dest: Lighthouse-win-x64.zip
+          dest: Lighthouse-server-win-x64.zip
 
       - uses: vimtor/action-zip@5407800dfb2b1b37d48df912330cb22f4ab6f422
         with:
           files: LighthouseArtifacts/linux-x64
-          dest: Lighthouse-linux-x64.zip
+          dest: Lighthouse-server-linux-x64.zip
 
       - name: Prepare macOS release files
         run: |
-          cp LighthouseArtifacts/osx-dmg/Lighthouse-${{ inputs.version }}.dmg Lighthouse-osx.dmg
-          cp LighthouseArtifacts/osx-app/Lighthouse-${{ inputs.version }}.app.zip Lighthouse-osx.app.zip
+          cp LighthouseArtifacts/osx-dmg/Lighthouse-${{ inputs.version }}.dmg Lighthouse-standalone-osx.dmg
+          cp LighthouseArtifacts/osx-app/Lighthouse-${{ inputs.version }}.app.zip Lighthouse-standalone-osx.app.zip
 
       - uses: vimtor/action-zip@5407800dfb2b1b37d48df912330cb22f4ab6f422
         with:
@@ -127,10 +127,10 @@ jobs:
 
       - name: Prepare Linux standalone release file
         run: |
-          cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage Lighthouse-linux-standalone.AppImage
+          cp LighthouseArtifacts/linux-standalone/Lighthouse-standalone.AppImage Lighthouse-standalone.AppImage
 
-          if [ -f LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.sig ]; then
-            cp LighthouseArtifacts/linux-standalone/Lighthouse-linux-standalone.AppImage.sig Lighthouse-linux-standalone.AppImage.sig
+          if [ -f LighthouseArtifacts/linux-standalone/Lighthouse-standalone.AppImage.sig ]; then
+            cp LighthouseArtifacts/linux-standalone/Lighthouse-standalone.AppImage.sig Lighthouse-standalone.AppImage.sig
           else
             echo "WARN: No Linux updater sig found"
           fi
@@ -144,7 +144,7 @@ jobs:
             ls -laR LighthouseArtifacts/win-standalone/ || true
             exit 1
           fi
-          cp "$SETUP_EXE" Lighthouse-win-standalone-x64.exe
+          cp "$SETUP_EXE" Lighthouse-standalone-installer.exe
 
           # Find and rename MSI to canonical release name
           MSI=$(find LighthouseArtifacts/win-standalone -name "*.msi" ! -name "*.msi.zip" | head -1)
@@ -153,19 +153,19 @@ jobs:
             ls -laR LighthouseArtifacts/win-standalone/ || true
             exit 1
           fi
-          cp "$MSI" Lighthouse-win-standalone-x64.msi
+          cp "$MSI" Lighthouse-standalone-installer.msi
 
           # Windows updater sigs (Tauri v2: signs exe/msi directly, no zip)
           NSIS_SIG=$(find LighthouseArtifacts/win-standalone -name "*-setup.exe.sig" | head -1)
           if [ -n "$NSIS_SIG" ]; then
-            cp "$NSIS_SIG" Lighthouse-win-standalone-x64.exe.sig
+            cp "$NSIS_SIG" Lighthouse-standalone-installer.exe.sig
           else
             echo "WARN: No NSIS updater sig found"
           fi
 
           MSI_SIG=$(find LighthouseArtifacts/win-standalone -name "*.msi.sig" | head -1)
           if [ -n "$MSI_SIG" ]; then
-            cp "$MSI_SIG" Lighthouse-win-standalone-x64.msi.sig
+            cp "$MSI_SIG" Lighthouse-standalone-installer.msi.sig
           else
             echo "WARN: No MSI updater sig found"
           fi
@@ -174,15 +174,15 @@ jobs:
         run: |
           # macOS updater archive + signature
           if [ -f LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz ]; then
-            cp LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz Lighthouse-osx.app.tar.gz
+            cp LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz Lighthouse-standalone-osx.app.tar.gz
           fi
           if [ -f LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz.sig ]; then
-            cp LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz.sig Lighthouse-osx.app.tar.gz.sig
+            cp LighthouseArtifacts/osx-updater/Lighthouse-${{ inputs.version }}.app.tar.gz.sig Lighthouse-standalone-osx.app.tar.gz.sig
           fi
 
       - uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-win-standalone-x64.exe,Lighthouse-win-standalone-x64.exe.sig,Lighthouse-win-standalone-x64.msi,Lighthouse-win-standalone-x64.msi.sig,Lighthouse-osx.dmg,Lighthouse-osx.app.zip,Lighthouse-osx.app.tar.gz,Lighthouse-osx.app.tar.gz.sig,Lighthouse-linux-x64.zip,Lighthouse-linux-standalone.AppImage,Lighthouse-linux-standalone.AppImage.sig,Lighthouse-SBOM.zip"
+          artifacts: "Lighthouse-server-win-x64.zip,Lighthouse-standalone-installer.exe,Lighthouse-standalone-installer.exe.sig,Lighthouse-standalone-installer.msi,Lighthouse-standalone-installer.msi.sig,Lighthouse-standalone-osx.dmg,Lighthouse-standalone-osx.app.zip,Lighthouse-standalone-osx.app.tar.gz,Lighthouse-standalone-osx.app.tar.gz.sig,Lighthouse-server-linux-x64.zip,Lighthouse-standalone.AppImage,Lighthouse-standalone.AppImage.sig,Lighthouse-SBOM.zip"
           tag: ${{ inputs.version }}
           prerelease: true
           name: "Lighthouse ${{ inputs.version }}"

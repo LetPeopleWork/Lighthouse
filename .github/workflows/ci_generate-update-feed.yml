@@ -99,17 +99,17 @@ jobs:
 
           gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
-            --pattern "Lighthouse-linux-standalone.AppImage.sig" \
+            --pattern "*.AppImage.sig" \
             --dir /tmp/sigs 2>/dev/null || echo "WARN: Linux sig not found"
 
           gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
-            --pattern "Lighthouse-osx.app.tar.gz.sig" \
+            --pattern "*osx*.tar.gz.sig" \
             --dir /tmp/sigs 2>/dev/null || echo "WARN: macOS sig not found"
 
           gh release download "${TAG}" \
             --repo "${{ github.repository }}" \
-            --pattern "Lighthouse-win-standalone-x64.exe.sig" \
+            --pattern "*installer.exe.sig" \
             --dir /tmp/sigs 2>/dev/null || echo "WARN: Windows sig not found"
 
           echo "=== Downloaded signatures ==="
@@ -125,19 +125,27 @@ jobs:
           SEMVER=$(echo "$VERSION_RAW" | awk -F'.' '{print $1"."$2"."$3$4}')
           echo "Tag: $TAG -> Tauri version: $SEMVER"
 
-          LINUX_SIG=$(cat /tmp/sigs/Lighthouse-linux-standalone.AppImage.sig 2>/dev/null || echo "")
-          MACOS_SIG=$(cat /tmp/sigs/Lighthouse-osx.app.tar.gz.sig 2>/dev/null || echo "")
-          WINDOWS_SIG=$(cat /tmp/sigs/Lighthouse-win-standalone-x64.exe.sig 2>/dev/null || echo "")
+          LINUX_SIG_FILE=$(ls /tmp/sigs/*.AppImage.sig 2>/dev/null | head -1)
+          DARWIN_SIG_FILE=$(ls /tmp/sigs/*osx*.tar.gz.sig 2>/dev/null | head -1)
+          WINDOWS_SIG_FILE=$(ls /tmp/sigs/*installer.exe.sig 2>/dev/null | head -1)
+
+          LINUX_SIG=$(cat "$LINUX_SIG_FILE" 2>/dev/null || echo "")
+          MACOS_SIG=$(cat "$DARWIN_SIG_FILE" 2>/dev/null || echo "")
+          WINDOWS_SIG=$(cat "$WINDOWS_SIG_FILE" 2>/dev/null || echo "")
+
+          LINUX_ASSET=$([ -n "$LINUX_SIG_FILE" ] && basename "$LINUX_SIG_FILE" .sig || echo "")
+          DARWIN_ASSET=$([ -n "$DARWIN_SIG_FILE" ] && basename "$DARWIN_SIG_FILE" .sig || echo "")
+          WINDOWS_ASSET=$([ -n "$WINDOWS_SIG_FILE" ] && basename "$WINDOWS_SIG_FILE" .sig || echo "")
 
           jq -n \
             --arg version "$SEMVER" \
             --rawfile notes /tmp/release_notes.md \
             --arg pub_date "$PUB_DATE" \
-            --arg linux_url "${DOWNLOAD_URL}/Lighthouse-linux-standalone.AppImage" \
+            --arg linux_url "${DOWNLOAD_URL}/${LINUX_ASSET}" \
             --arg linux_sig "$LINUX_SIG" \
-            --arg darwin_url "${DOWNLOAD_URL}/Lighthouse-osx.app.tar.gz" \
+            --arg darwin_url "${DOWNLOAD_URL}/${DARWIN_ASSET}" \
             --arg darwin_sig "$MACOS_SIG" \
-            --arg windows_url "${DOWNLOAD_URL}/Lighthouse-win-standalone-x64.exe" \
+            --arg windows_url "${DOWNLOAD_URL}/${WINDOWS_ASSET}" \
             --arg windows_sig "$WINDOWS_SIG" \
             '{
               version: $version,

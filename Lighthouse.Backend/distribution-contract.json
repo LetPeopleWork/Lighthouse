@@ -6,7 +6,7 @@
       "variantId": "windows.server",
       "os": "windows",
       "artifactNames": [
-        "Lighthouse-win-x64.zip"
+        "Lighthouse-server-win-x64.zip"
       ],
       "updateOwner": "lighthouse-internal",
       "description": "Windows server distribution — self-hosted, updated via Lighthouse internal updater."
@@ -15,8 +15,8 @@
       "variantId": "windows.standalone",
       "os": "windows",
       "artifactNames": [
-        "Lighthouse-win-standalone-x64.exe",
-        "Lighthouse-win-standalone-x64.msi"
+        "Lighthouse-standalone-installer.exe",
+        "Lighthouse-standalone-installer.msi"
       ],
       "updateOwner": "tauri",
       "description": "Windows standalone app — Tauri-packaged, updated via Tauri updater."
@@ -25,8 +25,8 @@
       "variantId": "macos.standalone",
       "os": "macos",
       "artifactNames": [
-        "Lighthouse-osx.dmg",
-        "Lighthouse-osx.app.zip"
+        "Lighthouse-standalone-osx.dmg",
+        "Lighthouse-standalone-osx.app.zip"
       ],
       "updateOwner": "tauri",
       "description": "macOS standalone app — Tauri-packaged, signed and notarized. Updated via Tauri updater."
@@ -35,7 +35,7 @@
       "variantId": "linux.server",
       "os": "linux",
       "artifactNames": [
-        "Lighthouse-linux-x64.zip"
+        "Lighthouse-server-linux-x64.zip"
       ],
       "updateOwner": "lighthouse-internal",
       "description": "Linux server distribution — self-hosted, updated via Lighthouse internal updater."
@@ -44,7 +44,7 @@
       "variantId": "linux.standalone",
       "os": "linux",
       "artifactNames": [
-        "Lighthouse-linux-standalone.AppImage"
+        "Lighthouse-standalone.AppImage"
       ],
       "updateOwner": "tauri",
       "description": "Linux standalone app — Tauri-packaged AppImage, updated via Tauri updater."
