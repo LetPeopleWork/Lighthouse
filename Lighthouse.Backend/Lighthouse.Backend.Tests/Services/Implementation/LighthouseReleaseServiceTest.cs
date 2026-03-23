@@ -1,10 +1,8 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -215,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private LighthouseReleaseService CreateSubject()
         {
-            return new LighthouseReleaseService(githubServiceMock.Object, assemblyServiceMock.Object, platformServiceMock.Object, Mock.Of<ILogger<LighthouseReleaseService>>());
+            return new LighthouseReleaseService(githubServiceMock.Object, assemblyServiceMock.Object, platformServiceMock.Object, Mock.Of<IProcessService>(), Mock.Of<ILogger<LighthouseReleaseService>>());
         }
     }
 }

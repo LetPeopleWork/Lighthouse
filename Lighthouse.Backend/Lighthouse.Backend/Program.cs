@@ -358,6 +358,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
+            builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();

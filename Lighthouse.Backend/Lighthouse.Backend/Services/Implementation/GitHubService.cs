@@ -15,12 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private readonly Cache<string, object> gitHubServiceCache = new Cache<string, object>();
 
-        private readonly GitHubClient client;
-
-        public GitHubService()
-        {
-            client = new GitHubClient(new ProductHeaderValue("let-people-work-lighthouse"));
-        }
+        private readonly GitHubClient client = new(new ProductHeaderValue("let-people-work-lighthouse"));
 
         public async Task<string> GetLatestReleaseVersion()
         {

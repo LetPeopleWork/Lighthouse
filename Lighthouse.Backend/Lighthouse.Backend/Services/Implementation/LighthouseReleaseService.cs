@@ -3,28 +3,21 @@ using Lighthouse.Backend.Models.Distribution;
 using Lighthouse.Backend.Services.Interfaces;
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Runtime.InteropServices;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class LighthouseReleaseService : ILighthouseReleaseService
+    public class LighthouseReleaseService(
+        IGitHubService gitHubService,
+        IAssemblyService assemblyService,
+        IPlatformService platformService,
+        IProcessService processService,
+        ILogger<LighthouseReleaseService> logger,
+        TimeSpan? updateScriptDelay = null,
+        HttpClient? httpClient = null)
+        : ILighthouseReleaseService
     {
-        private readonly IGitHubService gitHubService;
-        private readonly IAssemblyService assemblyService;
-        private readonly IPlatformService platformService;
-        private readonly ILogger<LighthouseReleaseService> logger;
-        private readonly HttpClient httpClient;
-
-        public LighthouseReleaseService(
-            IGitHubService gitHubService, IAssemblyService assemblyService, IPlatformService platformService, ILogger<LighthouseReleaseService> logger)
-        {
-            this.gitHubService = gitHubService;
-            this.assemblyService = assemblyService;
-            this.platformService = platformService;
-            this.logger = logger;
-
-            httpClient = new HttpClient();
-        }
+        private readonly HttpClient httpClient = httpClient ?? new HttpClient();
+        private readonly TimeSpan updateScriptDelay = updateScriptDelay ?? TimeSpan.FromSeconds(1);
 
         public string GetCurrentVersion()
         {
@@ -37,7 +30,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
             if (version.EndsWith(".0"))
             {
-                // Remove the trailing ".0" if it exists
                 version = version[..^2];
             }
 
@@ -142,18 +134,19 @@ namespace Lighthouse.Backend.Services.Implementation
             try
             {
                 logger.LogInformation("Installing latest update...");
+                
+                var osIdentifier = platformService.Platform.GetIdentifier();
 
                 var latestRelease = await GetLatestRelease();
-                var operatingSystem = GetOperatingSystemIdentifier();
-                var releaseAsset = GetLatestReleaseAssetForOperatingSystem(latestRelease, operatingSystem);
+                var releaseAsset = GetLatestReleaseAssetForOperatingSystem(latestRelease, osIdentifier);
 
                 if (releaseAsset == null)
                 {
-                    logger.LogError("Could not find a compatible release asset for the current platform: {OperatingSystem}", operatingSystem);
+                    logger.LogError("Could not find a compatible release asset for the current platform: {OperatingSystem}", platformService.Platform);
                     return false;
                 }
 
-                logger.LogInformation("Download asset for release {ReleaseVersion} for {OperatingSystem}", latestRelease.Version.ToString(), operatingSystem);
+                logger.LogInformation("Download asset for release {ReleaseVersion} for {OperatingSystem}", latestRelease.Version, platformService.Platform);
 
                 var tempDir = CreateTempDirectoryForUpdate();
 
@@ -165,7 +158,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 var extractPath = ExtractAsset(releaseAsset, tempDir, assetPath);
 
-                (var currentProcess, var currentProcessPath, var currentProcessDir) = GetProcessInformation();
+                var (currentProcess, currentProcessPath, currentProcessDir) = GetProcessInformation();
 
                 if (string.IsNullOrEmpty(currentProcessDir))
                 {
@@ -177,9 +170,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 logger.LogDebug("Current process path: {Path}, args: {Args}", currentProcessPath, args);
 
-                // Create update script based on OS
                 var updateScriptPath = CreateUpdateScript(
-                    operatingSystem,
+                    osIdentifier,
                     extractPath,
                     currentProcessDir,
                     currentProcess.Id,
@@ -196,8 +188,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(1000);
-                    ExecuteUpdateScript(updateScriptPath, operatingSystem);
+                    await Task.Delay(updateScriptDelay);
+                    ExecuteUpdateScript(updateScriptPath, osIdentifier);
                 });
 
                 return true;
@@ -240,7 +232,6 @@ namespace Lighthouse.Backend.Services.Implementation
             }
             else
             {
-                // Copy the asset directly if it's not a zip (like an executable)
                 logger.LogDebug("Asset is not a zip file, copying directly to {ExtractPath}", extractPath);
                 File.Copy(assetPath, Path.Combine(extractPath, releaseAsset.Name), true);
             }
@@ -261,7 +252,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     return string.Empty;
                 }
 
-                using (var fileStream = new FileStream(assetPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                await using (var fileStream = new FileStream(assetPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await response.Content.CopyToAsync(fileStream);
                 }
@@ -286,39 +277,20 @@ namespace Lighthouse.Backend.Services.Implementation
             return latestRelease;
         }
 
-        private static LighthouseReleaseAsset? GetLatestReleaseAssetForOperatingSystem(LighthouseRelease latestRelease, string operatingSystem)
+        private static LighthouseReleaseAsset? GetLatestReleaseAssetForOperatingSystem(LighthouseRelease latestRelease, string osIdentifier)
         {
-            return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(operatingSystem, StringComparison.OrdinalIgnoreCase));
+            // Right now: Exclude "Standalone" - in future, specifically filter for "Server"
+            return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(osIdentifier, StringComparison.OrdinalIgnoreCase) && !a.Name.Contains("standalone", StringComparison.OrdinalIgnoreCase));
         }
 
-        private static string GetOperatingSystemIdentifier()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return "win";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return "linux";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                return "osx";
-            }
-            else
-            {
-                throw new PlatformNotSupportedException("Current OS platform is not supported for updates");
-            }
-        }
-
-        private string CreateUpdateScript(string operatingSystem, string sourcePath, string destinationPath, int processId, string executablePath, string arguments)
+        private string CreateUpdateScript(string osIdentifier, string sourcePath, string destinationPath, int processId, string executablePath, string arguments)
         {
             try
             {
                 string scriptPath;
                 string scriptContent;
 
-                if (operatingSystem == "win")
+                if (osIdentifier == "win")
                 {
                     scriptPath = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}.bat");
                     scriptContent = $@"@echo off
@@ -373,7 +345,6 @@ echo ""Update installed successfully, restarting application...""
 ""$EXECUTABLE"" $ARGS &
 exit 0";
 
-                    // Make the script executable on Linux/MacOS
                     File.WriteAllText(scriptPath, scriptContent);
                     var makeExecutableProcess = new Process
                     {
@@ -402,13 +373,13 @@ exit 0";
             }
         }
 
-        private void ExecuteUpdateScript(string scriptPath, string operatingSystem)
+        private void ExecuteUpdateScript(string scriptPath, string osIdentifier)
         {
             try
             {
                 ProcessStartInfo startInfo;
 
-                if (operatingSystem == "win")
+                if (osIdentifier == "win")
                 {
                     startInfo = new ProcessStartInfo
                     {
@@ -429,11 +400,10 @@ exit 0";
                 }
 
                 logger.LogInformation("Executing update script: {Script}", scriptPath);
-                Process.Start(startInfo);
+                processService.Start(startInfo);
 
-                // Exit the application to allow the update script to work
                 logger.LogInformation("Exiting application for update installation...");
-                Environment.Exit(0);
+                processService.Exit(0);
             }
             catch (Exception ex)
             {
