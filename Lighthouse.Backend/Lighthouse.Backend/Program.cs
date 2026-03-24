@@ -24,9 +24,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http;
-using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Settings.Configuration;
 using System.Collections.Concurrent;
@@ -34,7 +32,6 @@ using System.Globalization;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
-using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Text;
@@ -371,123 +368,24 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();
             builder.Services.AddSingleton<DatabaseOperationTracker>();
             builder.Services.AddSingleton<ICommandRunner, CommandRunner>();
-            builder.Services.AddSingleton<IDatabaseManagementProvider>(sp =>
-            {
-                var dbConfig = sp.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
-                switch (dbConfig.Provider.ToLowerInvariant())
-                {
-                    case "sqlite":
-                        return new SqliteDatabaseManagementProvider(
-                            sp.GetRequiredService<IOptions<DatabaseConfiguration>>(),
-                            sp.GetRequiredService<ILogger<SqliteDatabaseManagementProvider>>());
-                    case "postgresql":
-                    case "postgres":
-                        return new PostgresDatabaseManagementProvider(
-                            sp.GetRequiredService<IOptions<DatabaseConfiguration>>(),
-                            sp.GetRequiredService<ICommandRunner>(),
-                            sp.GetRequiredService<ILogger<PostgresDatabaseManagementProvider>>());
-                    default:
-                        throw new NotSupportedException($"Database management provider '{dbConfig.Provider}' is not supported.");
-                }
-            });
+
+            DatabaseConfigurator.RegisterDatabaseManagementProvider(builder);
             builder.Services.AddSingleton<IDatabaseManagementService, DatabaseManagementService>();
         }
 
         private static void ConfigureDatabase(WebApplicationBuilder builder)
         {
-            // Configure database settings from appsettings.json
-            builder.Services.Configure<DatabaseConfiguration>(
-                builder.Configuration.GetSection("Database"));
-
-            // Configure DbContext with options
-            builder.Services.AddDbContext<LighthouseAppContext>((provider, options) =>
-            {
-                var dbConfig = provider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
-                switch (dbConfig.Provider.ToLower())
-                {
-                    case "postgresql":
-                    case "postgres":
-                        options.UseNpgsql(dbConfig.ConnectionString,
-                            npgsql =>
-                            {
-                                npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                                npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres");
-                                npgsql.EnableRetryOnFailure(
-                                    maxRetryCount: 3,
-                                    maxRetryDelay: TimeSpan.FromSeconds(5),
-                                    errorCodesToAdd: null);
-                                npgsql.CommandTimeout(30);
-                            });
-
-                        // Log slow queries in development
-                        if (builder.Environment.IsDevelopment())
-                        {
-                            options.EnableSensitiveDataLogging();
-                            options.EnableDetailedErrors();
-                        }
-                        break;
-                    case "sqlite":
-                        // Ensure the directory for the SQLite database exists
-                        var connectionStringBuilder = new SqliteConnectionStringBuilder(dbConfig.ConnectionString);
-                        var dataSource = connectionStringBuilder.DataSource;
-                        var directory = Path.GetDirectoryName(dataSource);
-                        if (!string.IsNullOrEmpty(directory))
-                        {
-                            Directory.CreateDirectory(directory);
-                        }
-
-                        // Create and configure SQLite connection with WAL mode
-                        var connection = new SqliteConnection(dbConfig.ConnectionString);
-                        connection.Open();
-
-                        // Enable WAL mode and other optimizations
-                        using (var command = connection.CreateCommand())
-                        {
-                            command.CommandText = @"
-                    PRAGMA journal_mode=WAL;
-                    PRAGMA busy_timeout=10000;
-                    PRAGMA synchronous=NORMAL;
-                ";
-                            command.ExecuteNonQuery();
-                        }
-
-                        options.UseSqlite(connection,
-                            sqliteOptions =>
-                            {
-                                sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                                sqliteOptions.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
-                            });
-                        break;
-                    default:
-                        throw new NotSupportedException($"Database provider '{dbConfig.Provider}' is not supported.");
-                }
-            });
+            DatabaseConfigurator.AddDatabaseConfiguration(builder);
+            DatabaseConfigurator.AddDbContext(builder);
 
             if (builder.Environment.IsEnvironment("Testing"))
             {
                 return;
             }
 
-            // Run migration
             using var scope = builder.Services.BuildServiceProvider().CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            logger.LogInformation("Migrating Database");
-            context.Database.Migrate();
-
-            logger.LogInformation("Seeding Database");
-            SeedDatabase(scope.ServiceProvider);
-        }
-
-        private static void SeedDatabase(IServiceProvider serviceProvider)
-        {
-            var seeders = serviceProvider.GetServices<ISeeder>();
-
-            foreach (var seeder in seeders)
-            {
-                seeder.Seed().GetAwaiter().GetResult();
-            }
+            DatabaseConfigurator.ApplyMigrations(scope.ServiceProvider);
+            DatabaseConfigurator.SeedDatabase(scope.ServiceProvider);
         }
 
         private static void ConfigureLogging(WebApplicationBuilder builder)
