@@ -1,4 +1,6 @@
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,19 +13,25 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         private readonly IDatabaseManagementProvider provider;
         private readonly DatabaseMaintenanceGate gate;
         private readonly DatabaseOperationTracker tracker;
+        private readonly IProcessService processService;
         private readonly Dictionary<string, string> backupArtifacts = new();
         private readonly ILogger<DatabaseManagementService> logger;
+        private readonly TimeSpan restartDelay;
 
         public DatabaseManagementService(
             IDatabaseManagementProvider provider,
             DatabaseMaintenanceGate gate,
             DatabaseOperationTracker tracker,
-            ILogger<DatabaseManagementService> logger)
+            IProcessService processService,
+            ILogger<DatabaseManagementService> logger,
+            TimeSpan? restartDelay = null)
         {
             this.provider = provider;
             this.gate = gate;
             this.tracker = tracker;
+            this.processService = processService;
             this.logger = logger;
+            this.restartDelay = restartDelay ?? TimeSpan.FromSeconds(1);
         }
 
         public DatabaseCapabilityStatus GetCapabilityStatus()
@@ -132,6 +140,8 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                     tracker.TransitionTo(operationId, DatabaseOperationState.RestartPending);
                     logger.LogInformation("Restore operation {OperationId} awaiting restart", operationId);
 
+                    ScheduleRestart();
+
                     return tracker.GetStatus(operationId)!;
                 }
                 finally
@@ -171,6 +181,8 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 tracker.TransitionTo(operationId, DatabaseOperationState.RestartPending);
                 logger.LogInformation("Clear operation {OperationId} awaiting restart", operationId);
 
+                ScheduleRestart();
+
                 return tracker.GetStatus(operationId)!;
             }
             catch (Exception ex)
@@ -190,6 +202,41 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             }
 
             return File.OpenRead(path);
+        }
+
+        private void ScheduleRestart()
+        {
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(restartDelay);
+
+                logger.LogInformation("Restarting application after database operation");
+
+                var currentProcess = Process.GetCurrentProcess();
+                var executablePath = currentProcess.MainModule?.FileName ?? string.Empty;
+
+                if (string.IsNullOrEmpty(executablePath))
+                {
+                    logger.LogError("Could not determine current process executable path for restart");
+                    return;
+                }
+
+                var commandLineArgs = Environment.GetCommandLineArgs();
+                var args = commandLineArgs.Length > 1
+                    ? string.Join(" ", commandLineArgs.Skip(1).Select(arg => $"\"{arg}\""))
+                    : string.Empty;
+
+                logger.LogInformation("Starting new process: {Path} {Args}", executablePath, args);
+
+                processService.Start(new ProcessStartInfo
+                {
+                    FileName = executablePath,
+                    Arguments = args,
+                    UseShellExecute = false,
+                });
+
+                processService.Exit(0);
+            });
         }
 
         private static string GenerateOperationId()
@@ -269,6 +316,16 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 DecryptFile(encryptedZipPath, decryptedPath, key);
                 ExtractToDirectorySafely(decryptedPath, extractDir);
+            }
+            catch (CryptographicException ex)
+            {
+                throw new InvalidOperationException(
+                    "Failed to decrypt the backup file. The password may be incorrect or the file may be corrupted.", ex);
+            }
+            catch (InvalidDataException ex)
+            {
+                throw new InvalidOperationException(
+                    "Failed to extract the backup archive. The file may be corrupted or not a valid backup.", ex);
             }
             finally
             {

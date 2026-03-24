@@ -1,9 +1,11 @@
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -11,6 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class DatabaseManagementServiceTest
     {
         private Mock<IDatabaseManagementProvider> providerMock;
+        private Mock<IProcessService> processServiceMock;
         private DatabaseMaintenanceGate gate;
         private DatabaseOperationTracker tracker;
         private ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
@@ -23,12 +26,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             providerMock.Setup(p => p.ProviderName).Returns("sqlite");
             providerMock.Setup(p => p.IsToolingAvailable()).Returns(true);
 
+            processServiceMock = new Mock<IProcessService>();
+
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             gate = new DatabaseMaintenanceGate(updateStatuses);
             tracker = new DatabaseOperationTracker();
 
             var loggerMock = new Mock<ILogger<DatabaseManagementService>>();
-            subject = new DatabaseManagementService(providerMock.Object, gate, tracker, loggerMock.Object);
+            subject = new DatabaseManagementService(providerMock.Object, gate, tracker, processServiceMock.Object, loggerMock.Object, TimeSpan.Zero);
         }
 
         [Test]
@@ -234,6 +239,74 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var status = subject.GetOperationStatus("nonexistent");
 
             Assert.That(status, Is.Null);
+        }
+
+        [Test]
+        public async Task RestoreBackup_Success_SchedulesRestart()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
+
+            using var stream = CreateValidBackupStream("password123");
+            await subject.RestoreBackup(stream, "password123");
+
+            // Allow the fire-and-forget task to execute (restartDelay is TimeSpan.Zero in tests)
+            await Task.Delay(100);
+
+            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+            processServiceMock.Verify(p => p.Exit(0), Times.Once);
+        }
+
+        [Test]
+        public async Task ClearDatabase_Success_SchedulesRestart()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
+
+            await subject.ClearDatabase();
+
+            await Task.Delay(100);
+
+            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+            processServiceMock.Verify(p => p.Exit(0), Times.Once);
+        }
+
+        [Test]
+        public async Task CreateBackup_Success_DoesNotScheduleRestart()
+        {
+            providerMock.Setup(p => p.CreateBackup(It.IsAny<string>())).ReturnsAsync("backup.db");
+
+            await subject.CreateBackup("password123");
+
+            await Task.Delay(100);
+
+            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+            processServiceMock.Verify(p => p.Exit(It.IsAny<int>()), Times.Never);
+        }
+
+        [Test]
+        public async Task RestoreBackup_Failure_DoesNotScheduleRestart()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+
+            using var stream = CreateValidBackupStream("password123");
+            await subject.RestoreBackup(stream, "password123");
+
+            await Task.Delay(100);
+
+            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+            processServiceMock.Verify(p => p.Exit(It.IsAny<int>()), Times.Never);
+        }
+
+        [Test]
+        public async Task ClearDatabase_Failure_DoesNotScheduleRestart()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).ThrowsAsync(new Exception("fail"));
+
+            await subject.ClearDatabase();
+
+            await Task.Delay(100);
+
+            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+            processServiceMock.Verify(p => p.Exit(It.IsAny<int>()), Times.Never);
         }
 
         private static MemoryStream CreateValidBackupStream(string password)

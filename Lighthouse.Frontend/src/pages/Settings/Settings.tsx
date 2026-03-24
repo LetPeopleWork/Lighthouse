@@ -54,6 +54,20 @@ const Settings: React.FC = () => {
 
 	const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
 		setValue(newValue);
+
+		const reverseTabMapping: { [key: string]: string } = {
+			"20": "configuration",
+			"25": "demo-data",
+			"30": "database",
+			"99": "system-info",
+		};
+
+		const tabName = reverseTabMapping[newValue];
+		if (tabName) {
+			const url = new URL(globalThis.location.href);
+			url.searchParams.set("tab", tabName);
+			globalThis.history.replaceState(null, "", url.toString());
+		}
 	};
 
 	const tabConfig = [

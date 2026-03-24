@@ -370,7 +370,20 @@ namespace Lighthouse.Backend
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();
             builder.Services.AddSingleton<DatabaseOperationTracker>();
-            // IDatabaseManagementService registration deferred to Story 4559 when the first IDatabaseManagementProvider is available
+            builder.Services.AddSingleton<IDatabaseManagementProvider>(sp =>
+            {
+                var dbConfig = sp.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
+                switch (dbConfig.Provider.ToLowerInvariant())
+                {
+                    case "sqlite":
+                        return new SqliteDatabaseManagementProvider(
+                            sp.GetRequiredService<IOptions<DatabaseConfiguration>>(),
+                            sp.GetRequiredService<ILogger<SqliteDatabaseManagementProvider>>());
+                    default:
+                        throw new NotSupportedException($"Database management provider '{dbConfig.Provider}' is not supported.");
+                }
+            });
+            builder.Services.AddSingleton<IDatabaseManagementService, DatabaseManagementService>();
         }
 
         private static void ConfigureDatabase(WebApplicationBuilder builder)

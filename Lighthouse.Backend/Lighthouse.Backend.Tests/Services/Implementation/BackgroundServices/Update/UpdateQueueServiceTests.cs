@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             {
                 Assert.That(updateStatuses.ContainsKey(new UpdateKey(updateType, id)), Is.True);
                 Assert.That(updateStatuses, Has.Count.EqualTo(1));
-            };
+            }
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             {
                 Assert.That(wasExecuted, Is.True);
                 Assert.That(updateStatuses.ContainsKey(updateKey), Is.False);
-            };
+            }
         }
 
         [Test]

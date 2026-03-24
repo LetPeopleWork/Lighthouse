@@ -101,6 +101,20 @@ const DatabaseManagementSettings: React.FC = () => {
 		}
 	};
 
+	useEffect(() => {
+		const params = new URLSearchParams(globalThis.location.search);
+		if (params.get("notify") === "restart-complete") {
+			setSuccess(
+				"Application restarted successfully. Database operation is complete.",
+			);
+			// Remove the param so it doesn't show again on manual refresh
+			params.delete("notify");
+			const url = new URL(globalThis.location.href);
+			url.searchParams.delete("notify");
+			globalThis.history.replaceState(null, "", url.toString());
+		}
+	}, []);
+
 	const handleRestore = async () => {
 		if (!restoreFile || !restorePassword) return;
 
@@ -168,27 +182,44 @@ const DatabaseManagementSettings: React.FC = () => {
 		}
 	};
 
-	const pollUntilRestart = async (operationId: string) => {
+	const pollUntilRestart = async (_operationId: string) => {
 		const maxAttempts = 60;
 		const delay = 2000;
 
+		// Wait a bit for the backend to begin shutting down
+		await new Promise((resolve) => setTimeout(resolve, delay));
+
+		// First, wait for the backend to go offline
+		let backendWentOffline = false;
+		for (let i = 0; i < 5; i++) {
+			try {
+				await databaseManagementService.getStatus();
+				await new Promise((resolve) => setTimeout(resolve, delay));
+			} catch {
+				backendWentOffline = true;
+				break;
+			}
+		}
+
+		if (!backendWentOffline) {
+			// Backend never went offline — it may have already restarted quickly
+		}
+
+		// Then, wait for the backend to come back online
 		for (let i = 0; i < maxAttempts; i++) {
 			try {
 				await new Promise((resolve) => setTimeout(resolve, delay));
-				const opStatus =
-					await databaseManagementService.getOperationStatus(operationId);
-
-				if (
-					opStatus?.state === "RestartComplete" ||
-					opStatus?.state === "Completed"
-				) {
-					if (globalThis.window !== undefined) {
-						globalThis.location.reload();
-					}
-					return;
+				await databaseManagementService.getStatus();
+				// Backend is back online
+				if (globalThis.window !== undefined) {
+					const url = new URL(globalThis.location.href);
+					url.searchParams.set("tab", "database");
+					url.searchParams.set("notify", "restart-complete");
+					globalThis.location.href = url.toString();
 				}
+				return;
 			} catch {
-				// Backend may be restarting
+				// Backend is still restarting
 			}
 		}
 	};
@@ -200,7 +231,7 @@ const DatabaseManagementSettings: React.FC = () => {
 		a.download = filename;
 		document.body.appendChild(a);
 		a.click();
-		document.body.removeChild(a);
+		a.remove();
 		URL.revokeObjectURL(url);
 	};
 
@@ -311,7 +342,9 @@ const DatabaseManagementSettings: React.FC = () => {
 							size="small"
 							value={backupPassword}
 							onChange={(e) => setBackupPassword(e.target.value)}
-							inputProps={{ "data-testid": "backup-password" }}
+							slotProps={{
+								input: { inputProps: { "data-testid": "backup-password" } },
+							}}
 							disabled={isBlocked || toolingMissing}
 							sx={{ minWidth: 250 }}
 						/>
@@ -367,7 +400,9 @@ const DatabaseManagementSettings: React.FC = () => {
 								size="small"
 								value={restorePassword}
 								onChange={(e) => setRestorePassword(e.target.value)}
-								inputProps={{ "data-testid": "restore-password" }}
+								slotProps={{
+									input: { inputProps: { "data-testid": "restore-password" } },
+								}}
 								disabled={isBlocked || toolingMissing}
 								sx={{ minWidth: 250 }}
 							/>
