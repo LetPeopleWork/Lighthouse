@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Models.OptionalFeatures
 
         public required bool Enabled { get; set; }
         
-        public bool IsPremium { get; set; }
+        public bool IsPremium { get; set; } = false;
 
         public bool IsPreview { get; set; } = false;
     }
