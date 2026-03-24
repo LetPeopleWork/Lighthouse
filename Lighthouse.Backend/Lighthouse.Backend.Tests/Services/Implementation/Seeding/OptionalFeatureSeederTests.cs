@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
                 Name = "MCP Server",
                 Description = "Custom description",
                 Enabled = true, // User enabled it
+                IsPremium = true,
                 IsPreview = false
             });
             await DatabaseContext.SaveChangesAsync();
@@ -109,6 +110,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
                 .Single(f => f.Key == OptionalFeatureKeys.LinearIntegrationKey);
 
             Assert.That(feature.IsPreview, Is.True); // Updated to true
+        }
+        
+        [Test]
+        public async Task SeedAsync_UpdatesIsPremiumFlag_WhenFeatureExists()
+        {
+            // Arrange
+            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
+            {
+                Id = 2,
+                Key = OptionalFeatureKeys.McpServerKey,
+                Name = "MCP Server",
+                Description = "Custom description",
+                Enabled = true,
+                IsPremium = false, // Old Value
+                IsPreview = false,
+            });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var feature = DatabaseContext.OptionalFeatures
+                .Single(f => f.Key == OptionalFeatureKeys.McpServerKey);
+
+            Assert.That(feature.IsPremium, Is.True); // Updated to true
         }
 
         [Test]

@@ -12,6 +12,7 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
@@ -149,37 +150,51 @@ const SystemSettingsTab: React.FC = () => {
 						</TableHead>
 						<TableBody>
 							{optionalFeatures.map((feature) => (
-								<TableRow
+								<LicenseTooltip
 									key={feature.id}
-									data-testid={`feature-row-${feature.key}`}
+									canUseFeature={
+										!feature.isPremium ||
+										(licenseStatus?.canUsePremiumFeatures ?? false)
+									}
+									premiumExtraInfo=""
+									defaultTooltip=""
 								>
-									<TableCell>
-										<Box sx={{ display: "flex", alignItems: "center" }}>
-											{feature.name}
-											{feature.isPreview && (
-												<Tooltip title="This feature is in preview and may change or be removed in future versions">
-													<Chip
-														icon={<BiotechIcon />}
-														label="Preview"
-														size="small"
-														color="warning"
-														sx={{ ml: 1 }}
-														data-testid={`${feature.key}-preview-indicator`}
-													/>
-												</Tooltip>
-											)}
-										</Box>
-									</TableCell>
-									<TableCell>{feature.description}</TableCell>
-									<TableCell>
-										<Switch
-											checked={feature.enabled}
-											data-testid={`${feature.key}-toggle`}
-											onChange={() => onToggleOptionalFeature(feature)}
-											color="primary"
-										/>
-									</TableCell>
-								</TableRow>
+									<TableRow
+										key={feature.id}
+										data-testid={`feature-row-${feature.key}`}
+									>
+										<TableCell>
+											<Box sx={{ display: "flex", alignItems: "center" }}>
+												{feature.name}
+												{feature.isPreview && (
+													<Tooltip title="This feature is in preview and may change or be removed in future versions">
+														<Chip
+															icon={<BiotechIcon />}
+															label="Preview"
+															size="small"
+															color="warning"
+															sx={{ ml: 1 }}
+															data-testid={`${feature.key}-preview-indicator`}
+														/>
+													</Tooltip>
+												)}
+											</Box>
+										</TableCell>
+										<TableCell>{feature.description}</TableCell>
+										<TableCell>
+											<Switch
+												checked={feature.enabled}
+												data-testid={`${feature.key}-toggle`}
+												disabled={
+													feature.isPremium &&
+													!(licenseStatus?.canUsePremiumFeatures ?? false)
+												}
+												onChange={() => onToggleOptionalFeature(feature)}
+												color="primary"
+											/>
+										</TableCell>
+									</TableRow>
+								</LicenseTooltip>
 							))}
 						</TableBody>
 					</Table>

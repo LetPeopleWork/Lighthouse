@@ -340,6 +340,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsPremium")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsPreview")
                         .HasColumnType("INTEGER");
 

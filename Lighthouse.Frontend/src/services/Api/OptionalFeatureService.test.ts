@@ -82,6 +82,7 @@ describe("OptionalFeatureService", () => {
 			name: "Feature 1",
 			description: "Updated Description",
 			enabled: true,
+			isPremium: false,
 			isPreview: true,
 		};
 
@@ -102,6 +103,7 @@ describe("OptionalFeatureService", () => {
 			name: "Feature 1",
 			description: "Description",
 			enabled: true,
+			isPremium: false,
 			isPreview: true,
 		};
 

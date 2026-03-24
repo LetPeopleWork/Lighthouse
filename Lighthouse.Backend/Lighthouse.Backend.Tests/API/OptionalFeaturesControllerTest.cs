@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -10,10 +11,13 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<OptionalFeature>> repositoryMock;
 
+        private Mock<ILicenseService> licenseServiceMock;
+
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<OptionalFeature>>();
+            licenseServiceMock = new Mock<ILicenseService>();
         }
 
         [Test]
@@ -38,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(features));
-            };
+            }
         }
 
         [Test]
@@ -54,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -74,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(feature));
-            };
+            }
         }
 
         [Test]
@@ -88,10 +92,10 @@ namespace Lighthouse.Backend.Tests.API
             var response = await subject.UpdateOptionalFeature(1, feature);
 
             using (Assert.EnterMultipleScope())
-                {
-                    var notFoundResult = response.Result as NotFoundResult;
-                    Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-                };
+            {
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
         }
 
         [Test]
@@ -105,21 +109,41 @@ namespace Lighthouse.Backend.Tests.API
             var response = await subject.UpdateOptionalFeature(0, feature);
 
             using (Assert.EnterMultipleScope())
-                {
-                    Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
-                    var okResult = response.Result as OkObjectResult;
-                    Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                    Assert.That(okResult.Value, Is.EqualTo(feature));
+                var okResult = response.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(okResult.Value, Is.EqualTo(feature));
 
-                    repositoryMock.Verify(x => x.Update(feature));
-                    repositoryMock.Verify(x => x.Save());
-                };
+                repositoryMock.Verify(x => x.Update(feature));
+                repositoryMock.Verify(x => x.Save());
+            }
+        }
+
+        [Test]
+        [TestCase(false, false, true)]
+        [TestCase(false, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(true, true, true)]
+        public async Task UpdateOptionalFeature_IsPremium_OnlyEnablesIfUserHasLicense(bool isPremiumFeature, bool hasLicense, bool executeUpdate)
+        {
+            var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false, IsPremium = isPremiumFeature };
+            repositoryMock.Setup(x => x.GetById(0)).Returns(feature);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasLicense);
+
+            var subject = CreateSubject();
+
+            _ = await subject.UpdateOptionalFeature(0, feature);
+
+            var expectedExecutionTimes = executeUpdate ? Times.Once() : Times.Never();
+            repositoryMock.Verify(x => x.Update(feature), expectedExecutionTimes);
+            repositoryMock.Verify(x => x.Save(), expectedExecutionTimes);
         }
 
         private OptionalFeaturesController CreateSubject()
         {
-            return new OptionalFeaturesController(repositoryMock.Object);
+            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object);
         }
     }
 }

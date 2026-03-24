@@ -50,6 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     Name = "MCP Server",
                     Description = "Enables MCP Server to integrate with AI Agents (requires restart). [Premium Only]",
                     Enabled = false,
+                    IsPremium =  true,
                     IsPreview = false
                 },
                 new OptionalFeature
@@ -75,8 +76,9 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 }
                 else
                 {
-                    // Update IsPreview flag if it changed
+                    // Update flags if it changed
                     existing.IsPreview = feature.IsPreview;
+                    existing.IsPremium = feature.IsPremium;
                     logger.LogDebug("Updating OptionalFeature: {Key}", feature.Key);
                 }
             }

@@ -4,5 +4,6 @@ export interface IOptionalFeature {
 	id: number;
 	description: string;
 	enabled: boolean;
+	isPremium: boolean;
 	isPreview: boolean;
 }
