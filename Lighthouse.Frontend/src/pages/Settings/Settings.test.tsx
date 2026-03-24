@@ -13,6 +13,9 @@ vi.mock("./DemoData/DemoDataSettings", () => ({
 vi.mock("./System/SystemSettingsTab", () => ({
 	default: () => <div>System Settings</div>,
 }));
+vi.mock("./DatabaseManagement/DatabaseManagementSettings", () => ({
+	default: () => <div>Database Management Settings</div>,
+}));
 vi.mock("../../components/App/LetPeopleWork/Tutorial/TutorialButton", () => ({
 	default: () => <button type="button">Tutorial Button</button>,
 }));
@@ -65,6 +68,19 @@ describe("Settings Component", () => {
 		renderWithRouter();
 		fireEvent.click(screen.getByTestId("system-info-tab"));
 		expect(screen.getByTestId("system-info-panel")).toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
+	});
+
+	it("should switch to Database tab when clicked", () => {
+		renderWithRouter();
+		fireEvent.click(screen.getByTestId("database-tab"));
+		expect(screen.getByTestId("database-panel")).toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
+	});
+
+	it("should switch to Database tab via query parameter", () => {
+		renderWithRouter(["/settings?tab=database"]);
+		expect(screen.getByTestId("database-panel")).toBeVisible();
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 });

@@ -8,6 +8,10 @@ import {
 	BlackoutPeriodService,
 	type IBlackoutPeriodService,
 } from "./BlackoutPeriodService";
+import {
+	DatabaseManagementService,
+	type IDatabaseManagementService,
+} from "./DatabaseManagementService";
 import { DeliveryService, type IDeliveryService } from "./DeliveryService";
 import { DemoDataService } from "./DemoDataService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
@@ -67,6 +71,7 @@ export interface IApiServiceContext {
 	wizardService: IWizardService;
 	systemInfoService: ISystemInfoService;
 	blackoutPeriodService: IBlackoutPeriodService;
+	databaseManagementService: IDatabaseManagementService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -94,6 +99,7 @@ const defaultServices: IApiServiceContext = {
 	wizardService: new WizardService(),
 	systemInfoService: new SystemInfoService(),
 	blackoutPeriodService: new BlackoutPeriodService(),
+	databaseManagementService: new DatabaseManagementService(),
 };
 
 export function getApiServices(): IApiServiceContext {

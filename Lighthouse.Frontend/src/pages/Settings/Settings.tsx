@@ -1,6 +1,7 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
+import StorageIcon from "@mui/icons-material/Storage";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
@@ -14,6 +15,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
 import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
@@ -38,6 +40,8 @@ const Settings: React.FC = () => {
 			"demo-data": "25",
 			configuration: "20",
 			system: "20",
+			database: "30",
+			"database-management": "30",
 			logs: "99",
 			systeminfo: "99",
 			"system-info": "99",
@@ -68,6 +72,14 @@ const Settings: React.FC = () => {
 			panelTestId: "demo-data-panel",
 			icon: <DatasetIcon />,
 			component: <DemoDataSettings />,
+		},
+		{
+			value: "30",
+			label: "Database",
+			testId: "database-tab",
+			panelTestId: "database-panel",
+			icon: <StorageIcon />,
+			component: <DatabaseManagementSettings />,
 		},
 		{
 			value: "99",

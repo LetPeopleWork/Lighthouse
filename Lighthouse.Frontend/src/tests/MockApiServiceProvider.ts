@@ -52,6 +52,8 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["systemInfoService"],
 		blackoutPeriodService:
 			null as unknown as IApiServiceContext["blackoutPeriodService"],
+		databaseManagementService:
+			null as unknown as IApiServiceContext["databaseManagementService"],
 		...overrides,
 	};
 };
