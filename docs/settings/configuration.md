@@ -75,6 +75,34 @@ At the end, you can choose whether you want to update all imported Teams and Por
 
 ![Import Summary](../assets/settings/import/summary.png)
 
+## Blackout Periods
+Blackout periods let you mark specific dates or date ranges as *non-working days* — for example, public holidays, company off-days, or planned shutdowns.
+
+![Blackout Period Section](../assets/settings/blackoutPeriodsSection.png)
+
+Lighthouse uses this information in two ways:
+
+- **Forecasting**: When running Monte Carlo Simulations, days that fall within a blackout period are skipped entirely. The simulation treats those days as if your team did no work, which means they do not count against the forecast duration and are not sampled for throughput. This keeps your forecasts accurate even when the future contains known non-working periods.
+- **Metrics charts**: Blackout days are visually highlighted with a hatched overlay in run charts, Process Behaviour Charts, and the Cycle Time Scatterplot, so you can immediately see which dips or gaps in your data were expected rather than a sign of a problem.
+
+![Throughput with Blackout](../assets/features/metrics/throughput_blackout.png)
+
+### Adding and Managing Blackout Periods
+1. Navigate to *System Settings* → *Configuration*.
+2. Locate the *Blackout Periods* section.
+3. Click *Add Blackout Period* and provide:
+   - **Start date** — the first day of the blackout.
+   - **End date** — the last day of the blackout (can be the same as the start date for a single day).
+   - **Description** — a short label such as "Christmas" or "Bank Holiday".
+4. Click *Save* to confirm. The period will take effect immediately for new forecasts and metric views.
+
+![Blackout Add Dialog](../assets/settings/blackoutPeriodConfiguration.png)
+
+You can add multiple blackout periods, edit existing ones, or delete them at any time. Changes apply globally across all teams and portfolios.
+
+{: .note}
+Blackout periods are a global configuration and apply to every team and portfolio in your Lighthouse instance.
+
 ## Optional Features
 Some features might not make sense to be enabled in all situations. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. In such a case you would find a toggle in the *Optional Features* setting which you can selectively enable or disable.
 

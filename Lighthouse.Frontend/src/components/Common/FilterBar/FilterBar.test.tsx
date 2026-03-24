@@ -26,7 +26,7 @@ describe("FilterBar", () => {
 		expect(inputElement).toBeInTheDocument();
 		expect(inputElement).toHaveAttribute(
 			"placeholder",
-			expect.stringContaining("Search by portfolio or Team name"),
+			expect.stringContaining("Search by Portfolio or Team name"),
 		);
 		expect(inputElement).toHaveValue(filterText);
 	});

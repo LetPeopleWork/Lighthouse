@@ -250,13 +250,36 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	const demoDataPage = await settingsPage.goToDemoData();
 	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 
-	const systemSettings = await settingsPage.goToSystemConfiguration();
+	let systemSettings = await settingsPage.goToSystemConfiguration();
 
 	await takePageScreenshot(systemSettings.page, "settings/configuration.png");
 
 	await takeElementScreenshot(
 		systemSettings.lighthouseConfiguration,
 		"settings/lighthouseConfiguration.png",
+	);
+
+	const startDate = new Date(Date.now()).toISOString().slice(0, 10);
+	const endDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+		.toISOString()
+		.slice(0, 10);
+
+	const blackoutPeriodDialog = await systemSettings.addBlackoutPeriod();
+	blackoutPeriodDialog.addBlackoutPeriod(
+		"GCZ Meisterfeier",
+		startDate,
+		endDate,
+	);
+
+	await takeDialogScreenshot(
+		blackoutPeriodDialog.page.getByRole("dialog"),
+		"settings/blackoutPeriodConfiguration.png",
+	);
+
+	systemSettings = await blackoutPeriodDialog.saveBlackoutPeriod();
+	await takeElementScreenshot(
+		systemSettings.blackoutPeriodsSection,
+		"settings/blackoutPeriodsSection.png",
 	);
 
 	await takeElementScreenshot(

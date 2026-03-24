@@ -22,6 +22,9 @@ Note that this also means that if your future will not be very similar to your p
 
 Be aware that this is not magic, and you assume that "your future looks like your past". Meaning that it highly depends on the input in the form of Throughput we feed it with.
 
+{: .note}
+**Blackout Periods and Forecasting**: If you have configured [Blackout Periods](../settings/configuration.html#blackout-periods) (e.g. public holidays or company off-days), Lighthouse will automatically skip those days when running a Monte Carlo Simulation. Concretely, each simulated day that lands on a blackout date is not counted as a working day — the simulation simply advances to the next non-blackout day. This means the forecast naturally accounts for known non-working periods without you having to adjust throughput data or add manual buffers.
+
 {: .recommendation}
 We recommend that you dive deeper into MCS by reading our blog post [An Introduction and Step-by-Step Guide to Monte Carlo Simulations](https://blog.letpeople.work/p/an-introduction-and-step-by-step-guide-to-monte-carlo-simulations) and follow along the exercise in a spreadsheet.
 

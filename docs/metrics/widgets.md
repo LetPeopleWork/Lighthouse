@@ -55,6 +55,9 @@ If you click on a specific day, it will show you the details of which items were
 
 If you have defined a *System WIP Limit*, you can show this as a horizontal line on your chart.
 
+{: .note}
+If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, making it easy to identify expected gaps in your WIP data.
+
 # Work Item Aging Chart
 
 |--------------|-------------------------|
@@ -153,7 +156,39 @@ You can see how many items were closed each day over the last several days. The 
 
 This widget will adjust based on the selected time range. If you want to know which exact items were closed, you can click on a specific day and get more details.
 
+{: .note}
+If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why Throughput was zero on certain days:
+
+![Throughput with Blackout](../assets/features/metrics/throughput_blackout.png)
+
 On the top right, you will see the *Predictability Score*. If you click on it, another widget is brought up:
+
+
+# Predictability Score
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Throughput |
+| **Affected by Filtering** | Yes |
+
+The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will run an *MCS How Many* forecast for the number of days in the date range. For example, if you have selected the last 30 days, Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
+
+![Predictability Score](../assets/features/metrics/predictabilityscore.png)
+
+The score is calculated like this:
+> (*Value at 95th Percentile* / *Value at 50% Percentile*) * 100
+
+You can interprete the value as follows:
+- The closer you are to 100%, the closer together your 50% and 95% chance are
+- If you were at 100%, this means that every single day, you closed exactly the same amount of items, and thus are *perfectly predictable*
+
+The idea behind the score is that, if your percentiles are very much "away" from each other (meaning the values are far off), the forecast will most likely not be of much use to you. So if your goal is predictability, this can be a trigger for a discussion to see how to "get the score up" and thus become more predictable. Ways to do that include (but are not limited to, and highly depend on your context):
+- Asking LetPeopleWork to help you out
+- Trying to reduce your batch size, favoring more frequent but smaller delivery
+- Reducing WIP and focusing on old items first and get them to done as fast as possible
+
+{: .important}
+The goal is not to be at 100%. In fact, that's far from realistic. We believe any value above 60% is decent. The intent of this chart is to show the results of an MCS for various inputs. For example if the throughput is distributed differently, or you take a longer or different range.
 
 # Process Behaviour Charts
 
@@ -177,6 +212,9 @@ On each chart, Lighthouse visualizes:
 - **Special causes** (via the chips in the top-right)
 
 You can click a chip (e.g. *Large Change*) to highlight points that match that special-cause rule. Clicking on a data point opens a dialog with the work items that make up that point.
+
+{: .note}
+If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on all PBC charts. This prevents you from misinterpreting expected gaps or dips as special causes.
 
 ## Cycle Time Process Behaviour Chart
 
@@ -205,32 +243,6 @@ The Feature Size PBC only exists for Portfolios.
 
 - [Deming Alliance](https://demingalliance.org/resources/articles/process-behaviour-charts-an-introduction)
 - [Actionable Agile Metrics for Predictability Volume II](https://leanpub.com/actionableagilemetricsii)
-
-# Predictability Score
-
-|--------------|-------------------------|
-| **Applies to** | Teams and Portfolios |
-| **Flow Metric** | Throughput |
-| **Affected by Filtering** | Yes |
-
-The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will run an *MCS How Many* forecast for the number of days in the date range. For example, if you have selected the last 30 days, Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
-
-![Predictability Score](../assets/features/metrics/predictabilityscore.png)
-
-The score is calculated like this:
-> (*Value at 95th Percentile* / *Value at 50% Percentile*) * 100
-
-You can interprete the value as follows:
-- The closer you are to 100%, the closer together your 50% and 95% chance are
-- If you were at 100%, this means that every single day, you closed exactly the same amount of items, and thus are *perfectly predictable*
-
-The idea behind the score is that, if your percentiles are very much "away" from each other (meaning the values are far off), the forecast will most likely not be of much use to you. So if your goal is predictability, this can be a trigger for a discussion to see how to "get the score up" and thus become more predictable. Ways to do that include (but are not limited to, and highly depend on your context):
-- Asking LetPeopleWork to help you out
-- Trying to reduce your batch size, favoring more frequent but smaller delivery
-- Reducing WIP and focusing on old items first and get them to done as fast as possible
-
-{: .important}
-The goal is not to be at 100%. In fact, that's far from realistic. We believe any value above 60% is decent. The intent of this chart is to show the results of an MCS for various inputs. For example if the throughput is distributed differently, or you take a longer or different range.
 
 # Cycle Time Percentiles
 
@@ -268,6 +280,11 @@ This visual allows you to see patterns or outliers. Hovering over a dot will giv
 You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
 
 The chart also distinguishes items by type, using different colors for each item type. The legend allows you to show or hide specific item types.
+
+{: .note}
+If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, the corresponding date ranges are highlighted with a hatched overlay on this chart, helping you distinguish expected gaps from anomalies.
+
+![Cycle Time with Blackout](../assets/features/metrics/cycletime_blackout.png)
 
 # Estimation vs. Cycle Time
 

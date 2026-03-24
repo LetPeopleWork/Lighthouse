@@ -102,7 +102,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 					placeholder={
 						isMobile
 							? "Search"
-							: `Search by ${portfolioTerm.toLowerCase()} or ${teamTerm} name (Ctrl+F)`
+							: `Search by ${portfolioTerm} or ${teamTerm} name (Ctrl+F)`
 					}
 					variant="standard"
 					value={localFilterText}

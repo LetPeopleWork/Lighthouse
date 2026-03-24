@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
+import { BlackoutPeriodDialog } from "./BlackoutPeriodDialog";
 import { ImportDialog } from "./ImportDialog";
 
 export type PeriodicRefreshSettingType = "Team" | "Feature" | "Forecast";
@@ -9,6 +10,14 @@ export class SystemConfigurationPage {
 
 	constructor(page: Page) {
 		this.page = page;
+	}
+
+	async addBlackoutPeriod(): Promise<BlackoutPeriodDialog> {
+		await this.page
+			.getByRole("button", { name: "Add Blackout Period" })
+			.click();
+
+		return new BlackoutPeriodDialog(this.page);
 	}
 
 	async enableFeature(featureName: string): Promise<void> {
@@ -153,5 +162,9 @@ export class SystemConfigurationPage {
 
 	get terminologyConfiguration(): Locator {
 		return this.page.getByText("Terminology ConfigurationUse");
+	}
+
+	get blackoutPeriodsSection(): Locator {
+		return this.page.getByText("Blackout PeriodsDefine global");
 	}
 }

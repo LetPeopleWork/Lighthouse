@@ -4,6 +4,31 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Blackout Periods
+
+Lighthouse now supports **Blackout Periods** — a way to mark specific dates or date ranges as non-working days directly in your configuration. Common use cases include public holidays, company off-days, or any planned period where your team is not delivering work.
+
+Blackout periods affect Lighthouse in two key areas:
+
+**Forecasting**: When running a Monte Carlo Simulation, Lighthouse skips blackout days entirely. The simulation does not count those days as working days and does not sample throughput for them. This means your forecasts automatically account for known non-working periods — no manual throughput adjustment or buffer needed.
+
+**Metrics charts**: Blackout days are highlighted with a hatched overlay in the following charts, so you can immediately tell why throughput was zero or WIP dipped on those days:
+- Throughput Run Chart
+- WIP Over Time
+- Total Work Item Age Run Chart
+- Process Behaviour Charts (all variants)
+- Cycle Time Scatterplot
+
+![Throughput with Blackout](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/throughput_blackout.png)
+
+Blackout periods are configured globally in *System Settings* → *Configuration* → *Blackout Periods* and apply to all teams and portfolios. See the [Configuration documentation](https://docs.lighthouse.letpeople.work/settings/configuration.html#blackout-periods) for details.
+
+
+![Throughput with Blackout](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/blackoutPeriodsSection.png)
+
+
 # Lighthouse v26.3.20.4
 
 ## Standalone Apps
