@@ -214,7 +214,6 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during database migration and seeding after restore");
-                throw;
             }
         }
 

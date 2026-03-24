@@ -41,8 +41,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 ExtractEncryptedZip(fixturePath, extractDir, password);
 
-                Assert.That(Directory.Exists(extractDir), Is.True);
-                Assert.That(Directory.GetFiles(extractDir, "*", SearchOption.AllDirectories).Length, Is.GreaterThan(0));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(Directory.Exists(extractDir), Is.True);
+                    Assert.That(Directory.GetFiles(extractDir, "*", SearchOption.AllDirectories), Is.Not.Empty);
+                }
             }
             finally
             {
@@ -69,9 +72,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var manifestContent = File.ReadAllText(manifestPath);
                 var manifest = JsonSerializer.Deserialize<Dictionary<string, string>>(manifestContent);
 
-                Assert.That(manifest, Is.Not.Null);
-                Assert.That(manifest!.ContainsKey("provider"), Is.True);
-                Assert.That(manifest["provider"], Is.EqualTo("sqlite"));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(manifest, Is.Not.Null);
+                    Assert.That(manifest!.ContainsKey("provider"), Is.True);
+                    Assert.That(manifest["provider"], Is.EqualTo("sqlite"));
+                }
             }
             finally
             {
@@ -93,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ExtractEncryptedZip(fixturePath, extractDir, password);
 
                 var dbFiles = Directory.GetFiles(extractDir, "*.db", SearchOption.AllDirectories);
-                Assert.That(dbFiles.Length, Is.GreaterThan(0), "No .db file found in SQLite backup fixture");
+                Assert.That(dbFiles, Is.Not.Empty, "No .db file found in SQLite backup fixture");
             }
             finally
             {
@@ -138,8 +144,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 ExtractEncryptedZip(fixturePath, extractDir, password);
 
-                Assert.That(Directory.Exists(extractDir), Is.True);
-                Assert.That(Directory.GetFiles(extractDir, "*", SearchOption.AllDirectories).Length, Is.GreaterThan(0));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(Directory.Exists(extractDir), Is.True);
+                    Assert.That(Directory.GetFiles(extractDir, "*", SearchOption.AllDirectories), Is.Not.Empty);
+                }
             }
             finally
             {
@@ -166,9 +175,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var manifestContent = File.ReadAllText(manifestPath);
                 var manifest = JsonSerializer.Deserialize<Dictionary<string, string>>(manifestContent);
 
-                Assert.That(manifest, Is.Not.Null);
-                Assert.That(manifest!.ContainsKey("provider"), Is.True);
-                Assert.That(manifest!["provider"], Is.EqualTo("postgresql"));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(manifest, Is.Not.Null);
+                    Assert.That(manifest.ContainsKey("provider"), Is.True);
+                    Assert.That(manifest["provider"], Is.EqualTo("postgresql"));
+                }
             }
             finally
             {
@@ -190,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ExtractEncryptedZip(fixturePath, extractDir, password);
 
                 var dumpFiles = Directory.GetFiles(extractDir, "*.pgdump", SearchOption.AllDirectories);
-                Assert.That(dumpFiles.Length, Is.GreaterThan(0), "No .pgdump file found in Postgres backup fixture");
+                Assert.That(dumpFiles, Is.Not.Empty, "No .pgdump file found in Postgres backup fixture");
             }
             finally
             {
@@ -236,9 +248,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var manifestContent = File.ReadAllText(manifestPath);
                 var manifest = JsonSerializer.Deserialize<Dictionary<string, string>>(manifestContent);
 
-                Assert.That(manifest, Is.Not.Null);
-                Assert.That(manifest!.ContainsKey("serverVersion"), Is.True, "Postgres backup manifest should contain serverVersion");
-                Assert.That(manifest["serverVersion"], Is.Not.Null.And.Not.Empty);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(manifest, Is.Not.Null);
+                    Assert.That(manifest!.ContainsKey("serverVersion"), Is.True, "Postgres backup manifest should contain serverVersion");
+                    Assert.That(manifest["serverVersion"], Is.Not.Null.And.Not.Empty);
+                }
             }
             finally
             {
@@ -265,9 +280,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     var manifestContent = File.ReadAllText(manifestPath);
                     var manifest = JsonSerializer.Deserialize<Dictionary<string, string>>(manifestContent);
 
-                    Assert.That(manifest, Is.Not.Null, $"{provider}: manifest deserialization failed");
-                    Assert.That(manifest!.ContainsKey("createdAt"), Is.True, $"{provider}: manifest missing createdAt");
-                    Assert.That(manifest.ContainsKey("appVersion"), Is.True, $"{provider}: manifest missing appVersion");
+                    using (Assert.EnterMultipleScope())
+                    {
+                        Assert.That(manifest, Is.Not.Null, $"{provider}: manifest deserialization failed");
+                        Assert.That(manifest!.ContainsKey("createdAt"), Is.True, $"{provider}: manifest missing createdAt");
+                        Assert.That(manifest.ContainsKey("appVersion"), Is.True, $"{provider}: manifest missing appVersion");
+                    }
                 }
                 finally
                 {
