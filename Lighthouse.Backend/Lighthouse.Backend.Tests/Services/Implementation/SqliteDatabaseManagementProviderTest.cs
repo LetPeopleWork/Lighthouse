@@ -120,8 +120,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.CreateBackup(backupDir);
 
             var walBackup = Path.Combine(backupDir, testDbFileName + "-wal");
-            Assert.That(File.Exists(walBackup), Is.True);
-            Assert.That(await File.ReadAllBytesAsync(walBackup), Is.EqualTo("wal-data"u8.ToArray()));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(File.Exists(walBackup), Is.True);
+                Assert.That(await File.ReadAllBytesAsync(walBackup), Is.EqualTo("wal-data"u8.ToArray()));
+            }
         }
 
         [Test]
@@ -136,8 +139,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.CreateBackup(backupDir);
 
             var shmBackup = Path.Combine(backupDir, testDbFileName + "-shm");
-            Assert.That(File.Exists(shmBackup), Is.True);
-            Assert.That(await File.ReadAllBytesAsync(shmBackup), Is.EqualTo("shm-data"u8.ToArray()));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(File.Exists(shmBackup), Is.True);
+                Assert.That(await File.ReadAllBytesAsync(shmBackup), Is.EqualTo("shm-data"u8.ToArray()));
+            }
         }
 
         [Test]
@@ -178,8 +184,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.RestoreBackup(restoreDir);
 
-            Assert.That(await File.ReadAllBytesAsync(testDbPath + "-wal"), Is.EqualTo("newwal"u8.ToArray()));
-            Assert.That(await File.ReadAllBytesAsync(testDbPath + "-shm"), Is.EqualTo("newshm"u8.ToArray()));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await File.ReadAllBytesAsync(testDbPath + "-wal"), Is.EqualTo("newwal"u8.ToArray()));
+                Assert.That(await File.ReadAllBytesAsync(testDbPath + "-shm"), Is.EqualTo("newshm"u8.ToArray()));
+            }
         }
 
         [Test]
@@ -195,8 +204,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.RestoreBackup(restoreDir);
 
-            Assert.That(File.Exists(testDbPath + "-wal"), Is.False);
-            Assert.That(File.Exists(testDbPath + "-shm"), Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(File.Exists(testDbPath + "-wal"), Is.False);
+                Assert.That(File.Exists(testDbPath + "-shm"), Is.False);
+            }
         }
 
         [Test]
@@ -254,8 +266,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.CreateBackup(backupDir);
 
-            Assert.That(File.Exists(Path.Combine(backupDir, "LighthouseAppContext.db-wal")), Is.False);
-            Assert.That(File.Exists(Path.Combine(backupDir, "LighthouseAppContext.db-shm")), Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(File.Exists(Path.Combine(backupDir, "LighthouseAppContext.db-wal")), Is.False);
+                Assert.That(File.Exists(Path.Combine(backupDir, "LighthouseAppContext.db-shm")), Is.False);
+            }
         }
     }
 }
