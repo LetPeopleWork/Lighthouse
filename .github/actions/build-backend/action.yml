@@ -24,6 +24,12 @@ runs:
       shell: bash
       run: dotnet restore ./Lighthouse.Backend
 
+    - name: Remove MSBuild problem matchers
+      shell: bash
+      run: |
+        echo "::remove-matcher owner=csc::"
+        echo "::remove-matcher owner=vsbuild::"
+
     - name: Build Backend Solution
       shell: bash
       run: |

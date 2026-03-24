@@ -13,7 +13,7 @@ runs:
   using: "composite"
   steps:
     - name: Checkout
-      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       with:
         fetch-depth: '0'
 
@@ -33,13 +33,13 @@ runs:
       run: sudo chmod -R +x ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64
 
     - name: Upload windows artifact for deployment job
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
       with:
         name: Lighthouse-win-x64-${{ inputs.version }}
         path: ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64
 
     - name: Upload linux artifact for deployment job
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
       with:
         name: Lighthouse-linux-x64-${{ inputs.version }}
         path: ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64
