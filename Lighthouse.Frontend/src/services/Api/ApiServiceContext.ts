@@ -8,10 +8,6 @@ import {
 	BlackoutPeriodService,
 	type IBlackoutPeriodService,
 } from "./BlackoutPeriodService";
-import {
-	ConfigurationService,
-	type IConfigurationService,
-} from "./ConfigurationService";
 import { DeliveryService, type IDeliveryService } from "./DeliveryService";
 import { DemoDataService } from "./DemoDataService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
@@ -63,7 +59,6 @@ export interface IApiServiceContext {
 	optionalFeatureService: IOptionalFeatureService;
 	updateSubscriptionService: IUpdateSubscriptionService;
 	suggestionService: ISuggestionService;
-	configurationService: IConfigurationService;
 	featureService: IFeatureService;
 	terminologyService: ITerminologyService;
 	licensingService: ILicensingService;
@@ -91,7 +86,6 @@ const defaultServices: IApiServiceContext = {
 	optionalFeatureService: new OptionalFeatureService(),
 	updateSubscriptionService: new UpdateSubscriptionService(),
 	suggestionService: new SuggestionService(),
-	configurationService: new ConfigurationService(),
 	featureService: new FeatureService(),
 	terminologyService: new TerminologyService(),
 	licensingService: new LicensingService(),

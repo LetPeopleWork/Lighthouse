@@ -1,7 +1,6 @@
 import { vi } from "vitest";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IBlackoutPeriodService } from "../services/Api/BlackoutPeriodService";
-import type { IConfigurationService } from "../services/Api/ConfigurationService";
 import type { IDeliveryService } from "../services/Api/DeliveryService";
 import type { IFeatureService } from "../services/Api/FeatureService";
 import type { ILicensingService } from "../services/Api/LicensingService";
@@ -42,8 +41,6 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["portfolioMetricsService"],
 		suggestionService:
 			null as unknown as IApiServiceContext["suggestionService"],
-		configurationService:
-			null as unknown as IApiServiceContext["configurationService"],
 		featureService: null as unknown as IApiServiceContext["featureService"],
 		terminologyService:
 			null as unknown as IApiServiceContext["terminologyService"],
@@ -190,14 +187,6 @@ export const createMockWorkTrackingSystemService =
 			validateWorkTrackingSystemConnection: vi.fn(),
 		};
 	};
-
-export const createMockConfigurationService = (): IConfigurationService => {
-	return {
-		exportConfiguration: vi.fn(),
-		clearConfiguration: vi.fn(),
-		validateConfiguration: vi.fn(),
-	};
-};
 
 export const createMockUpdateSubscriptionService =
 	(): IUpdateSubscriptionService => {

@@ -11,7 +11,6 @@ import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
-	createMockConfigurationService,
 	createMockLicensingService,
 	createMockOptionalFeatureService,
 	createMockSettingsService,
@@ -29,11 +28,6 @@ mockOptionalFeatureService.getAllFeatures = mockGetAllFeatures;
 mockOptionalFeatureService.updateFeature = mockUpdateFeature;
 
 const mockSettingsService: ISettingsService = createMockSettingsService();
-
-const mockExportConfiguration = vi.fn();
-
-const mockConfigurationService = createMockConfigurationService();
-mockConfigurationService.exportConfiguration = mockExportConfiguration;
 
 const mockGetAllTerminology = vi.fn();
 const mockUpdateTerminology = vi.fn();
@@ -59,7 +53,6 @@ const MockApiServiceProvider = ({
 	const mockContext = createMockApiServiceContext({
 		settingsService: mockSettingsService,
 		optionalFeatureService: mockOptionalFeatureService,
-		configurationService: mockConfigurationService,
 		terminologyService: mockTerminologyService,
 		licensingService: mockLicensingService,
 		blackoutPeriodService: mockBlackoutPeriodService,
@@ -208,139 +201,5 @@ describe("SystemSettingsTab Component", () => {
 			"feature2-preview-indicator",
 		);
 		expect(previewIndicators).not.toBeInTheDocument();
-	});
-
-	it("should call exportConfiguration when Export Configuration button is clicked", async () => {
-		mockGetAllFeatures.mockResolvedValue([
-			{
-				id: 1,
-				name: "Feature 1",
-				key: "feature1",
-				description: "Description 1",
-				enabled: false,
-				isPreview: true,
-			},
-		]);
-
-		renderWithMockApiProvider();
-
-		// Wait for components to load
-		await waitFor(() => {
-			expect(screen.getByText("Export Configuration")).toBeVisible();
-		});
-
-		// Click the Export Configuration button
-		fireEvent.click(screen.getByText("Export Configuration"));
-
-		// Verify the exportConfiguration function was called
-		expect(mockExportConfiguration).toHaveBeenCalled();
-	});
-
-	it("should open the import configuration dialog when Import Configuration button is clicked", async () => {
-		mockGetAllFeatures.mockResolvedValue([
-			{
-				id: 1,
-				name: "Feature 1",
-				key: "feature1",
-				description: "Description 1",
-				enabled: false,
-				isPreview: true,
-			},
-		]);
-
-		renderWithMockApiProvider();
-
-		// Wait for components to load
-		await waitFor(() => {
-			expect(screen.getByText("Import Configuration")).toBeVisible();
-		});
-
-		// Click the Import Configuration button
-		fireEvent.click(screen.getByText("Import Configuration"));
-
-		// Verify the dialog was opened
-		expect(
-			screen.getByTestId("import-configuration-dialog"),
-		).toBeInTheDocument();
-	});
-
-	it("should show configuration buttons when user has premium features", async () => {
-		mockGetLicenseStatus.mockResolvedValue({
-			hasLicense: true,
-			isValid: true,
-			canUsePremiumFeatures: true,
-		});
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(screen.getByText("Export Configuration")).toBeInTheDocument();
-			expect(screen.getByText("Import Configuration")).toBeInTheDocument();
-		});
-
-		expect(
-			screen.queryByText(
-				"Configuration export and import are premium features",
-			),
-		).not.toBeInTheDocument();
-	});
-
-	it("should hide configuration buttons when user cannot use premium features", async () => {
-		mockGetLicenseStatus.mockResolvedValue({
-			hasLicense: false,
-			isValid: false,
-			canUsePremiumFeatures: false,
-		});
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(
-				screen.getByText(
-					"Configuration export and import are premium features. Please obtain a valid license to access these features.",
-				),
-			).toBeInTheDocument();
-		});
-
-		expect(screen.queryByText("Export Configuration")).not.toBeInTheDocument();
-		expect(screen.queryByText("Import Configuration")).not.toBeInTheDocument();
-	});
-
-	it("should hide configuration buttons when license is invalid", async () => {
-		mockGetLicenseStatus.mockResolvedValue({
-			hasLicense: true,
-			isValid: false,
-			canUsePremiumFeatures: false,
-		});
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(
-				screen.getByText(
-					"Configuration export and import are premium features. Please obtain a valid license to access these features.",
-				),
-			).toBeInTheDocument();
-		});
-
-		expect(screen.queryByText("Export Configuration")).not.toBeInTheDocument();
-		expect(screen.queryByText("Import Configuration")).not.toBeInTheDocument();
-	});
-
-	it("should handle license status fetch failure gracefully", async () => {
-		mockGetLicenseStatus.mockRejectedValue(new Error("License fetch failed"));
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(
-				screen.getByText(
-					"Configuration export and import are premium features. Please obtain a valid license to access these features.",
-				),
-			).toBeInTheDocument();
-		});
-
-		expect(screen.queryByText("Export Configuration")).not.toBeInTheDocument();
-		expect(screen.queryByText("Import Configuration")).not.toBeInTheDocument();
 	});
 });

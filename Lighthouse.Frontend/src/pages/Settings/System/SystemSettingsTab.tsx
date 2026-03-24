@@ -1,5 +1,4 @@
 import BiotechIcon from "@mui/icons-material/Biotech";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Switch from "@mui/material/Switch";
@@ -13,7 +12,6 @@ import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
@@ -23,7 +21,6 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BlackoutPeriodsSettings from "./BlackoutPeriodsSettings";
-import ImportConfigurationDialog from "./ImportConfiguration/ImportConfigurationDialog";
 
 const SystemSettingsTab: React.FC = () => {
 	// Optional Features state
@@ -31,15 +28,12 @@ const SystemSettingsTab: React.FC = () => {
 		[],
 	);
 
-	// Import Configuration Dialog state
-	const [importDialogOpen, setImportDialogOpen] = useState(false);
-
 	// License status state
 	const [licenseStatus, setLicenseStatus] = useState<ILicenseStatus | null>(
 		null,
 	);
 
-	const { optionalFeatureService, configurationService, licensingService } =
+	const { optionalFeatureService, licensingService } =
 		useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
@@ -64,18 +58,6 @@ const SystemSettingsTab: React.FC = () => {
 			setLicenseStatus(null);
 		}
 	}, [licensingService]);
-
-	const onExportConfiguration = async () => {
-		await configurationService.exportConfiguration();
-	};
-
-	const onOpenImportDialog = () => {
-		setImportDialogOpen(true);
-	};
-
-	const onCloseImportDialog = () => {
-		setImportDialogOpen(false);
-	};
 
 	const onToggleOptionalFeature = async (toggledFeature: IOptionalFeature) => {
 		const updatedFeatures = optionalFeatures.map((feature) =>
@@ -103,35 +85,6 @@ const SystemSettingsTab: React.FC = () => {
 
 	return (
 		<Box sx={{ mb: 4 }}>
-			<ImportConfigurationDialog
-				open={importDialogOpen}
-				onClose={onCloseImportDialog}
-			/>
-			<InputGroup title="Lighthouse Configuration" initiallyExpanded={true}>
-				{licenseStatus?.canUsePremiumFeatures ? (
-					<Box sx={{ display: "flex", gap: 2 }}>
-						<ActionButton
-							buttonVariant="contained"
-							onClickHandler={onExportConfiguration}
-							buttonText="Export Configuration"
-						/>
-						<ActionButton
-							buttonVariant="contained"
-							onClickHandler={() => {
-								onOpenImportDialog();
-								return Promise.resolve();
-							}}
-							buttonText="Import Configuration"
-						/>
-					</Box>
-				) : (
-					<Alert severity="info" sx={{ m: 2 }}>
-						Configuration export and import are premium features. Please obtain
-						a valid license to access these features.
-					</Alert>
-				)}
-			</InputGroup>
-
 			<InputGroup title="Blackout Periods" initiallyExpanded={true}>
 				<BlackoutPeriodsSettings
 					isPremium={licenseStatus?.canUsePremiumFeatures ?? false}
