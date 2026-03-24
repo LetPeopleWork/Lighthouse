@@ -370,6 +370,7 @@ namespace Lighthouse.Backend
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();
             builder.Services.AddSingleton<DatabaseOperationTracker>();
+            builder.Services.AddSingleton<ICommandRunner, CommandRunner>();
             builder.Services.AddSingleton<IDatabaseManagementProvider>(sp =>
             {
                 var dbConfig = sp.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
@@ -379,6 +380,12 @@ namespace Lighthouse.Backend
                         return new SqliteDatabaseManagementProvider(
                             sp.GetRequiredService<IOptions<DatabaseConfiguration>>(),
                             sp.GetRequiredService<ILogger<SqliteDatabaseManagementProvider>>());
+                    case "postgresql":
+                    case "postgres":
+                        return new PostgresDatabaseManagementProvider(
+                            sp.GetRequiredService<IOptions<DatabaseConfiguration>>(),
+                            sp.GetRequiredService<ICommandRunner>(),
+                            sp.GetRequiredService<ILogger<PostgresDatabaseManagementProvider>>());
                     default:
                         throw new NotSupportedException($"Database management provider '{dbConfig.Provider}' is not supported.");
                 }

@@ -45,6 +45,13 @@ RUN dotnet publish "./Lighthouse.Backend/Lighthouse.Backend.csproj" \
 
 FROM base AS final
 WORKDIR /app
+
+# Install PostgreSQL client tools for database management operations
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \
+	&& rm -rf /var/lib/apt/lists/*
+USER app
+
 COPY --from=publish /app/publish .
 
 ENV Kestrel__Endpoints__Http__Url="http://+:80"
