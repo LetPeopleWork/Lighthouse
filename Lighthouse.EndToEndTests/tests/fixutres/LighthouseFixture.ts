@@ -29,7 +29,25 @@ export type ModelIdentifier = {
 };
 
 async function clearConfiguration(request: APIRequestContext): Promise<void> {
-	await request.delete("/api/configuration/clear");
+	const portfoliosResponse = await request.get("/api/Portfolios");
+	const portfolios = await portfoliosResponse.json();
+	for (const portfolio of portfolios) {
+		await request.delete(`/api/portfolios/${portfolio.id}`);
+	}
+
+	const teamsResponse = await request.get("/api/Teams");
+	const teams = await teamsResponse.json();
+	for (const team of teams) {
+		await request.delete(`/api/teams/${team.id}`);
+	}
+
+	const connectionsResponse = await request.get(
+		"/api/WorkTrackingSystemConnections",
+	);
+	const connections = await connectionsResponse.json();
+	for (const connection of connections) {
+		await request.delete(`/api/worktrackingsystemconnections/${connection.id}`);
+	}
 }
 
 async function generateTestData(
@@ -139,6 +157,7 @@ async function generateTestData(
 
 export const test = base.extend<LighthouseFixtures>({
 	overviewPage: async ({ page, request }, use) => {
+		await clearConfiguration(request);
 		const lighthousePage = new LighthousePage(page);
 		const overviewPage = await lighthousePage.open();
 
@@ -151,6 +170,7 @@ export const test = base.extend<LighthouseFixtures>({
 export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
 	return test.extend<LighthouseWithDataFixtures>({
 		testData: async ({ request }, use) => {
+			await clearConfiguration(request);
 			const data = await generateTestData(request, teamsToUpdate);
 			await use(data);
 			await clearConfiguration(request);
@@ -160,6 +180,7 @@ export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
 
 export const testWithData = test.extend<LighthouseWithDataFixtures>({
 	testData: async ({ request }, use) => {
+		await clearConfiguration(request);
 		const data = await generateTestData(request, []);
 
 		await use(data);
