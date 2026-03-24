@@ -157,7 +157,6 @@ async function generateTestData(
 
 export const test = base.extend<LighthouseFixtures>({
 	overviewPage: async ({ page, request }, use) => {
-		await clearConfiguration(request);
 		const lighthousePage = new LighthousePage(page);
 		const overviewPage = await lighthousePage.open();
 
@@ -170,7 +169,6 @@ export const test = base.extend<LighthouseFixtures>({
 export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
 	return test.extend<LighthouseWithDataFixtures>({
 		testData: async ({ request }, use) => {
-			await clearConfiguration(request);
 			const data = await generateTestData(request, teamsToUpdate);
 			await use(data);
 			await clearConfiguration(request);
@@ -180,7 +178,6 @@ export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
 
 export const testWithData = test.extend<LighthouseWithDataFixtures>({
 	testData: async ({ request }, use) => {
-		await clearConfiguration(request);
 		const data = await generateTestData(request, []);
 
 		await use(data);
