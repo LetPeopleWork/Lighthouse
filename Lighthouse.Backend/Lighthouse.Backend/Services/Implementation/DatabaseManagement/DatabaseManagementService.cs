@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             try
             {
                 DecryptFile(encryptedZipPath, decryptedPath, key);
-                ZipFile.ExtractToDirectory(decryptedPath, extractDir);
+                ExtractToDirectorySafely(decryptedPath, extractDir);
             }
             finally
             {
@@ -318,6 +318,28 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             using var cryptoStream = new CryptoStream(inputStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
             using var outputStream = File.Create(outputPath);
             cryptoStream.CopyTo(outputStream);
+        }
+
+        private static void ExtractToDirectorySafely(string zipPath, string destinationDir)
+        {
+            var fullDestination = Path.GetFullPath(destinationDir);
+
+            using var archive = ZipFile.OpenRead(zipPath);
+            foreach (var entry in archive.Entries)
+            {
+                // Skip directory entries
+                if (string.IsNullOrEmpty(entry.Name))
+                    continue;
+
+                var destinationPath = Path.GetFullPath(Path.Combine(fullDestination, entry.FullName));
+
+                // Ensure the entry resolves inside the destination directory
+                if (!destinationPath.StartsWith(fullDestination + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    throw new InvalidOperationException($"Zip Slip detected: {entry.FullName}");
+
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                entry.ExtractToFile(destinationPath, overwrite: true);
+            }
         }
     }
 }
