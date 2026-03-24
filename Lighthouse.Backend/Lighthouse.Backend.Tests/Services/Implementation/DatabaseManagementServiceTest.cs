@@ -5,7 +5,10 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Data;
+using Microsoft.EntityFrameworkCore;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -13,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class DatabaseManagementServiceTest
     {
         private Mock<IDatabaseManagementProvider> providerMock;
-        private Mock<IProcessService> processServiceMock;
+        private Mock<IServiceProvider> serviceProviderMock;
         private DatabaseMaintenanceGate gate;
         private DatabaseOperationTracker tracker;
         private ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
@@ -25,15 +28,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             providerMock = new Mock<IDatabaseManagementProvider>();
             providerMock.Setup(p => p.ProviderName).Returns("sqlite");
             providerMock.Setup(p => p.IsToolingAvailable()).Returns(true);
+            providerMock.Setup(p => p.RecycleConnection());
 
-            processServiceMock = new Mock<IProcessService>();
+            serviceProviderMock = new Mock<IServiceProvider>();
+
+            // MigrateAndSeedDatabase creates a scope — wire up IServiceScope + IServiceScopeFactory
+            var scopeMock = new Mock<IServiceScope>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            scopeMock.Setup(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
+            scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
+            serviceProviderMock
+                .Setup(sp => sp.GetService(typeof(IServiceScopeFactory)))
+                .Returns(scopeFactoryMock.Object);
+
+
+            var optionsBuilder = new DbContextOptionsBuilder<LighthouseAppContext>();
+            optionsBuilder.UseSqlite("Data Source=lighthouse.db", options =>
+            {
+                options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                options.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
+            });
+
+            serviceProviderMock
+                .Setup(sp => sp.GetService(typeof(LighthouseAppContext)))
+                .Returns(new LighthouseAppContext(
+                    optionsBuilder.Options, Mock.Of<ICryptoService>(), Mock.Of<ILogger<LighthouseAppContext>>()));
+
+            serviceProviderMock
+                .Setup(sp => sp.GetService(typeof(ILogger<Program>)))
+                .Returns(Mock.Of<ILogger<Program>>());
+
+            serviceProviderMock
+                .Setup(sp => sp.GetService(typeof(IEnumerable<ISeeder>)))
+                .Returns(Enumerable.Empty<ISeeder>());
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             gate = new DatabaseMaintenanceGate(updateStatuses);
             tracker = new DatabaseOperationTracker();
 
             var loggerMock = new Mock<ILogger<DatabaseManagementService>>();
-            subject = new DatabaseManagementService(providerMock.Object, gate, tracker, processServiceMock.Object, loggerMock.Object, TimeSpan.Zero);
+            subject = new DatabaseManagementService(
+                providerMock.Object,
+                gate,
+                tracker,
+                loggerMock.Object,
+                serviceProviderMock.Object);
         }
 
         [Test]
@@ -89,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CreateBackup_NoActiveWork_ReturnsAdmittedStatus()
+        public async Task CreateBackup_NoActiveWork_ReturnsCompletedStatus()
         {
             providerMock.Setup(p => p.CreateBackup(It.IsAny<string>())).ReturnsAsync("backup.db");
 
@@ -158,7 +197,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task RestoreBackup_NoActiveWork_CallsProviderRestore()
+        public async Task CreateBackup_Success_DoesNotRecycleConnection()
+        {
+            providerMock.Setup(p => p.CreateBackup(It.IsAny<string>())).ReturnsAsync("backup.db");
+
+            await subject.CreateBackup("password123");
+
+            providerMock.Verify(p => p.RecycleConnection(), Times.Never);
+        }
+
+        [Test]
+        public async Task RestoreBackup_NoActiveWork_SetsOperationTypeToRestore()
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
 
@@ -169,14 +218,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task RestoreBackup_Success_SetsRestartPendingState()
+        public async Task RestoreBackup_Success_SetsCompletedState()
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
 
             using var stream = CreateValidBackupStream("password123");
             var status = await subject.RestoreBackup(stream, "password123");
 
-            Assert.That(status.State, Is.EqualTo(DatabaseOperationState.RestartPending));
+            Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Completed));
+        }
+
+        [Test]
+        public async Task RestoreBackup_Success_RecyclesConnectionBeforeMigrating()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
+
+            using var stream = CreateValidBackupStream("password123");
+            await subject.RestoreBackup(stream, "password123");
+
+            providerMock.Verify(p => p.RecycleConnection(), Times.Once);
         }
 
         [Test]
@@ -192,7 +252,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task ClearDatabase_NoActiveWork_CallsProviderClear()
+        public async Task RestoreBackup_ReleasesGateAfterCompletion()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
+
+            using var stream = CreateValidBackupStream("password123");
+            await subject.RestoreBackup(stream, "password123");
+
+            Assert.That(gate.IsBlocked, Is.False);
+        }
+
+        [Test]
+        public async Task RestoreBackup_ReleasesGateAfterFailure()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+
+            using var stream = CreateValidBackupStream("password123");
+            await subject.RestoreBackup(stream, "password123");
+
+            Assert.That(gate.IsBlocked, Is.False);
+        }
+
+        [Test]
+        public async Task RestoreBackup_Failure_DoesNotRecycleConnection()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+
+            using var stream = CreateValidBackupStream("password123");
+            await subject.RestoreBackup(stream, "password123");
+
+            providerMock.Verify(p => p.RecycleConnection(), Times.Never);
+        }
+
+        [Test]
+        public async Task ClearDatabase_NoActiveWork_SetsOperationTypeToClear()
         {
             providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
 
@@ -202,13 +295,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task ClearDatabase_Success_SetsRestartPendingState()
+        public async Task ClearDatabase_Success_SetsCompletedState()
         {
             providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
 
             var status = await subject.ClearDatabase();
 
-            Assert.That(status.State, Is.EqualTo(DatabaseOperationState.RestartPending));
+            Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Completed));
+        }
+
+        [Test]
+        public async Task ClearDatabase_Success_RecyclesConnectionBeforeMigrating()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
+
+            await subject.ClearDatabase();
+
+            providerMock.Verify(p => p.RecycleConnection(), Times.Once);
         }
 
         [Test]
@@ -220,6 +323,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var status = await subject.ClearDatabase();
 
             Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+        }
+
+        [Test]
+        public async Task ClearDatabase_ReleasesGateAfterCompletion()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
+
+            await subject.ClearDatabase();
+
+            Assert.That(gate.IsBlocked, Is.False);
+        }
+
+        [Test]
+        public async Task ClearDatabase_ReleasesGateAfterFailure()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).ThrowsAsync(new Exception("fail"));
+
+            await subject.ClearDatabase();
+
+            Assert.That(gate.IsBlocked, Is.False);
+        }
+
+        [Test]
+        public async Task ClearDatabase_Failure_DoesNotRecycleConnection()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).ThrowsAsync(new Exception("fail"));
+
+            await subject.ClearDatabase();
+
+            providerMock.Verify(p => p.RecycleConnection(), Times.Never);
         }
 
         [Test]
@@ -239,74 +372,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var status = subject.GetOperationStatus("nonexistent");
 
             Assert.That(status, Is.Null);
-        }
-
-        [Test]
-        public async Task RestoreBackup_Success_SchedulesRestart()
-        {
-            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
-
-            using var stream = CreateValidBackupStream("password123");
-            await subject.RestoreBackup(stream, "password123");
-
-            // Allow the fire-and-forget task to execute (restartDelay is TimeSpan.Zero in tests)
-            await Task.Delay(100);
-
-            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
-            processServiceMock.Verify(p => p.Exit(0), Times.Once);
-        }
-
-        [Test]
-        public async Task ClearDatabase_Success_SchedulesRestart()
-        {
-            providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
-
-            await subject.ClearDatabase();
-
-            await Task.Delay(100);
-
-            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
-            processServiceMock.Verify(p => p.Exit(0), Times.Once);
-        }
-
-        [Test]
-        public async Task CreateBackup_Success_DoesNotScheduleRestart()
-        {
-            providerMock.Setup(p => p.CreateBackup(It.IsAny<string>())).ReturnsAsync("backup.db");
-
-            await subject.CreateBackup("password123");
-
-            await Task.Delay(100);
-
-            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
-            processServiceMock.Verify(p => p.Exit(It.IsAny<int>()), Times.Never);
-        }
-
-        [Test]
-        public async Task RestoreBackup_Failure_DoesNotScheduleRestart()
-        {
-            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
-
-            using var stream = CreateValidBackupStream("password123");
-            await subject.RestoreBackup(stream, "password123");
-
-            await Task.Delay(100);
-
-            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
-            processServiceMock.Verify(p => p.Exit(It.IsAny<int>()), Times.Never);
-        }
-
-        [Test]
-        public async Task ClearDatabase_Failure_DoesNotScheduleRestart()
-        {
-            providerMock.Setup(p => p.ClearDatabase()).ThrowsAsync(new Exception("fail"));
-
-            await subject.ClearDatabase();
-
-            await Task.Delay(100);
-
-            processServiceMock.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
-            processServiceMock.Verify(p => p.Exit(It.IsAny<int>()), Times.Never);
         }
 
         private static MemoryStream CreateValidBackupStream(string password)
@@ -347,9 +412,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             finally
             {
                 if (Directory.Exists(tempDir))
-                {
                     Directory.Delete(tempDir, recursive: true);
-                }
             }
         }
     }

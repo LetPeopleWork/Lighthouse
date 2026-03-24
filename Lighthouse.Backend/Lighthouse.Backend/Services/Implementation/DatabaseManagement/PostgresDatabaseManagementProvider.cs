@@ -147,6 +147,11 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             logger.LogInformation("PostgreSQL database {Database} cleared and recreated", database);
         }
 
+        public void RecycleConnection()
+        {
+            NpgsqlConnection.ClearAllPools();
+        }
+
         private async Task RunPsqlCommand(string sql, string errorPrefix)
         {
             var startInfo = new ProcessStartInfo

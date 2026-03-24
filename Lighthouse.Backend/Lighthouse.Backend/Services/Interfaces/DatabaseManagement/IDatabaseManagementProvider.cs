@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Services.Interfaces.DatabaseManagement
 
         string? GetToolingGuidanceUrl();
 
+        void RecycleConnection();
+
         Task<string> CreateBackup(string destinationPath);
 
         Task RestoreBackup(string backupContentPath);

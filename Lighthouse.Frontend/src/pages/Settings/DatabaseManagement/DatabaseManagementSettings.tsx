@@ -134,16 +134,12 @@ const DatabaseManagementSettings: React.FC = () => {
 			}
 
 			setSuccess(
-				"Restore completed. The application will restart to apply the changes.",
+				"Restore completed successfully. Your data has been restored.",
 			);
 			setRestoreFile(null);
 			setRestorePassword("");
 			if (fileInputRef.current) {
 				fileInputRef.current.value = "";
-			}
-
-			if (result.state === "RestartPending") {
-				await pollUntilRestart(result.operationId);
 			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Restore failed.");
@@ -167,60 +163,12 @@ const DatabaseManagementSettings: React.FC = () => {
 				return;
 			}
 
-			setSuccess(
-				"Database cleared. The application will restart to recreate the schema.",
-			);
-
-			if (result.state === "RestartPending") {
-				await pollUntilRestart(result.operationId);
-			}
+			setSuccess("Database cleared and reset successfully.");
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Clear failed.");
 		} finally {
 			setOperationLoading(null);
 			await fetchStatus();
-		}
-	};
-
-	const pollUntilRestart = async (_operationId: string) => {
-		const maxAttempts = 60;
-		const delay = 2000;
-
-		// Wait a bit for the backend to begin shutting down
-		await new Promise((resolve) => setTimeout(resolve, delay));
-
-		// First, wait for the backend to go offline
-		let backendWentOffline = false;
-		for (let i = 0; i < 5; i++) {
-			try {
-				await databaseManagementService.getStatus();
-				await new Promise((resolve) => setTimeout(resolve, delay));
-			} catch {
-				backendWentOffline = true;
-				break;
-			}
-		}
-
-		if (!backendWentOffline) {
-			// Backend never went offline — it may have already restarted quickly
-		}
-
-		// Then, wait for the backend to come back online
-		for (let i = 0; i < maxAttempts; i++) {
-			try {
-				await new Promise((resolve) => setTimeout(resolve, delay));
-				await databaseManagementService.getStatus();
-				// Backend is back online
-				if (globalThis.window !== undefined) {
-					const url = new URL(globalThis.location.href);
-					url.searchParams.set("tab", "database");
-					url.searchParams.set("notify", "restart-complete");
-					globalThis.location.href = url.toString();
-				}
-				return;
-			} catch {
-				// Backend is still restarting
-			}
 		}
 	};
 
@@ -267,6 +215,7 @@ const DatabaseManagementSettings: React.FC = () => {
 						label={`Provider: ${status.provider}`}
 						variant="outlined"
 						size="small"
+						data-testid="database-provider"
 					/>
 				</Box>
 			)}

@@ -81,6 +81,12 @@
 	  <None Update="Services\Implementation\Licensing\valid_not_expired_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Services\Implementation\TestData\Lighthouse_Backup_2026-03-24_sqlite.zip">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\TestData\Lighthouse_Backup_2026-03-24_postgres.zip">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 

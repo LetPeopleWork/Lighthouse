@@ -95,6 +95,11 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return Task.CompletedTask;
         }
 
+        public void RecycleConnection()
+        {
+            SqliteConnection.ClearAllPools();
+        }
+
         private static async Task CopyFileAsync(string source, string destination)
         {
             using var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

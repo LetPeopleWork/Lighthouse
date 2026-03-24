@@ -1,6 +1,5 @@
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -8,31 +7,15 @@ using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 {
-    public class DatabaseManagementService : IDatabaseManagementService
+    public class DatabaseManagementService(
+        IDatabaseManagementProvider provider,
+        DatabaseMaintenanceGate gate,
+        DatabaseOperationTracker tracker,
+        ILogger<DatabaseManagementService> logger,
+        IServiceProvider serviceProvider)
+        : IDatabaseManagementService
     {
-        private readonly IDatabaseManagementProvider provider;
-        private readonly DatabaseMaintenanceGate gate;
-        private readonly DatabaseOperationTracker tracker;
-        private readonly IProcessService processService;
         private readonly Dictionary<string, string> backupArtifacts = new();
-        private readonly ILogger<DatabaseManagementService> logger;
-        private readonly TimeSpan restartDelay;
-
-        public DatabaseManagementService(
-            IDatabaseManagementProvider provider,
-            DatabaseMaintenanceGate gate,
-            DatabaseOperationTracker tracker,
-            IProcessService processService,
-            ILogger<DatabaseManagementService> logger,
-            TimeSpan? restartDelay = null)
-        {
-            this.provider = provider;
-            this.gate = gate;
-            this.tracker = tracker;
-            this.processService = processService;
-            this.logger = logger;
-            this.restartDelay = restartDelay ?? TimeSpan.FromSeconds(1);
-        }
 
         public DatabaseCapabilityStatus GetCapabilityStatus()
         {
@@ -125,22 +108,14 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                 try
                 {
-                    var zipPath = Path.Combine(tempDir, "restore.zip");
-                    using (var fileStream = File.Create(zipPath))
-                    {
-                        await backupFile.CopyToAsync(fileStream);
-                    }
-
-                    var extractDir = Path.Combine(tempDir, "extracted");
-                    Directory.CreateDirectory(extractDir);
-                    ExtractEncryptedZip(zipPath, extractDir, password);
+                    var extractDir = await UnzipBackup(backupFile, password, tempDir);
 
                     await provider.RestoreBackup(extractDir);
 
-                    tracker.TransitionTo(operationId, DatabaseOperationState.RestartPending);
-                    logger.LogInformation("Restore operation {OperationId} awaiting restart", operationId);
+                    MigrateAndSeedDatabase();
 
-                    ScheduleRestart();
+                    tracker.TransitionTo(operationId, DatabaseOperationState.Completed);
+                    logger.LogInformation("Restore operation {OperationId} completed successfully", operationId);
 
                     return tracker.GetStatus(operationId)!;
                 }
@@ -153,9 +128,26 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 logger.LogError(ex, "Restore operation {OperationId} failed", operationId);
                 tracker.TransitionToFailed(operationId, ex.Message);
-                gate.Release(operationId);
                 return tracker.GetStatus(operationId)!;
             }
+            finally
+            {
+                gate.Release(operationId);
+            }
+        }
+
+        private static async Task<string> UnzipBackup(Stream backupFile, string password, string tempDir)
+        {
+            var zipPath = Path.Combine(tempDir, "restore.zip");
+            await using (var fileStream = File.Create(zipPath))
+            {
+                await backupFile.CopyToAsync(fileStream);
+            }
+
+            var extractDir = Path.Combine(tempDir, "extracted");
+            Directory.CreateDirectory(extractDir);
+            ExtractEncryptedZip(zipPath, extractDir, password);
+            return extractDir;
         }
 
         public async Task<DatabaseOperationStatus> ClearDatabase()
@@ -178,10 +170,10 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                 await provider.ClearDatabase();
 
-                tracker.TransitionTo(operationId, DatabaseOperationState.RestartPending);
-                logger.LogInformation("Clear operation {OperationId} awaiting restart", operationId);
+                MigrateAndSeedDatabase();
 
-                ScheduleRestart();
+                tracker.TransitionTo(operationId, DatabaseOperationState.Completed);
+                logger.LogInformation("Clear operation {OperationId} completed successfully", operationId);
 
                 return tracker.GetStatus(operationId)!;
             }
@@ -189,8 +181,11 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 logger.LogError(ex, "Clear operation {OperationId} failed", operationId);
                 tracker.TransitionToFailed(operationId, ex.Message);
-                gate.Release(operationId);
                 return tracker.GetStatus(operationId)!;
+            }
+            finally
+            {
+                gate.Release(operationId);
             }
         }
 
@@ -204,39 +199,23 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return File.OpenRead(path);
         }
 
-        private void ScheduleRestart()
+        private void MigrateAndSeedDatabase()
         {
-            _ = Task.Run(async () =>
+            using var scope = serviceProvider.CreateScope();
+            var scopedProvider = scope.ServiceProvider;
+
+            try
             {
-                await Task.Delay(restartDelay);
+                provider.RecycleConnection();
 
-                logger.LogInformation("Restarting application after database operation");
-
-                var currentProcess = Process.GetCurrentProcess();
-                var executablePath = currentProcess.MainModule?.FileName ?? string.Empty;
-
-                if (string.IsNullOrEmpty(executablePath))
-                {
-                    logger.LogError("Could not determine current process executable path for restart");
-                    return;
-                }
-
-                var commandLineArgs = Environment.GetCommandLineArgs();
-                var args = commandLineArgs.Length > 1
-                    ? string.Join(" ", commandLineArgs.Skip(1).Select(arg => $"\"{arg}\""))
-                    : string.Empty;
-
-                logger.LogInformation("Starting new process: {Path} {Args}", executablePath, args);
-
-                processService.Start(new ProcessStartInfo
-                {
-                    FileName = executablePath,
-                    Arguments = args,
-                    UseShellExecute = false,
-                });
-
-                processService.Exit(0);
-            });
+                DatabaseConfigurator.ApplyMigrations(scopedProvider);
+                DatabaseConfigurator.SeedDatabase(scopedProvider);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error during database migration and seeding after restore");
+                throw;
+            }
         }
 
         private static string GenerateOperationId()
