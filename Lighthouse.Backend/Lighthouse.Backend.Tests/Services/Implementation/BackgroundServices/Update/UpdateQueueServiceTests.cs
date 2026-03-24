@@ -1,4 +1,6 @@
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +17,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IClientProxy> clientProxyMock;
 
         private ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
+        private DatabaseMaintenanceGate gate;
 
         [SetUp]
         public void SetUp()
@@ -32,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             serviceScopeMock.Setup(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
+            gate = new DatabaseMaintenanceGate(updateStatuses);
         }
 
         [Test]
@@ -236,9 +240,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             Assert.That(globalNotificationCount, Is.GreaterThanOrEqualTo(2));
         }
 
+        [Test]
+        public void EnqueueUpdate_DatabaseBackupActive_DoesNotQueueUpdate()
+        {
+            gate.TryAcquire(DatabaseOperationType.Backup, "db-op-1");
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(UpdateType.Team, 1, _ => Task.CompletedTask);
+
+            Assert.That(updateStatuses.ContainsKey(new UpdateKey(UpdateType.Team, 1)), Is.False);
+        }
+
+        [Test]
+        public void EnqueueUpdate_DatabaseRestoreActive_DoesNotQueueUpdate()
+        {
+            gate.TryAcquire(DatabaseOperationType.Restore, "db-op-2");
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(UpdateType.Features, 5, _ => Task.CompletedTask);
+
+            Assert.That(updateStatuses.ContainsKey(new UpdateKey(UpdateType.Features, 5)), Is.False);
+        }
+
+        [Test]
+        public void EnqueueUpdate_DatabaseClearActive_DoesNotQueueUpdate()
+        {
+            gate.TryAcquire(DatabaseOperationType.Clear, "db-op-3");
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(UpdateType.Forecasts, 3, _ => Task.CompletedTask);
+
+            Assert.That(updateStatuses.ContainsKey(new UpdateKey(UpdateType.Forecasts, 3)), Is.False);
+        }
+
+        [Test]
+        public void EnqueueUpdate_DatabaseOperationReleased_QueuesUpdate()
+        {
+            gate.TryAcquire(DatabaseOperationType.Backup, "db-op-1");
+            gate.Release("db-op-1");
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(UpdateType.Team, 1, _ => Task.Delay(300));
+
+            Assert.That(updateStatuses.ContainsKey(new UpdateKey(UpdateType.Team, 1)), Is.True);
+        }
+
         private UpdateQueueService CreateSubject()
         {
-            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, updateStatuses, serviceScopeFactoryMock.Object);
+            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, updateStatuses, serviceScopeFactoryMock.Object, gate);
         }
     }
 }

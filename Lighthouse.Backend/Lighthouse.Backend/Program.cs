@@ -15,7 +15,9 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDev
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -364,6 +366,11 @@ namespace Lighthouse.Backend
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
+
+            // Database Management
+            builder.Services.AddSingleton<DatabaseMaintenanceGate>();
+            builder.Services.AddSingleton<DatabaseOperationTracker>();
+            // IDatabaseManagementService registration deferred to Story 4559 when the first IDatabaseManagementProvider is available
         }
 
         private static void ConfigureDatabase(WebApplicationBuilder builder)

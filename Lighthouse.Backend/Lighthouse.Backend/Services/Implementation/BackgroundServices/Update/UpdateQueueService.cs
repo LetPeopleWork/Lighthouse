@@ -1,5 +1,6 @@
 ﻿namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
+    using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
     using Lighthouse.Backend.Services.Interfaces.Update;
     using Microsoft.AspNetCore.SignalR;
     using System.Collections.Concurrent;
@@ -12,17 +13,20 @@
         private readonly IHubContext<UpdateNotificationHub> hubContext;
         private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
         private readonly IServiceScopeFactory serviceScopeFactory;
+        private readonly DatabaseMaintenanceGate maintenanceGate;
 
         public UpdateQueueService(
             ILogger<UpdateQueueService> logger,
             IHubContext<UpdateNotificationHub> hubContext,
             ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses,
-            IServiceScopeFactory serviceScopeFactory)
+            IServiceScopeFactory serviceScopeFactory,
+            DatabaseMaintenanceGate maintenanceGate)
         {
             this.logger = logger;
             this.hubContext = hubContext;
             this.updateStatuses = updateStatuses;
             this.serviceScopeFactory = serviceScopeFactory;
+            this.maintenanceGate = maintenanceGate;
 
             StartProcessingQueue();
         }
@@ -30,6 +34,12 @@
         public void EnqueueUpdate(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask)
         {
             var updateKey = new UpdateKey(updateType, id);
+
+            if (maintenanceGate.ActiveOperationId != null)
+            {
+                logger.LogInformation("Update for {UpdateType} with ID {Id} skipped because a database {OperationType} operation is active.", updateType, id, maintenanceGate.ActiveOperationType);
+                return;
+            }
 
             if (updateStatuses.ContainsKey(updateKey))
             {
