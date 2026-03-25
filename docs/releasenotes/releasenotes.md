@@ -65,6 +65,7 @@ Furthermore, the following change was made to the *Hide Completed* functionality
 
 ## Other Improvements and Bug Fixes
 - In the previous versions, you could enable the *MCP Feature* without a license. During startup, it was crashing as it should only be available with a license, effectively logging users out. This is now handled, so that enabling the feature is only allowed with a license, and if you somehow get into the other state anyway, Lighthouse will still manage to start.
+- Standalone version will restart after an update has been applied
 - Updated various third party dependencies
 
 ## Contributions ❤️
