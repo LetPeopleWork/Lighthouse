@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.3.25.6
 
 ## Blackout Periods
 Lighthouse now supports **Blackout Periods** — a way to mark specific dates or date ranges as non-working days directly in your configuration. Common use cases include public holidays, company off-days, or any planned period where your team is not delivering work.
@@ -76,7 +76,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
 - [Manuel Opitz](https://www.linkedin.com/in/manuel-opitz-3812351a9/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.20.4...v26.3.20.4)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.20.4...v26.3.25.6)
 
 
 # Lighthouse v26.3.20.4
