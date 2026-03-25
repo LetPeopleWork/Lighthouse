@@ -136,26 +136,25 @@ pub fn run() {
 
                         if confirmed {
                             println!("[tauri-updater] User confirmed update, downloading...");
-                            if let Err(e) =
-                                update.download_and_install(|_, _| {}, || {}).await
-                            {
-                                eprintln!(
-                                    "[tauri-updater] Failed to install update: {e}"
-                                );
-                                let err_handle = update_handle.clone();
-                                let err_msg = format!(
-                                    "Update installation failed:\n\n{}",
-                                    e
-                                );
-                                let _ = tokio::task::spawn_blocking(move || {
-                                    err_handle
-                                        .dialog()
-                                        .message(err_msg)
-                                        .title("Update Failed")
-                                        .kind(MessageDialogKind::Error)
-                                        .blocking_show();
-                                })
-                                .await;
+                            match update.download_and_install(|_, _| {}, || {}).await {
+                                Ok(_) => {
+                                    println!("[tauri-updater] Update installed, restarting...");
+                                    update_handle.restart();
+                                }
+                                Err(e) => {
+                                    eprintln!("[tauri-updater] Failed to install update: {e}");
+                                    let err_handle = update_handle.clone();
+                                    let err_msg = format!("Update installation failed:\n\n{}", e);
+                                    let _ = tokio::task::spawn_blocking(move || {
+                                        err_handle
+                                            .dialog()
+                                            .message(err_msg)
+                                            .title("Update Failed")
+                                            .kind(MessageDialogKind::Error)
+                                            .blocking_show();
+                                    })
+                                    .await;
+                                }
                             }
                         } else {
                             println!("[tauri-updater] User deferred update");
