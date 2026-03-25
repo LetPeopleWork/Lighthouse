@@ -25,19 +25,13 @@ export class OverviewPage {
 		await this.page.getByPlaceholder("Search").fill(searchTerm);
 	}
 
-	async getPortfolioLink(portfolio: {
-		name: string;
-		id: number;
-	}): Promise<Locator> {
-		const portfolioLink = this.page.getByRole("link", { name: portfolio.name });
+	async getPortfolioLink(portfolio: string): Promise<Locator> {
+		const portfolioLink = this.page.getByRole("link", { name: portfolio });
 		return portfolioLink;
 	}
 
-	async goToPortfolio(portfolio: {
-		name: string;
-		id: number;
-	}): Promise<PortfolioDetailPage> {
-		await this.search(portfolio.name);
+	async goToPortfolio(portfolio: string): Promise<PortfolioDetailPage> {
+		await this.search(portfolio);
 
 		const portfolioLink = await this.getPortfolioLink(portfolio);
 		await portfolioLink.click();

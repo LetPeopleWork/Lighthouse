@@ -52,7 +52,9 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 		async ({ testData, overviewPage }) => {
 			const portfolio = testData.portfolios[index];
 
-			const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
+			const portfolioDetailPage = await overviewPage.goToPortfolio(
+				portfolio.name,
+			);
 
 			const involvedTeams: { [key: string]: string[] } = {};
 
@@ -128,7 +130,9 @@ testWithUpdatedTeams([0])(
 	async ({ testData, overviewPage }) => {
 		const [portfolio] = testData.portfolios;
 
-		const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			portfolio.name,
+		);
 		await test.step("Refresh Features", async () => {
 			await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 

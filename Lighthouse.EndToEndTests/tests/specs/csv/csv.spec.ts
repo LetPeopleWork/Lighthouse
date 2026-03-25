@@ -215,13 +215,17 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 
 			const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
 			await portfoliosPage.search(newPortfolio.name);
-			const portfolioLink = await overviewPage.getPortfolioLink(newPortfolio);
+			const portfolioLink = await overviewPage.getPortfolioLink(
+				newPortfolio.name,
+			);
 			await expect(portfolioLink).toBeVisible();
 		});
 	});
 
 	await test.step("Wait for portfolio metrics to load and verify features", async () => {
-		const portfolioInfoPage = await overviewPage.goToPortfolio(newPortfolio);
+		const portfolioInfoPage = await overviewPage.goToPortfolio(
+			newPortfolio.name,
+		);
 
 		// Refresh features to load CSV data
 		await portfolioInfoPage.refreshFeatures();

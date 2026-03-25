@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import type { APIRequestContext } from "@playwright/test";
 import { TestConfig } from "../../../playwright.config";
 import {
@@ -157,11 +154,6 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 
 	await takePageScreenshot(systemSettings.page, "settings/configuration.png");
 
-	await takeElementScreenshot(
-		systemSettings.lighthouseConfiguration,
-		"settings/lighthouseConfiguration.png",
-	);
-
 	const startDate = new Date(Date.now()).toISOString().slice(0, 10);
 	const endDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
 		.toISOString()
@@ -206,6 +198,12 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 
 	const logs = await settingsPage.goToSystemInfo();
 	await takePageScreenshot(logs.page, "settings/systeminfo.png");
+
+	const databaseManagement = await settingsPage.goToDatabaseManagement();
+	await takePageScreenshot(
+		databaseManagement.page,
+		"settings/databasemanagement.png",
+	);
 });
 
 testWithData(
@@ -376,7 +374,7 @@ testWithData(
 
 		// portfolio Detail Page
 		const portfolioDetailPage = await overviewPage.goToPortfolio(
-			testData.portfolios[0],
+			testData.portfolios[0].name,
 		);
 		await takePageScreenshot(
 			portfolioDetailPage.page,

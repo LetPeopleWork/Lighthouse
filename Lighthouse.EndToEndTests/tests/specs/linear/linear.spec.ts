@@ -173,7 +173,9 @@ test("should be able to handle a team defined in Linear", async ({
 
 			const portfolioPage = await overviewPage.lightHousePage.goToOverview();
 			await portfolioPage.search(newPortfolio.name);
-			const portfolioLink = await portfolioPage.getPortfolioLink(newPortfolio);
+			const portfolioLink = await portfolioPage.getPortfolioLink(
+				newPortfolio.name,
+			);
 			await expect(portfolioLink).toBeVisible();
 		});
 	});

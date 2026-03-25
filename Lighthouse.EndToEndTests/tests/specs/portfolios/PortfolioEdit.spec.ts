@@ -350,7 +350,9 @@ for (const teamConfiguration of newTeamConfigurations) {
 
 				await overviewPage.lightHousePage.goToOverview();
 				await overviewPage.search(newPortfolio.name);
-				const portfolioLink = await overviewPage.getPortfolioLink(newPortfolio);
+				const portfolioLink = await overviewPage.getPortfolioLink(
+					newPortfolio.name,
+				);
 				await expect(portfolioLink).toBeVisible();
 			});
 		},

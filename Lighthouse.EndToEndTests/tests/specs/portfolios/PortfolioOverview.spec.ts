@@ -5,9 +5,9 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [portfolio1, portfolio2, portfolio3] = testData.portfolios;
 
-		const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1);
-		const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2);
-		const portfolioLink3 = await overviewPage.getPortfolioLink(portfolio3);
+		const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1.name);
+		const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2.name);
+		const portfolioLink3 = await overviewPage.getPortfolioLink(portfolio3.name);
 
 		await expect(portfolioLink1).toBeVisible();
 		await expect(portfolioLink2).toBeVisible();
@@ -23,8 +23,12 @@ testWithData(
 		await test.step(`Search for portfolio ${portfolio1.name}`, async () => {
 			await overviewPage.search(portfolio1.name);
 
-			const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1);
-			const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2);
+			const portfolioLink1 = await overviewPage.getPortfolioLink(
+				portfolio1.name,
+			);
+			const portfolioLink2 = await overviewPage.getPortfolioLink(
+				portfolio2.name,
+			);
 
 			await expect(portfolioLink1).toBeVisible();
 			await expect(portfolioLink2).not.toBeVisible();
@@ -33,8 +37,12 @@ testWithData(
 		await test.step(`Search for portfolio ${portfolio2.name}`, async () => {
 			await overviewPage.search(portfolio2.name);
 
-			const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1);
-			const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2);
+			const portfolioLink1 = await overviewPage.getPortfolioLink(
+				portfolio1.name,
+			);
+			const portfolioLink2 = await overviewPage.getPortfolioLink(
+				portfolio2.name,
+			);
 
 			await expect(portfolioLink1).not.toBeVisible();
 			await expect(portfolioLink2).toBeVisible();
@@ -43,8 +51,12 @@ testWithData(
 		await test.step("Search for not existing portfolio", async () => {
 			await overviewPage.search("Jambalaya");
 
-			const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1);
-			const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2);
+			const portfolioLink1 = await overviewPage.getPortfolioLink(
+				portfolio1.name,
+			);
+			const portfolioLink2 = await overviewPage.getPortfolioLink(
+				portfolio2.name,
+			);
 
 			await expect(portfolioLink1).not.toBeVisible();
 			await expect(portfolioLink2).not.toBeVisible();
@@ -57,7 +69,9 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [portfolio] = testData.portfolios;
 
-		const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			portfolio.name,
+		);
 		expect(portfolioDetailPage.page.url()).toContain(
 			`/portfolios/${portfolio.id}`,
 		);
@@ -89,7 +103,7 @@ testWithData(
 
 		await test.step(`Search for portfolio ${portfolio.name}`, async () => {
 			await overviewPage.search(portfolio.name);
-			const portfolioLink = await overviewPage.getPortfolioLink(portfolio);
+			const portfolioLink = await overviewPage.getPortfolioLink(portfolio.name);
 
 			await expect(portfolioLink).not.toBeVisible();
 		});
@@ -110,7 +124,7 @@ testWithData(
 		await test.step(`Search for portfolio ${portfolio.name}`, async () => {
 			await overviewPage.search(portfolio.name);
 
-			const portfolioLink = await overviewPage.getPortfolioLink(portfolio);
+			const portfolioLink = await overviewPage.getPortfolioLink(portfolio.name);
 			await expect(portfolioLink).toBeVisible();
 		});
 	},

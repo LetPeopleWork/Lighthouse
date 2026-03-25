@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DemoDataPage } from "../teams/DemoDataPage";
+import { DatabaseManagementPage } from "./DatabaseManagement/DatabaseManagementPage";
 import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
 import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
 
@@ -26,5 +27,11 @@ export class SettingsPage {
 		await this.page.getByTestId("system-info-tab").click();
 
 		return new SystemInfoPage(this.page);
+	}
+
+	async goToDatabaseManagement(): Promise<DatabaseManagementPage> {
+		await this.page.getByTestId("database-tab").click();
+
+		return new DatabaseManagementPage(this.page);
 	}
 }

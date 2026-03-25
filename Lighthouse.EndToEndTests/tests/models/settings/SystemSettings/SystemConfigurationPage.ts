@@ -154,12 +154,6 @@ export class SystemConfigurationPage {
 		});
 	}
 
-	get lighthouseConfiguration(): Locator {
-		return this.page.getByText(
-			"Lighthouse ConfigurationExport ConfigurationImport Configuration",
-		);
-	}
-
 	get terminologyConfiguration(): Locator {
 		return this.page.getByText("Terminology ConfigurationUse");
 	}

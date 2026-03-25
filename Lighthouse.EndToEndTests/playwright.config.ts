@@ -6,6 +6,7 @@ export class TestConfig {
 	static readonly JIRATOKENNAME: string = "JiraLighthouseIntegrationTestToken";
 	static readonly LIGHTHOUSEURLNAME: string = "LIGHTHOUSEURL";
 	static readonly LINEARAPITOKENNAME: string = "LinearAPIKey";
+	static readonly BACKUPPASSWORDNAME: string = "LighthouseBackupPassword";
 
 	private static getEnvVariable(name: string, defaultValue: string): string {
 		const value = process.env[name];
@@ -35,6 +36,10 @@ export class TestConfig {
 
 	public static get LinearApiKey(): string {
 		return TestConfig.getEnvVariable(TestConfig.LINEARAPITOKENNAME, "");
+	}
+
+	public static get BackupPassword(): string {
+		return TestConfig.getEnvVariable(TestConfig.BACKUPPASSWORDNAME, "");
 	}
 }
 
