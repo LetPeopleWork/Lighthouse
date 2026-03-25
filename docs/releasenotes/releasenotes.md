@@ -61,6 +61,8 @@ These icons were part of the *Name* column, and thus you could not search and/or
 - Warnings
 - Active Work in Progress
 
+![New Feature Columns](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/FeatureWarningColumn.png)
+
 Furthermore, the following change was made to the *Hide Completed* functionality. Previously, it only filtered by Feature state. So if your Feature was in a done state, it would not be displayed anymore. Now, next to this filter, it also checks the remaining work. If the Feature is in a done state, but has child items that are not done yet, it will still be displayed. Furthermore, in this scenario, we also display a warning (in the new column), as this is an indicator that something is wrong. This is important as having remaining items will impact your forecast, so either the Feature state is wrong, or the child items were not update. The warning is a nudge to *get your backlog in order*.
 
 ## Other Improvements and Bug Fixes
