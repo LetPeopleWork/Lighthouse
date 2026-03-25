@@ -21,5 +21,8 @@ General application settings that affect the overall Lighthouse behavior, includ
 ### [Demo Data](demodata.html)
 Load sample scenarios to explore Lighthouse features or for training purposes. Various scenarios are available covering different team situations and use cases.
 
+### [Database Management](databasemanagement.html)
+Backup, Restore, and Clear your database.
+
 ### [System Info](systeminfo.html)
 Access detailed information about your system as well as logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.

@@ -8,6 +8,8 @@ nav_order: 2
 # Configuration
 The Configuration Page shows some generally applicable settings that affect the overall Lighthouse behaviour.
 
+![Configuration Overview](../assets/settings/configuration.png)
+
 ## Blackout Periods
 Blackout periods let you mark specific dates or date ranges as *non-working days* — for example, public holidays, company off-days, or planned shutdowns.
 

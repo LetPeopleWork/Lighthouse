@@ -28,6 +28,31 @@ Blackout periods are configured globally in *System Settings* → *Configuration
 
 ![Throughput with Blackout](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/blackoutPeriodsSection.png)
 
+## Database Management
+
+Lighthouse now includes built-in **Database Management** capabilities, available under *System Settings* → *Database Management*. You can create encrypted backups of your database, restore from a previous backup, or clear all data — directly from the UI or via the REST API.
+
+**Key capabilities:**
+
+- **Backup**: Creates an AES-encrypted ZIP archive of your database. The backup is password-protected using PBKDF2 key derivation (SHA-256, 100 000 iterations). Downloads are available as a single file.
+- **Restore**: Upload a previously created backup to replace the current database. Lighthouse automatically restarts after a successful restore to ensure all services pick up the new data.
+- **Clear**: Removes all data from the database and restarts the application, giving you a clean slate.
+
+![Database Management](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/databasemanagement.png)
+
+**Provider support:**
+
+| Provider | Backup format | Requirements |
+|---|---|---|
+| SQLite | Raw database files | None — works out of the box |
+| PostgreSQL | `pg_dump` / `pg_restore` | `postgresql-client` tools must be installed (included in the official Docker image) |
+
+**Operational notes:**
+
+- After a *Restore* or *Clear* operation, Lighthouse restarts automatically. The UI will show a brief offline indicator and reconnect once the backend is back.
+- While a database operation is in progress, all other data-modifying operations (team updates, forecasts, etc.) are blocked to prevent data corruption.
+- Backup passwords are never stored — keep them in a safe place.
+
 
 # Lighthouse v26.3.20.4
 
