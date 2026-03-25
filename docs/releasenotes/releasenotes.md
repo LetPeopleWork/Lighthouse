@@ -7,7 +7,6 @@ nav_order: 95
 # Lighthouse vNext
 
 ## Blackout Periods
-
 Lighthouse now supports **Blackout Periods** — a way to mark specific dates or date ranges as non-working days directly in your configuration. Common use cases include public holidays, company off-days, or any planned period where your team is not delivering work.
 
 Blackout periods affect Lighthouse in two key areas:
@@ -30,13 +29,15 @@ Blackout periods are configured globally in *System Settings* → *Configuration
 
 ## Database Management
 
-Lighthouse now includes built-in **Database Management** capabilities, available under *System Settings* → *Database Management*. You can create encrypted backups of your database, restore from a previous backup, or clear all data — directly from the UI or via the REST API.
+Lighthouse now includes built-in **Database Management** capabilities, available under *System Settings* → *Database Management*. You can create encrypted backups of your database, restore from a previous backup, or clear all data — directly from the UI.
+
+⚠️ **This feature is replacing the previously used Configuration Export/Import mechanism. Please be aware that your exported configurations cannot be loaded anymore with this version ** ⚠️
 
 **Key capabilities:**
 
 - **Backup**: Creates an AES-encrypted ZIP archive of your database. The backup is password-protected using PBKDF2 key derivation (SHA-256, 100 000 iterations). Downloads are available as a single file.
-- **Restore**: Upload a previously created backup to replace the current database. Lighthouse automatically restarts after a successful restore to ensure all services pick up the new data.
-- **Clear**: Removes all data from the database and restarts the application, giving you a clean slate.
+- **Restore**: Upload a previously created backup to replace the current database.
+- **Clear**: Removes all data from the database, giving you a clean slate.
 
 ![Database Management](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/databasemanagement.png)
 
@@ -48,10 +49,31 @@ Lighthouse now includes built-in **Database Management** capabilities, available
 | PostgreSQL | `pg_dump` / `pg_restore` | `postgresql-client` tools must be installed (included in the official Docker image) |
 
 **Operational notes:**
-
-- After a *Restore* or *Clear* operation, Lighthouse restarts automatically. The UI will show a brief offline indicator and reconnect once the backend is back.
 - While a database operation is in progress, all other data-modifying operations (team updates, forecasts, etc.) are blocked to prevent data corruption.
 - Backup passwords are never stored — keep them in a safe place.
+
+## Restructure Feature View
+The feature  view used to have icon indicators for:
+- Using the default size instead of the real number of child items
+- Being actively worked on by a team
+
+These icons were part of the *Name* column, and thus you could not search and/or sort by them. With this release, we introduced dedicated columns for:
+- Warnings
+- Active Work in Progress
+
+Furthermore, the following change was made to the *Hide Completed* functionality. Previously, it only filtered by Feature state. So if your Feature was in a done state, it would not be displayed anymore. Now, next to this filter, it also checks the remaining work. If the Feature is in a done state, but has child items that are not done yet, it will still be displayed. Furthermore, in this scenario, we also display a warning (in the new column), as this is an indicator that something is wrong. This is important as having remaining items will impact your forecast, so either the Feature state is wrong, or the child items were not update. The warning is a nudge to *get your backlog in order*.
+
+## Other Improvements and Bug Fixes
+- In the previous versions, you could enable the *MCP Feature* without a license. During startup, it was crashing as it should only be available with a license, effectively logging users out. This is now handled, so that enabling the feature is only allowed with a license, and if you somehow get into the other state anyway, Lighthouse will still manage to start.
+- Updated various third party dependencies
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- [Manuel Opitz](https://www.linkedin.com/in/manuel-opitz-3812351a9/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.20.4...v26.3.20.4)
 
 
 # Lighthouse v26.3.20.4
