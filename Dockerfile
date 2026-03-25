@@ -46,9 +46,18 @@ RUN dotnet publish "./Lighthouse.Backend/Lighthouse.Backend.csproj" \
 FROM base AS final
 WORKDIR /app
 
-# Install PostgreSQL client tools for database management operations
+# Install the latest PostgreSQL client tools from the PGDG apt repository.
+# pg_dump is backwards compatible, so the latest client works with any supported server version.
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends curl gnupg \
+	&& curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+		| gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+	&& echo "deb [signed-by=/etc/apt/trusted.gpg.d/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt \
+		$(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+		> /etc/apt/sources.list.d/pgdg.list \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends postgresql-client \
 	&& rm -rf /var/lib/apt/lists/*
 USER app
 

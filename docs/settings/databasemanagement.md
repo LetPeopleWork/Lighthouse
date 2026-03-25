@@ -79,8 +79,8 @@ For PostgreSQL installations, the **postgresql-client** tools (`pg_dump`, `pg_re
 
 If the tools are missing, the UI shows a warning with a link to [postgresql.org/download](https://www.postgresql.org/download/) where you can install them.
 
-**Docker users:** The official Lighthouse Docker image already includes `postgresql-client`. No additional steps are required.
+**Docker users:** The official Lighthouse Docker image installs the latest `postgresql-client` from the [PGDG apt repository](https://apt.postgresql.org). Because `pg_dump` is backwards compatible, the latest client works with any supported PostgreSQL server version. No additional steps are required.
 
-**Self-hosted / bare-metal:** Install the `postgresql-client` package appropriate for your operating system. The major version of the client tools does not need to match your PostgreSQL server version exactly, but it is recommended to keep them reasonably aligned.
+**Self-hosted / bare-metal:** Install `postgresql-client` from your OS package manager. If you hit a version mismatch error, install a newer client from the [PGDG repository](https://apt.postgresql.org) to ensure the client version is greater than or equal to the server version.
 
 The exact version detected on the server is displayed on the page next to the provider name when tooling is available.
