@@ -93,7 +93,7 @@ describe("useAuthGuard", () => {
 		});
 	});
 
-	it("should resolve to authenticated when auth is blocked and session is valid", async () => {
+	it("should resolve to blocked when auth is blocked and session is valid", async () => {
 		const mockService = createMockAuthService({
 			getRuntimeAuthStatus: vi
 				.fn()
@@ -107,7 +107,7 @@ describe("useAuthGuard", () => {
 		const { result } = renderHook(() => useAuthGuard(mockService));
 
 		await waitFor(() => {
-			expect(result.current.shell).toBe("authenticated");
+			expect(result.current.shell).toBe("blocked");
 		});
 	});
 

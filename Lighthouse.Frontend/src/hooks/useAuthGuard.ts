@@ -12,7 +12,8 @@ export type AuthShell =
 	| "login"
 	| "authenticated"
 	| "misconfigured"
-	| "session-expired";
+	| "session-expired"
+	| "blocked";
 
 export interface AuthGuardState {
 	shell: AuthShell;
@@ -32,6 +33,7 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 	const [misconfigurationMessage, setMisconfigurationMessage] =
 		useState<string>();
 	const wasAuthenticated = useRef(false);
+	const resolvedMode = useRef<AuthMode | undefined>(undefined);
 	const sessionCheckTimer = useRef<ReturnType<typeof setInterval> | undefined>(
 		undefined,
 	);
@@ -45,7 +47,11 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 
 			if (sessionStatus.isAuthenticated) {
 				wasAuthenticated.current = true;
-				setShell("authenticated");
+				setShell(
+					resolvedMode.current === AuthMode.Blocked
+						? "blocked"
+						: "authenticated",
+				);
 			} else if (wasAuthenticated.current) {
 				setShell("session-expired");
 				if (sessionCheckTimer.current) {
@@ -72,6 +78,7 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 				const status = await authService.getRuntimeAuthStatus();
 				if (cancelled) return;
 				setRuntimeStatus(status);
+				resolvedMode.current = status.mode;
 
 				switch (status.mode) {
 					case AuthMode.Disabled:

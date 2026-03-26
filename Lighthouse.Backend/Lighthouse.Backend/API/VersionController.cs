@@ -1,12 +1,14 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Distribution;
 using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class VersionController : ControllerBase
     {
         private readonly ILighthouseReleaseService lighthouseReleaseService;

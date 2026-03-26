@@ -11,6 +11,7 @@ import {
 	Routes,
 	useParams,
 } from "react-router-dom";
+import BlockedPage from "./components/App/Auth/BlockedPage";
 import LoginPage from "./components/App/Auth/LoginPage";
 import MisconfiguredPage from "./components/App/Auth/MisconfiguredPage";
 import SessionExpiredPage from "./components/App/Auth/SessionExpiredPage";
@@ -110,6 +111,11 @@ const App: React.FC = () => {
 		apiServices.authService,
 	);
 
+	// Re-bootstrap auth state after a blocked-mode license import
+	const handleBlockedLicenseImported = () => {
+		globalThis.location.reload();
+	};
+
 	// --- 3. Splashscreen UI ---
 	// Show until BOTH the backend is ready AND the minimum display time has passed
 	if (!isBackendReady || !minTimeElapsed) {
@@ -132,6 +138,16 @@ const App: React.FC = () => {
 
 	if (shell === "session-expired") {
 		return <SessionExpiredPage loginUrl={loginUrl} />;
+	}
+
+	if (shell === "blocked") {
+		return (
+			<BlockedPage
+				licensingService={apiServices.licensingService}
+				onLicenseImported={handleBlockedLicenseImported}
+				onLogout={logout}
+			/>
+		);
 	}
 
 	// shell is "anonymous" or "authenticated" — render the normal app
