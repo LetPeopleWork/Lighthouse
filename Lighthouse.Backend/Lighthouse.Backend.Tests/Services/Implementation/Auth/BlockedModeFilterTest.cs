@@ -38,8 +38,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 return Task.FromResult(new ActionExecutedContext(context, [], null!));
             });
 
-            Assert.That(nextCalled, Is.True);
-            Assert.That(context.Result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nextCalled, Is.True);
+                Assert.That(context.Result, Is.Null);
+            }
         }
 
         [Test]
@@ -55,8 +58,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 return Task.FromResult(new ActionExecutedContext(context, [], null!));
             });
 
-            Assert.That(nextCalled, Is.True);
-            Assert.That(context.Result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nextCalled, Is.True);
+                Assert.That(context.Result, Is.Null);
+            }
         }
 
         [Test]
@@ -72,8 +78,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 return Task.FromResult(new ActionExecutedContext(context, [], null!));
             });
 
-            Assert.That(nextCalled, Is.True);
-            Assert.That(context.Result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nextCalled, Is.True);
+                Assert.That(context.Result, Is.Null);
+            }
         }
 
         [Test]
@@ -89,8 +98,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 return Task.FromResult(new ActionExecutedContext(context, [], null!));
             });
 
-            Assert.That(nextCalled, Is.True);
-            Assert.That(context.Result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nextCalled, Is.True);
+                Assert.That(context.Result, Is.Null);
+            }
         }
 
         [Test]
@@ -106,8 +118,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 return Task.FromResult(new ActionExecutedContext(context, [], null!));
             });
 
-            Assert.That(nextCalled, Is.True);
-            Assert.That(context.Result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nextCalled, Is.True);
+                Assert.That(context.Result, Is.Null);
+            }
         }
 
         [Test]
@@ -174,8 +189,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 return Task.FromResult(new ActionExecutedContext(context, [], null!));
             });
 
-            Assert.That(nextCalled, Is.True);
-            Assert.That(context.Result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nextCalled, Is.True);
+                Assert.That(context.Result, Is.Null);
+            }
         }
 
         private static ActionExecutingContext CreateContext(string path)

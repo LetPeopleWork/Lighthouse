@@ -369,12 +369,10 @@ namespace Lighthouse.Backend
 
             // Add a fallback authorization policy that requires authenticated users by default.
             // Individual controllers/endpoints can opt out with [AllowAnonymous].
-            builder.Services.AddAuthorization(options =>
-            {
-                options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            builder.Services.AddAuthorizationBuilder()
+                .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
-                    .Build();
-            });
+                    .Build());
 
             // Skip OIDC middleware registration when essential config values are missing.
             // The AuthModeResolver will still return Misconfigured mode so the frontend
