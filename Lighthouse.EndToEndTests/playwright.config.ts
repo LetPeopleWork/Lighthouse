@@ -8,6 +8,9 @@ export class TestConfig {
 	static readonly LINEARAPITOKENNAME: string = "LinearAPIKey";
 	static readonly BACKUPPASSWORDNAME: string = "LighthouseBackupPassword";
 
+	static readonly AUTH_TEST_USER_USERNAME: string = "test@user.com";
+	static readonly AUTH_TEST_USER_PASSWORD: string = "Test123!!?lsdkaflaskdf";
+
 	private static getEnvVariable(name: string, defaultValue: string): string {
 		const value = process.env[name];
 

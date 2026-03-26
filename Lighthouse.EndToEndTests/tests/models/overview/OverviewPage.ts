@@ -159,22 +159,6 @@ export class OverviewPage {
 		return new PortfolioEditPage(this.page);
 	}
 
-	async showLicenseTooltip(): Promise<void> {
-		await this.page.getByTestId("license-status-button").hover();
-		await this.page
-			.getByText("License valid - Click for")
-			.waitFor({ state: "visible" });
-	}
-
-	async showLicensingInformation(): Promise<Locator> {
-		await this.page.getByTestId("license-status-button").click();
-
-		return this.page
-			.locator("div")
-			.filter({ hasText: /Licensed to:/ })
-			.nth(1);
-	}
-
 	get toolbar(): Locator {
 		return this.page.getByText("LighthouseOverviewSystem Settings");
 	}

@@ -7,10 +7,12 @@ import {
 } from "../helpers/api/workTrackingSystemConnections";
 import { generateRandomName } from "../helpers/names";
 import { LighthousePage } from "../models/app/LighthousePage";
+import type { LoginPage } from "../models/auth/LoginPage";
 import type { OverviewPage } from "../models/overview/OverviewPage";
 
 type LighthouseFixtures = {
 	overviewPage: OverviewPage;
+	loginPage: LoginPage;
 };
 
 type LighthouseWithDataFixtures = {
@@ -154,6 +156,15 @@ async function generateTestData(
 		connections: [adoConnection, jiraConnection],
 	};
 }
+
+export const testWithAuth = base.extend<LighthouseFixtures>({
+	loginPage: async ({ page }, use) => {
+		const lighthousePage = new LighthousePage(page);
+		const loginPage = await lighthousePage.openWithAuth();
+
+		await use(loginPage);
+	},
+});
 
 export const test = base.extend<LighthouseFixtures>({
 	overviewPage: async ({ page, request }, use) => {

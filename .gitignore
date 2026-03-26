@@ -424,3 +424,4 @@ tools/codesign/actions-runner/*
 agent-output/*
 Lighthouse.Frontend/src-tauri/resources/*
 Lighthouse.Frontend/src-tauri/binaries/Lighthouse.Backend-*
+Lighthouse.EndToEndTests/tests/fixtures/valid_premium_license.json

@@ -114,7 +114,7 @@ test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
 });
 
 test("Take @screenshot of licensing", async ({ overviewPage }) => {
-	await overviewPage.showLicenseTooltip();
+	await overviewPage.lightHousePage.showLicenseTooltip();
 
 	// Get the bounding box of the toolbar
 	const toolbarBoundingBox = await overviewPage.toolbar.boundingBox();
@@ -136,7 +136,8 @@ test("Take @screenshot of licensing", async ({ overviewPage }) => {
 		});
 	}
 
-	const licensingPopover = await overviewPage.showLicensingInformation();
+	const licensingPopover =
+		await overviewPage.lightHousePage.showLicensingInformation();
 
 	await takeElementScreenshot(
 		licensingPopover,

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "prebuild": "pnpm dlx @biomejs/biome check --write ./tests",
-    "test": "playwright test --grep-invert @screenshot",
+    "test": "playwright test --grep-invert @screenshot|@auth",
+    "test:auth": "playwright test --grep @auth",
     "screenshots": "playwright test --grep @screenshot",
     "test-docker": "pnpm run docker-start && cross-env LIGHTHOUSEURL=https://localhost:8888 cross-env CI=true pnpm run test && pnpm run docker-stop",
     "docker-update": "docker pull ghcr.io/letpeoplework/lighthouse:dev-latest",

@@ -1,4 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
+import { LoginPage } from "../auth/LoginPage";
+import { SessionExpiredPage } from "../auth/SessionExpiredPage";
 import { OverviewPage } from "../overview/OverviewPage";
 import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
 import { SettingsPage } from "../settings/SettingsPage";
@@ -9,6 +11,11 @@ export class LighthousePage {
 
 	constructor(page: Page) {
 		this.page = page;
+	}
+
+	async openWithAuth(): Promise<LoginPage> {
+		await this.page.goto("/");
+		return new LoginPage(this.page);
 	}
 
 	async open(): Promise<OverviewPage> {
@@ -95,6 +102,41 @@ export class LighthousePage {
 			);
 			await raiseGitHubIssueButton.click();
 		});
+	}
+
+	async clearCookies(): Promise<SessionExpiredPage> {
+		await this.page.context().clearCookies();
+		return new SessionExpiredPage(this.page);
+	}
+
+	async showLicenseTooltip(): Promise<void> {
+		await this.page.getByTestId("license-status-button").hover();
+		await this.page
+			.getByText("License valid - Click for")
+			.waitFor({ state: "visible" });
+	}
+
+	async showLicensingInformation(): Promise<Locator> {
+		await this.page.getByTestId("license-status-button").click();
+
+		return this.page
+			.locator("div")
+			.filter({ hasText: /Licensed to:/ })
+			.nth(1);
+	}
+
+	async clearLicense(): Promise<void> {
+		await this.showLicensingInformation();
+
+		await this.page.getByRole("button", { name: "Clear License" }).click();
+
+		// Confirmation Dialog
+		await this.page.getByRole("button", { name: "Clear License" }).click();
+	}
+
+	async logout(): Promise<LoginPage> {
+		await this.page.getByTestId("logout-button").click();
+		return new LoginPage(this.page);
 	}
 
 	private GetContributorsButton(): Locator {
