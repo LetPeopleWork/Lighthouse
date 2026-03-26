@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 
             if (!config.Enabled)
             {
-                logger.LogInformation("Authentication is disabled by configuration");
+                logger.LogDebug("Authentication is disabled by configuration");
                 return new RuntimeAuthStatus { Mode = AuthMode.Disabled };
             }
 
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return new RuntimeAuthStatus { Mode = AuthMode.Blocked };
             }
 
-            logger.LogInformation("Authentication is enabled and configured correctly with valid Premium licensing");
+            logger.LogDebug("Authentication is enabled and configured correctly with valid Premium licensing");
             return new RuntimeAuthStatus { Mode = AuthMode.Enabled };
         }
     }

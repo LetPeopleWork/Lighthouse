@@ -1,0 +1,20 @@
+name: keycloak-stack
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: lighthouse-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 38080
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm.json
+    ports:
+      - "38080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/live HTTP/1.1\\r\\n\\r\\n' >&3 && cat <&3"]
+      interval: 10s
+      retries: 5

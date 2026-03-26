@@ -427,7 +427,7 @@ namespace Lighthouse.Backend
                 options.ClientSecret = authConfig.ClientSecret;
                 options.ResponseType = "code";
                 options.UsePkce = true;
-                options.SaveTokens = false;
+                options.SaveTokens = true;
                 options.GetClaimsFromUserInfoEndpoint = true;
                 options.CallbackPath = authConfig.CallbackPath;
                 options.SignedOutCallbackPath = authConfig.SignedOutCallbackPath;
