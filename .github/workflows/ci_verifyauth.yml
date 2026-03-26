@@ -133,7 +133,7 @@ jobs:
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-sqlite
+          name: playwright-report-auth
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
