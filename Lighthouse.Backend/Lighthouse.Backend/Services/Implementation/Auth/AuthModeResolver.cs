@@ -61,7 +61,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return new RuntimeAuthStatus { Mode = AuthMode.Blocked };
             }
 
-            logger.LogDebug("Authentication is enabled and configured correctly with valid Premium licensing");
             return new RuntimeAuthStatus { Mode = AuthMode.Enabled };
         }
     }

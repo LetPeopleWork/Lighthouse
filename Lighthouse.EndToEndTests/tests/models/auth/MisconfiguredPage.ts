@@ -7,9 +7,7 @@ export class MisconfiguredPage {
 
 	constructor(page: Page) {
 		this.page = page;
-		this.container = page.getByRole("heading", {
-			name: "Authentication Misconfigured",
-		});
+		this.container = page.getByTestId("misconfigured-page");
 		this.message = page.getByTestId("misconfigured-message");
 	}
 }

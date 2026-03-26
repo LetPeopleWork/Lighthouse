@@ -2,6 +2,7 @@ import path from "node:path";
 import test from "@playwright/test";
 import { TestConfig } from "../../../playwright.config";
 import { expect, testWithAuth } from "../../fixutres/LighthouseFixture";
+import { takeDialogScreenshot as takeElementScreenshot } from "../../helpers/screenshots";
 import { LighthousePage } from "../../models/app/LighthousePage";
 import { BlockedPage } from "../../models/auth/BlockedPage";
 import type { LoginPage } from "../../models/auth/LoginPage";
@@ -76,6 +77,11 @@ test.describe("@Auth E2E", () => {
 		async ({ loginPage }) => {
 			await expect(loginPage.container).toBeVisible();
 			await expect(loginPage.signInButton).toBeVisible();
+
+			await takeElementScreenshot(
+				loginPage.container,
+				"authentication/signin.png",
+			);
 		},
 	);
 
@@ -86,6 +92,11 @@ test.describe("@Auth E2E", () => {
 			await expect(blockedPage.container).toBeVisible();
 			await expect(blockedPage.uploadButton).toBeVisible();
 			await expect(blockedPage.logoutButton).toBeVisible();
+
+			await takeElementScreenshot(
+				blockedPage.container,
+				"authentication/blocked.png",
+			);
 		},
 	);
 
@@ -145,6 +156,11 @@ test.describe("@Auth E2E", () => {
 
 			await expect(sessionExpiredPage.container).toBeVisible();
 			await expect(sessionExpiredPage.signInAgainButton).toBeVisible();
+
+			await takeElementScreenshot(
+				sessionExpiredPage.container,
+				"authentication/session_expired.png",
+			);
 		},
 	);
 
@@ -167,6 +183,11 @@ test.describe("@Auth E2E", () => {
 
 			await expect(misconfiguredPage.container).toBeVisible();
 			await expect(misconfiguredPage.message).toContainText("Authority");
+
+			await takeElementScreenshot(
+				misconfiguredPage.container,
+				"authentication/misconfigured.png",
+			);
 		},
 	);
 });
