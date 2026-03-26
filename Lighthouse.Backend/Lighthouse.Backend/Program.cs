@@ -36,8 +36,11 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Text;
 using Lighthouse.Backend.Services.Implementation.Seeding;
+using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Standalone;
 
 namespace Lighthouse.Backend
@@ -363,6 +366,11 @@ namespace Lighthouse.Backend
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
+
+            // Authentication
+            builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));
+            builder.Services.AddSingleton<IAuthConfigurationValidator, AuthConfigurationValidator>();
+            builder.Services.AddScoped<IAuthModeResolver, AuthModeResolver>();
 
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();
