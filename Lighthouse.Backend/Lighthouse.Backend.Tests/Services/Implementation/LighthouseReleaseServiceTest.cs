@@ -225,8 +225,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var subject = CreateSubject();
                 subject.RemoveOperatorConfigFiles(tempDir);
 
-                Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.json")), Is.False);
-                Assert.That(File.Exists(Path.Combine(tempDir, "Lighthouse.dll")), Is.True);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.json")), Is.False);
+                    Assert.That(File.Exists(Path.Combine(tempDir, "Lighthouse.dll")), Is.True);
+                }
             }
             finally
             {
@@ -248,8 +251,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var subject = CreateSubject();
                 subject.RemoveOperatorConfigFiles(tempDir);
 
-                Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.json")), Is.False);
-                Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.Development.json")), Is.False);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.json")), Is.False);
+                    Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.Development.json")), Is.False);
+                }
             }
             finally
             {
@@ -271,8 +277,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var subject = CreateSubject();
                 subject.RemoveOperatorConfigFiles(tempDir);
 
-                Assert.That(File.Exists(Path.Combine(tempDir, "Lighthouse.dll")), Is.True);
-                Assert.That(File.Exists(Path.Combine(tempDir, "wwwroot.txt")), Is.True);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(File.Exists(Path.Combine(tempDir, "Lighthouse.dll")), Is.True);
+                    Assert.That(File.Exists(Path.Combine(tempDir, "wwwroot.txt")), Is.True);
+                }
             }
             finally
             {
