@@ -23,6 +23,7 @@ export const createMockApiServiceContext = (
 	overrides: Partial<IApiServiceContext>,
 ): IApiServiceContext => {
 	return {
+		authService: null as unknown as IApiServiceContext["authService"],
 		forecastService: null as unknown as IApiServiceContext["forecastService"],
 		logService: null as unknown as IApiServiceContext["logService"],
 		portfolioService: null as unknown as IApiServiceContext["portfolioService"],

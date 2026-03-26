@@ -4,6 +4,7 @@ import {
 	type IUpdateSubscriptionService,
 	UpdateSubscriptionService,
 } from "../UpdateSubscriptionService";
+import { AuthService, type IAuthService } from "./AuthService";
 import {
 	BlackoutPeriodService,
 	type IBlackoutPeriodService,
@@ -51,6 +52,7 @@ import {
 } from "./WorkTrackingSystemService";
 
 export interface IApiServiceContext {
+	authService: IAuthService;
 	forecastService: IForecastService;
 	logService: ILogService;
 	portfolioService: IPortfolioService;
@@ -79,6 +81,7 @@ const initializeUpdateSubscriptionService = async () => {
 };
 
 const defaultServices: IApiServiceContext = {
+	authService: new AuthService(),
 	forecastService: new ForecastService(),
 	logService: new LogService(),
 	portfolioService: new PortfolioService(),

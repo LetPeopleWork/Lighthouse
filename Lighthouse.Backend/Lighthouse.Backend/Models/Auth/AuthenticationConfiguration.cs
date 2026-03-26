@@ -15,5 +15,13 @@ namespace Lighthouse.Backend.Models.Auth
         public string SignedOutCallbackPath { get; init; } = "/api/auth/signout-callback";
 
         public IReadOnlyList<string> Scopes { get; init; } = ["openid", "profile", "email"];
+
+        public IReadOnlyList<string> AllowedOrigins { get; init; } = [];
+
+        public int SessionLifetimeMinutes { get; init; } = 480;
+
+        public IReadOnlyList<string> TrustedProxies { get; init; } = [];
+
+        public IReadOnlyList<string> TrustedNetworks { get; init; } = [];
     }
 }

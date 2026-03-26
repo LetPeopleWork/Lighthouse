@@ -38,8 +38,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = subject.Resolve();
 
-            Assert.That(result.Mode, Is.EqualTo(AuthMode.Disabled));
-            Assert.That(result.MisconfigurationMessage, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Mode, Is.EqualTo(AuthMode.Disabled));
+                Assert.That(result.MisconfigurationMessage, Is.Null);
+            }
+
         }
 
         [Test]
@@ -53,8 +57,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = subject.Resolve();
 
-            Assert.That(result.Mode, Is.EqualTo(AuthMode.Enabled));
-            Assert.That(result.MisconfigurationMessage, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Mode, Is.EqualTo(AuthMode.Enabled));
+                Assert.That(result.MisconfigurationMessage, Is.Null);
+            }
+
         }
 
         [Test]
@@ -68,8 +76,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = subject.Resolve();
 
-            Assert.That(result.Mode, Is.EqualTo(AuthMode.Blocked));
-            Assert.That(result.MisconfigurationMessage, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Mode, Is.EqualTo(AuthMode.Blocked));
+                Assert.That(result.MisconfigurationMessage, Is.Null);
+            }
         }
 
         [Test]
@@ -82,8 +93,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = subject.Resolve();
 
-            Assert.That(result.Mode, Is.EqualTo(AuthMode.Misconfigured));
-            Assert.That(result.MisconfigurationMessage, Is.EqualTo("Authority is required"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Mode, Is.EqualTo(AuthMode.Misconfigured));
+                Assert.That(result.MisconfigurationMessage, Is.EqualTo("Authority is required"));
+            }
         }
 
         [Test]

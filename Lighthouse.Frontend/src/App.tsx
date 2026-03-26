@@ -11,9 +11,13 @@ import {
 	Routes,
 	useParams,
 } from "react-router-dom";
+import LoginPage from "./components/App/Auth/LoginPage";
+import MisconfiguredPage from "./components/App/Auth/MisconfiguredPage";
+import SessionExpiredPage from "./components/App/Auth/SessionExpiredPage";
 import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
 import SplashScreen from "./components/App/SplashScreen/SplashScreen";
+import { useAuthGuard } from "./hooks/useAuthGuard";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
@@ -101,13 +105,36 @@ const App: React.FC = () => {
 		return () => unlistenFn?.();
 	}, [isTauri]);
 
-	// --- 2. Splashscreen UI ---
+	// --- 2. Auth Guard ---
+	const { shell, loginUrl, misconfigurationMessage } = useAuthGuard(
+		apiServices.authService,
+	);
+
+	// --- 3. Splashscreen UI ---
 	// Show until BOTH the backend is ready AND the minimum display time has passed
 	if (!isBackendReady || !minTimeElapsed) {
 		return <SplashScreen />;
 	}
 
-	// --- 3. Main App UI ---
+	// --- 4. Auth Shell Selection ---
+	// Ensure protected content does not render before auth state is known
+	if (shell === "loading") {
+		return <SplashScreen />;
+	}
+
+	if (shell === "login") {
+		return <LoginPage loginUrl={loginUrl} />;
+	}
+
+	if (shell === "misconfigured") {
+		return <MisconfiguredPage message={misconfigurationMessage} />;
+	}
+
+	if (shell === "session-expired") {
+		return <SessionExpiredPage loginUrl={loginUrl} />;
+	}
+
+	// shell is "anonymous" or "authenticated" — render the normal app
 	return (
 		<QueryClientProvider client={queryClient}>
 			<Router>

@@ -47,8 +47,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            }
+
         }
 
         [Test]
@@ -59,8 +63,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("ClientId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("ClientId"));
+            }
+
         }
 
         [Test]
@@ -71,8 +79,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            }
+
         }
 
         [Test]
@@ -83,8 +95,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("ClientId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("ClientId"));
+            }
+
         }
 
         [Test]
@@ -95,8 +111,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            }
+
         }
 
         [Test]
@@ -107,8 +127,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("HTTPS"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("HTTPS"));
+            }
+
         }
 
         [Test]
@@ -130,8 +154,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("Scopes"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Scopes"));
+            }
+
         }
 
         [Test]
@@ -142,8 +170,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = validator.Validate(config);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.ErrorReason, Does.Contain("openid"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("openid"));
+            }
+
         }
 
         private static AuthConfigurationValidator CreateSubject()

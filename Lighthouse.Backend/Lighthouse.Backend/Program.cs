@@ -167,6 +167,8 @@ namespace Lighthouse.Backend
                 app.UseHsts();
             }
 
+            app.UseForwardedHeaders();
+
             app.UseCors("AllowAll");
 
             app.UseSwagger();
@@ -180,6 +182,7 @@ namespace Lighthouse.Backend
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
@@ -247,17 +250,13 @@ namespace Lighthouse.Backend
 
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
+            var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationConfiguration>() ?? new AuthenticationConfiguration();
+
+            ConfigureCors(builder, authConfig);
+            ConfigureForwardedHeaders(builder, authConfig);
+            ConfigureAuthentication(builder, authConfig);
+
             builder.Services
-                .AddCors(options =>
-                {
-                    options.AddPolicy("AllowAll",
-                      corsPolicyBuilder =>
-                      {
-                          corsPolicyBuilder.AllowAnyOrigin()
-                               .AllowAnyMethod()
-                               .AllowAnyHeader();
-                      });
-                })
                 .AddControllers().AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -290,6 +289,133 @@ namespace Lighthouse.Backend
                 MaxConnectionsPerServer = 100,
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 EnableMultipleHttp2Connections = true
+            });
+        }
+
+        private static void ConfigureCors(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
+        {
+            if (authConfig.Enabled && authConfig.AllowedOrigins.Count > 0)
+            {
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowAll", corsPolicyBuilder =>
+                    {
+                        corsPolicyBuilder
+                            .WithOrigins(authConfig.AllowedOrigins.ToArray())
+                            .AllowAnyMethod()
+                            .AllowAnyHeader()
+                            .AllowCredentials();
+                    });
+                });
+            }
+            else
+            {
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowAll", corsPolicyBuilder =>
+                    {
+                        corsPolicyBuilder
+                            .AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+                    });
+                });
+            }
+        }
+
+        private static void ConfigureForwardedHeaders(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
+        {
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                    Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto |
+                    Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost;
+
+                foreach (var proxy in authConfig.TrustedProxies)
+                {
+                    if (IPAddress.TryParse(proxy, out var ip))
+                    {
+                        options.KnownProxies.Add(ip);
+                    }
+                }
+
+                foreach (var network in authConfig.TrustedNetworks)
+                {
+                    var parts = network.Split('/');
+                    if (parts.Length == 2
+                        && IPAddress.TryParse(parts[0], out var prefix)
+                        && int.TryParse(parts[1], out var prefixLength))
+                    {
+                        options.KnownIPNetworks.Add(new IPNetwork(prefix, prefixLength));
+                    }
+                }
+            });
+        }
+
+        private static void ConfigureAuthentication(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
+        {
+            if (!authConfig.Enabled)
+            {
+                return;
+            }
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme;
+            })
+            .AddCookie(options =>
+            {
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.Name = ".Lighthouse.Session";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(authConfig.SessionLifetimeMinutes);
+                options.SlidingExpiration = true;
+
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = 401;
+                        return Task.CompletedTask;
+                    }
+
+                    context.Response.Redirect(context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = 403;
+                        return Task.CompletedTask;
+                    }
+
+                    context.Response.Redirect(context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+            })
+            .AddOpenIdConnect(options =>
+            {
+                options.Authority = authConfig.Authority;
+                options.ClientId = authConfig.ClientId;
+                options.ClientSecret = authConfig.ClientSecret;
+                options.ResponseType = "code";
+                options.UsePkce = true;
+                options.SaveTokens = false;
+                options.GetClaimsFromUserInfoEndpoint = true;
+                options.CallbackPath = authConfig.CallbackPath;
+                options.SignedOutCallbackPath = authConfig.SignedOutCallbackPath;
+                options.MapInboundClaims = false;
+
+                options.Scope.Clear();
+                foreach (var scope in authConfig.Scopes)
+                {
+                    options.Scope.Add(scope);
+                }
             });
         }
 
