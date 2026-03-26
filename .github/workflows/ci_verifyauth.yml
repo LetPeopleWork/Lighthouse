@@ -124,7 +124,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
   
       - name: Run Playwright tests
-        run: pnpm run test
+        run: pnpm run test:auth
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
