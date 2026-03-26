@@ -23,7 +23,7 @@ jobs:
 
       - name: Run keycloak
         run: |
-          docker-compose up -d
+          docker compose up -d
         working-directory: ./examples/keycloak
 
       - name: Enable Corepack and prepare pnpm

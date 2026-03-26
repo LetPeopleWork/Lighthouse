@@ -10,10 +10,10 @@ import { OverviewPage } from "../../models/overview/OverviewPage";
 
 const LICENSE_FILE_PATH = path.join(
 	process.cwd(),
-    "..",
-    "Lighthouse.Backend",
-    "Lighthouse.Backend.Tests",
-    "Services",
+	"..",
+	"Lighthouse.Backend",
+	"Lighthouse.Backend.Tests",
+	"Services",
 	"Implementation",
 	"Licensing",
 	"valid_not_expired_license.json",
