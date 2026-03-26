@@ -211,6 +211,95 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public void RemoveOperatorConfigFiles_RemovesAppSettingsJson()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"lighthouse_test_{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "appsettings.json"), "{}");
+                File.WriteAllText(Path.Combine(tempDir, "Lighthouse.dll"), "binary");
+
+                var subject = CreateSubject();
+                subject.RemoveOperatorConfigFiles(tempDir);
+
+                Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.json")), Is.False);
+                Assert.That(File.Exists(Path.Combine(tempDir, "Lighthouse.dll")), Is.True);
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Test]
+        public void RemoveOperatorConfigFiles_RemovesAppSettingsDevelopmentJson()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"lighthouse_test_{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "appsettings.json"), "{}");
+                File.WriteAllText(Path.Combine(tempDir, "appsettings.Development.json"), "{}");
+
+                var subject = CreateSubject();
+                subject.RemoveOperatorConfigFiles(tempDir);
+
+                Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.json")), Is.False);
+                Assert.That(File.Exists(Path.Combine(tempDir, "appsettings.Development.json")), Is.False);
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Test]
+        public void RemoveOperatorConfigFiles_DoesNotRemoveNonConfigFiles()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"lighthouse_test_{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "Lighthouse.dll"), "binary");
+                File.WriteAllText(Path.Combine(tempDir, "wwwroot.txt"), "content");
+
+                var subject = CreateSubject();
+                subject.RemoveOperatorConfigFiles(tempDir);
+
+                Assert.That(File.Exists(Path.Combine(tempDir, "Lighthouse.dll")), Is.True);
+                Assert.That(File.Exists(Path.Combine(tempDir, "wwwroot.txt")), Is.True);
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Test]
+        public void RemoveOperatorConfigFiles_NoConfigFiles_DoesNotThrow()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"lighthouse_test_{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "Lighthouse.dll"), "binary");
+
+                var subject = CreateSubject();
+
+                Assert.DoesNotThrow(() => subject.RemoveOperatorConfigFiles(tempDir));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
         private LighthouseReleaseService CreateSubject()
         {
             return new LighthouseReleaseService(githubServiceMock.Object, assemblyServiceMock.Object, platformServiceMock.Object, Mock.Of<IProcessService>(), Mock.Of<ILogger<LighthouseReleaseService>>());

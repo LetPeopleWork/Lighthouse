@@ -158,6 +158,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 var extractPath = ExtractAsset(releaseAsset, tempDir, assetPath);
 
+                RemoveOperatorConfigFiles(extractPath);
+
                 var (currentProcess, currentProcessPath, currentProcessDir) = GetProcessInformation();
 
                 if (string.IsNullOrEmpty(currentProcessDir))
@@ -237,6 +239,17 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return extractPath;
+        }
+
+        internal void RemoveOperatorConfigFiles(string extractPath)
+        {
+            var configFiles = Directory.GetFiles(extractPath, "appsettings*.json", SearchOption.TopDirectoryOnly);
+
+            foreach (var configFile in configFiles)
+            {
+                logger.LogInformation("Removing {ConfigFile} from update package to preserve operator configuration", Path.GetFileName(configFile));
+                File.Delete(configFile);
+            }
         }
 
         private async Task<string> DownloadAssetToTempDirectory(LighthouseReleaseAsset releaseAsset, string tempDir)
