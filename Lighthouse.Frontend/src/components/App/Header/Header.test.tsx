@@ -44,7 +44,10 @@ describe("Header component", () => {
 		};
 	});
 
-	const renderHeader = () => {
+	const renderHeader = (props?: {
+		isAuthenticated?: boolean;
+		onLogout?: () => void;
+	}) => {
 		const mockApiContext = createMockApiServiceContext({
 			licensingService: mockLicensingService,
 		});
@@ -53,7 +56,7 @@ describe("Header component", () => {
 			<QueryClientProvider client={queryClient}>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<MemoryRouter>
-						<Header />
+						<Header {...props} />
 					</MemoryRouter>
 				</ApiServiceContext.Provider>
 			</QueryClientProvider>,
@@ -110,5 +113,33 @@ describe("Header component", () => {
 			"aria-label",
 			"Update All Teams and Portfolios",
 		);
+	});
+
+	it("should not render logout button when not authenticated", () => {
+		renderHeader();
+		expect(screen.queryByTestId("logout-button")).not.toBeInTheDocument();
+	});
+
+	it("should render logout button when authenticated with onLogout", () => {
+		renderHeader({ isAuthenticated: true, onLogout: vi.fn() });
+		expect(screen.getByTestId("logout-button")).toBeInTheDocument();
+		expect(screen.getByTestId("logout-button")).toHaveAttribute(
+			"aria-label",
+			"Sign Out",
+		);
+	});
+
+	it("should call onLogout when logout button is clicked", async () => {
+		const user = userEvent.setup();
+		const onLogout = vi.fn();
+		renderHeader({ isAuthenticated: true, onLogout });
+
+		await user.click(screen.getByTestId("logout-button"));
+		expect(onLogout).toHaveBeenCalledOnce();
+	});
+
+	it("should not render logout button when authenticated but no onLogout provided", () => {
+		renderHeader({ isAuthenticated: true });
+		expect(screen.queryByTestId("logout-button")).not.toBeInTheDocument();
 	});
 });

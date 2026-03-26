@@ -1,6 +1,7 @@
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import HelpIcon from "@mui/icons-material/Help";
+import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -22,7 +23,12 @@ import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
 import UpdateAllButton from "./UpdateAllButton";
 
-const Header: React.FC = () => {
+interface HeaderProps {
+	isAuthenticated?: boolean;
+	onLogout?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ isAuthenticated, onLogout }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,6 +67,21 @@ const Header: React.FC = () => {
 			<ListItem>
 				<UpdateAllButton />
 			</ListItem>
+			{isAuthenticated && onLogout && (
+				<ListItem>
+					<Tooltip title="Sign Out" arrow>
+						<IconButton
+							size="large"
+							color="inherit"
+							onClick={onLogout}
+							aria-label="Sign Out"
+							data-testid="logout-button"
+						>
+							<LogoutIcon style={{ color: theme.palette.text.primary }} />
+						</IconButton>
+					</Tooltip>
+				</ListItem>
+			)}
 		</List>
 	);
 
@@ -138,6 +159,19 @@ const Header: React.FC = () => {
 								icon={HelpIcon}
 								tooltip="Documentation"
 							/>
+							{isAuthenticated && onLogout && (
+								<Tooltip title="Sign Out" arrow>
+									<IconButton
+										size="large"
+										color="inherit"
+										onClick={onLogout}
+										aria-label="Sign Out"
+										data-testid="logout-button"
+									>
+										<LogoutIcon style={{ color: theme.palette.primary.main }} />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Box>
 					</>
 				)}

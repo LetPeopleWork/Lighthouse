@@ -360,6 +360,14 @@ namespace Lighthouse.Backend
                 return;
             }
 
+            // Skip OIDC middleware registration when essential config values are missing.
+            // The AuthModeResolver will still return Misconfigured mode so the frontend
+            // can show the appropriate error page without OIDC middleware crashing at runtime.
+            if (string.IsNullOrWhiteSpace(authConfig.Authority) || string.IsNullOrWhiteSpace(authConfig.ClientId))
+            {
+                return;
+            }
+
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
@@ -410,6 +418,7 @@ namespace Lighthouse.Backend
                 options.CallbackPath = authConfig.CallbackPath;
                 options.SignedOutCallbackPath = authConfig.SignedOutCallbackPath;
                 options.MapInboundClaims = false;
+                options.RequireHttpsMetadata = authConfig.RequireHttpsMetadata;
 
                 options.Scope.Clear();
                 foreach (var scope in authConfig.Scopes)

@@ -111,7 +111,7 @@ describe("useAuthGuard", () => {
 		});
 	});
 
-	it("should resolve to anonymous when auth mode fetch fails", async () => {
+	it("should resolve to misconfigured when auth mode fetch fails", async () => {
 		const mockService = createMockAuthService({
 			getRuntimeAuthStatus: vi
 				.fn()
@@ -121,7 +121,10 @@ describe("useAuthGuard", () => {
 		const { result } = renderHook(() => useAuthGuard(mockService));
 
 		await waitFor(() => {
-			expect(result.current.shell).toBe("anonymous");
+			expect(result.current.shell).toBe("misconfigured");
+			expect(result.current.misconfigurationMessage).toBe(
+				"Unable to reach the authentication service. Please verify the server is running and the authentication configuration is correct.",
+			);
 		});
 	});
 

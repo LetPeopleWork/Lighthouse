@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string SignedOutCallbackPath { get; init; } = "/api/auth/signout-callback";
 
+        public bool RequireHttpsMetadata { get; init; } = true;
+
         public IReadOnlyList<string> Scopes { get; init; } = ["openid", "profile", "email"];
 
         public IReadOnlyList<string> AllowedOrigins { get; init; } = [];

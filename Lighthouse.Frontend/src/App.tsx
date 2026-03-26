@@ -106,7 +106,7 @@ const App: React.FC = () => {
 	}, [isTauri]);
 
 	// --- 2. Auth Guard ---
-	const { shell, loginUrl, misconfigurationMessage } = useAuthGuard(
+	const { shell, loginUrl, misconfigurationMessage, logout } = useAuthGuard(
 		apiServices.authService,
 	);
 
@@ -152,7 +152,10 @@ const App: React.FC = () => {
 							}}
 						>
 							<CssBaseline />
-							<Header />
+							<Header
+								isAuthenticated={shell === "authenticated"}
+								onLogout={logout}
+							/>
 							<Box
 								component="main"
 								className="main-content"

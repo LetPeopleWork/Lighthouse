@@ -94,7 +94,10 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 				}
 			} catch {
 				if (!cancelled) {
-					setShell("anonymous");
+					setMisconfigurationMessage(
+						"Unable to reach the authentication service. Please verify the server is running and the authentication configuration is correct.",
+					);
+					setShell("misconfigured");
 				}
 			}
 		};

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return AuthConfigurationValidationResult.Invalid("Authority must be a valid absolute URL.");
             }
 
-            if (!string.Equals(authorityUri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            if (configuration.RequireHttpsMetadata && !string.Equals(authorityUri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
             {
                 return AuthConfigurationValidationResult.Invalid("Authority must use HTTPS.");
             }
