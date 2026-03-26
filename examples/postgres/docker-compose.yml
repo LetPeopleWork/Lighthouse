@@ -17,15 +17,45 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: lighthouse-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_IMPORT_STRATEGY: IGNORE_EXISTING
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm.json
+    ports:
+      - "38080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/live HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep 'HTTP/1.1 200 OK'"]
+      interval: 5s
+      retries: 10
+
   lighthouse:
     image: ghcr.io/letpeoplework/lighthouse:dev-latest
     container_name: lighthouse-app
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
     environment:
       Database__Provider: postgres
       Database__ConnectionString: Host=postgres;Database=lighthouse;Username=postgres;Password=postgres
+      Authentication__Enabled: "true"
+      Authentication__Authority: "http://localhost:38080/realms/Lighthouse"
+      Authentication__MetadataAddress: "http://keycloak:8080/realms/Lighthouse/.well-known/openid-configuration"
+      Authentication__ClientId: "lighthouse-app"
+      Authentication__ClientSecret: "vTaGFsyZ70RtZbkHClkqrJomzov5WmB9"
+      Authentication__CallbackPath: "/api/auth/callback"
+      Authentication__SignedOutCallbackPath: "/api/auth/signout-callback"
+      Authentication__RequireHttpsMetadata: "false"
     ports:
       - "8081:443"
       - "8080:80"

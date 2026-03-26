@@ -433,6 +433,7 @@ namespace Lighthouse.Backend
                 options.SignedOutCallbackPath = authConfig.SignedOutCallbackPath;
                 options.MapInboundClaims = false;
                 options.RequireHttpsMetadata = authConfig.RequireHttpsMetadata;
+                options.MetadataAddress = authConfig.MetadataAddress;
 
                 options.Scope.Clear();
                 foreach (var scope in authConfig.Scopes)

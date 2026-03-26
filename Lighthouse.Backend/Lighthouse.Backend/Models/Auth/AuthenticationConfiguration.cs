@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.Models.Auth
 
         public bool RequireHttpsMetadata { get; init; } = true;
 
+        public string MetadataAddress { get; init; } = string.Empty;
+
         public IReadOnlyList<string> Scopes { get; init; } = ["openid", "profile", "email"];
 
         public IReadOnlyList<string> AllowedOrigins { get; init; } = [];
