@@ -3,6 +3,7 @@ title: Configuration
 layout: home
 parent: Installation and Configuration
 nav_order: 3
+has_children: true
 ---
 
 There are various options to configure Lighthouse, from the Database to the used ports. This section will show you **what** is configurable and how you configure it.
@@ -184,3 +185,44 @@ To provide the custom certificate to you instance running in docker, you can map
 ```bash
 docker run -v ".:/app/Data" -e "Certificate__Path=/app/Data/MyCustomCertificate.pfx" -e "Certificate__Password=Password" ghcr.io/letpeoplework/lighthouse:latest
 ```
+
+## Authentication
+
+{: .note}
+Authentication is a **Premium** feature. You need a valid Premium license to enable it.
+
+Lighthouse supports OpenID Connect (OIDC) authentication to protect your instance. When enabled, users must sign in through your configured identity provider before accessing Lighthouse.
+
+**Default Values:** Authentication is **disabled** by default. All settings below apply only when `Enabled` is `true`.
+
+**Override Options (environment variables):**
+- `Authentication__Enabled`
+- `Authentication__Authority`
+- `Authentication__ClientId`
+- `Authentication__ClientSecret`
+- `Authentication__Scopes__0`, `Authentication__Scopes__1`, ...
+- `Authentication__AllowedOrigins__0`, `Authentication__AllowedOrigins__1`, ...
+- `Authentication__SessionLifetimeMinutes`
+- `Authentication__RequireHttpsMetadata`
+
+**Example configuration block** (in `appsettings.json`):
+
+```json
+{
+  "Authentication": {
+    "Enabled": true,
+    "Authority": "https://your-idp.example.com",
+    "ClientId": "your-client-id",
+    "ClientSecret": "your-client-secret",
+    "Scopes": ["openid", "profile", "email"],
+    "AllowedOrigins": ["https://lighthouse.example.com"],
+    "SessionLifetimeMinutes": 480,
+    "RequireHttpsMetadata": true
+  }
+}
+```
+
+{: .important}
+If `Enabled` is `true` but `Authority` is missing or misconfigured, Lighthouse will **not** start and will show an error. Authentication is fail-closed by design.
+
+For full provider-specific setup guides (Keycloak, Microsoft Entra ID, Google, Auth0), see the [Authentication](./authentication.html) page.
