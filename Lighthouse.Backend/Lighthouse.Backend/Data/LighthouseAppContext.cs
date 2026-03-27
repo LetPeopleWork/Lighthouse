@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; } = null!;
 
+        public DbSet<RefreshLog> RefreshLogs { get; set; } = null!;
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database

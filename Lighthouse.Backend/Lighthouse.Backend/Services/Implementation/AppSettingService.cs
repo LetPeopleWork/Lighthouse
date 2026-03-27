@@ -33,6 +33,17 @@ namespace Lighthouse.Backend.Services.Implementation
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.TeamDataRefreshInterval, AppSettingKeys.TeamDataRefreshAfter, AppSettingKeys.TeamDataRefreshStartDelay);
         }
 
+        public int GetRefreshLogRetentionRuns()
+        {
+            var setting = repository.GetByPredicate(s => s.Key == AppSettingKeys.RefreshLogRetentionRuns);
+            if (setting == null || !int.TryParse(setting.Value, out var value))
+            {
+                return 30;
+            }
+
+            return Math.Clamp(value, 10, 200);
+        }
+
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
         {
             var interval = GetSettingByKey(intervalKey);

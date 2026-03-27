@@ -30,7 +30,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 new AppSetting { Id = 2, Key = AppSettingKeys.TeamDataRefreshStartDelay, Value = "10" },
                 new AppSetting { Id = 3, Key = AppSettingKeys.FeaturesRefreshInterval, Value = "60" },
                 new AppSetting { Id = 4, Key = AppSettingKeys.FeaturesRefreshAfter, Value = "180" },
-                new AppSetting { Id = 5, Key = AppSettingKeys.FeaturesRefreshStartDelay, Value = "15" }
+                new AppSetting { Id = 5, Key = AppSettingKeys.FeaturesRefreshStartDelay, Value = "15" },
+                new AppSetting { Id = 6, Key = AppSettingKeys.RefreshLogRetentionRuns, Value = "30" }
             };
 
             foreach (var setting in defaultSettings)

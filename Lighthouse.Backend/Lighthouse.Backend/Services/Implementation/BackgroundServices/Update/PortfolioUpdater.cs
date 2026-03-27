@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using System.Diagnostics;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
@@ -50,25 +51,50 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
-            var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
-            var projectMetricsService = serviceProvider.GetRequiredService<IPortfolioMetricsService>();
-            var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
-            var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
+            var refreshLogService = serviceProvider.GetRequiredService<IRefreshLogService>();
+            var stopwatch = Stopwatch.StartNew();
+            var success = false;
+            var itemCount = 0;
 
-            await workItemService.UpdateFeaturesForPortfolio(project);
-            projectMetricsService.InvalidatePortfolioMetrics(project);
+            try
+            {
+                var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
+                var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
+                var projectMetricsService = serviceProvider.GetRequiredService<IPortfolioMetricsService>();
+                var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
+                var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
 
-            var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
-            deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
-            await deliveryRepository.Save();
+                await workItemService.UpdateFeaturesForPortfolio(project);
+                projectMetricsService.InvalidatePortfolioMetrics(project);
 
-            var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-            await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
+                var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
+                deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
+                await deliveryRepository.Save();
 
-            await forecastUpdateService.UpdateForecastsForPortfolio(project);
+                var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
+                await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
 
-            await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
+                await forecastUpdateService.UpdateForecastsForPortfolio(project);
+
+                await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
+
+                itemCount = project.Features.Count;
+                success = true;
+            }
+            finally
+            {
+                stopwatch.Stop();
+                await refreshLogService.LogRefreshAsync(new RefreshLog
+                {
+                    Type = RefreshType.Portfolio,
+                    EntityId = project.Id,
+                    EntityName = project.Name,
+                    ItemCount = itemCount,
+                    DurationMs = stopwatch.ElapsedMilliseconds,
+                    ExecutedAt = DateTime.UtcNow,
+                    Success = success
+                });
+            }
         }
     }
 }

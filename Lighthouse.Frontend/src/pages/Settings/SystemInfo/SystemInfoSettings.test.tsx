@@ -8,6 +8,14 @@ vi.mock("@melloware/react-logviewer", () => ({
 	),
 }));
 
+vi.mock("@mui/x-charts", async () => {
+	const actual = await vi.importActual("@mui/x-charts");
+	return {
+		...actual,
+		BarChart: vi.fn(() => <div data-testid="mock-bar-chart" />),
+	};
+});
+
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILogService } from "../../../services/Api/LogService";
 import type { ISystemInfoService } from "../../../services/Api/SystemInfoService";
@@ -21,6 +29,7 @@ import SystemInfoSettings from "./SystemInfoSettings";
 const mockGetSystemInfo = vi.fn();
 const mockSystemInfoService: ISystemInfoService = createMockSystemInfoService();
 mockSystemInfoService.getSystemInfo = mockGetSystemInfo;
+mockSystemInfoService.getRefreshLogs = vi.fn().mockResolvedValue([]);
 
 const mockLogService: ILogService = createMockLogService();
 mockLogService.getLogs = vi.fn().mockResolvedValue("sample logs");
@@ -76,6 +85,20 @@ describe("SystemInfoSettings", () => {
 
 		await waitFor(() => {
 			expect(screen.getByText("Logs")).toBeInTheDocument();
+		});
+	});
+
+	it("renders Refresh History section", async () => {
+		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
+
+		render(
+			<MockProvider>
+				<SystemInfoSettings />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Refresh History")).toBeInTheDocument();
 		});
 	});
 

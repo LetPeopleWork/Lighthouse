@@ -248,6 +248,7 @@ export const createMockDeliveryService = (): IDeliveryService => {
 export const createMockSystemInfoService = (): ISystemInfoService => {
 	return {
 		getSystemInfo: vi.fn(),
+		getRefreshLogs: vi.fn(),
 	};
 };
 

@@ -9,10 +9,12 @@ namespace Lighthouse.Backend.API
     public class SystemInfoController : ControllerBase
     {
         private readonly ISystemInfoService systemInfoService;
+        private readonly IRefreshLogService refreshLogService;
 
-        public SystemInfoController(ISystemInfoService systemInfoService)
+        public SystemInfoController(ISystemInfoService systemInfoService, IRefreshLogService refreshLogService)
         {
             this.systemInfoService = systemInfoService;
+            this.refreshLogService = refreshLogService;
         }
 
         [HttpGet]
@@ -21,6 +23,13 @@ namespace Lighthouse.Backend.API
         {
             var systemInfo = systemInfoService.GetSystemInfo();
             return Ok(systemInfo);
+        }
+
+        [HttpGet("refreshlog")]
+        [ProducesResponseType<IEnumerable<RefreshLog>>(StatusCodes.Status200OK)]
+        public ActionResult<IEnumerable<RefreshLog>> GetRefreshLog()
+        {
+            return Ok(refreshLogService.GetRefreshLogs());
         }
     }
 }

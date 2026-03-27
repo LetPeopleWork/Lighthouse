@@ -90,6 +90,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Throws<ArgumentNullException>(() => service.GetFeatureRefreshSettings());
         }
 
+        [Test]
+        public void GetRefreshLogRetentionRuns_ReturnsParsedValue()
+        {
+            repositoryMock.Setup(x => x.GetByPredicate(It.Is<Func<AppSetting, bool>>(predicate => predicate(new AppSetting { Key = AppSettingKeys.RefreshLogRetentionRuns })))).Returns(new AppSetting { Key = AppSettingKeys.RefreshLogRetentionRuns, Value = "50" });
+
+            var service = CreateService();
+
+            var result = service.GetRefreshLogRetentionRuns();
+
+            Assert.That(result, Is.EqualTo(50));
+        }
+
+        [Test]
+        public void GetRefreshLogRetentionRuns_SettingMissing_ReturnsDefault30()
+        {
+            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<AppSetting, bool>>())).Returns((AppSetting)null);
+
+            var service = CreateService();
+
+            var result = service.GetRefreshLogRetentionRuns();
+
+            Assert.That(result, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void GetRefreshLogRetentionRuns_ValueBelowMin_ClampsTo10()
+        {
+            repositoryMock.Setup(x => x.GetByPredicate(It.Is<Func<AppSetting, bool>>(predicate => predicate(new AppSetting { Key = AppSettingKeys.RefreshLogRetentionRuns })))).Returns(new AppSetting { Key = AppSettingKeys.RefreshLogRetentionRuns, Value = "5" });
+
+            var service = CreateService();
+
+            var result = service.GetRefreshLogRetentionRuns();
+
+            Assert.That(result, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void GetRefreshLogRetentionRuns_ValueAboveMax_ClampsTo200()
+        {
+            repositoryMock.Setup(x => x.GetByPredicate(It.Is<Func<AppSetting, bool>>(predicate => predicate(new AppSetting { Key = AppSettingKeys.RefreshLogRetentionRuns })))).Returns(new AppSetting { Key = AppSettingKeys.RefreshLogRetentionRuns, Value = "999" });
+
+            var service = CreateService();
+
+            var result = service.GetRefreshLogRetentionRuns();
+
+            Assert.That(result, Is.EqualTo(200));
+        }
+
         private AppSettingService CreateService()
         {
             return new AppSettingService(repositoryMock.Object);

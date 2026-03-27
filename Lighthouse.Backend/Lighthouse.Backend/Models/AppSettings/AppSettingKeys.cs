@@ -13,5 +13,7 @@
         public const string FeaturesRefreshAfter = "PeriodicRefresh:Features:RefreshAfter";
 
         public const string FeaturesRefreshStartDelay = "PeriodicRefresh:Features:StartDelay";
+
+        public const string RefreshLogRetentionRuns = "RefreshLog:RetentionRuns";
     }
 }

@@ -12,5 +12,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         RefreshSettings GetFeatureRefreshSettings();
 
         Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings);
+
+        int GetRefreshLogRetentionRuns();
     }
 }

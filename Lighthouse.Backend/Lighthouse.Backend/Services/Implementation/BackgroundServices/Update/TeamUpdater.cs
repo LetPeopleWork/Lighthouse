@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using System.Diagnostics;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
@@ -39,11 +40,36 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            var teamDataService = serviceProvider.GetRequiredService<ITeamDataService>();
-            await teamDataService.UpdateTeamData(team);
+            var refreshLogService = serviceProvider.GetRequiredService<IRefreshLogService>();
+            var stopwatch = Stopwatch.StartNew();
+            var success = false;
+            var itemCount = 0;
 
-            var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-            await writeBackTriggerService.TriggerWriteBackForTeam(team);
+            try
+            {
+                var teamDataService = serviceProvider.GetRequiredService<ITeamDataService>();
+                await teamDataService.UpdateTeamData(team);
+
+                var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
+                await writeBackTriggerService.TriggerWriteBackForTeam(team);
+
+                itemCount = team.WorkItems.Count;
+                success = true;
+            }
+            finally
+            {
+                stopwatch.Stop();
+                await refreshLogService.LogRefreshAsync(new RefreshLog
+                {
+                    Type = RefreshType.Team,
+                    EntityId = team.Id,
+                    EntityName = team.Name,
+                    ItemCount = itemCount,
+                    DurationMs = stopwatch.ElapsedMilliseconds,
+                    ExecutedAt = DateTime.UtcNow,
+                    Success = success
+                });
+            }
         }
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)
