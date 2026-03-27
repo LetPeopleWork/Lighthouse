@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
+        private Mock<IRefreshLogService> refreshLogServiceMock;
 
         private int idCounter;
 
@@ -39,6 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
+            refreshLogServiceMock = new Mock<IRefreshLogService>();
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
@@ -49,6 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(deliveryRepositoryMock.Object);
             SetupServiceProviderMock(deliveryRuleServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
+            SetupServiceProviderMock(refreshLogServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }

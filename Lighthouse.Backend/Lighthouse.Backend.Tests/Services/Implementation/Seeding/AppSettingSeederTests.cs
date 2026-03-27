@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             // Assert
             var settings = DatabaseContext.AppSettings.ToList();
-            Assert.That(settings, Has.Count.EqualTo(6)); // Should still be 6, not duplicated
+            Assert.That(settings, Has.Count.EqualTo(7));
         }
 
         [Test]

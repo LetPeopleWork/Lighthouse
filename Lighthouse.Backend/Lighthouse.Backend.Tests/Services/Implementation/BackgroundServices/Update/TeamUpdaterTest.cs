@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<ITeamDataService> teamDataServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
+        private Mock<IRefreshLogService> refreshLogServiceMock;
 
         private int idCounter = 0;
 
@@ -30,12 +31,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             licenseServiceMock = new Mock<ILicenseService>();
             teamDataServiceMock = new Mock<ITeamDataService>();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
+            refreshLogServiceMock = new Mock<IRefreshLogService>();
 
             SetupServiceProviderMock(teamRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(licenseServiceMock.Object);
             SetupServiceProviderMock(teamDataServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
+            SetupServiceProviderMock(refreshLogServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }
