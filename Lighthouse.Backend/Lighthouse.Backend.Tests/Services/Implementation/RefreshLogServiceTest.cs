@@ -101,8 +101,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = service.GetRefreshLogs().ToList();
 
-            Assert.That(result[0].Id, Is.EqualTo(2));
-            Assert.That(result[1].Id, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[0].Id, Is.EqualTo(2));
+                Assert.That(result[1].Id, Is.EqualTo(1));
+            }
         }
 
         private RefreshLogService CreateSubject()
