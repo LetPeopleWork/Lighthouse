@@ -3,6 +3,7 @@ name: Update Demo Environments
 env:
   AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
   JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+  LinearLighthouseIntegrationTestToken: ${{ secrets.LINEARAPIKEY }}
 
 # Run at 2 AM CET (which is midnight UTC in winter and 1 AM UTC in summer)
 # Also allow manual triggering via workflow_dispatch
@@ -39,3 +40,7 @@ jobs:
     - name: Update Jira Demo Environment  
       run: |
         python ./Scripts/DemoEnv/JiraSystemUpdater.py "${{ env.JiraLighthouseIntegrationTestToken }}"
+
+    - name: Update Linear Demo Environment
+      run: |
+        python ./Scripts/DemoEnv/LinearSystemUpdater.py "${{ env.LinearLighthouseIntegrationTestToken }}"
