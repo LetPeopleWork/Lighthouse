@@ -1,0 +1,66 @@
+services:
+  - type: web
+    name: lighthouse
+    runtime: image
+    image:
+      url: ghcr.io/letpeoplework/lighthouse:dev-latest
+    plan: free
+    envVars:
+      - key: ASPNETCORE_URLS
+        value: http://+:10000
+
+      # Database
+      - key: Database__Provider
+        value: postgres
+      - key: Database__ConnectionString
+        value: "Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      - key: DB_HOST
+        fromDatabase:
+          name: lighthouse-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: lighthouse-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: lighthouse-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: lighthouse-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: lighthouse-db
+          property: password
+
+      # Auth — fill these in manually in Render dashboard, never commit secrets
+      - key: Authentication__Enabled
+        value: "true"
+      - key: Authentication__Authority
+        sync: false   # set manually in dashboard
+      - key: Authentication__ClientId
+        sync: false
+      - key: Authentication__ClientSecret
+        sync: false
+      - key: Authentication__CallbackPath
+        value: "/api/auth/callback"
+      - key: Authentication__SignedOutCallbackPath
+        value: "/api/auth/signout-callback"
+      - key: Authentication__Scopes__0
+        value: "openid"
+      - key: Authentication__Scopes__1
+        value: "profile"
+      - key: Authentication__Scopes__2
+        value: "email"
+      - key: Authentication__AllowedOrigins
+        sync: false   # set to your Render app URL once known, e.g. https://lighthouse.onrender.com
+      - key: Authentication__SessionLifetimeMinutes
+        value: "480"
+
+databases:
+  - name: lighthouse-db
+    plan: free
+    databaseName: lighthouse
+    user: lighthouseuser
