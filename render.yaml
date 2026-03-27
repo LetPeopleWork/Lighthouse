@@ -13,7 +13,7 @@ services:
       - key: Database__Provider
         value: postgres
       - key: Database__ConnectionString
-        value: "Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+        sync: false   # set manually in dashboard once DB connection info is known
       - key: DB_HOST
         fromDatabase:
           name: lighthouse-db
