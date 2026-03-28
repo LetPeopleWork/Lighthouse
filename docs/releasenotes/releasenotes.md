@@ -6,6 +6,28 @@ nav_order: 95
 
 # vNext
 
+## State Mappings for Teams and Portfolios
+Lighthouse now supports **State Mappings** — a way to rename or group raw provider states into meaningful Lighthouse states before placing them in To Do, Doing, or Done.
+
+**Single-state rename:** Create a mapping with one source state to give it a clearer name. For example, map your provider's *In Dev* state to *Development* and then use *Development* in your Doing list.
+
+**Multi-state grouping:** Create a mapping that combines multiple provider states into a single Lighthouse state. For example, group *Code Review*, *QA Review*, and *Design Review* into a single *In Review* state and place it in Doing.
+
+**How it works:**
+1. Open team or portfolio settings and scroll to the **State Mappings** section (below the To Do / Doing / Done state lists).
+2. Add one or more mappings — give each a name and select the source states it should contain.
+3. Use the mapped name in your To Do, Doing, or Done configuration just like any other state.
+
+Mapped names replace the raw provider state everywhere in Lighthouse — work items, features, metrics, and forecasts all use the mapped name. Transition dates and cycle time calculations resolve mapped names back to raw provider states internally, so your metrics remain accurate.
+
+**Configuration rules:**
+- Each source state can only appear in one mapping.
+- Mapping names must be unique and cannot collide with direct state names.
+- Settings without any mappings continue to work exactly as before.
+- Cloning a team or portfolio preserves all state mappings and workflow selections.
+
+Mapping changes are treated as work-item-related configuration changes — updating mappings triggers a data refresh to ensure items reflect the new state names.
+
 ## Linear Integration — Production Release
 The Linear integration has moved from preview to a fully supported production provider. If you were using Linear during the preview phase, you will need to reconfigure your teams and portfolios — existing preview configurations are not migrated.
 
