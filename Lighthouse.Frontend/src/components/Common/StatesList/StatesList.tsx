@@ -24,6 +24,7 @@ interface StatesListComponentProps {
 	onReorderDoneStates?: (newOrder: string[]) => void;
 
 	isForTeam?: boolean;
+	stateMappingNames?: string[];
 }
 
 const StatesList: React.FC<StatesListComponentProps> = ({
@@ -40,6 +41,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 	onRemoveDoneState,
 	onReorderDoneStates,
 	isForTeam = true,
+	stateMappingNames = [],
 }) => {
 	const [statesSuggestions, setStatesSuggestions] =
 		useState<StatesCollection | null>(null);
@@ -76,36 +78,51 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [...toDoArray, ...doingArray, ...doneArray];
+		const allStates = [
+			...stateMappingNames,
+			...toDoArray,
+			...doingArray,
+			...doneArray,
+		];
 
 		return Array.from(new Set(allStates)).filter(
 			(state) => !allUsedStates.includes(state),
 		);
-	}, [statesSuggestions, allUsedStates]);
+	}, [statesSuggestions, allUsedStates, stateMappingNames]);
 
 	const doingSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [...doingArray, ...toDoArray, ...doneArray];
+		const allStates = [
+			...stateMappingNames,
+			...doingArray,
+			...toDoArray,
+			...doneArray,
+		];
 
 		return Array.from(new Set(allStates)).filter(
 			(state) => !allUsedStates.includes(state),
 		);
-	}, [statesSuggestions, allUsedStates]);
+	}, [statesSuggestions, allUsedStates, stateMappingNames]);
 
 	const doneSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [...doneArray, ...toDoArray, ...doingArray];
+		const allStates = [
+			...stateMappingNames,
+			...doneArray,
+			...toDoArray,
+			...doingArray,
+		];
 
 		return Array.from(new Set(allStates)).filter(
 			(state) => !allUsedStates.includes(state),
 		);
-	}, [statesSuggestions, allUsedStates]);
+	}, [statesSuggestions, allUsedStates, stateMappingNames]);
 
 	return (
 		<InputGroup title="States">

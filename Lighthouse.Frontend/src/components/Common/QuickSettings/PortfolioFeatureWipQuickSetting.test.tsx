@@ -27,6 +27,7 @@ const getMockTeam = (overrides?: Partial<ITeamSettings>): ITeamSettings => ({
 	tags: [],
 	blockedStates: [],
 	blockedTags: [],
+	stateMappings: [],
 	doneItemsCutoffDays: 180,
 	processBehaviourChartBaselineStartDate: null,
 	processBehaviourChartBaselineEndDate: null,

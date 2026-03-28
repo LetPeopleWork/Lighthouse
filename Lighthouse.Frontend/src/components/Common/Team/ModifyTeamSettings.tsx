@@ -1,18 +1,22 @@
 import { Container, type SelectChangeEvent, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
+import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
 import ValidationActions from "../ValidationActions/ValidationActions";
@@ -47,6 +51,16 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		IWorkTrackingSystemConnection[]
 	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
+
+	const stateMappingErrors = useMemo(() => {
+		if (!teamSettings) return [];
+		const directStates = [
+			...teamSettings.toDoStates,
+			...teamSettings.doingStates,
+			...teamSettings.doneStates,
+		];
+		return validateStateMappings(teamSettings.stateMappings, directStates);
+	}, [teamSettings]);
 
 	const handleTeamSettingsChange = <K extends keyof ITeamSettings>(
 		key: K,
@@ -370,6 +384,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							/>
 						)}
 
+						<StateMappingsEditor
+							stateMappings={teamSettings?.stateMappings || []}
+							onChange={(mappings: IStateMapping[]) =>
+								handleTeamSettingsChange("stateMappings", mappings)
+							}
+							validationErrors={stateMappingErrors}
+						/>
+
 						<StatesList
 							toDoStates={teamSettings?.toDoStates || []}
 							onAddToDoState={handleAddToDoState}
@@ -384,6 +406,11 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onRemoveDoneState={handleRemoveDoneState}
 							onReorderDoneStates={handleReorderDoneStates}
 							isForTeam={true}
+							stateMappingNames={
+								teamSettings?.stateMappings
+									?.filter((m) => m.name.trim() !== "")
+									.map((m) => m.name) || []
+							}
 						/>
 
 						<TagsComponent

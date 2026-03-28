@@ -81,7 +81,7 @@ const App: React.FC = () => {
 
 	// --- 1. Splashscreen State ---
 	const isTauri = isTauriEnv() && !hasTauriBackendUrl();
-	const [isBackendReady, setIsBackendReady] = useState(false);
+	const [isBackendReady, setIsBackendReady] = useState(!isTauri);
 	const [minTimeElapsed, setMinTimeElapsed] = useState(!isTauri);
 
 	// Only enforce the minimum display time when showing the splash (Tauri env)

@@ -68,6 +68,7 @@ const EditPortfolio: React.FC = () => {
 			parentOverrideAdditionalFieldDefinitionId: null,
 			blockedStates: [],
 			blockedTags: [],
+			stateMappings: [],
 			doneItemsCutoffDays: 365,
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,

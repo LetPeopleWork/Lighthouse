@@ -1,19 +1,22 @@
 import { Container, type SelectChangeEvent, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
+import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
 import ValidationActions from "../ValidationActions/ValidationActions";
@@ -50,6 +53,16 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [formValid, setFormValid] = useState<boolean>(false);
+
+	const stateMappingErrors = useMemo(() => {
+		if (!projectSettings) return [];
+		const directStates = [
+			...projectSettings.toDoStates,
+			...projectSettings.doingStates,
+			...projectSettings.doneStates,
+		];
+		return validateStateMappings(projectSettings.stateMappings, directStates);
+	}, [projectSettings]);
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -391,6 +404,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							/>
 						)}
 
+						<StateMappingsEditor
+							stateMappings={projectSettings?.stateMappings || []}
+							onChange={(mappings: IStateMapping[]) =>
+								handleProjectSettingsChange("stateMappings", mappings)
+							}
+							validationErrors={stateMappingErrors}
+						/>
+
 						<StatesList
 							toDoStates={projectSettings?.toDoStates || []}
 							onAddToDoState={handleAddToDoState}
@@ -405,6 +426,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onReorderToDoStates={handleReorderToDoStates}
 							onReorderDoingStates={handleReorderDoingStates}
 							onReorderDoneStates={handleReorderDoneStates}
+							stateMappingNames={
+								projectSettings?.stateMappings
+									?.filter((m) => m.name.trim() !== "")
+									.map((m) => m.name) || []
+							}
 						/>
 
 						<TagsComponent

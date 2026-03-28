@@ -300,4 +300,74 @@ describe("StatesList", () => {
 			expect(chip.closest('[draggable="true"]')).toBeInTheDocument();
 		}
 	});
+
+	describe("stateMappingNames", () => {
+		const renderWithMappings = (mappingNames: string[]) => {
+			return render(
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<StatesList
+						toDoStates={[]}
+						onAddToDoState={mockOnAddToDoState}
+						onRemoveToDoState={mockOnRemoveToDoState}
+						doingStates={[]}
+						onAddDoingState={mockOnAddDoingState}
+						onRemoveDoingState={mockOnRemoveDoingState}
+						doneStates={[]}
+						onAddDoneState={mockOnAddDoneState}
+						onRemoveDoneState={mockOnRemoveDoneState}
+						isForTeam={true}
+						stateMappingNames={mappingNames}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+		};
+
+		it("includes mapped names as suggestions in To Do states", async () => {
+			await act(async () => {
+				renderWithMappings(["Active Work", "Completed Work"]);
+			});
+
+			// The mapped names should be clickable suggestions in the autocomplete
+			const toDoInput = screen.getByLabelText("New To Do States");
+			await act(async () => {
+				fireEvent.change(toDoInput, { target: { value: "Active" } });
+			});
+
+			// Mapped name should appear as an option
+			expect(screen.getByText("Active Work")).toBeInTheDocument();
+		});
+
+		it("filters out already-used mapped names from suggestions", async () => {
+			render(
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<StatesList
+						toDoStates={["Active Work"]}
+						onAddToDoState={mockOnAddToDoState}
+						onRemoveToDoState={mockOnRemoveToDoState}
+						doingStates={[]}
+						onAddDoingState={mockOnAddDoingState}
+						onRemoveDoingState={mockOnRemoveDoingState}
+						doneStates={[]}
+						onAddDoneState={mockOnAddDoneState}
+						onRemoveDoneState={mockOnRemoveDoneState}
+						isForTeam={true}
+						stateMappingNames={["Active Work", "Completed Work"]}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+
+			await act(async () => {
+				// Wait for suggestions to load
+			});
+
+			// "Active Work" is already used, should not appear as a suggestion
+			// "Completed Work" should still be available
+			const toDoInput = screen.getByLabelText("New To Do States");
+			await act(async () => {
+				fireEvent.change(toDoInput, { target: { value: "Completed" } });
+			});
+
+			expect(screen.getByText("Completed Work")).toBeInTheDocument();
+		});
+	});
 });

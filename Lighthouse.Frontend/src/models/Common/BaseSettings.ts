@@ -1,4 +1,5 @@
 import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
+import type { IStateMapping } from "./StateMapping";
 
 export interface IBaseSettings {
 	id: number;
@@ -16,6 +17,7 @@ export interface IBaseSettings {
 	parentOverrideAdditionalFieldDefinitionId: number | null;
 	blockedStates: string[];
 	blockedTags: string[];
+	stateMappings: IStateMapping[];
 	doneItemsCutoffDays: number;
 	processBehaviourChartBaselineStartDate: Date | null;
 	processBehaviourChartBaselineEndDate: Date | null;
