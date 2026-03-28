@@ -125,7 +125,9 @@ const App: React.FC = () => {
 	// --- 4. Auth Shell Selection ---
 	// Ensure protected content does not render before auth state is known
 	if (shell === "loading") {
-		return <SplashScreen />;
+		// If we are in Tauri, show the splash.
+		// If we are in Server mode, return null (or a tiny spinner) to prevent the "flash"
+		return isTauri ? <SplashScreen /> : null;
 	}
 
 	if (shell === "login") {
