@@ -183,6 +183,97 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        [Test]
+        public void MapRawStateToMappedName_NoMappings_ReturnsSameState()
+        {
+            var subject = CreateSubject();
+
+            var result = subject.MapRawStateToMappedName("Active");
+
+            Assert.That(result, Is.EqualTo("Active"));
+        }
+
+        [Test]
+        public void MapRawStateToMappedName_WithMapping_ReturnsMappedName()
+        {
+            var subject = CreateSubject();
+            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
+
+            var result = subject.MapRawStateToMappedName("Active");
+
+            Assert.That(result, Is.EqualTo("In Progress"));
+        }
+
+        [Test]
+        public void MapRawStateToMappedName_NoMatchingMapping_ReturnsSameState()
+        {
+            var subject = CreateSubject();
+            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
+
+            var result = subject.MapRawStateToMappedName("New");
+
+            Assert.That(result, Is.EqualTo("New"));
+        }
+
+        [Test]
+        public void MapRawStateToMappedName_CaseInsensitive_ReturnsMappedName()
+        {
+            var subject = CreateSubject();
+            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active"] });
+
+            var result = subject.MapRawStateToMappedName("active");
+
+            Assert.That(result, Is.EqualTo("In Progress"));
+        }
+
+        [Test]
+        public void AllStates_NoMappings_ReturnsConfiguredStates()
+        {
+            var subject = CreateSubject();
+            subject.ToDoStates.Clear();
+            subject.ToDoStates.AddRange(["New"]);
+            subject.DoingStates.Clear();
+            subject.DoingStates.AddRange(["Active"]);
+            subject.DoneStates.Clear();
+            subject.DoneStates.AddRange(["Closed"]);
+
+            var result = subject.AllStates.ToList();
+
+            Assert.That(result, Is.EquivalentTo(new[] { "New", "Active", "Closed" }));
+        }
+
+        [Test]
+        public void AllStates_WithMappings_ReturnsRawExpandedStates()
+        {
+            var subject = CreateSubject();
+            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
+            subject.ToDoStates.Clear();
+            subject.ToDoStates.AddRange(["New"]);
+            subject.DoingStates.Clear();
+            subject.DoingStates.AddRange(["In Progress"]);
+            subject.DoneStates.Clear();
+            subject.DoneStates.AddRange(["Closed"]);
+
+            var result = subject.AllStates.ToList();
+
+            Assert.That(result, Is.EquivalentTo(new[] { "New", "Active", "Resolved", "Closed" }));
+        }
+
+        [Test]
+        public void OpenStates_WithMappings_ReturnsRawExpandedStates()
+        {
+            var subject = CreateSubject();
+            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
+            subject.ToDoStates.Clear();
+            subject.ToDoStates.AddRange(["New"]);
+            subject.DoingStates.Clear();
+            subject.DoingStates.AddRange(["In Progress"]);
+
+            var result = subject.OpenStates.ToList();
+
+            Assert.That(result, Is.EquivalentTo(new[] { "New", "Active", "Resolved" }));
+        }
+
         private static WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
         {
             return new WorkTrackingSystemOptionsOwnerTestClass();

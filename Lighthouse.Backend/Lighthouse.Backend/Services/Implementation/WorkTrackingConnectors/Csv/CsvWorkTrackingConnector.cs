@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             {
                 ReferenceId = referenceId,
                 Name = name,
-                State = state,
+                State = owner.MapRawStateToMappedName(state),
                 StateCategory = stateCategory,
                 Type = type,
                 StartedDate = startedDate,

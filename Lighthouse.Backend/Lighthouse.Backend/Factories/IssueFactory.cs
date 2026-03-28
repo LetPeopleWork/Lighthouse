@@ -59,18 +59,21 @@ namespace Lighthouse.Backend.Factories
         {
             var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
 
+            var rawDoingStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.DoingStates);
+            var rawDoneStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.DoneStates);
+
             // If the StateCategory is To Do or Unknown, we have neither started nor finished
             DateTime? closedDate = null;
             DateTime? startedDate = null;
 
             if (stateCategory == StateCategories.Done)
             {
-                closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates, []);
-                startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates, workitemQueryOwner.DoneStates);
+                closedDate = GetTransitionDate(json, rawDoneStates, []);
+                startedDate = GetTransitionDate(json, rawDoingStates, rawDoneStates);
             }
             else if (stateCategory == StateCategories.Doing)
             {
-                startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates, workitemQueryOwner.DoneStates);
+                startedDate = GetTransitionDate(json, rawDoingStates, rawDoneStates);
             }
 
             // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.

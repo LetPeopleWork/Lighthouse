@@ -615,7 +615,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 ReferenceId = $"{workItem.Id}",
                 Name = workItem.ExtractTitleFromWorkItem(),
                 Type = workItem.ExtractTypeFromWorkItem(),
-                State = state,
+                State = workItemQueryOwner.MapRawStateToMappedName(state),
                 StateCategory = stateCategory,
                 Url = workItem.ExtractUrlFromWorkItem(),
                 Order = workItem.ExtractStackRankFromWorkItem(),
@@ -630,17 +630,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)
         {
             var witClient = GetWorkItemTrackingHttpClient(workItemQueryOwner.WorkTrackingSystemConnection);
+
+            var rawDoingStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoingStates);
+            var rawDoneStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoneStates);
+
             DateTime? startedDate = null;
             DateTime? closedDate = null;
 
             if (stateCategory == StateCategories.Done)
             {
-                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
-                closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, workItemQueryOwner.DoneStates, []);
+                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates);
+                closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoneStates, []);
             }
             else if (stateCategory == StateCategories.Doing)
             {
-                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
+                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates);
             }
 
             if (startedDate == null && closedDate != null)

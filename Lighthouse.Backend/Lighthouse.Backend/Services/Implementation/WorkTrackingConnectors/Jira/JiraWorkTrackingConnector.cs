@@ -884,7 +884,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 StartedDate = issue.StartedDate,
                 Order = issue.Rank,
                 Type = issue.IssueType,
-                State = issue.State,
+                State = workItemQueryOwner.MapRawStateToMappedName(issue.State),
                 Url = url,
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),

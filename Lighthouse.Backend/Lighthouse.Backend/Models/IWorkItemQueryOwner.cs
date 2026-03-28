@@ -26,10 +26,16 @@ namespace Lighthouse.Backend.Models
         
         List<string> BlockedTags { get; set; }
 
+        List<StateMapping> StateMappings { get; set; }
+
         int DoneItemsCutoffDays { get; set; }
         
         int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
 
         StateCategories MapStateToStateCategory(string state);
+
+        List<string> GetRawStatesForCategory(List<string> categoryStates);
+
+        string MapRawStateToMappedName(string rawState);
     }
 }

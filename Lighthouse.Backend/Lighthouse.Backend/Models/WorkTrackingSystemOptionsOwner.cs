@@ -22,9 +22,12 @@ namespace Lighthouse.Backend.Models
 
         public List<string> Tags { get; set; } = new List<string>();
 
-        public IEnumerable<string> AllStates => OpenStates.Union(DoneStates);
+        public IEnumerable<string> AllStates => GetRawStatesForCategory(ToDoStates)
+            .Union(GetRawStatesForCategory(DoingStates))
+            .Union(GetRawStatesForCategory(DoneStates));
 
-        public IEnumerable<string> OpenStates => ToDoStates.Union(DoingStates);
+        public IEnumerable<string> OpenStates => GetRawStatesForCategory(ToDoStates)
+            .Union(GetRawStatesForCategory(DoingStates));
 
         public int ServiceLevelExpectationProbability { get; set; } = 0;
 
@@ -98,6 +101,14 @@ namespace Lighthouse.Backend.Models
             }
 
             return rawStates;
+        }
+
+        public string MapRawStateToMappedName(string rawState)
+        {
+            var mapping = StateMappings.FirstOrDefault(m =>
+                m.States.Any(s => string.Equals(s, rawState, StringComparison.OrdinalIgnoreCase)));
+
+            return mapping?.Name ?? rawState;
         }
 
         public void ResetUpdateTime()
