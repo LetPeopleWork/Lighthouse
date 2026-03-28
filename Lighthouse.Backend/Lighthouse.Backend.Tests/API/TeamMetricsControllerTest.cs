@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -77,6 +78,40 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedThroughput));
+            }
+        }
+
+        [Test]
+        public void GetThroughput_DateOnlyInputPreservesCalendarDay()
+        {
+            // Simulates how ASP.NET model binding parses yyyy-MM-dd query parameters:
+            // DateTime.Parse("2026-03-28") produces a DateTimeKind.Unspecified value
+            // at midnight, preserving the calendar day without UTC reinterpretation.
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3]));
+
+            var dateOnlyStart = DateTime.Parse("2026-03-28");
+            var dateOnlyEnd = DateTime.Parse("2026-03-28");
+
+            teamMetricsServiceMock.Setup(service =>
+                service.GetThroughputForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(expectedThroughput);
+
+            var subject = CreateSubject();
+            var response = subject.GetThroughput(team.Id, dateOnlyStart, dateOnlyEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                // Verify that the parsed date preserves the calendar day (March 28)
+                // regardless of the machine's timezone
+                Assert.That(dateOnlyStart.Day, Is.EqualTo(28));
+                Assert.That(dateOnlyStart.Month, Is.EqualTo(3));
+                Assert.That(dateOnlyStart.Year, Is.EqualTo(2026));
+                Assert.That(dateOnlyStart.Kind, Is.EqualTo(DateTimeKind.Unspecified));
             }
         }
 
@@ -987,7 +1022,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
         }
     }
 }

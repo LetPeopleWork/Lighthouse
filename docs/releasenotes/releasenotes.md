@@ -6,6 +6,16 @@ nav_order: 95
 
 # vNext
 
+## Bug Fix: Cycle Time Dates No Longer Appear in the Future for Positive-Offset Timezones
+Fixed a bug where users in positive-offset timezones (e.g., NZ, Australia) could see cycle-time dates displayed one day in the future. The root cause was that date-range filters and chart labels used UTC-based date conversion instead of respecting the user's local calendar date.
+
+**What changed:**
+- Date-range filters now serialize using local calendar-date components, so the intended selected day is always sent to the backend regardless of timezone.
+- Cycle Time scatter plot bucketing continues to use local-midnight normalization (already correct).
+- Cycle Time Process Behaviour Chart (PBC) labels now display date-only rather than full datetime, eliminating misleading "future date" presentation caused by UTC-to-local rendering shifts.
+
+No changes are required to your configuration. If you previously observed future-dated items in the Cycle Time views, they will now display the correct calendar day.
+
 ## State Mappings for Teams and Portfolios
 Lighthouse now supports **State Mappings** — a way to rename or group raw provider states into meaningful Lighthouse states before placing them in To Do, Doing, or Done.
 

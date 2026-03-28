@@ -246,6 +246,48 @@ describe("ProjectMetricsService", () => {
 			// Assert
 			expect(result).toBe("startDate=2023-01-01&endDate=2023-01-31");
 		});
+
+		it("should use local calendar date components, not UTC conversion", () => {
+			// A date created with local components (as a date picker would)
+			// must serialize using the local year/month/day, not the UTC year/month/day.
+			const localStart = new Date(2026, 2, 28); // March 28, 2026 local
+			const localEnd = new Date(2026, 2, 28);
+
+			const result = service.getDateFormatString(localStart, localEnd);
+
+			// The query string must reflect the local calendar date (2026-03-28),
+			// regardless of what UTC date that midnight maps to.
+			expect(result).toBe("startDate=2026-03-28&endDate=2026-03-28");
+		});
+
+		it("should produce stable yyyy-MM-dd for DST-inactive winter dates", () => {
+			// July 15 in Southern Hemisphere (or Jan 15 in Northern) — DST-inactive
+			// for positive-offset timezones like NZ (NZST = UTC+12, no DST)
+			const winterDate = new Date(2026, 6, 15); // July 15, 2026
+			const result = service.getDateFormatString(winterDate, winterDate);
+			expect(result).toBe("startDate=2026-07-15&endDate=2026-07-15");
+		});
+
+		it("should produce stable yyyy-MM-dd for DST-active summer dates", () => {
+			// Late March in Southern Hemisphere — DST-active for NZ (NZDT = UTC+13)
+			const summerDate = new Date(2026, 2, 28); // March 28, 2026
+			const result = service.getDateFormatString(summerDate, summerDate);
+			expect(result).toBe("startDate=2026-03-28&endDate=2026-03-28");
+		});
+
+		it("should handle year-end boundary dates correctly", () => {
+			const nyeStart = new Date(2025, 11, 31); // Dec 31, 2025
+			const nydEnd = new Date(2026, 0, 1); // Jan 1, 2026
+			const result = service.getDateFormatString(nyeStart, nydEnd);
+			expect(result).toBe("startDate=2025-12-31&endDate=2026-01-01");
+		});
+
+		it("should zero-pad single-digit months and days", () => {
+			const start = new Date(2026, 0, 5); // Jan 5
+			const end = new Date(2026, 8, 2); // Sep 2
+			const result = service.getDateFormatString(start, end);
+			expect(result).toBe("startDate=2026-01-05&endDate=2026-09-02");
+		});
 	});
 
 	describe("getTotalWorkItemAge", () => {

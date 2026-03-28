@@ -44,6 +44,15 @@ describe("chartAxisUtils", () => {
 				);
 			}
 		});
+
+		it("should produce date-only output with no time component", () => {
+			// A UTC datetime timestamp for an afternoon time — the formatted
+			// label must never contain time-of-day characters (colon separator)
+			const timestamp = new Date("2026-03-27T14:30:00Z").getTime();
+			const result = dateValueFormatter(timestamp);
+			expect(result).not.toContain(":");
+			expect(result).toBe(new Date(timestamp).toLocaleDateString());
+		});
 	});
 
 	describe("getMaxYAxisHeight", () => {
@@ -251,6 +260,79 @@ describe("chartAxisUtils", () => {
 
 			const expectedDate = new Date(2026, 11, 31, 0, 0, 0, 0);
 			expect(result).toBe(expectedDate.getTime());
+		});
+
+		it("should bucket UTC datetime to local calendar date", () => {
+			// A UTC datetime like 2026-03-27T12:30:00Z represents the same
+			// instant everywhere. In a positive-offset timezone (e.g., NZ UTC+13),
+			// this is March 28 local. getDateOnlyTimestamp should bucket by the
+			// local calendar date, not the UTC date.
+			const utcDatetime = new Date("2026-03-27T12:30:00Z");
+			const result = getDateOnlyTimestamp(utcDatetime);
+
+			// The bucket should match local-midnight of whatever local date the
+			// UTC datetime falls on in the current environment
+			const expectedLocalDate = new Date(
+				utcDatetime.getFullYear(),
+				utcDatetime.getMonth(),
+				utcDatetime.getDate(),
+				0,
+				0,
+				0,
+				0,
+			);
+			expect(result).toBe(expectedLocalDate.getTime());
+		});
+
+		it("should produce consistent bucket for DST-inactive dates", () => {
+			// July 15 — DST-inactive for Southern Hemisphere positive-offset zones
+			const dstInactive = new Date("2026-07-15T23:59:00Z");
+			const result = getDateOnlyTimestamp(dstInactive);
+
+			const expected = new Date(
+				dstInactive.getFullYear(),
+				dstInactive.getMonth(),
+				dstInactive.getDate(),
+				0,
+				0,
+				0,
+				0,
+			);
+			expect(result).toBe(expected.getTime());
+		});
+
+		it("should produce consistent bucket for DST-active dates", () => {
+			// March 28 — DST-active for NZ (NZDT = UTC+13)
+			const dstActive = new Date("2026-03-28T11:00:00Z");
+			const result = getDateOnlyTimestamp(dstActive);
+
+			const expected = new Date(
+				dstActive.getFullYear(),
+				dstActive.getMonth(),
+				dstActive.getDate(),
+				0,
+				0,
+				0,
+				0,
+			);
+			expect(result).toBe(expected.getTime());
+		});
+
+		it("should bucket negative-offset UTC datetime to local date", () => {
+			// A late-night UTC time that would be the previous day in Hawaii (UTC-10)
+			const lateUtc = new Date("2026-03-28T02:00:00Z");
+			const result = getDateOnlyTimestamp(lateUtc);
+
+			const expected = new Date(
+				lateUtc.getFullYear(),
+				lateUtc.getMonth(),
+				lateUtc.getDate(),
+				0,
+				0,
+				0,
+				0,
+			);
+			expect(result).toBe(expected.getTime());
 		});
 	});
 });

@@ -16,12 +16,14 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
+        private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IRepository<BlackoutPeriod> blackoutPeriodRepository, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
             this.blackoutPeriodRepository = blackoutPeriodRepository;
+            this.logger = logger;
         }
 
         [HttpGet("throughput")]
@@ -101,6 +103,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
+            LogDateBoundaries("cycleTimePercentiles", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate));
         }
 
@@ -112,6 +115,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
+            LogDateBoundaries("cycleTimeData", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var workItems = teamMetricsService.GetClosedItemsForTeam(team, startDate, endDate);
@@ -183,6 +187,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
+            LogDateBoundaries("cycleTime/pbc", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 AnnotateBlackoutDays(teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)));
         }
@@ -208,6 +213,12 @@ namespace Lighthouse.Backend.API
         {
             var blackoutPeriods = blackoutPeriodRepository.GetAll();
             return blackoutPeriods.AnnotateBlackoutDays(chart);
+        }
+
+        private void LogDateBoundaries(string endpoint, int teamId, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Metrics request {Endpoint} for team {TeamId}: startDate={StartDate:yyyy-MM-dd} endDate={EndDate:yyyy-MM-dd} (Kind={StartKind}/{EndKind})",
+                endpoint, teamId, startDate, endDate, startDate.Kind, endDate.Kind);
         }
     }
 }

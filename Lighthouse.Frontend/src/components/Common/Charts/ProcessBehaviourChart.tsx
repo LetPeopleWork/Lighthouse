@@ -429,13 +429,9 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 												scaleType: "band" as const,
 												valueFormatter: (value: number) => {
 													if (value >= 0 && value < data.dataPoints.length) {
-														return data.xAxisKind === "DateTime"
-															? new Date(
-																	data.dataPoints[value].xValue,
-																).toLocaleString()
-															: new Date(
-																	data.dataPoints[value].xValue,
-																).toLocaleDateString();
+														return new Date(
+															data.dataPoints[value].xValue,
+														).toLocaleDateString();
 													}
 													return String(value);
 												},
@@ -445,9 +441,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 												data: chartData.xValues,
 												scaleType: "time" as const,
 												valueFormatter: (value: number) =>
-													data.xAxisKind === "DateTime"
-														? new Date(value).toLocaleString()
-														: new Date(value).toLocaleDateString(),
+													new Date(value).toLocaleDateString(),
 											},
 								]}
 								yAxis={[

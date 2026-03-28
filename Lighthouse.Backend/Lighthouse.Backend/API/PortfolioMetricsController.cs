@@ -14,7 +14,8 @@ namespace Lighthouse.Backend.API
     public class PortfolioMetricsController(
         IRepository<Portfolio> portfolioRepository,
         IPortfolioMetricsService portfolioMetricsService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        ILogger<PortfolioMetricsController> logger)
         : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
@@ -85,6 +86,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
+            LogDateBoundaries("cycleTimePercentiles", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate));
         }
@@ -97,6 +99,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
+            LogDateBoundaries("cycleTimeData", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var features = portfolioMetricsService.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate);
@@ -192,6 +195,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
+            LogDateBoundaries("cycleTime/pbc", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 AnnotateBlackoutDays(portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate)));
         }
@@ -240,6 +244,12 @@ namespace Lighthouse.Backend.API
         {
             var blackoutPeriods = blackoutPeriodRepository.GetAll();
             return blackoutPeriods.AnnotateBlackoutDays(chart);
+        }
+
+        private void LogDateBoundaries(string endpoint, int portfolioId, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Metrics request {Endpoint} for portfolio {PortfolioId}: startDate={StartDate:yyyy-MM-dd} endDate={EndDate:yyyy-MM-dd} (Kind={StartKind}/{EndKind})",
+                endpoint, portfolioId, startDate, endDate, startDate.Kind, endDate.Kind);
         }
     }
 }

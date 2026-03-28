@@ -848,4 +848,93 @@ describe("ProcessBehaviourChart", () => {
 			expect(ChartContainer).toHaveBeenCalled();
 		});
 	});
+
+	describe("Cycle Time Date-Only Labels", () => {
+		it("uses date-only format for CycleTime PBC x-axis labels even with DateTime xAxisKind", async () => {
+			const { ChartContainer } = vi.mocked(await import("@mui/x-charts"));
+
+			const utcDatetime = "2026-03-27T14:30:00Z";
+			const data = createReadyChartData({
+				xAxisKind: "DateTime",
+				dataPoints: [
+					{
+						xValue: utcDatetime,
+						yValue: 5,
+						specialCauses: [],
+						workItemIds: [101],
+						isBlackout: false,
+					},
+				],
+			});
+
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Cycle Time PBC"
+					type={ProcessBehaviourChartType.CycleTime}
+				/>,
+			);
+
+			// Extract the valueFormatter from the xAxis config passed to ChartContainer
+			const lastCall =
+				ChartContainer.mock.calls[ChartContainer.mock.calls.length - 1];
+			const xAxisConfig = (
+				lastCall[0] as {
+					xAxis: { valueFormatter?: (value: number) => string }[];
+				}
+			).xAxis[0];
+			const formatter = xAxisConfig.valueFormatter;
+			expect(formatter).toBeDefined();
+
+			if (!formatter) {
+				throw new Error("xAxis valueFormatter is not defined");
+			}
+
+			// The formatter should produce date-only output (no time component).
+			// For index 0, it should format the UTC datetime as a local date string.
+			const result = formatter(0);
+			const expectedDateOnly = new Date(utcDatetime).toLocaleDateString();
+			expect(result).toBe(expectedDateOnly);
+
+			// Critically, it must NOT include time-of-day
+			expect(result).not.toContain(":");
+		});
+
+		it("uses date-only format in dialog title for CycleTime PBC drill-in", () => {
+			const utcDatetime = "2026-03-27T14:30:00Z";
+			const mockItem = createMockWorkItem({ id: 101, name: "Item 101" });
+
+			const data = createReadyChartData({
+				xAxisKind: "DateTime",
+				dataPoints: [
+					{
+						xValue: utcDatetime,
+						yValue: 5,
+						specialCauses: [],
+						workItemIds: [101],
+						isBlackout: false,
+					},
+				],
+			});
+
+			render(
+				<ProcessBehaviourChart
+					data={data}
+					title="Cycle Time PBC"
+					type={ProcessBehaviourChartType.CycleTime}
+					workItemLookup={new Map([[101, mockItem]])}
+				/>,
+			);
+
+			const markPlot = screen.getByTestId("mock-mark-plot");
+			fireEvent.click(markPlot);
+
+			const dialog = screen.getByTestId("work-items-dialog");
+			const dialogTitle = dialog.getAttribute("data-title");
+
+			// Dialog title should use date-only format, not datetime
+			expect(dialogTitle).not.toContain(":");
+			expect(dialogTitle).toContain(new Date(utcDatetime).toLocaleDateString());
+		});
+	});
 });

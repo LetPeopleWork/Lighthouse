@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -27,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService = new Mock<IPortfolioMetricsService>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodRepositoryMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
             
             project = new Portfolio
             {
