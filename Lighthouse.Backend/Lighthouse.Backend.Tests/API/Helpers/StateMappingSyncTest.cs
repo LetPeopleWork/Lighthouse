@@ -22,11 +22,14 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             team.SyncTeamWithTeamSettings(dto);
 
-            Assert.That(team.StateMappings, Has.Count.EqualTo(2));
-            Assert.That(team.StateMappings[0].Name, Is.EqualTo("In Progress"));
-            Assert.That(team.StateMappings[0].States, Is.EquivalentTo(new[] { "Active", "Resolved" }));
-            Assert.That(team.StateMappings[1].Name, Is.EqualTo("Waiting"));
-            Assert.That(team.StateMappings[1].States, Is.EquivalentTo(new[] { "Blocked" }));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.StateMappings, Has.Count.EqualTo(2));
+                Assert.That(team.StateMappings[0].Name, Is.EqualTo("In Progress"));
+                Assert.That(team.StateMappings[0].States, Is.EquivalentTo(["Active", "Resolved"]));
+                Assert.That(team.StateMappings[1].Name, Is.EqualTo("Waiting"));
+                Assert.That(team.StateMappings[1].States, Is.EquivalentTo(["Blocked"]));
+            }
         }
 
         [Test]

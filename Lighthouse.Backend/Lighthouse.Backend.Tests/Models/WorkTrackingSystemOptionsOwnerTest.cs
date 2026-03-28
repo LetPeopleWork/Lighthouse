@@ -62,9 +62,12 @@ namespace Lighthouse.Backend.Tests.Models
 
             subject.StateMappings.Add(mapping);
 
-            Assert.That(subject.StateMappings, Has.Count.EqualTo(1));
-            Assert.That(subject.StateMappings[0].Name, Is.EqualTo("In Progress"));
-            Assert.That(subject.StateMappings[0].States, Is.EquivalentTo(new[] { "Active", "Resolved" }));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.StateMappings, Has.Count.EqualTo(1));
+                Assert.That(subject.StateMappings[0].Name, Is.EqualTo("In Progress"));
+                Assert.That(subject.StateMappings[0].States, Is.EquivalentTo(["Active", "Resolved"]));
+            }
         }
 
         [Test]
@@ -76,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(new[] { "Active", "Resolved" }));
+            Assert.That(rawStates, Is.EquivalentTo(["Active", "Resolved"]));
         }
 
         [Test]
@@ -89,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(new[] { "Active", "Resolved" }));
+            Assert.That(rawStates, Is.EquivalentTo(["Active", "Resolved"]));
         }
 
         [Test]
@@ -102,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(new[] { "Active", "Resolved", "Development" }));
+            Assert.That(rawStates, Is.EquivalentTo(["Active", "Resolved", "Development"]));
         }
 
         [Test]
@@ -115,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(new[] { "Active" }));
+            Assert.That(rawStates, Is.EquivalentTo(["Active"]));
         }
 
         [Test]
@@ -153,9 +156,12 @@ namespace Lighthouse.Backend.Tests.Models
             subject.DoneStates.Clear();
             subject.DoneStates.AddRange(["Closed"]);
 
-            Assert.That(subject.MapStateToStateCategory("New"), Is.EqualTo(StateCategories.ToDo));
-            Assert.That(subject.MapStateToStateCategory("Prioritized"), Is.EqualTo(StateCategories.ToDo));
-            Assert.That(subject.MapStateToStateCategory("Active"), Is.EqualTo(StateCategories.Doing));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.MapStateToStateCategory("New"), Is.EqualTo(StateCategories.ToDo));
+                Assert.That(subject.MapStateToStateCategory("Prioritized"), Is.EqualTo(StateCategories.ToDo));
+                Assert.That(subject.MapStateToStateCategory("Active"), Is.EqualTo(StateCategories.Doing));
+            }
         }
 
         [Test]
@@ -170,8 +176,11 @@ namespace Lighthouse.Backend.Tests.Models
             subject.DoneStates.Clear();
             subject.DoneStates.AddRange(["Completed"]);
 
-            Assert.That(subject.MapStateToStateCategory("Closed"), Is.EqualTo(StateCategories.Done));
-            Assert.That(subject.MapStateToStateCategory("Delivered"), Is.EqualTo(StateCategories.Done));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.MapStateToStateCategory("Closed"), Is.EqualTo(StateCategories.Done));
+                Assert.That(subject.MapStateToStateCategory("Delivered"), Is.EqualTo(StateCategories.Done));
+            }
         }
 
         private static WorkTrackingSystemOptionsOwnerTestClass CreateSubject()

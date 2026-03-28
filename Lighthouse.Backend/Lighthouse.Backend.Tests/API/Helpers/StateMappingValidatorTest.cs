@@ -13,8 +13,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.True);
-            Assert.That(result.Errors, Is.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Errors, Is.Empty);
+            }
         }
 
         [Test]
@@ -42,8 +45,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Has.Some.Contains("name"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Some.Contains("name"));
+            }
         }
 
         [Test]
@@ -72,8 +78,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Has.Some.Contains("In Progress"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Some.Contains("In Progress"));
+            }
         }
 
         [Test]
@@ -103,8 +112,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Has.Some.Contains("Resolved"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Some.Contains("Resolved"));
+            }
         }
 
         [Test]
@@ -133,8 +145,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Has.Some.Contains("Active"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Some.Contains("Active"));
+            }
         }
 
         [Test]
@@ -162,8 +177,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Has.Some.Contains("Empty"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Some.Contains("Empty"));
+            }
         }
 
         [Test]
@@ -179,8 +197,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors.Count, Is.GreaterThanOrEqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Count.GreaterThanOrEqualTo(2));
+            }
         }
     }
 }

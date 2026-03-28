@@ -14,11 +14,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var dto = new TeamSettingDto(team);
 
-            Assert.That(dto.StateMappings, Has.Count.EqualTo(2));
-            Assert.That(dto.StateMappings[0].Name, Is.EqualTo("In Progress"));
-            Assert.That(dto.StateMappings[0].States, Is.EquivalentTo(new[] { "Active", "Resolved" }));
-            Assert.That(dto.StateMappings[1].Name, Is.EqualTo("Waiting"));
-            Assert.That(dto.StateMappings[1].States, Is.EquivalentTo(new[] { "Blocked" }));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dto.StateMappings, Has.Count.EqualTo(2));
+                Assert.That(dto.StateMappings[0].Name, Is.EqualTo("In Progress"));
+                Assert.That(dto.StateMappings[0].States, Is.EquivalentTo(["Active", "Resolved"]));
+                Assert.That(dto.StateMappings[1].Name, Is.EqualTo("Waiting"));
+                Assert.That(dto.StateMappings[1].States, Is.EquivalentTo(["Blocked"]));
+            }
         }
 
         [Test]
@@ -39,9 +42,12 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var dto = new PortfolioSettingDto(portfolio);
 
-            Assert.That(dto.StateMappings, Has.Count.EqualTo(1));
-            Assert.That(dto.StateMappings[0].Name, Is.EqualTo("Dev Done"));
-            Assert.That(dto.StateMappings[0].States, Is.EquivalentTo(new[] { "Resolved", "Verified" }));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dto.StateMappings, Has.Count.EqualTo(1));
+                Assert.That(dto.StateMappings[0].Name, Is.EqualTo("Dev Done"));
+                Assert.That(dto.StateMappings[0].States, Is.EquivalentTo(["Resolved", "Verified"]));
+            }
         }
 
         [Test]
