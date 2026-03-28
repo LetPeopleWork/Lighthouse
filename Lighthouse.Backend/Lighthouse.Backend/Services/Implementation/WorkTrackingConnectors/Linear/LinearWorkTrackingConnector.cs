@@ -269,11 +269,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        private WorkItemBase CreateWorkItemFromIssue(IssueNode issue, IWorkItemQueryOwner queryOwner, string resolvedProjectId)
+        private WorkItemBase CreateWorkItemFromIssue(IssueNode issue, Team team, string resolvedProjectId)
         {
             var state = issue.State?.Name ?? UnknownStateIdentifier;
 
-            var stateCategory = queryOwner.MapStateToStateCategory(state);
+            var stateCategory = team.MapStateToStateCategory(state);
 
             if (issue.CompletedAt != null && issue.StartedAt == null)
             {
@@ -420,9 +420,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return response?.Team;
         }
 
-        private static List<IssueNode> FilterIssuesForStates(IWorkItemQueryOwner owner, List<IssueNode> issues)
+        private static List<IssueNode> FilterIssuesForStates(Team team, List<IssueNode> issues)
         {
-            var states = owner.AllStates.ToList();
+            var states = team.AllStates.ToList();
 
             return issues.Where(i => states.Contains(i.State.Name)).ToList();
         }
