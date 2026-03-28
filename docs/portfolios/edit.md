@@ -76,6 +76,30 @@ For Jira, the common states are: *To Do* (To Do), *In Progress* (Doing), *Done* 
 {: .important}
 While Azure DevOps can handle if you specify states that don't exist, Jira will not execute a query with a state that is not in its system. That means for Jira you have make sure everything you mention does exist exactly as specified, as otherwise the [Validation](#validation-and-save) will fail.
 
+## State Mappings
+State Mappings let you define Lighthouse-friendly state names and map one or more provider states to each name.
+
+This gives you a two-step setup:
+1. Define mappings in the **State Mappings** section.
+2. Use the mapped names in **To Do**, **Doing**, or **Done**.
+
+### Examples
+- Single-state rename: map `Active` to `Implementation`.
+- Multi-state grouping: map `In Progress`, `Code Review`, and `QA Review` to `Implementation`.
+
+After mapping, Lighthouse exposes the mapped name as the state value in Lighthouse views and APIs.
+
+### Validation Rules
+- Mapping names must be unique.
+- A mapping must contain at least one source state.
+- A source state can only exist in one mapping.
+- Mapping names can be used in To Do / Doing / Done (this is the intended workflow).
+
+### Notes
+- Existing configurations without mappings continue to work unchanged.
+- Cloning a portfolio copies State Mappings together with the other portfolio settings.
+- Updating mappings is treated as a work-item-related change and triggers refresh/invalidation behavior.
+
 # Tags
 Tags allow you to add any kind of additional information that may be helpful for you to identify this portfolio. This may be a specific customer, a department, business unit, or tribe, or anything else that somehow might be useful. You can add as many tags as you want. Existing tags will be shown as proposal.
 
