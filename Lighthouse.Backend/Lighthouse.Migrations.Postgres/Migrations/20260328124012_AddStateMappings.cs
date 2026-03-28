@@ -7,7 +7,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
     /// <inheritdoc />
     public partial class AddStateMappings : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
@@ -23,11 +22,34 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                 type: "text",
                 nullable: false,
                 defaultValue: "");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_FeatureProject_Projects_ProjectsId",
+                table: "FeaturePortfolio");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_FeaturePortfolio_Portfolios_PortfoliosId",
+                table: "FeaturePortfolio",
+                column: "PortfoliosId",
+                principalTable: "Portfolios",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_FeaturePortfolio_Portfolios_PortfoliosId",
+                table: "FeaturePortfolio");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_FeatureProject_Projects_ProjectsId",
+                table: "FeaturePortfolio",
+                column: "PortfoliosId",
+                principalTable: "Portfolios",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
             migrationBuilder.DropColumn(
                 name: "StateMappings",
                 table: "Teams");
