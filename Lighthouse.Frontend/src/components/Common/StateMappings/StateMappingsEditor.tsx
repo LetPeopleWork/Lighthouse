@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import InputGroup from "../InputGroup/InputGroup";
 
@@ -30,11 +30,16 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 		[index: number]: string;
 	}>({});
 
+	const mappingIds = useRef<string[]>([]);
+
 	const handleAddMapping = () => {
+		mappingIds.current.push(crypto.randomUUID());
 		onChange([...stateMappings, { name: "", states: [] }]);
 	};
 
 	const handleRemoveMapping = (index: number) => {
+		mappingIds.current.splice(index, 1);
+
 		const updated = stateMappings.filter((_, i) => i !== index);
 		onChange(updated);
 	};
@@ -64,6 +69,13 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 		onChange(updated);
 	};
 
+	const getId = (index: number) => {
+		if (!mappingIds.current[index]) {
+			mappingIds.current[index] = crypto.randomUUID();
+		}
+		return mappingIds.current[index];
+	};
+
 	return (
 		<InputGroup title="State Mappings">
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -85,7 +97,7 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 				<Grid
 					container
 					spacing={2}
-					key={`mapping-${mapping.name || "new"}-${mapping.states.join(",")}`}
+					key={getId(index)}
 					sx={{
 						mb: 2,
 						p: 2,

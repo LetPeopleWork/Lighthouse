@@ -404,14 +404,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							/>
 						)}
 
-						<StateMappingsEditor
-							stateMappings={projectSettings?.stateMappings || []}
-							onChange={(mappings: IStateMapping[]) =>
-								handleProjectSettingsChange("stateMappings", mappings)
-							}
-							validationErrors={stateMappingErrors}
-						/>
-
 						<StatesList
 							toDoStates={projectSettings?.toDoStates || []}
 							onAddToDoState={handleAddToDoState}
@@ -431,6 +423,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 									?.filter((m) => m.name.trim() !== "")
 									.map((m) => m.name) || []
 							}
+						/>
+
+						<StateMappingsEditor
+							stateMappings={projectSettings?.stateMappings || []}
+							onChange={(mappings: IStateMapping[]) =>
+								handleProjectSettingsChange("stateMappings", mappings)
+							}
+							validationErrors={stateMappingErrors}
 						/>
 
 						<TagsComponent

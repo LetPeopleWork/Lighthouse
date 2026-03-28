@@ -50,7 +50,14 @@ function validateNoDirectStateConflicts(
 	mappings: IStateMapping[],
 	directStates: string[],
 ): string[] {
-	const directLower = new Set(directStates.map((s) => s.trim().toLowerCase()));
+	const mappingNames = new Set(
+		mappings.map((m) => m.name.trim().toLowerCase()).filter(Boolean),
+	);
+	const directLower = new Set(
+		directStates
+			.map((s) => s.trim().toLowerCase())
+			.filter((s) => !mappingNames.has(s)),
+	);
 	return mappings
 		.map((m) => m.name.trim())
 		.filter((name) => name && directLower.has(name.toLowerCase()))

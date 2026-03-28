@@ -135,7 +135,35 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_MappingNameCollidesWithDirectState_ReturnsError()
+        public void Validate_MappingNameUsedInDirectStateList_IsValid()
+        {
+            var mappings = new List<StateMapping>
+            {
+                new() { Name = "Implementation", States = ["Active", "Resolved"] }
+            };
+            var allStates = new List<string> { "New", "Implementation", "Done" };
+
+            var result = StateMappingValidator.Validate(mappings, allStates);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_MappingNameUsedInDirectStateListCaseInsensitive_IsValid()
+        {
+            var mappings = new List<StateMapping>
+            {
+                new() { Name = "Implementation", States = ["Active", "Resolved"] }
+            };
+            var allStates = new List<string> { "New", "implementation", "Done" };
+
+            var result = StateMappingValidator.Validate(mappings, allStates);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_MappingNameMatchesRawStateInDirectList_IsValid()
         {
             var mappings = new List<StateMapping>
             {
@@ -145,25 +173,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = StateMappingValidator.Validate(mappings, allStates);
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Errors, Has.Some.Contains("Active"));
-            }
-        }
-
-        [Test]
-        public void Validate_MappingNameCollidesWithDirectStateCaseInsensitive_ReturnsError()
-        {
-            var mappings = new List<StateMapping>
-            {
-                new() { Name = "active", States = ["In Work"] }
-            };
-            var allStates = new List<string> { "Active" };
-
-            var result = StateMappingValidator.Validate(mappings, allStates);
-
-            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]

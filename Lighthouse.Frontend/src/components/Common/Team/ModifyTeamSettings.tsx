@@ -384,14 +384,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							/>
 						)}
 
-						<StateMappingsEditor
-							stateMappings={teamSettings?.stateMappings || []}
-							onChange={(mappings: IStateMapping[]) =>
-								handleTeamSettingsChange("stateMappings", mappings)
-							}
-							validationErrors={stateMappingErrors}
-						/>
-
 						<StatesList
 							toDoStates={teamSettings?.toDoStates || []}
 							onAddToDoState={handleAddToDoState}
@@ -411,6 +403,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 									?.filter((m) => m.name.trim() !== "")
 									.map((m) => m.name) || []
 							}
+						/>
+
+						<StateMappingsEditor
+							stateMappings={teamSettings?.stateMappings || []}
+							onChange={(mappings: IStateMapping[]) =>
+								handleTeamSettingsChange("stateMappings", mappings)
+							}
+							validationErrors={stateMappingErrors}
 						/>
 
 						<TagsComponent

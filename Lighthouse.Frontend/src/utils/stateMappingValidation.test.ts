@@ -49,15 +49,31 @@ describe("validateStateMappings", () => {
 		);
 	});
 
-	it("returns error when mapping name collides with direct state", () => {
+	it("allows mapping name used in direct state lists (intended workflow)", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "Implementation", states: ["Active", "Resolved"] },
+		];
+		const directStates = ["New", "Implementation", "Done"];
+		const result = validateStateMappings(mappings, directStates);
+		expect(result).toEqual([]);
+	});
+
+	it("allows mapping name used in direct state lists case-insensitively", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "Implementation", states: ["Active", "Resolved"] },
+		];
+		const directStates = ["New", "implementation", "Done"];
+		const result = validateStateMappings(mappings, directStates);
+		expect(result).toEqual([]);
+	});
+
+	it("allows mapping name matching raw state in direct state list", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "In Progress", states: ["Working"] },
 		];
 		const directStates = ["New", "In Progress", "Done"];
 		const result = validateStateMappings(mappings, directStates);
-		expect(result).toContain(
-			'Mapping name "In Progress" conflicts with a directly configured state.',
-		);
+		expect(result).toEqual([]);
 	});
 
 	it("returns multiple errors for multiple issues", () => {
