@@ -7,5 +7,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task LogRefreshAsync(RefreshLog entry);
 
         IEnumerable<RefreshLog> GetRefreshLogs();
+
+        Task RemoveRefreshLogsForEntity(RefreshType type, int entityId);
+
+        Task RemoveOrphanedRefreshLogs();
     }
 }

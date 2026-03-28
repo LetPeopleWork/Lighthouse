@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,8 @@ namespace Lighthouse.Backend.API
         IWorkItemRepository workItemRepository,
         ITeamUpdater teamUpdateService,
         IPortfolioUpdater portfolioUpdater,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IRefreshLogService refreshLogService)
         : ControllerBase
     {
         [HttpGet]
@@ -67,6 +69,8 @@ namespace Lighthouse.Backend.API
 
             teamRepository.Remove(teamId);
             await teamRepository.Save();
+
+            await refreshLogService.RemoveRefreshLogsForEntity(RefreshType.Team, teamId);
 
             foreach (var portfolioId in allAffectedIds)
             {

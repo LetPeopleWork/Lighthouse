@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepoMock;
 
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
+        private Mock<IRefreshLogService> refreshLogServiceMock;
 
         [SetUp]
         public void Setup()
@@ -21,6 +23,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepoMock = new Mock<IRepository<Portfolio>>();
             teamRepoMock = new Mock<IRepository<Team>>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
+            refreshLogServiceMock = new Mock<IRefreshLogService>();
         }
 
         [Test]
@@ -96,6 +99,18 @@ namespace Lighthouse.Backend.Tests.API
 
             portfolioRepoMock.Verify(x => x.Remove(portfolioId));
             portfolioRepoMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task Delete_RemovesPortfolioRefreshLogs()
+        {
+            const int portfolioId = 12;
+
+            var subject = CreateSubject();
+
+            await subject.DeletePortfolio(portfolioId);
+
+            refreshLogServiceMock.Verify(x => x.RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId), Times.Once);
         }
 
         [Test]
@@ -336,7 +351,8 @@ namespace Lighthouse.Backend.Tests.API
             return new PortfolioController(
                 portfolioRepoMock.Object,
                 teamRepoMock.Object,
-                portfolioUpdaterMock.Object
+                portfolioUpdaterMock.Object,
+                refreshLogServiceMock.Object
             );
         }
 

@@ -498,6 +498,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISeeder, AppSettingSeeder>();
             builder.Services.AddScoped<ISeeder, OptionalFeatureSeeder>();
             builder.Services.AddScoped<ISeeder, TerminologySeeder>();
+            builder.Services.AddScoped<ISeeder, RefreshLogSeeder>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();

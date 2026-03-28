@@ -6,6 +6,15 @@ nav_order: 95
 
 # vNext
 
+## Bug Fix: Deleted Teams and Portfolios Removed from Refresh History
+Fixed a bug where deleted teams and portfolios continued to appear in the Refresh History section of Settings > System Info. Orphaned refresh-log entries are now cleaned up automatically.
+
+**What changed:**
+- Deleting a team or portfolio now removes all associated refresh-log records immediately.
+- On startup, any orphaned refresh-log entries left behind by prior versions or partial failures are automatically cleaned up.
+
+No changes are required to your configuration. If you previously saw deleted entities in the refresh history dropdown, they will disappear after the next server restart or the next time you delete a team or portfolio.
+
 ## Bug Fix: Cycle Time Dates No Longer Appear in the Future for Positive-Offset Timezones
 Fixed a bug where users in positive-offset timezones (e.g., NZ, Australia) could see cycle-time dates displayed one day in the future. The root cause was that date-range filters and chart labels used UTC-based date conversion instead of respecting the user's local calendar date.
 

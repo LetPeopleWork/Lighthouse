@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,8 @@ namespace Lighthouse.Backend.API
     public class PortfolioController(
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
-        IPortfolioUpdater portfolioUpdater)
+        IPortfolioUpdater portfolioUpdater,
+        IRefreshLogService refreshLogService)
         : ControllerBase
     {
         [HttpGet]
@@ -37,6 +39,9 @@ namespace Lighthouse.Backend.API
         {
             portfolioRepository.Remove(portfolioId);
             await portfolioRepository.Save();
+
+            await refreshLogService.RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId);
+
             return NoContent();
         }
 

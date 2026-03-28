@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ITeamUpdater> teamUpdateServiceMock;
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IRefreshLogService> refreshLogServiceMock;
 
         [SetUp]
         public void Setup()
@@ -28,6 +30,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
+            refreshLogServiceMock = new Mock<IRefreshLogService>();
         }
 
         [Test]
@@ -44,6 +47,16 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task Delete_RemovesTeamRefreshLogs()
+        {
+            const int teamId = 12;
+
+            var subject = CreateSubject();
+
+            await subject.DeleteTeam(teamId);
+
+            refreshLogServiceMock.Verify(x => x.RemoveRefreshLogsForEntity(RefreshType.Team, teamId), Times.Once);
+        }
         public async Task Delete_WhenTeamIsInvolvedInPortfolios_TriggersPortfolioUpdates()
         {
             const int teamId = 42;
@@ -595,7 +608,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object, refreshLogServiceMock.Object);
         }
     }
 }
