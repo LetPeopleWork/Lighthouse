@@ -243,6 +243,24 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task CreatePortfolio_InvalidStateMappings_ReturnsBadRequest()
+        {
+            var dto = new PortfolioSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                StateMappings =
+                [
+                    new StateMappingDto { Name = "", States = ["Active"] }
+                ]
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreatePortfolio(dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
         private PortfoliosController CreateSubject()
         {
             return new PortfoliosController(

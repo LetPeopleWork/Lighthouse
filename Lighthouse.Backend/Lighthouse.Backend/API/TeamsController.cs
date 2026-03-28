@@ -73,6 +73,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(baselineValidation.ErrorMessage);
             }
 
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting);
+            if (!stateMappingValidation.IsValid)
+            {
+                return BadRequest(stateMappingValidation.Errors);
+            }
+
             teamSetting.Id = 0;
             var newTeam = new Team();
             newTeam.SyncTeamWithTeamSettings(teamSetting);

@@ -526,6 +526,50 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(dto!.HasThroughputBlackoutOverlap, Is.False);
         }
 
+        [Test]
+        public async Task UpdateTeam_InvalidStateMappings_ReturnsBadRequest()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                StateMappings =
+                [
+                    new StateMappingDto { Name = "Group A", States = ["Active"] },
+                    new StateMappingDto { Name = "Group A", States = ["Resolved"] }
+                ]
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public async Task UpdateTeam_ValidStateMappings_ReturnsOk()
+        {
+            var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180,
+                StateMappings =
+                [
+                    new StateMappingDto { Name = "In Progress", States = ["Active", "Resolved"] }
+                ]
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
         private static Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };

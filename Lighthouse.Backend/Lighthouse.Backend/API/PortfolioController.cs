@@ -54,6 +54,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(baselineValidation.ErrorMessage);
             }
 
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(portfolioSetting);
+            if (!stateMappingValidation.IsValid)
+            {
+                return BadRequest(stateMappingValidation.Errors);
+            }
+
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
                 portfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);

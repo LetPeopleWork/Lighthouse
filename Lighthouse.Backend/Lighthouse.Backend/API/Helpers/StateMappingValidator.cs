@@ -1,9 +1,25 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.API.Helpers
 {
     public static class StateMappingValidator
     {
+        public static StateMappingValidationResult ValidateSettings(SettingsOwnerDtoBase settings)
+        {
+            var mappings = settings.StateMappings
+                .Select(dto => new StateMapping { Name = dto.Name, States = dto.States })
+                .ToList();
+
+            var allDirectStates = settings.ToDoStates
+                .Concat(settings.DoingStates)
+                .Concat(settings.DoneStates)
+                .Concat(settings.BlockedStates)
+                .ToList();
+
+            return Validate(mappings, allDirectStates);
+        }
+
         public static StateMappingValidationResult Validate(List<StateMapping> mappings, List<string> allDirectStates)
         {
             var errors = new List<string>();

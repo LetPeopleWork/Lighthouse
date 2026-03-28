@@ -64,6 +64,12 @@ namespace Lighthouse.Backend.API
                 return BadRequest(baselineValidation.ErrorMessage);
             }
 
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(portfolioSetting);
+            if (!stateMappingValidation.IsValid)
+            {
+                return BadRequest(stateMappingValidation.Errors);
+            }
+
             portfolioSetting.Id = 0;
 
             var newPortfolio = new Portfolio();

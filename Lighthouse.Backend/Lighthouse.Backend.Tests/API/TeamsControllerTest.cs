@@ -445,6 +445,24 @@ namespace Lighthouse.Backend.Tests.API
             return new Team { Id = id, Name = name };
         }
 
+        [Test]
+        public async Task CreateTeam_InvalidStateMappings_ReturnsBadRequest()
+        {
+            var dto = new TeamSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                StateMappings =
+                [
+                    new StateMappingDto { Name = "", States = ["Active"] }
+                ]
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreateTeam(dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
         private static Portfolio CreatePortfolio(int id, string name)
         {
             return new Portfolio { Id = id, Name = name };

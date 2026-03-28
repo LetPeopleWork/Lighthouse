@@ -309,6 +309,28 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task UpdatePortfolio_InvalidStateMappings_ReturnsBadRequest()
+        {
+            var portfolio = new Portfolio { Id = 1 };
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(portfolio);
+
+            var dto = new PortfolioSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                StateMappings =
+                [
+                    new StateMappingDto { Name = "Group A", States = ["Active"] },
+                    new StateMappingDto { Name = "Group A", States = ["Resolved"] }
+                ]
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdatePortfolio(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
         private PortfolioController CreateSubject()
         {
             return new PortfolioController(
