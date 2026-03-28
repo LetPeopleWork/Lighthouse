@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(workItems.ToList(), Has.Count.EqualTo(1));
+                Assert.That(workItems.ToList(), Has.Count.GreaterThan(1));
                 var workItem = workItems.Single();
 
                 Assert.That(workItem.ReferenceId, Is.EqualTo("lig-5"));
