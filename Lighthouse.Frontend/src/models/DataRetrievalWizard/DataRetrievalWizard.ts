@@ -24,5 +24,5 @@ export interface DataRetrievalWizardProps {
 
 	onCancel: () => void;
 
-	dialogTitle?: string;
+	boardType?: "Board" | "Team";
 }

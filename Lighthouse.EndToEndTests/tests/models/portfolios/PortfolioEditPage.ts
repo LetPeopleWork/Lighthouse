@@ -155,7 +155,11 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 		await this.page
 			.getByRole("button", { name: workTrackingSystemType })
 			.click();
-		return new BoardWizard(this.page, (page) => new PortfolioEditPage(page));
+		return new BoardWizard(
+			this.page,
+			(page) => new PortfolioEditPage(page),
+			"Board",
+		);
 	}
 
 	async triggerCsvWizard(): Promise<CsvUploadWizard<PortfolioEditPage>> {

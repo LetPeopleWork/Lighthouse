@@ -21,7 +21,7 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	workTrackingSystemConnectionId,
 	onComplete,
 	onCancel,
-	dialogTitle,
+	boardType = "Board",
 }) => {
 	const { wizardService } = useContext(ApiServiceContext);
 	const [boards, setBoards] = useState<IBoard[]>([]);
@@ -120,7 +120,7 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 
 	return (
 		<Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-			<DialogTitle>{dialogTitle ?? "Select Board"}</DialogTitle>
+			<DialogTitle>Select {boardType}</DialogTitle>
 			<DialogContent>
 				{loading ? (
 					<CircularProgress sx={{ display: "block", margin: "2rem auto" }} />
@@ -134,15 +134,15 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 							renderInput={(params) => (
 								<TextField
 									{...params}
-									label="Board"
-									placeholder="Search for a board..."
+									label={boardType}
+									placeholder={`Search for a ${boardType.toLowerCase()}...`}
 									fullWidth
 									margin="normal"
 								/>
 							)}
 							isOptionEqualToValue={(option, value) => option.id === value.id}
 							disabled={boards.length === 0}
-							noOptionsText="No boards available"
+							noOptionsText={`No ${boardType.toLowerCase()}s available`}
 						/>
 						<BoardInformationDisplay
 							boardInformation={boardInformation}

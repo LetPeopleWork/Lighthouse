@@ -373,13 +373,11 @@ for (const wizardConfig of wizardConfiguration) {
 			await newTeamPage.selectWorkTrackingSystem(
 				newWorkTrackingSystemConnectionName,
 			);
-			const wizard = await newTeamPage.openBoardWizard(
-				wizardConfig.displayName,
-			);
+			const wizard = await newTeamPage.openTeamWizard(wizardConfig.displayName);
 
 			expect(await wizard.confirmButton.isEnabled()).toBeFalsy();
 
-			await wizard.selectBoardByName(wizardConfig.boardName);
+			await wizard.selectByName(wizardConfig.boardName);
 
 			await expect(wizard.boardInformationPanel).toBeVisible();
 			expect(await wizard.confirmButton.isEnabled()).toBeTruthy();

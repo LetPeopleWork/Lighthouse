@@ -5,16 +5,18 @@ import type { TeamEditPage } from "../teams/TeamEditPage";
 export class BoardWizard<T extends PortfolioEditPage | TeamEditPage> {
 	page: Page;
 	createPageHandler: (page: Page) => T;
+	type: string;
 
-	constructor(page: Page, createPageHandler: (page: Page) => T) {
+	constructor(page: Page, createPageHandler: (page: Page) => T, type: string) {
 		this.page = page;
 		this.createPageHandler = createPageHandler;
+		this.type = type;
 	}
 
-	async selectBoardByName(boardName: string): Promise<void> {
-		await this.page.getByRole("combobox", { name: "Board" }).click();
+	async selectByName(name: string): Promise<void> {
+		await this.page.getByRole("combobox", { name: this.type }).click();
 
-		await this.page.getByRole("option", { name: boardName }).click();
+		await this.page.getByRole("option", { name }).click();
 	}
 
 	async confirm(): Promise<T> {

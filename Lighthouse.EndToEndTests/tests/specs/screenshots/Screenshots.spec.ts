@@ -535,9 +535,9 @@ for (const wizardConfig of wizardConfigs) {
 			const team = testData.teams[wizardConfig.teamIndex];
 			const teamEditPage = await overviewPage.editTeam(team.name);
 
-			const jiraWizard = await teamEditPage.openBoardWizard(wizardConfig.name);
+			const jiraWizard = await teamEditPage.openTeamWizard(wizardConfig.name);
 
-			await jiraWizard.selectBoardByName(wizardConfig.boardName);
+			await jiraWizard.selectByName(wizardConfig.boardName);
 
 			await expect(jiraWizard.boardInformationPanel).toBeVisible();
 

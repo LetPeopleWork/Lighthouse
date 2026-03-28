@@ -5,14 +5,6 @@ import { generateRandomName } from "../../helpers/names";
 test("should be able to handle a team defined in Linear", async ({
 	overviewPage,
 }) => {
-	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-
-	await test.step("Enable Linear Integration", async () => {
-		const featuresTab = await settingsPage.goToSystemConfiguration();
-
-		await featuresTab.enableFeature("LinearIntegration");
-	});
-
 	const workTrackingSystem = {
 		name: generateRandomName(),
 	};
@@ -37,7 +29,7 @@ test("should be able to handle a team defined in Linear", async ({
 	const newTeam = { id: 0, name: "LighthouseDemo" };
 
 	await test.step("Create Linear Team", async () => {
-		const newTeamPage = await overviewPage.lightHousePage.createNewTeam();
+		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
 
 		await test.step("Add general configuration", async () => {
 			await newTeamPage.setName(newTeam.name);
@@ -47,37 +39,19 @@ test("should be able to handle a team defined in Linear", async ({
 			await expect(newTeamPage.validateButton).toBeDisabled();
 		});
 
-		await test.step("Add Work Item Type Configuration", async () => {
-			await newTeamPage.resetWorkItemTypes([], ["Default", "Bug"]);
-
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newTeamPage.validateButton).toBeDisabled();
-		});
-
-		await test.step("Add State Configuration", async () => {
-			await newTeamPage.resetStates(
-				{
-					toDo: [],
-					doing: [],
-					done: [],
-				},
-				{
-					toDo: ["Backlog", "Planned"],
-					doing: ["Development", "Resolved"],
-					done: ["Closed"],
-				},
-			);
-
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newTeamPage.validateButton).toBeDisabled();
-		});
-
-		await test.step("Select Work Tracking System", async () => {
+		await test.step("Select Work Tracking System and Linear Team", async () => {
 			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
-			await newTeamPage.setDataRetrievalValue(
-				newTeam.name,
-				"Linear Team/Project",
+
+			const linearTeamWizard = await newTeamPage.openTeamWizard(
+				"Linear",
+				"Team",
 			);
+			await linearTeamWizard.selectByName(newTeam.name);
+
+			await expect(linearTeamWizard.boardInformationPanel).toBeVisible();
+			expect(await linearTeamWizard.confirmButton.isEnabled()).toBeTruthy();
+
+			newTeamPage = await linearTeamWizard.confirm();
 
 			// Now we have all default configuration set
 			await expect(newTeamPage.validateButton).toBeEnabled();
@@ -120,8 +94,8 @@ test("should be able to handle a team defined in Linear", async ({
 			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
-		await test.step("Add Work Item Type Configuration", async () => {
-			await newPortfolioPage.resetWorkItemTypes([], ["Default"]);
+		await test.step("Select Work Tracking System", async () => {
+			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
 			await expect(newPortfolioPage.validateButton).toBeDisabled();
@@ -136,21 +110,9 @@ test("should be able to handle a team defined in Linear", async ({
 				},
 				{
 					toDo: ["Backlog", "Planned"],
-					doing: ["Development", "Resolved"],
-					done: ["Closed"],
+					doing: ["In Progress"],
+					done: ["Completed"],
 				},
-			);
-
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newPortfolioPage.validateButton).toBeDisabled();
-		});
-
-		await test.step("Select Work Tracking System", async () => {
-			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
-
-			await newPortfolioPage.setDataRetrievalValue(
-				newPortfolio.name,
-				"Linear Team/Project",
 			);
 
 			// Now we have all default configuration set

@@ -56,13 +56,20 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		await this.automaticallyAdjustFeatureWIPCheckBox.uncheck();
 	}
 
-	async openBoardWizard(
+	async openTeamWizard(
 		workTrackingSystemType: string,
+		wizardType: "Board" | "Team" = "Board",
 	): Promise<BoardWizard<TeamEditPage>> {
 		await this.page
-			.getByRole("button", { name: `Select ${workTrackingSystemType} Board` })
+			.getByRole("button", {
+				name: `Select ${workTrackingSystemType} ${wizardType}`,
+			})
 			.click();
-		return new BoardWizard(this.page, (page) => new TeamEditPage(page));
+		return new BoardWizard(
+			this.page,
+			(page) => new TeamEditPage(page),
+			wizardType,
+		);
 	}
 
 	async triggerCsvWizard(): Promise<CsvUploadWizard<TeamEditPage>> {

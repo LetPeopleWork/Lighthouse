@@ -203,7 +203,7 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 					workTrackingSystemConnectionId={selectedWorkTrackingSystem.id}
 					onComplete={handleWizardComplete}
 					onCancel={handleWizardCancel}
-					dialogTitle={activeWizard.name}
+					boardType={activeWizard.id === "linear.team" ? "Team" : "Board"}
 				/>
 			)}
 		</InputGroup>

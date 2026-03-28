@@ -448,7 +448,7 @@ for (const wizardConfiguration of wizardConfigurations) {
 
 				expect(await boardWizard.confirmButton.isEnabled()).toBeFalsy();
 
-				await boardWizard.selectBoardByName(wizardConfiguration.boardName);
+				await boardWizard.selectByName(wizardConfiguration.boardName);
 
 				await expect(boardWizard.boardInformationPanel).toBeVisible();
 				expect(await boardWizard.confirmButton.isEnabled()).toBeTruthy();
