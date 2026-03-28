@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var result = subject.AllStates.ToList();
 
-            Assert.That(result, Is.EquivalentTo(new[] { "New", "Active", "Closed" }));
+            Assert.That(result, Is.EquivalentTo(["New", "Active", "Closed"]));
         }
 
         [Test]
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var result = subject.AllStates.ToList();
 
-            Assert.That(result, Is.EquivalentTo(new[] { "New", "Active", "Resolved", "Closed" }));
+            Assert.That(result, Is.EquivalentTo(["New", "Active", "Resolved", "Closed"]));
         }
 
         [Test]
@@ -271,7 +271,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var result = subject.OpenStates.ToList();
 
-            Assert.That(result, Is.EquivalentTo(new[] { "New", "Active", "Resolved" }));
+            Assert.That(result, Is.EquivalentTo(["New", "Active", "Resolved"]));
         }
 
         private static WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
