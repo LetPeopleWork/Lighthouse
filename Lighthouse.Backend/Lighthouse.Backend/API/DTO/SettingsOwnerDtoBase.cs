@@ -81,5 +81,7 @@ namespace Lighthouse.Backend.API.DTO
         public bool UseNonNumericEstimation { get; set; } = false;
 
         public List<string> EstimationCategoryValues { get; set; } = [];
+
+        public DataRetrievalSchemaDto? DataRetrievalSchema { get; set; }
     }
 }

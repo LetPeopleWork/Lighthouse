@@ -336,7 +336,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 									if (numberOfItems === 1) {
 										const workItem = group.items[0];
-										return `${getWorkItemName(workItem)} (Click for details)`;
+										return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
 									}
 
 									return `${numberOfItems} ${workItemsTerm} in ${group.state} (Click for details)`;

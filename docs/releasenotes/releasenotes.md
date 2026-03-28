@@ -4,6 +4,27 @@ layout: home
 nav_order: 95
 ---
 
+# vNext
+
+## Linear Integration — Production Release
+The Linear integration has moved from preview to a fully supported production provider. If you were using Linear during the preview phase, you will need to reconfigure your teams and portfolios — existing preview configurations are not migrated.
+
+**What changed:**
+
+**Teams:** Linear teams are now configured using a team selection wizard instead of typing team names manually. The wizard lists all available teams from your connected Linear workspace. Work item types are fixed to *Issue* and do not require manual configuration.
+
+**Portfolios:** Linear portfolios automatically retrieve all projects in the authenticated workspace as Lighthouse features. No query or work item type configuration is needed — just create a portfolio with a Linear connection, configure your states, and you're ready to go.
+
+**Hierarchy:** Lighthouse now maps the full Linear hierarchy:
+- **Issues** (team work items) roll up to **Projects** (portfolio features)
+- **Projects** roll up to **Initiatives** (parent features)
+
+This means your Monte Carlo forecasts and metrics correctly reflect the Linear project structure. Initiative names, statuses, and URLs are fetched directly from the Linear API.
+
+**States:** State configuration works the same as before — map your Linear issue statuses to Lighthouse's To Do / Doing / Done categories.
+
+See the [Linear documentation](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/linear.html) for updated setup instructions.
+
 # Lighthouse v26.3.25.6
 
 ## Blackout Periods

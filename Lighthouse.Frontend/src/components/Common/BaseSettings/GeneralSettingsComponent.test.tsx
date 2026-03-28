@@ -864,4 +864,114 @@ describe("GeneralSettingsComponent", () => {
 			);
 		});
 	});
+
+	describe("Schema-driven behavior", () => {
+		const linearTeamSystem: IWorkTrackingSystemConnection = {
+			id: 4,
+			name: "Linear System",
+			workTrackingSystem: "Linear",
+			options: [],
+			writeBackMappingDefinitions: [],
+			authenticationMethodKey: "linear.apikey",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "Linear Team",
+			additionalFieldDefinitions: [],
+		};
+
+		it("hides data retrieval field when schema inputKind is none", () => {
+			const settingsWithNoneSchema = {
+				...createMockTeamSettings(),
+				dataRetrievalSchema: {
+					key: "linear.projects",
+					displayLabel: "Linear Projects",
+					inputKind: "none" as const,
+					isRequired: false,
+					isWorkItemTypesRequired: false,
+					wizardHint: null,
+				},
+			};
+
+			render(
+				<GeneralSettingsComponent
+					settings={settingsWithNoneSchema}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={[linearTeamSystem]}
+					selectedWorkTrackingSystem={linearTeamSystem}
+				/>,
+			);
+
+			expect(screen.getByLabelText("Name")).toBeInTheDocument();
+			expect(
+				screen.queryByLabelText("Linear Projects"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders data retrieval field as read-only when schema inputKind is wizard-select", () => {
+			const settingsWithWizardSchema = {
+				...createMockTeamSettings(),
+				dataRetrievalValue: "team-uuid-123",
+				dataRetrievalSchema: {
+					key: "linear.team",
+					displayLabel: "Linear Team",
+					inputKind: "wizard-select" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: false,
+					wizardHint: "linear-team-select",
+				},
+			};
+
+			render(
+				<GeneralSettingsComponent
+					settings={settingsWithWizardSchema}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={[linearTeamSystem]}
+					selectedWorkTrackingSystem={linearTeamSystem}
+				/>,
+			);
+
+			const textField = screen.getByLabelText("Linear Team");
+			expect(textField).toBeInTheDocument();
+			expect(textField).toHaveValue("team-uuid-123");
+			expect(textField).toHaveAttribute("readonly");
+		});
+
+		it("uses schema displayLabel for the data retrieval field label", () => {
+			const settingsWithSchema = {
+				...createMockTeamSettings(),
+				dataRetrievalSchema: {
+					key: "linear.team",
+					displayLabel: "Linear Team",
+					inputKind: "wizard-select" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: false,
+					wizardHint: "linear-team-select",
+				},
+			};
+
+			render(
+				<GeneralSettingsComponent
+					settings={settingsWithSchema}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={[linearTeamSystem]}
+					selectedWorkTrackingSystem={linearTeamSystem}
+				/>,
+			);
+
+			expect(screen.getByLabelText("Linear Team")).toBeInTheDocument();
+		});
+
+		it("falls back to connection display name when schema has no displayLabel", () => {
+			const settingsWithoutSchema = createMockTeamSettings();
+
+			render(
+				<GeneralSettingsComponent
+					settings={settingsWithoutSchema}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={[linearTeamSystem]}
+					selectedWorkTrackingSystem={linearTeamSystem}
+				/>,
+			);
+
+			expect(screen.getByLabelText("Linear Team")).toBeInTheDocument();
+		});
+	});
 });

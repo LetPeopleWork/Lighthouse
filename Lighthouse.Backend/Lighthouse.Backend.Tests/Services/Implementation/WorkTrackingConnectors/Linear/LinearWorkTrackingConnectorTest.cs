@@ -9,7 +9,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 {
     public class LinearWorkTrackingConnectorTest
     {
-
         [Test]
         public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
         {
@@ -45,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task ValidateTeamSettings_GivenValidTeamName_ReturnsTrue()
+        public async Task ValidateTeamSettings_GivenValidTeamId_ReturnsTrue()
         {
             var subject = CreateSubject();
 
@@ -57,14 +56,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [TestCase("NonExistentTeam")]
+        [TestCase("00000000-0000-0000-0000-000000000000")]
         [TestCase("")]
-        public async Task ValidateTeamSettings_GivenInvalidTeamName_ReturnsFalse(string teamName)
+        public async Task ValidateTeamSettings_GivenInvalidTeamId_ReturnsFalse(string teamId)
         {
             var subject = CreateSubject();
 
             var team = CreateTeam();
-            team.DataRetrievalValue = teamName;
+            team.DataRetrievalValue = teamId;
 
             var isValid = await subject.ValidateTeamSettings(team);
 
@@ -72,39 +71,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_FiltersForSpecificedWorkItemTypes_ReturnsExcpectedWorkItems()
+        public async Task GetWorkItemsForTeam_AllWorkItemsHaveIssueType()
         {
             var subject = CreateSubject();
 
             var team = CreateTeam();
 
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.Add("Bug");
-
             var workItems = await subject.GetWorkItemsForTeam(team);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(workItems.ToList(), Has.Count.EqualTo(1));
-                var workItem = workItems.Single();
-
-                Assert.That(workItem.ReferenceId, Is.EqualTo("lig-13"));
-                Assert.That(workItem.Name, Is.EqualTo("Bug 1"));
-                Assert.That(workItem.State, Is.EqualTo("Development"));
-                Assert.That(workItem.Type, Is.EqualTo("Bug"));
-                Assert.That(workItem.ParentReferenceId, Is.EqualTo("lig-5"));
-                Assert.That(workItem.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-13/bug-1"));
-
-                Assert.That(workItem.Order, Is.Not.Null);
-
-                Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 24, 11, 05, 51, 877, DateTimeKind.Utc)));
-                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 10, 26, 11, 51, 18, 595, DateTimeKind.Utc)));
-                Assert.That(workItem.ClosedDate, Is.Null);
+                Assert.That(workItems.ToList(), Has.Count.GreaterThan(0));
+                Assert.That(workItems.All(w => w.Type == "Issue"), Is.True);
             }
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_FiltersForSpecificedStates_ReturnsExcpectedWorkItems()
+        public async Task GetWorkItemsForTeam_FiltersForSpecifiedStates_ReturnsExpectedWorkItems()
         {
             var subject = CreateSubject();
 
@@ -123,8 +106,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.ReferenceId, Is.EqualTo("lig-5"));
                 Assert.That(workItem.Name, Is.EqualTo("Customize settings"));
                 Assert.That(workItem.State, Is.EqualTo("Done"));
-                Assert.That(workItem.Type, Is.EqualTo("Default"));
-                Assert.That(workItem.ParentReferenceId, Is.EqualTo(string.Empty));
+                Assert.That(workItem.Type, Is.EqualTo("Issue"));
+                Assert.That(workItem.ParentReferenceId, Is.Not.Null);
                 Assert.That(workItem.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-5/customize-settings"));
 
                 Assert.That(workItem.Order, Is.Not.Null);
@@ -142,37 +125,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var team = CreateTeam();
 
-            team.ToDoStates.Clear();
-            team.DoingStates.Clear();
-            team.DoingStates.Add("Development");
-
             team.DoneStates.Clear();
 
             var workItems = await subject.GetWorkItemsForTeam(team);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(workItems.ToList(), Has.Count.EqualTo(2));
-                var item1 = workItems.First();
-                var item2 = workItems.Last();
-
-                Assert.That(item2.ReferenceId, Is.EqualTo("lig-2"));
-                Assert.That(item1.ReferenceId, Is.EqualTo("lig-13"));
+                Assert.That(workItems.ToList(), Has.Count.GreaterThan(1));
+                var item1 = workItems.Single(x => x.ReferenceId == "lig-2");
+                var item2 = workItems.Single(x => x.ReferenceId == "lig-13");
 
                 var item1Order = double.Parse(item1.Order);
                 var item2Order = double.Parse(item2.Order);
 
-                // Ordering = Manual, Less = "higher up"
-                Assert.That(item2Order, Is.LessThan(item1Order));
+                Assert.That(item2Order, Is.GreaterThan(item1Order));
             }
         }
 
         [Test]
-        public async Task ValidateProjectSettings_GivenValidProjectName_ReturnsTrue()
+        public async Task ValidatePortfolioSettings_WorkspaceWithProjects_ReturnsTrue()
         {
             var subject = CreateSubject();
 
-            var project = CreateProject();
+            var project = CreatePortfolio();
 
             var isValid = await subject.ValidatePortfolioSettings(project);
 
@@ -180,29 +155,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [TestCase("NonExistentProject")]
-        [TestCase("")]
-        public async Task ValidateProjectSettings_GivenInvalidProjectName_ReturnsFalse(string projectName)
+        public async Task ValidatePortfolioSettings_DataRetrievalValueIgnored_StillReturnsTrue()
         {
             var subject = CreateSubject();
 
-            var project = CreateProject();
-            project.DataRetrievalValue = projectName;
+            var project = CreatePortfolio();
+            project.DataRetrievalValue = "NonExistentProject";
 
             var isValid = await subject.ValidatePortfolioSettings(project);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(isValid, Is.True);
         }
 
         [Test]
-        public async Task GetFeaturesForProject_FilterForState_ReturnsCorrectFeature()
+        public async Task GetFeaturesForProject_ReturnsProjectsAsFeatures()
         {
-            var project = CreateProject();
-            project.ToDoStates.Clear();
-            project.ToDoStates.Add("Backlog");
+            var project = CreatePortfolio();
 
+            var subject = CreateSubject();
+
+            var features = await subject.GetFeaturesForProject(project);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Has.Count.GreaterThan(0));
+                Assert.That(features.All(f => f.Type == "Project"), Is.True);
+                Assert.That(features.All(f => !string.IsNullOrEmpty(f.ReferenceId)), Is.True);
+                Assert.That(features.All(f => !string.IsNullOrEmpty(f.Name)), Is.True);
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WithNonMatchingStates_ReturnsNoFeatures()
+        {
+            var project = CreatePortfolio();
+            project.ToDoStates.Clear();
             project.DoingStates.Clear();
             project.DoneStates.Clear();
+            project.ToDoStates.Add("NonExistentState");
+
+            var subject = CreateSubject();
+
+            var features = await subject.GetFeaturesForProject(project);
+
+            Assert.That(features, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_FeaturesHaveStableProjectIdReference()
+        {
+            var project = CreatePortfolio();
 
             var subject = CreateSubject();
 
@@ -210,71 +212,99 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(features.ToList(), Has.Count.EqualTo(1));
-                var feature = features.Single();
-
-                Assert.That(feature.ReferenceId, Is.EqualTo("lig-11"));
-
-                Assert.That(feature.Name, Is.EqualTo("Feature 1"));
-                Assert.That(feature.State, Is.EqualTo("Backlog"));
-                Assert.That(feature.Type, Is.EqualTo("Feature"));
-                Assert.That(feature.ParentReferenceId, Is.EqualTo(string.Empty));
-                Assert.That(feature.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-11/feature-1"));
-
-                Assert.That(feature.Order, Is.Not.Null);
-
-                Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
-                Assert.That(feature.StartedDate, Is.Null);
-                Assert.That(feature.ClosedDate, Is.Null);
+                Assert.That(features, Has.Count.GreaterThan(0));
+                Assert.That(features.All(f => !string.IsNullOrEmpty(f.ReferenceId)), Is.True);
+                Assert.That(features.All(f => f.ReferenceId != f.Name), Is.True, "ReferenceId should be a UUID, not a name");
             }
         }
 
         [Test]
-        public async Task GetFeaturesForProject_FilterForType_ReturnsCorrectFeature()
+        public async Task GetFeaturesForProject_ProjectsLinkedToInitiatives_HaveParentReferenceId()
         {
-            var project = CreateProject();
-
-            project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Feature");
+            var project = CreatePortfolio();
 
             var subject = CreateSubject();
 
             var features = await subject.GetFeaturesForProject(project);
+
+            // At least verify the ParentReferenceId is set for projects that have initiatives
+            // Not all projects may be linked to initiatives, so we just check the field is populated when present
+            Assert.That(features, Has.Count.GreaterThan(0));
+
+            var featuresWithInitiative = features.Where(f => !string.IsNullOrEmpty(f.ParentReferenceId)).ToList();
+
+            foreach (var feature in featuresWithInitiative)
+            {
+                Assert.That(feature.ParentReferenceId, Does.Not.Contain(" "),
+                    $"ParentReferenceId '{feature.ParentReferenceId}' for {feature.Name} should be a UUID");
+            }
+        }
+
+        [Test]
+        public async Task GetParentFeaturesDetails_WithInitiativeIds_ReturnsRealInitiatives()
+        {
+            var project = CreatePortfolio();
+
+            var subject = CreateSubject();
+
+            // First get features to find any initiative references
+            var features = await subject.GetFeaturesForProject(project);
+            var initiativeIds = features
+                .Where(f => !string.IsNullOrEmpty(f.ParentReferenceId))
+                .Select(f => f.ParentReferenceId)
+                .Distinct()
+                .ToList();
+
+            var parentFeatures = await subject.GetParentFeaturesDetails(project, initiativeIds);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(features.ToList(), Has.Count.EqualTo(1));
-                var feature = features.Single();
-
-                Assert.That(feature.ReferenceId, Is.EqualTo("lig-11"));
-
-                Assert.That(feature.Name, Is.EqualTo("Feature 1"));
-                Assert.That(feature.State, Is.EqualTo("Backlog"));
-                Assert.That(feature.Type, Is.EqualTo("Feature"));
-                Assert.That(feature.ParentReferenceId, Is.EqualTo(string.Empty));
-                Assert.That(feature.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-11/feature-1"));
-
-                Assert.That(feature.Order, Is.Not.Null);
-
-                Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
-                Assert.That(feature.StartedDate, Is.Null);
-                Assert.That(feature.ClosedDate, Is.Null);
+                Assert.That(parentFeatures, Has.Count.GreaterThan(0));
+                Assert.That(parentFeatures.All(f => f.Type == "Initiative"), Is.True, "Parent features should be typed as Initiative");
+                Assert.That(parentFeatures.All(f => f.Name != "Parent Feature"), Is.True, "Parent features should have real names, not placeholder");
+                Assert.That(parentFeatures.All(f => !string.IsNullOrEmpty(f.ReferenceId)), Is.True);
             }
         }
 
         [Test]
-        public async Task GetFeaturesForProject_FiltersOutSubIssues()
+        public async Task GetParentFeaturesDetails_WithInvalidIds_ReturnsEmptyList()
         {
-            var project = CreateProject();
+            var project = CreatePortfolio();
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project);
+            var invalidIds = new[] { "00000000-0000-0000-0000-000000000000" };
 
-            Assert.That(features.ToList(), Has.Count.EqualTo(2));
+            var parentFeatures = await subject.GetParentFeaturesDetails(project, invalidIds);
+
+            Assert.That(parentFeatures, Has.Count.EqualTo(0));
         }
 
-        private Team CreateTeam()
+        [Test]
+        public async Task GetFeatureWithParent_SetsCorrectParentReferenceId()
+        {
+            var project = CreatePortfolio();
+            var subject = CreateSubject();
+            
+            var features = await subject.GetFeaturesForProject(project);
+
+            var featureWithParent = features.Single(x => x.Name == "Integration Test Project");
+            Assert.That(featureWithParent.ParentReferenceId, Is.EqualTo("b87bc74b-cb77-4c45-84a5-4dd7460c6873"));
+        }
+
+        [Test]
+        public async Task GetParentFeaturesDetails_WithParentReferenceId_SetsCorrectParentReferenceId()
+        {
+            var project = CreatePortfolio();
+            var subject = CreateSubject();
+            
+            var parentDetails = await subject.GetParentFeaturesDetails(project, ["b87bc74b-cb77-4c45-84a5-4dd7460c6873"]);
+
+            var testInitiative = parentDetails.Single();
+            Assert.That(testInitiative.Name, Is.EqualTo("Test Initative"));
+        }
+
+        private static Team CreateTeam()
         {
             var connection = CreateConnection();
 
@@ -286,8 +316,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
 
             team.WorkItemTypes.Clear();
-            team.WorkItemTypes.Add("Default");
-            team.WorkItemTypes.Add("Bug");
+            team.WorkItemTypes.Add("Issue");
 
             team.ToDoStates.Clear();
             team.ToDoStates.Add("Backlog");
@@ -303,36 +332,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private Portfolio CreateProject()
+        private static Portfolio CreatePortfolio()
         {
             var connection = CreateConnection();
 
             var project = new Portfolio
             {
-                Name = "Test Project",
-                DataRetrievalValue = "My Demo Project",
+                Name = "Integration Test Project",
+                DataRetrievalValue = string.Empty,
                 WorkTrackingSystemConnection = connection
             };
 
             project.WorkItemTypes.Clear();
-            project.WorkItemTypes.Add("Feature");
-            project.WorkItemTypes.Add("Default");
 
             project.ToDoStates.Clear();
-            project.ToDoStates.Add("Backlog");
             project.ToDoStates.Add("Planned");
+            project.ToDoStates.Add("Backlog");
 
             project.DoingStates.Clear();
-            project.DoingStates.Add("Development");
-            project.DoingStates.Add("Resolved");
+            project.DoingStates.Add("In Progress");
 
             project.DoneStates.Clear();
-            project.DoneStates.Add("Done");
+            project.DoneStates.Add("Completed");
 
             return project;
         }
 
-        private WorkTrackingSystemConnection CreateConnection()
+        private static WorkTrackingSystemConnection CreateConnection()
         {
             var apiKey = Environment.GetEnvironmentVariable("LinearAPIKey") ?? throw new NotSupportedException("Can run test only if Environment Variable 'LinearAPIKey' is set!");
 

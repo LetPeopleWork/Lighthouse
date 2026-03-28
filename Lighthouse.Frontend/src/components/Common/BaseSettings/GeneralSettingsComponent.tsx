@@ -11,7 +11,10 @@ import Grid from "@mui/material/Grid";
 import { useState } from "react";
 import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
-import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
+import type {
+	IDataRetrievalWizard,
+	SettingsContext,
+} from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -26,6 +29,7 @@ interface GeneralSettingsComponentProps<T extends IBaseSettings> {
 	selectedWorkTrackingSystem?: IWorkTrackingSystemConnection | null;
 	onWorkTrackingSystemChange?: (event: SelectChangeEvent<string>) => void;
 	showWorkTrackingSystemSelection?: boolean;
+	settingsContext?: SettingsContext;
 }
 
 const GeneralSettingsComponent = <T extends IBaseSettings>({
@@ -36,6 +40,7 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 	selectedWorkTrackingSystem = null,
 	onWorkTrackingSystemChange = () => {},
 	showWorkTrackingSystemSelection = false,
+	settingsContext,
 }: GeneralSettingsComponentProps<T>) => {
 	const [activeWizard, setActiveWizard] = useState<IDataRetrievalWizard | null>(
 		null,
@@ -45,7 +50,10 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 
 	// Get available wizards for the selected work tracking system
 	const availableWizards = selectedWorkTrackingSystem
-		? getWizardsForSystem(selectedWorkTrackingSystem.workTrackingSystem)
+		? getWizardsForSystem(
+				selectedWorkTrackingSystem.workTrackingSystem,
+				settingsContext,
+			)
 		: [];
 
 	const handleWizardComplete = (boardInfo: IBoardInformation) => {
@@ -96,15 +104,26 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 		onWorkTrackingSystemChange(event);
 	};
 
+	const schema = settings?.dataRetrievalSchema;
+
 	const getDataRetrievalDisplayName = (
 		selectedWorkTrackingSystem: IWorkTrackingSystemConnection | null,
 	) => {
+		if (schema?.displayLabel) {
+			return schema.displayLabel;
+		}
+
 		if (selectedWorkTrackingSystem === null) {
 			return "Query";
 		}
 
 		return selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName();
 	};
+
+	const showDataRetrievalField =
+		selectedWorkTrackingSystem != null && schema?.inputKind !== "none";
+
+	const isDataRetrievalReadOnly = schema?.inputKind !== "freetext";
 
 	return (
 		<InputGroup title={title}>
@@ -138,14 +157,10 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 				</Grid>
 			)}
 
-			{selectedWorkTrackingSystem && (
+			{showDataRetrievalField && (
 				<Grid size={{ xs: 12 }}>
 					<TextField
-						label={
-							selectedWorkTrackingSystem
-								? getDataRetrievalDisplayName(selectedWorkTrackingSystem)
-								: "Data Retrieval"
-						}
+						label={getDataRetrievalDisplayName(selectedWorkTrackingSystem)}
 						multiline
 						rows={4}
 						fullWidth
@@ -157,6 +172,11 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 								e.target.value as T[keyof T],
 							)
 						}
+						slotProps={{
+							input: {
+								readOnly: isDataRetrievalReadOnly,
+							},
+						}}
 					/>
 				</Grid>
 			)}
@@ -183,6 +203,7 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 					workTrackingSystemConnectionId={selectedWorkTrackingSystem.id}
 					onComplete={handleWizardComplete}
 					onCancel={handleWizardCancel}
+					dialogTitle={activeWizard.name}
 				/>
 			)}
 		</InputGroup>

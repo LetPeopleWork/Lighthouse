@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IJiraWorkTrackingConnector> jiraWorkTrackingConnectorMock;
         
         private Mock<IAzureDevOpsWorkTrackingConnector> azureDevOpsWorkTrackingConnectorMock;
+
+        private Mock<ILinearWorkTrackingConnector> linearWorkTrackingConnectorMock;
         
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
 
@@ -22,12 +24,14 @@ namespace Lighthouse.Backend.Tests.API
         {
             jiraWorkTrackingConnectorMock = new Mock<IJiraWorkTrackingConnector>();
             azureDevOpsWorkTrackingConnectorMock = new Mock<IAzureDevOpsWorkTrackingConnector>();
+            linearWorkTrackingConnectorMock = new Mock<ILinearWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
         
         [Test]
         [TestCase(WorkTrackingSystems.Jira)]
         [TestCase(WorkTrackingSystems.AzureDevOps)]
+        [TestCase(WorkTrackingSystems.Linear)]
         public async Task GetBoards_WorkTrackingSystemExists_ReturnsAvailableBoards(WorkTrackingSystems workTrackingSystemType)
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = workTrackingSystemType };
@@ -80,6 +84,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         [TestCase(WorkTrackingSystems.Jira)]
         [TestCase(WorkTrackingSystems.AzureDevOps)]
+        [TestCase(WorkTrackingSystems.Linear)]
         public async Task GetBoardInformation_WorkTrackingSystemExists_BoardExists_ReturnsBoardInformation(WorkTrackingSystems workTrackingSystemType)
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = workTrackingSystemType };
@@ -141,13 +146,14 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystems.Jira => jiraWorkTrackingConnectorMock.As<IBoardInformationProvider>(),
                 WorkTrackingSystems.AzureDevOps => azureDevOpsWorkTrackingConnectorMock.As<IBoardInformationProvider>(),
+                WorkTrackingSystems.Linear => linearWorkTrackingConnectorMock.As<IBoardInformationProvider>(),
                 _ => throw new NotSupportedException("Not supported WorkTrackingSystemConnectionType")
             };
         }
         
         private WizardsController CreateSubject()
         {
-            return new WizardsController(jiraWorkTrackingConnectorMock.Object, azureDevOpsWorkTrackingConnectorMock.Object, workTrackingSystemConnectionRepoMock.Object);
+            return new WizardsController(jiraWorkTrackingConnectorMock.Object, azureDevOpsWorkTrackingConnectorMock.Object, linearWorkTrackingConnectorMock.Object, workTrackingSystemConnectionRepoMock.Object);
         }
     }
 }

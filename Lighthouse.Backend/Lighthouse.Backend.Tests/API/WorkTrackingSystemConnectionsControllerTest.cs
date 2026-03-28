@@ -2,7 +2,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -25,8 +24,6 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<ICryptoService> cryptoServiceMock;
 
-        private OptionalFeature linearIntegrationPreviewFeature;
-
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
@@ -40,8 +37,6 @@ namespace Lighthouse.Backend.Tests.API
 
             cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => input);
             cryptoServiceMock.Setup(x => x.Decrypt(It.IsAny<string>())).Returns((string input) => input);
-
-            linearIntegrationPreviewFeature = new OptionalFeature { Enabled = true, Id = 12, Key = OptionalFeatureKeys.LinearIntegrationKey };
 
             workTrackingSystemsFactoryMock.Setup(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns((WorkTrackingSystems s) => new WorkTrackingSystemConnection { WorkTrackingSystem = s });
         }
@@ -72,29 +67,6 @@ namespace Lighthouse.Backend.Tests.API
             }
 
             workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(Enum.GetValues<WorkTrackingSystems>().Length));
-        }
-
-        [Test]
-        public void GetSupportedWorkTrackingSystems_LinearIntegrationOff_SkipsLinearFromAvailableSystems()
-        {
-            linearIntegrationPreviewFeature.Enabled = false;
-
-            var subject = CreateSubject();
-
-            var result = subject.GetSupportedWorkTrackingSystemConnections();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-
-                var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
-
-                var expected = Enum.GetValues<WorkTrackingSystems>().Length - 1;
-                Assert.That(supportedSystems?.Count(), Is.EqualTo(expected));
-            }
         }
 
         [Test]
@@ -385,11 +357,8 @@ namespace Lighthouse.Backend.Tests.API
 
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
-            var optionalFeatureRepositoryMock = new Mock<IRepository<OptionalFeature>>();
-            optionalFeatureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(linearIntegrationPreviewFeature);
-
             return new WorkTrackingSystemConnectionsController(
-                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, optionalFeatureRepositoryMock.Object, licenseServiceMock.Object);
+                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object);
         }
 
         private void AddAdditionalFieldDefinitionToDto(WorkTrackingSystemConnectionDto connectionDto,

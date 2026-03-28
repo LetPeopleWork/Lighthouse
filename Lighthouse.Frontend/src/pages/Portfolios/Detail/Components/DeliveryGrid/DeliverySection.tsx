@@ -85,7 +85,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				minWidth: 120,
 				flex: 1,
 				renderCell: ({ row }) => (
-					<FeatureName name={getWorkItemName(row)} url={row.url ?? ""} />
+					<FeatureName
+						name={getWorkItemName(row.name, row.referenceId)}
+						url={row.url ?? ""}
+					/>
 				),
 			},
 			{

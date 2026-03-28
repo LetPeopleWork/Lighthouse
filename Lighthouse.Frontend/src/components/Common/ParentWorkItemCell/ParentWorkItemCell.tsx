@@ -1,6 +1,7 @@
 import { Box, Link } from "@mui/material";
 import type React from "react";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
+import { getWorkItemName } from "../../../utils/featureName";
 
 interface ParentWorkItemCellProps {
 	parentReference: string | null | undefined;
@@ -26,7 +27,7 @@ const ParentWorkItemCell: React.FC<ParentWorkItemCellProps> = ({
 					rel="noopener noreferrer"
 					sx={{ textDecoration: "none" }}
 				>
-					{parentInfo.referenceId} - {parentInfo.name}
+					{getWorkItemName(parentInfo.name, parentInfo.referenceId)}
 				</Link>
 			</Box>
 		);

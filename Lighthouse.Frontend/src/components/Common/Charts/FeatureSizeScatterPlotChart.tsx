@@ -404,7 +404,7 @@ const formatSeriesValue = (
 	const numberOfClosedItems = group.items.length ?? 0;
 	if (numberOfClosedItems === 1) {
 		const single = group.items[0];
-		return `${getWorkItemName(single)} - ${single.state} (Click for details)`;
+		return `${getWorkItemName(single.name, single.referenceId)} - ${single.state} (Click for details)`;
 	}
 	return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
 };

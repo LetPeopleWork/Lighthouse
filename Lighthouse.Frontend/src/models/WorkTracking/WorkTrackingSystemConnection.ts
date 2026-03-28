@@ -84,7 +84,7 @@ export class WorkTrackingSystemConnection
 			case "AzureDevOps":
 				return "WIQL Query";
 			case "Linear":
-				return "Linear Team/Project";
+				return "Linear Team";
 			case "Csv":
 				return "CSV File Content";
 			default:

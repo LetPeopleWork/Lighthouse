@@ -2,6 +2,7 @@ import { Container, type SelectChangeEvent, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -229,6 +230,19 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 			) ?? null;
 
 		setSelectedWorkTrackingSystem(selectedWorkTrackingSystem);
+
+		if (selectedWorkTrackingSystem) {
+			setTeamSettings((prev) =>
+				prev
+					? {
+							...prev,
+							dataRetrievalSchema: getDefaultTeamSchema(
+								selectedWorkTrackingSystem.workTrackingSystem,
+							),
+						}
+					: prev,
+			);
+		}
 	};
 
 	const handleSave = async () => {
@@ -255,13 +269,18 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 					teamSettings.toDoStates.length > 0 &&
 					teamSettings.doingStates.length > 0 &&
 					teamSettings.doneStates.length > 0;
-				const hasValidWorkItemTypes = teamSettings.workItemTypes.length > 0;
 
-				// Check that dataRetrievalValue is not empty (whether it's a query or CSV data)
+				const schema = teamSettings.dataRetrievalSchema;
+				const hasValidWorkItemTypes =
+					schema?.isWorkItemTypesRequired === false ||
+					teamSettings.workItemTypes.length > 0;
+
+				// Check that dataRetrievalValue is not empty when required
 				const hasValidDataSource =
 					modifyDefaultSettings ||
 					(selectedWorkTrackingSystem !== null &&
-						(teamSettings.dataRetrievalValue ?? "") !== "");
+						(schema?.isRequired === false ||
+							(teamSettings.dataRetrievalValue ?? "") !== ""));
 
 				areInputsValid =
 					hasValidName &&
@@ -332,6 +351,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
 							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
 							showWorkTrackingSystemSelection={!modifyDefaultSettings}
+							settingsContext="team"
 						/>
 
 						<ForecastSettingsComponent
@@ -340,12 +360,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							isDefaultSettings={modifyDefaultSettings}
 						/>
 
-						<WorkItemTypesComponent
-							workItemTypes={teamSettings?.workItemTypes || []}
-							onAddWorkItemType={handleAddWorkItemType}
-							onRemoveWorkItemType={handleRemoveWorkItemType}
-							isForTeam={true}
-						/>
+						{teamSettings?.dataRetrievalSchema?.isWorkItemTypesRequired !==
+							false && (
+							<WorkItemTypesComponent
+								workItemTypes={teamSettings?.workItemTypes || []}
+								onAddWorkItemType={handleAddWorkItemType}
+								onRemoveWorkItemType={handleRemoveWorkItemType}
+								isForTeam={true}
+							/>
+						)}
 
 						<StatesList
 							toDoStates={teamSettings?.toDoStates || []}

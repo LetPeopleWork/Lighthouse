@@ -8,15 +8,8 @@ grand_parent: Concepts
 
 This page will give you an overview of the specifics to Linear when using Lighthouse. In detail, it will cover:  
 
-{: .d-inline-block }
-Preview
-{: .label .label-green }
-
 - TOC
 {:toc}
-
-{: .note}
-The integration with Linear is in preview and currently only very limited functionality is available. We're eager for feedback from users that work on a regular base with Linear so we can learn how to improve the integration. Please get in contact with us if you are interested.
 
 # Work Tracking System Connection
 To create a connection to a Linear Workspace, you need a single thing: A Linear API Key
@@ -29,32 +22,36 @@ You can find more information on how to create an API Key in the [Linear Documen
 {: .important}
 The API Key shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 
-# Query
-Right now no queries are supported for Linear. Instead, Lighthouse assumes you'll specify either the *Team Name* or the *Project Name* as defined in Linear itself in the respective query sections. We want to gain more insights on how the Linear integration may be used (by people that work with Linear) before putting more effort into querying.
-
 # Team Backlog
-When you create a new team, you will have to define a query that will get the items that belong to the specific team backlog. As mentioned in [Query](#query), for Linear, please put the **exact name of your team** in the *Work Item Query* field.
+When you create a new team in Lighthouse that uses a Linear connection, you can select a Linear team from a wizard that lists all teams available in the connected workspace.
 
-Lighthouse will then automatically fetch all issues for this team together that match the [Type](#types) and [State](#states) definitions.
+Lighthouse will automatically fetch all issues for the selected team. Work item types are fixed to *Issue* — you do not need to configure item types manually.
 
 # Portfolios
-Portfolios are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In a Linear context, you'll also have Projects. Please specify the **exact name of your project** in the *Work Item Query* field. Lighthouse will fetch all items that match the [Type](#types) and [State](#states) definitions and are part of this portfolio.
+Linear portfolios retrieve all **projects** from the authenticated workspace as Lighthouse features. No query or work item type configuration is required.
 
-# Types
-You can specify which item types you care about. As in Linear, all items are issues, this translates best to *Templates* that are applied. Add here the names of the templates you care about. Items that don't have a template will be treated as type of *Default*.
+Each Linear project becomes a Lighthouse feature, and its issues roll up as work items. If a project is linked to a Linear **initiative**, Lighthouse will resolve that initiative as the parent feature.
 
-{: .note}
-You must specify *Default* as a type, as otherwise Lighthouse will ignore all issues without a template
+# Hierarchy
+Lighthouse maps the full Linear hierarchy:
+
+| Linear Concept | Lighthouse Concept |
+|---|---|
+| Issue | Work Item (team level) |
+| Project | Feature (portfolio level) |
+| Initiative | Parent Feature |
+
+Issues are associated with the project they belong to. If an issue does not have a direct project association, Lighthouse checks the issue's parent chain to find the project. Projects linked to initiatives will display the initiative as a parent feature with its name, status, and URL fetched from the Linear API.
 
 # States
-The states are the *Issue status* - please make sure to specify all status that you care about in Lighthouse. The ones you don't need, you can skip. As an example, if you have the following states:
+The states correspond to **Issue statuses** in Linear. Make sure to specify all statuses you care about. As an example, if you have the following states:
 - Backlog
 - Planned
 - Development
 - Done
 - Canceled
 
-You can specify it as follows:
+You can configure them as follows:
 - *To Do*
   - Backlog
   - Planned
@@ -63,7 +60,7 @@ You can specify it as follows:
 - *Done*
   - Done
 
-For Lighthouse, the *Canceled* state is irrelevant, so you can leave it. No items in this state will be found by Lighthouse and will not affect any metrics.
+States you don't need (e.g. *Canceled*) can be left out. Items in unmapped states will not be tracked by Lighthouse and will not affect your metrics.
 
 # Feature Order
-The Order of Features is based on the ordering you do in Linear. In order to change this, you can [manually reorder](https://linear.app/docs/display-options#manual-ordering).
+The order of features is based on the ordering you set in Linear. To change this, you can [manually reorder](https://linear.app/docs/display-options#manual-ordering).

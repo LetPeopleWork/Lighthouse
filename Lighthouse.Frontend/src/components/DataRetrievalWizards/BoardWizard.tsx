@@ -21,6 +21,7 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	workTrackingSystemConnectionId,
 	onComplete,
 	onCancel,
+	dialogTitle,
 }) => {
 	const { wizardService } = useContext(ApiServiceContext);
 	const [boards, setBoards] = useState<IBoard[]>([]);
@@ -119,7 +120,7 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 
 	return (
 		<Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-			<DialogTitle>Select Board</DialogTitle>
+			<DialogTitle>{dialogTitle ?? "Select Board"}</DialogTitle>
 			<DialogContent>
 				{loading ? (
 					<CircularProgress sx={{ display: "block", margin: "2rem auto" }} />

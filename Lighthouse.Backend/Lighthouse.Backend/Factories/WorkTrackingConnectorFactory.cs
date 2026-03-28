@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Factories
                 WorkTrackingSystems.AzureDevOps => serviceProvider
                     .GetRequiredService<IAzureDevOpsWorkTrackingConnector>(),
                 WorkTrackingSystems.Jira => serviceProvider.GetRequiredService<IJiraWorkTrackingConnector>(),
-                WorkTrackingSystems.Linear => serviceProvider.GetRequiredService<LinearWorkTrackingConnector>(),
+                WorkTrackingSystems.Linear => serviceProvider.GetRequiredService<ILinearWorkTrackingConnector>(),
                 WorkTrackingSystems.Csv => serviceProvider.GetRequiredService<CsvWorkTrackingConnector>(),
                 _ => throw new NotSupportedException()
             };

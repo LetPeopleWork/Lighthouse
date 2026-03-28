@@ -8,13 +8,17 @@ import dataRetrievalWizards, {
 
 describe("DataRetrievalWizardRegistry", () => {
 	describe("dataRetrievalWizards array", () => {
-		it("should contain the CSV upload wizard, Jira and ADO board wizard", () => {
-			expect(dataRetrievalWizards).toHaveLength(3);
+		it("should contain the CSV upload wizard, Jira, ADO, Linear team, and Linear states wizards", () => {
+			expect(dataRetrievalWizards).toHaveLength(4);
 
 			const csvWizard = dataRetrievalWizards.find((w) => w.id === "csv.upload");
 			expect(csvWizard).toBeDefined();
 			expect(csvWizard?.name).toBe("Upload CSV File");
 			expect(csvWizard?.applicableSystemTypes).toContain("Csv");
+			expect(csvWizard?.applicableSettingsContexts).toEqual([
+				"team",
+				"portfolio",
+			]);
 			expect(csvWizard?.component).toBe(CsvUploadWizard);
 
 			const jiraWizard = dataRetrievalWizards.find(
@@ -23,13 +27,30 @@ describe("DataRetrievalWizardRegistry", () => {
 			expect(jiraWizard).toBeDefined();
 			expect(jiraWizard?.name).toBe("Select Jira Board");
 			expect(jiraWizard?.applicableSystemTypes).toContain("Jira");
+			expect(jiraWizard?.applicableSettingsContexts).toEqual([
+				"team",
+				"portfolio",
+			]);
 			expect(jiraWizard?.component).toBe(BoardWizard);
 
 			const adoWizard = dataRetrievalWizards.find((w) => w.id === "ado.board");
 			expect(adoWizard).toBeDefined();
 			expect(adoWizard?.name).toBe("Select Azure DevOps Board");
 			expect(adoWizard?.applicableSystemTypes).toContain("AzureDevOps");
+			expect(adoWizard?.applicableSettingsContexts).toEqual([
+				"team",
+				"portfolio",
+			]);
 			expect(adoWizard?.component).toBe(BoardWizard);
+
+			const linearTeamWizard = dataRetrievalWizards.find(
+				(w) => w.id === "linear.team",
+			);
+			expect(linearTeamWizard).toBeDefined();
+			expect(linearTeamWizard?.name).toBe("Select Linear Team");
+			expect(linearTeamWizard?.applicableSystemTypes).toContain("Linear");
+			expect(linearTeamWizard?.applicableSettingsContexts).toEqual(["team"]);
+			expect(linearTeamWizard?.component).toBe(BoardWizard);
 		});
 
 		it("should have valid wizard structure", () => {
@@ -37,11 +58,13 @@ describe("DataRetrievalWizardRegistry", () => {
 				expect(wizard).toHaveProperty("id");
 				expect(wizard).toHaveProperty("name");
 				expect(wizard).toHaveProperty("applicableSystemTypes");
+				expect(wizard).toHaveProperty("applicableSettingsContexts");
 				expect(wizard).toHaveProperty("component");
 
 				expect(typeof wizard.id).toBe("string");
 				expect(typeof wizard.name).toBe("string");
 				expect(Array.isArray(wizard.applicableSystemTypes)).toBe(true);
+				expect(Array.isArray(wizard.applicableSettingsContexts)).toBe(true);
 				expect(typeof wizard.component).toBe("function");
 			}
 		});
@@ -64,10 +87,19 @@ describe("DataRetrievalWizardRegistry", () => {
 			expect(wizards[0].name).toBe("Select Jira Board");
 		});
 
-		it("should return empty array for Linear system type", () => {
+		it("should return Linear wizards for Linear system type", () => {
 			const wizards = getWizardsForSystem("Linear");
 
-			expect(wizards).toHaveLength(0);
+			expect(wizards).toHaveLength(1);
+			expect(wizards[0].id).toBe("linear.team");
+			expect(wizards[0].name).toBe("Select Linear Team");
+		});
+
+		it("should return only team wizards for Linear when settingsContext is team", () => {
+			const wizards = getWizardsForSystem("Linear", "team");
+
+			expect(wizards).toHaveLength(1);
+			expect(wizards[0].id).toBe("linear.team");
 		});
 
 		it("should filter wizards based on applicable system types", () => {
@@ -165,6 +197,7 @@ describe("DataRetrievalWizardRegistry", () => {
 				expect(wizard.id).toBeTruthy();
 				expect(wizard.name).toBeTruthy();
 				expect(wizard.applicableSystemTypes.length).toBeGreaterThan(0);
+				expect(wizard.applicableSettingsContexts.length).toBeGreaterThan(0);
 				expect(wizard.component).toBeTruthy();
 			}
 		});

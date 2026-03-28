@@ -28,6 +28,11 @@ namespace Lighthouse.Backend.API.DTO
 
             SizeEstimateAdditionalFieldDefinitionId = portfolio.SizeEstimateAdditionalFieldDefinitionId;
             FeatureOwnerAdditionalFieldDefinitionId = portfolio.FeatureOwnerAdditionalFieldDefinitionId;
+
+            if (portfolio.WorkTrackingSystemConnection != null)
+            {
+                DataRetrievalSchema = DataRetrievalSchemaDto.ForPortfolio(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
+            }
         }
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];

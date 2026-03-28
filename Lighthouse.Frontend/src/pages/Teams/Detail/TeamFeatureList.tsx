@@ -90,7 +90,10 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				flex: 1,
 				hideable: false,
 				renderCell: ({ row }) => (
-					<FeatureName name={getWorkItemName(row)} url={row.url ?? ""} />
+					<FeatureName
+						name={getWorkItemName(row.name, row.referenceId)}
+						url={row.url ?? ""}
+					/>
 				),
 			},
 			{
@@ -167,7 +170,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog
-					title={`${getWorkItemName(selectedFeature)} Stories`}
+					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} Stories`}
 					items={featureWorkItems}
 					open={isWorkItemsDialogOpen}
 					onClose={handleCloseWorkItemsDialog}

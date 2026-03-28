@@ -488,7 +488,7 @@ namespace Lighthouse.Backend
 
             builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();
-            builder.Services.AddScoped<LinearWorkTrackingConnector>();
+            builder.Services.AddScoped<ILinearWorkTrackingConnector, LinearWorkTrackingConnector>();
             builder.Services.AddScoped<CsvWorkTrackingConnector>();
 
             // MCP Resources

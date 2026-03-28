@@ -10,7 +10,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
     {
         [Test]
         [TestCase(OptionalFeatureKeys.McpServerKey, "MCP Server", false)]
-        [TestCase(OptionalFeatureKeys.LinearIntegrationKey, "Linear Integration", true)]
         public async Task SeedAsync_AddsCurrentFeatures_WhenDatabaseIsEmpty(string key, string expectedName, bool expectedIsPreview)
         {
             var subject = CreateSubject();
@@ -59,6 +58,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         [Test]
         [TestCase(OptionalFeatureKeys.LighthouseChartKey)]
         [TestCase(OptionalFeatureKeys.CycleTimeScatterPlotKey)]
+        [TestCase(OptionalFeatureKeys.LinearIntegrationKey)]
         public async Task SeedAsync_RemovesDeprecatedFeatures(string deprecatedKey)
         {
             // Arrange
@@ -92,11 +92,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             DatabaseContext.OptionalFeatures.Add(new OptionalFeature
             {
                 Id = 3,
-                Key = OptionalFeatureKeys.LinearIntegrationKey,
+                Key = OptionalFeatureKeys.McpServerKey,
                 Name = "Linear Integration",
                 Description = "Enables Experimental Support for Linear.app",
                 Enabled = false,
-                IsPreview = false // Old value
+                IsPreview = true // Old value
             });
             await DatabaseContext.SaveChangesAsync();
 
@@ -107,9 +107,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             // Assert
             var feature = DatabaseContext.OptionalFeatures
-                .Single(f => f.Key == OptionalFeatureKeys.LinearIntegrationKey);
+                .Single(f => f.Key == OptionalFeatureKeys.McpServerKey);
 
-            Assert.That(feature.IsPreview, Is.True); // Updated to true
+            Assert.That(feature.IsPreview, Is.False); // Updated to true
         }
         
         [Test]
@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             // Assert
             var features = DatabaseContext.OptionalFeatures.ToList();
-            Assert.That(features, Has.Count.EqualTo(2)); // Should still be 2, not duplicated
+            Assert.That(features, Has.Count.EqualTo(1));
         }
 
         [Test]

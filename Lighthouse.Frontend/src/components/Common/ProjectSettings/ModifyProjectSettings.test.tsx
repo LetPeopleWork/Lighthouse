@@ -568,4 +568,77 @@ describe("ModifyProjectSettings", () => {
 			expect(screen.getByText("Validate")).toBeDisabled();
 		});
 	}
+
+	describe("Linear schema-driven behavior", () => {
+		it("hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false", async () => {
+			const linearPortfolioSettings = {
+				...projectSettings,
+				dataRetrievalSchema: {
+					key: "linear.projects",
+					displayLabel: "Linear Projects",
+					inputKind: "none" as const,
+					isRequired: false,
+					isWorkItemTypesRequired: false,
+					wizardHint: null,
+				},
+			};
+
+			mockGetProjectSettings.mockResolvedValue(linearPortfolioSettings);
+
+			renderWithProvider(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			expect(
+				screen.queryByText("WorkItemTypesComponent"),
+			).not.toBeInTheDocument();
+		});
+
+		it("validates successfully without work item types and data retrieval value for Linear portfolio", async () => {
+			const linearPortfolioSettings = {
+				...projectSettings,
+				workItemTypes: [],
+				dataRetrievalValue: "",
+				dataRetrievalSchema: {
+					key: "linear.projects",
+					displayLabel: "Linear Projects",
+					inputKind: "none" as const,
+					isRequired: false,
+					isWorkItemTypesRequired: false,
+					wizardHint: null,
+				},
+			};
+
+			mockGetProjectSettings.mockResolvedValue(linearPortfolioSettings);
+			mockValidateProjectSettings.mockResolvedValue(true);
+
+			renderWithProvider(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			expect(screen.getByText("Validate")).not.toBeDisabled();
+		});
+	});
 });

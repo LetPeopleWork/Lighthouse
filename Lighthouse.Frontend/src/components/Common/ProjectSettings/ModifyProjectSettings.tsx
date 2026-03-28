@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -64,6 +65,19 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			) ?? null;
 
 		setSelectedWorkTrackingSystem(selectedWorkTrackingSystem);
+
+		if (selectedWorkTrackingSystem) {
+			setProjectSettings((prev) =>
+				prev
+					? {
+							...prev,
+							dataRetrievalSchema: getDefaultPortfolioSchema(
+								selectedWorkTrackingSystem.workTrackingSystem,
+							),
+						}
+					: prev,
+			);
+		}
 	};
 
 	const handleAddWorkItemType = (newWorkItemType: string) => {
@@ -288,18 +302,22 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 					!projectSettings.usePercentileToCalculateDefaultAmountOfWorkItems ||
 					(projectSettings.defaultWorkItemPercentile > 0 &&
 						projectSettings.percentileHistoryInDays >= 30);
+
+				const schema = projectSettings.dataRetrievalSchema;
 				const hasValidAmountOfWorkItemTypes =
+					schema?.isWorkItemTypesRequired === false ||
 					projectSettings.workItemTypes.length > 0;
 				const hasAllNecessaryStates =
 					projectSettings.toDoStates.length > 0 &&
 					projectSettings.doingStates.length > 0 &&
 					projectSettings.doneStates.length > 0;
 
-				// Check that dataRetrievalValue is not empty (whether it's a query or CSV data)
+				// Check that dataRetrievalValue is not empty when required
 				const hasValidDataSource =
 					modifyDefaultSettings ||
 					(selectedWorkTrackingSystem !== null &&
-						(projectSettings?.dataRetrievalValue ?? "") !== "");
+						(schema?.isRequired === false ||
+							(projectSettings?.dataRetrievalValue ?? "") !== ""));
 
 				isFormValid =
 					hasValidName &&
@@ -360,14 +378,18 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
 							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
 							showWorkTrackingSystemSelection={!modifyDefaultSettings}
+							settingsContext="portfolio"
 						/>
 
-						<WorkItemTypesComponent
-							workItemTypes={projectSettings?.workItemTypes || []}
-							onAddWorkItemType={handleAddWorkItemType}
-							onRemoveWorkItemType={handleRemoveWorkItemType}
-							isForTeam={false}
-						/>
+						{projectSettings?.dataRetrievalSchema?.isWorkItemTypesRequired !==
+							false && (
+							<WorkItemTypesComponent
+								workItemTypes={projectSettings?.workItemTypes || []}
+								onAddWorkItemType={handleAddWorkItemType}
+								onRemoveWorkItemType={handleRemoveWorkItemType}
+								isForTeam={false}
+							/>
+						)}
 
 						<StatesList
 							toDoStates={projectSettings?.toDoStates || []}

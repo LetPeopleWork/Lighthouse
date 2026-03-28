@@ -156,7 +156,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 												if (numberOfItems === 1) {
 													const item =
 														chartData.workItemsPerUnitOfTime[index][0];
-													return `${getWorkItemName(item)} (Click for details)`;
+													return `${getWorkItemName(item.name, item.referenceId)} (Click for details)`;
 												}
 
 												if (numberOfItems > 0) {

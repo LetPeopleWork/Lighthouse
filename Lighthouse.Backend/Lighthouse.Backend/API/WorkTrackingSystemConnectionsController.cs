@@ -2,7 +2,6 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -22,19 +21,14 @@ namespace Lighthouse.Backend.API
         private readonly ICryptoService cryptoService;
         private readonly ILicenseService licenseService;
 
-        private readonly bool isLinearIntegrationEnabled;
-
         public WorkTrackingSystemConnectionsController(
-            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, IRepository<OptionalFeature> optionalFeatureRepository, ILicenseService licenseService)
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, ILicenseService licenseService)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
             this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.cryptoService = cryptoService;
             this.licenseService = licenseService;
-
-            var linearPreviewFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.LinearIntegrationKey);
-            isLinearIntegrationEnabled = linearPreviewFeature?.Enabled ?? false;
         }
 
         [HttpGet("supported")]
@@ -44,11 +38,6 @@ namespace Lighthouse.Backend.API
 
             foreach (var system in Enum.GetValues<WorkTrackingSystems>())
             {
-                if (!isLinearIntegrationEnabled && system == WorkTrackingSystems.Linear)
-                {
-                    continue;
-                }
-
                 AddConnectionForWorkTrackingSystem(supportedSystems, system);
             }
 

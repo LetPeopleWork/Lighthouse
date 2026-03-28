@@ -21,6 +21,11 @@ namespace Lighthouse.Backend.API.DTO
             FeatureWIP = team.FeatureWIP;
             AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
             DoneItemsCutoffDays = team.DoneItemsCutoffDays;
+
+            if (team.WorkTrackingSystemConnection != null)
+            {
+                DataRetrievalSchema = DataRetrievalSchemaDto.ForTeam(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+            }
         }
 
         [JsonRequired]

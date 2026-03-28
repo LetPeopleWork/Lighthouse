@@ -25,7 +25,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             var deprecatedKeys = new[]
             {
                 OptionalFeatureKeys.LighthouseChartKey,
-                OptionalFeatureKeys.CycleTimeScatterPlotKey
+                OptionalFeatureKeys.CycleTimeScatterPlotKey,
+                OptionalFeatureKeys.LinearIntegrationKey,
             };
 
             var toRemove = await context.OptionalFeatures
@@ -52,15 +53,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     Enabled = false,
                     IsPremium =  true,
                     IsPreview = false
-                },
-                new OptionalFeature
-                {
-                    Id = 3,
-                    Key = OptionalFeatureKeys.LinearIntegrationKey,
-                    Name = "Linear Integration",
-                    Description = "Enables Experimental Support for Linear.app",
-                    Enabled = false,
-                    IsPreview = true
                 }
             };
 

@@ -46,7 +46,7 @@ describe("ParentWorkItemCell", () => {
 		expect(link).toHaveAttribute("href", "http://example.com/parent");
 		expect(link).toHaveAttribute("target", "_blank");
 		expect(link).toHaveAttribute("rel", "noopener noreferrer");
-		expect(screen.getByText("PARENT-1 - Parent Feature")).toBeInTheDocument();
+		expect(screen.getByText("PARENT-1: Parent Feature")).toBeInTheDocument();
 	});
 
 	it("should display reference ID when parent is not found in map", () => {
@@ -74,6 +74,6 @@ describe("ParentWorkItemCell", () => {
 
 		const link = screen.getByRole("link");
 		expect(link).toBeInTheDocument();
-		expect(screen.getByText(/PARENT-1 -/)).toBeInTheDocument();
+		expect(screen.getByText(/PARENT-1/)).toBeInTheDocument();
 	});
 });

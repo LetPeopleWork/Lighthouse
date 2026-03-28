@@ -185,7 +185,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 
 											if (numberOfClosedItems === 1) {
 												const item = chartData.workItemsPerUnitOfTime[index][0];
-												return `${getWorkItemName(item)} (Click for details)${suffix}`;
+												return `${getWorkItemName(item.name, item.referenceId)} (Click for details)${suffix}`;
 											}
 
 											if (numberOfClosedItems > 0) {

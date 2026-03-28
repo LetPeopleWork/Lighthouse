@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.API
     public class WizardsController(
         IJiraWorkTrackingConnector jiraWorkTrackingConnector,
         IAzureDevOpsWorkTrackingConnector azureDevOpsWorkTrackingConnector,
+        ILinearWorkTrackingConnector linearWorkTrackingConnector,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemRepo)
     : ControllerBase
     {
@@ -46,6 +47,7 @@ namespace Lighthouse.Backend.API
             {
                 WorkTrackingSystems.AzureDevOps => azureDevOpsWorkTrackingConnector,
                 WorkTrackingSystems.Jira => jiraWorkTrackingConnector,
+                WorkTrackingSystems.Linear => linearWorkTrackingConnector,
                 _ => throw new NotImplementedException(
                     "Work Tracking System Type {Type} does not support Board Information!")
             };

@@ -85,10 +85,58 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             public class ProjectNode
             {
                 public string Id { get; set; }
+                public string Name { get; set; }
+                public ProjectStatusNode Status { get; set; }
+                public string Url { get; set; }
+                public double SortOrder { get; set; }
+                public DateTime CreatedAt { get; set; }
+                public DateTime? StartDate { get; set; }
+                public DateTime? CompletedAt { get; set; }
+                public Issues Issues { get; set; }
+                public InitiativeToProjectConnection Initiatives { get; set; }
+            }
+
+            public class ProjectStatusNode
+            {
+                public string Id { get; set; }
+                public string Name { get; set; }
+                public string Type { get; set; }
+                public string Color { get; set; }
+            }
+            
+            public class InitiativeResponse
+            {
+                public InitiativeNode Initiative { get; set; }
+            }
+
+            public class InitiativeToProjectConnection
+            {
+                public List<InitiativeToProjectNode> Nodes { get; set; }
+            }
+
+            public class InitiativeToProjectNode
+            {
+                public string Id { get; set; }
+                public string Name { get; set; }
+            }
+
+            public class InitiativeNode
+            {
+                public string Id { get; set; }
 
                 public string Name { get; set; }
-                
-                public Issues Issues { get; set; }
+
+                public string Status { get; set; }
+
+                public string Url { get; set; }
+
+                public double SortOrder { get; set; }
+
+                public DateTime CreatedAt { get; set; }
+
+                public DateTime? StartedAt { get; set; }
+
+                public DateTime? CompletedAt { get; set; }
             }
 
             public class Issues
@@ -138,6 +186,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
                 public ParentNode Parent { get; set; }
 
+                public ProjectReferenceNode Project { get; set; }
+
                 public TeamNode Team { get; set; }
 
                 public TemplateNode LastAppliedTemplate { get; set; }
@@ -147,6 +197,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 public DateTime? CompletedAt { get; set; }
 
                 public DateTime CreatedAt { get; set; }
+            }
+
+            public class ProjectReferenceNode
+            {
+                public string Id { get; set; }
             }
 
             public class IssueType
@@ -177,6 +232,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 public string Id { get; set; }
 
                 public string Name { get; set; }
+            }
+
+            public class TeamDetailResponse
+            {
+                public TeamDetailNode Team { get; set; }
+            }
+
+            public class TeamDetailNode
+            {
+                public string Id { get; set; }
+
+                public string Name { get; set; }
+
+                public WorkflowStates States { get; set; }
+            }
+
+            public class WorkflowStates
+            {
+                public List<WorkflowStateNode> Nodes { get; set; }
+            }
+
+            public class WorkflowStateNode
+            {
+                public string Name { get; set; }
+
+                public string Type { get; set; }
+
+                public double Position { get; set; }
             }
         }
     }

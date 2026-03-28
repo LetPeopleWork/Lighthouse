@@ -10,6 +10,10 @@ args = parser.parse_args()
 
 headers = {"Content-Type": "application/json", "Authorization": args.api_token}
 
+# --- Constants: Items to never touch ---
+PROTECTED_ISSUE_IDENTIFIERS = {"lig-2", "lig-13"}
+PROTECTED_PROJECT_NAMES = {"Integration Test Project"}
+
 def execute(query, variables=None):
     res = requests.post(LINEAR_API_URL, headers=headers, json={"query": query, "variables": variables})
     response_json = res.json()
@@ -118,6 +122,10 @@ if issue_data:
     transitioned = 0
 
     for issue in issues:
+        if issue["identifier"].lower() in PROTECTED_ISSUE_IDENTIFIERS:
+            print(f"  🔒 Skipping protected issue {issue['identifier']}")
+            continue
+
         if random.random() < 0.3:
             if issue["state"]["type"] in ("completed", "cancelled"):
                 continue
@@ -168,6 +176,10 @@ query {
 
 if refresh_data:
     for proj in refresh_data["projects"]["nodes"]:
+        if proj["name"].strip().lower() in {p.lower() for p in PROTECTED_PROJECT_NAMES}:
+            print(f"  🔒 Skipping protected project '{proj['name']}'")
+            continue
+
         issue_types = [i["state"]["type"] for i in proj["issues"]["nodes"]]
 
         if not issue_types:

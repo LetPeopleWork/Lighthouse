@@ -334,7 +334,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 									if (numberOfClosedItems === 1) {
 										const workItem = group.items[0];
-										return `${getWorkItemName(workItem)} (Click for details)`;
+										return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
 									}
 
 									return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;

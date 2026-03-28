@@ -108,7 +108,10 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				width: 300,
 				flex: 1,
 				renderCell: ({ row }) => (
-					<FeatureName name={getWorkItemName(row)} url={row.url ?? ""} />
+					<FeatureName
+						name={getWorkItemName(row.name, row.referenceId)}
+						url={row.url ?? ""}
+					/>
 				),
 			},
 			{
@@ -180,7 +183,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog
-					title={`${getWorkItemName(selectedFeature)} Stories`}
+					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} Stories`}
 					items={featureWorkItems}
 					open={isWorkItemsDialogOpen}
 					onClose={handleCloseWorkItemsDialog}

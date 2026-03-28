@@ -1,3 +1,5 @@
+import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
+
 export interface IBaseSettings {
 	id: number;
 	name: string;
@@ -21,4 +23,5 @@ export interface IBaseSettings {
 	estimationUnit: string | null;
 	useNonNumericEstimation: boolean;
 	estimationCategoryValues: string[];
+	dataRetrievalSchema?: IDataRetrievalSchema | null;
 }

@@ -69,7 +69,7 @@ vi.mock(
 									workTrackingSystem: "Linear",
 									authenticationMethodKey: "linear.apikey",
 									workTrackingSystemGetDataRetrievalDisplayName: () =>
-										"Linear Team/Project",
+										"Linear Team",
 									additionalFieldDefinitions: [],
 								})
 							}
@@ -386,4 +386,73 @@ describe("ModifyTeamSettings", () => {
 			expect(screen.getByText("Validate")).toBeDisabled();
 		});
 	}
+
+	describe("Linear schema-driven behavior", () => {
+		it("hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false", async () => {
+			const linearTeamSettings = {
+				...createMockTeamSettings(),
+				dataRetrievalSchema: {
+					key: "linear.team",
+					displayLabel: "Linear Team",
+					inputKind: "wizard-select" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: false,
+					wizardHint: "linear-team-select",
+				},
+			};
+
+			mockGetTeamSettings.mockResolvedValueOnce(linearTeamSettings);
+
+			await renderModifyTeamSettings();
+
+			expect(
+				screen.queryByText("WorkItemTypesComponent"),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows WorkItemTypesComponent when schema says isWorkItemTypesRequired is true", async () => {
+			const jiraTeamSettings = {
+				...createMockTeamSettings(),
+				dataRetrievalSchema: {
+					key: "jira.jql",
+					displayLabel: "JQL Query",
+					inputKind: "freetext" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: true,
+					wizardHint: "jira-team-wizard",
+				},
+			};
+
+			mockGetTeamSettings.mockResolvedValueOnce(jiraTeamSettings);
+
+			await renderModifyTeamSettings();
+
+			expect(screen.getByText("WorkItemTypesComponent")).toBeInTheDocument();
+		});
+
+		it("validates successfully without work item types when schema says not required", async () => {
+			const linearTeamSettings = {
+				...createMockTeamSettings(),
+				workItemTypes: [], // Empty - normally invalid
+				dataRetrievalSchema: {
+					key: "linear.team",
+					displayLabel: "Linear Team",
+					inputKind: "wizard-select" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: false,
+					wizardHint: "linear-team-select",
+				},
+			};
+
+			mockGetTeamSettings.mockResolvedValueOnce(linearTeamSettings);
+			mockValidateTeamSettings.mockResolvedValueOnce(true);
+
+			await renderModifyTeamSettings();
+
+			await waitFor(() => {
+				const validateButton = screen.getByText("Validate");
+				expect(validateButton).not.toBeDisabled();
+			});
+		});
+	});
 });
