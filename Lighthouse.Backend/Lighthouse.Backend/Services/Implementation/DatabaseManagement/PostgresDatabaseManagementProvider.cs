@@ -118,9 +118,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 throw new FileNotFoundException($"Backup does not contain expected dump file: {BackupFileName}");
             }
 
-            logger.LogDebug("Dropping and recreating database {Database} before restore", database);
-            await RunPsqlCommand($"DROP DATABASE IF EXISTS \"{database}\" WITH (FORCE);", "Failed to drop database");
-            await RunPsqlCommand($"CREATE DATABASE \"{database}\" OWNER \"{username}\";", "Failed to create database");
+            await ClearDatabase();
 
             logger.LogInformation("Restoring PostgreSQL database from {Source}", dumpFile);
 

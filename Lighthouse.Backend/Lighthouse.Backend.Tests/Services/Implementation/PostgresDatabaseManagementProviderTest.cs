@@ -248,12 +248,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 await subject.RestoreBackup(restoreDir);
 
+                // Verify the psql drop/create happens first (2 calls)
+                commandRunnerMock.Verify(c => c.RunAsync(
+                    It.Is<ProcessStartInfo>(p => p.FileName == "psql"),
+                    It.IsAny<CancellationToken>()),
+                    Times.Exactly(2));
+
+                // Verify pg_restore arguments (removed --clean and --if-exists)
                 commandRunnerMock.Verify(c => c.RunAsync(
                     It.Is<ProcessStartInfo>(p =>
                         p.FileName == "pg_restore" &&
-                        p.Arguments.Contains("--clean") &&
-                        p.Arguments.Contains("--if-exists") &&
-                        p.Arguments.Contains("--dbname=")),
+                        p.Arguments.Contains("--host=") &&
+                        p.Arguments.Contains("--username=") &&
+                        p.Arguments.Contains("--dbname=lighthouse")),
                     It.IsAny<CancellationToken>()), Times.Once);
             }
             finally
@@ -277,11 +284,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 await subject.RestoreBackup(restoreDir);
 
+                // Verify PGPASSWORD is set for the 2 psql calls and 1 pg_restore call
                 commandRunnerMock.Verify(c => c.RunAsync(
                     It.Is<ProcessStartInfo>(p =>
                         p.Environment.ContainsKey("PGPASSWORD") &&
                         p.Environment["PGPASSWORD"] == "secret"),
-                    It.IsAny<CancellationToken>()), Times.Once);
+                    It.IsAny<CancellationToken>()), Times.Exactly(3));
             }
             finally
             {
@@ -315,7 +323,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Directory.CreateDirectory(restoreDir);
             await File.WriteAllBytesAsync(Path.Combine(restoreDir, "lighthouse.pgdump"), "data"u8.ToArray());
 
-            commandRunnerMock.Setup(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()))
+            // Setup: psql calls succeed (0), but pg_restore fails (1)
+            commandRunnerMock.Setup(c => c.RunAsync(It.Is<ProcessStartInfo>(p => p.FileName == "psql"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CommandResult(0, "", ""));
+
+            commandRunnerMock.Setup(c => c.RunAsync(It.Is<ProcessStartInfo>(p => p.FileName == "pg_restore"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new CommandResult(1, "", "pg_restore: error: could not connect"));
 
             try
