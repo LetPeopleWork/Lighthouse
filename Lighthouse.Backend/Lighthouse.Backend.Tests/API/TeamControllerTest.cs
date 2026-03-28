@@ -57,6 +57,8 @@ namespace Lighthouse.Backend.Tests.API
 
             refreshLogServiceMock.Verify(x => x.RemoveRefreshLogsForEntity(RefreshType.Team, teamId), Times.Once);
         }
+
+        [Test]
         public async Task Delete_WhenTeamIsInvolvedInPortfolios_TriggersPortfolioUpdates()
         {
             const int teamId = 42;
