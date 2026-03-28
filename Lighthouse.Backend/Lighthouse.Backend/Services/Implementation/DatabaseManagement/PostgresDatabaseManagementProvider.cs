@@ -118,12 +118,16 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 throw new FileNotFoundException($"Backup does not contain expected dump file: {BackupFileName}");
             }
 
+            logger.LogDebug("Dropping and recreating database {Database} before restore", database);
+            await RunPsqlCommand($"DROP DATABASE IF EXISTS \"{database}\" WITH (FORCE);", "Failed to drop database");
+            await RunPsqlCommand($"CREATE DATABASE \"{database}\" OWNER \"{username}\";", "Failed to create database");
+
             logger.LogInformation("Restoring PostgreSQL database from {Source}", dumpFile);
 
             var startInfo = new ProcessStartInfo
             {
                 FileName = RestoreToolName,
-                Arguments = $"--host={host} --port={port} --username={username} --dbname={database} --clean --if-exists {dumpFile}",
+                Arguments = $"--host={host} --port={port} --username={username} --dbname={database} {dumpFile}",
             };
             startInfo.Environment["PGPASSWORD"] = password;
 
