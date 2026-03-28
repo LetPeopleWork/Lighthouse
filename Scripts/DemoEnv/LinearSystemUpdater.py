@@ -131,7 +131,8 @@ if issue_data:
                 continue
 
             all_states = sorted(issue["team"]["states"]["nodes"], key=lambda s: s["position"])
-            active_states = [s for s in all_states if s["type"] not in ("completed", "cancelled")]
+            # Only traverse backlog → unstarted → started states
+            active_states = [s for s in all_states if s["type"] in ("backlog", "unstarted", "started")]
 
             current_ids = [s["id"] for s in active_states]
             try:
@@ -141,9 +142,13 @@ if issue_data:
                 continue
 
             if idx + 1 >= len(active_states):
+                # Always land on the first completed state, never cancelled
                 next_state = next((s for s in all_states if s["type"] == "completed"), None)
             else:
                 next_state = active_states[idx + 1]
+                # Safety check: never transition into a cancelled state
+                if next_state["type"] == "cancelled":
+                    next_state = next((s for s in all_states if s["type"] == "completed"), None)
 
             if not next_state:
                 continue
