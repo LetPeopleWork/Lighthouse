@@ -44,6 +44,7 @@ namespace Lighthouse.Backend.API.Helpers
                 team.ProcessBehaviourChartBaselineEndDate = teamSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;
 
                 SyncStates(team, teamSetting);
+                SyncStateMappings(team, teamSetting);
                 SyncServiceLevelExpectation(team, teamSetting);
                 SyncBlockedItems(team, teamSetting);
             }
@@ -57,8 +58,9 @@ namespace Lighthouse.Backend.API.Helpers
                     !team.ToDoStates.OrderBy(x => x).SequenceEqual(teamSetting.ToDoStates.OrderBy(x => x)) ||
                     !team.DoingStates.OrderBy(x => x).SequenceEqual(teamSetting.DoingStates.OrderBy(x => x)) ||
                     !team.DoneStates.OrderBy(x => x).SequenceEqual(teamSetting.DoneStates.OrderBy(x => x));
+                var stateMappingsChanged = StateMappingsChanged(team.StateMappings, teamSetting.StateMappings);
 
-                return queryChanged || connectionChanged || workItemTypesChanged || statesChanged;
+                return queryChanged || connectionChanged || workItemTypesChanged || statesChanged || stateMappingsChanged;
             }
         }
 
@@ -79,6 +81,40 @@ namespace Lighthouse.Backend.API.Helpers
         {
             team.ServiceLevelExpectationProbability = teamSetting.ServiceLevelExpectationProbability;
             team.ServiceLevelExpectationRange = teamSetting.ServiceLevelExpectationRange;
+        }
+
+        private static void SyncStateMappings(Team team, TeamSettingDto teamSetting)
+        {
+            team.StateMappings = teamSetting.StateMappings
+                .Select(dto => new StateMapping
+                {
+                    Name = dto.Name.Trim(),
+                    States = dto.States.Select(s => s.Trim()).ToList()
+                })
+                .ToList();
+        }
+
+        private static bool StateMappingsChanged(List<StateMapping> current, List<StateMappingDto> incoming)
+        {
+            if (current.Count != incoming.Count)
+            {
+                return true;
+            }
+
+            for (var i = 0; i < current.Count; i++)
+            {
+                if (!string.Equals(current[i].Name, incoming[i].Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (!current[i].States.OrderBy(x => x).SequenceEqual(incoming[i].States.OrderBy(x => x)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static List<string> TrimListEntries(List<string> list)

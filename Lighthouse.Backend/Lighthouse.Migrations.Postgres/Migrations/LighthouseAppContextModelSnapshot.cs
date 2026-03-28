@@ -459,6 +459,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("SizeEstimateAdditionalFieldDefinitionId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("StateMappings")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("SystemWIPLimit")
                         .HasColumnType("integer");
 
@@ -595,6 +599,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("ServiceLevelExpectationRange")
                         .HasColumnType("integer");
+
+                    b.Property<string>("StateMappings")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("SystemWIPLimit")
                         .HasColumnType("integer");

@@ -186,6 +186,30 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<BlackoutPeriod>()
                 .Property(bp => bp.Id)
                 .ValueGeneratedOnAdd();
+
+            var stateMappingsConverter = new ValueConverter<List<StateMapping>, string>(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new List<StateMapping>()
+                    : JsonSerializer.Deserialize<List<StateMapping>>(v, (JsonSerializerOptions?)null)
+                      ?? new List<StateMapping>()
+            );
+
+            var stateMappingsComparer = new ValueComparer<List<StateMapping>>(
+                (c1, c2) => JsonSerializer.Serialize(c1, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(c2, (JsonSerializerOptions?)null),
+                c => JsonSerializer.Serialize(c, (JsonSerializerOptions?)null).GetHashCode(),
+                c => JsonSerializer.Deserialize<List<StateMapping>>(JsonSerializer.Serialize(c, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!
+            );
+
+            modelBuilder.Entity<Team>()
+                .Property(t => t.StateMappings)
+                .HasConversion(stateMappingsConverter)
+                .Metadata.SetValueComparer(stateMappingsComparer);
+
+            modelBuilder.Entity<Portfolio>()
+                .Property(p => p.StateMappings)
+                .HasConversion(stateMappingsConverter)
+                .Metadata.SetValueComparer(stateMappingsComparer);
         }
 
         public override int SaveChanges()

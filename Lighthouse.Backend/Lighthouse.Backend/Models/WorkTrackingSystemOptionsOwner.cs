@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Models
 
         public List<string> BlockedTags { get; set; } = [];
 
+        public List<StateMapping> StateMappings { get; set; } = [];
+
         public abstract int DoneItemsCutoffDays { get; set; }
 
         public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
@@ -58,22 +60,44 @@ namespace Lighthouse.Backend.Models
 
         public StateCategories MapStateToStateCategory(string state)
         {
-            if (ToDoStates.IsItemInList(state))
+            if (GetRawStatesForCategory(ToDoStates).IsItemInList(state))
             {
                 return StateCategories.ToDo;
             }
 
-            if (DoingStates.IsItemInList(state))
+            if (GetRawStatesForCategory(DoingStates).IsItemInList(state))
             {
                 return StateCategories.Doing;
             }
 
-            if (DoneStates.IsItemInList(state))
+            if (GetRawStatesForCategory(DoneStates).IsItemInList(state))
             {
                 return StateCategories.Done;
             }
 
             return StateCategories.Unknown;
+        }
+
+        public List<string> GetRawStatesForCategory(List<string> categoryStates)
+        {
+            var rawStates = new List<string>();
+
+            foreach (var entry in categoryStates)
+            {
+                var mapping = StateMappings.FirstOrDefault(m =>
+                    string.Equals(m.Name, entry, StringComparison.OrdinalIgnoreCase));
+
+                if (mapping != null)
+                {
+                    rawStates.AddRange(mapping.States);
+                }
+                else
+                {
+                    rawStates.Add(entry);
+                }
+            }
+
+            return rawStates;
         }
 
         public void ResetUpdateTime()

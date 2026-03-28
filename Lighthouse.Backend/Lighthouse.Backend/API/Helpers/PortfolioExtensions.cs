@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.API.Helpers
             project.ProcessBehaviourChartBaselineEndDate = portfolioSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;
 
             SyncStates(project, portfolioSetting);
+            SyncStateMappings(project, portfolioSetting);
             SyncTeams(project, portfolioSetting, teamRepo);
             SyncServiceLevelExpectation(project, portfolioSetting);
             SyncBlockedItems(project, portfolioSetting);
@@ -54,6 +55,17 @@ namespace Lighthouse.Backend.API.Helpers
         private static List<string> TrimListEntries(List<string> list)
         {
             return list.Select(s => s.Trim()).ToList();
+        }
+
+        private static void SyncStateMappings(Portfolio project, PortfolioSettingDto portfolioSetting)
+        {
+            project.StateMappings = portfolioSetting.StateMappings
+                .Select(dto => new StateMapping
+                {
+                    Name = dto.Name.Trim(),
+                    States = dto.States.Select(s => s.Trim()).ToList()
+                })
+                .ToList();
         }
 
         private static void SyncTeams(Portfolio project, PortfolioSettingDto portfolioSetting, IRepository<Team> teamRepo)
