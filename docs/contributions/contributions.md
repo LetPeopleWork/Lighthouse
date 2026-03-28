@@ -75,6 +75,8 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Marat Kiniabulatov**](https://www.linkedin.com/in/maratkinyabulatov/)
 - [**Ben Richards**](https://www.linkedin.com/in/iambenrichards/)  
 - [**Manuel Opitz**](https://www.linkedin.com/in/manuel-opitz-3812351a9/)  
+
+
 ---
 
 ## Supporting Companies
