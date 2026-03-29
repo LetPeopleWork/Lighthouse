@@ -17,6 +17,14 @@ You can click on any of the values, and it will copy them.
 
 You also have a link to the API documentation, which will bring you to a swagger page detailing all the API endpoints of Lighthouse.
 
+## Refresh History
+In order to observe the refresh times of your teams and portfolios, Lighthouse is tracking the last 30 runs and visualizing them:
+
+![Refresh History](../assets/settings/RefreshHistory.png)
+
+You can see when you refreshed, how many items (Work Items or Features) were fetched, and how long it took.
+
+
 ## Logs
 We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  
 For this case, you can check the *Logs*.

@@ -6,55 +6,30 @@ nav_order: 95
 
 # vNext
 
-## Bug Fix: Deleted Teams and Portfolios Removed from Refresh History
-Fixed a bug where deleted teams and portfolios continued to appear in the Refresh History section of Settings > System Info. Orphaned refresh-log entries are now cleaned up automatically.
+## Authentication Support
 
-**What changed:**
-- Deleting a team or portfolio now removes all associated refresh-log records immediately.
-- On startup, any orphaned refresh-log entries left behind by prior versions or partial failures are automatically cleaned up.
+Lighthouse now supports **OpenID Connect (OIDC)** authentication to protect your instance. When enabled, users must sign in through your identity provider before accessing Lighthouse — unauthenticated requests are redirected to the sign-in screen.
 
-No changes are required to your configuration. If you previously saw deleted entities in the refresh history dropdown, they will disappear after the next server restart or the next time you delete a team or portfolio.
+![Sign In Screen](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/authentication/signin.png)
 
-## Bug Fix: Cycle Time Dates No Longer Appear in the Future for Positive-Offset Timezones
-Fixed a bug where users in positive-offset timezones (e.g., NZ, Australia) could see cycle-time dates displayed one day in the future. The root cause was that date-range filters and chart labels used UTC-based date conversion instead of respecting the user's local calendar date.
+Key highlights:
 
-**What changed:**
-- Date-range filters now serialize using local calendar-date components, so the intended selected day is always sent to the backend regardless of timezone.
-- Cycle Time scatter plot bucketing continues to use local-midnight normalization (already correct).
-- Cycle Time Process Behaviour Chart (PBC) labels now display date-only rather than full datetime, eliminating misleading "future date" presentation caused by UTC-to-local rendering shifts.
+- **Fail-closed design**: If authentication is enabled but misconfigured (e.g. no `Authority` set), Lighthouse displays an error screen and refuses to start, rather than accidentally leaving the app unprotected.
+- **Session management**: Sessions last 8 hours by default, configurable via `SessionLifetimeMinutes`. Users see a **Session Expired** screen when their session ends.
+- **Provider guides** are available for [Keycloak](https://docs.lighthouse.letpeople.work/Installation/authentication.html#keycloak), [Microsoft Entra ID](https://docs.lighthouse.letpeople.work/Installation/authentication.html#microsoft-entra-id), [Google](https://docs.lighthouse.letpeople.work/Installation/authentication.html#google), and [Auth0](https://docs.lighthouse.letpeople.work/Installation/authentication.html#auth0).
 
-No changes are required to your configuration. If you previously observed future-dated items in the Cycle Time views, they will now display the correct calendar day.
+See the [Authentication documentation](https://docs.lighthouse.letpeople.work/Installation/authentication.html) for the full configuration reference and setup instructions.
 
-## State Mappings for Teams and Portfolios
-Lighthouse now supports **State Mappings** — a way to rename or group raw provider states into meaningful Lighthouse states before placing them in To Do, Doing, or Done.
-
-**Single-state rename:** Create a mapping with one source state to give it a clearer name. For example, map your provider's *In Dev* state to *Development* and then use *Development* in your Doing list.
-
-**Multi-state grouping:** Create a mapping that combines multiple provider states into a single Lighthouse state. For example, group *Code Review*, *QA Review*, and *Design Review* into a single *In Review* state and place it in Doing.
-
-**How it works:**
-1. Open team or portfolio settings and scroll to the **State Mappings** section (below the To Do / Doing / Done state lists).
-2. Add one or more mappings — give each a name and select the source states it should contain.
-3. Use the mapped name in your To Do, Doing, or Done configuration just like any other state.
-
-Mapped names replace the raw provider state everywhere in Lighthouse — work items, features, metrics, and forecasts all use the mapped name. Transition dates and cycle time calculations resolve mapped names back to raw provider states internally, so your metrics remain accurate.
-
-**Configuration rules:**
-- Each source state can only appear in one mapping.
-- Mapping names must be unique and cannot collide with direct state names.
-- Settings without any mappings continue to work exactly as before.
-- Cloning a team or portfolio preserves all state mappings and workflow selections.
-
-Mapping changes are treated as work-item-related configuration changes — updating mappings triggers a data refresh to ensure items reflect the new state names.
+**Note:** Authentication is a **Premium** feature. A valid Premium license is required to use it.
 
 ## Linear Integration — Production Release
-The Linear integration has moved from preview to a fully supported production provider. If you were using Linear during the preview phase, you will need to reconfigure your teams and portfolios — existing preview configurations are not migrated.
+The Linear integration has moved from preview to a fully supported production provider. If you were using Linear during the preview phase, you will need to reconfigure your teams and portfolios. While we are not supporting 100% the same features as with Jira and Azure DevOps yet (for example, additional fields are not yet available), the basic functionality now works.
 
-**What changed:**
+Here is what changed:
 
 **Teams:** Linear teams are now configured using a team selection wizard instead of typing team names manually. The wizard lists all available teams from your connected Linear workspace. Work item types are fixed to *Issue* and do not require manual configuration.
 
-**Portfolios:** Linear portfolios automatically retrieve all projects in the authenticated workspace as Lighthouse features. No query or work item type configuration is needed — just create a portfolio with a Linear connection, configure your states, and you're ready to go.
+**Portfolios:** Linear portfolios automatically retrieve all projects in the authenticated workspace as Lighthouse features. No query or work item type configuration is needed. Just create a portfolio with a Linear connection, configure your states, and you're ready to go.
 
 **Hierarchy:** Lighthouse now maps the full Linear hierarchy:
 - **Issues** (team work items) roll up to **Projects** (portfolio features)
@@ -62,9 +37,42 @@ The Linear integration has moved from preview to a fully supported production pr
 
 This means your Monte Carlo forecasts and metrics correctly reflect the Linear project structure. Initiative names, statuses, and URLs are fetched directly from the Linear API.
 
-**States:** State configuration works the same as before — map your Linear issue statuses to Lighthouse's To Do / Doing / Done categories.
-
 See the [Linear documentation](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/linear.html) for updated setup instructions.
+
+
+## State Mappings for Teams and Portfolios
+Lighthouse now supports **State Mappings** — a way to rename or group raw provider states into meaningful Lighthouse states before placing them in To Do, Doing, or Done. If you create a state mapping, it can be used like a regular state, and all the *source states* will be transformed into the mapped state.
+
+You can use that to:
+- Group multiple states into one: For example, group *Code Review*, *QA Review*, and *Design Review* into a single *In Review* state and place it in Doing.
+- *Rename* a single state: For example, map your provider's *In Dev* state to *Development* and then use *Development* in your Doing list.
+
+**How it works:**
+1. Open team or portfolio settings and scroll to the **State Mappings** section (below the To Do / Doing / Done state lists).
+2. Add one or more mappings — give each a name and select the source states it should contain.
+3. Use the mapped name in your To Do, Doing, or Done configuration just like any other state.
+
+## Refresh History
+In the System Settings, you can now see statistics to the last 30 refreshes that you did for each of your teams and portfolios:
+
+![Throughput with Blackout](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/RefreshHistory.png)
+
+This includes how many items were fetched and how long it took to execute it. This may be useful to track Lighthouse performance over time, to see if it's degrading as you onboard more users, teams, and portfolios or not.
+
+## Other Improvements and Bug Fixes
+- Cycle Time Dates No Longer Appear in the Future for Positive-Offset Timezones.
+- Standalone version will now ensure that all processes are stopped when exiting. This was not the case before, and could prevent updates as files were still in use.
+- When running Lighthouse in Docker, the logs were not displayed in the UI, but a generic *Logs not found* message. This has been addressed, logs show up now.
+- Updated various third party dependencies
+
+## Contributions ❤️
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.25.6...v26.3.25.6)
+
 
 # Lighthouse v26.3.25.6
 
