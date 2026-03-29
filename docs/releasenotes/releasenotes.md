@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# vNext
+# Lighthouse v26.3.28.14
 
 ## Authentication Support
 
@@ -71,7 +71,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
 - [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.25.6...v26.3.25.6)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.25.6...v26.3.28.14)
 
 
 # Lighthouse v26.3.25.6
