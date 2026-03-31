@@ -113,7 +113,7 @@ jobs:
           - [Compliance Documentation](https://docs.lighthouse.letpeople.work/compliance/)
           - [CRA Technical File](https://docs.lighthouse.letpeople.work/compliance/cra-technical-file.html)
 
-          Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          Version: ${{ inputs.version }}
           EOF
 
       - name: Upload SBOM Artifacts
