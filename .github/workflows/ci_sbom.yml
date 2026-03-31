@@ -51,7 +51,7 @@ jobs:
       # Generate Backend SBOM (CycloneDX)
       - name: Generate Backend SBOM
         working-directory: ./Lighthouse.Backend
-        run: dotnet-CycloneDX Lighthouse.sln --json --recursive --output ./sbom/ --filename backend-sbom.json
+        run: dotnet-CycloneDX Lighthouse.sln --json --exclude-dev --exclude-test-projects --recursive --output ./sbom/ --filename backend-sbom.json
 
       # Generate SBOM for Frontend using CycloneDX (converts to SPDX later or use as-is)
       - name: Generate Frontend SBOM
