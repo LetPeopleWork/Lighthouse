@@ -30,3 +30,4 @@ jobs:
         with:
           fileversion: ${{ inputs.fileversion }}
           version: ${{ inputs.version }}
+          sbom-version: ${{ inputs.version }}

@@ -56,6 +56,18 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: ./Lighthouse.Frontend
 
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: Lighthouse-SBOM-${{ inputs.version }}
+          path: ./sbom-download
+
+      - name: Copy SBOM files to frontend public directory
+        run: |
+          mkdir -p ./Lighthouse.Frontend/public/sbom
+          cp ./sbom-download/lighthouse-backend-sbom.spdx.json ./Lighthouse.Frontend/public/sbom/backend.spdx.json
+          cp ./sbom-download/lighthouse-frontend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/frontend.cdx.json
+
       - name: Build Backend (composite, publish osx targets)
         uses: ./.github/actions/build-backend
         with:

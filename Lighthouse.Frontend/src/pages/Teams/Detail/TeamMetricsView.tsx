@@ -70,7 +70,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		if (team.useFixedDatesForThroughput) {
 			setDateRange(30);
 		} else {
-			const range = Math.floor(
+			const range = Math.round(
 				(team.throughputEndDate.valueOf() -
 					team.throughputStartDate.valueOf()) /
 					(1000 * 60 * 60 * 24),

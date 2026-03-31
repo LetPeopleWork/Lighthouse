@@ -1,0 +1,23 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "metadata": {
+    "timestamp": "2026-03-31T05:38:48Z",
+    "component": {
+      "name": "lighthouse.frontend",
+      "version": "0.0.0",
+      "purl": "pkg:npm/lighthouse.frontend@0.0.0",
+      "type": "application"
+    }
+  },
+  "components": [
+    {
+      "group": "@adobe",
+      "name": "css-tools",
+      "version": "4.4.4",
+      "purl": "pkg:npm/%40adobe/css-tools@4.4.4",
+      "type": "library",
+      "bom-ref": "pkg:npm/@adobe/css-tools@4.4.4"
+    }
+  ]
+}

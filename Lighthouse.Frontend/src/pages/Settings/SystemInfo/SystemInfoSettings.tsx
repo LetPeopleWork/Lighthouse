@@ -3,6 +3,7 @@ import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import LogSettings from "../LogSettings/LogSettings";
 import RefreshHistorySection from "./RefreshHistorySection";
 import SystemInfoDisplay from "./SystemInfoDisplay";
+import ThirdPartyPackagesSection from "./ThirdPartyPackagesSection";
 
 const SystemInfoSettings: React.FC = () => {
 	return (
@@ -14,6 +15,9 @@ const SystemInfoSettings: React.FC = () => {
 				<RefreshHistorySection />
 			</InputGroup>
 			<LogSettings />
+			<InputGroup title="Third Party Packages">
+				<ThirdPartyPackagesSection />
+			</InputGroup>
 		</>
 	);
 };

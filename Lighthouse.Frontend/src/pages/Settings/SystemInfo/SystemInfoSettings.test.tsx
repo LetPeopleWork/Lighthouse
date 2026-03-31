@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SystemInfo } from "../../../models/SystemInfo/SystemInfo";
 
 vi.mock("@melloware/react-logviewer", () => ({
@@ -16,6 +16,11 @@ vi.mock("@mui/x-charts", async () => {
 	};
 });
 
+vi.mock("@mui/x-data-grid", async () => {
+	const actual = await vi.importActual("@mui/x-data-grid");
+	return { ...actual };
+});
+
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILogService } from "../../../services/Api/LogService";
 import type { ISystemInfoService } from "../../../services/Api/SystemInfoService";
@@ -30,6 +35,12 @@ const mockGetSystemInfo = vi.fn();
 const mockSystemInfoService: ISystemInfoService = createMockSystemInfoService();
 mockSystemInfoService.getSystemInfo = mockGetSystemInfo;
 mockSystemInfoService.getRefreshLogs = vi.fn().mockResolvedValue([]);
+mockSystemInfoService.getBackendSbom = vi
+	.fn()
+	.mockResolvedValue({ packages: [], documentDescribes: [] });
+mockSystemInfoService.getFrontendSbom = vi
+	.fn()
+	.mockResolvedValue({ components: [], metadata: {} });
 
 const mockLogService: ILogService = createMockLogService();
 mockLogService.getLogs = vi.fn().mockResolvedValue("sample logs");
@@ -60,6 +71,23 @@ const MockProvider = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe("SystemInfoSettings", () => {
+	beforeEach(() => {
+		Object.defineProperty(globalThis, "matchMedia", {
+			writable: true,
+			value: vi.fn().mockImplementation((query: string) => ({
+				matches: false,
+				media: query,
+				onchange: null,
+				addListener: vi.fn(),
+				removeListener: vi.fn(),
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+				dispatchEvent: vi.fn(),
+			})),
+		});
+		localStorage.clear();
+	});
+
 	it("renders System Info section", async () => {
 		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
 
@@ -113,6 +141,20 @@ describe("SystemInfoSettings", () => {
 
 		await waitFor(() => {
 			expect(screen.getByText("Linux 5.15.0")).toBeInTheDocument();
+		});
+	});
+
+	it("renders Third Party Packages section", async () => {
+		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
+
+		render(
+			<MockProvider>
+				<SystemInfoSettings />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Third Party Packages")).toBeInTheDocument();
 		});
 	});
 });

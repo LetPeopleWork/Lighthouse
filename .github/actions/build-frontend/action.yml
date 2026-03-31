@@ -6,6 +6,10 @@ inputs:
     description: "Run tests and Sonar analysis (true/false)"
     required: false
     default: 'true'
+  sbom-version:
+    description: "Version string to download SBOM artifact (leave empty to skip)"
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -14,6 +18,21 @@ runs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       with:
         fetch-depth: '0'
+
+    - name: Download SBOM artifacts
+      if: ${{ inputs.sbom-version != '' }}
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: Lighthouse-SBOM-${{ inputs.sbom-version }}
+        path: ./sbom-download
+
+    - name: Copy SBOM files to frontend public directory
+      if: ${{ inputs.sbom-version != '' }}
+      shell: bash
+      run: |
+        mkdir -p ./Lighthouse.Frontend/public/sbom
+        cp ./sbom-download/lighthouse-backend-sbom.spdx.json ./Lighthouse.Frontend/public/sbom/backend.spdx.json
+        cp ./sbom-download/lighthouse-frontend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/frontend.cdx.json
 
     - name: Setup pnpm
       uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320

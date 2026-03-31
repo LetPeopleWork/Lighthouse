@@ -8,6 +8,10 @@ inputs:
   version:
     required: true
     description: "Release version string (for artifact names)"
+  sbom-version:
+    description: "Version string to download SBOM artifact (leave empty to skip)"
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -21,6 +25,7 @@ runs:
       uses: ./.github/actions/build-frontend
       with:
         run-tests: 'false'
+        sbom-version: ${{ inputs.sbom-version }}
 
     - name: Build Backend (composite, publish outputs)
       uses: ./.github/actions/build-backend

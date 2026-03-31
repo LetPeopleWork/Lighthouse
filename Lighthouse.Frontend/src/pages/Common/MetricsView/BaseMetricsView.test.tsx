@@ -1063,7 +1063,7 @@ describe("BaseMetricsView component", () => {
 		const startDate = new Date(startDateElement.textContent ?? "");
 		const endDate = new Date(endDateElement.textContent ?? "");
 
-		const daysDifference = Math.floor(
+		const daysDifference = Math.round(
 			(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
 		);
 
