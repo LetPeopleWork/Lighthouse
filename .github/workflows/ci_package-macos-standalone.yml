@@ -65,7 +65,7 @@ jobs:
       - name: Copy SBOM files to frontend public directory
         run: |
           mkdir -p ./Lighthouse.Frontend/public/sbom
-          cp ./sbom-download/lighthouse-backend-sbom.spdx.json ./Lighthouse.Frontend/public/sbom/backend.spdx.json
+          cp ./sbom-download/lighthouse-backend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/backend.cdx.json
           cp ./sbom-download/lighthouse-frontend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/frontend.cdx.json
 
       - name: Build Backend (composite, publish osx targets)

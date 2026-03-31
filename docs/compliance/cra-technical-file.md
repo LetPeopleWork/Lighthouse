@@ -277,7 +277,7 @@ Logging is minimal and avoids personal data. Users control log retention.
 
 | Format | Location | Update Frequency |
 |--------|----------|------------------|
-| SPDX 2.2 (backend) + CycloneDX 1.5 (frontend) | `Lighthouse-SBOM.zip` attached to GitHub Releases | Each release |
+| CycloneDX 1.7 (backend) + CycloneDX 1.5 (frontend) | `Lighthouse-SBOM.zip` attached to GitHub Releases | Each release |
 
 ### 7.2 SBOM Scope
 
@@ -289,7 +289,7 @@ The SBOM includes:
 ### 7.3 SBOM Generation
 
 SBOM is generated automatically during the CI/CD release process using:
-- **Backend**: Microsoft SBOM Tool → SPDX 2.2 JSON format
+- **Backend**: dotnet-CycloneDX → CycloneDX 1.7 JSON format
 - **Frontend**: CycloneDX npm tool → CycloneDX 1.5 JSON format
 
 Both formats are consolidated into a single `Lighthouse-SBOM.zip` artifact attached to each GitHub Release.

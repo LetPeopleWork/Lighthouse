@@ -53,7 +53,7 @@ This checklist documents the self-assessment of Lighthouse against the essential
 | Req | Requirement | Status | Evidence / Notes |
 |-----|-------------|--------|------------------|
 | 3.1 | Maintain SBOM covering components and dependencies | ✅ Implemented | SBOM generation workflow in ci_sbom.yml |
-| 3.2 | SBOM in commonly used, machine-readable format | ✅ Implemented | SPDX 2.2 (backend) + CycloneDX 1.5 (frontend) |
+| 3.2 | SBOM in commonly used, machine-readable format | ✅ Implemented | CycloneDX |
 | 3.3 | SBOM available to users | ✅ Implemented | Attached to GitHub Releases as Lighthouse-SBOM.zip |
 
 ## Part II: Vulnerability Handling Requirements for Manufacturers
