@@ -5,7 +5,6 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type {
 	CycloneDxDocument,
 	ISystemInfoService,
-	SpdxDocument,
 } from "../../../services/Api/SystemInfoService";
 import {
 	createMockApiServiceContext,
@@ -16,28 +15,6 @@ import ThirdPartyPackagesSection from "./ThirdPartyPackagesSection";
 vi.mock("@mui/x-data-grid", async () => {
 	const actual = await vi.importActual("@mui/x-data-grid");
 	return { ...actual };
-});
-
-const getMockSpdxDocument = (
-	overrides?: Partial<SpdxDocument>,
-): SpdxDocument => ({
-	documentDescribes: ["SPDXRef-RootPackage"],
-	packages: [
-		{
-			name: "Newtonsoft.Json",
-			SPDXID: "SPDXRef-Package-abc",
-			versionInfo: "13.0.3",
-			licenseDeclared: "MIT",
-			externalRefs: [
-				{
-					referenceCategory: "PACKAGE-MANAGER",
-					referenceType: "purl",
-					referenceLocator: "pkg:nuget/Newtonsoft.Json@13.0.3",
-				},
-			],
-		},
-	],
-	...overrides,
 });
 
 const getMockCdxDocument = (
@@ -109,7 +86,7 @@ describe("ThirdPartyPackagesSection", () => {
 	it("shows backend package name and version from SPDX data", async () => {
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument());
+			.mockResolvedValue(getMockCdxDocument());
 		mockSystemInfoService.getFrontendSbom = vi
 			.fn()
 			.mockResolvedValue(getMockCdxDocument({ components: [] }));
@@ -121,15 +98,15 @@ describe("ThirdPartyPackagesSection", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText("Newtonsoft.Json")).toBeInTheDocument();
+			expect(screen.getByText("react")).toBeInTheDocument();
 		});
-		expect(screen.getByText("13.0.3")).toBeInTheDocument();
+		expect(screen.getByText("19.2.4")).toBeInTheDocument();
 	});
 
 	it("shows frontend package name and version from CycloneDX data", async () => {
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument({ packages: [] }));
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
 		mockSystemInfoService.getFrontendSbom = vi
 			.fn()
 			.mockResolvedValue(getMockCdxDocument());
@@ -149,7 +126,7 @@ describe("ThirdPartyPackagesSection", () => {
 	it("renders npm package link for frontend packages", async () => {
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument());
+			.mockResolvedValue(getMockCdxDocument());
 		mockSystemInfoService.getFrontendSbom = vi
 			.fn()
 			.mockResolvedValue(getMockCdxDocument({ components: [] }));
@@ -161,13 +138,13 @@ describe("ThirdPartyPackagesSection", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText("Newtonsoft.Json")).toBeInTheDocument();
+			expect(screen.getByText("react")).toBeInTheDocument();
 		});
 
-		const link = screen.getByText("Newtonsoft.Json").closest("a");
+		const link = screen.getByText("react").closest("a");
 		expect(link).toHaveAttribute(
 			"href",
-			"https://www.nuget.org/packages/Newtonsoft.Json/13.0.3",
+			"https://www.npmjs.com/package/react/v/19.2.4",
 		);
 		expect(link).toHaveAttribute("target", "_blank");
 	});
@@ -175,7 +152,7 @@ describe("ThirdPartyPackagesSection", () => {
 	it("renders npm package link for frontend packages", async () => {
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument({ packages: [] }));
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
 		mockSystemInfoService.getFrontendSbom = vi
 			.fn()
 			.mockResolvedValue(getMockCdxDocument());
@@ -219,7 +196,7 @@ describe("ThirdPartyPackagesSection", () => {
 		});
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument({ packages: [] }));
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
 		mockSystemInfoService.getFrontendSbom = vi.fn().mockResolvedValue(cdxDoc);
 
 		render(
@@ -247,7 +224,7 @@ describe("ThirdPartyPackagesSection", () => {
 		});
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument({ packages: [] }));
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
 		mockSystemInfoService.getFrontendSbom = vi.fn().mockResolvedValue(cdxDoc);
 
 		render(
@@ -294,7 +271,7 @@ describe("ThirdPartyPackagesSection", () => {
 		});
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument({ packages: [] }));
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
 		mockSystemInfoService.getFrontendSbom = vi.fn().mockResolvedValue(cdxDoc);
 
 		render(
@@ -317,7 +294,7 @@ describe("ThirdPartyPackagesSection", () => {
 	it("filters packages by search input", async () => {
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
-			.mockResolvedValue(getMockSpdxDocument());
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
 		mockSystemInfoService.getFrontendSbom = vi
 			.fn()
 			.mockResolvedValue(getMockCdxDocument());
@@ -329,7 +306,7 @@ describe("ThirdPartyPackagesSection", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText("Newtonsoft.Json")).toBeInTheDocument();
+			expect(screen.getByText("react")).toBeInTheDocument();
 		});
 		expect(screen.getByText("react")).toBeInTheDocument();
 
@@ -340,46 +317,5 @@ describe("ThirdPartyPackagesSection", () => {
 			expect(screen.queryByText("Newtonsoft.Json")).not.toBeInTheDocument();
 		});
 		expect(screen.getByText("react")).toBeInTheDocument();
-	});
-
-	it("excludes the SPDX root package", async () => {
-		const spdxDoc = getMockSpdxDocument({
-			packages: [
-				{
-					name: "Lighthouse",
-					SPDXID: "SPDXRef-RootPackage",
-					versionInfo: "26.0.0",
-					licenseDeclared: "MIT",
-				},
-				{
-					name: "Newtonsoft.Json",
-					SPDXID: "SPDXRef-Package-abc",
-					versionInfo: "13.0.3",
-					licenseDeclared: "MIT",
-					externalRefs: [
-						{
-							referenceCategory: "PACKAGE-MANAGER",
-							referenceType: "purl",
-							referenceLocator: "pkg:nuget/Newtonsoft.Json@13.0.3",
-						},
-					],
-				},
-			],
-		});
-		mockSystemInfoService.getBackendSbom = vi.fn().mockResolvedValue(spdxDoc);
-		mockSystemInfoService.getFrontendSbom = vi
-			.fn()
-			.mockResolvedValue(getMockCdxDocument({ components: [] }));
-
-		render(
-			<MockProvider>
-				<ThirdPartyPackagesSection />
-			</MockProvider>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByText("Newtonsoft.Json")).toBeInTheDocument();
-		});
-		expect(screen.queryByText("Lighthouse")).not.toBeInTheDocument();
 	});
 });

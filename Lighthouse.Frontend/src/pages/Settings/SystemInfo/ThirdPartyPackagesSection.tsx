@@ -10,10 +10,7 @@ import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import type { ThirdPartyPackage } from "../../../models/SystemInfo/ThirdPartyPackage";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type {
-	CycloneDxDocument,
-	SpdxDocument,
-} from "../../../services/Api/SystemInfoService";
+import type { CycloneDxDocument } from "../../../services/Api/SystemInfoService";
 
 function purlToPackageUrl(purl: string | undefined): string | null {
 	if (!purl) return null;
@@ -30,22 +27,6 @@ function purlToPackageUrl(purl: string | undefined): string | null {
 	}
 
 	return null;
-}
-
-function parseSpdxPackages(doc: SpdxDocument): ThirdPartyPackage[] {
-	return doc.packages
-		.filter((pkg) => pkg.SPDXID !== "SPDXRef-RootPackage")
-		.map((pkg) => {
-			const purlRef = pkg.externalRefs?.find(
-				(ref) => ref.referenceType === "purl",
-			);
-			return {
-				id: `Backend:${pkg.name}@${pkg.versionInfo}`,
-				name: pkg.name,
-				version: pkg.versionInfo,
-				packageUrl: purlToPackageUrl(purlRef?.referenceLocator),
-			};
-		});
 }
 
 function parseCdxComponents(doc: CycloneDxDocument): ThirdPartyPackage[] {
@@ -78,7 +59,7 @@ const ThirdPartyPackagesSection: React.FC = () => {
 					systemInfoService.getBackendSbom(),
 					systemInfoService.getFrontendSbom(),
 				]);
-				const backendPackages = parseSpdxPackages(backendSbom);
+				const backendPackages = parseCdxComponents(backendSbom);
 				const frontendPackages = parseCdxComponents(frontendSbom);
 				setPackages([...backendPackages, ...frontendPackages]);
 			} catch (err) {

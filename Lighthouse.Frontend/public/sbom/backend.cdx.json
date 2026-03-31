@@ -1,0 +1,115 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:6b31ae46-d51f-4692-a5cf-7bce8626b261",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-03-31T18:42:33Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "authors": [
+            {
+              "name": "CycloneDX"
+            }
+          ],
+          "name": "CycloneDX module for .NET",
+          "version": "6.1.0.0",
+          "externalReferences": [
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-dotnet",
+              "type": "website"
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "Lighthouse@0.0.0",
+      "name": "Lighthouse",
+      "version": "0.0.0"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Azure.Core@1.38.0",
+      "authors": [
+        {
+          "name": "Microsoft"
+        }
+      ],
+      "name": "Azure.Core",
+      "version": "1.38.0",
+      "description": "This is the implementation of the Azure Client Pipeline",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "83AFDE6A5EAD30ADE441297F981CCC46BE6FFEA39EE46B2B4E985844279A4573C55ECB375A1C923E8C7A3E2E0439A5CA2A2009A46DDBF8C21B41C657662017CE"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "copyright": "\u00A9 Microsoft Corporation. All rights reserved.",
+      "purl": "pkg:nuget/Azure.Core@1.38.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/Azure/azure-sdk-for-net/blob/Azure.Core_1.38.0/sdk/core/Azure.Core/README.md",
+          "type": "website"
+        },
+        {
+          "url": "https://github.com/Azure/azure-sdk-for-net",
+          "type": "vcs"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "Lighthouse@0.0.0",
+      "dependsOn": [
+        "pkg:nuget/CsvHelper@33.1.0",
+        "pkg:nuget/GraphQL.Client@6.1.0",
+        "pkg:nuget/GraphQL.Client.Serializer.Newtonsoft@6.1.0",
+        "pkg:nuget/Microsoft.AspNetCore.Authentication.OpenIdConnect@10.0.5",
+        "pkg:nuget/Microsoft.AspNetCore.SpaServices.Extensions@10.0.5",
+        "pkg:nuget/Microsoft.Build@18.4.0",
+        "pkg:nuget/Microsoft.EntityFrameworkCore@10.0.5",
+        "pkg:nuget/Microsoft.EntityFrameworkCore.Design@10.0.5",
+        "pkg:nuget/Microsoft.EntityFrameworkCore.Relational@10.0.5",
+        "pkg:nuget/Microsoft.EntityFrameworkCore.Sqlite@10.0.5",
+        "pkg:nuget/Microsoft.EntityFrameworkCore.Tools@10.0.5",
+        "pkg:nuget/Microsoft.NET.ILLink.Tasks@10.0.4",
+        "pkg:nuget/Microsoft.TeamFoundationServer.Client@20.256.2",
+        "pkg:nuget/Microsoft.VisualStudio.Azure.Containers.Tools.Targets@1.23.0",
+        "pkg:nuget/ModelContextProtocol.AspNetCore@1.2.0",
+        "pkg:nuget/Newtonsoft.Json@13.0.4",
+        "pkg:nuget/Npgsql.EntityFrameworkCore.PostgreSQL@10.0.1",
+        "pkg:nuget/Octokit@14.0.0",
+        "pkg:nuget/Serilog.AspNetCore@10.0.0",
+        "pkg:nuget/Serilog.Expressions@5.0.0",
+        "pkg:nuget/Serilog.Settings.Configuration@10.0.0",
+        "pkg:nuget/Serilog.Sinks.File@7.0.0",
+        "pkg:nuget/Swashbuckle.AspNetCore@10.1.7",
+        "pkg:nuget/System.Data.SqlClient@4.9.1",
+        "pkg:nuget/Microsoft.Build.Tasks.Core@18.4.0",
+        "pkg:nuget/coverlet.collector@8.0.1",
+        "pkg:nuget/Microsoft.AspNetCore.Mvc.Testing@10.0.5",
+        "pkg:nuget/Microsoft.EntityFrameworkCore.InMemory@10.0.5",
+        "pkg:nuget/Microsoft.NET.Test.Sdk@18.3.0",
+        "pkg:nuget/Moq@4.20.72",
+        "pkg:nuget/NUnit@4.5.1",
+        "pkg:nuget/NUnit.Analyzers@4.12.0",
+        "pkg:nuget/NUnit3TestAdapter@6.2.0"
+      ]
+    }
+  ]
+}

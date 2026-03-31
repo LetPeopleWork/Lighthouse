@@ -19,17 +19,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          fetch-depth: '0'
+          fetch-depth: "0"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
-          node-version: '24'
+          node-version: "24"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
@@ -44,22 +44,14 @@ jobs:
         working-directory: ./Lighthouse.Backend
         run: dotnet restore
 
-      # Generate SBOM for .NET Backend using Microsoft SBOM Tool
-      - name: Install Microsoft SBOM Tool
-        run: |
-          dotnet tool install --global Microsoft.Sbom.DotNetTool
+      # Install CycloneDX for .NET
+      - name: Install CycloneDX .NET tool
+        run: dotnet tool install --global CycloneDX
 
-      - name: Generate Backend SBOM (SPDX)
+      # Generate Backend SBOM (CycloneDX)
+      - name: Generate Backend SBOM
         working-directory: ./Lighthouse.Backend
-        run: |
-          sbom-tool generate \
-            -b . \
-            -bc ./Lighthouse.Backend \
-            -pn Lighthouse \
-            -pv ${{ inputs.version }} \
-            -ps LetPeopleWork \
-            -nsb https://github.com/LetPeopleWork/Lighthouse \
-            -m .
+        run: dotnet-CycloneDX Lighthouse.sln --json --recursive --output ./sbom/ --filename backend-sbom.json
 
       # Generate SBOM for Frontend using CycloneDX (converts to SPDX later or use as-is)
       - name: Generate Frontend SBOM
@@ -72,10 +64,7 @@ jobs:
         run: mkdir -p sbom-output
 
       - name: Copy Backend SBOM
-        run: |
-          cp ./Lighthouse.Backend/_manifest/spdx_2.2/manifest.spdx.json ./sbom-output/lighthouse-backend-sbom.spdx.json || echo "Backend SBOM not found in expected location"
-          # Try alternate location
-          find ./Lighthouse.Backend -name "*.spdx.json" -exec cp {} ./sbom-output/lighthouse-backend-sbom.spdx.json \; 2>/dev/null || true
+        run: cp ./Lighthouse.Backend/sbom/backend-sbom.json ./sbom-output/lighthouse-backend-sbom.cdx.json
 
       - name: Copy Frontend SBOM
         run: cp ./Lighthouse.Frontend/frontend-sbom.json ./sbom-output/lighthouse-frontend-sbom.cdx.json
@@ -89,12 +78,12 @@ jobs:
 
           ## Files
 
-          - `lighthouse-backend-sbom.spdx.json` - Backend (.NET) dependencies in SPDX 2.2 format
+          - `lighthouse-backend-sbom.cdx.json` - Backend (.NET) dependencies in CycloneDX format
           - `lighthouse-frontend-sbom.cdx.json` - Frontend (Node.js) dependencies in CycloneDX 1.5 format
 
           ## Format Notes
 
-          - **Backend**: Generated using Microsoft SBOM Tool, SPDX 2.2 JSON format
+          - **Backend**: Generated using CycloneDX .NET tool, CycloneDX 1.7 JSON format
           - **Frontend**: Generated using CycloneDX npm, CycloneDX 1.5 JSON format
 
           Both formats are machine-readable and widely supported by vulnerability scanning tools.

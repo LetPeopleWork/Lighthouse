@@ -2,25 +2,6 @@ import type { RefreshLog } from "../../models/SystemInfo/RefreshLog";
 import type { SystemInfo } from "../../models/SystemInfo/SystemInfo";
 import { BaseApiService } from "./BaseApiService";
 
-export type SpdxExternalRef = {
-	referenceCategory: string;
-	referenceType: string;
-	referenceLocator: string;
-};
-
-export type SpdxPackage = {
-	name: string;
-	SPDXID: string;
-	versionInfo: string;
-	licenseDeclared: string;
-	externalRefs?: SpdxExternalRef[];
-};
-
-export type SpdxDocument = {
-	packages: SpdxPackage[];
-	documentDescribes: string[];
-};
-
 export type CdxLicense = {
 	license: { id: string };
 };
@@ -38,12 +19,6 @@ export type CycloneDxDocument = {
 	metadata?: { component?: { name: string } };
 };
 
-function isSpdxDocument(data: unknown): data is SpdxDocument {
-	if (typeof data !== "object" || data === null) return false;
-	const doc = data as Record<string, unknown>;
-	return Array.isArray(doc.packages) && Array.isArray(doc.documentDescribes);
-}
-
 function isCycloneDxDocument(data: unknown): data is CycloneDxDocument {
 	if (typeof data !== "object" || data === null) return false;
 	const doc = data as Record<string, unknown>;
@@ -53,7 +28,7 @@ function isCycloneDxDocument(data: unknown): data is CycloneDxDocument {
 export interface ISystemInfoService {
 	getSystemInfo(): Promise<SystemInfo>;
 	getRefreshLogs(): Promise<RefreshLog[]>;
-	getBackendSbom(): Promise<SpdxDocument>;
+	getBackendSbom(): Promise<CycloneDxDocument>;
 	getFrontendSbom(): Promise<CycloneDxDocument>;
 }
 
@@ -77,15 +52,16 @@ export class SystemInfoService
 		});
 	}
 
-	async getBackendSbom(): Promise<SpdxDocument> {
-		const response = await fetch("/sbom/backend.spdx.json");
+	async getBackendSbom(): Promise<CycloneDxDocument> {
+		const response = await fetch("/sbom/backend.cdx.json");
 		if (!response.ok) {
 			throw new Error(`Failed to load backend SBOM: ${response.status}`);
 		}
 		const data: unknown = await response.json();
-		if (!isSpdxDocument(data)) {
-			throw new Error("Invalid SPDX document format");
+		if (!isCycloneDxDocument(data)) {
+			throw new Error("Invalid CycloneDX document format");
 		}
+
 		return data;
 	}
 
