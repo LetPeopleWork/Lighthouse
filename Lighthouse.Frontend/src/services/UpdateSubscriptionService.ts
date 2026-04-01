@@ -55,7 +55,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		if (import.meta.env.VITE_API_BASE_URL !== undefined) {
 			this.baseUrl = import.meta.env.VITE_API_BASE_URL;
 		}
-		
+
 		this.apiService = axios.create({ baseURL: this.baseUrl });
 	}
 

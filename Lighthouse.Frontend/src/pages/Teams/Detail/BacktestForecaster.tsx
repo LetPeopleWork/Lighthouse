@@ -104,10 +104,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	useEffect(() => {
 		try {
 			const rollingThroughputWindow =
-				Math.floor(
-					(team.throughputEndDate.getTime() -
-						team.throughputStartDate.getTime()) /
-						(1000 * 60 * 60 * 24),
+				dayjs(team.throughputEndDate).diff(
+					dayjs(team.throughputStartDate),
+					"day",
 				) + 1;
 
 			if (team.useFixedDatesForThroughput) {
