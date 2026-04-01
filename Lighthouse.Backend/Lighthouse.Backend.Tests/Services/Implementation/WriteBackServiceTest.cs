@@ -15,9 +15,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock;
         private Mock<IWorkTrackingConnector> connectorMock;
         private Mock<ILogger<WriteBackService>> loggerMock;
-        
+
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IRepository<Feature>>  featureRepositoryMock;
+        private Mock<IRepository<Feature>> featureRepositoryMock;
 
         private List<WorkItem> workItems;
 
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             loggerMock = new Mock<ILogger<WriteBackService>>();
 
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            featureRepositoryMock = new  Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IRepository<Feature>>();
 
             workItems = [];
             features = [];
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
                 .Returns(connectorMock.Object);
-            
+
             workItemRepositoryMock.Setup(x => x.GetAll()).Returns(workItems);
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
         }
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var updates = new List<WriteBackFieldUpdate>
-            {   
+            {
                 CreateBackFieldUpdate("42", "Custom.Age", "5", string.Empty, connection),
                 CreateBackFieldUpdate("43", "Custom.Age", "10", null, connection),
             };
@@ -308,7 +308,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 CreateBackFieldUpdate("42", "Custom.Age", "5", "5", connection),
             };
-            
+
             connection.AdditionalFieldDefinitions.Clear();
 
             connectorMock
@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
-            
+
             workItems.Single().AdditionalFieldValues.Clear();
 
             connectorMock
@@ -358,7 +358,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
-            
+
             connection.AdditionalFieldDefinitions.Clear();
 
             connectorMock
@@ -400,13 +400,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
         }
 
+        [Test]
+        public async Task WriteFieldsToWorkItems_WorkItemAppearsInMultipleTeams_DoesNotThrow()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+
+            var update = CreateBackFieldUpdate("FWUP-3", "Custom.Age", "5", null, connection);
+            AddItem("FWUP-3", connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id, null);
+
+            var updates = new List<WriteBackFieldUpdate> { update };
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult { ItemResults = [] });
+
+            var service = CreateService();
+
+            await service.WriteFieldsToWorkItems(connection, updates);
+
+            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, It.Is<IReadOnlyList<WriteBackFieldUpdate>>(u => u.Count == 1 && u[0].WorkItemId == "FWUP-3")), Times.Once);
+        }
+
         private WriteBackFieldUpdate CreateBackFieldUpdate(string workItemReference, string targetFieldReference, string? newValue, string? oldValue, WorkTrackingSystemConnection connection, bool isFeature = false)
         {
             var additionalFieldId = AddAdditionalField(connection, targetFieldReference);
             AddItem(workItemReference, additionalFieldId, oldValue, isFeature);
 
             return new WriteBackFieldUpdate
-                { WorkItemId = workItemReference, TargetFieldReference = targetFieldReference, Value = newValue };
+            { WorkItemId = workItemReference, TargetFieldReference = targetFieldReference, Value = newValue };
         }
 
         private void AddItem(string referenceId, int additionalFieldId, string? additionalFieldValue, bool isFeature = false)
@@ -435,12 +456,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var existingField =
                 workTrackingSystemConnection.AdditionalFieldDefinitions.SingleOrDefault(af =>
                     af.Reference == additionalFieldReference);
-            
+
             if (existingField != null)
             {
                 return existingField.Id;
             }
-            
+
             var count = workTrackingSystemConnection.AdditionalFieldDefinitions.Count;
 
             workTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
@@ -450,7 +471,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Reference = additionalFieldReference,
                 WorkTrackingSystemConnection = workTrackingSystemConnection,
             });
-            
+
             return count;
         }
 

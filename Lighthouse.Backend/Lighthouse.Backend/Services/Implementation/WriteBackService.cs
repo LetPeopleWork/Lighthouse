@@ -95,11 +95,20 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var update in updates)
             {
-                var changedItem = allItems.SingleOrDefault(x => x.ReferenceId == update.WorkItemId);
-                if (changedItem == null)
+                var changedItems = allItems.Where(x => x.ReferenceId == update.WorkItemId).ToList();
+                if (changedItems.Count == 0)
                 {
                     continue;
                 }
+
+                if (changedItems.Count > 1)
+                {
+                    logger.LogWarning(
+                        "Multiple items found with reference {WorkItemReference} for update to field {TargetFieldReference} on connection {ConnectionId} — taking first match.",
+                        update.WorkItemId, update.TargetFieldReference, connection.Id);
+                }
+
+                var changedItem = changedItems[0];
 
                 if (!additionalFieldMap.TryGetValue(update.TargetFieldReference, out var additionalFieldId))
                 {
