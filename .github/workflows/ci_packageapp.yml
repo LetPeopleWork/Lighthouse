@@ -9,6 +9,10 @@ on:
       version:
         required: true
         type: string
+      sbom-version:
+        required: false
+        type: string
+        default: ''
       dotnet_version:
         required: false
         type: string
@@ -30,4 +34,4 @@ jobs:
         with:
           fileversion: ${{ inputs.fileversion }}
           version: ${{ inputs.version }}
-          sbom-version: ${{ inputs.version }}
+          sbom-version: ${{ inputs.sbom-version }}

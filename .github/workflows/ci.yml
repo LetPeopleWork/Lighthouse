@@ -63,6 +63,7 @@ jobs:
     with:
       fileversion: ${{ needs.version.outputs.fileversion }}
       version: ${{ needs.version.outputs.version }}
+      sbom-version: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.version || '' }}
       
   
   docker:
