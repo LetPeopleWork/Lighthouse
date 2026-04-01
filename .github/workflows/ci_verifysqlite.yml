@@ -52,23 +52,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-e2e-
 
-      - name: Install E2E dependencies
-        run: pnpm install --frozen-lockfile
-        shell: bash
-        working-directory: ./Lighthouse.EndToEndTests
-
-      - name: Get Playwright version
-        id: playwright-version
-        shell: bash
-        run: echo "PLAYWRIGHT_VERSION=$(pnpm list @playwright/test --json | grep -oP '"version":\s*"\K[^"]+' | head -1)" >> $GITHUB_ENV
-        working-directory: ./Lighthouse.EndToEndTests
-
       - name: Cache Playwright browsers
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/Lighthouse.EndToEndTests/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Chromium
+        run: pnpm exec playwright install chromium --only-shell
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Install Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install-deps chromium
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
 
       - name: Install Chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
