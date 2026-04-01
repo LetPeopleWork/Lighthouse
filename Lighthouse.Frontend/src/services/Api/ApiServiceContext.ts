@@ -76,10 +76,6 @@ export interface IApiServiceContext {
 	databaseManagementService: IDatabaseManagementService;
 }
 
-const initializeUpdateSubscriptionService = async () => {
-	await defaultServices.updateSubscriptionService.initialize();
-};
-
 const defaultServices: IApiServiceContext = {
 	authService: new AuthService(),
 	forecastService: new ForecastService(),
@@ -106,8 +102,6 @@ const defaultServices: IApiServiceContext = {
 };
 
 export function getApiServices(): IApiServiceContext {
-	initializeUpdateSubscriptionService();
-
 	return defaultServices;
 }
 

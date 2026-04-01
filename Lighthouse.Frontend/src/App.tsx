@@ -33,7 +33,11 @@ import {
 	type IApiServiceContext,
 } from "./services/Api/ApiServiceContext";
 import { TerminologyProvider } from "./services/TerminologyContext";
-import { hasTauriBackendUrl, isTauriEnv } from "./utils/tauri";
+import {
+	getTauriBackendUrl,
+	hasTauriBackendUrl,
+	isTauriEnv,
+} from "./utils/tauri";
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -92,19 +96,27 @@ const App: React.FC = () => {
 	}, [isTauri]);
 
 	useEffect(() => {
+		async function initialize(baseUrl: string | null = null) {
+			await apiServices.updateSubscriptionService.initialize(baseUrl);
+		}
+
 		if (!isTauri) {
+			initialize();
 			setIsBackendReady(true);
 			return;
 		}
 
 		let unlistenFn: (() => void) | undefined;
 
-		initTauriListener(() => setIsBackendReady(true)).then((unlisten) => {
+		initTauriListener(() => {
+			initialize(getTauriBackendUrl());
+			setIsBackendReady(true);
+		}).then((unlisten) => {
 			unlistenFn = unlisten;
 		});
 
 		return () => unlistenFn?.();
-	}, [isTauri]);
+	}, [isTauri, apiServices.updateSubscriptionService.initialize]);
 
 	// --- 2. Auth Guard ---
 	const { shell, loginUrl, misconfigurationMessage, logout } = useAuthGuard(

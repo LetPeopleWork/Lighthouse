@@ -17,7 +17,7 @@ export interface IGlobalUpdateStatus {
 }
 
 export interface IUpdateSubscriptionService {
-	initialize(): Promise<void>;
+	initialize(baseUrlOverride: string | null): Promise<void>;
 	getUpdateStatus(
 		updateType: UpdateType,
 		id: number,
@@ -43,25 +43,30 @@ export interface IUpdateSubscriptionService {
 }
 
 export class UpdateSubscriptionService implements IUpdateSubscriptionService {
-	private readonly baseUrl: string = "/api";
+	private baseUrl: string = "/api";
 
 	private connection!: signalR.HubConnection;
 	private isConnected = false;
 	private isConnecting = false;
 	private connectionPromise: Promise<void> | null = null;
-	private readonly apiService: AxiosInstance;
+	private apiService: AxiosInstance;
 
-	public constructor() {
+	constructor() {
 		if (import.meta.env.VITE_API_BASE_URL !== undefined) {
 			this.baseUrl = import.meta.env.VITE_API_BASE_URL;
 		}
-
-		this.apiService = axios.create({
-			baseURL: this.baseUrl,
-		});
+		
+		this.apiService = axios.create({ baseURL: this.baseUrl });
 	}
 
-	public async initialize(): Promise<void> {
+	public async initialize(
+		baseUrlOverride: string | null = null,
+	): Promise<void> {
+		if (baseUrlOverride) {
+			this.baseUrl = baseUrlOverride;
+			this.apiService = axios.create({ baseURL: this.baseUrl });
+		}
+
 		if (this.isConnected) {
 			return;
 		}
@@ -161,7 +166,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	public async subscribeToAllUpdates(callback: () => void): Promise<void> {
-		await this.initialize();
+		await this.connectionPromise;
 
 		try {
 			this.connection.on("GlobalUpdateNotification", callback);
@@ -172,7 +177,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	public async unsubscribeFromAllUpdates(): Promise<void> {
-		await this.initialize();
+		await this.connectionPromise;
 
 		try {
 			this.connection.off("GlobalUpdateNotification");
@@ -187,7 +192,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		id: number,
 		callback: (status: IUpdateStatus) => void,
 	) {
-		await this.initialize();
+		await this.connectionPromise;
 
 		const updateKey = `${updateType}_${id}`;
 
@@ -200,7 +205,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	private async unsubscribeFromUpdate(updateType: UpdateType, id: number) {
-		await this.initialize();
+		await this.connectionPromise;
 
 		const updateKey = `${updateType}_${id}`;
 
