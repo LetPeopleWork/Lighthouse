@@ -16,12 +16,12 @@ jobs:
       AzureDevOpsLighthouseE2ETestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
       LinearAPIKey: ${{ secrets.LINEARAPIKEY }}
       LighthouseBackupPassword: ${{ secrets.LIGHTHOUSEBACKUPPASSWORD }}
-      
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          fetch-depth: '0'
-      
+          fetch-depth: "0"
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: Lighthouse-linux-x64-${{ inputs.version }}
@@ -52,6 +52,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-e2e-
 
+      - name: Install E2E dependencies
+        run: pnpm install --frozen-lockfile
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
       - name: Cache Playwright browsers
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
         id: playwright-cache
@@ -81,7 +86,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Python dependencies
         run: |
@@ -89,7 +94,7 @@ jobs:
 
       - name: Set linux executable permission
         run: sudo chmod -R +x ./linux-x64
-        working-directory: ./Lighthouse  
+        working-directory: ./Lighthouse
 
       - name: Run Lighthouse
         run: |
@@ -97,7 +102,7 @@ jobs:
         working-directory: ./Lighthouse/linux-x64
         env:
           Database__Provider: sqlite
-          Database__ConnectionString: 'Data Source=lighthouse.db'
+          Database__ConnectionString: "Data Source=lighthouse.db"
 
       - name: Write private key to file
         run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
@@ -122,14 +127,14 @@ jobs:
             -F "file=@license.json" \
             http://localhost:5000/api/license/import
           echo "License uploaded successfully!"
-  
+
       - name: Run Playwright tests
         run: pnpm run test
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
           LIGHTHOUSEURL: http://localhost:5000
-  
+
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         if: ${{ !cancelled() }}
         with:
