@@ -45,6 +45,8 @@ describe("UpdateSubscriptionService", () => {
 
 	it("should subscribe to team updates", async () => {
 		const callback = vi.fn();
+		await service.initialize();
+
 		await service.subscribeToTeamUpdates(1, callback);
 		expect(mockConnection.on).toHaveBeenCalledWith("Team_1", callback);
 		expect(mockConnection.invoke).toHaveBeenCalledWith(
@@ -55,7 +57,9 @@ describe("UpdateSubscriptionService", () => {
 	});
 
 	it("should unsubscribe from team updates", async () => {
+		await service.initialize();
 		await service.unsubscribeFromTeamUpdates(1);
+
 		expect(mockConnection.off).toHaveBeenCalledWith("Team_1");
 		expect(mockConnection.invoke).toHaveBeenCalledWith(
 			"UnsubscribeFromUpdate",
