@@ -20,8 +20,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@melloware/react-logviewer':
-        specifier: ^6.4.1
-        version: 6.4.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^6.5.1
+        version: 6.5.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@microsoft/signalr':
         specifier: ^10.0.0
         version: 10.0.0
@@ -573,8 +573,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@melloware/react-logviewer@6.4.1':
-    resolution: {integrity: sha512-ArCs2C2KchI3Sa+LP80JghtcZu3zqxkXmoZx6DKJXgzRTN07Q8ECl7wzf26eQT0g0yM2CMOJ4WgfavhQ4xKA5Q==}
+  '@melloware/react-logviewer@6.5.1':
+    resolution: {integrity: sha512-ZDC8ATqdmvzPx+He7mZyG2/8nRnt0Hkn3ZWNOyzFw0LZ8RME4/t2ZStmaUK9YqJlAWnnUyMVHIg/wqaG2skZRg==}
     peerDependencies:
       react: '>=17.0.0'
       react-dom: '>=17.0.0'
@@ -1570,8 +1570,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hotkeys-js@4.0.2:
-    resolution: {integrity: sha512-fJNEO88zWwoXEGJuvjSbunKSexaT1VbC1S9wIzMA2BfOZ5KPiQj2wTqxDeXd110/4akiAuQIsE3TSbNvGgCyQg==}
+  hotkeys-js@4.0.3:
+    resolution: {integrity: sha512-adK3E0KGXiIm8rcRhn2JHEvCVzgg54UtHtufxHVWM0I95hakyxn80aX6ez0nxVEdbzzgrb9g2lMJIThFSyTSFQ==}
 
   html-encoding-sniffer@6.0.0:
     resolution: {integrity: sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==}
@@ -2303,8 +2303,8 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  virtua@0.48.8:
-    resolution: {integrity: sha512-jpsxOw5V4B6hg44JePRLo9DL0TV7N1lBEVtPjKpAJebXyhI2s9lfiXJESaLapNtr3vtiSk/pWHiLf7B2a6UcgQ==}
+  virtua@0.49.0:
+    resolution: {integrity: sha512-yra9TIPqkVIn+LOjCZO8e6C6UsCiCIHJXt3yfnCP02r2sLpgr6mlispn3SHtWZv2aK2tuZLo6Sp2v6qmSrSVfw==}
     peerDependencies:
       react: '>=16.14.0'
       react-dom: '>=16.14.0'
@@ -2819,15 +2819,15 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@melloware/react-logviewer@6.4.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@melloware/react-logviewer@6.5.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      hotkeys-js: 4.0.2
+      hotkeys-js: 4.0.3
       immutable: 5.1.5
       mitt: 3.0.1
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
       react-string-replace: 2.0.1
-      virtua: 0.48.8(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      virtua: 0.49.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     transitivePeerDependencies:
       - solid-js
       - svelte
@@ -3793,7 +3793,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hotkeys-js@4.0.2: {}
+  hotkeys-js@4.0.3: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:
@@ -4727,7 +4727,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  virtua@0.48.8(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  virtua@0.49.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     optionalDependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
