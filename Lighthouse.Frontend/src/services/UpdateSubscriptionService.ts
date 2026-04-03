@@ -1,5 +1,6 @@
 import * as signalR from "@microsoft/signalr";
 import axios, { type AxiosInstance } from "axios";
+import { getBackendReadyPromise, getBackendUrl } from "../utils/backendUrl";
 
 export type UpdateType = "Team" | "Features" | "Forecasts";
 
@@ -17,7 +18,6 @@ export interface IGlobalUpdateStatus {
 }
 
 export interface IUpdateSubscriptionService {
-	initialize(baseUrlOverride: string | null): Promise<void>;
 	getUpdateStatus(
 		updateType: UpdateType,
 		id: number,
@@ -43,63 +43,46 @@ export interface IUpdateSubscriptionService {
 }
 
 export class UpdateSubscriptionService implements IUpdateSubscriptionService {
-	private baseUrl: string = "/api";
-
 	private connection!: signalR.HubConnection;
 	private isConnected = false;
-	private isConnecting = false;
 	private connectionPromise: Promise<void> | null = null;
 	private apiService: AxiosInstance;
 
 	constructor() {
-		if (import.meta.env.VITE_API_BASE_URL !== undefined) {
-			this.baseUrl = import.meta.env.VITE_API_BASE_URL;
-		}
+		this.apiService = axios.create({ baseURL: getBackendUrl() });
 
-		this.apiService = axios.create({ baseURL: this.baseUrl });
+		// Self-initialise once the backend URL is known
+		this.connectionPromise = this.connect();
 	}
 
-	public async initialize(
-		baseUrlOverride: string | null = null,
-	): Promise<void> {
-		if (baseUrlOverride) {
-			this.baseUrl = baseUrlOverride;
-			this.apiService = axios.create({ baseURL: this.baseUrl });
+	private async connect(): Promise<void> {
+		await getBackendReadyPromise();
+
+		const baseUrl = getBackendUrl();
+		this.apiService = axios.create({ baseURL: baseUrl });
+
+		if (this.isConnected) return;
+
+		try {
+			this.connection ??= new signalR.HubConnectionBuilder()
+				.withUrl(`${baseUrl}/updateNotificationHub`, {
+					withCredentials: true,
+				})
+				.configureLogging(signalR.LogLevel.Information)
+				.build();
+
+			await this.connection.start();
+			this.isConnected = true;
+		} catch (error) {
+			console.error("Error starting SignalR connection:", error);
+			this.connectionPromise = null;
 		}
+	}
 
-		if (this.isConnected) {
-			return;
+	private async ensureConnected(): Promise<void> {
+		if (this.connectionPromise) {
+			await this.connectionPromise;
 		}
-
-		if (this.isConnecting) {
-			if (this.connectionPromise) {
-				return this.connectionPromise;
-			}
-			throw new Error("Connection promise is null");
-		}
-
-		this.isConnecting = true;
-
-		this.connection ??= new signalR.HubConnectionBuilder()
-			.withUrl(`${this.baseUrl}/updateNotificationHub`, {
-				withCredentials: true,
-			})
-			.configureLogging(signalR.LogLevel.Information)
-			.build();
-
-		this.connectionPromise = this.connection
-			.start()
-			.then(() => {
-				this.isConnected = true;
-				this.isConnecting = false;
-			})
-			.catch((error) => {
-				console.error("Error starting SignalR connection:", error);
-				this.isConnecting = false;
-				this.connectionPromise = null;
-			});
-
-		return this.connectionPromise;
 	}
 
 	public async subscribeToTeamUpdates(
@@ -141,6 +124,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		updateType: UpdateType,
 		id: number,
 	): Promise<IUpdateStatus | null> {
+		await this.ensureConnected();
+
 		try {
 			const updateStatus = await this.connection.invoke<IUpdateStatus>(
 				"GetUpdateStatus",
@@ -155,6 +140,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {
+		await this.ensureConnected();
+
 		try {
 			const response =
 				await this.apiService.get<IGlobalUpdateStatus>("/update/status");
@@ -166,7 +153,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	public async subscribeToAllUpdates(callback: () => void): Promise<void> {
-		await this.connectionPromise;
+		await this.ensureConnected();
 
 		try {
 			this.connection.on("GlobalUpdateNotification", callback);
@@ -177,7 +164,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	public async unsubscribeFromAllUpdates(): Promise<void> {
-		await this.connectionPromise;
+		await this.ensureConnected();
 
 		try {
 			this.connection.off("GlobalUpdateNotification");
@@ -192,7 +179,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		id: number,
 		callback: (status: IUpdateStatus) => void,
 	) {
-		await this.connectionPromise;
+		await this.ensureConnected();
 
 		const updateKey = `${updateType}_${id}`;
 
@@ -205,7 +192,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	private async unsubscribeFromUpdate(updateType: UpdateType, id: number) {
-		await this.connectionPromise;
+		await this.ensureConnected();
 
 		const updateKey = `${updateType}_${id}`;
 

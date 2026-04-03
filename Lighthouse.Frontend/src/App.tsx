@@ -33,11 +33,8 @@ import {
 	type IApiServiceContext,
 } from "./services/Api/ApiServiceContext";
 import { TerminologyProvider } from "./services/TerminologyContext";
-import {
-	getTauriBackendUrl,
-	hasTauriBackendUrl,
-	isTauriEnv,
-} from "./utils/tauri";
+import { notifyBackendReady } from "./utils/backendUrl";
+import { hasTauriBackendUrl, isTauriEnv } from "./utils/tauri";
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -62,21 +59,6 @@ const PortfolioEditRedirect: React.FC = () => {
 	return <Navigate to={`/portfolios/${id}/settings`} replace />;
 };
 
-const initTauriListener = async (
-	onReady: () => void,
-): Promise<(() => void) | undefined> => {
-	try {
-		const { listen } = await import("@tauri-apps/api/event");
-		return await listen<string>("backend-ready", () => {
-			setTimeout(onReady, 200);
-		});
-	} catch (e) {
-		console.error("Failed to initialize Tauri event listener:", e);
-		onReady();
-		return undefined;
-	}
-};
-
 const SPLASH_MIN_MS = 5000;
 
 const App: React.FC = () => {
@@ -96,27 +78,29 @@ const App: React.FC = () => {
 	}, [isTauri]);
 
 	useEffect(() => {
-		async function initialize(baseUrl: string | null = null) {
-			await apiServices.updateSubscriptionService.initialize(baseUrl);
-		}
-
 		if (!isTauri) {
-			initialize();
 			setIsBackendReady(true);
 			return;
 		}
 
 		let unlistenFn: (() => void) | undefined;
 
-		initTauriListener(() => {
-			initialize(getTauriBackendUrl());
-			setIsBackendReady(true);
-		}).then((unlisten) => {
-			unlistenFn = unlisten;
-		});
+		const initTauriListener = async () => {
+			try {
+				const { listen } = await import("@tauri-apps/api/event");
+				unlistenFn = await listen<string>("backend-ready", (event) => {
+					notifyBackendReady(event.payload);
+					setIsBackendReady(true);
+				});
+			} catch (e) {
+				console.error("Failed to initialize Tauri event listener:", e);
+			}
+		};
+
+		initTauriListener();
 
 		return () => unlistenFn?.();
-	}, [isTauri, apiServices.updateSubscriptionService.initialize]);
+	}, [isTauri]);
 
 	// --- 2. Auth Guard ---
 	const { shell, loginUrl, misconfigurationMessage, logout } = useAuthGuard(

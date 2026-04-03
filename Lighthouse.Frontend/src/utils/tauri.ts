@@ -11,6 +11,10 @@ export const hasTauriBackendUrl = (): boolean =>
 export const getTauriBackendUrl = (): string | null =>
 	globalThis.sessionStorage.getItem("TAURI_BACKEND_URL");
 
+export const setTauriBackendUrl = (url: string): void => {
+	globalThis.sessionStorage.setItem("TAURI_BACKEND_URL", url);
+};
+
 export const createBackendReadyPromise = (): {
 	promise: Promise<void>;
 	resolve: () => void;

@@ -8,13 +8,26 @@ import {
 
 vi.mock("@microsoft/signalr");
 vi.mock("axios");
+vi.mock("../utils/backendUrl", () => ({
+	getBackendReadyPromise: () => Promise.resolve(),
+	getBackendUrl: () => "/api",
+}));
 const mockedAxios = vi.mocked(axios, true);
+
+/** Helper: create and wait for the auto-connecting service */
+const createService = async (): Promise<UpdateSubscriptionService> => {
+	const svc = new UpdateSubscriptionService();
+	// Flush the internal connect() micro-task chain
+	await Promise.resolve();
+	await Promise.resolve();
+	return svc;
+};
 
 describe("UpdateSubscriptionService", () => {
 	let service: UpdateSubscriptionService;
 	let mockConnection: signalR.HubConnection;
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		mockConnection = {
 			start: vi.fn().mockResolvedValue(undefined),
 			on: vi.fn(),
@@ -31,7 +44,7 @@ describe("UpdateSubscriptionService", () => {
 
 		mockedAxios.create.mockReturnThis();
 
-		service = new UpdateSubscriptionService();
+		service = await createService();
 	});
 
 	afterEach(() => {
@@ -39,13 +52,11 @@ describe("UpdateSubscriptionService", () => {
 	});
 
 	it("should initialize the connection", async () => {
-		await service.initialize();
 		expect(mockConnection.start).toHaveBeenCalled();
 	});
 
 	it("should subscribe to team updates", async () => {
 		const callback = vi.fn();
-		await service.initialize();
 
 		await service.subscribeToTeamUpdates(1, callback);
 		expect(mockConnection.on).toHaveBeenCalledWith("Team_1", callback);
@@ -57,7 +68,6 @@ describe("UpdateSubscriptionService", () => {
 	});
 
 	it("should unsubscribe from team updates", async () => {
-		await service.initialize();
 		await service.unsubscribeFromTeamUpdates(1);
 
 		expect(mockConnection.off).toHaveBeenCalledWith("Team_1");
@@ -69,7 +79,6 @@ describe("UpdateSubscriptionService", () => {
 	});
 
 	it("should get update status", async () => {
-		await service.initialize();
 		const mockStatus: IUpdateStatus = {
 			updateType: "Team",
 			id: 1,
@@ -89,7 +98,6 @@ describe("UpdateSubscriptionService", () => {
 	});
 
 	it("should handle errors when getting update status", async () => {
-		await service.initialize();
 		(mockConnection.invoke as import("@vitest/spy").Mock).mockRejectedValue(
 			new Error("Test error"),
 		);
