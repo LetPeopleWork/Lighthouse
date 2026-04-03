@@ -18,7 +18,6 @@ import EstimationFieldComponent from "../EstimationField/EstimationFieldComponen
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
-import TagsComponent from "../Tags/TagsComponent";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 
@@ -212,30 +211,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		);
 	};
 
-	const handleAddTag = (tag: string) => {
-		if (tag.trim()) {
-			setTeamSettings((prev) =>
-				prev
-					? {
-							...prev,
-							tags: [...(prev.tags || []), tag.trim()],
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleRemoveTag = (tag: string) => {
-		setTeamSettings((prev) =>
-			prev
-				? {
-						...prev,
-						tags: (prev.tags || []).filter((item) => item !== tag),
-					}
-				: prev,
-		);
-	};
-
 	const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
 		const selectedWorkTrackingSystemName = event.target.value;
 		const selectedWorkTrackingSystem =
@@ -411,12 +386,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								handleTeamSettingsChange("stateMappings", mappings)
 							}
 							validationErrors={stateMappingErrors}
-						/>
-
-						<TagsComponent
-							tags={teamSettings?.tags || []}
-							onAddTag={handleAddTag}
-							onRemoveTag={handleRemoveTag}
 						/>
 
 						<FlowMetricsConfigurationComponent

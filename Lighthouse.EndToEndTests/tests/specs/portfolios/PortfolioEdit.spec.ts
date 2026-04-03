@@ -268,10 +268,6 @@ for (const teamConfiguration of newTeamConfigurations) {
 				await expect(newPortfolioPage.validateButton).toBeDisabled();
 			});
 
-			await test.step("Add Tags", async () => {
-				await newPortfolioPage.addTag("Important");
-				await newPortfolioPage.addTag(teamConfiguration.name);
-			});
 
 			await test.step("Select Work Tracking System", async () => {
 				const workTrackingSystem =

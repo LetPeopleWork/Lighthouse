@@ -20,20 +20,6 @@ namespace Lighthouse.Backend.API
             this.projectRepository = projectRepository;
         }
 
-        [HttpGet("tags")]
-        public ActionResult<List<string>> GetTags()
-        {
-            logger.LogDebug("Getting Tag Suggestions");
-
-            var workItemQueryOwners = GetAllWorkItemQueryOwners();
-
-            var tags = workItemQueryOwners
-                .SelectMany(x => x.Tags)
-                .Distinct();
-
-            return Ok(tags.ToList());
-        }
-
         [HttpGet("workitemtypes/teams")]
         public ActionResult<List<string>> GetWorkItemTypesForTeams()
         {

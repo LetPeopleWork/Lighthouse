@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.API.DTO
             ToDoStates = workTrackingSystemOptionsOwner.ToDoStates;
             DoingStates = workTrackingSystemOptionsOwner.DoingStates;
             DoneStates = workTrackingSystemOptionsOwner.DoneStates;
-            Tags = workTrackingSystemOptionsOwner.Tags;
             WorkTrackingSystemConnectionId = workTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId;
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
@@ -50,8 +49,6 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> DoingStates { get; set; } = [];
 
         public List<string> DoneStates { get; set; } = [];
-
-        public List<string> Tags { get; set; } = [];
 
         public List<string> BlockedStates { get; set; } = [];
 

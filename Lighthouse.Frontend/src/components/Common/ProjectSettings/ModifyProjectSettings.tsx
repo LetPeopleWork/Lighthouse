@@ -18,7 +18,6 @@ import EstimationFieldComponent from "../EstimationField/EstimationFieldComponen
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
-import TagsComponent from "../Tags/TagsComponent";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
@@ -233,30 +232,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		);
 	};
 
-	const handleAddTag = (tag: string) => {
-		if (tag.trim()) {
-			setProjectSettings((prev) =>
-				prev
-					? {
-							...prev,
-							tags: [...(prev.tags || []), tag.trim()],
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleRemoveTag = (tag: string) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						tags: (prev.tags || []).filter((item) => item !== tag),
-					}
-				: prev,
-		);
-	};
-
 	const handleProjectSettingsChange = <K extends keyof IPortfolioSettings>(
 		key: K,
 		value: IPortfolioSettings[K] | null,
@@ -431,12 +406,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								handleProjectSettingsChange("stateMappings", mappings)
 							}
 							validationErrors={stateMappingErrors}
-						/>
-
-						<TagsComponent
-							tags={projectSettings?.tags || []}
-							onAddTag={handleAddTag}
-							onRemoveTag={handleRemoveTag}
 						/>
 
 						<FeatureSizeComponent

@@ -466,10 +466,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("SystemWIPLimit")
                         .HasColumnType("integer");
 
-                    b.PrimitiveCollection<List<string>>("Tags")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.PrimitiveCollection<List<string>>("ToDoStates")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -606,10 +602,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("SystemWIPLimit")
                         .HasColumnType("integer");
-
-                    b.PrimitiveCollection<List<string>>("Tags")
-                        .IsRequired()
-                        .HasColumnType("text[]");
 
                     b.Property<int>("ThroughputHistory")
                         .HasColumnType("integer");

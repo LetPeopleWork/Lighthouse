@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.API.DTO
             Name = workTrackingSystemOptionsOwner.Name;
             Id = workTrackingSystemOptionsOwner.Id;
             LastUpdated = DateTime.SpecifyKind(workTrackingSystemOptionsOwner.UpdateTime, DateTimeKind.Utc);
-            Tags = workTrackingSystemOptionsOwner.Tags.ToList();
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
             SystemWIPLimit = workTrackingSystemOptionsOwner.SystemWIPLimit;
@@ -24,8 +23,6 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int Id { get; set; }
-
-        public List<string> Tags { get; set; }
 
         [JsonRequired]
         public DateTime LastUpdated { get; set; }

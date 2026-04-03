@@ -39,22 +39,6 @@ export abstract class BaseEditPage<T> {
 		);
 	}
 
-	async addTag(tag: string): Promise<void> {
-		await this.page.getByLabel("New Tag").fill(tag);
-		await this.page.keyboard.press("Enter");
-
-		// Reset the input field
-		await this.page.keyboard.press("Escape");
-	}
-
-	async removeTag(tag: string): Promise<void> {
-		await this.removeChipItem(tag);
-	}
-
-	getTag(tag: string): Locator {
-		return this.page.getByRole("button", { name: tag, exact: true });
-	}
-
 	async removeWorkItemType(workItemType: string): Promise<void> {
 		await this.removeChipItem(workItemType);
 	}

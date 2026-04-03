@@ -30,287 +30,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTags_NoTeams_NoProjects_ReturnsEmptyList()
-        {
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-            
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(0));
-            };
-        }
-
-        [Test]
-        public void GetTags_TeamWithTag_ReturnsTag()
-        {
-            var tag = "FirstClubInTown";
-            var team = CreateTeam(tag);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(1));
-                Assert.That(tags, Has.Member(tag));
-            };
-        }
-
-        [Test]
-        public void GetTags_TeamWithMultipleTags_ReturnsAllTags()
-        {
-            var tag1 = "Blue";
-            var tag2 = "White";
-
-            var team = CreateTeam(tag1, tag2);
-            var suggestionsController = CreateSubject();
-            
-            var response = suggestionsController.GetTags();
-            
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(tag1));
-                Assert.That(tags, Has.Member(tag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_TeamsWithSimilarTags_ReturnsUniqueTags()
-        {
-            var tag1 = "Blue";
-            var tag2 = "White";
-
-            var team1 = CreateTeam(tag1, tag2);
-            var team2 = CreateTeam(tag2);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(tag1));
-                Assert.That(tags, Has.Member(tag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_TeamsWithDifferentTags_ReturnsAllUniqueTags()
-        {
-            var tag1 = "Blue";
-            var tag2 = "White";
-
-            var team1 = CreateTeam(tag1);
-            var team2 = CreateTeam(tag2);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(tag1));
-                Assert.That(tags, Has.Member(tag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_NoProjects_ReturnsEmptyList()
-        {
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(0));
-            };
-        }
-
-        [Test]
-        public void GetTags_ProjectWithTag_ReturnsTag()
-        {
-            var tag = "ProjectAlpha";
-            var project = CreateProject(tag);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(1));
-                Assert.That(tags, Has.Member(tag));
-            };
-        }
-
-        [Test]
-        public void GetTags_ProjectWithMultipleTags_ReturnsAllTags()
-        {
-            var tag1 = "Red";
-            var tag2 = "Green";
-
-            var project = CreateProject(tag1, tag2);
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(tag1));
-                Assert.That(tags, Has.Member(tag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_ProjectsWithSimilarTags_ReturnsUniqueTags()
-        {
-            var tag1 = "Red";
-            var tag2 = "Green";
-
-            var project1 = CreateProject(tag1, tag2);
-            var project2 = CreateProject(tag2);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(tag1));
-                Assert.That(tags, Has.Member(tag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_ProjectsWitDifferentTags_ReturnsUniqueTags()
-        {
-            var tag1 = "Red";
-            var tag2 = "Green";
-
-            var project1 = CreateProject(tag1);
-            var project2 = CreateProject(tag2);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(tag1));
-                Assert.That(tags, Has.Member(tag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_TeamsAndProjectsWithOverlappingTags_ReturnsUniqueCombinedTags()
-        {
-            var teamTag1 = "TeamTag1";
-            var teamTag2 = "SharedTag";
-            var projectTag1 = "ProjectTag1";
-            var projectTag2 = "SharedTag";
-
-            var team = CreateTeam(teamTag1, teamTag2);
-            var project = CreateProject(projectTag1, projectTag2);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(3));
-                Assert.That(tags, Has.Member(teamTag1));
-                Assert.That(tags, Has.Member(projectTag1));
-                Assert.That(tags, Has.Member(projectTag2));
-            };
-        }
-
-        [Test]
-        public void GetTags_TeamsAndProjectsWithDistinctTags_ReturnsAllUniqueTags()
-        {
-            var teamTag1 = "TeamTag1";
-            var teamTag2 = "TeamTag2";
-            var projectTag1 = "ProjectTag1";
-            var projectTag2 = "ProjectTag2";
-
-            var team = CreateTeam(teamTag1, teamTag2);
-            var project = CreateProject(projectTag1, projectTag2);
-
-            var suggestionsController = CreateSubject();
-
-            var response = suggestionsController.GetTags();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.Not.Null);
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-
-                var itemTypes = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(itemTypes, Has.Count.EqualTo(4));
-                Assert.That(itemTypes, Has.Member(teamTag1));
-                Assert.That(itemTypes, Has.Member(teamTag2));
-                Assert.That(itemTypes, Has.Member(projectTag1));
-                Assert.That(itemTypes, Has.Member(projectTag2));
-            };
-        }
-
-        [Test]
         public void GetWorkItemTypesForTeams_ReturnsAllWorkItemTypes()
         {
             var teamType1 = "User Story";
             var teamType2 = "Bug";
             var teamType3 = "Task";
 
-            var team1 = CreateTeam("Team1");
+            var team1 = CreateTeam();
             team1.WorkItemTypes.Add(teamType1);
             team1.WorkItemTypes.Add(teamType3);
 
-            var team2 = CreateTeam("Team2");
+            var team2 = CreateTeam();
             team2.WorkItemTypes.Add(teamType2);
 
             var suggestionsController = CreateSubject();
@@ -337,11 +67,11 @@ namespace Lighthouse.Backend.Tests.API
             var teamType2 = "Bug";
             var teamType3 = "Task";
 
-            var team1 = CreateTeam("Team1");
+            var team1 = CreateTeam();
             team1.WorkItemTypes.Add(teamType1);
             team1.WorkItemTypes.Add(teamType3);
 
-            var team2 = CreateTeam("Team2");
+            var team2 = CreateTeam();
             team2.WorkItemTypes.Add(teamType1);
             team2.WorkItemTypes.Add(teamType2);
 
@@ -573,13 +303,12 @@ namespace Lighthouse.Backend.Tests.API
             };
         }
 
-        private Portfolio CreateProject(params string[] tags)
+        private Portfolio CreateProject()
         {
             var project = new Portfolio
             {
                 Id = 1,
-                Name = "Test Project",
-                Tags = tags.ToList()
+                Name = "Test Project"
             };
 
             projects.Add(project);
@@ -587,13 +316,12 @@ namespace Lighthouse.Backend.Tests.API
             return project;
         }
 
-        private Team CreateTeam(params string[] tags)
+        private Team CreateTeam()
         {
             var team = new Team
             {
                 Id = 1,
-                Name = "Test Team",
-                Tags = tags.ToList()
+                Name = "Test Team"
             };
 
             teams.Add(team);

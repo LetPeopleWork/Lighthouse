@@ -9,7 +9,6 @@ export interface IBaseSettings {
 	toDoStates: string[];
 	doingStates: string[];
 	doneStates: string[];
-	tags: string[];
 	workTrackingSystemConnectionId: number;
 	serviceLevelExpectationProbability: number;
 	serviceLevelExpectationRange: number;

@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Models
 
         public List<string> DoneStates { get; set; } = new List<string> { "Done", "Closed" };
 
-        public List<string> Tags { get; set; } = new List<string>();
-
         public IEnumerable<string> AllStates => GetRawStatesForCategory(ToDoStates)
             .Union(GetRawStatesForCategory(DoingStates))
             .Union(GetRawStatesForCategory(DoneStates));

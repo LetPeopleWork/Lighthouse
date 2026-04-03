@@ -82,7 +82,6 @@ const EditTeamPage: React.FC = () => {
 			toDoStates: [],
 			doingStates: [],
 			doneStates: [],
-			tags: [],
 			workTrackingSystemConnectionId: 0,
 			serviceLevelExpectationProbability: 80,
 			serviceLevelExpectationRange: 10,

@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.API.Helpers
             project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
-            project.Tags = portfolioSetting.Tags;
             project.FeatureOwnerAdditionalFieldDefinitionId = portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId;
             project.EstimationAdditionalFieldDefinitionId = portfolioSetting.EstimationAdditionalFieldDefinitionId;
             project.EstimationUnit = portfolioSetting.EstimationUnit;

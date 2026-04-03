@@ -7,7 +7,6 @@ export async function createPortfolio(
 	dataRetrievalValue: string,
 	workItemTypes: string[],
 	states: { toDo: string[]; doing: string[]; done: string[] },
-	tags: string[],
 ): Promise<{ id: number; name: string }> {
 	const response = await api.post("/api/portfolios", {
 		data: {
@@ -18,7 +17,6 @@ export async function createPortfolio(
 			toDoStates: states.toDo,
 			doingStates: states.doing,
 			doneStates: states.done,
-			tags: tags,
 			overrideRealChildCountStates: [],
 			dataRetrievalValue: dataRetrievalValue,
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
