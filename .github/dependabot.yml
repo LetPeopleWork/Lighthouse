@@ -5,6 +5,8 @@ updates:
     directory: "/Lighthouse.Frontend"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 5
     ignore:
       # Ignore MUI X Charts updates until v8.16+ regression is fixed
       - dependency-name: "@mui/x-charts"
@@ -20,6 +22,8 @@ updates:
     directory: "/Lighthouse.Backend"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 5      
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5
@@ -29,6 +33,8 @@ updates:
     directory: "/Lighthouse.EndToEndTests"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 5
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5
@@ -38,6 +44,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 5
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5
@@ -47,6 +55,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 5
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 10
