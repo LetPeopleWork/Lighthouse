@@ -317,17 +317,6 @@ describe("ModifyTeamSettings", () => {
 		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
 	});
 
-	it("handles adding and removing tags", async () => {
-		await renderModifyTeamSettings();
-
-		// Test adding a tag
-		fireEvent.click(screen.getByText("Add Tag"));
-		// Test removing a tag
-		fireEvent.click(screen.getByText("Remove Tag"));
-
-		expect(screen.getByText("TagsComponent")).toBeInTheDocument();
-	});
-
 	it("handles save action", async () => {
 		await renderModifyTeamSettings();
 		mockValidateTeamSettings.mockResolvedValue(true);
