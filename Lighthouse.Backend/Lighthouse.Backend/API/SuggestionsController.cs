@@ -11,13 +11,13 @@ namespace Lighthouse.Backend.API
     {
         private readonly ILogger<SuggestionsController> logger;
         private readonly IRepository<Team> teamRepository;
-        private readonly IRepository<Portfolio> projectRepository;
+        private readonly IRepository<Portfolio> portfolioRepository;
 
-        public SuggestionsController(ILogger<SuggestionsController> logger, IRepository<Team> teamRepository, IRepository<Portfolio> projectRepository)
+        public SuggestionsController(ILogger<SuggestionsController> logger, IRepository<Team> teamRepository, IRepository<Portfolio> portfolioRepository)
         {
             this.logger = logger;
             this.teamRepository = teamRepository;
-            this.projectRepository = projectRepository;
+            this.portfolioRepository = portfolioRepository;
         }
 
         [HttpGet("workitemtypes/teams")]
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.API
         {
             logger.LogDebug("Getting Work Item Type Suggestions for Projects");
 
-            var projects = projectRepository.GetAll();
+            var projects = portfolioRepository.GetAll();
 
             var workItemTypes = projects
                 .SelectMany(x => x.WorkItemTypes)
@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.API
         {
             logger.LogDebug("Getting States Suggestions for Projects");
 
-            var projects = projectRepository.GetAll();
+            var projects = portfolioRepository.GetAll();
 
             var statesCollection = new StatesCollectionDto
             {
@@ -80,19 +80,6 @@ namespace Lighthouse.Backend.API
             };
 
             return Ok(statesCollection);
-        }
-
-        private List<IWorkItemQueryOwner> GetAllWorkItemQueryOwners()
-        {
-            var workItemQueryOwners = new List<IWorkItemQueryOwner>();
-
-            var teams = teamRepository.GetAll();
-            var projects = projectRepository.GetAll();
-
-            workItemQueryOwners.AddRange(teams);
-            workItemQueryOwners.AddRange(projects);
-
-            return workItemQueryOwners;
         }
     }
 }
