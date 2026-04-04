@@ -28,10 +28,8 @@ jobs:
         working-directory: ./Lighthouse.Frontend
         run: pnpm audit --audit-level=low
 
-      - name: Wait for SonarCloud Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
+      - name: Upload Sonar report metadata
+        uses: actions/upload-artifact@v4
         with:
-          scanMetadataReportFile: ./Lighthouse.Frontend/.scannerwork/report-task.txt
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          name: sonar-report-frontend
+          path: ./Lighthouse.Frontend/.scannerwork/report-task.txt

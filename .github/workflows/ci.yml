@@ -52,6 +52,13 @@ jobs:
     with:
       e2e: ${{ needs.changes.outputs.e2e }}
 
+  sonar-gates:
+    needs: [frontend, backend]
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    uses: ./.github/workflows/ci_sonar_gates.yml
+    name: Verify SonarCloud Quality Gates
+    secrets: inherit
+
   packageapp:
     needs: [version, sbom]
     # Run version even if some prior jobs were skipped, but not if they failed
@@ -127,7 +134,7 @@ jobs:
 
   # Linux standalone (Tauri AppImage)
   package-linux-standalone:
-    needs: [version, sbom, packageapp, verifysqlite, verifypostgres]
+    needs: [version, sbom, packageapp, verifysqlite, verifypostgres, sonar-gates]
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_package-linux-standalone.yml
     name: Package Linux Standalone
@@ -140,7 +147,7 @@ jobs:
 
   # Windows standalone (Tauri NSIS + MSI)
   package-win-standalone:
-    needs: [version, sbom, packageapp, verifysqlite, verifypostgres]
+    needs: [version, sbom, packageapp, verifysqlite, verifypostgres, sonar-gates]
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_package-win-standalone.yml
     name: Package Windows Standalone
@@ -177,7 +184,7 @@ jobs:
   
   # macOS standalone (Tauri DMG)
   package-macos-standalone:
-    needs: [version, sbom, packageapp, verifysqlite, verifypostgres]
+    needs: [version, sbom, packageapp, verifysqlite, verifypostgres, sonar-gates]
     # Run version even if some prior jobs were skipped, but not if they failed
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_package-macos-standalone.yml

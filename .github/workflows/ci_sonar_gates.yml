@@ -1,0 +1,36 @@
+name: Verify SonarCloud Quality Gates
+
+on:
+  workflow_call:
+
+jobs:
+  sonar-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Frontend Sonar report
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-report-frontend
+          path: ./Lighthouse.Frontend/.scannerwork/
+
+      - name: Download Backend Sonar report
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-report-backend
+          path: .sonarqube/out/.sonar/
+
+      - name: Wait for Frontend Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        with:
+          scanMetadataReportFile: ./Lighthouse.Frontend/.scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Wait for Backend Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        with:
+          scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

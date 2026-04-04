@@ -70,10 +70,8 @@ jobs:
       run: |
         dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
-    - name: Wait for SonarCloud Quality Gate
-      uses: sonarsource/sonarqube-quality-gate-action@master
-      timeout-minutes: 5
+    - name: Upload Sonar report metadata
+      uses: actions/upload-artifact@v4
       with:
-        scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        name: sonar-report-backend
+        path: .sonarqube/out/.sonar/report-task.txt
