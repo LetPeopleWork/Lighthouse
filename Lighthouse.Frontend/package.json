@@ -11,7 +11,8 @@
 		"preview": "vite preview",
 		"test": "vitest run --reporter=default",
 		"sonarreport": "vitest run --coverage",
-		"tauri": "tauri"
+		"tauri": "tauri",
+		"update-sidecar": "dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ../Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64 ../Lighthouse.Backend/Lighthouse.Backend && mkdir -p src-tauri/binaries && mkdir -p src-tauri/resources && cp ../Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/Lighthouse src-tauri/binaries/Lighthouse.Backend-x86_64-unknown-linux-gnu && chmod +x src-tauri/binaries/Lighthouse.Backend-x86_64-unknown-linux-gnu && cp -r ../Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/. src-tauri/resources/ && rm -f src-tauri/resources/Lighthouse"
 	},
 	"dependencies": {
 		"@emotion/react": "^11.14.0",
