@@ -1,7 +1,6 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
@@ -9,14 +8,27 @@ import {
 import EditTeamPage from "./EditTeam";
 
 const mockNavigate = vi.fn();
+let mockParams: { id?: string } = { id: undefined };
 vi.mock("react-router-dom", async () => {
 	const actual = await vi.importActual("react-router-dom");
 	return {
 		...actual,
 		useNavigate: () => mockNavigate,
-		useParams: () => ({ id: undefined }),
+		useParams: () => mockParams,
 	};
 });
+
+// Mock CreateTeamWizard
+vi.mock("../../../components/Common/Team/CreateTeamWizard", () => ({
+	default: () => <div data-testid="create-team-wizard">CreateTeamWizard</div>,
+}));
+
+// Mock ModifyTeamSettings
+vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
+	default: () => (
+		<div data-testid="modify-team-settings">ModifyTeamSettings</div>
+	),
+}));
 
 // Mock URLSearchParams and window.location
 const mockGet = vi.fn();
@@ -103,6 +115,7 @@ describe("EditTeam", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockGet.mockReturnValue(null);
+		mockParams = { id: undefined };
 		// Reset globalThis.location.search
 		globalThis.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
@@ -139,91 +152,32 @@ describe("EditTeam", () => {
 		mockSuggestionService.getStatesForTeams.mockResolvedValue([]);
 	});
 
-	it("calls getTeamSettings when cloneFrom param is present for new team", async () => {
-		const mockTeamSettings: ITeamSettings = {
-			id: 5,
-			name: "Original Team",
-			dataRetrievalValue: "project = TEST",
-			workItemTypes: ["Story", "Bug"],
-			toDoStates: ["New", "Active"],
-			doingStates: ["In Progress"],
-			doneStates: ["Done"],
-			throughputHistory: 5,
-			featureWIP: 2,
-			parentOverrideAdditionalFieldDefinitionId: null,
-			automaticallyAdjustFeatureWIP: false,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			workTrackingSystemConnectionId: 1,
-			serviceLevelExpectationProbability: 70,
-			serviceLevelExpectationRange: 7,
-			systemWIPLimit: 6,
-			blockedStates: [],
-			blockedTags: ["Blocked"],
-			stateMappings: [],
-			doneItemsCutoffDays: 0,
-			processBehaviourChartBaselineStartDate: null,
-			processBehaviourChartBaselineEndDate: null,
-			estimationAdditionalFieldDefinitionId: null,
-			estimationUnit: null,
-			useNonNumericEstimation: false,
-			estimationCategoryValues: [],
-		};
-
-		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
-		// Set window.location.search and mock URLSearchParams properly
-		globalThis.location.search = "?cloneFrom=5";
-		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
-
+	it("renders CreateTeamWizard for new team without cloneFrom", async () => {
 		renderEditTeamWithContext();
-
 		await waitFor(() => {
-			expect(mockTeamService.getTeamSettings).toHaveBeenCalledWith(5);
+			expect(screen.getByTestId("create-team-wizard")).toBeInTheDocument();
 		});
+		expect(
+			screen.queryByTestId("modify-team-settings"),
+		).not.toBeInTheDocument();
 	});
 
-	it("prefixes name with 'Copy of' when cloning team", async () => {
-		const mockTeamSettings: ITeamSettings = {
-			id: 5,
-			name: "Original Team",
-			dataRetrievalValue: "project = TEST",
-			workItemTypes: ["Story"],
-			toDoStates: ["New"],
-			doingStates: ["In Progress"],
-			doneStates: ["Done"],
-			throughputHistory: 5,
-			featureWIP: 1,
-			parentOverrideAdditionalFieldDefinitionId: null,
-			automaticallyAdjustFeatureWIP: false,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			workTrackingSystemConnectionId: 1,
-			serviceLevelExpectationProbability: 70,
-			serviceLevelExpectationRange: 7,
-			systemWIPLimit: 6,
-			blockedStates: [],
-			blockedTags: [],
-			stateMappings: [],
-			doneItemsCutoffDays: 0,
-			processBehaviourChartBaselineStartDate: null,
-			processBehaviourChartBaselineEndDate: null,
-			estimationAdditionalFieldDefinitionId: null,
-			estimationUnit: null,
-			useNonNumericEstimation: false,
-			estimationCategoryValues: [],
-		};
-
-		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
-		// Set window.location.search and mock URLSearchParams properly
-		globalThis.location.search = "?cloneFrom=5";
-		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
-
+	it("renders ModifyTeamSettings for edit mode", async () => {
+		mockParams = { id: "42" };
 		renderEditTeamWithContext();
-
 		await waitFor(() => {
-			expect(mockTeamService.getTeamSettings).toHaveBeenCalledWith(5);
+			expect(screen.getByTestId("modify-team-settings")).toBeInTheDocument();
 		});
+		expect(screen.queryByTestId("create-team-wizard")).not.toBeInTheDocument();
+	});
+
+	it("renders ModifyTeamSettings when cloneFrom param is present", async () => {
+		globalThis.location.search = "?cloneFrom=5";
+		mockGet.mockReturnValue("5");
+		renderEditTeamWithContext();
+		await waitFor(() => {
+			expect(screen.getByTestId("modify-team-settings")).toBeInTheDocument();
+		});
+		expect(screen.queryByTestId("create-team-wizard")).not.toBeInTheDocument();
 	});
 });

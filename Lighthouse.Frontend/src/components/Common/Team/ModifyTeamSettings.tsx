@@ -5,12 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
-import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	emitEditSaveFailed,
+	emitEditSaveStarted,
+	emitEditSaveSucceeded,
+	generateCorrelationId,
+} from "../../../services/Telemetry/OnboardingTelemetry";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -67,9 +71,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	) => {
 		setTeamSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
-
-	const { getTerm } = useTerminology();
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
 	const handleAddWorkItemType = (newWorkItemType: string) => {
 		if (newWorkItemType.trim()) {
@@ -239,11 +240,39 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 			return;
 		}
 
+		const saveCorrelationId = generateCorrelationId();
+		const telemetryProps = {
+			entityType: "team" as const,
+			workTrackingSystem: selectedWorkTrackingSystem?.workTrackingSystem,
+			correlationId: saveCorrelationId,
+		};
+		emitEditSaveStarted(telemetryProps);
+
 		const updatedSettings: ITeamSettings = {
 			...teamSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
 		};
-		await saveTeamSettings(updatedSettings);
+
+		if (!modifyDefaultSettings) {
+			const isValid = await validateTeamSettings(updatedSettings);
+			if (!isValid) {
+				emitEditSaveFailed({
+					...telemetryProps,
+					failureCategory: "validation",
+				});
+				return;
+			}
+		}
+
+		try {
+			await saveTeamSettings(updatedSettings);
+			emitEditSaveSucceeded(telemetryProps);
+		} catch {
+			emitEditSaveFailed({
+				...telemetryProps,
+				failureCategory: "unknown",
+			});
+		}
 	};
 
 	useEffect(() => {
@@ -311,18 +340,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 		fetchData();
 	}, [getTeamSettings, getWorkTrackingSystems]);
-
-	const handleValidate = async () => {
-		if (!teamSettings || modifyDefaultSettings) {
-			return false;
-		}
-
-		const updatedSettings: ITeamSettings = {
-			...teamSettings,
-			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-		};
-		return await validateTeamSettings(updatedSettings);
-	};
 
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
@@ -452,10 +469,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
 							<ValidationActions
-								onValidate={modifyDefaultSettings ? undefined : handleValidate}
 								onSave={handleSave}
 								inputsValid={inputsValid}
-								validationFailedMessage={`Validation failed - either the connection failed, the specified query is invalid, or no closed ${workItemsTerm} in the specified history could be found. Check the logs for additional details."`}
 								disableSave={disableSave}
 								saveTooltip={saveTooltip}
 							/>

@@ -317,24 +317,30 @@ describe("ModifyTeamSettings", () => {
 		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
 	});
 
-	it("handles save action", async () => {
+	it("handles save action with validate-on-save", async () => {
 		await renderModifyTeamSettings();
 		mockValidateTeamSettings.mockResolvedValue(true);
 
-		fireEvent.click(screen.getByText("Validate"));
-		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
-
 		fireEvent.click(screen.getByText("Save"));
 
+		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
 		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
 	});
 
-	it("handles validate action", async () => {
+	it("does not save when validation fails", async () => {
 		await renderModifyTeamSettings();
+		mockValidateTeamSettings.mockResolvedValue(false);
 
-		fireEvent.click(screen.getByText("Validate"));
+		fireEvent.click(screen.getByText("Save"));
 
 		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
+		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	it("does not render a standalone Validate button", async () => {
+		await renderModifyTeamSettings();
+		expect(screen.queryByText("Validate")).not.toBeInTheDocument();
+		expect(screen.getByText("Save")).toBeInTheDocument();
 	});
 
 	it("sets inputsValid to true when all inputs are valid", async () => {
@@ -346,8 +352,8 @@ describe("ModifyTeamSettings", () => {
 		await renderModifyTeamSettings();
 
 		await waitFor(() => {
-			const validateButton = screen.getByText("Validate");
-			expect(validateButton).not.toBeDisabled();
+			const saveButton = screen.getByText("Save");
+			expect(saveButton).not.toBeDisabled();
 		});
 	});
 
@@ -372,7 +378,7 @@ describe("ModifyTeamSettings", () => {
 
 			await renderModifyTeamSettings();
 
-			expect(screen.getByText("Validate")).toBeDisabled();
+			expect(screen.getByText("Save")).toBeDisabled();
 		});
 	}
 
@@ -439,8 +445,8 @@ describe("ModifyTeamSettings", () => {
 			await renderModifyTeamSettings();
 
 			await waitFor(() => {
-				const validateButton = screen.getByText("Validate");
-				expect(validateButton).not.toBeDisabled();
+				const saveButton = screen.getByText("Save");
+				expect(saveButton).not.toBeDisabled();
 			});
 		});
 	});

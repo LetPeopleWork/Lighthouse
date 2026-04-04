@@ -1,7 +1,9 @@
+import { Container, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import CreateTeamWizard from "../../../components/Common/Team/CreateTeamWizard";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -13,6 +15,10 @@ const EditTeamPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewTeam = id === undefined;
 	const navigate = useNavigate();
+
+	const urlParams = new URLSearchParams(globalThis.location.search);
+	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
+	const useWizard = isNewTeam && !hasCloneFrom;
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -107,6 +113,34 @@ const EditTeamPage: React.FC = () => {
 			await workTrackingSystemService.getConfiguredWorkTrackingSystems();
 		return systems;
 	};
+
+	const getConnections = async () => {
+		return await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+	};
+
+	const wizardSaveTeamSettings = async (updatedSettings: ITeamSettings) => {
+		const newSettings = await teamService.createTeam(updatedSettings);
+		await teamService.updateTeamData(newSettings.id);
+		navigate(`/teams/${newSettings.id}/settings`);
+	};
+
+	if (useWizard) {
+		return (
+			<SnackbarErrorHandler>
+				<Container maxWidth={false}>
+					<Typography variant="h4" sx={{ mb: 2 }}>
+						{pageTitle}
+					</Typography>
+					<CreateTeamWizard
+						getConnections={getConnections}
+						validateTeamSettings={validateTeamSettings}
+						saveTeamSettings={wizardSaveTeamSettings}
+						onCancel={() => navigate("/")}
+					/>
+				</Container>
+			</SnackbarErrorHandler>
+		);
+	}
 
 	return (
 		<SnackbarErrorHandler>
