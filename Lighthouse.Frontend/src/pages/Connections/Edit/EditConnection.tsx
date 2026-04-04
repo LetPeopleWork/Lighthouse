@@ -1,6 +1,8 @@
+import { Container, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import CreateConnectionWizard from "../../../components/Common/Connection/CreateConnectionWizard";
 import ModifyConnectionSettings from "../../../components/Common/Connection/ModifyConnectionSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -60,6 +62,24 @@ const EditConnectionPage: React.FC = () => {
 			connection,
 		);
 	};
+
+	if (isNewConnection) {
+		return (
+			<SnackbarErrorHandler>
+				<Container maxWidth={false}>
+					<Typography variant="h4" sx={{ mb: 2 }}>
+						{pageTitle}
+					</Typography>
+					<CreateConnectionWizard
+						getSupportedSystems={getSupportedSystems}
+						validateConnection={validateConnectionSettings}
+						saveConnection={saveConnectionSettings}
+						onCancel={() => navigate("/")}
+					/>
+				</Container>
+			</SnackbarErrorHandler>
+		);
+	}
 
 	return (
 		<SnackbarErrorHandler>

@@ -23,6 +23,12 @@ import type { IWriteBackMappingDefinition } from "../../../models/WorkTracking/W
 import AdditionalFieldsEditor from "../../../pages/Settings/Connections/AdditionalFieldsEditor";
 import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBackMappingsEditor";
 import { ApiError } from "../../../services/Api/ApiError";
+import {
+	emitEditSaveFailed,
+	emitEditSaveStarted,
+	emitEditSaveSucceeded,
+	generateCorrelationId,
+} from "../../../services/Telemetry/OnboardingTelemetry";
 import { useTerminology } from "../../../services/TerminologyContext";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
@@ -76,7 +82,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	>([]);
 	const [isEditMode, setIsEditMode] = useState(false);
 	const [inputsValid, setInputsValid] = useState(false);
-	const [validationKey, setValidationKey] = useState(0);
 	const [fieldsModified, setFieldsModified] = useState(false);
 	const [validationErrorMessage, setValidationErrorMessage] = useState<
 		string | null
@@ -325,11 +330,19 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		setName(event.target.value);
 	};
 
-	const handleValidate = async () => {
-		setValidationErrorMessage(null);
-
+	const handleSave = async () => {
 		if (selectedWorkTrackingSystem && selectedAuthMethod) {
-			const settings: IWorkTrackingSystemConnection = {
+			setValidationErrorMessage(null);
+
+			const saveCorrelationId = generateCorrelationId();
+			const telemetryProps = {
+				entityType: "connection" as const,
+				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
+				correlationId: saveCorrelationId,
+			};
+			emitEditSaveStarted(telemetryProps);
+
+			const connection: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
 				name,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
@@ -342,34 +355,40 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			};
 
 			try {
-				return await validateConnectionSettings(settings);
+				const isValid = await validateConnectionSettings(connection);
+				if (!isValid) {
+					setValidationErrorMessage(
+						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
+					);
+					emitEditSaveFailed({
+						...telemetryProps,
+						failureCategory: "validation",
+					});
+					return;
+				}
 			} catch (error) {
 				if (error instanceof ApiError && error.code === 403) {
 					setValidationErrorMessage(
 						"You've exceeded the number of additional fields allowed on your plan.",
 					);
+					emitEditSaveFailed({
+						...telemetryProps,
+						failureCategory: "license",
+					});
+				} else {
+					setValidationErrorMessage(
+						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
+					);
+					emitEditSaveFailed({
+						...telemetryProps,
+						failureCategory: "network",
+					});
 				}
-				return false;
+				return;
 			}
-		}
 
-		return false;
-	};
-
-	const handleSave = async () => {
-		if (selectedWorkTrackingSystem && selectedAuthMethod) {
-			const connection: IWorkTrackingSystemConnection = {
-				id: selectedWorkTrackingSystem.id,
-				name,
-				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
-				options: allOptions,
-				authenticationMethodKey: selectedAuthMethod.key,
-				workTrackingSystemGetDataRetrievalDisplayName:
-					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
-				additionalFieldDefinitions: additionalFields,
-				writeBackMappingDefinitions: writeBackMappings,
-			};
 			await saveConnectionSettings(connection);
+			emitEditSaveSucceeded(telemetryProps);
 		}
 	};
 
@@ -496,7 +515,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							fields={additionalFields}
 							onChange={setAdditionalFields}
 							onFieldsChanged={() => {
-								setValidationKey((prev) => prev + 1);
 								setFieldsModified(true);
 							}}
 						/>
@@ -562,7 +580,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						}}
 					>
 						<ValidationActions
-							onValidate={handleValidate}
 							onSave={handleSave}
 							inputsValid={inputsValid}
 							validationFailedMessage={
@@ -571,7 +588,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							}
 							disableSave={disableSave}
 							saveTooltip={saveTooltip}
-							key={validationKey}
 						/>
 					</Grid>
 				</Grid>

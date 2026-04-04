@@ -206,16 +206,16 @@ describe("ModifyConnectionSettings", () => {
 			});
 		});
 
-		it("renders Validate and Save buttons", async () => {
+		it("renders Save button without standalone Validate button", async () => {
 			renderComponent();
 			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Validate/i }),
-				).toBeInTheDocument();
 				expect(
 					screen.getByRole("button", { name: /Save/i }),
 				).toBeInTheDocument();
 			});
+			expect(
+				screen.queryByRole("button", { name: /^Validate$/i }),
+			).not.toBeInTheDocument();
 		});
 
 		it("updates connection name when user types in the name field", async () => {
@@ -285,53 +285,12 @@ describe("ModifyConnectionSettings", () => {
 		});
 	});
 
-	describe("Validation", () => {
-		// Use a system with no required auth fields so inputsValid starts as true
-		it("calls validateConnectionSettings when Validate button is clicked", async () => {
+	describe("Validate on Save", () => {
+		it("validates then saves when Save is clicked with valid inputs", async () => {
 			const user = userEvent.setup();
 			renderComponent({
 				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
 			});
-			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Validate/i }),
-				).not.toBeDisabled();
-			});
-			await user.click(screen.getByRole("button", { name: /Validate/i }));
-			await waitFor(() => {
-				expect(defaultProps.validateConnectionSettings).toHaveBeenCalled();
-			});
-		});
-
-		it("enables Save button after successful validation", async () => {
-			const user = userEvent.setup();
-			renderComponent({
-				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
-			});
-			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Validate/i }),
-				).not.toBeDisabled();
-			});
-			await user.click(screen.getByRole("button", { name: /Validate/i }));
-			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Save/i }),
-				).not.toBeDisabled();
-			});
-		});
-
-		it("calls saveConnectionSettings when Save is clicked after validation", async () => {
-			const user = userEvent.setup();
-			renderComponent({
-				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
-			});
-			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Validate/i }),
-				).not.toBeDisabled();
-			});
-			await user.click(screen.getByRole("button", { name: /Validate/i }));
 			await waitFor(() => {
 				expect(
 					screen.getByRole("button", { name: /Save/i }),
@@ -339,28 +298,44 @@ describe("ModifyConnectionSettings", () => {
 			});
 			await user.click(screen.getByRole("button", { name: /Save/i }));
 			await waitFor(() => {
+				expect(defaultProps.validateConnectionSettings).toHaveBeenCalled();
+			});
+			await waitFor(() => {
 				expect(defaultProps.saveConnectionSettings).toHaveBeenCalled();
 			});
+		});
+
+		it("shows error and does not save when validation fails", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockResolvedValue(false);
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+			await waitFor(() => {
+				expect(defaultProps.validateConnectionSettings).toHaveBeenCalled();
+			});
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toBeInTheDocument();
+			});
+			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("disableSave prop", () => {
-		it("keeps Save button disabled when disableSave is true regardless of validation", async () => {
-			const user = userEvent.setup();
+		it("keeps Save button disabled when disableSave is true", async () => {
 			renderComponent({
 				disableSave: true,
 				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
 			});
 			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Validate/i }),
-				).not.toBeDisabled();
+				expect(screen.getByRole("button", { name: /Save/i })).toBeDisabled();
 			});
-			await user.click(screen.getByRole("button", { name: /Validate/i }));
-			await waitFor(() => {
-				expect(defaultProps.validateConnectionSettings).toHaveBeenCalled();
-			});
-			expect(screen.getByRole("button", { name: /Save/i })).toBeDisabled();
 		});
 	});
 });
