@@ -321,7 +321,7 @@ describe("TeamFeatureList component", () => {
 
 		await screen.findByText(/FTR-1/);
 
-		await user.click(screen.getByRole("button", { name: "Total" }));
+		await user.click(screen.getByRole("button", { name: "Team A" }));
 
 		expect(mockGetFeatureWorkItems).toHaveBeenCalledWith(1);
 		expect(await screen.findByText("Story 101")).toBeInTheDocument();

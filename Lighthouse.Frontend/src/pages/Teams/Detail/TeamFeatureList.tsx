@@ -9,9 +9,8 @@ import {
 	createStateColumn,
 } from "../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
+import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
-import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
-import ProgressTitle from "../../../components/Common/ProgressIndicator/ProgressTitle";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
@@ -41,6 +40,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
 	const parentMap = useParentWorkItems(features);
+
+	// Stable single-element array so useMemo deps don't change on every render
+	const teams = useMemo(() => [team], [team]);
 
 	const handleShowFeatureDetails = useCallback(
 		async (feature: IFeature) => {
@@ -73,8 +75,10 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	// Fetch features in progress
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
-			const features = await teamMetricsService.getFeaturesInProgress(team.id);
-			setFeaturesInProgress(features.map((feature) => feature.referenceId));
+			const inProgress = await teamMetricsService.getFeaturesInProgress(
+				team.id,
+			);
+			setFeaturesInProgress(inProgress.map((feature) => feature.referenceId));
 		};
 
 		fetchFeaturesInProgress();
@@ -102,30 +106,13 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				width: 400,
 				sortable: false,
 				renderCell: ({ row }) => (
-					<Box sx={{ width: "100%" }}>
-						<ProgressIndicator
-							title={
-								<ProgressTitle
-									title="Total"
-									isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-									onShowDetails={async () =>
-										await handleShowFeatureDetails(row)
-									}
-								/>
-							}
-							progressableItem={{
-								remainingWork: row.getRemainingWorkForFeature(),
-								totalWork: row.getTotalWorkForFeature(),
-							}}
-						/>
-						<ProgressIndicator
-							title={team.name}
-							progressableItem={{
-								remainingWork: row.getRemainingWorkForTeam(team.id),
-								totalWork: row.getTotalWorkForTeam(team.id),
-							}}
-						/>
-					</Box>
+					<FeatureProgressIndicator
+						feature={row}
+						teams={teams}
+						overallTitle="Total"
+						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+						onShowDetails={async () => handleShowFeatureDetails(row)}
+					/>
 				),
 			},
 			createForecastsColumn(),
@@ -149,7 +136,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			},
 			createStateColumn(),
 		],
-		[featureTerm, team, parentMap, portfoliosTerm, handleShowFeatureDetails],
+		[featureTerm, teams, parentMap, portfoliosTerm, handleShowFeatureDetails],
 	);
 
 	const getActiveWorkTeams = useCallback(

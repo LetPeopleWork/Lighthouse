@@ -1,4 +1,3 @@
-import { Box } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -9,10 +8,8 @@ import {
 	createStateColumn,
 } from "../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
+import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
-import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
-import ProgressTitle from "../../../components/Common/ProgressIndicator/ProgressTitle";
-import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
@@ -80,10 +77,10 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 
 			for (const team of portfolio.involvedTeams) {
 				try {
-					const features = await teamMetricsService.getFeaturesInProgress(
+					const inProgress = await teamMetricsService.getFeaturesInProgress(
 						team.id,
 					);
-					featuresByTeam[team.id] = features.map(
+					featuresByTeam[team.id] = inProgress.map(
 						(feature) => feature.referenceId,
 					);
 				} catch (error) {
@@ -120,40 +117,12 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				width: 400,
 				sortable: false,
 				renderCell: ({ row }) => (
-					<Box sx={{ width: "100%" }}>
-						<ProgressIndicator
-							title={
-								<ProgressTitle
-									title="Overall Progress"
-									isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-									onShowDetails={async () =>
-										await handleShowFeatureDetails(row)
-									}
-								/>
-							}
-							progressableItem={{
-								remainingWork: row.getRemainingWorkForFeature(),
-								totalWork: row.getTotalWorkForFeature(),
-							}}
-						/>
-						{portfolio.involvedTeams
-							.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
-							.map((team) => (
-								<Box key={team.id}>
-									<ProgressIndicator
-										title={
-											<StyledLink to={`/teams/${team.id}`}>
-												{team.name}
-											</StyledLink>
-										}
-										progressableItem={{
-											remainingWork: row.getRemainingWorkForTeam(team.id),
-											totalWork: row.getTotalWorkForTeam(team.id),
-										}}
-									/>
-								</Box>
-							))}
-					</Box>
+					<FeatureProgressIndicator
+						feature={row}
+						teams={portfolio.involvedTeams}
+						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+						onShowDetails={async () => handleShowFeatureDetails(row)}
+					/>
 				),
 			},
 			createParentColumn(parentMap),

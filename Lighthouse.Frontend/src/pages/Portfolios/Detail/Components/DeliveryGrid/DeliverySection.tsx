@@ -23,6 +23,7 @@ import {
 	createStateColumn,
 } from "../../../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
+import FeatureProgressIndicator from "../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
@@ -66,7 +67,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		delivery.selectionMode === DeliverySelectionMode.RuleBased ||
 		(delivery.selectionMode as unknown as string) === "RuleBased";
 
-	// Helper function to format date for display
 	const formatDate = (date: Date): string => {
 		return new Date(date).toLocaleDateString("en-US", {
 			month: "short",
@@ -75,7 +75,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		});
 	};
 
-	// Define feature grid columns (adapted from PortfolioFeatureList)
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
 		() => [
 			{
@@ -97,7 +96,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				minWidth: 100,
 				flex: 0.5,
 				renderCell: ({ row }) => {
-					// Find teams that have work for this feature
 					const teamsWithWork = teams.filter(
 						(team) => row.getTotalWorkForTeam(team.id) > 0,
 					);
@@ -128,34 +126,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				flex: 1,
 				sortable: false,
 				renderCell: ({ row }) => (
-					<Box sx={{ width: "100%" }}>
-						<ProgressIndicator
-							title="Overall Progress"
-							progressableItem={{
-								remainingWork: row.getRemainingWorkForFeature(),
-								totalWork: row.getTotalWorkForFeature(),
-							}}
-							showDetails={true}
-						/>
-						{teams
-							.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
-							.map((team) => (
-								<Box key={team.id}>
-									<ProgressIndicator
-										title={
-											<StyledLink to={`/teams/${team.id}`}>
-												{team.name}
-											</StyledLink>
-										}
-										progressableItem={{
-											remainingWork: row.getRemainingWorkForTeam(team.id),
-											totalWork: row.getTotalWorkForTeam(team.id),
-										}}
-										showDetails={true}
-									/>
-								</Box>
-							))}
-					</Box>
+					<FeatureProgressIndicator feature={row} teams={teams} />
 				),
 			},
 			{
@@ -202,7 +173,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					sx={{ overflow: "hidden" }}
 					slotProps={{
 						transition: {
-							unmountOnExit: false, // Keep content mounted for better performance
+							unmountOnExit: false,
 						},
 					}}
 				>
@@ -221,7 +192,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									margin: "12px 0",
 								},
 							},
-							pr: 8, // Add padding right for the delete button
+							pr: 8,
 						}}
 					>
 						<IconButton
@@ -235,7 +206,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								position: "absolute",
 								top: "50%",
 								transform: "translateY(-50%)",
-								right: 48, // Position to the left of delete button
+								right: 48,
 								zIndex: 1,
 								bgcolor: "background.paper",
 								"&:hover": {
