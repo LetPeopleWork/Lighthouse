@@ -301,33 +301,34 @@ namespace Lighthouse.Backend
 
         private static void ConfigureCors(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
         {
-            if (authConfig.Enabled && authConfig.AllowedOrigins.Count > 0)
+            var isStandalone = Environment.GetEnvironmentVariable("Standalone") == "true";
+
+            builder.Services.AddCors(options =>
             {
-                builder.Services.AddCors(options =>
+                options.AddPolicy("AllowAll", corsPolicyBuilder =>
                 {
-                    options.AddPolicy("AllowAll", corsPolicyBuilder =>
+                    if (isStandalone)
+                    {
+                        corsPolicyBuilder
+                            .SetIsOriginAllowed(_ => true)
+                            .AllowCredentials();
+                    }
+                    else if (authConfig.Enabled && authConfig.AllowedOrigins.Count > 0)
                     {
                         corsPolicyBuilder
                             .WithOrigins(authConfig.AllowedOrigins.ToArray())
-                            .AllowAnyMethod()
-                            .AllowAnyHeader()
                             .AllowCredentials();
-                    });
-                });
-            }
-            else
-            {
-                builder.Services.AddCors(options =>
-                {
-                    options.AddPolicy("AllowAll", corsPolicyBuilder =>
+                    }
+                    else
                     {
-                        corsPolicyBuilder
-                            .AllowAnyOrigin()
-                            .AllowAnyMethod()
-                            .AllowAnyHeader();
-                    });
+                        corsPolicyBuilder.AllowAnyOrigin();
+                    }
+
+                    corsPolicyBuilder
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
                 });
-            }
+            });
         }
 
         private static void ConfigureForwardedHeaders(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
