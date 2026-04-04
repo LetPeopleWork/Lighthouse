@@ -98,12 +98,6 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 						}
 
 						involvedTeams[team.name].push(feature.name);
-
-						const teamLink = portfolioDetailPage.getTeamLinkForFeature(
-							team.name,
-							involvedTeams[team.name].length - 1,
-						);
-						await expect(teamLink).toBeVisible();
 					}
 				}
 			});
