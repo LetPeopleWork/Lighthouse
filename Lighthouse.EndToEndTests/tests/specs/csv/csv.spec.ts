@@ -1,11 +1,11 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
-import type { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import {
 	createPortfoliosCsvFile,
 	createTeamCsvFile,
 } from "../../helpers/csv/csvTestData";
 import { generateRandomName } from "../../helpers/names";
-import type { TeamEditPage } from "../../models/teams/TeamEditPage";
+import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
+import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
 test("should be able to handle teams and portfolios defined via CSV", async ({
 	overviewPage,
@@ -21,14 +21,18 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 	};
 
 	await test.step("Create CSV Connector", async () => {
-		const workTrackingSystemEditPage = await overviewPage.addConnection();
+		const workTrackingSystemCreationWizard = await overviewPage.addConnection();
 
-		await workTrackingSystemEditPage.selectWorkTrackingSystem("Csv");
+		await workTrackingSystemCreationWizard.selectWorkTrackingSystemType("Csv");
 
-		await workTrackingSystemEditPage.setConnectionName(workTrackingSystem.name);
+		// CSV doesn't have auth - go directly to next step
+		await workTrackingSystemCreationWizard.goToNextStep();
 
-		await workTrackingSystemEditPage.validate();
-		await workTrackingSystemEditPage.create();
+		await workTrackingSystemCreationWizard.setConnectionName(
+			workTrackingSystem.name,
+		);
+
+		overviewPage = await workTrackingSystemCreationWizard.create();
 	});
 
 	await test.step("Create CSV Team with file upload", async () => {
@@ -37,19 +41,33 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 
 		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
 
-		await test.step("Add general configuration", async () => {
-			await newTeamPage.setName(newTeam.name);
-			await newTeamPage.setThroughputHistory(20);
+		await test.step("Choose Connection", async () => {
+			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
+		});
 
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newTeamPage.validateButton).toBeDisabled();
+		await test.step("Select CSV file", async () => {
+			const csvUploadWizard = await newTeamPage.selectWizard("CSV", "File");
+
+			// CSV system should now show file upload component
+			await expect(csvUploadWizard.isFileUploadVisible()).resolves.toBe(true);
+
+			// Upload the CSV file - ensure teamCsvFile is not null
+			if (!teamCsvFile) {
+				throw new Error("Team CSV file not created");
+			}
+			await csvUploadWizard.selectByName(teamCsvFile.filePath);
+			await csvUploadWizard.waitForUploadComplete();
+
+			await expect(csvUploadWizard.hasValidationErrors()).resolves.toBeFalsy();
+
+			newTeamPage = await csvUploadWizard.confirm();
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
 			await newTeamPage.resetWorkItemTypes([], ["User Story", "Bug", "Task"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newTeamPage.validateButton).toBeDisabled();
+			await expect(newTeamPage.nextButton).toBeDisabled();
 		});
 
 		await test.step("Add State Configuration", async () => {
@@ -66,52 +84,28 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 				},
 			);
 
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newTeamPage.validateButton).toBeDisabled();
+			// We have all mandatory config set, next should be enabled
+			await expect(newTeamPage.nextButton).toBeEnabled();
+
+			await newTeamPage.goToNextStep();
 		});
 
-		let csvUploadWizard: CsvUploadWizard<TeamEditPage>;
+		await test.step("Add Name and Create", async () => {
+			await newTeamPage.setName("");
 
-		await test.step("Select CSV Work Tracking System", async () => {
-			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
+			// Expect Validation to be disabled because mandatory config is still missing
+			await expect(newTeamPage.createButton).toBeDisabled();
 
-			csvUploadWizard = await newTeamPage.triggerCsvWizard();
-
-			// CSV system should now show file upload component
-			await expect(csvUploadWizard.isFileUploadVisible()).resolves.toBe(true);
-
-			// Upload the CSV file - ensure teamCsvFile is not null
-			if (!teamCsvFile) {
-				throw new Error("Team CSV file not created");
-			}
-			await csvUploadWizard.uploadCsvFile(teamCsvFile.filePath);
-			await csvUploadWizard.waitForUploadComplete();
-
-			await expect(csvUploadWizard.hasValidationErrors()).resolves.toBeFalsy();
-
-			newTeamPage = await csvUploadWizard.useFile();
+			await newTeamPage.setName(newTeam.name);
 
 			// Now we have all default configuration set
-			await expect(newTeamPage.validateButton).toBeEnabled();
-		});
-
-		await test.step("Validate Settings", async () => {
-			await newTeamPage.validate();
-			await expect(newTeamPage.validateButton).toBeEnabled();
-			await expect(newTeamPage.saveButton).toBeEnabled();
-
-			// Check for any validation errors
-			const hasErrors = await csvUploadWizard.hasValidationErrors();
-			if (hasErrors) {
-				const errors = await csvUploadWizard.getValidationErrors();
-				console.warn("CSV validation errors:", errors);
-			}
+			await expect(newTeamPage.createButton).toBeEnabled();
 		});
 
 		await test.step("Create New Team", async () => {
-			await newTeamPage.validate();
-			await expect(newTeamPage.saveButton).toBeEnabled();
-			const teamInfoPage = await newTeamPage.save();
+			const teamInfoPage = await newTeamPage.create(
+				(page) => new TeamDetailPage(page),
+			);
 
 			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled();
 			newTeam.id = teamInfoPage.teamId;
@@ -146,18 +140,36 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
 		let newPortfolioPage = await portfoliosPage.addNewPortfolio();
 
-		await test.step("Add general configuration", async () => {
-			await newPortfolioPage.setName(newPortfolio.name);
+		await test.step("Choose Connection", async () => {
+			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
+		});
 
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newPortfolioPage.validateButton).toBeDisabled();
+		await test.step("Select CSV file", async () => {
+			const csvUploadWizard = await newPortfolioPage.selectWizard(
+				"CSV",
+				"File",
+			);
+
+			// CSV system should now show file upload component
+			await expect(csvUploadWizard.isFileUploadVisible()).resolves.toBe(true);
+
+			// Upload the CSV file - ensure portfolioCsvFile is not null
+			if (!portfolioCsvFile) {
+				throw new Error("Portfolio CSV file not created");
+			}
+			await csvUploadWizard.selectByName(portfolioCsvFile.filePath);
+			await csvUploadWizard.waitForUploadComplete();
+
+			await expect(csvUploadWizard.hasValidationErrors()).resolves.toBeFalsy();
+
+			newPortfolioPage = await csvUploadWizard.confirm();
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
 			await newPortfolioPage.resetWorkItemTypes([], ["Epic"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newPortfolioPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.nextButton).toBeDisabled();
 		});
 
 		await test.step("Add State Configuration", async () => {
@@ -174,41 +186,23 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 				},
 			);
 
-			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newPortfolioPage.validateButton).toBeDisabled();
+			// We have all mandatory config set, next should be enabled
+			await expect(newPortfolioPage.nextButton).toBeEnabled();
+			await newPortfolioPage.goToNextStep();
 		});
 
-		await test.step("Select CSV Work Tracking System", async () => {
-			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
+		await test.step("Add general configuration", async () => {
+			await newPortfolioPage.setName("");
+			await expect(newPortfolioPage.createButton).toBeDisabled();
 
-			const csvWizard = await newPortfolioPage.triggerCsvWizard();
-
-			// CSV system should now show file upload component
-			await expect(csvWizard.isFileUploadVisible()).resolves.toBe(true);
-
-			// Upload the CSV file - ensure portfolioCsvFile is not null
-			if (!portfolioCsvFile) {
-				throw new Error("portfolio CSV file not created");
-			}
-			await csvWizard.uploadCsvFile(portfolioCsvFile.filePath);
-			await csvWizard.waitForUploadComplete();
-
-			newPortfolioPage = await csvWizard.useFile();
-
-			// Now we have all default configuration set
-			await expect(newPortfolioPage.validateButton).toBeEnabled();
-		});
-
-		await test.step("Validate Settings", async () => {
-			await newPortfolioPage.validate();
-			await expect(newPortfolioPage.validateButton).toBeEnabled();
-			await expect(newPortfolioPage.saveButton).toBeEnabled();
+			await newPortfolioPage.setName(newPortfolio.name);
+			await expect(newPortfolioPage.createButton).toBeEnabled();
 		});
 
 		await test.step("Create New portfolio", async () => {
-			await newPortfolioPage.validate();
-			await expect(newPortfolioPage.saveButton).toBeEnabled();
-			const portfolioInfoPage = await newPortfolioPage.save();
+			const portfolioInfoPage = await newPortfolioPage.create(
+				(page) => new PortfolioDetailPage(page),
+			);
 
 			await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled();
 			newPortfolio.id = portfolioInfoPage.portfolioId;

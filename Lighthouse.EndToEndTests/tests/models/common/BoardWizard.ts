@@ -1,21 +1,17 @@
 import type { Locator, Page } from "@playwright/test";
-import type { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
-import type { TeamEditPage } from "../teams/TeamEditPage";
+import { BaseWizard } from "./BaseWizard";
 
-export class BoardWizard<T extends PortfolioEditPage | TeamEditPage> {
-	page: Page;
-	createPageHandler: (page: Page) => T;
-	type: string;
-
-	constructor(page: Page, createPageHandler: (page: Page) => T, type: string) {
-		this.page = page;
-		this.createPageHandler = createPageHandler;
-		this.type = type;
+export class BoardWizard<T> extends BaseWizard<T> {
+	constructor(
+		page: Page,
+		createPageHandler: (page: Page) => T,
+		private readonly type: string,
+	) {
+		super(page, createPageHandler);
 	}
 
 	async selectByName(name: string): Promise<void> {
 		await this.page.getByRole("combobox", { name: this.type }).click();
-
 		await this.page.getByRole("option", { name }).click();
 	}
 

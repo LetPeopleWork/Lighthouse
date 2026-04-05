@@ -13,16 +13,6 @@ export class WorkTrackingSystemEditPage {
 		await this.page.getByLabel("Connection Name").fill(name);
 	}
 
-	async selectWorkTrackingSystem(
-		workTrackingSystemName: string,
-	): Promise<void> {
-		// Default selection is ADO, so this is correctly hardcoded here
-		await this.page.getByText("AzureDevOps").click();
-		await this.page
-			.getByRole("option", { name: workTrackingSystemName })
-			.click();
-	}
-
 	async setWorkTrackingSystemOption(optionName: string, optionValue: string) {
 		await this.page.getByLabel(optionName, { exact: true }).fill(optionValue);
 	}

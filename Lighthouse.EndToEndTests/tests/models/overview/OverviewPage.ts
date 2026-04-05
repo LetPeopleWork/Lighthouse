@@ -1,9 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
 import type { LighthousePage } from "../app/LighthousePage";
+import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { PortfolioDeletionDialog } from "../portfolios/PortfolioDeletionDialog";
 import { PortfolioDetailPage } from "../portfolios/PortfolioDetailPage";
 import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
+import { WorkTrackingSystemCreateWizard } from "../settings/WorkTrackingSystems/WorkTrackingSystemCreateWizard";
 import { WorkTrackingSystemEditPage } from "../settings/WorkTrackingSystems/WorkTrackingSystemEditPage";
+import { AddTeamWizard } from "../teams/AddTeamWizard";
 import { TeamDeletionDialog } from "../teams/TeamDeletionDialog";
 import { TeamDetailPage } from "../teams/TeamDetailPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
@@ -51,13 +54,13 @@ export class OverviewPage {
 		return new PortfolioEditPage(this.page);
 	}
 
-	async addNewPortfolio(): Promise<PortfolioEditPage> {
+	async addNewPortfolio(): Promise<AddPortfolioWizard> {
 		await this.page
 			.getByRole("button", { name: "Add Portfolio" })
 			.first()
 			.click();
 
-		return new PortfolioEditPage(this.page);
+		return new AddPortfolioWizard(this.page);
 	}
 
 	async deletePortfolio(portfolio: {
@@ -71,13 +74,13 @@ export class OverviewPage {
 		return new PortfolioDeletionDialog(this.page);
 	}
 
-	async addConnection(): Promise<WorkTrackingSystemEditPage> {
+	async addConnection(): Promise<WorkTrackingSystemCreateWizard> {
 		await this.page
 			.getByRole("button", { name: "Add Work Tracking System" })
 			.first()
 			.click();
 
-		return new WorkTrackingSystemEditPage(this.page);
+		return new WorkTrackingSystemCreateWizard(this.page);
 	}
 
 	async deleteConnection(connectionName: string): Promise<void> {
@@ -127,10 +130,10 @@ export class OverviewPage {
 		return new TeamEditPage(this.page);
 	}
 
-	async addNewTeam(): Promise<TeamEditPage> {
+	async addNewTeam(): Promise<AddTeamWizard> {
 		await this.page.getByRole("button", { name: "Add Team" }).first().click();
 
-		return new TeamEditPage(this.page);
+		return new AddTeamWizard(this.page);
 	}
 
 	async deleteTeam(teamName: string): Promise<TeamDeletionDialog> {

@@ -2,9 +2,9 @@ import type { Locator, Page } from "@playwright/test";
 import { LoginPage } from "../auth/LoginPage";
 import { SessionExpiredPage } from "../auth/SessionExpiredPage";
 import { OverviewPage } from "../overview/OverviewPage";
-import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
+import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { SettingsPage } from "../settings/SettingsPage";
-import { TeamEditPage } from "../teams/TeamEditPage";
+import { AddTeamWizard } from "../teams/AddTeamWizard";
 
 export class LighthousePage {
 	readonly page: Page;
@@ -28,14 +28,14 @@ export class LighthousePage {
 		return new OverviewPage(this.page, this);
 	}
 
-	async createNewTeam(): Promise<TeamEditPage> {
+	async createNewTeam(): Promise<AddTeamWizard> {
 		await this.page.goto("/teams/new");
-		return new TeamEditPage(this.page);
+		return new AddTeamWizard(this.page);
 	}
 
-	async createNewProject(): Promise<PortfolioEditPage> {
+	async createNewPortfolio(): Promise<AddPortfolioWizard> {
 		await this.page.goto("/portfolios/new");
-		return new PortfolioEditPage(this.page);
+		return new AddPortfolioWizard(this.page);
 	}
 
 	async goToSettings(): Promise<SettingsPage> {

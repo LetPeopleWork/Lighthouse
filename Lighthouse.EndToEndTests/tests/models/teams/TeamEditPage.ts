@@ -1,10 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
-import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
-import { BoardWizard } from "../common/BoardWizard";
 import { TeamDetailPage } from "./TeamDetailPage";
 
 export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
+	constructor(page: Page) {
+		super(page, (page) => new TeamDetailPage(page));
+	}
+
 	override async save(): Promise<TeamDetailPage> {
 		await this.saveButton.click();
 		return new TeamDetailPage(this.page);
@@ -54,29 +56,5 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 
 	async disableAutomaticallyAdjustFeatureWIP(): Promise<void> {
 		await this.automaticallyAdjustFeatureWIPCheckBox.uncheck();
-	}
-
-	async openTeamWizard(
-		workTrackingSystemType: string,
-		wizardType: "Board" | "Team" = "Board",
-	): Promise<BoardWizard<TeamEditPage>> {
-		await this.page
-			.getByRole("button", {
-				name: `Select ${workTrackingSystemType} ${wizardType}`,
-			})
-			.click();
-		return new BoardWizard(
-			this.page,
-			(page) => new TeamEditPage(page),
-			wizardType,
-		);
-	}
-
-	async triggerCsvWizard(): Promise<CsvUploadWizard<TeamEditPage>> {
-		await this.page.getByRole("button", { name: "Upload CSV File" }).click();
-		return new CsvUploadWizard(
-			this.page,
-			(page: Page) => new TeamEditPage(page),
-		);
 	}
 }

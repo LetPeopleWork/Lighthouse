@@ -4,24 +4,28 @@ import { generateRandomName } from "../../helpers/names";
 import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
 import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
-test("should be able to handle a team defined in Linear", async ({
+test("should be able to handle a team and portfolio defined in Azure DevOps", async ({
 	overviewPage,
 }) => {
 	const workTrackingSystem = {
 		name: generateRandomName(),
 	};
 
-	await test.step("Create Linear Work Tracking System Connection", async () => {
+	await test.step("Create Azure DevOps Work Tracking System Connection", async () => {
 		await overviewPage.lightHousePage.goToOverview();
 		const workTrackingSystemCreationWizard = await overviewPage.addConnection();
 
 		await workTrackingSystemCreationWizard.selectWorkTrackingSystemType(
-			"Linear",
+			"AzureDevOps",
 		);
 
 		await workTrackingSystemCreationWizard.setWorkTrackingSystemOption(
-			"API Key",
-			TestConfig.LinearApiKey,
+			"Organization URL",
+			"https://dev.azure.com/letpeoplework",
+		);
+		await workTrackingSystemCreationWizard.setWorkTrackingSystemOption(
+			"Personal Access Token",
+			TestConfig.AzureDevOpsToken,
 		);
 
 		await workTrackingSystemCreationWizard.goToNextStep();
@@ -33,33 +37,32 @@ test("should be able to handle a team defined in Linear", async ({
 		await workTrackingSystemCreationWizard.create();
 	});
 
-	const newTeam = { id: 0, name: "LighthouseDemo" };
+	const newTeam = { id: 0, name: generateRandomName() };
 
-	await test.step("Create Linear Team", async () => {
+	await test.step("Create Azure DevOps Team via Wizard", async () => {
 		let newTeamPage = await overviewPage.lightHousePage.createNewTeam();
 
 		await test.step("Choose Connection", async () => {
 			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
 		});
 
-		await test.step("Select Linear Team in Wizard", async () => {
-			const linearTeamWizard = await newTeamPage.selectWizard("Linear", "Team");
-			await linearTeamWizard.selectByName(newTeam.name);
+		await test.step("Select Azure DevOps Board in Wizard", async () => {
+			const wizard = await newTeamPage.selectWizard("Azure DevOps");
 
-			await expect(linearTeamWizard.boardInformationPanel).toBeVisible();
-			expect(await linearTeamWizard.confirmButton.isEnabled()).toBeTruthy();
+			expect(await wizard.confirmButton.isEnabled()).toBeFalsy();
 
-			newTeamPage = await linearTeamWizard.confirm();
+			await wizard.selectByName("Lighthouse - Stories");
+
+			await expect(wizard.boardInformationPanel).toBeVisible();
+			expect(await wizard.confirmButton.isEnabled()).toBeTruthy();
+
+			newTeamPage = await wizard.confirm();
 		});
 
-		await test.step("Add Name", async () => {
-			// We expect to skip the manual config here since Linear should pre-populate everything based on the selected team - just need to add a name
+		await test.step("Add Name and Create", async () => {
 			await newTeamPage.setName(newTeam.name);
-
 			await expect(newTeamPage.createButton).toBeEnabled();
-		});
 
-		await test.step("Create New Team", async () => {
 			const teamInfoPage = await newTeamPage.create(
 				(page) => new TeamDetailPage(page),
 			);
@@ -74,55 +77,43 @@ test("should be able to handle a team defined in Linear", async ({
 		});
 	});
 
-	await test.step("Create Linear Portfolio", async () => {
-		const newPortfolio = {
-			id: 0,
-			name: "My Demo Project",
-		};
+	const newPortfolio = { id: 0, name: generateRandomName() };
 
-		const portfolioPage = await overviewPage.lightHousePage.goToOverview();
-
-		const newPortfolioPage = await portfolioPage.addNewPortfolio();
+	await test.step("Create Azure DevOps Portfolio via Wizard", async () => {
+		const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
+		let newPortfolioPage = await portfoliosPage.addNewPortfolio();
 
 		await test.step("Choose Connection", async () => {
 			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
 		});
 
-		await test.step("Add State Configuration", async () => {
-			await newPortfolioPage.resetStates(
-				{
-					toDo: [],
-					doing: [],
-					done: [],
-				},
-				{
-					toDo: ["Backlog", "Planned"],
-					doing: ["In Progress"],
-					done: ["Completed"],
-				},
-			);
+		await test.step("Select Azure DevOps Board in Wizard", async () => {
+			const boardWizard = await newPortfolioPage.selectWizard("Azure DevOps");
 
-			await expect(newPortfolioPage.nextButton).toBeEnabled();
-			await newPortfolioPage.goToNextStep();
+			expect(await boardWizard.confirmButton.isEnabled()).toBeFalsy();
+
+			await boardWizard.selectByName("Lighthouse - Epics");
+
+			await expect(boardWizard.boardInformationPanel).toBeVisible();
+			expect(await boardWizard.confirmButton.isEnabled()).toBeTruthy();
+
+			newPortfolioPage = await boardWizard.confirm();
 		});
 
-		await test.step("Add Name", async () => {
+		await test.step("Add Name and Create", async () => {
 			await newPortfolioPage.setName(newPortfolio.name);
-
 			await expect(newPortfolioPage.createButton).toBeEnabled();
-		});
 
-		await test.step("Create New Portfolio", async () => {
 			const portfolioInfoPage = await newPortfolioPage.create(
 				(page) => new PortfolioDetailPage(page),
 			);
 
-			await expect(portfolioInfoPage.refreshFeatureButton).toBeDisabled();
+			await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled();
 			newPortfolio.id = portfolioInfoPage.portfolioId;
 
-			const portfolioPage = await overviewPage.lightHousePage.goToOverview();
-			await portfolioPage.search(newPortfolio.name);
-			const portfolioLink = await portfolioPage.getPortfolioLink(
+			const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
+			await portfoliosPage.search(newPortfolio.name);
+			const portfolioLink = await portfoliosPage.getPortfolioLink(
 				newPortfolio.name,
 			);
 			await expect(portfolioLink).toBeVisible();

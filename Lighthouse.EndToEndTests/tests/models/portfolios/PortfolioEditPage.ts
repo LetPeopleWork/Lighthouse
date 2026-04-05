@@ -1,10 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
-import { CsvUploadWizard } from "../../helpers/csv/CsvUploadWizard";
 import { BaseEditPage } from "../common/BaseEditPage";
-import { BoardWizard } from "../common/BoardWizard";
 import { PortfolioDetailPage } from "./PortfolioDetailPage";
 
 export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
+	constructor(page: Page) {
+		super(page, (page) => new PortfolioDetailPage(page));
+	}
+
 	override async save(): Promise<PortfolioDetailPage> {
 		await this.saveButton.click();
 		return new PortfolioDetailPage(this.page);
@@ -147,26 +149,5 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.filter({ hasText: /.*Owning Team$/ })
 			.getByRole("combobox");
 		return (await combobox.textContent()) ?? "";
-	}
-
-	async openBoardWizard(
-		workTrackingSystemType: string,
-	): Promise<BoardWizard<PortfolioEditPage>> {
-		await this.page
-			.getByRole("button", { name: workTrackingSystemType })
-			.click();
-		return new BoardWizard(
-			this.page,
-			(page) => new PortfolioEditPage(page),
-			"Board",
-		);
-	}
-
-	async triggerCsvWizard(): Promise<CsvUploadWizard<PortfolioEditPage>> {
-		await this.page.getByRole("button", { name: "Upload CSV File" }).click();
-		return new CsvUploadWizard(
-			this.page,
-			(page: Page) => new PortfolioEditPage(page),
-		);
 	}
 }

@@ -70,7 +70,6 @@ const updateTeams = async (
 		await editTeam.setName(newTeamName);
 		team.name = newTeamName;
 
-		await editTeam.validate();
 		await expect(editTeam.saveButton).toBeEnabled();
 
 		const teamDetailPage = await editTeam.save();
@@ -96,7 +95,6 @@ const updatePortfolios = async (
 		await editPortfolioPage.setName(newPortfolioname);
 		portfolio.name = newPortfolioname;
 
-		await editPortfolioPage.validate();
 		await expect(editPortfolioPage.saveButton).toBeEnabled();
 
 		const portfolioDetailPage = await editPortfolioPage.save();
@@ -463,7 +461,6 @@ testWithData(
 		const teamEditPage = await overviewPage.editTeam(team.name);
 
 		await teamEditPage.setEstimationField("Story Points");
-		await teamEditPage.validate();
 		await expect(teamEditPage.saveButton).toBeEnabled();
 		const teamDetailPage = await teamEditPage.save();
 
@@ -494,6 +491,12 @@ const workTrackingSystemConfiguration = [
 		],
 	},
 	{
+		workTrackingSystemName: "Linear",
+		workTrackingSystemOptions: [
+			{ field: "API Key", value: TestConfig.LinearApiKey },
+		],
+	},
+	{
 		workTrackingSystemName: "CSV",
 		workTrackingSystemOptions: [
 			{ field: "Delimiter", value: "," },
@@ -515,7 +518,7 @@ const workTrackingSystemConfiguration = [
 	},
 ];
 
-const wizardConfigs = [
+const teamWizardScreenshotConfigs = [
 	{
 		name: "Jira",
 		boardName: "Stories",
@@ -523,27 +526,72 @@ const wizardConfigs = [
 	},
 	{
 		name: "Azure DevOps",
+		boardName: "Lighthouse - Stories",
+		teamIndex: 0,
+	},
+	{
+		name: "Linear",
+		boardName: "LighthouseDemo",
+		teamIndex: 1,
+	},
+];
+
+const portfolioWizardScreenshotConfigs = [
+	{
+		name: "Jira",
+		displayName: "Jira",
+		boardName: "Epics",
+		teamIndex: 2,
+	},
+	{
+		name: "Azure DevOps",
+		displayName: "Azure DevOps",
 		boardName: "Lighthouse - Epics",
 		teamIndex: 0,
 	},
 ];
 
-for (const wizardConfig of wizardConfigs) {
+for (const wizardConfig of teamWizardScreenshotConfigs) {
 	testWithData(
-		`Take @screenshot of ${wizardConfig.name} Wizard`,
+		`Take @screenshot of ${wizardConfig.name} Team Wizard`,
 		async ({ testData, overviewPage }) => {
 			const team = testData.teams[wizardConfig.teamIndex];
 			const teamEditPage = await overviewPage.editTeam(team.name);
 
-			const jiraWizard = await teamEditPage.openTeamWizard(wizardConfig.name);
+			const wizard = await teamEditPage.selectWizard(wizardConfig.name);
 
-			await jiraWizard.selectByName(wizardConfig.boardName);
+			await wizard.selectByName(wizardConfig.boardName);
 
-			await expect(jiraWizard.boardInformationPanel).toBeVisible();
+			await expect(wizard.boardInformationPanel).toBeVisible();
 
 			await takeDialogScreenshot(
-				jiraWizard.page.getByRole("dialog"),
-				`concepts/${wizardConfig.name.replace(" ", "").toLowerCase()}_wizard.png`,
+				wizard.page.getByRole("dialog"),
+				`concepts/${wizardConfig.name.replace(" ", "").toLowerCase()}_team_wizard.png`,
+				5,
+				1000,
+			);
+		},
+	);
+}
+
+for (const wizardConfig of portfolioWizardScreenshotConfigs) {
+	testWithData(
+		`Take @screenshot of ${wizardConfig.name} Portfolio Wizard`,
+		async ({ testData, overviewPage }) => {
+			const portfolio = testData.portfolios[0];
+			const portfolioEditPage = await overviewPage.editPortfolio(portfolio);
+
+			const boardWizard = await portfolioEditPage.selectWizard(
+				wizardConfig.displayName,
+			);
+
+			await boardWizard.selectByName(wizardConfig.boardName);
+
+			await expect(boardWizard.boardInformationPanel).toBeVisible();
+
+			await takeDialogScreenshot(
+				boardWizard.page.getByRole("dialog"),
+				`concepts/${wizardConfig.name.replace(" ", "").toLowerCase()}_portfolio_wizard.png`,
 				5,
 				1000,
 			);
@@ -564,12 +612,7 @@ for (const {
 			);
 			const workTrackingSystemEditPage = await overviewPage.addConnection();
 
-			// Wait for the dialog to be visible
-			await workTrackingSystemEditPage.setConnectionName(
-				`My ${workTrackingSystemName} Connection`,
-			);
-
-			await workTrackingSystemEditPage.selectWorkTrackingSystem(
+			await workTrackingSystemEditPage.selectWorkTrackingSystemType(
 				workTrackingSystemName,
 			);
 
@@ -579,8 +622,6 @@ for (const {
 					option.value,
 				);
 			}
-
-			await workTrackingSystemEditPage.scrollToTop();
 
 			await takePageScreenshot(
 				workTrackingSystemEditPage.page,
