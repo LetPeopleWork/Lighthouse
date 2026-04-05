@@ -508,12 +508,6 @@ const workTrackingSystemConfiguration = [
 			{ field: "Type Column", value: "Type" },
 			{ field: "Started Date Column", value: "Started Date" },
 			{ field: "Closed Date Column", value: "Closed Date" },
-			{ field: "Created Date Column", value: "Created Date" },
-			{ field: "Parent Reference Id Column", value: "Parent Key" },
-			{ field: "Tags Column", value: "Labels" },
-			{ field: "Url Column", value: "Url" },
-			{ field: "Owning Team Column", value: "Owning Team" },
-			{ field: "Estimated Size Column", value: "Estimated Size" },
 		],
 	},
 ];
@@ -611,6 +605,13 @@ for (const {
 				"Expected to have portfolios initiatilized to prevent tutorial page from being displayed",
 			);
 			const workTrackingSystemEditPage = await overviewPage.addConnection();
+
+			await takePageScreenshot(
+				workTrackingSystemEditPage.page,
+				`concepts/worktrackingsystem_type_selection.png`,
+				5,
+				1000,
+			);
 
 			await workTrackingSystemEditPage.selectWorkTrackingSystemType(
 				workTrackingSystemName,

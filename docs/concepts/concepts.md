@@ -40,14 +40,16 @@ flowchart TD
 # Work Tracking System
 The Work Tracking System is the place where your backlog lives. Lighthouse is designed to onboard more systems as needed, join our Slack or reach out via email if you'd like to see a new system supported.
 
-Currently supported are [Jira](./worktrackingsystems/jira.html) and [Azure DevOps](./worktrackingsystems/azuredevops.html). The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
+Currently supported are [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [Linear](./worktrackingsystems/linear.html) and [CSV](./worktrackingsystems/csv.html).
+
+The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
 
 ## Creating a Work Tracking System Connection
 You can create a new connection to your work tracking system via the Overview page.
 
 Once defined, you can reference them via name when you set up your teams and portfolio. What information is needed for the connection depends on the specific Work Tracking System, please check in the subpages for your system to get more detailed information.
 
-![Work Tracking Systems](../assets/concepts/worktrackingsystem_AzureDevOps.png)
+![Work Tracking Systems](../assets/concepts/worktrackingsystem_type_selection.png)
 
 # Query
 Lighthouse is using the built-in query languages from the work tracking systems to fetch the data needed for the forecasts. This makes the tool flexible and allows you to define teams and portfolios in whatever way makes sense to you.

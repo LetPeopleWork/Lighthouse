@@ -14,8 +14,7 @@ This page will give you an overview of the specifics to Linear when using Lighth
 # Work Tracking System Connection
 To create a connection to a Linear Workspace, you need a single thing: A Linear API Key
   
-<!-- TODO: Add automatically generated picture once the integration is fully implemented -->
-![Create Linear Connection](../assets/concepts/worktrackingsystem_Linear.png)
+![Create Linear Connection](../../assets/concepts/worktrackingsystem_Linear.png)
 
 You can find more information on how to create an API Key in the [Linear Documentation](https://linear.app/docs/api-and-webhooks#create-an-api-key)
 
