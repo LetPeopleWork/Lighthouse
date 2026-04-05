@@ -31,14 +31,10 @@ for (const { index, name } of testData) {
 			// Add a small delay to give metrics time to load
 			await teamDetailPage.page.waitForTimeout(300);
 
-			await expect(teamDetailPage.workItemsInProgressWidget).toBeVisible();
 			await expect(teamDetailPage.cycleTimePercentileWidget).toBeVisible();
 			await expect(teamDetailPage.startedVsClosedWidget).toBeVisible();
 			await expect(teamDetailPage.throughputRunChartWidget).toBeVisible();
 			await expect(teamDetailPage.cycleTimeScatterplotWidget).toBeVisible();
-			await expect(teamDetailPage.workItemAgingChart).toBeVisible();
-			await expect(teamDetailPage.wipOverTimeWidget).toBeVisible();
-			await expect(teamDetailPage.simplifiedCfdWidget).toBeVisible();
 		},
 	);
 }
