@@ -428,7 +428,7 @@ describe("ModifyProjectSettings", () => {
 		expect(screen.getByText("GeneralSettingsComponent")).toBeInTheDocument();
 	});
 
-	it("handles save action", async () => {
+	it("handles save action with validate-on-save", async () => {
 		render(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
@@ -444,14 +444,35 @@ describe("ModifyProjectSettings", () => {
 		await waitFor(() =>
 			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 		);
-		fireEvent.click(screen.getByText("Validate"));
-		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
 
 		fireEvent.click(screen.getByText("Save"));
+		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
 		await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
 	});
 
-	it("handles validate action", async () => {
+	it("does not save when validation fails", async () => {
+		render(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+			/>,
+		);
+		mockValidateProjectSettings.mockResolvedValue(false);
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.click(screen.getByText("Save"));
+		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
+		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+	});
+
+	it("does not render a standalone Validate button", async () => {
 		render(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
@@ -467,9 +488,7 @@ describe("ModifyProjectSettings", () => {
 			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 		);
 
-		fireEvent.click(screen.getByText("Validate"));
-
-		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
+		expect(screen.queryByText("Validate")).not.toBeInTheDocument();
 	});
 
 	it("sets formValid to true when all inputs are valid", async () => {
@@ -488,7 +507,7 @@ describe("ModifyProjectSettings", () => {
 			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 		);
 
-		expect(screen.getByText("Validate")).not.toBeDisabled();
+		expect(screen.getByText("Save")).not.toBeDisabled();
 	});
 
 	const scenarios = [
@@ -541,7 +560,7 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			expect(screen.getByText("Validate")).toBeDisabled();
+			expect(screen.getByText("Save")).toBeDisabled();
 		});
 	}
 
@@ -614,7 +633,7 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			expect(screen.getByText("Validate")).not.toBeDisabled();
+			expect(screen.getByText("Save")).not.toBeDisabled();
 		});
 	});
 });

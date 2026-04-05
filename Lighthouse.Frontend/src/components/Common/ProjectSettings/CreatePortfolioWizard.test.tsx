@@ -1,0 +1,713 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
+import type {
+	DataRetrievalWizardProps,
+	IDataRetrievalWizard,
+} from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
+import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
+import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { TerminologyProvider } from "../../../services/TerminologyContext";
+import {
+	createMockApiServiceContext,
+	createMockTerminologyService,
+} from "../../../tests/MockApiServiceProvider";
+// ---------- mock wizard registry ----------
+import { getWizardsForSystem } from "../../DataRetrievalWizards";
+import CreatePortfolioWizard from "./CreatePortfolioWizard";
+
+vi.mock("../../DataRetrievalWizards", () => ({
+	getWizardsForSystem: vi.fn().mockReturnValue([]),
+}));
+const mockGetWizardsForSystem = vi.mocked(getWizardsForSystem);
+
+const createMockWizardComponent = (boardInfo: IBoardInformation) => {
+	const MockWizard: React.FC<DataRetrievalWizardProps> = ({
+		onComplete,
+		onCancel,
+	}) => (
+		<div data-testid="mock-wizard-dialog">
+			<button type="button" onClick={() => onComplete(boardInfo)}>
+				Complete Wizard
+			</button>
+			<button type="button" onClick={onCancel}>
+				Cancel Wizard
+			</button>
+		</div>
+	);
+	MockWizard.displayName = "MockWizard";
+	return MockWizard;
+};
+
+const fullBoardInfo: IBoardInformation = {
+	dataRetrievalValue: "SELECT * FROM Features",
+	workItemTypes: ["Epic", "Feature"],
+	toDoStates: ["New"],
+	doingStates: ["Active"],
+	doneStates: ["Closed"],
+};
+
+const createMockWizard = (
+	name: string,
+	boardInfo: IBoardInformation,
+): IDataRetrievalWizard => ({
+	id: `mock.${name}`,
+	name,
+	applicableSystemTypes: ["AzureDevOps"],
+	applicableSettingsContexts: ["portfolio"],
+	component: createMockWizardComponent(boardInfo),
+});
+
+// ---------- mock child components ----------
+vi.mock("../WorkItemTypes/WorkItemTypesComponent", () => ({
+	default: ({
+		workItemTypes,
+		onAddWorkItemType,
+		onRemoveWorkItemType,
+	}: {
+		workItemTypes: string[];
+		onAddWorkItemType: (type: string) => void;
+		onRemoveWorkItemType: (type: string) => void;
+	}) => (
+		<div>
+			<div>WorkItemTypesComponent</div>
+			{workItemTypes.map((type) => (
+				<span key={type}>{type}</span>
+			))}
+			<button type="button" onClick={() => onAddWorkItemType("NewType")}>
+				Add Work Item Type
+			</button>
+			<button
+				type="button"
+				onClick={() => onRemoveWorkItemType(workItemTypes[0] ?? "")}
+			>
+				Remove Work Item Type
+			</button>
+		</div>
+	),
+}));
+
+vi.mock("../StatesList/StatesList", () => ({
+	default: ({
+		toDoStates,
+		doingStates,
+		doneStates,
+		onAddToDoState,
+		onAddDoingState,
+		onAddDoneState,
+	}: {
+		toDoStates: string[];
+		doingStates: string[];
+		doneStates: string[];
+		onAddToDoState: (state: string) => void;
+		onAddDoingState: (state: string) => void;
+		onAddDoneState: (state: string) => void;
+	}) => (
+		<div>
+			<div>StatesListComponent</div>
+			<div data-testid="todo-states">
+				{toDoStates.map((s) => (
+					<span key={s}>{s}</span>
+				))}
+			</div>
+			<div data-testid="doing-states">
+				{doingStates.map((s) => (
+					<span key={s}>{s}</span>
+				))}
+			</div>
+			<div data-testid="done-states">
+				{doneStates.map((s) => (
+					<span key={s}>{s}</span>
+				))}
+			</div>
+			<button type="button" onClick={() => onAddToDoState("New")}>
+				Add ToDo State
+			</button>
+			<button type="button" onClick={() => onAddDoingState("InProgress")}>
+				Add Doing State
+			</button>
+			<button type="button" onClick={() => onAddDoneState("Done")}>
+				Add Done State
+			</button>
+		</div>
+	),
+}));
+
+// ---------- test fixtures ----------
+const mockConnections: IWorkTrackingSystemConnection[] = [
+	{
+		id: 1,
+		name: "My ADO Connection",
+		workTrackingSystem: "AzureDevOps",
+		options: [],
+		availableAuthenticationMethods: [],
+		authenticationMethodKey: "ado.pat",
+		workTrackingSystemGetDataRetrievalDisplayName: () => "Board/Query",
+		additionalFieldDefinitions: [],
+		writeBackMappingDefinitions: [],
+	},
+	{
+		id: 2,
+		name: "My Jira Connection",
+		workTrackingSystem: "Jira",
+		options: [],
+		availableAuthenticationMethods: [],
+		authenticationMethodKey: "jira.cloud",
+		workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
+		additionalFieldDefinitions: [],
+		writeBackMappingDefinitions: [],
+	},
+	{
+		id: 3,
+		name: "My Linear Connection",
+		workTrackingSystem: "Linear",
+		options: [],
+		availableAuthenticationMethods: [],
+		authenticationMethodKey: "linear.apikey",
+		workTrackingSystemGetDataRetrievalDisplayName: () => "Team",
+		additionalFieldDefinitions: [],
+		writeBackMappingDefinitions: [],
+	},
+];
+
+const createQueryClient = () =>
+	new QueryClient({
+		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+	});
+
+interface RenderOptions {
+	connections?: IWorkTrackingSystemConnection[];
+	validatePortfolioSettings?: (
+		settings: IPortfolioSettings,
+	) => Promise<boolean>;
+	savePortfolioSettings?: (settings: IPortfolioSettings) => Promise<void>;
+	onCancel?: () => void;
+}
+
+const renderWizard = (options: RenderOptions = {}) => {
+	const {
+		connections = mockConnections,
+		validatePortfolioSettings = vi.fn().mockResolvedValue(true),
+		savePortfolioSettings = vi.fn().mockResolvedValue(undefined),
+		onCancel = vi.fn(),
+	} = options;
+
+	const getConnections = vi.fn().mockResolvedValue(connections);
+
+	const mockTerminologyService = createMockTerminologyService();
+	vi.mocked(mockTerminologyService.getAllTerminology).mockResolvedValue([
+		{
+			id: 1,
+			key: "workTrackingSystem",
+			defaultValue: "Work Tracking System",
+			description: "",
+			value: "Work Tracking System",
+		},
+	]);
+
+	const mockApiServiceContext = createMockApiServiceContext({
+		terminologyService: mockTerminologyService,
+	});
+
+	render(
+		<QueryClientProvider client={createQueryClient()}>
+			<MemoryRouter>
+				<ApiServiceContext.Provider value={mockApiServiceContext}>
+					<TerminologyProvider>
+						<CreatePortfolioWizard
+							getConnections={getConnections}
+							validatePortfolioSettings={validatePortfolioSettings}
+							savePortfolioSettings={savePortfolioSettings}
+							onCancel={onCancel}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</MemoryRouter>
+		</QueryClientProvider>,
+	);
+
+	return {
+		getConnections,
+		validatePortfolioSettings,
+		savePortfolioSettings,
+		onCancel,
+	};
+};
+
+// ---------- tests ----------
+describe("CreatePortfolioWizard", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockGetWizardsForSystem.mockReturnValue([]);
+	});
+
+	describe("Step 1: Choose Connection", () => {
+		it("renders a stepper with four steps", async () => {
+			renderWizard();
+			await waitFor(() => {
+				expect(screen.getByText("Choose Connection")).toBeInTheDocument();
+				expect(screen.getByText("Load Data")).toBeInTheDocument();
+				expect(screen.getByText("Configure")).toBeInTheDocument();
+				expect(screen.getByText("Name & Create")).toBeInTheDocument();
+			});
+		});
+
+		it("shows available connections as selectable options", async () => {
+			renderWizard();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("button", { name: /My Jira Connection/i }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("button", { name: /My Linear Connection/i }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("does not show a Back button on step 1", async () => {
+			renderWizard();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: /Back/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("advances to Load Data step when a connection is selected", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([
+				createMockWizard("Select Board", fullBoardInfo),
+			]);
+			renderWizard();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Select Board/i }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("skips Load Data to Configure when no wizards available", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			renderWizard();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+		});
+	});
+
+	describe("Step 2: Load Data", () => {
+		const goToLoadData = async () => {
+			const user = userEvent.setup();
+			const wizard = createMockWizard("Select Board", fullBoardInfo);
+			mockGetWizardsForSystem.mockReturnValue([wizard]);
+			const validatePortfolioSettings = vi.fn().mockResolvedValue(true);
+			const savePortfolioSettings = vi.fn().mockResolvedValue(undefined);
+			renderWizard({ validatePortfolioSettings, savePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Select Board/i }),
+				).toBeInTheDocument();
+			});
+			return { user, validatePortfolioSettings, savePortfolioSettings };
+		};
+
+		it("shows wizard buttons for the selected connection type", async () => {
+			await goToLoadData();
+			expect(
+				screen.getByRole("button", { name: /Select Board/i }),
+			).toBeInTheDocument();
+		});
+
+		it("shows a Configure Manually button to skip", async () => {
+			await goToLoadData();
+			expect(
+				screen.getByRole("button", { name: /Configure Manually/i }),
+			).toBeInTheDocument();
+		});
+
+		it("Configure Manually advances to Configure step", async () => {
+			const { user } = await goToLoadData();
+			await user.click(
+				screen.getByRole("button", { name: /Configure Manually/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+		});
+
+		it("clicking a wizard opens the wizard dialog", async () => {
+			const { user } = await goToLoadData();
+			await user.click(screen.getByRole("button", { name: /Select Board/i }));
+			await waitFor(() => {
+				expect(screen.getByTestId("mock-wizard-dialog")).toBeInTheDocument();
+			});
+		});
+
+		it("wizard complete + validation pass → jumps to Name & Create", async () => {
+			const { user, validatePortfolioSettings } = await goToLoadData();
+			await user.click(screen.getByRole("button", { name: /Select Board/i }));
+			await waitFor(() => {
+				expect(screen.getByTestId("mock-wizard-dialog")).toBeInTheDocument();
+			});
+			await user.click(screen.getByText("Complete Wizard"));
+			await waitFor(() => {
+				expect(validatePortfolioSettings).toHaveBeenCalledTimes(1);
+			});
+			await waitFor(() => {
+				expect(screen.getByLabelText("Portfolio Name")).toBeInTheDocument();
+			});
+		});
+
+		it("wizard complete + validation fail → lands on Configure step with data", async () => {
+			const user = userEvent.setup();
+			const wizard = createMockWizard("Select Board", fullBoardInfo);
+			mockGetWizardsForSystem.mockReturnValue([wizard]);
+			const validatePortfolioSettings = vi.fn().mockResolvedValue(false);
+			renderWizard({ validatePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Select Board/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Select Board/i }));
+			await waitFor(() => {
+				expect(screen.getByTestId("mock-wizard-dialog")).toBeInTheDocument();
+			});
+			await user.click(screen.getByText("Complete Wizard"));
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+			expect(screen.getByText("Epic")).toBeInTheDocument();
+			expect(screen.getByText("Feature")).toBeInTheDocument();
+		});
+
+		it("wizard cancel returns to Load Data step", async () => {
+			const { user } = await goToLoadData();
+			await user.click(screen.getByRole("button", { name: /Select Board/i }));
+			await waitFor(() => {
+				expect(screen.getByTestId("mock-wizard-dialog")).toBeInTheDocument();
+			});
+			await user.click(screen.getByText("Cancel Wizard"));
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("mock-wizard-dialog"),
+				).not.toBeInTheDocument();
+			});
+			expect(
+				screen.getByRole("button", { name: /Select Board/i }),
+			).toBeInTheDocument();
+		});
+
+		it("shows Back button that returns to Choose Connection", async () => {
+			const { user } = await goToLoadData();
+			await user.click(screen.getByRole("button", { name: /Back/i }));
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+		});
+	});
+
+	describe("Step 3: Configure (manual)", () => {
+		const goToConfigure = async () => {
+			const user = userEvent.setup();
+			const wizard = createMockWizard("Select Board", fullBoardInfo);
+			mockGetWizardsForSystem.mockReturnValue([wizard]);
+			const validatePortfolioSettings = vi.fn().mockResolvedValue(true);
+			const savePortfolioSettings = vi.fn().mockResolvedValue(undefined);
+			renderWizard({ validatePortfolioSettings, savePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Configure Manually/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /Configure Manually/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+			return { user, validatePortfolioSettings, savePortfolioSettings };
+		};
+
+		it("renders data retrieval field, work item types, and states", async () => {
+			await goToConfigure();
+			expect(screen.getByLabelText("WIQL Query")).toBeInTheDocument();
+			expect(screen.getByText("WorkItemTypesComponent")).toBeInTheDocument();
+			expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+		});
+
+		it("also renders wizard buttons for re-loading data", async () => {
+			await goToConfigure();
+			expect(
+				screen.getByRole("button", { name: /Select Board/i }),
+			).toBeInTheDocument();
+		});
+
+		it("disables Next when required fields are empty", async () => {
+			await goToConfigure();
+			const nextButton = screen.getByRole("button", { name: /Next/i });
+			expect(nextButton).toBeDisabled();
+		});
+
+		it("validates on Next and advances to Name & Create on success", async () => {
+			const { user, validatePortfolioSettings } = await goToConfigure();
+
+			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
+			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			fireEvent.click(screen.getByText("Add ToDo State"));
+			fireEvent.click(screen.getByText("Add Doing State"));
+			fireEvent.click(screen.getByText("Add Done State"));
+			fireEvent.click(screen.getByText("Add Work Item Type"));
+
+			const nextButton = screen.getByRole("button", { name: /Next/i });
+			await waitFor(() => {
+				expect(nextButton).toBeEnabled();
+			});
+			await user.click(nextButton);
+
+			await waitFor(() => {
+				expect(validatePortfolioSettings).toHaveBeenCalledTimes(1);
+			});
+			await waitFor(() => {
+				expect(screen.getByLabelText("Portfolio Name")).toBeInTheDocument();
+			});
+		});
+
+		it("shows validation error and stays on Configure when validation fails", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			const validatePortfolioSettings = vi.fn().mockResolvedValue(false);
+			renderWizard({ validatePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+
+			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
+			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			fireEvent.click(screen.getByText("Add ToDo State"));
+			fireEvent.click(screen.getByText("Add Doing State"));
+			fireEvent.click(screen.getByText("Add Done State"));
+			fireEvent.click(screen.getByText("Add Work Item Type"));
+
+			const nextButton = screen.getByRole("button", { name: /Next/i });
+			await waitFor(() => {
+				expect(nextButton).toBeEnabled();
+			});
+			await user.click(nextButton);
+
+			await waitFor(() => {
+				expect(screen.getByText(/validation failed/i)).toBeInTheDocument();
+			});
+			expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+		});
+
+		it("does not show WorkItemTypes for Linear portfolio (isWorkItemTypesRequired=false)", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			renderWizard();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My Linear Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My Linear Connection/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText("WorkItemTypesComponent"),
+			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Step 4: Name & Create", () => {
+		const goToNameCreate = async () => {
+			const user = userEvent.setup();
+			const wizard = createMockWizard("Select Board", fullBoardInfo);
+			mockGetWizardsForSystem.mockReturnValue([wizard]);
+			const validatePortfolioSettings = vi.fn().mockResolvedValue(true);
+			const savePortfolioSettings = vi.fn().mockResolvedValue(undefined);
+			renderWizard({ validatePortfolioSettings, savePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Select Board/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Select Board/i }));
+			await waitFor(() => {
+				expect(screen.getByTestId("mock-wizard-dialog")).toBeInTheDocument();
+			});
+			await user.click(screen.getByText("Complete Wizard"));
+			await waitFor(() => {
+				expect(screen.getByLabelText("Portfolio Name")).toBeInTheDocument();
+			});
+			return { user, validatePortfolioSettings, savePortfolioSettings };
+		};
+
+		it("renders name input with default name", async () => {
+			await goToNameCreate();
+			const nameInput =
+				screen.getByLabelText<HTMLInputElement>("Portfolio Name");
+			expect(nameInput.value).toBe("New Portfolio");
+		});
+
+		it("disables Create button when name is empty", async () => {
+			const { user } = await goToNameCreate();
+			const nameInput = screen.getByLabelText("Portfolio Name");
+			await user.clear(nameInput);
+			const createButton = screen.getByRole("button", { name: /Create/i });
+			expect(createButton).toBeDisabled();
+		});
+
+		it("enables Create button when name is non-empty", async () => {
+			await goToNameCreate();
+			const createButton = screen.getByRole("button", { name: /Create/i });
+			expect(createButton).toBeEnabled();
+		});
+
+		it("calls savePortfolioSettings with assembled DTO on Create click", async () => {
+			const { user, savePortfolioSettings } = await goToNameCreate();
+			await user.click(screen.getByRole("button", { name: /Create/i }));
+			await waitFor(() => {
+				expect(savePortfolioSettings).toHaveBeenCalledTimes(1);
+			});
+			const savedSettings = savePortfolioSettings.mock.calls[0][0];
+			expect(savedSettings.name).toBe("New Portfolio");
+			expect(savedSettings.workTrackingSystemConnectionId).toBe(1);
+			expect(savedSettings.defaultAmountOfWorkItemsPerFeature).toBe(10);
+		});
+
+		it("shows Back button that returns to Configure step", async () => {
+			const { user } = await goToNameCreate();
+			await user.click(screen.getByRole("button", { name: /Back/i }));
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+		});
+	});
+
+	describe("Cancel", () => {
+		it("calls onCancel when Cancel button is clicked", async () => {
+			const onCancel = vi.fn();
+			renderWizard({ onCancel });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await userEvent.click(screen.getByRole("button", { name: /Cancel/i }));
+			expect(onCancel).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("No standalone Validate button", () => {
+		it("does not render a standalone Validate button at any step", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			const validatePortfolioSettings = vi.fn().mockResolvedValue(true);
+			renderWizard({ validatePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText("Validate")).not.toBeInTheDocument();
+
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+			expect(screen.queryByText("Validate")).not.toBeInTheDocument();
+
+			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
+			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			fireEvent.click(screen.getByText("Add ToDo State"));
+			fireEvent.click(screen.getByText("Add Doing State"));
+			fireEvent.click(screen.getByText("Add Done State"));
+			fireEvent.click(screen.getByText("Add Work Item Type"));
+
+			const nextButton = screen.getByRole("button", { name: /Next/i });
+			await waitFor(() => {
+				expect(nextButton).toBeEnabled();
+			});
+			await user.click(nextButton);
+			await waitFor(() => {
+				expect(screen.getByLabelText("Portfolio Name")).toBeInTheDocument();
+			});
+			expect(screen.queryByText("Validate")).not.toBeInTheDocument();
+		});
+	});
+});

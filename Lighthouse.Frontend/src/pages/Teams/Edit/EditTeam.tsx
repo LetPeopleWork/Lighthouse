@@ -121,7 +121,7 @@ const EditTeamPage: React.FC = () => {
 	const wizardSaveTeamSettings = async (updatedSettings: ITeamSettings) => {
 		const newSettings = await teamService.createTeam(updatedSettings);
 		await teamService.updateTeamData(newSettings.id);
-		navigate(`/teams/${newSettings.id}/settings`);
+		navigate(`/teams/${newSettings.id}/metrics`);
 	};
 
 	if (useWizard) {

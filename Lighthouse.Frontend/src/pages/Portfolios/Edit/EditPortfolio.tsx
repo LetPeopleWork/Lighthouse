@@ -1,6 +1,8 @@
+import { Container, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import CreatePortfolioWizard from "../../../components/Common/ProjectSettings/CreatePortfolioWizard";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
@@ -11,6 +13,10 @@ import { useTerminology } from "../../../services/TerminologyContext";
 const EditPortfolio: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewPortfolio = id === undefined;
+
+	const urlParams = new URLSearchParams(globalThis.location.search);
+	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
+	const useWizard = isNewPortfolio && !hasCloneFrom;
 
 	const navigate = useNavigate();
 	const { portfolioService, workTrackingSystemService, teamService } =
@@ -107,6 +113,37 @@ const EditPortfolio: React.FC = () => {
 			navigate(`/portfolios/${savedSettings.id}`);
 		}
 	};
+
+	const getConnections = async () => {
+		return await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+	};
+
+	const wizardSavePortfolioSettings = async (
+		updatedSettings: IPortfolioSettings,
+	) => {
+		const savedSettings =
+			await portfolioService.createPortfolio(updatedSettings);
+		await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
+		navigate(`/portfolios/${savedSettings.id}/metrics`);
+	};
+
+	if (useWizard) {
+		return (
+			<SnackbarErrorHandler>
+				<Container maxWidth={false}>
+					<Typography variant="h4" sx={{ mb: 2 }}>
+						{pageTitle}
+					</Typography>
+					<CreatePortfolioWizard
+						getConnections={getConnections}
+						validatePortfolioSettings={validateProjectSettings}
+						savePortfolioSettings={wizardSavePortfolioSettings}
+						onCancel={() => navigate("/")}
+					/>
+				</Container>
+			</SnackbarErrorHandler>
+		);
+	}
 
 	return (
 		<SnackbarErrorHandler>

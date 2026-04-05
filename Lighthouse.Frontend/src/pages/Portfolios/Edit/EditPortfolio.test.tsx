@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import type { MockedFunction } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,14 +11,35 @@ import EditPortfolio from "./EditPortfolio";
 
 // Mock the router navigation
 const mockNavigate = vi.fn();
+let mockParams: { id?: string } = { id: undefined };
 vi.mock("react-router-dom", async () => {
 	const actual = await vi.importActual("react-router-dom");
 	return {
 		...actual,
 		useNavigate: () => mockNavigate,
-		useParams: () => ({ id: undefined }),
+		useParams: () => mockParams,
 	};
 });
+
+// Mock CreatePortfolioWizard
+vi.mock(
+	"../../../components/Common/ProjectSettings/CreatePortfolioWizard",
+	() => ({
+		default: () => (
+			<div data-testid="create-portfolio-wizard">CreatePortfolioWizard</div>
+		),
+	}),
+);
+
+// Mock ModifyProjectSettings
+vi.mock(
+	"../../../components/Common/ProjectSettings/ModifyProjectSettings",
+	() => ({
+		default: () => (
+			<div data-testid="modify-project-settings">ModifyProjectSettings</div>
+		),
+	}),
+);
 
 // Mock URLSearchParams and window.location
 const mockGet = vi.fn();
@@ -105,6 +126,7 @@ describe("EditPortfolio", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockGet.mockReturnValue(null);
+		mockParams = { id: undefined };
 		// Reset window.location.search
 		globalThis.location.search = "";
 
@@ -166,97 +188,36 @@ describe("EditPortfolio", () => {
 		mockTeamService.getTeams.mockResolvedValue([]);
 	});
 
-	it("calls getPortfolioSettings when cloneFrom param is present for new Portfolio", async () => {
-		const mockPortfolioSettings: IPortfolioSettings = {
-			id: 5,
-			name: "Original Project",
-			dataRetrievalValue: "project = TEST",
-			workItemTypes: ["Story", "Bug"],
-			defaultAmountOfWorkItemsPerFeature: 10,
-			toDoStates: ["New", "Active"],
-			doingStates: ["In Progress"],
-			doneStates: ["Done"],
-			workTrackingSystemConnectionId: 1,
-			serviceLevelExpectationProbability: 70,
-			serviceLevelExpectationRange: 7,
-			systemWIPLimit: 6,
-			parentOverrideAdditionalFieldDefinitionId: null,
-			sizeEstimateAdditionalFieldDefinitionId: null,
-			featureOwnerAdditionalFieldDefinitionId: null,
-			blockedStates: [],
-			blockedTags: ["Blocked"],
-			stateMappings: [],
-			overrideRealChildCountStates: [],
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultWorkItemPercentile: 85,
-			percentileHistoryInDays: 30,
-			doneItemsCutoffDays: 0,
-			processBehaviourChartBaselineStartDate: null,
-			processBehaviourChartBaselineEndDate: null,
-			estimationAdditionalFieldDefinitionId: null,
-			estimationUnit: null,
-			useNonNumericEstimation: false,
-			estimationCategoryValues: [],
-		};
-
-		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
-			mockPortfolioSettings,
-		);
-		// Set window.location.search and mock URLSearchParams properly
-		globalThis.location.search = "?cloneFrom=5";
-		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
-
+	it("renders CreatePortfolioWizard for new portfolio without cloneFrom", async () => {
 		renderEditPortfolioWithContext();
-
 		await waitFor(() => {
-			expect(mockPortfolioService.getPortfolioSettings).toHaveBeenCalledWith(5);
+			expect(screen.getByTestId("create-portfolio-wizard")).toBeInTheDocument();
 		});
+		expect(
+			screen.queryByTestId("modify-project-settings"),
+		).not.toBeInTheDocument();
 	});
 
-	it("prefixes name with 'Copy of' when cloning Portfolio", async () => {
-		const mockPortfolioSettings: IPortfolioSettings = {
-			id: 5,
-			name: "Original Project",
-			dataRetrievalValue: "project = TEST",
-			workItemTypes: ["Story"],
-			defaultAmountOfWorkItemsPerFeature: 8,
-			toDoStates: ["New"],
-			doingStates: ["In Progress"],
-			doneStates: ["Done"],
-			workTrackingSystemConnectionId: 1,
-			serviceLevelExpectationProbability: 70,
-			serviceLevelExpectationRange: 7,
-			systemWIPLimit: 6,
-			parentOverrideAdditionalFieldDefinitionId: null,
-			sizeEstimateAdditionalFieldDefinitionId: null,
-			featureOwnerAdditionalFieldDefinitionId: null,
-			blockedStates: [],
-			blockedTags: [],
-			stateMappings: [],
-			overrideRealChildCountStates: [],
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultWorkItemPercentile: 85,
-			percentileHistoryInDays: 30,
-			doneItemsCutoffDays: 0,
-			processBehaviourChartBaselineStartDate: null,
-			processBehaviourChartBaselineEndDate: null,
-			estimationAdditionalFieldDefinitionId: null,
-			estimationUnit: null,
-			useNonNumericEstimation: false,
-			estimationCategoryValues: [],
-		};
-
-		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
-			mockPortfolioSettings,
-		);
-		// Set window.location.search and mock URLSearchParams properly
-		globalThis.location.search = "?cloneFrom=5";
-		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
-
+	it("renders ModifyProjectSettings for edit mode", async () => {
+		mockParams = { id: "42" };
 		renderEditPortfolioWithContext();
-
 		await waitFor(() => {
-			expect(mockPortfolioService.getPortfolioSettings).toHaveBeenCalledWith(5);
+			expect(screen.getByTestId("modify-project-settings")).toBeInTheDocument();
 		});
+		expect(
+			screen.queryByTestId("create-portfolio-wizard"),
+		).not.toBeInTheDocument();
+	});
+
+	it("renders ModifyProjectSettings when cloneFrom param is present", async () => {
+		globalThis.location.search = "?cloneFrom=5";
+		mockGet.mockReturnValue("5");
+		renderEditPortfolioWithContext();
+		await waitFor(() => {
+			expect(screen.getByTestId("modify-project-settings")).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByTestId("create-portfolio-wizard"),
+		).not.toBeInTheDocument();
 	});
 });

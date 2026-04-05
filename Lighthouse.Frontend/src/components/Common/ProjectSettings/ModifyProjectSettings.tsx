@@ -7,10 +7,14 @@ import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalS
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
-import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	emitEditSaveFailed,
+	emitEditSaveStarted,
+	emitEditSaveSucceeded,
+	generateCorrelationId,
+} from "../../../services/Telemetry/OnboardingTelemetry";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -62,9 +66,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		];
 		return validateStateMappings(projectSettings.stateMappings, directStates);
 	}, [projectSettings]);
-
-	const { getTerm } = useTerminology();
-	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
 		useLicenseRestrictions();
@@ -258,24 +259,39 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			return;
 		}
 
+		const saveCorrelationId = generateCorrelationId();
+		const telemetryProps = {
+			entityType: "portfolio" as const,
+			workTrackingSystem: selectedWorkTrackingSystem?.workTrackingSystem,
+			correlationId: saveCorrelationId,
+		};
+		emitEditSaveStarted(telemetryProps);
+
 		const updatedSettings: IPortfolioSettings = {
 			...projectSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
 		};
 
-		await saveProjectSettings(updatedSettings);
-	};
-
-	const handleValidate = async () => {
-		if (!projectSettings || modifyDefaultSettings) {
-			return false;
+		if (!modifyDefaultSettings) {
+			const isValid = await validateProjectSettings(updatedSettings);
+			if (!isValid) {
+				emitEditSaveFailed({
+					...telemetryProps,
+					failureCategory: "validation",
+				});
+				return;
+			}
 		}
 
-		const updatedSettings: IPortfolioSettings = {
-			...projectSettings,
-			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-		};
-		return await validateProjectSettings(updatedSettings);
+		try {
+			await saveProjectSettings(updatedSettings);
+			emitEditSaveSucceeded(telemetryProps);
+		} catch {
+			emitEditSaveFailed({
+				...telemetryProps,
+				failureCategory: "unknown",
+			});
+		}
 	};
 
 	useEffect(() => {
@@ -488,10 +504,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
 							<ValidationActions
-								onValidate={modifyDefaultSettings ? undefined : handleValidate}
 								onSave={handleSave}
 								inputsValid={formValid}
-								validationFailedMessage={`Validation failed - either the connection failed, the Query is invalid, or no ${featuresTerm} could be found. Check the logs for additional details."`}
 								disableSave={!canUpdatePortfolioData}
 								saveTooltip={`Free users can only update portfolio data for up to ${maxPortfoliosWithoutPremium} portfolio`}
 							/>
