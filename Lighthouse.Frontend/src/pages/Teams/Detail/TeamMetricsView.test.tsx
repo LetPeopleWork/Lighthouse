@@ -14,7 +14,9 @@ interface BaseMetricsViewProps {
 	entity: { name: string };
 	title: string;
 	defaultDateRange: number;
-	additionalItems?: Array<{ id: string; node: React.ReactNode }>;
+	featuresInProgress?: Array<{ id: number; name: string }>;
+	featureWip?: number;
+	hasBlockedConfig?: boolean;
 }
 
 vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
@@ -22,62 +24,25 @@ vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
 		entity,
 		title,
 		defaultDateRange,
-		additionalItems,
+		featuresInProgress,
+		featureWip,
+		hasBlockedConfig,
 	}: BaseMetricsViewProps) => (
 		<div data-testid="base-metrics-view">
 			<div data-testid="entity-name">{entity.name}</div>
 			<div data-testid="metrics-title">{title}</div>
 			<div data-testid="default-date-range">{defaultDateRange}</div>
-			{additionalItems && additionalItems.length > 0 && (
-				<div data-testid="additional-components">
-					{additionalItems.map((it) => {
-						// If the item provides a React node, render it. Otherwise
-						// treat it as an InProgressEntry-like object and render
-						// a simple items-in-progress structure so tests can assert
-						// against it (matches production which may pass data)
-						const entry = it as {
-							node?: React.ReactNode;
-							id?: string | number;
-							title?: string;
-							items?: Array<unknown>;
-							idealWip?: number;
-						};
-
-						return entry.node ? (
-							entry.node
-						) : (
-							<div
-								data-testid="items-in-progress"
-								key={entry.id || entry.title}
-							>
-								<div data-testid="items-title">{entry.title}</div>
-								<div data-testid="items-count">
-									{(entry.items || []).length}
-								</div>
-								{entry.idealWip !== undefined && (
-									<div data-testid="ideal-wip">{entry.idealWip}</div>
-								)}
-							</div>
-						);
-					})}
+			{featuresInProgress && (
+				<div data-testid="features-in-progress">
+					<div data-testid="features-count">{featuresInProgress.length}</div>
+					{featureWip !== undefined && (
+						<div data-testid="feature-wip">{featureWip}</div>
+					)}
 				</div>
 			)}
-		</div>
-	),
-}));
-
-interface ItemsInProgressProps {
-	title: string;
-	items: Array<{ id: number; name: string }>;
-	idealWip?: number;
-}
-
-vi.mock("./ItemsInProgress", () => ({
-	default: ({ title, items, idealWip }: ItemsInProgressProps) => (
-		<div data-testid="items-in-progress">
-			<div data-testid="items-title">{title}</div>
-			<div data-testid="items-count">{items.length}</div>
-			{idealWip !== undefined && <div data-testid="ideal-wip">{idealWip}</div>}
+			{hasBlockedConfig !== undefined && (
+				<div data-testid="has-blocked-config">{String(hasBlockedConfig)}</div>
+			)}
 		</div>
 	),
 }));
@@ -104,6 +69,8 @@ describe("TeamMetricsView component", () => {
 		const mockTeamService = createMockTeamService();
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			doingStates: ["In Progress", "Review"],
+			blockedStates: [],
+			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -166,6 +133,8 @@ describe("TeamMetricsView component", () => {
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			automaticallyAdjustFeatureWIP: false,
 			doingStates: ["In Progress"],
+			blockedStates: [],
+			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -180,8 +149,8 @@ describe("TeamMetricsView component", () => {
 		);
 
 		await waitFor(() => {
-			const idealWip = screen.getByTestId("ideal-wip");
-			expect(idealWip).toHaveTextContent("5");
+			const featureWipEl = screen.getByTestId("feature-wip");
+			expect(featureWipEl).toHaveTextContent("5");
 		});
 	});
 
@@ -195,6 +164,8 @@ describe("TeamMetricsView component", () => {
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			automaticallyAdjustFeatureWIP: false,
 			doingStates: ["In Progress"],
+			blockedStates: [],
+			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -209,10 +180,10 @@ describe("TeamMetricsView component", () => {
 		);
 
 		await waitFor(() => {
-			// idealWip should not be rendered if undefined
-			const itemsInProgress = screen.getByTestId("items-in-progress");
+			// featureWip should not be rendered if undefined
+			const featuresInProgress = screen.getByTestId("features-in-progress");
 			expect(
-				itemsInProgress.querySelector("[data-testid='ideal-wip']"),
+				featuresInProgress.querySelector("[data-testid='feature-wip']"),
 			).toBeNull();
 		});
 	});
@@ -227,6 +198,8 @@ describe("TeamMetricsView component", () => {
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			automaticallyAdjustFeatureWIP: true,
 			doingStates: ["In Progress"],
+			blockedStates: [],
+			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -241,14 +214,14 @@ describe("TeamMetricsView component", () => {
 		);
 
 		await waitFor(() => {
-			const itemsInProgress = screen.getByTestId("items-in-progress");
+			const featuresInProgress = screen.getByTestId("features-in-progress");
 			expect(
-				itemsInProgress.querySelector("[data-testid='ideal-wip']"),
+				featuresInProgress.querySelector("[data-testid='feature-wip']"),
 			).toBeNull();
 		});
 	});
 
-	it("should render items in progress with fetched features", async () => {
+	it("should render features in progress with fetched features", async () => {
 		// Arrange
 		const team = new Team();
 		team.id = 1;
@@ -260,16 +233,10 @@ describe("TeamMetricsView component", () => {
 
 		// Assert
 		await waitFor(() => {
-			const additionalComponents = screen.getByTestId("additional-components");
-			expect(additionalComponents).toBeInTheDocument();
-
-			const itemsInProgress = screen.getByTestId("items-in-progress");
-			expect(itemsInProgress).toBeInTheDocument();
-			expect(screen.getByTestId("items-title")).toHaveTextContent(
-				"Features being Worked On:",
-			);
-			expect(screen.getByTestId("items-count")).toHaveTextContent("2");
-			expect(screen.getByTestId("ideal-wip")).toHaveTextContent("3");
+			const featuresInProgress = screen.getByTestId("features-in-progress");
+			expect(featuresInProgress).toBeInTheDocument();
+			expect(screen.getByTestId("features-count")).toHaveTextContent("2");
+			expect(screen.getByTestId("feature-wip")).toHaveTextContent("3");
 		});
 	});
 
@@ -297,9 +264,9 @@ describe("TeamMetricsView component", () => {
 
 		// Should still render the component with empty features
 		await waitFor(() => {
-			const itemsInProgress = screen.getByTestId("items-in-progress");
-			expect(itemsInProgress).toBeInTheDocument();
-			expect(screen.getByTestId("items-count")).toHaveTextContent("0");
+			const featuresInProgress = screen.getByTestId("features-in-progress");
+			expect(featuresInProgress).toBeInTheDocument();
+			expect(screen.getByTestId("features-count")).toHaveTextContent("0");
 		});
 
 		consoleSpy.mockRestore();

@@ -13,7 +13,7 @@ export type CategoryDefinition = {
 export type WidgetPlacement = {
 	readonly widgetKey: string;
 	readonly size: "small" | "medium" | "large" | "xlarge";
-	readonly ownerFilter?: "portfolio-only";
+	readonly ownerFilter?: "portfolio-only" | "team-only";
 };
 
 const categories: readonly CategoryDefinition[] = [
@@ -26,7 +26,7 @@ const categories: readonly CategoryDefinition[] = [
 
 const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	"flow-health": [
-		{ widgetKey: "itemsInProgress", size: "small" },
+		{ widgetKey: "wipOverview", size: "small" },
 		{ widgetKey: "startedVsFinished", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
 		{ widgetKey: "totalWorkItemAge", size: "small" },
@@ -36,7 +36,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "wipOverTime", size: "large" },
 	],
 	"aging-stability": [
-		{ widgetKey: "itemsInProgress", size: "small" },
+		{ widgetKey: "wipOverview", size: "small" },
 		{ widgetKey: "totalWorkItemAge", size: "small" },
 		{ widgetKey: "aging", size: "large" },
 		{ widgetKey: "wipOverTime", size: "large" },
@@ -44,6 +44,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "stacked", size: "large" },
 	],
 	predictability: [
+		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
 		{ widgetKey: "throughputPbc", size: "large" },
 		{ widgetKey: "wipPbc", size: "large" },
@@ -56,13 +57,26 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		},
 	],
 	portfolio: [
+		{
+			widgetKey: "featuresWorkedOnOverview",
+			size: "small",
+			ownerFilter: "team-only",
+		},
+		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "workDistribution", size: "large" },
 		{ widgetKey: "featureSize", size: "large", ownerFilter: "portfolio-only" },
 		{ widgetKey: "estimationVsCycleTime", size: "large" },
 	],
 	overview: [
-		{ widgetKey: "itemsInProgress", size: "small" },
+		{ widgetKey: "wipOverview", size: "small" },
+		{ widgetKey: "blockedOverview", size: "small" },
+		{
+			widgetKey: "featuresWorkedOnOverview",
+			size: "small",
+			ownerFilter: "team-only",
+		},
 		{ widgetKey: "totalWorkItemAge", size: "small" },
+		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "startedVsFinished", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
 	],
@@ -85,6 +99,9 @@ export function getWidgetsForCategory(
 	const widgets = categoryWidgets[categoryKey];
 	return widgets.filter((w) => {
 		if (w.ownerFilter === "portfolio-only" && ownerType !== "portfolio") {
+			return false;
+		}
+		if (w.ownerFilter === "team-only" && ownerType !== "team") {
 			return false;
 		}
 		return true;

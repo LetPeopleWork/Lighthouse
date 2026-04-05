@@ -6,7 +6,6 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
-import type { InProgressEntry } from "./ItemsInProgress";
 
 interface TeamMetricsViewProps {
 	team: Team;
@@ -15,6 +14,7 @@ interface TeamMetricsViewProps {
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const [doingStates, setDoingStates] = useState<string[]>([]);
+	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 	const [featureWip, setFeatureWip] = useState<number | undefined>(undefined);
@@ -58,6 +58,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			try {
 				const settings = await teamService.getTeamSettings(team.id);
 				setDoingStates(settings.doingStates);
+				setHasBlockedConfig(
+					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
+				);
 			} catch (err) {
 				console.error("Error fetching team settings:", err);
 			}
@@ -80,19 +83,15 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		}
 	}, [team]);
 
-	const featuresBeingWorkedOn: InProgressEntry = {
-		title: `${featuresTerm} being Worked On:`,
-		items: inProgressFeatures,
-		idealWip: featureWip,
-	};
-
 	return (
 		<BaseMetricsView
 			entity={team}
 			metricsService={teamMetricsService}
 			title={workItemsTerm}
 			defaultDateRange={dateRange}
-			additionalItems={[featuresBeingWorkedOn]}
+			featuresInProgress={inProgressFeatures}
+			featureWip={featureWip}
+			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
 		/>
 	);

@@ -153,28 +153,63 @@ vi.mock(
 	}),
 );
 
-vi.mock("../../Teams/Detail/ItemsInProgress", () => ({
+vi.mock("./WipOverviewWidget", () => ({
 	default: ({
-		entries,
+		wipCount,
+		systemWipLimit,
+		title,
 	}: {
-		entries: Array<{
-			title: string;
-			items: IWorkItem[];
-			idealWip?: number;
-			sle?: number;
-		}>;
+		wipCount: number;
+		systemWipLimit?: number;
+		title?: string;
 	}) => (
-		<div data-testid={`items-in-progress-container`}>
-			{entries.map((entry) => (
-				<div key={entry.title} data-testid={`items-in-progress-${entry.title}`}>
-					<div data-testid={`items-count-${entry.title}`}>
-						{entry.items?.length ?? 0}
-					</div>
-					<div data-testid={`ideal-wip-${entry.title}`}>
-						{entry.idealWip ?? ""}
-					</div>
-				</div>
-			))}
+		<div data-testid="wip-overview-widget">
+			<div data-testid="wip-overview-count">{wipCount}</div>
+			<div data-testid="wip-overview-limit">{systemWipLimit ?? ""}</div>
+			<div data-testid="wip-overview-title">{title}</div>
+		</div>
+	),
+}));
+
+vi.mock("./BlockedOverviewWidget", () => ({
+	default: ({
+		blockedCount,
+		title,
+	}: {
+		blockedCount: number;
+		title?: string;
+	}) => (
+		<div data-testid="blocked-overview-widget">
+			<div data-testid="blocked-overview-count">{blockedCount}</div>
+			<div data-testid="blocked-overview-title">{title}</div>
+		</div>
+	),
+}));
+
+vi.mock("./FeaturesWorkedOnWidget", () => ({
+	default: ({
+		featureCount,
+		featureWip,
+		title,
+	}: {
+		featureCount: number;
+		featureWip?: number;
+		title?: string;
+	}) => (
+		<div data-testid="features-worked-on-widget">
+			<div data-testid="features-worked-on-count">{featureCount}</div>
+			<div data-testid="features-worked-on-wip">{featureWip ?? ""}</div>
+			<div data-testid="features-worked-on-title">{title}</div>
+		</div>
+	),
+}));
+
+vi.mock("./PredictabilityScoreWidget", () => ({
+	default: ({ score }: { score: number | null }) => (
+		<div data-testid="predictability-score-widget">
+			<div data-testid="predictability-score-value">
+				{score !== null ? score : "loading"}
+			</div>
 		</div>
 	),
 }));
@@ -381,10 +416,24 @@ vi.mock("./WidgetShell", () => ({
 	default: ({
 		widgetKey,
 		children,
+		footer,
 	}: {
 		widgetKey: string;
 		children: ReactNode;
-	}) => <div data-testid={`widget-shell-${widgetKey}`}>{children}</div>,
+		footer?: { ragStatus: string; tipText: string };
+	}) => (
+		<div data-testid={`widget-shell-${widgetKey}`}>
+			{footer && (
+				<div data-testid={`widget-footer-${widgetKey}`}>
+					<span data-testid={`widget-rag-${widgetKey}`}>
+						{footer.ragStatus}
+					</span>
+					<span data-testid={`widget-tip-${widgetKey}`}>{footer.tipText}</span>
+				</div>
+			)}
+			{children}
+		</div>
+	),
 }));
 
 describe("BaseMetricsView component", () => {
@@ -699,15 +748,8 @@ describe("BaseMetricsView component", () => {
 
 		// Check components are rendered with correct data (flow-health category by default)
 		await waitFor(() => {
-			expect(
-				screen.getByTestId("items-in-progress-Features in Progress:"),
-			).toBeInTheDocument();
-			expect(
-				screen.getByTestId("items-count-Features in Progress:"),
-			).toHaveTextContent("2");
-			expect(
-				screen.getByTestId("ideal-wip-Features in Progress:"),
-			).toBeEmptyDOMElement();
+			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
+			expect(screen.getByTestId("wip-overview-count")).toHaveTextContent("2");
 			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
 			expect(
 				screen.getByTestId("bar-run-chart-Features Completed"),
@@ -815,12 +857,8 @@ describe("BaseMetricsView component", () => {
 
 		// Check components are rendered with correct data
 		await waitFor(() => {
-			expect(
-				screen.getByTestId("items-in-progress-Work Items in Progress:"),
-			).toBeInTheDocument();
-			expect(
-				screen.getByTestId("ideal-wip-Work Items in Progress:"),
-			).toBeEmptyDOMElement();
+			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
+			expect(screen.getByTestId("wip-overview-count")).toHaveTextContent("2");
 			expect(
 				screen.getByTestId("bar-run-chart-Work Items Completed"),
 			).toBeInTheDocument();
@@ -1088,34 +1126,42 @@ describe("BaseMetricsView component", () => {
 		consoleSpy.mockRestore();
 	});
 
-	it("renders additional components when provided", async () => {
-		const additionalEntry = {
-			title: "Additional Test:",
-			items: mockInProgressItems,
-			idealWip: 5,
+	it("renders split overview widgets when features are provided (team context)", async () => {
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue(mockInProgressItems),
 		};
+
+		// Overview category to see all overview widgets
+		localStorage.setItem(
+			`lighthouse:metrics:team:${mockTeam.id}:category`,
+			"overview",
+		);
 
 		renderWithRouter(
 			<BaseMetricsView
-				entity={mockProject}
-				metricsService={mockMetricsService}
-				title="Features"
-				additionalItems={[additionalEntry]}
+				entity={mockTeam}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				featuresInProgress={mockInProgressItems}
+				featureWip={3}
+				hasBlockedConfig={true}
 				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
-		// Check that the additional entry is rendered inside the ItemsInProgress mock
 		await waitFor(() => {
+			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
+			expect(screen.getByTestId("blocked-overview-widget")).toBeInTheDocument();
 			expect(
-				screen.getByTestId("items-in-progress-Additional Test:"),
+				screen.getByTestId("features-worked-on-widget"),
 			).toBeInTheDocument();
-			expect(
-				screen.getByTestId("items-count-Additional Test:"),
-			).toHaveTextContent("2");
-			expect(
-				screen.getByTestId("ideal-wip-Additional Test:"),
-			).toHaveTextContent("5");
+			expect(screen.getByTestId("features-worked-on-count")).toHaveTextContent(
+				"2",
+			);
+			expect(screen.getByTestId("features-worked-on-wip")).toHaveTextContent(
+				"3",
+			);
 		});
 	});
 

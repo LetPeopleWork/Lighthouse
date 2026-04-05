@@ -40,16 +40,23 @@ import type {
 } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
-import ItemsInProgress, {
-	type InProgressEntry,
-} from "../../Teams/Detail/ItemsInProgress";
+import BlockedOverviewWidget from "./BlockedOverviewWidget";
 import { getWidgetsForCategory } from "./categoryMetadata";
 import type { DashboardItem } from "./Dashboard";
 import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
+import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
+import PredictabilityScoreWidget from "./PredictabilityScoreWidget";
+import {
+	computeBlockedOverviewRag,
+	computeFeaturesWorkedOnRag,
+	computePredictabilityScoreRag,
+	computeWipOverviewRag,
+} from "./ragRules";
 import { useCategorySelection } from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
 import WidgetShell from "./WidgetShell";
+import WipOverviewWidget from "./WipOverviewWidget";
 
 export interface BaseMetricsViewProps<
 	T extends IWorkItem | IFeature,
@@ -59,7 +66,9 @@ export interface BaseMetricsViewProps<
 	metricsService: IMetricsService<T>;
 	title: string;
 	defaultDateRange?: number;
-	additionalItems?: InProgressEntry[];
+	featuresInProgress?: IWorkItem[];
+	featureWip?: number;
+	hasBlockedConfig?: boolean;
 	doingStates: string[];
 }
 
@@ -125,6 +134,30 @@ function buildWorkItemLookup(
 	}
 
 	return lookup;
+}
+
+type RagFooter = {
+	readonly ragStatus: "red" | "amber" | "green";
+	readonly tipText: string;
+};
+
+function buildWidgetFooters(
+	wipCount: number,
+	systemWipLimit: number | undefined,
+	blockedCount: number,
+	hasBlockedConfig: boolean,
+	featuresInProgress: IWorkItem[] | undefined,
+	featureWip: number | undefined,
+	predictabilityScore: number | null,
+): Record<string, RagFooter | undefined> {
+	return {
+		wipOverview: computeWipOverviewRag(wipCount, systemWipLimit),
+		blockedOverview: computeBlockedOverviewRag(blockedCount, hasBlockedConfig),
+		featuresWorkedOnOverview: featuresInProgress
+			? computeFeaturesWorkedOnRag(featuresInProgress.length, featureWip)
+			: undefined,
+		predictabilityScore: computePredictabilityScoreRag(predictabilityScore),
+	};
 }
 
 function isProjectMetricsService(
@@ -381,7 +414,9 @@ export const BaseMetricsView = <
 	metricsService,
 	title,
 	defaultDateRange = 30,
-	additionalItems = [],
+	featuresInProgress,
+	featureWip,
+	hasBlockedConfig = false,
 	doingStates,
 }: BaseMetricsViewProps<T, E>) => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -469,26 +504,36 @@ export const BaseMetricsView = <
 		],
 	);
 
-	const inProgressEntries: InProgressEntry[] = [
-		{
-			title: `${title} in Progress:`,
-			items: inProgressItems,
-			sle:
-				entity.serviceLevelExpectationRange > 0
-					? entity.serviceLevelExpectationRange
-					: undefined,
-			idealWip: entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
-		},
-		{
-			title: `${blockedTerm}:`,
-			items: inProgressItems.filter((item) => item.isBlocked),
-			idealWip: 0,
-		},
-		...additionalItems,
-	];
+	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
 
 	const widgetNodes: Record<string, ReactNode | null> = {
-		itemsInProgress: <ItemsInProgress entries={inProgressEntries} />,
+		wipOverview: (
+			<WipOverviewWidget
+				wipCount={inProgressItems.length}
+				systemWipLimit={
+					entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined
+				}
+				title={`${title} in Progress`}
+			/>
+		),
+		blockedOverview: (
+			<BlockedOverviewWidget
+				blockedCount={blockedItems.length}
+				title={blockedTerm}
+			/>
+		),
+		featuresWorkedOnOverview: featuresInProgress ? (
+			<FeaturesWorkedOnWidget
+				featureCount={featuresInProgress.length}
+				featureWip={featureWip}
+				title={`${featureTerm} being Worked On`}
+			/>
+		) : null,
+		predictabilityScore: (
+			<PredictabilityScoreWidget
+				score={predictabilityData?.predictabilityScore ?? null}
+			/>
+		),
 		percentiles: (
 			<CycleTimePercentiles
 				percentileValues={percentileValues}
@@ -641,6 +686,16 @@ export const BaseMetricsView = <
 		}
 	}
 
+	const widgetFooters = buildWidgetFooters(
+		inProgressItems.length,
+		entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
+		blockedItems.length,
+		hasBlockedConfig,
+		featuresInProgress,
+		featureWip,
+		predictabilityData?.predictabilityScore ?? null,
+	);
+
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
 		.filter((w) => widgetNodes[w.widgetKey] != null)
@@ -648,7 +703,11 @@ export const BaseMetricsView = <
 			id: w.widgetKey,
 			size: w.size,
 			node: (
-				<WidgetShell widgetKey={w.widgetKey} showTips={showTips}>
+				<WidgetShell
+					widgetKey={w.widgetKey}
+					showTips={showTips}
+					footer={widgetFooters[w.widgetKey]}
+				>
 					{widgetNodes[w.widgetKey]}
 				</WidgetShell>
 			),
