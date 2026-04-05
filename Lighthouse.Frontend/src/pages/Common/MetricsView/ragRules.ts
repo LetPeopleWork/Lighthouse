@@ -298,3 +298,364 @@ export function computeCycleTimeScatterplotRag(
 		tipText: "Healthy cycle time behavior.",
 	};
 }
+
+// -----------------------------------------------------------------------
+// M4 — Aging and Flow Stability
+// -----------------------------------------------------------------------
+
+export function computeWorkItemAgeChartRag(
+	sle: { percentile: number; value: number } | null,
+	hasBlockedConfig: boolean,
+	items: ReadonlyArray<{ workItemAge: number; isBlocked: boolean }>,
+): RagResult {
+	if (!sle) {
+		return { ragStatus: "red", tipText: "Define SLE in settings." };
+	}
+	if (!hasBlockedConfig) {
+		return {
+			ragStatus: "red",
+			tipText: "Define blocked indicators in settings.",
+		};
+	}
+
+	const aboveSle = items.some((i) => i.workItemAge > sle.value);
+	if (aboveSle) {
+		return {
+			ragStatus: "red",
+			tipText: "Items exceed the SLE; focus on resolving them.",
+		};
+	}
+
+	const threshold = sle.value * 0.85;
+	const approachingSle = items.some((i) => i.workItemAge >= threshold);
+	const hasBlocked = items.some((i) => i.isBlocked);
+
+	if (approachingSle || hasBlocked) {
+		return {
+			ragStatus: "amber",
+			tipText: "Items are nearing the SLE or are blocked.",
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: "All items are within healthy age ranges.",
+	};
+}
+
+export function computeWipOverTimeRag(
+	wipValues: ReadonlyArray<number>,
+	systemWipLimit: number | undefined,
+): RagResult {
+	if (!systemWipLimit || systemWipLimit <= 0) {
+		return { ragStatus: "red", tipText: "Define System WIP Limit." };
+	}
+
+	if (wipValues.length === 0) {
+		return {
+			ragStatus: "green",
+			tipText: "Operating within WIP boundaries.",
+		};
+	}
+
+	let above = 0;
+	let at = 0;
+	let below = 0;
+
+	for (const value of wipValues) {
+		if (value > systemWipLimit) {
+			above++;
+		} else if (value === systemWipLimit) {
+			at++;
+		} else {
+			below++;
+		}
+	}
+
+	const total = wipValues.length;
+	const atPercent = (at / total) * 100;
+
+	if (atPercent > 50) {
+		return {
+			ragStatus: "green",
+			tipText: "Operating within WIP boundaries.",
+		};
+	}
+
+	if (above > at + below && above !== at + below) {
+		return {
+			ragStatus: "red",
+			tipText: "WIP frequently exceeds the limit; reduce work in progress.",
+		};
+	}
+
+	if (below > above + at) {
+		return {
+			ragStatus: "amber",
+			tipText: "WIP is often below capacity; consider starting more work.",
+		};
+	}
+
+	return {
+		ragStatus: "amber",
+		tipText: "WIP distribution is uneven; aim for consistency.",
+	};
+}
+
+export function computeTotalWorkItemAgeOverTimeRag(
+	startValue: number,
+	endValue: number,
+): RagResult {
+	if (startValue === 0 && endValue === 0) {
+		return {
+			ragStatus: "green",
+			tipText: "Total age is stable over the period.",
+		};
+	}
+
+	if (startValue === 0 && endValue > 0) {
+		return {
+			ragStatus: "red",
+			tipText: "Total age is growing; investigate root causes.",
+		};
+	}
+
+	const change = (endValue - startValue) / startValue;
+
+	if (change > 0.1) {
+		return {
+			ragStatus: "red",
+			tipText: "Total age is growing; investigate root causes.",
+		};
+	}
+
+	if (change < -0.1) {
+		return {
+			ragStatus: "amber",
+			tipText:
+				"Total age is decreasing significantly; verify items are still in progress.",
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: "Total age is stable over the period.",
+	};
+}
+
+export function computeSimplifiedCfdRag(
+	startedTotal: number,
+	closedTotal: number,
+	systemWipLimit: number | undefined,
+): RagResult {
+	return computeStartedVsClosedRag(startedTotal, closedTotal, systemWipLimit);
+}
+
+// -----------------------------------------------------------------------
+// M5 — Portfolio and Correlation
+// -----------------------------------------------------------------------
+
+export function computeWorkDistributionRag(
+	unlinkedCount: number,
+	totalCount: number,
+	featureWip: number | undefined,
+	distributionRate: number,
+): RagResult {
+	if (totalCount === 0) {
+		return {
+			ragStatus: "green",
+			tipText: "Distribution is healthy.",
+		};
+	}
+
+	const unlinkedPercent = (unlinkedCount / totalCount) * 100;
+	if (unlinkedPercent >= 20) {
+		return {
+			ragStatus: "red",
+			tipText: "Too many items not linked to a feature; link work items.",
+		};
+	}
+
+	if (!featureWip || featureWip <= 0) {
+		return {
+			ragStatus: "red",
+			tipText: "Define Feature WIP in settings.",
+		};
+	}
+
+	const overRatio =
+		featureWip > 0 ? (distributionRate - featureWip) / featureWip : 0;
+
+	if (overRatio > 0.2) {
+		return {
+			ragStatus: "red",
+			tipText: "Spread too thin across features; focus on fewer initiatives.",
+		};
+	}
+
+	if (overRatio > 0) {
+		return {
+			ragStatus: "amber",
+			tipText: "Slightly above Feature WIP; consider reducing scope.",
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: "Distribution is healthy.",
+	};
+}
+
+export function computeFeatureSizeRag(
+	featureSizeTarget: { percentile: number; value: number } | null,
+	percentileValues: ReadonlyArray<{ percentile: number; value: number }>,
+): RagResult {
+	if (!featureSizeTarget) {
+		return {
+			ragStatus: "red",
+			tipText: "Define Feature Size Target in settings.",
+		};
+	}
+
+	const matching = percentileValues.find(
+		(p) => p.percentile === featureSizeTarget.percentile,
+	);
+	if (!matching) {
+		return {
+			ragStatus: "green",
+			tipText: "Feature sizes are within target range.",
+		};
+	}
+
+	const deviation =
+		featureSizeTarget.value > 0
+			? (matching.value - featureSizeTarget.value) / featureSizeTarget.value
+			: 0;
+
+	if (deviation > 0.15) {
+		return {
+			ragStatus: "red",
+			tipText:
+				"Feature sizes significantly exceed target; break down features.",
+		};
+	}
+	if (deviation > 0) {
+		return {
+			ragStatus: "amber",
+			tipText: "Feature sizes slightly above target; monitor trends.",
+		};
+	}
+	return {
+		ragStatus: "green",
+		tipText: "Feature sizes are within target range.",
+	};
+}
+
+export function computeEstimationVsCycleTimeRag(
+	estimationStatus: string,
+	dataPoints: ReadonlyArray<{ estimate: number; cycleTime: number }>,
+): RagResult {
+	if (estimationStatus !== "Configured") {
+		return {
+			ragStatus: "red",
+			tipText: "Configure estimation settings to enable correlation.",
+		};
+	}
+
+	if (dataPoints.length < 2) {
+		return {
+			ragStatus: "green",
+			tipText: "Estimates correlate with actual cycle times.",
+		};
+	}
+
+	// Spearman rank correlation coefficient
+	const ranked = (arr: ReadonlyArray<number>): number[] => {
+		const sorted = [...arr].map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
+		const ranks = new Array<number>(arr.length);
+		for (let i = 0; i < sorted.length; i++) {
+			ranks[sorted[i].i] = i + 1;
+		}
+		return ranks;
+	};
+
+	const estimates = dataPoints.map((d) => d.estimate);
+	const cycleTimes = dataPoints.map((d) => d.cycleTime);
+	const rankE = ranked(estimates);
+	const rankC = ranked(cycleTimes);
+
+	const n = dataPoints.length;
+	let sumDSq = 0;
+	for (let i = 0; i < n; i++) {
+		const d = rankE[i] - rankC[i];
+		sumDSq += d * d;
+	}
+
+	const rho = 1 - (6 * sumDSq) / (n * (n * n - 1));
+
+	if (rho >= 0.6) {
+		return {
+			ragStatus: "green",
+			tipText: "Estimates correlate with actual cycle times.",
+		};
+	}
+	if (rho >= 0.3) {
+		return {
+			ragStatus: "amber",
+			tipText:
+				"Weak correlation between estimates and cycle times; review estimation approach.",
+		};
+	}
+	return {
+		ragStatus: "red",
+		tipText: "No meaningful correlation; estimates do not predict cycle time.",
+	};
+}
+
+// -----------------------------------------------------------------------
+// M6 — PBC Widget Family
+// -----------------------------------------------------------------------
+
+type PbcInput = {
+	readonly status: string;
+	readonly baselineConfigured: boolean;
+	readonly dataPoints: ReadonlyArray<{
+		specialCauses: ReadonlyArray<string>;
+	}>;
+};
+
+export function computePbcRag(data: PbcInput): RagResult {
+	if (
+		!data.baselineConfigured ||
+		data.status === "BaselineMissing" ||
+		data.status === "BaselineInvalid" ||
+		data.status === "InsufficientData"
+	) {
+		return {
+			ragStatus: "red",
+			tipText: "Configure a baseline period to enable PBC analysis.",
+		};
+	}
+
+	const allCauses = new Set(data.dataPoints.flatMap((dp) => dp.specialCauses));
+
+	if (allCauses.has("LargeChange")) {
+		return {
+			ragStatus: "red",
+			tipText: "Signal detected: Large-magnitude change in process behaviour.",
+		};
+	}
+
+	if (allCauses.has("ModerateChange")) {
+		return {
+			ragStatus: "amber",
+			tipText:
+				"Signal detected: Moderate change in process behaviour; investigate.",
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: "Process behaviour is within expected limits.",
+	};
+}

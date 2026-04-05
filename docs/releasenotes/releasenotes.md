@@ -4,6 +4,30 @@ layout: home
 nav_order: 95
 ---
 
+# vNext
+
+## Metrics Dashboard — RAG Status Indicators
+
+Every widget on the Metrics Dashboard now shows a **Red / Amber / Green (RAG)** status indicator in its footer. RAG status is computed from live data and your team's configuration (SLE, System WIP Limit, Feature WIP, blocked indicators, etc.) so you can spot issues at a glance without interpreting each chart individually.
+
+**Widget coverage by category:**
+
+| Category | Widgets with RAG |
+|---|---|
+| Flow Health | WIP Overview, Blocked Overview, Features Worked On, Started vs Finished, Total Work Item Age, Throughput, Cycle Time Percentiles, Cycle Time Scatterplot, Work Distribution, WIP Over Time |
+| Aging & Stability | Work Item Age Chart, WIP Over Time, Total Work Item Age Over Time, Simplified CFD |
+| Predictability | Predictability Score, Throughput PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC |
+| Portfolio | Work Distribution, Feature Size, Estimation vs Cycle Time |
+
+**How it works:**
+- Each widget computes its RAG from the same data the chart displays — no separate API calls.
+- **Red** = action required (missing configuration, threshold exceeded, or process signal).
+- **Amber** = attention needed (approaching limits or moderate changes).
+- **Green** = within healthy operating range.
+- Toggle the *Show Tips* button in the dashboard header to see actionable guidance alongside each status.
+
+**Process Behaviour Charts (PBC)** use a shared RAG contract: if a baseline is not configured or the data is insufficient, the status is Red. A Large-magnitude signal is Red, a Moderate signal is Amber, and no special causes means Green.
+
 # Lighthouse v26.3.28.14
 
 ## Authentication Support

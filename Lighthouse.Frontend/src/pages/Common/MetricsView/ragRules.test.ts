@@ -3,12 +3,20 @@ import {
 	computeBlockedOverviewRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
+	computeEstimationVsCycleTimeRag,
+	computeFeatureSizeRag,
 	computeFeaturesWorkedOnRag,
+	computePbcRag,
 	computePredictabilityScoreRag,
+	computeSimplifiedCfdRag,
 	computeStartedVsClosedRag,
 	computeThroughputRag,
+	computeTotalWorkItemAgeOverTimeRag,
 	computeTotalWorkItemAgeRag,
+	computeWipOverTimeRag,
 	computeWipOverviewRag,
+	computeWorkDistributionRag,
+	computeWorkItemAgeChartRag,
 } from "./ragRules";
 
 describe("ragRules", () => {
@@ -481,6 +489,411 @@ describe("ragRules", () => {
 			const cycleTimes = [1, 2, 3, 4, 5];
 			const result = computeCycleTimeScatterplotRag(sle, cycleTimes);
 			expect(result.ragStatus).toBe("green");
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// M4 — Aging and Flow Stability Widgets
+	// -----------------------------------------------------------------------
+
+	describe("computeWorkItemAgeChartRag", () => {
+		it("returns red when no SLE is set", () => {
+			const result = computeWorkItemAgeChartRag(null, true, []);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("SLE");
+		});
+
+		it("returns red when no blocked config is set", () => {
+			const sle = { percentile: 85, value: 14 };
+			const result = computeWorkItemAgeChartRag(sle, false, []);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("blocked");
+		});
+
+		it("returns red when any item is above SLE", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 10, isBlocked: false },
+				{ workItemAge: 15, isBlocked: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns amber when item is within 15% of SLE", () => {
+			const sle = { percentile: 85, value: 14 };
+			// 15% of 14 = 2.1, so threshold = 14 - 2.1 = 11.9. Item at 12 is within 15%.
+			const items = [
+				{ workItemAge: 12, isBlocked: false },
+				{ workItemAge: 5, isBlocked: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns amber when any item is blocked", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 5, isBlocked: true },
+				{ workItemAge: 3, isBlocked: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns green when no blockers and all below SLE", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 5, isBlocked: false },
+				{ workItemAge: 8, isBlocked: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green with empty items", () => {
+			const sle = { percentile: 85, value: 14 };
+			const result = computeWorkItemAgeChartRag(sle, true, []);
+			expect(result.ragStatus).toBe("green");
+		});
+	});
+
+	describe("computeWipOverTimeRag", () => {
+		it("returns red when no system WIP is set", () => {
+			const result = computeWipOverTimeRag([3, 4, 5], undefined);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("System WIP");
+		});
+
+		it("returns red when more days above WIP than at/below", () => {
+			// WIP limit = 5, values: [6, 7, 6, 5, 4] → above=3, at=1, below=1 → above > at+below-above? above(3) > rest(2) → Red
+			const result = computeWipOverTimeRag([6, 7, 6, 5, 4], 5);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns green when most days at the WIP limit (>50%)", () => {
+			// WIP limit = 5, values: [5, 5, 5, 4, 6] → at=3 out of 5 = 60% → Green
+			const result = computeWipOverTimeRag([5, 5, 5, 4, 6], 5);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber when more days below than at/above", () => {
+			// WIP limit = 5, values: [3, 2, 4, 5, 6] → above=1, at=1, below=3 → below > above+at → Amber
+			const result = computeWipOverTimeRag([3, 2, 4, 5, 6], 5);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns amber for mixed distribution with no dominant pattern", () => {
+			// WIP limit = 5, values: [4, 6, 5, 4] → above=1, at=1, below=2, atPercent=25% → mixed → Amber
+			const result = computeWipOverTimeRag([4, 6, 5, 4], 5);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns green with empty data", () => {
+			const result = computeWipOverTimeRag([], 5);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("handles 50/50 split as not red", () => {
+			// WIP limit = 5, values: [6, 4] → above=1, below=1 → 50/50 → not red
+			const result = computeWipOverTimeRag([6, 4], 5);
+			expect(result.ragStatus).not.toBe("red");
+		});
+	});
+
+	describe("computeTotalWorkItemAgeOverTimeRag", () => {
+		it("returns red when end is higher than start by >10%", () => {
+			// start=100, end=115 → (115-100)/100 = 15% > 10% → Red
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 115);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns amber when start is higher than end by >10%", () => {
+			// start=100, end=85 → decrease of 15% → Amber
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 85);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns green when start and end are within 10% margin", () => {
+			// start=100, end=105 → 5% change → Green
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 105);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when start and end are equal", () => {
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 100);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when both are zero", () => {
+			const result = computeTotalWorkItemAgeOverTimeRag(0, 0);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns red when start is zero and end is positive", () => {
+			const result = computeTotalWorkItemAgeOverTimeRag(0, 10);
+			expect(result.ragStatus).toBe("red");
+		});
+	});
+
+	describe("computeSimplifiedCfdRag", () => {
+		it("delegates to startedVsClosed logic", () => {
+			// Same behavior: no WIP limit → Red
+			const result = computeSimplifiedCfdRag(10, 8, undefined);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns green when balanced with WIP limit", () => {
+			const result = computeSimplifiedCfdRag(10, 10, 5);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns red when started much more than closed", () => {
+			const result = computeSimplifiedCfdRag(20, 10, 5);
+			expect(result.ragStatus).toBe("red");
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// M5 — Portfolio and Correlation Widgets
+	// -----------------------------------------------------------------------
+
+	describe("computeWorkDistributionRag", () => {
+		it("returns red when unlinked items >= 20%", () => {
+			const result = computeWorkDistributionRag(20, 100, 3, 2);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("linked");
+		});
+
+		it("returns red when no feature WIP is set", () => {
+			const result = computeWorkDistributionRag(0, 100, undefined, 5);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Feature WIP");
+		});
+
+		it("returns red when distribution rate exceeds feature WIP by >20%", () => {
+			// featureWip=3, distributionRate=4 → (4-3)/3=33% → >20% → Red
+			const result = computeWorkDistributionRag(5, 100, 3, 4);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("thin");
+		});
+
+		it("returns amber when distribution rate slightly above feature WIP (up to 20%)", () => {
+			// featureWip=5, distributionRate=6 → (6-5)/5=20% → Amber
+			const result = computeWorkDistributionRag(5, 100, 5, 6);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns green when distribution rate at or below feature WIP", () => {
+			const result = computeWorkDistributionRag(5, 100, 5, 5);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when distribution rate is below feature WIP", () => {
+			const result = computeWorkDistributionRag(5, 100, 5, 3);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green with zero total items", () => {
+			const result = computeWorkDistributionRag(0, 0, 5, 0);
+			expect(result.ragStatus).toBe("green");
+		});
+	});
+
+	describe("computeFeatureSizeRag", () => {
+		it("returns red when no feature size target is set", () => {
+			const result = computeFeatureSizeRag(null, []);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Feature Size Target");
+		});
+
+		it("returns green when actual is at or below target", () => {
+			const target = { percentile: 85, value: 10 };
+			const percentiles = [
+				{ percentile: 50, value: 5 },
+				{ percentile: 85, value: 9 },
+			];
+			const result = computeFeatureSizeRag(target, percentiles);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber when actual is 1-15% above target", () => {
+			const target = { percentile: 85, value: 10 };
+			// Actual 85th = 11 → (11-10)/10 = 10% → Amber
+			const percentiles = [
+				{ percentile: 50, value: 5 },
+				{ percentile: 85, value: 11 },
+			];
+			const result = computeFeatureSizeRag(target, percentiles);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns red when actual is >15% above target", () => {
+			const target = { percentile: 85, value: 10 };
+			// Actual 85th = 12 → (12-10)/10 = 20% → Red
+			const percentiles = [
+				{ percentile: 50, value: 5 },
+				{ percentile: 85, value: 12 },
+			];
+			const result = computeFeatureSizeRag(target, percentiles);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns green when no matching percentile found", () => {
+			const target = { percentile: 85, value: 10 };
+			const percentiles = [{ percentile: 50, value: 5 }];
+			const result = computeFeatureSizeRag(target, percentiles);
+			expect(result.ragStatus).toBe("green");
+		});
+	});
+
+	describe("computeEstimationVsCycleTimeRag", () => {
+		it("returns red when not configured", () => {
+			const result = computeEstimationVsCycleTimeRag("NotConfigured", []);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("estimation");
+		});
+
+		it("returns green with empty data points", () => {
+			const result = computeEstimationVsCycleTimeRag("Configured", []);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when clear positive correlation", () => {
+			// Increasing estimates with increasing cycle times
+			const data = [
+				{ estimate: 1, cycleTime: 5 },
+				{ estimate: 3, cycleTime: 10 },
+				{ estimate: 5, cycleTime: 15 },
+				{ estimate: 8, cycleTime: 25 },
+			];
+			const result = computeEstimationVsCycleTimeRag("Configured", data);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns red when no correlation (high estimates with low cycle time)", () => {
+			// No meaningful pattern
+			const data = [
+				{ estimate: 10, cycleTime: 2 },
+				{ estimate: 1, cycleTime: 20 },
+				{ estimate: 8, cycleTime: 1 },
+				{ estimate: 2, cycleTime: 25 },
+			];
+			const result = computeEstimationVsCycleTimeRag("Configured", data);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns amber when weak correlation", () => {
+			// Some positive trend but noisy
+			const data = [
+				{ estimate: 1, cycleTime: 5 },
+				{ estimate: 3, cycleTime: 8 },
+				{ estimate: 5, cycleTime: 3 },
+				{ estimate: 8, cycleTime: 20 },
+			];
+			const result = computeEstimationVsCycleTimeRag("Configured", data);
+			expect(result.ragStatus).toBe("amber");
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// M6 — PBC Widget Family
+	// -----------------------------------------------------------------------
+
+	describe("computePbcRag", () => {
+		it("returns red when no baseline configured", () => {
+			const data = {
+				status: "BaselineMissing" as const,
+				baselineConfigured: false,
+				dataPoints: [],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("baseline");
+		});
+
+		it("returns red when status is BaselineInvalid", () => {
+			const data = {
+				status: "BaselineInvalid" as const,
+				baselineConfigured: true,
+				dataPoints: [],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns red when any LargeChange signal present", () => {
+			const data = {
+				status: "Ready" as const,
+				baselineConfigured: true,
+				dataPoints: [
+					{ specialCauses: ["None" as const] },
+					{ specialCauses: ["LargeChange" as const] },
+				],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Signal");
+		});
+
+		it("returns amber when ModerateChange but no LargeChange", () => {
+			const data = {
+				status: "Ready" as const,
+				baselineConfigured: true,
+				dataPoints: [
+					{ specialCauses: ["ModerateChange" as const] },
+					{ specialCauses: ["None" as const] },
+				],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns green when no LargeChange and no ModerateChange", () => {
+			const data = {
+				status: "Ready" as const,
+				baselineConfigured: true,
+				dataPoints: [
+					{ specialCauses: ["None" as const] },
+					{ specialCauses: ["SmallShift" as const] },
+				],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green with empty data points and ready status", () => {
+			const data = {
+				status: "Ready" as const,
+				baselineConfigured: true,
+				dataPoints: [],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns red when InsufficientData status", () => {
+			const data = {
+				status: "InsufficientData" as const,
+				baselineConfigured: true,
+				dataPoints: [],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns red when LargeChange and ModerateChange both present", () => {
+			const data = {
+				status: "Ready" as const,
+				baselineConfigured: true,
+				dataPoints: [
+					{
+						specialCauses: ["LargeChange" as const, "ModerateChange" as const],
+					},
+				],
+			};
+			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("red");
 		});
 	});
 });

@@ -2738,4 +2738,367 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 	});
+
+	describe("M4 RAG Footers — Aging and Flow Stability Widgets", () => {
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"aging-stability",
+			);
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
+				"aging-stability",
+			);
+		});
+		it("shows green RAG for aging chart when SLE and blocked config present and items healthy", async () => {
+			// mockProject has SLE = {85, 14}. inProgressItems have workItemAge = 10, 8 (both below SLE and threshold)
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					hasBlockedConfig={true}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-footer-aging")).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-aging")).toHaveTextContent(
+					"green",
+				);
+			});
+		});
+
+		it("shows red RAG for aging chart when no blocked config", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					hasBlockedConfig={false}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-aging")).toHaveTextContent("red");
+			});
+		});
+
+		it("shows red RAG for WIP over time when no WIP limit is set", async () => {
+			// mockProject.systemWIPLimit = 0 → undefined → Red
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-wipOverTime"),
+				).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-wipOverTime")).toHaveTextContent(
+					"red",
+				);
+			});
+		});
+
+		it("shows green RAG for total age over time when start and end are equal", async () => {
+			// wipOverTimeData: history=2, day 0 = 2 items, day 1 = 4 items
+			// Starts at 2, ends at 4 → (4-2)/2 = 100% increase → Red
+			// With default data, getValueOnDay(0) = 2, getValueOnDay(1) = 4
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-totalWorkItemAgeOverTime"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-rag-totalWorkItemAgeOverTime"),
+				).toHaveTextContent("red");
+			});
+		});
+
+		it("shows red RAG for simplified CFD when no WIP limit", async () => {
+			// Same as startedVsClosed → no WIP limit → Red
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-footer-stacked")).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-stacked")).toHaveTextContent(
+					"red",
+				);
+			});
+		});
+	});
+
+	describe("M5 RAG Footers — Portfolio and Correlation Widgets", () => {
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"portfolio",
+			);
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
+				"portfolio",
+			);
+		});
+		it("shows red RAG for estimation vs cycle time when not configured", async () => {
+			// Default mock returns status "NotConfigured" → widget node is null → won't render in dashboard
+			// Use "Ready" status with no correlation data to get a red RAG for different reason
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getEstimationVsCycleTimeData = vi.fn().mockResolvedValue({
+				status: "Ready",
+				diagnostics: {
+					totalCount: 4,
+					mappedCount: 4,
+					unmappedCount: 0,
+					invalidCount: 0,
+				},
+				estimationUnit: "Story Points",
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				dataPoints: [
+					{
+						workItemIds: [1],
+						estimationNumericValue: 10,
+						estimationDisplayValue: "10",
+						cycleTime: 2,
+					},
+					{
+						workItemIds: [2],
+						estimationNumericValue: 1,
+						estimationDisplayValue: "1",
+						cycleTime: 20,
+					},
+					{
+						workItemIds: [3],
+						estimationNumericValue: 8,
+						estimationDisplayValue: "8",
+						cycleTime: 1,
+					},
+					{
+						workItemIds: [4],
+						estimationNumericValue: 2,
+						estimationDisplayValue: "2",
+						cycleTime: 25,
+					},
+				],
+			});
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={svc}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-estimationVsCycleTime"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-rag-estimationVsCycleTime"),
+				).toHaveTextContent("red");
+			});
+		});
+
+		it("shows red RAG for feature size when no target is set", async () => {
+			// featureSizeTarget = null → Red
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-featureSize"),
+				).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-featureSize")).toHaveTextContent(
+					"red",
+				);
+			});
+		});
+
+		it("shows green RAG for work distribution when zero items", async () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getInProgressItems = vi.fn().mockResolvedValue([]);
+			svc.getCycleTimeData = vi.fn().mockResolvedValue([]);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={svc}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-workDistribution"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-rag-workDistribution"),
+				).toHaveTextContent("green");
+			});
+		});
+	});
+
+	describe("M6 RAG Footers — PBC Widgets", () => {
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"predictability",
+			);
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
+				"predictability",
+			);
+		});
+
+		const readyPbcWithLargeChange: ProcessBehaviourChartData = {
+			status: "Ready",
+			statusReason: "",
+			xAxisKind: "Date",
+			average: 5,
+			upperNaturalProcessLimit: 10,
+			lowerNaturalProcessLimit: 0,
+			baselineConfigured: true,
+			dataPoints: [
+				{
+					xValue: "2025-01-01",
+					yValue: 15,
+					specialCauses: ["LargeChange"],
+					workItemIds: [1],
+				},
+			],
+		};
+
+		const readyPbcGreen: ProcessBehaviourChartData = {
+			status: "Ready",
+			statusReason: "",
+			xAxisKind: "Date",
+			average: 5,
+			upperNaturalProcessLimit: 10,
+			lowerNaturalProcessLimit: 0,
+			baselineConfigured: true,
+			dataPoints: [
+				{
+					xValue: "2025-01-01",
+					yValue: 5,
+					specialCauses: ["None"],
+					workItemIds: [1],
+				},
+			],
+		};
+
+		it("shows red RAG for PBC when baseline missing", async () => {
+			// Default mocks have baselineMissingPbcData → Red
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={mockMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-throughputPbc"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-rag-throughputPbc"),
+				).toHaveTextContent("red");
+			});
+		});
+
+		it("shows red RAG for PBC when LargeChange signal present", async () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getThroughputPbc = vi.fn().mockResolvedValue(readyPbcWithLargeChange);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={svc}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-throughputPbc"),
+				).toHaveTextContent("red");
+			});
+		});
+
+		it("shows green RAG for PBC when no special causes", async () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getThroughputPbc = vi.fn().mockResolvedValue(readyPbcGreen);
+			svc.getWipPbc = vi.fn().mockResolvedValue(readyPbcGreen);
+			svc.getTotalWorkItemAgePbc = vi.fn().mockResolvedValue(readyPbcGreen);
+			svc.getCycleTimePbc = vi.fn().mockResolvedValue(readyPbcGreen);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={svc}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-throughputPbc"),
+				).toHaveTextContent("green");
+				expect(screen.getByTestId("widget-rag-wipPbc")).toHaveTextContent(
+					"green",
+				);
+				expect(
+					screen.getByTestId("widget-rag-totalWorkItemAgePbc"),
+				).toHaveTextContent("green");
+				expect(screen.getByTestId("widget-rag-cycleTimePbc")).toHaveTextContent(
+					"green",
+				);
+			});
+		});
+	});
 });

@@ -51,12 +51,20 @@ import {
 	computeBlockedOverviewRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
+	computeEstimationVsCycleTimeRag,
+	computeFeatureSizeRag,
 	computeFeaturesWorkedOnRag,
+	computePbcRag,
 	computePredictabilityScoreRag,
+	computeSimplifiedCfdRag,
 	computeStartedVsClosedRag,
 	computeThroughputRag,
+	computeTotalWorkItemAgeOverTimeRag,
 	computeTotalWorkItemAgeRag,
+	computeWipOverTimeRag,
 	computeWipOverviewRag,
+	computeWorkDistributionRag,
+	computeWorkItemAgeChartRag,
 } from "./ragRules";
 import { useCategorySelection } from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
@@ -164,6 +172,28 @@ type RagInputs = {
 	readonly throughputValues: ReadonlyArray<number>;
 	readonly blackoutDayIndices: ReadonlyArray<number>;
 	readonly cycleTimes: ReadonlyArray<number>;
+	readonly agingItems: ReadonlyArray<{
+		workItemAge: number;
+		isBlocked: boolean;
+	}>;
+	readonly wipOverTimeValues: ReadonlyArray<number>;
+	readonly totalAgeStart: number;
+	readonly totalAgeEnd: number;
+	readonly unlinkedCount: number;
+	readonly workDistTotalCount: number;
+	readonly distributionRate: number;
+	readonly featureSizeTarget: IPercentileValue | null;
+	readonly sizePercentileValues: IPercentileValue[];
+	readonly estimationStatus: string;
+	readonly estimationDataPoints: ReadonlyArray<{
+		estimate: number;
+		cycleTime: number;
+	}>;
+	readonly throughputPbcData: ProcessBehaviourChartData | null;
+	readonly wipPbcData: ProcessBehaviourChartData | null;
+	readonly totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
+	readonly cycleTimePbcData: ProcessBehaviourChartData | null;
+	readonly featureSizePbcData: ProcessBehaviourChartData | null;
 };
 
 function buildWidgetFooters(
@@ -207,6 +237,51 @@ function buildWidgetFooters(
 			inputs.blackoutDayIndices,
 		),
 		cycleScatter: computeCycleTimeScatterplotRag(inputs.sle, inputs.cycleTimes),
+		aging: computeWorkItemAgeChartRag(
+			inputs.sle,
+			inputs.hasBlockedConfig,
+			inputs.agingItems,
+		),
+		wipOverTime: computeWipOverTimeRag(
+			inputs.wipOverTimeValues,
+			inputs.systemWipLimit,
+		),
+		totalWorkItemAgeOverTime: computeTotalWorkItemAgeOverTimeRag(
+			inputs.totalAgeStart,
+			inputs.totalAgeEnd,
+		),
+		stacked: computeSimplifiedCfdRag(
+			inputs.startedTotal,
+			inputs.closedTotal,
+			inputs.systemWipLimit,
+		),
+		workDistribution: computeWorkDistributionRag(
+			inputs.unlinkedCount,
+			inputs.workDistTotalCount,
+			inputs.featureWip,
+			inputs.distributionRate,
+		),
+		featureSize: computeFeatureSizeRag(
+			inputs.featureSizeTarget,
+			inputs.sizePercentileValues,
+		),
+		estimationVsCycleTime: computeEstimationVsCycleTimeRag(
+			inputs.estimationStatus,
+			inputs.estimationDataPoints,
+		),
+		throughputPbc: inputs.throughputPbcData
+			? computePbcRag(inputs.throughputPbcData)
+			: undefined,
+		wipPbc: inputs.wipPbcData ? computePbcRag(inputs.wipPbcData) : undefined,
+		totalWorkItemAgePbc: inputs.totalWorkItemAgePbcData
+			? computePbcRag(inputs.totalWorkItemAgePbcData)
+			: undefined,
+		cycleTimePbc: inputs.cycleTimePbcData
+			? computePbcRag(inputs.cycleTimePbcData)
+			: undefined,
+		featureSizePbc: inputs.featureSizePbcData
+			? computePbcRag(inputs.featureSizePbcData)
+			: undefined,
 	};
 }
 
@@ -856,6 +931,44 @@ export const BaseMetricsView = <
 		cycleTimes: (cycleTimeData as unknown as IWorkItem[]).map(
 			(item) => item.cycleTime,
 		),
+		agingItems: inProgressItems.map((item) => ({
+			workItemAge: item.workItemAge,
+			isBlocked: item.isBlocked,
+		})),
+		wipOverTimeValues: wipOverTimeData
+			? Array.from({ length: wipOverTimeData.history }, (_, i) =>
+					wipOverTimeData.getValueOnDay(i),
+				)
+			: [],
+		totalAgeStart: wipOverTimeData?.getValueOnDay(0) ?? 0,
+		totalAgeEnd: wipOverTimeData
+			? wipOverTimeData.getValueOnDay(Math.max(0, wipOverTimeData.history - 1))
+			: 0,
+		unlinkedCount: [
+			...(cycleTimeData as unknown as IWorkItem[]),
+			...inProgressItems,
+		].filter((item) => !item.parentWorkItemReference).length,
+		workDistTotalCount:
+			(cycleTimeData as unknown as IWorkItem[]).length + inProgressItems.length,
+		distributionRate: new Set(
+			[...(cycleTimeData as unknown as IWorkItem[]), ...inProgressItems]
+				.map((item) => item.parentWorkItemReference)
+				.filter(Boolean),
+		).size,
+		featureSizeTarget: null,
+		sizePercentileValues,
+		estimationStatus: estimationVsCycleTimeData?.status ?? "NotConfigured",
+		estimationDataPoints: (estimationVsCycleTimeData?.dataPoints ?? []).map(
+			(dp) => ({
+				estimate: dp.estimationNumericValue,
+				cycleTime: dp.cycleTime,
+			}),
+		),
+		throughputPbcData,
+		wipPbcData,
+		totalWorkItemAgePbcData,
+		cycleTimePbcData,
+		featureSizePbcData,
 	});
 
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
