@@ -52,20 +52,19 @@ describe("DashboardHeader", () => {
 	});
 
 	afterEach(() => {
-		// restore default matchMedia
 		setMatchMedia(false);
 	});
 
 	it("shows label and formatted date range and opens popover which calls handlers", async () => {
-		setMatchMedia(false); // wide screen
+		setMatchMedia(false);
 
 		const onStart = vi.fn();
 		const onEnd = vi.fn();
 
 		const { default: DashboardHeader } = await import("./DashboardHeader");
 
-		const start = new Date(2025, 6, 15); // 15 Jul 2025
-		const end = new Date(2025, 7, 14); // 14 Aug 2025
+		const start = new Date(2025, 6, 15);
+		const end = new Date(2025, 7, 14);
 
 		render(
 			<DashboardHeader
@@ -73,27 +72,21 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
-				dashboardId="Team_1337"
 			/>,
 		);
 
-		// Label should be visible
 		expect(screen.getByText("Metrics shown for:")).toBeInTheDocument();
 
-		// Formatted date range should be visible (substring match)
 		expect(
 			screen.getByText(/15 Jul 2025\s*→\s*14 Aug 2025/),
 		).toBeInTheDocument();
 
-		// Open the popover
 		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
 
-		// Popover should render the mocked DateRangeSelector
 		expect(
 			await screen.findByTestId("date-range-selector"),
 		).toBeInTheDocument();
 
-		// Clicking the mocked buttons should call handlers
 		fireEvent.click(screen.getByTestId("change-start-date"));
 		expect(onStart).toHaveBeenCalled();
 
@@ -102,7 +95,7 @@ describe("DashboardHeader", () => {
 	});
 
 	it("hides the label on narrow screens but keeps the toggle", async () => {
-		setMatchMedia(true); // narrow screen
+		setMatchMedia(true);
 
 		const onStart = vi.fn();
 		const onEnd = vi.fn();
@@ -118,20 +111,17 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
-				dashboardId="Team_1337"
 			/>,
 		);
 
-		// Label should not be present on narrow screens
 		expect(screen.queryByText("Metrics shown for:")).toBeNull();
 
-		// The toggle must still be present and operable
 		expect(
 			screen.getByTestId("dashboard-date-range-toggle"),
 		).toBeInTheDocument();
 	});
 
-	it("toggles edit mode, persists to localStorage and dispatches event", async () => {
+	it("does not expose edit toggle or reset layout controls", async () => {
 		setMatchMedia(false);
 
 		const onStart = vi.fn();
@@ -141,12 +131,6 @@ describe("DashboardHeader", () => {
 
 		const start = new Date(2025, 6, 15);
 		const end = new Date(2025, 7, 14);
-		const dashboardId = "test-dashboard-1";
-
-		// ensure clean state
-		localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
-
-		const dispatchSpy = vi.spyOn(window, "dispatchEvent");
 
 		render(
 			<DashboardHeader
@@ -154,132 +138,14 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
-				dashboardId={dashboardId}
 			/>,
 		);
 
-		const toggle = screen.getByTestId("dashboard-edit-toggle");
-		expect(toggle).toBeInTheDocument();
-		// initial state not pressed
-		expect(toggle).toHaveAttribute("aria-pressed", "false");
-
-		// enable edit mode
-		fireEvent.click(toggle);
-
-		// persisted
 		expect(
-			localStorage.getItem(`lighthouse:dashboard:${dashboardId}:edit`),
-		).toBe("1");
-
-		// toggle reflect state
-		expect(toggle).toHaveAttribute("aria-pressed", "true");
-
-		// dispatch event called with expected payload
-		expect(dispatchSpy).toHaveBeenCalled();
-		const lastCall = dispatchSpy.mock.calls[dispatchSpy.mock.calls.length - 1];
-		const evt = lastCall ? lastCall[0] : undefined;
-		expect(evt).toBeInstanceOf(CustomEvent);
-		expect((evt as CustomEvent).detail).toMatchObject({
-			dashboardId: dashboardId,
-			isEditing: true,
-		});
-
-		// disable edit mode
-		fireEvent.click(toggle);
+			screen.queryByTestId("dashboard-edit-toggle"),
+		).not.toBeInTheDocument();
 		expect(
-			localStorage.getItem(`lighthouse:dashboard:${dashboardId}:edit`),
-		).toBe("0");
-
-		const lastCall2 = dispatchSpy.mock.calls[dispatchSpy.mock.calls.length - 1];
-		const evt2 = lastCall2 ? lastCall2[0] : undefined;
-		expect((evt2 as CustomEvent).detail).toMatchObject({
-			dashboardId: dashboardId,
-			isEditing: false,
-		});
-
-		// cleanup
-		dispatchSpy.mockRestore();
-		localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
+			screen.queryByTestId("dashboard-reset-layout"),
+		).not.toBeInTheDocument();
 	});
-});
-
-it("resets layout, clears localStorage and dispatches reset events", async () => {
-	setMatchMedia(false);
-
-	const onStart = vi.fn();
-	const onEnd = vi.fn();
-
-	const { default: DashboardHeader } = await import("./DashboardHeader");
-
-	const start = new Date(2025, 6, 15);
-	const end = new Date(2025, 7, 14);
-	const dashboardId = "reset-dashboard-1";
-
-	// populate localStorage keys that resetLayout should remove
-	localStorage.setItem(
-		`lighthouse:dashboard:${dashboardId}:layout`,
-		JSON.stringify({ widgets: [] }),
-	);
-	localStorage.setItem(
-		`lighthouse:dashboard:${dashboardId}:hidden`,
-		JSON.stringify({}),
-	);
-	localStorage.setItem(`lighthouse:dashboard:${dashboardId}:edit`, "1");
-
-	const dispatchSpy = vi.spyOn(window, "dispatchEvent");
-
-	render(
-		<DashboardHeader
-			startDate={start}
-			endDate={end}
-			onStartDateChange={onStart}
-			onEndDateChange={onEnd}
-			dashboardId={dashboardId}
-		/>,
-	);
-
-	const reset = screen.getByTestId("dashboard-reset-layout");
-	expect(reset).toBeInTheDocument();
-
-	// click to reset
-	fireEvent.click(reset);
-
-	// localStorage keys should be removed
-	expect(
-		localStorage.getItem(`lighthouse:dashboard:${dashboardId}:layout`),
-	).toBeNull();
-	expect(
-		localStorage.getItem(`lighthouse:dashboard:${dashboardId}:hidden`),
-	).toBeNull();
-	expect(
-		localStorage.getItem(`lighthouse:dashboard:${dashboardId}:edit`),
-	).toBeNull();
-
-	// events dispatched: reset-layout and edit-mode-changed
-	expect(dispatchSpy).toHaveBeenCalled();
-
-	const calls = dispatchSpy.mock.calls.map((c) => c[0]);
-
-	const resetEvt = calls.find(
-		(e) => (e as CustomEvent).type === "lighthouse:dashboard:reset-layout",
-	);
-	expect(resetEvt).toBeDefined();
-	expect((resetEvt as CustomEvent).detail).toMatchObject({
-		dashboardId: dashboardId,
-	});
-
-	const editEvt = calls.find(
-		(e) => (e as CustomEvent).type === "lighthouse:dashboard:edit-mode-changed",
-	);
-	expect(editEvt).toBeDefined();
-	expect((editEvt as CustomEvent).detail).toMatchObject({
-		dashboardId: dashboardId,
-		isEditing: false,
-	});
-
-	// cleanup
-	dispatchSpy.mockRestore();
-	localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:layout`);
-	localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:hidden`);
-	localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
 });

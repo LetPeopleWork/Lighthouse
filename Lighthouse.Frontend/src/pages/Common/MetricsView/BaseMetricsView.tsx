@@ -159,8 +159,6 @@ export const BaseMetricsView = <
 	const workInProgressTerm = getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
-	const dashboardId = `${"getFeaturesInProgress" in metricsService ? "Team" : "Project"}_${entity.id}`;
-
 	// Helper to update URL with both date parameters
 	const updateDateParams = (start: Date, end: Date) => {
 		const newParams = new URLSearchParams(searchParams);
@@ -745,10 +743,9 @@ export const BaseMetricsView = <
 				endDate={endDate}
 				onStartDateChange={handleStartDateChange}
 				onEndDateChange={handleEndDateChange}
-				dashboardId={dashboardId}
 			/>
 
-			<Dashboard items={dashboardItems} dashboardId={dashboardId} />
+			<Dashboard items={dashboardItems} />
 		</Grid>
 	);
 };

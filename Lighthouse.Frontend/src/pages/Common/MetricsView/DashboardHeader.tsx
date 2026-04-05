@@ -1,7 +1,4 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import DoneIcon from "@mui/icons-material/Done";
-import EditIcon from "@mui/icons-material/Edit";
-import GridViewIcon from "@mui/icons-material/GridView";
 import {
 	Box,
 	ButtonBase,
@@ -11,8 +8,6 @@ import {
 	useMediaQuery,
 	useTheme,
 } from "@mui/material";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
 import { format } from "date-fns";
 import React from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
@@ -22,8 +17,6 @@ export interface DashboardHeaderProps {
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
 	onEndDateChange: (date: Date | null) => void;
-	// Identifier used to scope edit/hidden widget state (required)
-	dashboardId: string;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -31,99 +24,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 	endDate,
 	onStartDateChange,
 	onEndDateChange,
-	dashboardId,
 }) => {
 	const theme = useTheme();
 	const isNarrow = useMediaQuery(theme.breakpoints.down("sm"));
 	const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-	const [isEditing, setIsEditing] = React.useState<boolean>(() => {
-		try {
-			const key = `lighthouse:dashboard:${dashboardId}:edit`;
-			return localStorage.getItem(key) === "1";
-		} catch {
-			return false;
-		}
-	});
-
-	// keep local edit state in sync with events dispatched by other components
-	React.useEffect(() => {
-		const handler = (ev: Event) => {
-			const detail = (ev as CustomEvent)?.detail as
-				| { dashboardId?: string; isEditing?: boolean }
-				| undefined;
-			if (!detail) return;
-			if (detail.dashboardId === dashboardId) {
-				setIsEditing(!!detail.isEditing);
-			}
-		};
-
-		globalThis.addEventListener(
-			"lighthouse:dashboard:edit-mode-changed",
-			handler as EventListener,
-		);
-
-		return () => {
-			globalThis.removeEventListener(
-				"lighthouse:dashboard:edit-mode-changed",
-				handler as EventListener,
-			);
-		};
-	}, [dashboardId]);
 
 	const open = Boolean(anchorEl);
 
 	const handleOpen = (e: React.MouseEvent<HTMLElement>) =>
 		setAnchorEl(e.currentTarget);
 	const handleClose = () => setAnchorEl(null);
-
-	const editStorageKey = `lighthouse:dashboard:${dashboardId}:edit`;
-
-	const toggleEdit = () => {
-		const next = !isEditing;
-		setIsEditing(next);
-		try {
-			localStorage.setItem(editStorageKey, next ? "1" : "0");
-		} catch {
-			// ignore storage errors
-		}
-		// notify other components in this window
-		globalThis.dispatchEvent(
-			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
-				detail: { dashboardId: dashboardId, isEditing: next },
-			}),
-		);
-	};
-
-	const resetLayout = () => {
-		try {
-			const keys = [
-				`lighthouse:dashboard:${dashboardId}:layout`,
-				`lighthouse:dashboard:${dashboardId}:hidden`,
-				`lighthouse:dashboard:${dashboardId}:edit`,
-			];
-			keys.forEach((k) => {
-				localStorage.removeItem(k);
-			});
-		} catch {
-			// ignore storage errors
-		}
-
-		// notify other components in this window to reset their state
-		globalThis.dispatchEvent(
-			new CustomEvent("lighthouse:dashboard:reset-layout", {
-				detail: { dashboardId: dashboardId },
-			}),
-		);
-
-		// also ensure edit mode is turned off everywhere
-		globalThis.dispatchEvent(
-			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
-				detail: { dashboardId: dashboardId, isEditing: false },
-			}),
-		);
-
-		setIsEditing(false);
-	};
 
 	const formatDate = (d: Date) => format(d, "dd MMM yyyy");
 
@@ -177,35 +87,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 					</ButtonBase>
 				</Tooltip>
 			</Box>
-
-			{/* Right side: edit toggle */}
-			<Stack direction="row" alignItems="center" spacing={1}>
-				<Tooltip title={isEditing ? "Leave Edit" : "Enter Edit Mode"}>
-					<IconButton
-						size="small"
-						color={isEditing ? "primary" : "default"}
-						onClick={toggleEdit}
-						aria-pressed={isEditing}
-						data-testid="dashboard-edit-toggle"
-					>
-						{isEditing ? (
-							<DoneIcon fontSize="small" />
-						) : (
-							<EditIcon fontSize="small" />
-						)}
-					</IconButton>
-				</Tooltip>
-
-				<Tooltip title="Reset layout">
-					<IconButton
-						size="small"
-						onClick={resetLayout}
-						data-testid="dashboard-reset-layout"
-					>
-						<GridViewIcon fontSize="small" />
-					</IconButton>
-				</Tooltip>
-			</Stack>
 
 			<Popover
 				open={open}
