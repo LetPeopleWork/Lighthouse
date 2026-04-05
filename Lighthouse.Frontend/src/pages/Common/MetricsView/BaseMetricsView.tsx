@@ -49,8 +49,13 @@ import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
 import PredictabilityScoreWidget from "./PredictabilityScoreWidget";
 import {
 	computeBlockedOverviewRag,
+	computeCycleTimePercentilesRag,
+	computeCycleTimeScatterplotRag,
 	computeFeaturesWorkedOnRag,
 	computePredictabilityScoreRag,
+	computeStartedVsClosedRag,
+	computeThroughputRag,
+	computeTotalWorkItemAgeRag,
 	computeWipOverviewRag,
 } from "./ragRules";
 import { useCategorySelection } from "./useCategorySelection";
@@ -141,23 +146,290 @@ type RagFooter = {
 	readonly tipText: string;
 };
 
+type RagInputs = {
+	readonly wipCount: number;
+	readonly systemWipLimit: number | undefined;
+	readonly blockedCount: number;
+	readonly hasBlockedConfig: boolean;
+	readonly featuresInProgress: IWorkItem[] | undefined;
+	readonly featureWip: number | undefined;
+	readonly predictabilityScore: number | null;
+	readonly sle: IPercentileValue | null;
+	readonly percentileValues: IPercentileValue[];
+	readonly startedTotal: number;
+	readonly closedTotal: number;
+	readonly totalWorkItemAge: number | null;
+	readonly currentWip: number;
+	readonly sleDays: number | undefined;
+	readonly throughputValues: ReadonlyArray<number>;
+	readonly blackoutDayIndices: ReadonlyArray<number>;
+	readonly cycleTimes: ReadonlyArray<number>;
+};
+
 function buildWidgetFooters(
-	wipCount: number,
-	systemWipLimit: number | undefined,
-	blockedCount: number,
-	hasBlockedConfig: boolean,
-	featuresInProgress: IWorkItem[] | undefined,
-	featureWip: number | undefined,
-	predictabilityScore: number | null,
+	inputs: RagInputs,
 ): Record<string, RagFooter | undefined> {
 	return {
-		wipOverview: computeWipOverviewRag(wipCount, systemWipLimit),
-		blockedOverview: computeBlockedOverviewRag(blockedCount, hasBlockedConfig),
-		featuresWorkedOnOverview: featuresInProgress
-			? computeFeaturesWorkedOnRag(featuresInProgress.length, featureWip)
+		wipOverview: computeWipOverviewRag(inputs.wipCount, inputs.systemWipLimit),
+		blockedOverview: computeBlockedOverviewRag(
+			inputs.blockedCount,
+			inputs.hasBlockedConfig,
+		),
+		featuresWorkedOnOverview: inputs.featuresInProgress
+			? computeFeaturesWorkedOnRag(
+					inputs.featuresInProgress.length,
+					inputs.featureWip,
+				)
 			: undefined,
-		predictabilityScore: computePredictabilityScoreRag(predictabilityScore),
+		predictabilityScore: computePredictabilityScoreRag(
+			inputs.predictabilityScore,
+		),
+		percentiles: computeCycleTimePercentilesRag(
+			inputs.sle,
+			inputs.percentileValues,
+		),
+		startedVsFinished: computeStartedVsClosedRag(
+			inputs.startedTotal,
+			inputs.closedTotal,
+			inputs.systemWipLimit,
+		),
+		totalWorkItemAge:
+			inputs.totalWorkItemAge === null
+				? undefined
+				: computeTotalWorkItemAgeRag(
+						inputs.totalWorkItemAge,
+						inputs.currentWip,
+						inputs.systemWipLimit,
+						inputs.sleDays,
+					),
+		throughput: computeThroughputRag(
+			inputs.throughputValues,
+			inputs.blackoutDayIndices,
+		),
+		cycleScatter: computeCycleTimeScatterplotRag(inputs.sle, inputs.cycleTimes),
 	};
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic helper avoids coupling to specific entity/metrics type
+function buildWidgetNodes(ctx: {
+	entity: IFeatureOwner;
+	title: string;
+	startDate: Date;
+	inProgressItems: IWorkItem[];
+	blockedItems: IWorkItem[];
+	blockedTerm: string;
+	featuresInProgress: IWorkItem[] | undefined;
+	featureWip: number | undefined;
+	featureTerm: string;
+	predictabilityData: IForecastPredictabilityScore | null;
+	percentileValues: IPercentileValue[];
+	serviceLevelExpectation: IPercentileValue | null;
+	cycleTimeData: IWorkItem[];
+	startedItems: RunChartData | null;
+	throughputData: RunChartData | null;
+	wipOverTimeData: RunChartData | null;
+	allFeaturesForSizeChart: IFeature[];
+	sizePercentileValues: IPercentileValue[];
+	featureSizeEstimationData: IFeatureSizeEstimationResponse | null;
+	estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
+	blackoutPeriods: IBlackoutPeriod[];
+	doingStates: string[];
+	workItemLookup: Map<number, IWorkItem>;
+	metricsService: IMetricsService<IWorkItem | IFeature>;
+	throughputTerm: string;
+	workItemAgeTerm: string;
+	workInProgressTerm: string;
+	getTerm: (key: string) => string;
+	totalWorkItemAge: number | null;
+	throughputPbcData: ProcessBehaviourChartData | null;
+	wipPbcData: ProcessBehaviourChartData | null;
+	totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
+	cycleTimePbcData: ProcessBehaviourChartData | null;
+	featureSizePbcData: ProcessBehaviourChartData | null;
+}): Record<string, ReactNode | null> {
+	const nodes: Record<string, ReactNode | null> = {
+		wipOverview: (
+			<WipOverviewWidget
+				wipCount={ctx.inProgressItems.length}
+				systemWipLimit={
+					ctx.entity.systemWIPLimit > 0 ? ctx.entity.systemWIPLimit : undefined
+				}
+				title={`${ctx.title} in Progress`}
+			/>
+		),
+		blockedOverview: (
+			<BlockedOverviewWidget
+				blockedCount={ctx.blockedItems.length}
+				title={ctx.blockedTerm}
+			/>
+		),
+		featuresWorkedOnOverview: ctx.featuresInProgress ? (
+			<FeaturesWorkedOnWidget
+				featureCount={ctx.featuresInProgress.length}
+				featureWip={ctx.featureWip}
+				title={`${ctx.featureTerm} being Worked On`}
+			/>
+		) : null,
+		predictabilityScore: (
+			<PredictabilityScoreWidget
+				score={ctx.predictabilityData?.predictabilityScore ?? null}
+			/>
+		),
+		percentiles: (
+			<CycleTimePercentiles
+				percentileValues={ctx.percentileValues}
+				serviceLevelExpectation={ctx.serviceLevelExpectation}
+				items={ctx.cycleTimeData}
+			/>
+		),
+		startedVsFinished: (
+			<StartedVsFinishedDisplay
+				startedItems={ctx.startedItems}
+				closedItems={ctx.throughputData}
+			/>
+		),
+		totalWorkItemAge: (
+			<TotalWorkItemAgeWidget
+				entityId={ctx.entity.id}
+				metricsService={ctx.metricsService}
+			/>
+		),
+		throughput: ctx.throughputData ? (
+			<BarRunChart
+				title={`${ctx.title} Completed`}
+				startDate={ctx.startDate}
+				chartData={ctx.throughputData}
+				displayTotal={true}
+				predictabilityData={ctx.predictabilityData}
+			/>
+		) : null,
+		cycleScatter: (
+			<CycleTimeScatterPlotChart
+				cycleTimeDataPoints={ctx.cycleTimeData}
+				percentileValues={ctx.percentileValues}
+				serviceLevelExpectation={ctx.serviceLevelExpectation}
+				blackoutPeriods={ctx.blackoutPeriods}
+			/>
+		),
+		workDistribution: (
+			<WorkDistributionChart
+				workItems={
+					[...ctx.cycleTimeData, ...ctx.inProgressItems] as IWorkItem[]
+				}
+				title="Work Distribution"
+			/>
+		),
+		aging: (
+			<WorkItemAgingChart
+				inProgressItems={ctx.inProgressItems}
+				percentileValues={ctx.percentileValues}
+				serviceLevelExpectation={ctx.serviceLevelExpectation}
+				doingStates={ctx.doingStates}
+			/>
+		),
+		wipOverTime: ctx.wipOverTimeData ? (
+			<LineRunChart
+				title={`${ctx.title} In Progress Over Time`}
+				startDate={ctx.startDate}
+				chartData={ctx.wipOverTimeData}
+				displayTotal={false}
+				wipLimit={ctx.entity.systemWIPLimit}
+			/>
+		) : null,
+		totalWorkItemAgeOverTime: ctx.wipOverTimeData ? (
+			<TotalWorkItemAgeRunChart
+				title={`${ctx.title} Total Work Item Age Over Time`}
+				startDate={ctx.startDate}
+				wipOverTimeData={ctx.wipOverTimeData}
+			/>
+		) : null,
+		stacked:
+			ctx.throughputData && ctx.startedItems ? (
+				<StackedAreaChart
+					title="Simplified Cumulative Flow Diagram"
+					startDate={ctx.startDate}
+					areas={[
+						{
+							index: 1,
+							title: "Doing",
+							area: ctx.startedItems,
+							color: appColors.primary.light,
+							startOffset: ctx.wipOverTimeData?.getValueOnDay(0) ?? 0,
+						},
+						{
+							index: 2,
+							title: "Done",
+							area: ctx.throughputData,
+							color: appColors.secondary.light,
+						},
+					]}
+				/>
+			) : null,
+		estimationVsCycleTime:
+			ctx.estimationVsCycleTimeData?.status !== "NotConfigured" &&
+			ctx.estimationVsCycleTimeData ? (
+				<EstimationVsCycleTimeChart
+					data={ctx.estimationVsCycleTimeData}
+					workItemLookup={ctx.workItemLookup}
+				/>
+			) : null,
+		featureSize:
+			ctx.allFeaturesForSizeChart.length > 0 ? (
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={ctx.allFeaturesForSizeChart}
+					sizePercentileValues={ctx.sizePercentileValues}
+					estimationData={ctx.featureSizeEstimationData ?? undefined}
+				/>
+			) : null,
+	};
+
+	const pbcConfigs = [
+		{
+			id: "throughputPbc",
+			data: ctx.throughputPbcData,
+			titleSuffix: ctx.throughputTerm,
+			type: ProcessBehaviourChartType.Throughput,
+		},
+		{
+			id: "wipPbc",
+			data: ctx.wipPbcData,
+			titleSuffix: ctx.workInProgressTerm,
+			type: ProcessBehaviourChartType.WorkInProgress,
+		},
+		{
+			id: "totalWorkItemAgePbc",
+			data: ctx.totalWorkItemAgePbcData,
+			titleSuffix: `Total ${ctx.workItemAgeTerm}`,
+			type: ProcessBehaviourChartType.TotalWorkItemAge,
+		},
+		{
+			id: "cycleTimePbc",
+			data: ctx.cycleTimePbcData,
+			titleSuffix: ctx.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+			type: ProcessBehaviourChartType.CycleTime,
+		},
+		{
+			id: "featureSizePbc",
+			data: ctx.featureSizePbcData,
+			titleSuffix: `${ctx.featureTerm} Size`,
+			type: ProcessBehaviourChartType.FeatureSize,
+		},
+	];
+
+	for (const config of pbcConfigs) {
+		if (config.data) {
+			nodes[config.id] = (
+				<ProcessBehaviourChart
+					data={config.data}
+					title={config.titleSuffix}
+					workItemLookup={ctx.workItemLookup}
+					type={config.type}
+				/>
+			);
+		}
+	}
+
+	return nodes;
 }
 
 function isProjectMetricsService(
@@ -194,6 +466,7 @@ interface MetricsData<T> {
 	estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
 	featureSizeEstimationData: IFeatureSizeEstimationResponse | null;
 	serviceLevelExpectation: IPercentileValue | null;
+	totalWorkItemAge: number | null;
 }
 
 function useMetricsData<
@@ -247,6 +520,7 @@ function useMetricsData<
 		useState<IFeatureSizeEstimationResponse | null>(null);
 	const [serviceLevelExpectation, setServiceLevelExpectation] =
 		useState<IPercentileValue | null>(null);
+	const [totalWorkItemAge, setTotalWorkItemAge] = useState<number | null>(null);
 
 	useEffect(() => {
 		blackoutPeriodService
@@ -265,6 +539,15 @@ function useMetricsData<
 				console.error("Error fetching predictability data:", error),
 			);
 	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
+		metricsService
+			.getTotalWorkItemAge(entity.id)
+			.then(setTotalWorkItemAge)
+			.catch((error) =>
+				console.error("Error fetching total work item age:", error),
+			);
+	}, [entity, metricsService]);
 
 	useEffect(() => {
 		metricsService
@@ -399,6 +682,7 @@ function useMetricsData<
 		estimationVsCycleTimeData,
 		featureSizeEstimationData,
 		serviceLevelExpectation,
+		totalWorkItemAge,
 	};
 }
 
@@ -469,6 +753,7 @@ export const BaseMetricsView = <
 		estimationVsCycleTimeData,
 		featureSizeEstimationData,
 		serviceLevelExpectation,
+		totalWorkItemAge,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
 	const { getTerm } = useTerminology();
@@ -506,195 +791,72 @@ export const BaseMetricsView = <
 
 	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
 
-	const widgetNodes: Record<string, ReactNode | null> = {
-		wipOverview: (
-			<WipOverviewWidget
-				wipCount={inProgressItems.length}
-				systemWipLimit={
-					entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined
-				}
-				title={`${title} in Progress`}
-			/>
-		),
-		blockedOverview: (
-			<BlockedOverviewWidget
-				blockedCount={blockedItems.length}
-				title={blockedTerm}
-			/>
-		),
-		featuresWorkedOnOverview: featuresInProgress ? (
-			<FeaturesWorkedOnWidget
-				featureCount={featuresInProgress.length}
-				featureWip={featureWip}
-				title={`${featureTerm} being Worked On`}
-			/>
-		) : null,
-		predictabilityScore: (
-			<PredictabilityScoreWidget
-				score={predictabilityData?.predictabilityScore ?? null}
-			/>
-		),
-		percentiles: (
-			<CycleTimePercentiles
-				percentileValues={percentileValues}
-				serviceLevelExpectation={serviceLevelExpectation}
-				items={cycleTimeData}
-			/>
-		),
-		startedVsFinished: (
-			<StartedVsFinishedDisplay
-				startedItems={startedItems}
-				closedItems={throughputData}
-			/>
-		),
-		totalWorkItemAge: (
-			<TotalWorkItemAgeWidget
-				entityId={entity.id}
-				metricsService={metricsService}
-			/>
-		),
-		throughput: throughputData ? (
-			<BarRunChart
-				title={`${title} Completed`}
-				startDate={startDate}
-				chartData={throughputData}
-				displayTotal={true}
-				predictabilityData={predictabilityData}
-			/>
-		) : null,
-		cycleScatter: (
-			<CycleTimeScatterPlotChart
-				cycleTimeDataPoints={cycleTimeData}
-				percentileValues={percentileValues}
-				serviceLevelExpectation={serviceLevelExpectation}
-				blackoutPeriods={blackoutPeriods}
-			/>
-		),
-		workDistribution: (
-			<WorkDistributionChart
-				workItems={[...cycleTimeData, ...inProgressItems] as IWorkItem[]}
-				title="Work Distribution"
-			/>
-		),
-		aging: (
-			<WorkItemAgingChart
-				inProgressItems={inProgressItems}
-				percentileValues={percentileValues}
-				serviceLevelExpectation={serviceLevelExpectation}
-				doingStates={doingStates}
-			/>
-		),
-		wipOverTime: wipOverTimeData ? (
-			<LineRunChart
-				title={`${title} In Progress Over Time`}
-				startDate={startDate}
-				chartData={wipOverTimeData}
-				displayTotal={false}
-				wipLimit={entity.systemWIPLimit}
-			/>
-		) : null,
-		totalWorkItemAgeOverTime: wipOverTimeData ? (
-			<TotalWorkItemAgeRunChart
-				title={`${title} Total Work Item Age Over Time`}
-				startDate={startDate}
-				wipOverTimeData={wipOverTimeData}
-			/>
-		) : null,
-		stacked:
-			throughputData && startedItems ? (
-				<StackedAreaChart
-					title="Simplified Cumulative Flow Diagram"
-					startDate={startDate}
-					areas={[
-						{
-							index: 1,
-							title: "Doing",
-							area: startedItems,
-							color: appColors.primary.light,
-							startOffset: wipOverTimeData?.getValueOnDay(0) ?? 0,
-						},
-						{
-							index: 2,
-							title: "Done",
-							area: throughputData,
-							color: appColors.secondary.light,
-						},
-					]}
-				/>
-			) : null,
-		estimationVsCycleTime:
-			estimationVsCycleTimeData?.status !== "NotConfigured" &&
-			estimationVsCycleTimeData ? (
-				<EstimationVsCycleTimeChart
-					data={estimationVsCycleTimeData}
-					workItemLookup={workItemLookup}
-				/>
-			) : null,
-		featureSize:
-			allFeaturesForSizeChart.length > 0 ? (
-				<FeatureSizeScatterPlotChart
-					sizeDataPoints={allFeaturesForSizeChart}
-					sizePercentileValues={sizePercentileValues}
-					estimationData={featureSizeEstimationData ?? undefined}
-				/>
-			) : null,
-	};
+	const widgetNodes = buildWidgetNodes({
+		entity,
+		title,
+		startDate,
+		inProgressItems,
+		blockedItems,
+		blockedTerm,
+		featuresInProgress,
+		featureWip,
+		featureTerm,
+		predictabilityData,
+		percentileValues,
+		serviceLevelExpectation,
+		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
+		startedItems,
+		throughputData,
+		wipOverTimeData,
+		allFeaturesForSizeChart,
+		sizePercentileValues,
+		featureSizeEstimationData,
+		estimationVsCycleTimeData,
+		blackoutPeriods,
+		doingStates,
+		workItemLookup,
+		metricsService,
+		throughputTerm,
+		workItemAgeTerm,
+		workInProgressTerm,
+		getTerm,
+		totalWorkItemAge,
+		throughputPbcData,
+		wipPbcData,
+		totalWorkItemAgePbcData,
+		cycleTimePbcData,
+		featureSizePbcData,
+	});
 
-	const pbcConfigs = [
-		{
-			id: "throughputPbc",
-			data: throughputPbcData,
-			titleSuffix: throughputTerm,
-			type: ProcessBehaviourChartType.Throughput,
-		},
-		{
-			id: "wipPbc",
-			data: wipPbcData,
-			titleSuffix: workInProgressTerm,
-			type: ProcessBehaviourChartType.WorkInProgress,
-		},
-		{
-			id: "totalWorkItemAgePbc",
-			data: totalWorkItemAgePbcData,
-			titleSuffix: `Total ${workItemAgeTerm}`,
-			type: ProcessBehaviourChartType.TotalWorkItemAge,
-		},
-		{
-			id: "cycleTimePbc",
-			data: cycleTimePbcData,
-			titleSuffix: getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
-			type: ProcessBehaviourChartType.CycleTime,
-		},
-		{
-			id: "featureSizePbc",
-			data: featureSizePbcData,
-			titleSuffix: `${featureTerm} Size`,
-			type: ProcessBehaviourChartType.FeatureSize,
-		},
-	];
-
-	for (const config of pbcConfigs) {
-		if (config.data) {
-			widgetNodes[config.id] = (
-				<ProcessBehaviourChart
-					data={config.data}
-					title={config.titleSuffix}
-					workItemLookup={workItemLookup}
-					type={config.type}
-				/>
-			);
-		}
-	}
-
-	const widgetFooters = buildWidgetFooters(
-		inProgressItems.length,
-		entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
-		blockedItems.length,
+	const widgetFooters = buildWidgetFooters({
+		wipCount: inProgressItems.length,
+		systemWipLimit:
+			entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
+		blockedCount: blockedItems.length,
 		hasBlockedConfig,
 		featuresInProgress,
 		featureWip,
-		predictabilityData?.predictabilityScore ?? null,
-	);
+		predictabilityScore: predictabilityData?.predictabilityScore ?? null,
+		sle: serviceLevelExpectation,
+		percentileValues,
+		startedTotal: startedItems?.total ?? 0,
+		closedTotal: throughputData?.total ?? 0,
+		totalWorkItemAge,
+		currentWip: inProgressItems.length,
+		sleDays:
+			entity.serviceLevelExpectationRange > 0
+				? entity.serviceLevelExpectationRange
+				: undefined,
+		throughputValues: throughputData
+			? Array.from({ length: throughputData.history }, (_, i) =>
+					throughputData.getValueOnDay(i),
+				)
+			: [],
+		blackoutDayIndices: throughputData?.blackoutDayIndices ?? [],
+		cycleTimes: (cycleTimeData as unknown as IWorkItem[]).map(
+			(item) => item.cycleTime,
+		),
+	});
 
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets

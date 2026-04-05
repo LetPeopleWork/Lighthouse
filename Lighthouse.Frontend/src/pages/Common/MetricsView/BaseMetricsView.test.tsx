@@ -2182,6 +2182,241 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
+	describe("M3 RAG Footers — Flow Throughput and Cycle Widgets", () => {
+		it("shows green RAG for throughput when no consecutive zero periods", async () => {
+			// Default mock: throughputData = [3, 5] → no zeros → Green
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-throughput"),
+				).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-throughput")).toHaveTextContent(
+					"green",
+				);
+			});
+		});
+
+		it("shows red RAG for throughput when consecutive zeros exist", async () => {
+			const zeroThroughputData = new RunChartData(
+				generateWorkItemMapForRunChart([0, 0, 5]),
+				3,
+				5,
+			);
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getThroughput = vi.fn().mockResolvedValue(zeroThroughputData);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={svc}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-throughput")).toHaveTextContent(
+					"red",
+				);
+			});
+		});
+
+		it("shows green RAG for cycle time percentiles when actual is below SLE", async () => {
+			// SLE = {85, 14}, percentiles has {85, 12} → (12-14)/14 = -14% → Green
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-percentiles"),
+				).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-percentiles")).toHaveTextContent(
+					"green",
+				);
+			});
+		});
+
+		it("shows red RAG for cycle time percentiles when actual exceeds SLE by >15%", async () => {
+			// SLE = {85, 14}, create percentiles where 85th = 17 → (17-14)/14 = 21% → Red
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getCycleTimePercentiles = vi.fn().mockResolvedValue([
+				{ percentile: 50, value: 9 },
+				{ percentile: 85, value: 17 },
+				{ percentile: 95, value: 20 },
+			]);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={svc}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-percentiles")).toHaveTextContent(
+					"red",
+				);
+			});
+		});
+
+		it("shows green RAG for cycle time scatterplot when all items within SLE", async () => {
+			// SLE value = 14, cycleTimes = [9, 10] → 0% above → Green
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-cycleScatter"),
+				).toBeInTheDocument();
+				expect(screen.getByTestId("widget-rag-cycleScatter")).toHaveTextContent(
+					"green",
+				);
+			});
+		});
+
+		it("shows red RAG for started vs finished when no WIP limit is set", async () => {
+			// mockProject.systemWIPLimit = 0 → undefined → Red
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-startedVsFinished"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-rag-startedVsFinished"),
+				).toHaveTextContent("red");
+			});
+		});
+
+		it("shows green RAG for started vs finished when values are close and WIP limit set", async () => {
+			const teamWithWip = new Team();
+			teamWithWip.name = "Team With WIP";
+			teamWithWip.id = 99;
+			teamWithWip.systemWIPLimit = 5;
+			teamWithWip.lastUpdated = new Date();
+			teamWithWip.serviceLevelExpectationProbability = 85;
+			teamWithWip.serviceLevelExpectationRange = 14;
+
+			const balancedStarted = new RunChartData(
+				generateWorkItemMapForRunChart([5, 5]),
+				2,
+				10,
+			);
+			const balancedClosed = new RunChartData(
+				generateWorkItemMapForRunChart([5, 5]),
+				2,
+				10,
+			);
+
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getStartedItems = vi.fn().mockResolvedValue(balancedStarted);
+			svc.getThroughput = vi.fn().mockResolvedValue(balancedClosed);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={teamWithWip}
+					metricsService={svc}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-startedVsFinished"),
+				).toHaveTextContent("green");
+			});
+		});
+
+		it("shows red RAG for total work item age when no WIP limit is set", async () => {
+			// mockProject.systemWIPLimit = 0 → undefined → Red
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-footer-totalWorkItemAge"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-rag-totalWorkItemAge"),
+				).toHaveTextContent("red");
+			});
+		});
+
+		it("shows green RAG for total work item age when within healthy range", async () => {
+			const teamWithWipAndSle = new Team();
+			teamWithWipAndSle.name = "Healthy Team";
+			teamWithWipAndSle.id = 100;
+			teamWithWipAndSle.systemWIPLimit = 5;
+			teamWithWipAndSle.lastUpdated = new Date();
+			teamWithWipAndSle.serviceLevelExpectationProbability = 85;
+			teamWithWipAndSle.serviceLevelExpectationRange = 14;
+
+			// ref = 5 * 14 = 70. totalAge = 20, currentWip = 2, tomorrow = 22 < 70 → Green
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getTotalWorkItemAge = vi.fn().mockResolvedValue(20);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={teamWithWipAndSle}
+					metricsService={svc}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-totalWorkItemAge"),
+				).toHaveTextContent("green");
+			});
+		});
+	});
+
 	describe("Process Behaviour Charts", () => {
 		// PBC widgets are in the predictability category
 		beforeEach(() => {
