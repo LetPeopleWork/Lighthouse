@@ -27,11 +27,60 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 DataRetrievalValue = LoadCsvFile(csvFileName),
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
+                WorkItemTypes = ["Story"],
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Done"]
             };
 
             var isValid = await subject.ValidateTeamSettings(team);
 
             Assert.That(isValid, Is.EqualTo(expectedResult));
+        }
+
+        [Test]
+        public async Task ValidateTeam_ChecksIfValid_ReturnsFalseWorkItemTypesAreMissing()
+        {
+            var subject = CreateSubject();
+            var team = new Team
+            {
+                DataRetrievalValue = LoadCsvFile("team-valid-all-optional.csv"),
+                WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
+                WorkItemTypes = [],
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Done"]
+            };
+            
+            var isValid = await subject.ValidateTeamSettings(team);
+
+            Assert.That(isValid, Is.False);
+        }
+        
+        [Test]
+        [TestCase(new[]{"New"}, new[]{"Active"}, new string[0])]
+        [TestCase(new[]{"New"}, new string[0], new[] {"Done"})]
+        [TestCase(new string[0], new[]{"Active"}, new[] {"Done"})]
+        [TestCase(new[]{"New"}, new string[0], new string[0])]
+        [TestCase(new string[0], new[]{"Active"}, new string[0])]
+        [TestCase(new string[0], new string[0], new[] {"Done"})]
+        [TestCase(new string[0], new string[0], new string[0])]
+        public async Task ValidateTeam_ChecksIfValid_ReturnsFalseIfStateCategoryIsEmpty(string[] toDoStates, string[] doingStates, string[] doneStates)
+        {
+            var subject = CreateSubject();
+            var team = new Team
+            {
+                DataRetrievalValue = LoadCsvFile("team-valid-all-optional.csv"),
+                WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
+                WorkItemTypes = ["Story"],
+                ToDoStates = toDoStates.ToList(),
+                DoingStates = doingStates.ToList(),
+                DoneStates = doneStates.ToList()
+            };
+            
+            var isValid = await subject.ValidateTeamSettings(team);
+
+            Assert.That(isValid, Is.False);
         }
 
         [Test]

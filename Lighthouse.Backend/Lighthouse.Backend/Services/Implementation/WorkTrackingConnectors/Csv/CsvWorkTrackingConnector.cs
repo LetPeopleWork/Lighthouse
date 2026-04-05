@@ -82,20 +82,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<bool> ValidateTeamSettings(Team team)
         {
-            return ValidateCsv(team);
+            return ValidateQueryOwnerForCsv(team);
         }
 
         public Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
         {
-            return ValidateCsv(portfolio);
+            return ValidateQueryOwnerForCsv(portfolio);
         }
 
-        private Task<bool> ValidateCsv(IWorkItemQueryOwner owner)
+        private Task<bool> ValidateQueryOwnerForCsv(IWorkItemQueryOwner owner)
         {
             var csvContent = owner.DataRetrievalValue;
 
             if (string.IsNullOrEmpty(csvContent))
             {
+                // Must have CSV
+                return Task.FromResult(false);
+            }
+
+            if (owner.WorkItemTypes.Count == 0)
+            {
+                // Work Item Types are not skippable
+                return Task.FromResult(false);
+            }
+
+            if (owner.ToDoStates.Count == 0 || owner.DoingStates.Count == 0 || owner.DoneStates.Count == 0)
+            {
+                // States are not optional
                 return Task.FromResult(false);
             }
 
