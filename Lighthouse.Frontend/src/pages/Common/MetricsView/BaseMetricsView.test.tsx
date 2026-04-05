@@ -377,6 +377,16 @@ vi.mock("./Dashboard", () => ({
 	),
 }));
 
+vi.mock("./WidgetShell", () => ({
+	default: ({
+		widgetKey,
+		children,
+	}: {
+		widgetKey: string;
+		children: ReactNode;
+	}) => <div data-testid={`widget-shell-${widgetKey}`}>{children}</div>,
+}));
+
 describe("BaseMetricsView component", () => {
 	// Helper function to render component with router context
 	const renderWithRouter = (component: ReactNode) => {
@@ -598,6 +608,7 @@ describe("BaseMetricsView component", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		localStorage.clear();
 	});
 
 	it("renders all components correctly with Project entity", async () => {
@@ -686,7 +697,7 @@ describe("BaseMetricsView component", () => {
 			}
 		});
 
-		// Check components are rendered with correct data
+		// Check components are rendered with correct data (flow-health category by default)
 		await waitFor(() => {
 			expect(
 				screen.getByTestId("items-in-progress-Features in Progress:"),
@@ -703,25 +714,13 @@ describe("BaseMetricsView component", () => {
 			).toBeInTheDocument();
 			expect(screen.getByTestId("cycle-time-scatter-plot")).toBeInTheDocument();
 			expect(
-				screen.getByTestId("feature-size-scatter-plot"),
-			).toBeInTheDocument();
-			expect(
 				screen.getByTestId("line-run-chart-Features In Progress Over Time"),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("started-vs-finished")).toBeInTheDocument();
 			expect(
-				screen.getByTestId(
-					"stacked-area-chart-Simplified Cumulative Flow Diagram",
-				),
-			).toBeInTheDocument();
-			expect(
 				screen.getByTestId("total-work-item-age-widget"),
 			).toBeInTheDocument();
-			expect(
-				screen.getByTestId(
-					"total-work-item-age-run-chart-Features Total Work Item Age Over Time",
-				),
-			).toBeInTheDocument();
+			expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
 		});
 
 		// Check that service level expectation is set correctly
@@ -731,6 +730,12 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("passes size percentile values to FeatureSizeScatterPlotChart when using Project entity", async () => {
+		// featureSize widget is in the portfolio category
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+			"portfolio",
+		);
+
 		const projectMetricsService = createMockMetricsService<IFeature>();
 
 		const mockFeatureData = mockCycleTimeData.map((item) => ({
@@ -828,6 +833,12 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("renders Total Work Item Age widget and chart correctly", async () => {
+		// totalWorkItemAgeOverTime is in aging-stability category
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+			"aging-stability",
+		);
+
 		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
@@ -840,7 +851,7 @@ describe("BaseMetricsView component", () => {
 
 		// Wait for components to render
 		await waitFor(() => {
-			// Check Total Work Item Age Widget is rendered
+			// Check Total Work Item Age Widget is rendered (in aging-stability)
 			expect(
 				screen.getByTestId("total-work-item-age-widget"),
 			).toBeInTheDocument();
@@ -2126,6 +2137,18 @@ describe("BaseMetricsView component", () => {
 	});
 
 	describe("Process Behaviour Charts", () => {
+		// PBC widgets are in the predictability category
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"predictability",
+			);
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
+				"predictability",
+			);
+		});
+
 		const readyPbcData: ProcessBehaviourChartData = {
 			status: "Ready",
 			statusReason: "",

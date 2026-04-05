@@ -29,9 +29,30 @@ vi.mock(
 	}),
 );
 
+vi.mock("./CategorySelector", () => ({
+	default: ({
+		selectedCategory,
+		onSelectCategory,
+	}: {
+		selectedCategory: string;
+		onSelectCategory: (key: string) => void;
+	}) => (
+		<div data-testid="category-selector">
+			<span data-testid="selected-category">{selectedCategory}</span>
+			<button
+				type="button"
+				data-testid="select-category"
+				onClick={() => onSelectCategory("portfolio")}
+			>
+				Switch
+			</button>
+		</div>
+	),
+}));
+
 // Helper to control matchMedia (used by MUI's useMediaQuery)
 function setMatchMedia(matches: boolean) {
-	Object.defineProperty(window, "matchMedia", {
+	Object.defineProperty(globalThis, "matchMedia", {
 		writable: true,
 		value: (query: string) => ({
 			matches,
@@ -72,6 +93,10 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
+				selectedCategory="flow-health"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={vi.fn()}
 			/>,
 		);
 
@@ -111,6 +136,10 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
+				selectedCategory="flow-health"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={vi.fn()}
 			/>,
 		);
 
@@ -138,6 +167,10 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
+				selectedCategory="flow-health"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={vi.fn()}
 			/>,
 		);
 
@@ -147,5 +180,54 @@ describe("DashboardHeader", () => {
 		expect(
 			screen.queryByTestId("dashboard-reset-layout"),
 		).not.toBeInTheDocument();
+	});
+
+	it("renders category selector with the selected category", async () => {
+		setMatchMedia(false);
+
+		const { default: DashboardHeader } = await import("./DashboardHeader");
+
+		render(
+			<DashboardHeader
+				startDate={new Date(2025, 6, 15)}
+				endDate={new Date(2025, 7, 14)}
+				onStartDateChange={vi.fn()}
+				onEndDateChange={vi.fn()}
+				selectedCategory="predictability"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByTestId("category-selector")).toBeInTheDocument();
+		expect(screen.getByTestId("selected-category")).toHaveTextContent(
+			"predictability",
+		);
+	});
+
+	it("renders tips toggle and calls onToggleTips when clicked", async () => {
+		setMatchMedia(false);
+
+		const onToggle = vi.fn();
+		const { default: DashboardHeader } = await import("./DashboardHeader");
+
+		render(
+			<DashboardHeader
+				startDate={new Date(2025, 6, 15)}
+				endDate={new Date(2025, 7, 14)}
+				onStartDateChange={vi.fn()}
+				onEndDateChange={vi.fn()}
+				selectedCategory="flow-health"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={onToggle}
+			/>,
+		);
+
+		const toggle = screen.getByTestId("metrics-tips-toggle");
+		expect(toggle).toBeInTheDocument();
+		fireEvent.click(toggle);
+		expect(onToggle).toHaveBeenCalled();
 	});
 });

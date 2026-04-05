@@ -1,7 +1,9 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import {
 	Box,
 	ButtonBase,
+	IconButton,
 	Popover,
 	Tooltip,
 	Typography,
@@ -11,12 +13,18 @@ import {
 import { format } from "date-fns";
 import React from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
+import CategorySelector from "./CategorySelector";
+import type { CategoryKey } from "./categoryMetadata";
 
 export interface DashboardHeaderProps {
 	startDate: Date;
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
 	onEndDateChange: (date: Date | null) => void;
+	selectedCategory: CategoryKey;
+	onSelectCategory: (key: CategoryKey) => void;
+	showTips: boolean;
+	onToggleTips: () => void;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -24,6 +32,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 	endDate,
 	onStartDateChange,
 	onEndDateChange,
+	selectedCategory,
+	onSelectCategory,
+	showTips,
+	onToggleTips,
 }) => {
 	const theme = useTheme();
 	const isNarrow = useMediaQuery(theme.breakpoints.down("sm"));
@@ -40,14 +52,36 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 	return (
 		<Box
 			sx={{
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
 				width: "100%",
 				p: 1,
 				mb: 1,
 			}}
 		>
+			<Box
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					mb: 1,
+				}}
+			>
+				<CategorySelector
+					selectedCategory={selectedCategory}
+					onSelectCategory={onSelectCategory}
+				/>
+				<Tooltip title={showTips ? "Hide tips" : "Show tips"}>
+					<IconButton
+						size="small"
+						onClick={onToggleTips}
+						color={showTips ? "primary" : "default"}
+						aria-pressed={showTips}
+						data-testid="metrics-tips-toggle"
+					>
+						<LightbulbOutlinedIcon fontSize="small" />
+					</IconButton>
+				</Tooltip>
+			</Box>
+
 			<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 				{!isNarrow && (
 					<Typography

@@ -10,12 +10,12 @@ import type { DashboardItem } from "./Dashboard";
 
 // Helper to simulate different viewport widths by controlling matchMedia
 function setMatchMediaWidth(width: number) {
-	Object.defineProperty(window, "matchMedia", {
+	Object.defineProperty(globalThis, "matchMedia", {
 		writable: true,
 		value: (query: string) => {
 			// Extract min-width in px from the media query if present
-			const m = RegExp(/min-width:\s*(\d+)px/).exec(query);
-			const min = m ? parseInt(m[1], 10) : 0;
+			const m = new RegExp(/min-width:\s*(\d+)px/).exec(query);
+			const min = m ? Number.parseInt(m[1], 10) : 0;
 			return {
 				matches: width >= min,
 				media: query,
@@ -61,8 +61,8 @@ describe("Dashboard component", () => {
 		expect(a).toBeInTheDocument();
 		expect(b).toBeInTheDocument();
 
-		expect(a.getAttribute("data-size")).toBe("small");
-		expect(b.getAttribute("data-size")).toBe("medium");
+		expect(a.dataset.size).toBe("small");
+		expect(b.dataset.size).toBe("medium");
 	});
 
 	it("renders items in the order provided without localStorage influence", async () => {
@@ -79,7 +79,7 @@ describe("Dashboard component", () => {
 
 		const nodes = await screen.findAllByTestId(/^dashboard-item-(?!spotlight)/);
 		const ids = nodes.map((n) =>
-			n.getAttribute("data-testid")?.replace("dashboard-item-", ""),
+			n.dataset.testid?.replace("dashboard-item-", ""),
 		);
 		expect(ids).toEqual(["A", "B", "C"]);
 	});
@@ -114,7 +114,7 @@ describe("Dashboard component", () => {
 			];
 			render(<Dashboard items={items} />);
 			const el = await screen.findByTestId("dashboard-item-x");
-			return Number(el.getAttribute("data-colspan") || 0);
+			return Number(el.dataset.colspan || 0);
 		}
 
 		const breakpoints = {
@@ -208,7 +208,7 @@ describe("Dashboard component", () => {
 		// Order should be as provided, not from localStorage
 		const nodes = await screen.findAllByTestId(/^dashboard-item-(?!spotlight)/);
 		const ids = nodes.map((n) =>
-			n.getAttribute("data-testid")?.replace("dashboard-item-", ""),
+			n.dataset.testid?.replace("dashboard-item-", ""),
 		);
 		expect(ids).toEqual(["A", "B"]);
 	});
@@ -316,7 +316,7 @@ describe("Dashboard component", () => {
 
 		await screen.findByTestId("dashboard-spotlight-modal");
 
-		fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
+		fireEvent.keyDown(globalThis.window, { key: "Escape", code: "Escape" });
 
 		await waitFor(() => {
 			expect(
