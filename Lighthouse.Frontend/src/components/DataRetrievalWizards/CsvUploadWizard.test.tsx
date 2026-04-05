@@ -37,7 +37,7 @@ describe("CsvUploadWizard", () => {
 		);
 
 		// Title appears twice (in dialog title and in the content area)
-		const titles = screen.getAllByText("Upload CSV File");
+		const titles = screen.getAllByText("Select CSV File");
 		expect(titles.length).toBeGreaterThanOrEqual(1);
 		expect(
 			screen.getByText("Drag and drop a CSV file here, or click to select"),
@@ -57,7 +57,7 @@ describe("CsvUploadWizard", () => {
 			/>,
 		);
 
-		expect(screen.queryByText("Upload CSV File")).not.toBeInTheDocument();
+		expect(screen.queryByText("Select CSV File")).not.toBeInTheDocument();
 	});
 
 	it("disables Use File button when no file is selected", () => {

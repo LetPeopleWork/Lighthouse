@@ -338,7 +338,7 @@ describe("GeneralSettingsComponent", () => {
 
 		// Should show wizard button for CSV upload
 		expect(
-			screen.getByRole("button", { name: /Upload CSV File/i }),
+			screen.getByRole("button", { name: /Select CSV File/i }),
 		).toBeInTheDocument();
 	});
 
@@ -442,7 +442,7 @@ describe("GeneralSettingsComponent", () => {
 
 			// The wizard button should be present for CSV system
 			const wizardButton = await screen.findByRole("button", {
-				name: /Upload CSV File/i,
+				name: /Select CSV File/i,
 			});
 			expect(wizardButton).toBeInTheDocument();
 		});
@@ -502,7 +502,7 @@ describe("GeneralSettingsComponent", () => {
 			);
 
 			const wizardButton = await screen.findByRole("button", {
-				name: /Upload CSV File/i,
+				name: /Select CSV File/i,
 			});
 
 			// Click the wizard button
@@ -671,7 +671,7 @@ describe("GeneralSettingsComponent", () => {
 			// Wizard buttons appear if a system with wizards is selected,
 			// even when the selection dropdown UI is hidden
 			expect(
-				screen.getByRole("button", { name: /Upload CSV File/i }),
+				screen.getByRole("button", { name: /Select CSV File/i }),
 			).toBeInTheDocument();
 		});
 
@@ -733,7 +733,7 @@ describe("GeneralSettingsComponent", () => {
 
 			// For CSV, we expect 1 wizard button
 			const wizardButtons = await screen.findAllByRole("button", {
-				name: /Upload/i,
+				name: /Select/i,
 			});
 
 			// Should have at least one wizard button for CSV
@@ -806,12 +806,12 @@ describe("GeneralSettingsComponent", () => {
 
 			// Open the wizard
 			const uploadButton = screen.getByRole("button", {
-				name: /Upload CSV File/i,
+				name: /Select CSV File/i,
 			});
 			await userEvent.click(uploadButton);
 
 			await waitFor(() => {
-				expect(screen.getAllByText(/Upload CSV File/i).length).toBeGreaterThan(
+				expect(screen.getAllByText(/Select CSV File/i).length).toBeGreaterThan(
 					0,
 				);
 			});

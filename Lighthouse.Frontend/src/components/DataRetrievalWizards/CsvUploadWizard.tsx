@@ -142,7 +142,7 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 
 	return (
 		<Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-			<DialogTitle>Upload CSV File</DialogTitle>
+			<DialogTitle>Select CSV File</DialogTitle>
 			<DialogContent>
 				<DropZone
 					onDrop={handleDrop}
@@ -151,7 +151,7 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 				>
 					<CloudUpload sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
 					<Typography variant="h6" gutterBottom>
-						{selectedFile ? selectedFile.name : "Upload CSV File"}
+						{selectedFile ? selectedFile.name : "Select CSV File"}
 					</Typography>
 					<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
 						{selectedFile

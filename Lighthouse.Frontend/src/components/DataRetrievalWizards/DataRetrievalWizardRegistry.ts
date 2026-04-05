@@ -9,7 +9,7 @@ import CsvUploadWizard from "./CsvUploadWizard";
 const dataRetrievalWizards: IDataRetrievalWizard[] = [
 	{
 		id: "csv.upload",
-		name: "Upload CSV File",
+		name: "Select CSV File",
 		applicableSystemTypes: ["Csv"],
 		applicableSettingsContexts: ["team", "portfolio"],
 		component: CsvUploadWizard,

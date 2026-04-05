@@ -23,12 +23,6 @@ import type { IWriteBackMappingDefinition } from "../../../models/WorkTracking/W
 import AdditionalFieldsEditor from "../../../pages/Settings/Connections/AdditionalFieldsEditor";
 import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBackMappingsEditor";
 import { ApiError } from "../../../services/Api/ApiError";
-import {
-	emitEditSaveFailed,
-	emitEditSaveStarted,
-	emitEditSaveSucceeded,
-	generateCorrelationId,
-} from "../../../services/Telemetry/OnboardingTelemetry";
 import { useTerminology } from "../../../services/TerminologyContext";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
@@ -334,14 +328,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		if (selectedWorkTrackingSystem && selectedAuthMethod) {
 			setValidationErrorMessage(null);
 
-			const saveCorrelationId = generateCorrelationId();
-			const telemetryProps = {
-				entityType: "connection" as const,
-				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
-				correlationId: saveCorrelationId,
-			};
-			emitEditSaveStarted(telemetryProps);
-
 			const connection: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
 				name,
@@ -360,10 +346,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					setValidationErrorMessage(
 						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
 					);
-					emitEditSaveFailed({
-						...telemetryProps,
-						failureCategory: "validation",
-					});
 					return;
 				}
 			} catch (error) {
@@ -371,24 +353,15 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					setValidationErrorMessage(
 						"You've exceeded the number of additional fields allowed on your plan.",
 					);
-					emitEditSaveFailed({
-						...telemetryProps,
-						failureCategory: "license",
-					});
 				} else {
 					setValidationErrorMessage(
 						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
 					);
-					emitEditSaveFailed({
-						...telemetryProps,
-						failureCategory: "network",
-					});
 				}
 				return;
 			}
 
 			await saveConnectionSettings(connection);
-			emitEditSaveSucceeded(telemetryProps);
 		}
 	};
 

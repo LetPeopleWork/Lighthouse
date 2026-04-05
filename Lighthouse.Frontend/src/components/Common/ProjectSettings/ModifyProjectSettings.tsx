@@ -9,12 +9,6 @@ import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSett
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
-import {
-	emitEditSaveFailed,
-	emitEditSaveStarted,
-	emitEditSaveSucceeded,
-	generateCorrelationId,
-} from "../../../services/Telemetry/OnboardingTelemetry";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -259,14 +253,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			return;
 		}
 
-		const saveCorrelationId = generateCorrelationId();
-		const telemetryProps = {
-			entityType: "portfolio" as const,
-			workTrackingSystem: selectedWorkTrackingSystem?.workTrackingSystem,
-			correlationId: saveCorrelationId,
-		};
-		emitEditSaveStarted(telemetryProps);
-
 		const updatedSettings: IPortfolioSettings = {
 			...projectSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
@@ -275,23 +261,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		if (!modifyDefaultSettings) {
 			const isValid = await validateProjectSettings(updatedSettings);
 			if (!isValid) {
-				emitEditSaveFailed({
-					...telemetryProps,
-					failureCategory: "validation",
-				});
 				return;
 			}
 		}
 
-		try {
-			await saveProjectSettings(updatedSettings);
-			emitEditSaveSucceeded(telemetryProps);
-		} catch {
-			emitEditSaveFailed({
-				...telemetryProps,
-				failureCategory: "unknown",
-			});
-		}
+		await saveProjectSettings(updatedSettings);
 	};
 
 	useEffect(() => {

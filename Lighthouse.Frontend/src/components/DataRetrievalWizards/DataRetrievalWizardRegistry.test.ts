@@ -13,7 +13,7 @@ describe("DataRetrievalWizardRegistry", () => {
 
 			const csvWizard = dataRetrievalWizards.find((w) => w.id === "csv.upload");
 			expect(csvWizard).toBeDefined();
-			expect(csvWizard?.name).toBe("Upload CSV File");
+			expect(csvWizard?.name).toBe("Select CSV File");
 			expect(csvWizard?.applicableSystemTypes).toContain("Csv");
 			expect(csvWizard?.applicableSettingsContexts).toEqual([
 				"team",
@@ -76,7 +76,7 @@ describe("DataRetrievalWizardRegistry", () => {
 
 			expect(wizards).toHaveLength(1);
 			expect(wizards[0].id).toBe("csv.upload");
-			expect(wizards[0].name).toBe("Upload CSV File");
+			expect(wizards[0].name).toBe("Select CSV File");
 		});
 
 		it("should return Jira board wizard for Jira system type", () => {

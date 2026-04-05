@@ -15,15 +15,6 @@ import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalS
 import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import {
-	emitCreateFailed,
-	emitCreateStarted,
-	emitCreateSucceeded,
-	emitCreateValidationFailed,
-	emitCreateValidationStarted,
-	emitCreateValidationSucceeded,
-	generateCorrelationId,
-} from "../../../services/Telemetry/OnboardingTelemetry";
 import { getWizardsForSystem } from "../../DataRetrievalWizards";
 import ActionButton from "../ActionButton/ActionButton";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -68,7 +59,6 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 	const [validating, setValidating] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
-	const [correlationId] = useState(generateCorrelationId);
 
 	// Wizard state
 	const [availableWizards, setAvailableWizards] = useState<
@@ -76,16 +66,6 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 	>([]);
 	const [activeWizard, setActiveWizard] = useState<IDataRetrievalWizard | null>(
 		null,
-	);
-
-	const telemetryProps = useMemo(
-		() => ({
-			entityType: "portfolio" as const,
-			workTrackingSystem: selectedConnection?.workTrackingSystem,
-			wizardUsed: true,
-			correlationId,
-		}),
-		[selectedConnection, correlationId],
 	);
 
 	const schema = useMemo(
@@ -117,11 +97,6 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 		setDoingStates([]);
 		setDoneStates([]);
 		setValidationError(null);
-
-		emitCreateStarted({
-			...telemetryProps,
-			workTrackingSystem: connection.workTrackingSystem,
-		});
 
 		const wizards = getWizardsForSystem(
 			connection.workTrackingSystem,
@@ -202,27 +177,16 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 	const runValidation = async (): Promise<boolean> => {
 		setValidating(true);
 		setValidationError(null);
-		emitCreateValidationStarted(telemetryProps);
 		try {
 			const dto = buildPortfolioSettingsDto();
 			const isValid = await validatePortfolioSettings(dto);
-			if (isValid) {
-				emitCreateValidationSucceeded(telemetryProps);
-			} else {
-				emitCreateValidationFailed({
-					...telemetryProps,
-					failureCategory: "validation",
-				});
+			if (!isValid) {
 				setValidationError(
 					"Validation failed. Check your configuration and try again.",
 				);
 			}
 			return isValid;
 		} catch {
-			emitCreateValidationFailed({
-				...telemetryProps,
-				failureCategory: "network",
-			});
 			setValidationError(
 				"Validation failed. Check your configuration and try again.",
 			);
@@ -270,24 +234,14 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 
 		setValidating(true);
 		setValidationError(null);
-		emitCreateValidationStarted(telemetryProps);
 		try {
 			const isValid = await validatePortfolioSettings(tempDto);
 			if (isValid) {
-				emitCreateValidationSucceeded(telemetryProps);
 				setActiveStep(STEP_NAME_CREATE);
 			} else {
-				emitCreateValidationFailed({
-					...telemetryProps,
-					failureCategory: "validation",
-				});
 				setActiveStep(STEP_CONFIGURE);
 			}
 		} catch {
-			emitCreateValidationFailed({
-				...telemetryProps,
-				failureCategory: "network",
-			});
 			setActiveStep(STEP_CONFIGURE);
 		} finally {
 			setValidating(false);
@@ -321,9 +275,6 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 		setSaving(true);
 		try {
 			await savePortfolioSettings(dto);
-			emitCreateSucceeded(telemetryProps);
-		} catch {
-			emitCreateFailed({ ...telemetryProps, failureCategory: "unknown" });
 		} finally {
 			setSaving(false);
 		}
@@ -361,7 +312,7 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 			{availableWizards.map((wizard) => (
 				<Button
 					key={wizard.id}
-					variant="outlined"
+					variant="contained"
 					onClick={() => setActiveWizard(wizard)}
 					sx={{ mr: 1 }}
 				>
@@ -410,7 +361,7 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 				{renderWizardButtons()}
 			</Box>
 			<Button
-				variant="text"
+				variant="outlined"
 				onClick={() => setActiveStep(STEP_CONFIGURE)}
 				sx={{ alignSelf: "flex-start" }}
 			>

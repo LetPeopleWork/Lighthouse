@@ -237,7 +237,7 @@ describe("CreateConnectionWizard", () => {
 			renderWizard();
 			await waitFor(() => {
 				expect(screen.getByText("Choose Type")).toBeInTheDocument();
-				expect(screen.getByText("Authentication")).toBeInTheDocument();
+				expect(screen.getByText("Configuration")).toBeInTheDocument();
 				expect(screen.getByText("Name & Create")).toBeInTheDocument();
 			});
 			expect(screen.queryByText("Validate")).not.toBeInTheDocument();
@@ -286,7 +286,7 @@ describe("CreateConnectionWizard", () => {
 		});
 	});
 
-	describe("Step 2: Authentication & Options", () => {
+	describe("Step 2: Configuration & Options", () => {
 		const goToStep2 = async () => {
 			const user = userEvent.setup();
 			const mocks = renderWizard();
@@ -336,10 +336,66 @@ describe("CreateConnectionWizard", () => {
 			expect(nextButton).toBeEnabled();
 		});
 
-		it("does not render non-auth options like RequestTimeout", async () => {
+		it("does not render optional non-auth options like RequestTimeout", async () => {
 			await goToStep2();
 			expect(
 				screen.queryByLabelText(/Request.*Timeout/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders required non-auth options in configuration step", async () => {
+			const systemWithRequiredNonAuth = new WorkTrackingSystemConnection({
+				id: 0,
+				name: "Custom System",
+				workTrackingSystem: "AzureDevOps",
+				options: [
+					{ key: "AccessToken", value: "", isSecret: true, isOptional: false },
+					{
+						key: "RequiredSetting",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "OptionalSetting",
+						value: "default",
+						isSecret: false,
+						isOptional: true,
+					},
+				],
+				availableAuthenticationMethods: [
+					{
+						key: "ado.pat",
+						displayName: "Personal Access Token",
+						options: [
+							{
+								key: "AccessToken",
+								displayName: "Access Token",
+								isSecret: true,
+								isOptional: false,
+							},
+						],
+					},
+				],
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "ado.pat",
+			});
+			const user = userEvent.setup();
+			renderWizard({ supportedSystems: [systemWithRequiredNonAuth] });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Custom System/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Custom System/i }));
+			await waitFor(() => {
+				expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
+			});
+			// Required non-auth option should be shown
+			expect(screen.getByLabelText("RequiredSetting")).toBeInTheDocument();
+			// Optional non-auth option should NOT be shown
+			expect(
+				screen.queryByLabelText("OptionalSetting"),
 			).not.toBeInTheDocument();
 		});
 
@@ -499,7 +555,7 @@ describe("CreateConnectionWizard", () => {
 			expect(savedConnection.writeBackMappingDefinitions).toEqual([]);
 		});
 
-		it("shows Back button that returns to Auth step", async () => {
+		it("shows Back button that returns to Configuration step", async () => {
 			const { user } = await goToStep3();
 			await user.click(screen.getByRole("button", { name: /Back/i }));
 			await waitFor(() => {

@@ -20,19 +20,10 @@ import type {
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
-import {
-	emitCreateFailed,
-	emitCreateStarted,
-	emitCreateSucceeded,
-	emitCreateValidationFailed,
-	emitCreateValidationStarted,
-	emitCreateValidationSucceeded,
-	generateCorrelationId,
-} from "../../../services/Telemetry/OnboardingTelemetry";
 import ActionButton from "../ActionButton/ActionButton";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 
-const STEPS = ["Choose Type", "Authentication", "Name & Create"];
+const STEPS = ["Choose Type", "Configuration", "Name & Create"];
 
 interface CreateConnectionWizardProps {
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
@@ -61,24 +52,16 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const [authOptions, setAuthOptions] = useState<IWorkTrackingSystemOption[]>(
 		[],
 	);
-	const [otherOptions, setOtherOptions] = useState<IWorkTrackingSystemOption[]>(
-		[],
-	);
+	const [requiredOtherOptions, setRequiredOtherOptions] = useState<
+		IWorkTrackingSystemOption[]
+	>([]);
+	const [optionalOtherOptions, setOptionalOtherOptions] = useState<
+		IWorkTrackingSystemOption[]
+	>([]);
 	const [connectionName, setConnectionName] = useState("");
 	const [validating, setValidating] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
-	const [correlationId] = useState(generateCorrelationId);
-
-	const telemetryProps = useMemo(
-		() => ({
-			entityType: "connection" as const,
-			workTrackingSystem: selectedSystem?.workTrackingSystem,
-			wizardUsed: true,
-			correlationId,
-		}),
-		[selectedSystem, correlationId],
-	);
 
 	const getAllAuthOptionKeys = useCallback(
 		(connection: IWorkTrackingSystemConnection | null): Set<string> => {
@@ -111,11 +94,6 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		setSelectedSystem(system);
 		setConnectionName(system.name);
 
-		emitCreateStarted({
-			...telemetryProps,
-			workTrackingSystem: system.workTrackingSystem,
-		});
-
 		const availableMethods = system.availableAuthenticationMethods ?? [];
 		const defaultMethod = availableMethods[0] ?? null;
 		setSelectedAuthMethod(defaultMethod);
@@ -134,18 +112,18 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 			setAuthOptions([]);
 		}
 
-		// Set up non-auth options
+		// Set up non-auth options, split into required and optional
 		const allAuthKeys = getAllAuthOptionKeys(system);
-		setOtherOptions(
-			system.options
-				.filter((opt) => !allAuthKeys.has(opt.key))
-				.map((opt) => ({
-					key: opt.key,
-					value: opt.value,
-					isSecret: opt.isSecret,
-					isOptional: opt.isOptional,
-				})),
-		);
+		const nonAuthOptions = system.options
+			.filter((opt) => !allAuthKeys.has(opt.key))
+			.map((opt) => ({
+				key: opt.key,
+				value: opt.value,
+				isSecret: opt.isSecret,
+				isOptional: opt.isOptional,
+			}));
+		setRequiredOtherOptions(nonAuthOptions.filter((opt) => !opt.isOptional));
+		setOptionalOtherOptions(nonAuthOptions.filter((opt) => opt.isOptional));
 
 		setActiveStep(1);
 	};
@@ -173,14 +151,26 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		);
 	};
 
+	const handleRequiredOtherOptionChange = (key: string, value: string) => {
+		setRequiredOtherOptions((prev) =>
+			prev.map((opt) => (opt.key === key ? { ...opt, value } : opt)),
+		);
+	};
+
 	const allOptions = useMemo(
-		() => [...authOptions, ...otherOptions],
-		[authOptions, otherOptions],
+		() => [...authOptions, ...requiredOtherOptions, ...optionalOtherOptions],
+		[authOptions, requiredOtherOptions, optionalOtherOptions],
 	);
 
-	const authInputsValid = useMemo(() => {
-		return authOptions.every((opt) => opt.isOptional || opt.value !== "");
-	}, [authOptions]);
+	const configInputsValid = useMemo(() => {
+		const authValid = authOptions.every(
+			(opt) => opt.isOptional || opt.value !== "",
+		);
+		const requiredOtherValid = requiredOtherOptions.every(
+			(opt) => opt.value !== "",
+		);
+		return authValid && requiredOtherValid;
+	}, [authOptions, requiredOtherOptions]);
 
 	const buildConnectionDto =
 		useCallback((): IWorkTrackingSystemConnection | null => {
@@ -201,26 +191,14 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const runValidation = useCallback(async (): Promise<boolean> => {
 		const dto = buildConnectionDto();
 		if (!dto) return false;
-		emitCreateValidationStarted(telemetryProps);
 		try {
 			const isValid = await validateConnection(dto);
-			if (isValid) {
-				emitCreateValidationSucceeded(telemetryProps);
-			} else {
-				emitCreateValidationFailed({
-					...telemetryProps,
-					failureCategory: "validation",
-				});
-			}
+
 			return isValid;
 		} catch {
-			emitCreateValidationFailed({
-				...telemetryProps,
-				failureCategory: "network",
-			});
 			return false;
 		}
-	}, [buildConnectionDto, validateConnection, telemetryProps]);
+	}, [buildConnectionDto, validateConnection]);
 
 	const handleCreate = async () => {
 		const dto = buildConnectionDto();
@@ -228,9 +206,6 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		setSaving(true);
 		try {
 			await saveConnection(dto);
-			emitCreateSucceeded(telemetryProps);
-		} catch {
-			emitCreateFailed({ ...telemetryProps, failureCategory: "unknown" });
 		} finally {
 			setSaving(false);
 		}
@@ -313,6 +288,19 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 				);
 			})}
 
+			{requiredOtherOptions.map((option) => (
+				<TextField
+					key={option.key}
+					label={option.key}
+					type={option.isSecret ? "password" : "text"}
+					fullWidth
+					value={option.value}
+					onChange={(e) =>
+						handleRequiredOtherOptionChange(option.key, e.target.value)
+					}
+				/>
+			))}
+
 			{validationError && (
 				<Alert severity="error" sx={{ width: "100%" }}>
 					{validationError}
@@ -346,7 +334,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	};
 
 	const isNextDisabled = () => {
-		if (activeStep === 1) return !authInputsValid || validating;
+		if (activeStep === 1) return !configInputsValid || validating;
 		return false;
 	};
 
