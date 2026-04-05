@@ -1,10 +1,10 @@
 import { Container, type SelectChangeEvent, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useModifySettings } from "../../../hooks/useModifySettings";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
-import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -40,306 +40,69 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	validateProjectSettings,
 	modifyDefaultSettings = false,
 }) => {
-	const [loading, setLoading] = useState<boolean>(false);
-	const [projectSettings, setProjectSettings] =
-		useState<IPortfolioSettings | null>(null);
-	const [workTrackingSystems, setWorkTrackingSystems] = useState<
-		IWorkTrackingSystemConnection[]
-	>([]);
 	const [teams, setTeams] = useState<ITeam[]>([]);
-	const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] =
-		useState<IWorkTrackingSystemConnection | null>(null);
-	const [formValid, setFormValid] = useState<boolean>(false);
-
-	const stateMappingErrors = useMemo(() => {
-		if (!projectSettings) return [];
-		const directStates = [
-			...projectSettings.toDoStates,
-			...projectSettings.doingStates,
-			...projectSettings.doneStates,
-		];
-		return validateStateMappings(projectSettings.stateMappings, directStates);
-	}, [projectSettings]);
-
 	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
 		useLicenseRestrictions();
 
-	const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
-		const selectedWorkTrackingSystemName = event.target.value;
-		const selectedWorkTrackingSystem =
-			workTrackingSystems.find(
-				(system) => system.name === selectedWorkTrackingSystemName,
-			) ?? null;
+	const fetchTeams = useCallback(async () => {
+		const fetchedTeams = await getAllTeams();
+		setTeams(fetchedTeams);
+	}, [getAllTeams]);
 
-		setSelectedWorkTrackingSystem(selectedWorkTrackingSystem);
-
-		if (selectedWorkTrackingSystem) {
-			setProjectSettings((prev) =>
-				prev
-					? {
-							...prev,
-							dataRetrievalSchema: getDefaultPortfolioSchema(
-								selectedWorkTrackingSystem.workTrackingSystem,
-							),
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleAddWorkItemType = (newWorkItemType: string) => {
-		if (newWorkItemType.trim()) {
-			setProjectSettings((prev) =>
-				prev
-					? {
-							...prev,
-							workItemTypes: [
-								...(prev.workItemTypes || []),
-								newWorkItemType.trim(),
-							],
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleRemoveWorkItemType = (type: string) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						workItemTypes: (prev.workItemTypes || []).filter(
-							(item) => item !== type,
-						),
-					}
-				: prev,
-		);
-	};
-
-	const handleAddToDoState = (toDoState: string) => {
-		if (toDoState.trim()) {
-			setProjectSettings((prev) =>
-				prev
-					? {
-							...prev,
-							toDoStates: [...(prev.toDoStates || []), toDoState.trim()],
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleRemoveToDoState = (toDoState: string) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						toDoStates: (prev.toDoStates || []).filter(
-							(item) => item !== toDoState,
-						),
-					}
-				: prev,
-		);
-	};
-
-	const handleAddDoingState = (doingState: string) => {
-		if (doingState.trim()) {
-			setProjectSettings((prev) =>
-				prev
-					? {
-							...prev,
-							doingStates: [...(prev.doingStates || []), doingState.trim()],
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleRemoveDoingState = (doingState: string) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						doingStates: (prev.doingStates || []).filter(
-							(item) => item !== doingState,
-						),
-					}
-				: prev,
-		);
-	};
-
-	const handleAddDoneState = (doneState: string) => {
-		if (doneState.trim()) {
-			setProjectSettings((prev) =>
-				prev
-					? {
-							...prev,
-							doneStates: [...(prev.doneStates || []), doneState.trim()],
-						}
-					: prev,
-			);
-		}
-	};
-
-	const handleRemoveDoneState = (doneState: string) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						doneStates: (prev.doneStates || []).filter(
-							(item) => item !== doneState,
-						),
-					}
-				: prev,
-		);
-	};
-
-	const handleReorderToDoStates = (newOrder: string[]) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						toDoStates: newOrder,
-					}
-				: prev,
-		);
-	};
-
-	const handleReorderDoingStates = (newOrder: string[]) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						doingStates: newOrder,
-					}
-				: prev,
-		);
-	};
-
-	const handleReorderDoneStates = (newOrder: string[]) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						doneStates: newOrder,
-					}
-				: prev,
-		);
-	};
-
-	const handleProjectSettingsChange = <K extends keyof IPortfolioSettings>(
-		key: K,
-		value: IPortfolioSettings[K] | null,
-	) => {
-		// Allow null for nullable fields: additional field definitions and owning team
-		const nullableFields = [
-			"sizeEstimateAdditionalFieldDefinitionId",
-			"featureOwnerAdditionalFieldDefinitionId",
-			"parentOverrideAdditionalFieldDefinitionId",
-			"estimationAdditionalFieldDefinitionId",
-			"estimationUnit",
-			"owningTeam",
-		];
-
-		if (value === null && !nullableFields.includes(key)) {
-			return;
-		}
-
-		setProjectSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
-	};
-
-	const handleSave = async () => {
-		if (!projectSettings) {
-			return;
-		}
-
-		const updatedSettings: IPortfolioSettings = {
-			...projectSettings,
-			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-		};
-
-		if (!modifyDefaultSettings) {
-			const isValid = await validateProjectSettings(updatedSettings);
-			if (!isValid) {
-				return;
-			}
-		}
-
-		await saveProjectSettings(updatedSettings);
-	};
-
-	useEffect(() => {
-		const handleStateChange = () => {
-			let isFormValid = false;
-
-			if (projectSettings) {
-				const hasValidName = projectSettings.name !== "";
-				const hasValidDefaultAmountOfFeatures =
-					projectSettings.defaultAmountOfWorkItemsPerFeature !== undefined;
-				const hasValidPercentileOptions =
-					!projectSettings.usePercentileToCalculateDefaultAmountOfWorkItems ||
-					(projectSettings.defaultWorkItemPercentile > 0 &&
-						projectSettings.percentileHistoryInDays >= 30);
-
-				const schema = projectSettings.dataRetrievalSchema;
-				const hasValidAmountOfWorkItemTypes =
-					schema?.isWorkItemTypesRequired === false ||
-					projectSettings.workItemTypes.length > 0;
-				const hasAllNecessaryStates =
-					projectSettings.toDoStates.length > 0 &&
-					projectSettings.doingStates.length > 0 &&
-					projectSettings.doneStates.length > 0;
-
-				// Check that dataRetrievalValue is not empty when required
-				const hasValidDataSource =
-					modifyDefaultSettings ||
-					(selectedWorkTrackingSystem !== null &&
+	const {
+		loading,
+		settings: projectSettings,
+		workTrackingSystems,
+		selectedWorkTrackingSystem,
+		formValid,
+		updateSettings,
+		handleWorkTrackingSystemChange,
+		handleSave,
+		workItemTypeHandlers,
+		toDoHandlers,
+		doingHandlers,
+		doneHandlers,
+	} = useModifySettings<IPortfolioSettings>({
+		getWorkTrackingSystems,
+		getSettings: getProjectSettings,
+		saveSettings: saveProjectSettings,
+		validateSettings: validateProjectSettings,
+		modifyDefaultSettings,
+		getSchemaForSystem: getDefaultPortfolioSchema,
+		validateForm: (s, system, isDefault) => {
+			if (!s) return false;
+			const schema = s.dataRetrievalSchema;
+			return (
+				s.name !== "" &&
+				s.defaultAmountOfWorkItemsPerFeature !== undefined &&
+				(!s.usePercentileToCalculateDefaultAmountOfWorkItems ||
+					(s.defaultWorkItemPercentile > 0 &&
+						s.percentileHistoryInDays >= 30)) &&
+				(schema?.isWorkItemTypesRequired === false ||
+					s.workItemTypes.length > 0) &&
+				s.toDoStates.length > 0 &&
+				s.doingStates.length > 0 &&
+				s.doneStates.length > 0 &&
+				(isDefault ||
+					(system !== null &&
 						(schema?.isRequired === false ||
-							(projectSettings?.dataRetrievalValue ?? "") !== ""));
+							(s.dataRetrievalValue ?? "") !== "")))
+			);
+		},
+		additionalFetch: fetchTeams,
+	});
 
-				isFormValid =
-					hasValidName &&
-					hasValidDefaultAmountOfFeatures &&
-					hasValidPercentileOptions &&
-					hasValidAmountOfWorkItemTypes &&
-					hasAllNecessaryStates &&
-					(modifyDefaultSettings ||
-						(hasValidDataSource && selectedWorkTrackingSystem !== null));
-			}
+	const stateMappingErrors = useMemo(() => {
+		if (!projectSettings) return [];
+		return validateStateMappings(projectSettings.stateMappings, [
+			...projectSettings.toDoStates,
+			...projectSettings.doingStates,
+			...projectSettings.doneStates,
+		]);
+	}, [projectSettings]);
 
-			setFormValid(isFormValid);
-		};
-
-		handleStateChange();
-	}, [projectSettings, selectedWorkTrackingSystem, modifyDefaultSettings]);
-
-	useEffect(() => {
-		const fetchData = async () => {
-			setLoading(true);
-			try {
-				const settings = await getProjectSettings();
-				setProjectSettings(settings);
-
-				const systems = await getWorkTrackingSystems();
-				setWorkTrackingSystems(systems);
-
-				const fetchedTeams = await getAllTeams();
-				setTeams(fetchedTeams);
-
-				setSelectedWorkTrackingSystem(
-					systems.find(
-						(system) => system.id === settings.workTrackingSystemConnectionId,
-					) ?? null,
-				);
-			} catch (error) {
-				console.error("Error fetching data", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchData();
-	}, [getProjectSettings, getWorkTrackingSystems, getAllTeams]);
+	const onWtsChange = (e: SelectChangeEvent<string>) =>
+		handleWorkTrackingSystemChange(e.target.value);
 
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
@@ -349,58 +112,57 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<Grid size={{ xs: 12 }}>
 							<Typography variant="h4">{title}</Typography>
 						</Grid>
+
 						<GeneralSettingsComponent
 							settings={projectSettings}
-							onSettingsChange={handleProjectSettingsChange}
+							onSettingsChange={updateSettings}
 							workTrackingSystems={workTrackingSystems}
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
-							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
+							onWorkTrackingSystemChange={onWtsChange}
 							showWorkTrackingSystemSelection={!modifyDefaultSettings}
 							settingsContext="portfolio"
 						/>
 
-						{projectSettings?.dataRetrievalSchema?.isWorkItemTypesRequired !==
+						{projectSettings.dataRetrievalSchema?.isWorkItemTypesRequired !==
 							false && (
 							<WorkItemTypesComponent
-								workItemTypes={projectSettings?.workItemTypes || []}
-								onAddWorkItemType={handleAddWorkItemType}
-								onRemoveWorkItemType={handleRemoveWorkItemType}
+								workItemTypes={projectSettings.workItemTypes || []}
+								onAddWorkItemType={workItemTypeHandlers.onAdd}
+								onRemoveWorkItemType={workItemTypeHandlers.onRemove}
 								isForTeam={false}
 							/>
 						)}
 
 						<StatesList
-							toDoStates={projectSettings?.toDoStates || []}
-							onAddToDoState={handleAddToDoState}
-							onRemoveToDoState={handleRemoveToDoState}
-							doingStates={projectSettings?.doingStates || []}
-							onAddDoingState={handleAddDoingState}
-							onRemoveDoingState={handleRemoveDoingState}
-							doneStates={projectSettings?.doneStates || []}
-							onAddDoneState={handleAddDoneState}
-							onRemoveDoneState={handleRemoveDoneState}
+							toDoStates={projectSettings.toDoStates || []}
+							onAddToDoState={toDoHandlers.onAdd}
+							onRemoveToDoState={toDoHandlers.onRemove}
+							onReorderToDoStates={toDoHandlers.onReorder}
+							doingStates={projectSettings.doingStates || []}
+							onAddDoingState={doingHandlers.onAdd}
+							onRemoveDoingState={doingHandlers.onRemove}
+							onReorderDoingStates={doingHandlers.onReorder}
+							doneStates={projectSettings.doneStates || []}
+							onAddDoneState={doneHandlers.onAdd}
+							onRemoveDoneState={doneHandlers.onRemove}
+							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={false}
-							onReorderToDoStates={handleReorderToDoStates}
-							onReorderDoingStates={handleReorderDoingStates}
-							onReorderDoneStates={handleReorderDoneStates}
 							stateMappingNames={
-								projectSettings?.stateMappings
+								projectSettings.stateMappings
 									?.filter((m) => m.name.trim() !== "")
 									.map((m) => m.name) || []
 							}
 						/>
 
 						<StateMappingsEditor
-							stateMappings={projectSettings?.stateMappings || []}
-							onChange={(mappings: IStateMapping[]) =>
-								handleProjectSettingsChange("stateMappings", mappings)
-							}
+							stateMappings={projectSettings.stateMappings || []}
+							onChange={(mappings) => updateSettings("stateMappings", mappings)}
 							validationErrors={stateMappingErrors}
 						/>
 
 						<FeatureSizeComponent
 							projectSettings={projectSettings}
-							onProjectSettingsChange={handleProjectSettingsChange}
+							onProjectSettingsChange={updateSettings}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
@@ -408,7 +170,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 						<OwnershipComponent
 							projectSettings={projectSettings}
-							onProjectSettingsChange={handleProjectSettingsChange}
+							onProjectSettingsChange={updateSettings}
 							availableTeams={teams}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
@@ -417,48 +179,45 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 						<FlowMetricsConfigurationComponent
 							settings={projectSettings}
-							onSettingsChange={handleProjectSettingsChange}
+							onSettingsChange={updateSettings}
 						/>
 
 						<EstimationFieldComponent
 							estimationFieldDefinitionId={
-								projectSettings?.estimationAdditionalFieldDefinitionId ?? null
+								projectSettings.estimationAdditionalFieldDefinitionId ?? null
 							}
-							onEstimationFieldChange={(value) =>
-								handleProjectSettingsChange(
-									"estimationAdditionalFieldDefinitionId",
-									value,
-								)
+							onEstimationFieldChange={(v) =>
+								updateSettings("estimationAdditionalFieldDefinitionId", v)
 							}
-							estimationUnit={projectSettings?.estimationUnit ?? null}
-							onEstimationUnitChange={(value) =>
-								handleProjectSettingsChange("estimationUnit", value || null)
+							estimationUnit={projectSettings.estimationUnit ?? null}
+							onEstimationUnitChange={(v) =>
+								updateSettings("estimationUnit", v || null)
 							}
 							useNonNumericEstimation={
-								projectSettings?.useNonNumericEstimation ?? false
+								projectSettings.useNonNumericEstimation ?? false
 							}
-							onUseNonNumericEstimationChange={(value) =>
-								handleProjectSettingsChange("useNonNumericEstimation", value)
+							onUseNonNumericEstimationChange={(v) =>
+								updateSettings("useNonNumericEstimation", v)
 							}
 							estimationCategoryValues={
-								projectSettings?.estimationCategoryValues ?? []
+								projectSettings.estimationCategoryValues ?? []
 							}
-							onAddCategoryValue={(value) => {
-								const current = projectSettings?.estimationCategoryValues ?? [];
-								handleProjectSettingsChange("estimationCategoryValues", [
-									...current,
-									value.trim(),
-								]);
-							}}
-							onRemoveCategoryValue={(value) => {
-								const current = projectSettings?.estimationCategoryValues ?? [];
-								handleProjectSettingsChange(
+							onAddCategoryValue={(v) =>
+								updateSettings("estimationCategoryValues", [
+									...(projectSettings.estimationCategoryValues ?? []),
+									v.trim(),
+								])
+							}
+							onRemoveCategoryValue={(v) =>
+								updateSettings(
 									"estimationCategoryValues",
-									current.filter((v) => v !== value),
-								);
-							}}
-							onReorderCategoryValues={(values) =>
-								handleProjectSettingsChange("estimationCategoryValues", values)
+									(projectSettings.estimationCategoryValues ?? []).filter(
+										(x) => x !== v,
+									),
+								)
+							}
+							onReorderCategoryValues={(v) =>
+								updateSettings("estimationCategoryValues", v)
 							}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
@@ -467,7 +226,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 						<AdvancedInputsComponent
 							settings={projectSettings}
-							onSettingsChange={handleProjectSettingsChange}
+							onSettingsChange={updateSettings}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}

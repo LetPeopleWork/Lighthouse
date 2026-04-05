@@ -2,7 +2,7 @@ import { Container, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import CreatePortfolioWizard from "../../../components/Common/ProjectSettings/CreatePortfolioWizard";
+import CreatePortfolioWizard from "../../../components/Common/CreateWizards/CreatePortfolioWizard";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";

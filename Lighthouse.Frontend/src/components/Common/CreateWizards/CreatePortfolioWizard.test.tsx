@@ -506,7 +506,7 @@ describe("CreatePortfolioWizard", () => {
 			const { user, validatePortfolioSettings } = await goToConfigure();
 
 			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
-			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
 			fireEvent.click(screen.getByText("Add ToDo State"));
 			fireEvent.click(screen.getByText("Add Doing State"));
 			fireEvent.click(screen.getByText("Add Done State"));
@@ -544,7 +544,7 @@ describe("CreatePortfolioWizard", () => {
 			});
 
 			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
-			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
 			fireEvent.click(screen.getByText("Add ToDo State"));
 			fireEvent.click(screen.getByText("Add Doing State"));
 			fireEvent.click(screen.getByText("Add Done State"));
@@ -693,7 +693,7 @@ describe("CreatePortfolioWizard", () => {
 			expect(screen.queryByText("Validate")).not.toBeInTheDocument();
 
 			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
-			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
 			fireEvent.click(screen.getByText("Add ToDo State"));
 			fireEvent.click(screen.getByText("Add Doing State"));
 			fireEvent.click(screen.getByText("Add Done State"));

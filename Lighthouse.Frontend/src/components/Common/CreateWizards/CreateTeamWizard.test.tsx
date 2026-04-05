@@ -510,7 +510,7 @@ describe("CreateTeamWizard", () => {
 			const { user, validateTeamSettings } = await goToConfigure();
 
 			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
-			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
 			fireEvent.click(screen.getByText("Add ToDo State"));
 			fireEvent.click(screen.getByText("Add Doing State"));
 			fireEvent.click(screen.getByText("Add Done State"));
@@ -548,7 +548,7 @@ describe("CreateTeamWizard", () => {
 			});
 
 			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
-			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
 			fireEvent.click(screen.getByText("Add ToDo State"));
 			fireEvent.click(screen.getByText("Add Doing State"));
 			fireEvent.click(screen.getByText("Add Done State"));
@@ -703,7 +703,7 @@ describe("CreateTeamWizard", () => {
 
 			// Fill and go to Name & Create
 			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
-			await user.type(dataRetrievalInput, "MyProject\\MyBoard");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
 			fireEvent.click(screen.getByText("Add ToDo State"));
 			fireEvent.click(screen.getByText("Add Doing State"));
 			fireEvent.click(screen.getByText("Add Done State"));

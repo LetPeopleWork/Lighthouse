@@ -19,7 +19,7 @@ vi.mock("react-router-dom", async () => {
 });
 
 // Mock CreateTeamWizard
-vi.mock("../../../components/Common/Team/CreateTeamWizard", () => ({
+vi.mock("../../../components/Common/CreateWizards/CreateTeamWizard", () => ({
 	default: () => <div data-testid="create-team-wizard">CreateTeamWizard</div>,
 }));
 

@@ -23,7 +23,7 @@ vi.mock("react-router-dom", async () => {
 
 // Mock CreatePortfolioWizard
 vi.mock(
-	"../../../components/Common/ProjectSettings/CreatePortfolioWizard",
+	"../../../components/Common/CreateWizards/CreatePortfolioWizard",
 	() => ({
 		default: () => (
 			<div data-testid="create-portfolio-wizard">CreatePortfolioWizard</div>
