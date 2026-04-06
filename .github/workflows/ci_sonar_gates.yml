@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Download Frontend Sonar report
         if: inputs.frontend-ran
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: sonar-report-frontend
           path: ./Lighthouse.Frontend/.scannerwork/
@@ -33,7 +33,7 @@ jobs:
 
       - name: Download Backend Sonar report
         if: inputs.backend-ran
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: sonar-report-backend
           path: .sonarqube/out/.sonar/
