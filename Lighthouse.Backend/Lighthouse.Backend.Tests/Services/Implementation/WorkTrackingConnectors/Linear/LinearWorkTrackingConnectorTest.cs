@@ -76,8 +76,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Message, Is.Not.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Is.Not.Empty);
+            }
         }
 
         [Test]
