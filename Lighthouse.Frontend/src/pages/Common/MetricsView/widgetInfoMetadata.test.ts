@@ -47,6 +47,9 @@ describe("widgetInfoMetadata", () => {
 			expect(entry.description.length).toBeGreaterThan(0);
 			expect(entry.learnMoreUrl).toContain(DOCS_BASE);
 			expect(entry.learnMoreUrl).toMatch(/#.+/);
+			expect(entry.statusGuidance.sustain.length).toBeGreaterThan(0);
+			expect(entry.statusGuidance.observe.length).toBeGreaterThan(0);
+			expect(entry.statusGuidance.act.length).toBeGreaterThan(0);
 		}
 	});
 

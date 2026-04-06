@@ -149,6 +149,11 @@ describe("WidgetShell", () => {
 				info={{
 					description: "This is a test widget",
 					learnMoreUrl: "https://example.com",
+					statusGuidance: {
+						sustain: "Sustain guidance",
+						observe: "Observe guidance",
+						act: "Act guidance",
+					},
 				}}
 			>
 				<div>Content</div>
@@ -165,6 +170,11 @@ describe("WidgetShell", () => {
 				info={{
 					description: "Shows completed items over time",
 					learnMoreUrl: "https://docs.example.com#throughput",
+					statusGuidance: {
+						sustain: "Sustain guidance",
+						observe: "Observe guidance",
+						act: "Act guidance",
+					},
 				}}
 			>
 				<div>Content</div>
@@ -176,6 +186,71 @@ describe("WidgetShell", () => {
 		).toBeInTheDocument();
 		const link = screen.getByRole("link", { name: /learn more/i });
 		expect(link).toHaveAttribute("href", "https://docs.example.com#throughput");
+	});
+
+	it("shows Sustain, Observe, and Act guidance in info popover when tips are enabled", async () => {
+		const user = userEvent.setup();
+		render(
+			<WidgetShell
+				widgetKey="test-widget"
+				showTips={true}
+				info={{
+					description: "General info",
+					learnMoreUrl: "https://docs.example.com#test",
+					statusGuidance: {
+						sustain: "Healthy trend.",
+						observe: "Watch this trend.",
+						act: "Take action now.",
+					},
+				}}
+			>
+				<div>Content</div>
+			</WidgetShell>,
+		);
+
+		await user.click(screen.getByTestId("widget-info-test-widget"));
+
+		expect(screen.getByText("General info")).toBeInTheDocument();
+		expect(screen.getByText("Sustain")).toBeInTheDocument();
+		expect(screen.getByText("Observe")).toBeInTheDocument();
+		expect(screen.getByText("Act")).toBeInTheDocument();
+		expect(screen.getByText("Healthy trend.")).toBeInTheDocument();
+		expect(screen.getByText("Watch this trend.")).toBeInTheDocument();
+		expect(screen.getByText("Take action now.")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /learn more/i }),
+		).toBeInTheDocument();
+	});
+
+	it("hides status guidance in info popover when tips are disabled", async () => {
+		const user = userEvent.setup();
+		render(
+			<WidgetShell
+				widgetKey="test-widget"
+				showTips={false}
+				info={{
+					description: "General info",
+					learnMoreUrl: "https://docs.example.com#test",
+					statusGuidance: {
+						sustain: "Healthy trend.",
+						observe: "Watch this trend.",
+						act: "Take action now.",
+					},
+				}}
+			>
+				<div>Content</div>
+			</WidgetShell>,
+		);
+
+		await user.click(screen.getByTestId("widget-info-test-widget"));
+
+		expect(screen.getByText("General info")).toBeInTheDocument();
+		expect(screen.queryByText("Healthy trend.")).not.toBeInTheDocument();
+		expect(screen.queryByText("Watch this trend.")).not.toBeInTheDocument();
+		expect(screen.queryByText("Take action now.")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /learn more/i }),
+		).toBeInTheDocument();
 	});
 
 	it("does not render info button when info prop is absent", () => {

@@ -16,6 +16,7 @@ import WorkItemsDialog, {
 	type HighlightColumnDefinition,
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
+import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 
 type RagStatus = "red" | "amber" | "green" | "none";
 
@@ -27,6 +28,7 @@ type WidgetFooter = {
 type WidgetInfo = {
 	readonly description: string;
 	readonly learnMoreUrl: string;
+	readonly statusGuidance: WidgetStatusGuidance;
 };
 
 export type ViewDataPayload = {
@@ -58,6 +60,15 @@ const ragLabelMap: Record<Exclude<RagStatus, "none">, string> = {
 	green: "Sustain",
 };
 
+const infoGuidanceOrder: ReadonlyArray<{
+	readonly guidanceKey: keyof WidgetStatusGuidance;
+	readonly ragStatus: Exclude<RagStatus, "none">;
+}> = [
+	{ guidanceKey: "sustain", ragStatus: "green" },
+	{ guidanceKey: "observe", ragStatus: "amber" },
+	{ guidanceKey: "act", ragStatus: "red" },
+];
+
 const WidgetShell: React.FC<WidgetShellProps> = ({
 	title,
 	widgetKey,
@@ -74,6 +85,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 
 	const hasViewData = !!viewData && viewData.items.length > 0;
 	const hasHeader = !!title || (header && showTips) || !!info || hasViewData;
+	const showInfoGuidance = showTips && !!info?.statusGuidance;
 
 	return (
 		<>
@@ -124,6 +136,47 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 										<Typography variant="body2" sx={{ mb: 1 }}>
 											{info.description}
 										</Typography>
+										{showInfoGuidance && (
+											<Box
+												sx={{
+													display: "flex",
+													flexDirection: "column",
+													gap: 0.75,
+													mb: 1,
+												}}
+											>
+												{infoGuidanceOrder.map(({ guidanceKey, ragStatus }) => (
+													<Box
+														key={guidanceKey}
+														sx={{
+															display: "flex",
+															alignItems: "flex-start",
+															gap: 0.75,
+														}}
+													>
+														<Chip
+															label={ragLabelMap[ragStatus]}
+															size="small"
+															sx={{
+																backgroundColor: ragColorMap[ragStatus],
+																color: "#fff",
+																fontWeight: 600,
+																fontSize: "0.65rem",
+																height: 20,
+																minWidth: 68,
+															}}
+														/>
+														<Typography
+															variant="caption"
+															color="text.secondary"
+															sx={{ lineHeight: 1.45 }}
+														>
+															{info.statusGuidance[guidanceKey]}
+														</Typography>
+													</Box>
+												))}
+											</Box>
+										)}
 										<Link
 											href={info.learnMoreUrl}
 											target="_blank"
