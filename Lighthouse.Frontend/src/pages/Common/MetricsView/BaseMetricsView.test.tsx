@@ -195,7 +195,7 @@ vi.mock("./PredictabilityScoreOverviewWidget", () => ({
 	default: ({ score }: { score: number | null }) => (
 		<div data-testid="predictability-score-widget">
 			<div data-testid="predictability-score-value">
-				{score !== null ? score : "loading"}
+				{score ?? "loading"}
 			</div>
 		</div>
 	),
@@ -411,21 +411,21 @@ vi.mock("./WidgetShell", () => ({
 	default: ({
 		widgetKey,
 		children,
-		footer,
+		header,
 		info,
 	}: {
 		widgetKey: string;
 		children: ReactNode;
-		footer?: { ragStatus: string; tipText: string };
+		header?: { ragStatus: string; tipText: string };
 		info?: { description: string; learnMoreUrl: string };
 	}) => (
 		<div data-testid={`widget-shell-${widgetKey}`}>
-			{footer && (
-				<div data-testid={`widget-footer-${widgetKey}`}>
+			{header && (
+				<div data-testid={`widget-header-${widgetKey}`}>
 					<span data-testid={`widget-rag-${widgetKey}`}>
-						{footer.ragStatus}
+						{header.ragStatus}
 					</span>
-					<span data-testid={`widget-tip-${widgetKey}`}>{footer.tipText}</span>
+					<span data-testid={`widget-tip-${widgetKey}`}>{header.tipText}</span>
 				</div>
 			)}
 			{info && (
@@ -2151,7 +2151,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-throughput"),
+					screen.getByTestId("widget-header-throughput"),
 				).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-throughput")).toHaveTextContent(
 					"green",
@@ -2205,7 +2205,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-percentiles"),
+					screen.getByTestId("widget-header-percentiles"),
 				).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-percentiles")).toHaveTextContent(
 					"green",
@@ -2265,7 +2265,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-cycleScatter"),
+					screen.getByTestId("widget-header-cycleScatter"),
 				).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-cycleScatter")).toHaveTextContent(
 					"green",
@@ -2287,7 +2287,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-startedVsFinished"),
+					screen.getByTestId("widget-header-startedVsFinished"),
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-startedVsFinished"),
@@ -2356,7 +2356,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-totalWorkItemAge"),
+					screen.getByTestId("widget-header-totalWorkItemAge"),
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-totalWorkItemAge"),
@@ -2742,7 +2742,7 @@ describe("BaseMetricsView component", () => {
 			);
 
 			await waitFor(() => {
-				expect(screen.getByTestId("widget-footer-aging")).toBeInTheDocument();
+				expect(screen.getByTestId("widget-header-aging")).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-aging")).toHaveTextContent(
 					"green",
 				);
@@ -2780,7 +2780,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-wipOverTime"),
+					screen.getByTestId("widget-header-wipOverTime"),
 				).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-wipOverTime")).toHaveTextContent(
 					"red",
@@ -2804,7 +2804,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-totalWorkItemAgeOverTime"),
+					screen.getByTestId("widget-header-totalWorkItemAgeOverTime"),
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-totalWorkItemAgeOverTime"),
@@ -2831,7 +2831,7 @@ describe("BaseMetricsView component", () => {
 			);
 
 			await waitFor(() => {
-				expect(screen.getByTestId("widget-footer-stacked")).toBeInTheDocument();
+				expect(screen.getByTestId("widget-header-stacked")).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-stacked")).toHaveTextContent(
 					"red",
 				);
@@ -2905,7 +2905,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-estimationVsCycleTime"),
+					screen.getByTestId("widget-header-estimationVsCycleTime"),
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-estimationVsCycleTime"),
@@ -2927,7 +2927,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-featureSize"),
+					screen.getByTestId("widget-header-featureSize"),
 				).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-featureSize")).toHaveTextContent(
 					"red",
@@ -2952,7 +2952,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-workDistribution"),
+					screen.getByTestId("widget-header-workDistribution"),
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-workDistribution"),
@@ -3023,7 +3023,7 @@ describe("BaseMetricsView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("widget-footer-throughputPbc"),
+					screen.getByTestId("widget-header-throughputPbc"),
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-throughputPbc"),
