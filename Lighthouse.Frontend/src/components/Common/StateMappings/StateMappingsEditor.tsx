@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
 	Alert,
+	Autocomplete,
 	Button,
 	Chip,
 	IconButton,
@@ -17,12 +18,15 @@ import InputGroup from "../InputGroup/InputGroup";
 
 interface StateMappingsEditorProps {
 	stateMappings: IStateMapping[];
+	/** Current Doing states from which source states can be selected. */
+	doingStates: string[];
 	onChange: (mappings: IStateMapping[]) => void;
 	validationErrors?: string[];
 }
 
 const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 	stateMappings,
+	doingStates,
 	onChange,
 	validationErrors = [],
 }) => {
@@ -31,6 +35,25 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 	}>({});
 
 	const mappingIds = useRef<string[]>([]);
+
+	/** Returns Doing states available as sources for the given mapping index.
+	 *  Excludes mapping names (they cannot be nested) and states already
+	 *  present in any mapping.
+	 */
+	const getAvailableSourceOptions = (mappingIndex: number): string[] => {
+		const allMappingNames = new Set(
+			stateMappings.map((m) => m.name.trim().toLowerCase()),
+		);
+		const currentMappingStates = new Set(
+			(stateMappings[mappingIndex]?.states ?? []).map((s) =>
+				s.trim().toLowerCase(),
+			),
+		);
+		return doingStates.filter((s) => {
+			const lower = s.trim().toLowerCase();
+			return !allMappingNames.has(lower) && !currentMappingStates.has(lower);
+		});
+	};
 
 	const handleAddMapping = () => {
 		mappingIds.current.push(crypto.randomUUID());
@@ -78,10 +101,14 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 
 	return (
 		<InputGroup title="State Mappings">
-			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				Group one or more provider states under a single name. Use mapped names
-				in To Do, Doing, or Done configuration.
+			<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+				Combine multiple Doing states into one named group. When you add a
+				group, its states are removed from your Doing list and replaced by the
+				group name. Removing a group restores the original states.
 			</Typography>
+			<Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+				After saving, a data reload is needed for these changes to take effect.
+			</Alert>
 
 			{validationErrors.length > 0 && (
 				<Stack spacing={1} sx={{ mb: 2 }}>
@@ -148,24 +175,28 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 								/>
 							))}
 						</Stack>
-						<TextField
-							label="New Source State"
-							value={newStateInputs[index] ?? ""}
-							onChange={(e) =>
-								setNewStateInputs((prev) => ({
-									...prev,
-									[index]: e.target.value,
-								}))
-							}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault();
-									handleAddState(index, newStateInputs[index] ?? "");
-								}
+						<Autocomplete
+							options={getAvailableSourceOptions(index)}
+							value={null}
+							inputValue={newStateInputs[index] ?? ""}
+							onInputChange={(_, val) => {
+								setNewStateInputs((prev) => ({ ...prev, [index]: val }));
 							}}
-							size="small"
-							fullWidth
-							helperText="Press Enter to add a source state"
+							onChange={(_, selected) => {
+								if (selected) handleAddState(index, selected);
+							}}
+							blurOnSelect
+							disableCloseOnSelect={false}
+							noOptionsText="No Doing states available"
+							renderInput={(params) => (
+								<TextField
+									{...params}
+									label="Add Doing State to This Group"
+									size="small"
+									fullWidth
+									helperText="Select from your current Doing states"
+								/>
+							)}
 						/>
 					</Grid>
 				</Grid>

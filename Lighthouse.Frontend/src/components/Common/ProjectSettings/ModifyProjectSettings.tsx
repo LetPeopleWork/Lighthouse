@@ -14,6 +14,7 @@ import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSett
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
+import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -163,7 +164,16 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 						<StateMappingsEditor
 							stateMappings={projectSettings.stateMappings || []}
-							onChange={(mappings) => updateSettings("stateMappings", mappings)}
+							doingStates={projectSettings.doingStates || []}
+							onChange={(nextMappings) => {
+								const reconciledDoing = reconcileDoingStates(
+									projectSettings.stateMappings || [],
+									nextMappings,
+									projectSettings.doingStates || [],
+								);
+								updateSettings("stateMappings", nextMappings);
+								updateSettings("doingStates", reconciledDoing);
+							}}
 							validationErrors={stateMappingErrors}
 						/>
 

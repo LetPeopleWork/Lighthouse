@@ -13,6 +13,7 @@ import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
+import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -156,7 +157,16 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 						<StateMappingsEditor
 							stateMappings={teamSettings.stateMappings || []}
-							onChange={(mappings) => updateSettings("stateMappings", mappings)}
+							doingStates={teamSettings.doingStates || []}
+							onChange={(nextMappings) => {
+								const reconciledDoing = reconcileDoingStates(
+									teamSettings.stateMappings || [],
+									nextMappings,
+									teamSettings.doingStates || [],
+								);
+								updateSettings("stateMappings", nextMappings);
+								updateSettings("doingStates", reconciledDoing);
+							}}
 							validationErrors={stateMappingErrors}
 						/>
 
