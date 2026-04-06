@@ -46,6 +46,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	predictability: [
 		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
+		{ widgetKey: "predictabilityScoreDetails", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
 		{ widgetKey: "wipPbc", size: "large" },
 		{ widgetKey: "totalWorkItemAgePbc", size: "large" },

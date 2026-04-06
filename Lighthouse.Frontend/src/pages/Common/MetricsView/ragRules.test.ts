@@ -17,368 +17,313 @@ import {
 	computeWipOverviewRag,
 	computeWorkDistributionRag,
 	computeWorkItemAgeChartRag,
+	type RagTerms,
 } from "./ragRules";
+
+const terms: RagTerms = {
+	workItem: "Work Item",
+	workItems: "Work Items",
+	feature: "Feature",
+	features: "Features",
+	cycleTime: "Cycle Time",
+	throughput: "Throughput",
+	wip: "WIP",
+	workItemAge: "Work Item Age",
+	blocked: "Blocked",
+	sle: "SLE",
+};
 
 describe("ragRules", () => {
 	describe("computeWipOverviewRag", () => {
 		it("returns red when no system WIP limit is defined (0)", () => {
-			const result = computeWipOverviewRag(5, 0);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define System WIP Limit.",
-			});
+			const result = computeWipOverviewRag(5, 0, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit");
 		});
 
 		it("returns red when no system WIP limit is defined (undefined)", () => {
-			const result = computeWipOverviewRag(5, undefined);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define System WIP Limit.",
-			});
+			const result = computeWipOverviewRag(5, undefined, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit");
 		});
 
 		it("returns red when WIP exceeds limit", () => {
-			const result = computeWipOverviewRag(8, 5);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Close items to bring WIP down.",
-			});
+			const result = computeWipOverviewRag(8, 5, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("exceeding the limit");
 		});
 
 		it("returns amber when WIP is below limit", () => {
-			const result = computeWipOverviewRag(3, 5);
-			expect(result).toEqual({
-				ragStatus: "amber",
-				tipText: "Start more items to operate at best capacity.",
-			});
+			const result = computeWipOverviewRag(3, 5, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Start more items");
 		});
 
 		it("returns green when WIP matches limit", () => {
-			const result = computeWipOverviewRag(5, 5);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "You match your System WIP Limit.",
-			});
+			const result = computeWipOverviewRag(5, 5, terms);
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toContain("matches the System WIP Limit");
 		});
 
 		it("returns red with zero WIP and no limit", () => {
-			const result = computeWipOverviewRag(0, 0);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define System WIP Limit.",
-			});
+			const result = computeWipOverviewRag(0, 0, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit");
 		});
 	});
 
 	describe("computeBlockedOverviewRag", () => {
 		it("returns red when no blocked config is defined", () => {
-			const result = computeBlockedOverviewRag(0, false);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define blocked indicators in settings.",
-			});
+			const result = computeBlockedOverviewRag(0, false, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define Blocked indicators");
 		});
 
 		it("returns red when 2+ items are blocked", () => {
-			const result = computeBlockedOverviewRag(2, true);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Focus on unblocking blocked work.",
-			});
+			const result = computeBlockedOverviewRag(2, true, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Focus on unblocking");
 		});
 
 		it("returns red when many items are blocked", () => {
-			const result = computeBlockedOverviewRag(5, true);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Focus on unblocking blocked work.",
-			});
+			const result = computeBlockedOverviewRag(5, true, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Focus on unblocking");
 		});
 
 		it("returns amber when 1 item is blocked", () => {
-			const result = computeBlockedOverviewRag(1, true);
-			expect(result).toEqual({
-				ragStatus: "amber",
-				tipText: "Do not ignore blocked items.",
-			});
+			const result = computeBlockedOverviewRag(1, true, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Do not ignore");
 		});
 
 		it("returns green when no items are blocked", () => {
-			const result = computeBlockedOverviewRag(0, true);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "No blockers.",
-			});
+			const result = computeBlockedOverviewRag(0, true, terms);
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toContain("No Blocked");
 		});
 	});
 
 	describe("computeFeaturesWorkedOnRag", () => {
 		it("returns red when no feature WIP is defined (0)", () => {
-			const result = computeFeaturesWorkedOnRag(3, 0);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define Feature WIP in settings.",
-			});
+			const result = computeFeaturesWorkedOnRag(3, 0, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define Feature WIP");
 		});
 
 		it("returns red when no feature WIP is defined (undefined)", () => {
-			const result = computeFeaturesWorkedOnRag(3, undefined);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define Feature WIP in settings.",
-			});
+			const result = computeFeaturesWorkedOnRag(3, undefined, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define Feature WIP");
 		});
 
 		it("returns red when feature count exceeds WIP", () => {
-			const result = computeFeaturesWorkedOnRag(5, 3);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Focus your work to get features done more quickly.",
-			});
+			const result = computeFeaturesWorkedOnRag(5, 3, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("exceeding the limit");
 		});
 
 		it("returns amber when feature count is below WIP", () => {
-			const result = computeFeaturesWorkedOnRag(1, 3);
-			expect(result).toEqual({
-				ragStatus: "amber",
-				tipText: "Consider starting work for another feature.",
-			});
+			const result = computeFeaturesWorkedOnRag(1, 3, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Consider starting another");
 		});
 
 		it("returns green when feature count matches WIP", () => {
-			const result = computeFeaturesWorkedOnRag(3, 3);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "Working at capacity.",
-			});
+			const result = computeFeaturesWorkedOnRag(3, 3, terms);
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toContain("matching the Feature WIP limit");
 		});
 	});
 
 	describe("computePredictabilityScoreRag", () => {
 		it("returns undefined when score is null", () => {
-			const result = computePredictabilityScoreRag(null);
+			const result = computePredictabilityScoreRag(null, terms);
 			expect(result).toBeUndefined();
 		});
 
 		it("returns red when score is below 40%", () => {
-			const result = computePredictabilityScoreRag(0.35);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Throughput is highly variable; forecasts will be unreliable.",
-			});
+			const result = computePredictabilityScoreRag(0.35, terms);
+			expect(result?.ragStatus).toBe("red");
+			expect(result?.tipText).toContain("below 40%");
+			expect(result?.tipText).toContain("highly variable");
 		});
 
 		it("returns red at exactly 0%", () => {
-			const result = computePredictabilityScoreRag(0);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Throughput is highly variable; forecasts will be unreliable.",
-			});
+			const result = computePredictabilityScoreRag(0, terms);
+			expect(result?.ragStatus).toBe("red");
+			expect(result?.tipText).toContain("highly variable");
 		});
 
 		it("returns amber when score is between 40% and 60%", () => {
-			const result = computePredictabilityScoreRag(0.5);
-			expect(result).toEqual({
-				ragStatus: "amber",
-				tipText: "Moderate predictability; analyze bulk closings.",
-			});
+			const result = computePredictabilityScoreRag(0.5, terms);
+			expect(result?.ragStatus).toBe("amber");
+			expect(result?.tipText).toContain("40\u201360%");
 		});
 
 		it("returns amber at exactly 40%", () => {
-			const result = computePredictabilityScoreRag(0.4);
-			expect(result).toEqual({
-				ragStatus: "amber",
-				tipText: "Moderate predictability; analyze bulk closings.",
-			});
+			const result = computePredictabilityScoreRag(0.4, terms);
+			expect(result?.ragStatus).toBe("amber");
+			expect(result?.tipText).toContain("Analyze bulk closings");
 		});
 
 		it("returns green when score is above 60%", () => {
-			const result = computePredictabilityScoreRag(0.73);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "Process is reasonably stable; forecasts are trustworthy.",
-			});
+			const result = computePredictabilityScoreRag(0.73, terms);
+			expect(result?.ragStatus).toBe("green");
+			expect(result?.tipText).toContain("Forecasts are trustworthy");
 		});
 
 		it("returns amber at exactly 60%", () => {
-			const result = computePredictabilityScoreRag(0.6);
-			expect(result).toEqual({
-				ragStatus: "amber",
-				tipText: "Moderate predictability; analyze bulk closings.",
-			});
+			const result = computePredictabilityScoreRag(0.6, terms);
+			expect(result?.ragStatus).toBe("amber");
 		});
 
 		it("returns green above 60%", () => {
-			const result = computePredictabilityScoreRag(0.61);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "Process is reasonably stable; forecasts are trustworthy.",
-			});
+			const result = computePredictabilityScoreRag(0.61, terms);
+			expect(result?.ragStatus).toBe("green");
 		});
 
 		it("returns green at 100%", () => {
-			const result = computePredictabilityScoreRag(1.0);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "Process is reasonably stable; forecasts are trustworthy.",
-			});
+			const result = computePredictabilityScoreRag(1.0, terms);
+			expect(result?.ragStatus).toBe("green");
+			expect(result?.tipText).toContain("above 60%");
 		});
 	});
 
 	describe("computeCycleTimePercentilesRag", () => {
 		it("returns red when no SLE is defined (null)", () => {
-			const result = computeCycleTimePercentilesRag(null, []);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define SLE in settings based on historical data.",
-			});
+			const result = computeCycleTimePercentilesRag(null, [], terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define a SLE");
 		});
 
-		it("returns green when at or above SLE", () => {
-			// SLE: 85% within 10 days. percentiles show 85th = 9 days
+		it("returns green when percentage meets SLE target", () => {
+			// SLE: 85% within 10 days. 9 of 10 items <= 10 → 90% >= 85%
 			const sle = { percentile: 85, value: 10 };
-			const percentiles = [
-				{ percentile: 50, value: 5 },
-				{ percentile: 70, value: 7 },
-				{ percentile: 85, value: 9 },
-				{ percentile: 95, value: 15 },
-			];
-			const result = computeCycleTimePercentilesRag(sle, percentiles);
+			const cycleTimes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11];
+			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns amber when performance is 1-15% away from SLE", () => {
-			// SLE: 85% within 10 days. 85th percentile = 11 (10% over)
+		it("returns amber when percentage is slightly below SLE target (within 20pp)", () => {
+			// SLE: 85% within 10 days. 8 of 10 = 80%. Gap = 5pp < 20
 			const sle = { percentile: 85, value: 10 };
-			const percentiles = [
-				{ percentile: 50, value: 5 },
-				{ percentile: 85, value: 11 },
-				{ percentile: 95, value: 18 },
-			];
-			const result = computeCycleTimePercentilesRag(sle, percentiles);
+			const cycleTimes = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12];
+			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
-		it("returns red when performance is more than 15% away from SLE", () => {
-			// SLE: 85% within 10 days. 85th percentile = 12 (20% over)
+		it("returns red when percentage is far below SLE target (>20pp)", () => {
+			// SLE: 85% within 10 days. 4 of 10 = 40%. Gap = 45pp > 20
 			const sle = { percentile: 85, value: 10 };
-			const percentiles = [
-				{ percentile: 50, value: 5 },
-				{ percentile: 85, value: 12 },
-				{ percentile: 95, value: 20 },
-			];
-			const result = computeCycleTimePercentilesRag(sle, percentiles);
+			const cycleTimes = [1, 2, 3, 4, 11, 12, 13, 14, 15, 16];
+			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
-		it("returns green when no matching percentile exists (no data)", () => {
+		it("returns red when no cycle time data exists", () => {
 			const sle = { percentile: 85, value: 10 };
-			const result = computeCycleTimePercentilesRag(sle, []);
+			const result = computeCycleTimePercentilesRag(sle, [], terms);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns green when all cycle times are within SLE", () => {
+			const sle = { percentile: 85, value: 10 };
+			// 20 items, 17 ≤ 10, 3 > 10 → 85% >= 85%
+			const cycleTimes = [...Array(17).fill(5), 11, 12, 13];
+			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns green when actual equals SLE exactly", () => {
-			const sle = { percentile: 85, value: 10 };
-			const percentiles = [{ percentile: 85, value: 10 }];
-			const result = computeCycleTimePercentilesRag(sle, percentiles);
-			expect(result.ragStatus).toBe("green");
-		});
-
-		it("returns amber at exactly 1% over", () => {
-			// SLE: 85% within 100 days. 85th = 101 (1% over)
+		it("returns amber when gap is exactly 1pp below target", () => {
+			// SLE: 85% within 100. 84 of 100 within → 84%. Gap = 1pp < 20
 			const sle = { percentile: 85, value: 100 };
-			const percentiles = [{ percentile: 85, value: 101 }];
-			const result = computeCycleTimePercentilesRag(sle, percentiles);
+			const cycleTimes = [...Array(84).fill(50), ...Array(16).fill(150)];
+			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 	});
 
 	describe("computeStartedVsClosedRag", () => {
 		it("returns red when no system WIP limit is defined", () => {
-			const result = computeStartedVsClosedRag(10, 8, undefined);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define System WIP Limit.",
-			});
+			const result = computeStartedVsClosedRag(10, 8, undefined, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit");
 		});
 
 		it("returns green when started and closed are equal", () => {
-			const result = computeStartedVsClosedRag(10, 10, 5);
+			const result = computeStartedVsClosedRag(10, 10, 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green when difference is within 1 item", () => {
-			const result = computeStartedVsClosedRag(10, 11, 5);
+			const result = computeStartedVsClosedRag(10, 11, 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns red when starting much more than closing", () => {
-			const result = computeStartedVsClosedRag(20, 10, 5);
+			const result = computeStartedVsClosedRag(20, 10, 5, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns amber when closing much more than starting", () => {
-			const result = computeStartedVsClosedRag(10, 20, 5);
+			const result = computeStartedVsClosedRag(10, 20, 5, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns green when both are zero", () => {
-			const result = computeStartedVsClosedRag(0, 0, 5);
+			const result = computeStartedVsClosedRag(0, 0, 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns red for moderate starting-more gap (>10%)", () => {
 			// started=12, closed=10, diff%=2/12=16.7%
-			const result = computeStartedVsClosedRag(12, 10, 5);
+			const result = computeStartedVsClosedRag(12, 10, 5, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 	});
 
 	describe("computeTotalWorkItemAgeRag", () => {
 		it("returns red when no WIP limit is defined", () => {
-			const result = computeTotalWorkItemAgeRag(100, 5, undefined, 10);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define System WIP Limit and SLE.",
-			});
+			const result = computeTotalWorkItemAgeRag(100, 5, undefined, 10, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit and SLE");
 		});
 
 		it("returns red when no SLE is defined", () => {
-			const result = computeTotalWorkItemAgeRag(100, 5, 5, undefined);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define System WIP Limit and SLE.",
-			});
+			const result = computeTotalWorkItemAgeRag(100, 5, 5, undefined, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit and SLE");
 		});
 
 		it("returns red when total age exceeds reference value", () => {
 			// ref = WIP(5) * SLE(10) = 50. totalAge=60 > 50
-			const result = computeTotalWorkItemAgeRag(60, 5, 5, 10);
+			const result = computeTotalWorkItemAgeRag(60, 5, 5, 10, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns amber when tomorrow projection exceeds reference", () => {
 			// ref = 5*10=50. totalAge=46, tomorrow = 46+5=51 > 50
-			const result = computeTotalWorkItemAgeRag(46, 5, 5, 10);
+			const result = computeTotalWorkItemAgeRag(46, 5, 5, 10, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns green when total age and tomorrow are within range", () => {
 			// ref = 5*10=50. totalAge=40, tomorrow=40+5=45 <= 50
-			const result = computeTotalWorkItemAgeRag(40, 5, 5, 10);
+			const result = computeTotalWorkItemAgeRag(40, 5, 5, 10, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns green when total age is exactly at reference", () => {
+		it("returns amber when total age is exactly at reference", () => {
 			// ref = 5*10=50. totalAge=50, tomorrow=50+5=55 but today is exactly at limit
-			const result = computeTotalWorkItemAgeRag(50, 5, 5, 10);
+			const result = computeTotalWorkItemAgeRag(50, 5, 5, 10, terms);
 			// totalAge = ref, but tomorrow > ref → amber
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns green when well below reference", () => {
 			// ref =5*10=50. totalAge=20, tomorrow=20+5=25 <= 50
-			const result = computeTotalWorkItemAgeRag(20, 5, 5, 10);
+			const result = computeTotalWorkItemAgeRag(20, 5, 5, 10, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 	});
@@ -386,67 +331,63 @@ describe("ragRules", () => {
 	describe("computeThroughputRag", () => {
 		it("returns green with consistent throughput (no zero periods)", () => {
 			const values = [3, 5, 2, 4, 1];
-			const result = computeThroughputRag(values, []);
-			expect(result).toEqual({
-				ragStatus: "green",
-				tipText: "Stable, predictable delivery.",
-			});
+			const result = computeThroughputRag(values, [], terms);
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toContain("Throughput is stable");
 		});
 
-		it("returns amber with one consecutive zero period", () => {
-			const values = [3, 0, 2, 4, 1];
-			const result = computeThroughputRag(values, []);
+		it("returns amber with one run of 3 consecutive zeros", () => {
+			const values = [3, 0, 0, 0, 4, 1];
+			const result = computeThroughputRag(values, [], terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
-		it("returns red with multiple consecutive zero periods", () => {
-			const values = [3, 0, 0, 4, 1];
-			const result = computeThroughputRag(values, []);
+		it("returns red with multiple runs of 3 consecutive zeros", () => {
+			const values = [0, 0, 0, 0, 4, 1];
+			const result = computeThroughputRag(values, [], terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns red with all zero periods", () => {
 			const values = [0, 0, 0, 0];
-			const result = computeThroughputRag(values, []);
+			const result = computeThroughputRag(values, [], terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns green with empty data", () => {
-			const result = computeThroughputRag([], []);
+			const result = computeThroughputRag([], [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("excludes blackout days from zero-period detection", () => {
 			// periods: [3, 0, 0, 4, 1], blackout at indices 1,2
 			const values = [3, 0, 0, 4, 1];
-			const result = computeThroughputRag(values, [1, 2]);
+			const result = computeThroughputRag(values, [1, 2], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns amber when one non-blackout zero remains", () => {
-			// periods: [3, 0, 0, 0, 1], blackout at indices 1,2
-			// non-blackout: [3, _, _, 0, 1] → one isolated zero
-			const values = [3, 0, 0, 0, 1];
-			const result = computeThroughputRag(values, [1, 2]);
+		it("returns amber when one non-blackout zero run remains", () => {
+			// [3, 0, 0, 0, 0, 0, 1], blackout at [1,2]
+			// Window [3,4,5]: all non-blackout && zero → zeroRuns=1 → amber
+			const values = [3, 0, 0, 0, 0, 0, 1];
+			const result = computeThroughputRag(values, [1, 2], terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
-		it("returns red when multiple consecutive non-blackout zeros", () => {
-			// [3, 0, 0, 0, 0], blackout at [1]
-			// non-blackout: [3, _, 0, 0, 0] → 3 consecutive
-			const values = [3, 0, 0, 0, 0];
-			const result = computeThroughputRag(values, [1]);
+		it("returns red when multiple consecutive non-blackout zero runs", () => {
+			// [3, 0, 0, 0, 0, 0, 0], blackout at [1]
+			// Window [2,3,4]: allZero → run1, [3,4,5]: allZero → run2, [4,5,6]: allZero → run3
+			const values = [3, 0, 0, 0, 0, 0, 0];
+			const result = computeThroughputRag(values, [1], terms);
 			expect(result.ragStatus).toBe("red");
 		});
 	});
 
 	describe("computeCycleTimeScatterplotRag", () => {
 		it("returns red when no SLE is defined", () => {
-			const result = computeCycleTimeScatterplotRag(null, []);
-			expect(result).toEqual({
-				ragStatus: "red",
-				tipText: "Define a Service Level Expectation based on historical data.",
-			});
+			const result = computeCycleTimeScatterplotRag(null, [], terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define a SLE");
 		});
 
 		it("returns green when within SLE", () => {
@@ -455,7 +396,7 @@ describe("ragRules", () => {
 			const sle = { percentile: 85, value: 10 };
 			const cycleTimes = [2, 3, 4, 5, 6, 7, 8, 9, 9, 11];
 			// 1 out of 10 = 10% above, SLE says 15% allowed
-			const result = computeCycleTimeScatterplotRag(sle, cycleTimes);
+			const result = computeCycleTimeScatterplotRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
@@ -465,7 +406,7 @@ describe("ragRules", () => {
 			const sle = { percentile: 85, value: 10 };
 			// 18 of 100 items above 10 days
 			const cycleTimes = Array(82).fill(5).concat(Array(18).fill(15));
-			const result = computeCycleTimeScatterplotRag(sle, cycleTimes);
+			const result = computeCycleTimeScatterplotRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
@@ -474,20 +415,20 @@ describe("ragRules", () => {
 			// 30% above
 			const sle = { percentile: 85, value: 10 };
 			const cycleTimes = Array(70).fill(5).concat(Array(30).fill(15));
-			const result = computeCycleTimeScatterplotRag(sle, cycleTimes);
+			const result = computeCycleTimeScatterplotRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns green with empty cycle time data", () => {
 			const sle = { percentile: 85, value: 10 };
-			const result = computeCycleTimeScatterplotRag(sle, []);
+			const result = computeCycleTimeScatterplotRag(sle, [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green when all items within SLE", () => {
 			const sle = { percentile: 85, value: 10 };
 			const cycleTimes = [1, 2, 3, 4, 5];
-			const result = computeCycleTimeScatterplotRag(sle, cycleTimes);
+			const result = computeCycleTimeScatterplotRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 	});
@@ -498,16 +439,16 @@ describe("ragRules", () => {
 
 	describe("computeWorkItemAgeChartRag", () => {
 		it("returns red when no SLE is set", () => {
-			const result = computeWorkItemAgeChartRag(null, true, []);
+			const result = computeWorkItemAgeChartRag(null, true, [], terms);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("SLE");
 		});
 
 		it("returns red when no blocked config is set", () => {
 			const sle = { percentile: 85, value: 14 };
-			const result = computeWorkItemAgeChartRag(sle, false, []);
+			const result = computeWorkItemAgeChartRag(sle, false, [], terms);
 			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("blocked");
+			expect(result.tipText).toContain("Blocked");
 		});
 
 		it("returns red when any item is above SLE", () => {
@@ -516,18 +457,18 @@ describe("ragRules", () => {
 				{ workItemAge: 10, isBlocked: false },
 				{ workItemAge: 15, isBlocked: false },
 			];
-			const result = computeWorkItemAgeChartRag(sle, true, items);
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
-		it("returns amber when item is within 15% of SLE", () => {
+		it("returns amber when some items are above SLE within allowed percentage", () => {
 			const sle = { percentile: 85, value: 14 };
-			// 15% of 14 = 2.1, so threshold = 14 - 2.1 = 11.9. Item at 12 is within 15%.
+			// 1 of 10 above SLE → 10% <= allowedAbove(15%) → anyAbove=true → amber
 			const items = [
-				{ workItemAge: 12, isBlocked: false },
-				{ workItemAge: 5, isBlocked: false },
+				{ workItemAge: 15, isBlocked: false },
+				...Array(9).fill({ workItemAge: 5, isBlocked: false }),
 			];
-			const result = computeWorkItemAgeChartRag(sle, true, items);
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
@@ -537,7 +478,7 @@ describe("ragRules", () => {
 				{ workItemAge: 5, isBlocked: true },
 				{ workItemAge: 3, isBlocked: false },
 			];
-			const result = computeWorkItemAgeChartRag(sle, true, items);
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
@@ -547,91 +488,83 @@ describe("ragRules", () => {
 				{ workItemAge: 5, isBlocked: false },
 				{ workItemAge: 8, isBlocked: false },
 			];
-			const result = computeWorkItemAgeChartRag(sle, true, items);
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green with empty items", () => {
 			const sle = { percentile: 85, value: 14 };
-			const result = computeWorkItemAgeChartRag(sle, true, []);
+			const result = computeWorkItemAgeChartRag(sle, true, [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 	});
 
 	describe("computeWipOverTimeRag", () => {
 		it("returns red when no system WIP is set", () => {
-			const result = computeWipOverTimeRag([3, 4, 5], undefined);
+			const result = computeWipOverTimeRag([3, 4, 5], undefined, terms);
 			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("System WIP");
+			expect(result.tipText).toContain("System WIP Limit");
 		});
 
 		it("returns red when more days above WIP than at/below", () => {
-			// WIP limit = 5, values: [6, 7, 6, 5, 4] → above=3, at=1, below=1 → above > at+below-above? above(3) > rest(2) → Red
-			const result = computeWipOverTimeRag([6, 7, 6, 5, 4], 5);
+			const result = computeWipOverTimeRag([6, 7, 6, 5, 4], 5, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns green when most days at the WIP limit (>50%)", () => {
-			// WIP limit = 5, values: [5, 5, 5, 4, 6] → at=3 out of 5 = 60% → Green
-			const result = computeWipOverTimeRag([5, 5, 5, 4, 6], 5);
+			const result = computeWipOverTimeRag([5, 5, 5, 4, 6], 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns amber when more days below than at/above", () => {
-			// WIP limit = 5, values: [3, 2, 4, 5, 6] → above=1, at=1, below=3 → below > above+at → Amber
-			const result = computeWipOverTimeRag([3, 2, 4, 5, 6], 5);
+			const result = computeWipOverTimeRag([3, 2, 4, 5, 6], 5, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns amber for mixed distribution with no dominant pattern", () => {
-			// WIP limit = 5, values: [4, 6, 5, 4] → above=1, at=1, below=2, atPercent=25% → mixed → Amber
-			const result = computeWipOverTimeRag([4, 6, 5, 4], 5);
+			const result = computeWipOverTimeRag([4, 6, 5, 4], 5, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns green with empty data", () => {
-			const result = computeWipOverTimeRag([], 5);
+			const result = computeWipOverTimeRag([], 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("handles 50/50 split as not red", () => {
-			// WIP limit = 5, values: [6, 4] → above=1, below=1 → 50/50 → not red
-			const result = computeWipOverTimeRag([6, 4], 5);
+			const result = computeWipOverTimeRag([6, 4], 5, terms);
 			expect(result.ragStatus).not.toBe("red");
 		});
 	});
 
 	describe("computeTotalWorkItemAgeOverTimeRag", () => {
 		it("returns red when end is higher than start by >10%", () => {
-			// start=100, end=115 → (115-100)/100 = 15% > 10% → Red
-			const result = computeTotalWorkItemAgeOverTimeRag(100, 115);
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 115, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns amber when start is higher than end by >10%", () => {
-			// start=100, end=85 → decrease of 15% → Amber
-			const result = computeTotalWorkItemAgeOverTimeRag(100, 85);
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 85, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns green when start and end are within 10% margin", () => {
-			// start=100, end=105 → 5% change → Green
-			const result = computeTotalWorkItemAgeOverTimeRag(100, 105);
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 105, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green when start and end are equal", () => {
-			const result = computeTotalWorkItemAgeOverTimeRag(100, 100);
+			const result = computeTotalWorkItemAgeOverTimeRag(100, 100, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green when both are zero", () => {
-			const result = computeTotalWorkItemAgeOverTimeRag(0, 0);
+			const result = computeTotalWorkItemAgeOverTimeRag(0, 0, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns red when start is zero and end is positive", () => {
-			const result = computeTotalWorkItemAgeOverTimeRag(0, 10);
+			const result = computeTotalWorkItemAgeOverTimeRag(0, 10, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 	});
@@ -639,17 +572,17 @@ describe("ragRules", () => {
 	describe("computeSimplifiedCfdRag", () => {
 		it("delegates to startedVsClosed logic", () => {
 			// Same behavior: no WIP limit → Red
-			const result = computeSimplifiedCfdRag(10, 8, undefined);
+			const result = computeSimplifiedCfdRag(10, 8, undefined, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
 		it("returns green when balanced with WIP limit", () => {
-			const result = computeSimplifiedCfdRag(10, 10, 5);
+			const result = computeSimplifiedCfdRag(10, 10, 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns red when started much more than closed", () => {
-			const result = computeSimplifiedCfdRag(20, 10, 5);
+			const result = computeSimplifiedCfdRag(20, 10, 5, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 	});
@@ -660,102 +593,97 @@ describe("ragRules", () => {
 
 	describe("computeWorkDistributionRag", () => {
 		it("returns red when unlinked items >= 20%", () => {
-			const result = computeWorkDistributionRag(20, 100, 3, 2);
+			const result = computeWorkDistributionRag(20, 100, 3, 2, terms);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("linked");
 		});
 
 		it("returns red when no feature WIP is set", () => {
-			const result = computeWorkDistributionRag(0, 100, undefined, 5);
+			const result = computeWorkDistributionRag(0, 100, undefined, 5, terms);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("Feature WIP");
 		});
 
 		it("returns red when distribution rate exceeds feature WIP by >20%", () => {
 			// featureWip=3, distributionRate=4 → (4-3)/3=33% → >20% → Red
-			const result = computeWorkDistributionRag(5, 100, 3, 4);
+			const result = computeWorkDistributionRag(5, 100, 3, 4, terms);
 			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("thin");
+			expect(result.tipText).toContain("Focus on fewer");
 		});
 
 		it("returns amber when distribution rate slightly above feature WIP (up to 20%)", () => {
 			// featureWip=5, distributionRate=6 → (6-5)/5=20% → Amber
-			const result = computeWorkDistributionRag(5, 100, 5, 6);
+			const result = computeWorkDistributionRag(5, 100, 5, 6, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
 		it("returns green when distribution rate at or below feature WIP", () => {
-			const result = computeWorkDistributionRag(5, 100, 5, 5);
+			const result = computeWorkDistributionRag(5, 100, 5, 5, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green when distribution rate is below feature WIP", () => {
-			const result = computeWorkDistributionRag(5, 100, 5, 3);
+			const result = computeWorkDistributionRag(5, 100, 5, 3, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
 		it("returns green with zero total items", () => {
-			const result = computeWorkDistributionRag(0, 0, 5, 0);
+			const result = computeWorkDistributionRag(0, 0, 5, 0, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 	});
 
 	describe("computeFeatureSizeRag", () => {
 		it("returns red when no feature size target is set", () => {
-			const result = computeFeatureSizeRag(null, []);
+			const result = computeFeatureSizeRag(null, [], terms);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("Feature Size Target");
 		});
 
-		it("returns green when actual is at or below target", () => {
+		it("returns green when most items are within target", () => {
 			const target = { percentile: 85, value: 10 };
-			const percentiles = [
-				{ percentile: 50, value: 5 },
-				{ percentile: 85, value: 9 },
-			];
-			const result = computeFeatureSizeRag(target, percentiles);
+			// All 10 items ≤ 10 → 100% >= 85% target
+			const sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+			const result = computeFeatureSizeRag(target, sizes, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns amber when actual is 1-15% above target", () => {
+		it("returns amber when percentage is slightly below target (within 20pp)", () => {
 			const target = { percentile: 85, value: 10 };
-			// Actual 85th = 11 → (11-10)/10 = 10% → Amber
-			const percentiles = [
-				{ percentile: 50, value: 5 },
-				{ percentile: 85, value: 11 },
-			];
-			const result = computeFeatureSizeRag(target, percentiles);
+			// 8 of 10 ≤ 10 → 80%. Gap = 5pp (< 20)
+			const sizes = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12];
+			const result = computeFeatureSizeRag(target, sizes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
-		it("returns red when actual is >15% above target", () => {
+		it("returns red when percentage is far below target (>20pp)", () => {
 			const target = { percentile: 85, value: 10 };
-			// Actual 85th = 12 → (12-10)/10 = 20% → Red
-			const percentiles = [
-				{ percentile: 50, value: 5 },
-				{ percentile: 85, value: 12 },
-			];
-			const result = computeFeatureSizeRag(target, percentiles);
+			// 6 of 10 ≤ 10 → 60%. Gap = 25pp (> 20)
+			const sizes = [1, 2, 3, 4, 5, 6, 11, 12, 13, 14];
+			const result = computeFeatureSizeRag(target, sizes, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
-		it("returns green when no matching percentile found", () => {
+		it("returns green when no items to evaluate", () => {
 			const target = { percentile: 85, value: 10 };
-			const percentiles = [{ percentile: 50, value: 5 }];
-			const result = computeFeatureSizeRag(target, percentiles);
+			const result = computeFeatureSizeRag(target, [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 	});
 
 	describe("computeEstimationVsCycleTimeRag", () => {
 		it("returns red when not configured", () => {
-			const result = computeEstimationVsCycleTimeRag("NotConfigured", []);
+			const result = computeEstimationVsCycleTimeRag(
+				"NotConfigured",
+				[],
+				terms,
+			);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("estimation");
 		});
 
 		it("returns green with empty data points", () => {
-			const result = computeEstimationVsCycleTimeRag("Configured", []);
+			const result = computeEstimationVsCycleTimeRag("Ready", [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
@@ -767,7 +695,7 @@ describe("ragRules", () => {
 				{ estimate: 5, cycleTime: 15 },
 				{ estimate: 8, cycleTime: 25 },
 			];
-			const result = computeEstimationVsCycleTimeRag("Configured", data);
+			const result = computeEstimationVsCycleTimeRag("Ready", data, terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
@@ -779,7 +707,7 @@ describe("ragRules", () => {
 				{ estimate: 8, cycleTime: 1 },
 				{ estimate: 2, cycleTime: 25 },
 			];
-			const result = computeEstimationVsCycleTimeRag("Configured", data);
+			const result = computeEstimationVsCycleTimeRag("Ready", data, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
@@ -791,7 +719,7 @@ describe("ragRules", () => {
 				{ estimate: 5, cycleTime: 3 },
 				{ estimate: 8, cycleTime: 20 },
 			];
-			const result = computeEstimationVsCycleTimeRag("Configured", data);
+			const result = computeEstimationVsCycleTimeRag("Ready", data, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 	});

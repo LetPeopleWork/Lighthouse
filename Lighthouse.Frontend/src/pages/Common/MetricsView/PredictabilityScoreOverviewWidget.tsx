@@ -7,13 +7,13 @@ import {
 } from "@mui/material";
 import type React from "react";
 
-type PredictabilityScoreWidgetProps = {
+type PredictabilityScoreOverviewWidgetProps = {
 	readonly score: number | null;
 };
 
-const PredictabilityScoreWidget: React.FC<PredictabilityScoreWidgetProps> = ({
-	score,
-}) => {
+const PredictabilityScoreOverviewWidget: React.FC<
+	PredictabilityScoreOverviewWidgetProps
+> = ({ score }) => {
 	const theme = useTheme();
 
 	return (
@@ -48,4 +48,4 @@ const PredictabilityScoreWidget: React.FC<PredictabilityScoreWidgetProps> = ({
 	);
 };
 
-export default PredictabilityScoreWidget;
+export default PredictabilityScoreOverviewWidget;

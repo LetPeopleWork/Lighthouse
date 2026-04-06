@@ -1,11 +1,5 @@
 import { Grid } from "@mui/material";
-import {
-	type ReactNode,
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-} from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
@@ -22,6 +16,7 @@ import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWor
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
+import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
@@ -33,11 +28,7 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type {
-	IMetricsService,
-	IProjectMetricsService,
-} from "../../../services/Api/MetricsService";
+import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
@@ -46,7 +37,8 @@ import type { DashboardItem } from "./Dashboard";
 import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
 import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
-import PredictabilityScoreWidget from "./PredictabilityScoreWidget";
+import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget";
+import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
 import {
 	computeBlockedOverviewRag,
 	computeCycleTimePercentilesRag,
@@ -65,6 +57,7 @@ import {
 	computeWipOverviewRag,
 	computeWorkDistributionRag,
 	computeWorkItemAgeChartRag,
+	type RagTerms,
 } from "./ragRules";
 import { useCategorySelection } from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
@@ -84,10 +77,6 @@ export interface BaseMetricsViewProps<
 	hasBlockedConfig?: boolean;
 	doingStates: string[];
 }
-
-// ---------------------------------------------------------------------------
-// Pure helpers (outside component — zero cognitive complexity cost)
-// ---------------------------------------------------------------------------
 
 function formatDate(date: Date): string {
 	return date.toISOString().split("T")[0];
@@ -184,6 +173,7 @@ type RagInputs = {
 	readonly distributionRate: number;
 	readonly featureSizeTarget: IPercentileValue | null;
 	readonly sizePercentileValues: IPercentileValue[];
+	readonly featureSizes: ReadonlyArray<number>;
 	readonly estimationStatus: string;
 	readonly estimationDataPoints: ReadonlyArray<{
 		estimate: number;
@@ -194,34 +184,48 @@ type RagInputs = {
 	readonly totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
 	readonly cycleTimePbcData: ProcessBehaviourChartData | null;
 	readonly featureSizePbcData: ProcessBehaviourChartData | null;
+	readonly terms: RagTerms;
 };
 
 function buildWidgetFooters(
 	inputs: RagInputs,
 ): Record<string, RagFooter | undefined> {
 	return {
-		wipOverview: computeWipOverviewRag(inputs.wipCount, inputs.systemWipLimit),
+		wipOverview: computeWipOverviewRag(
+			inputs.wipCount,
+			inputs.systemWipLimit,
+			inputs.terms,
+		),
 		blockedOverview: computeBlockedOverviewRag(
 			inputs.blockedCount,
 			inputs.hasBlockedConfig,
+			inputs.terms,
 		),
 		featuresWorkedOnOverview: inputs.featuresInProgress
 			? computeFeaturesWorkedOnRag(
 					inputs.featuresInProgress.length,
 					inputs.featureWip,
+					inputs.terms,
 				)
 			: undefined,
 		predictabilityScore: computePredictabilityScoreRag(
 			inputs.predictabilityScore,
+			inputs.terms,
+		),
+		predictabilityScoreDetails: computePredictabilityScoreRag(
+			inputs.predictabilityScore,
+			inputs.terms,
 		),
 		percentiles: computeCycleTimePercentilesRag(
 			inputs.sle,
-			inputs.percentileValues,
+			inputs.cycleTimes,
+			inputs.terms,
 		),
 		startedVsFinished: computeStartedVsClosedRag(
 			inputs.startedTotal,
 			inputs.closedTotal,
 			inputs.systemWipLimit,
+			inputs.terms,
 		),
 		totalWorkItemAge:
 			inputs.totalWorkItemAge === null
@@ -231,43 +235,56 @@ function buildWidgetFooters(
 						inputs.currentWip,
 						inputs.systemWipLimit,
 						inputs.sleDays,
+						inputs.terms,
 					),
 		throughput: computeThroughputRag(
 			inputs.throughputValues,
 			inputs.blackoutDayIndices,
+			inputs.terms,
 		),
-		cycleScatter: computeCycleTimeScatterplotRag(inputs.sle, inputs.cycleTimes),
+		cycleScatter: computeCycleTimeScatterplotRag(
+			inputs.sle,
+			inputs.cycleTimes,
+			inputs.terms,
+		),
 		aging: computeWorkItemAgeChartRag(
 			inputs.sle,
 			inputs.hasBlockedConfig,
 			inputs.agingItems,
+			inputs.terms,
 		),
 		wipOverTime: computeWipOverTimeRag(
 			inputs.wipOverTimeValues,
 			inputs.systemWipLimit,
+			inputs.terms,
 		),
 		totalWorkItemAgeOverTime: computeTotalWorkItemAgeOverTimeRag(
 			inputs.totalAgeStart,
 			inputs.totalAgeEnd,
+			inputs.terms,
 		),
 		stacked: computeSimplifiedCfdRag(
 			inputs.startedTotal,
 			inputs.closedTotal,
 			inputs.systemWipLimit,
+			inputs.terms,
 		),
 		workDistribution: computeWorkDistributionRag(
 			inputs.unlinkedCount,
 			inputs.workDistTotalCount,
 			inputs.featureWip,
 			inputs.distributionRate,
+			inputs.terms,
 		),
 		featureSize: computeFeatureSizeRag(
 			inputs.featureSizeTarget,
-			inputs.sizePercentileValues,
+			inputs.featureSizes,
+			inputs.terms,
 		),
 		estimationVsCycleTime: computeEstimationVsCycleTimeRag(
 			inputs.estimationStatus,
 			inputs.estimationDataPoints,
+			inputs.terms,
 		),
 		throughputPbc: inputs.throughputPbcData
 			? computePbcRag(inputs.throughputPbcData)
@@ -346,8 +363,13 @@ function buildWidgetNodes(ctx: {
 			/>
 		) : null,
 		predictabilityScore: (
-			<PredictabilityScoreWidget
+			<PredictabilityScoreOverviewWidget
 				score={ctx.predictabilityData?.predictabilityScore ?? null}
+			/>
+		),
+		predictabilityScoreDetails: (
+			<PredictabilityScoreDetailsWidget
+				predictabilityData={ctx.predictabilityData}
 			/>
 		),
 		percentiles: (
@@ -375,7 +397,6 @@ function buildWidgetNodes(ctx: {
 				startDate={ctx.startDate}
 				chartData={ctx.throughputData}
 				displayTotal={true}
-				predictabilityData={ctx.predictabilityData}
 			/>
 		) : null,
 		cycleScatter: (
@@ -507,264 +528,6 @@ function buildWidgetNodes(ctx: {
 	return nodes;
 }
 
-function isProjectMetricsService(
-	service: object,
-): service is IProjectMetricsService {
-	return (
-		"getAllFeaturesForSizeChart" in service &&
-		"getSizePercentiles" in service &&
-		"getFeatureSizePbc" in service &&
-		"getFeatureSizeEstimation" in service
-	);
-}
-
-// ---------------------------------------------------------------------------
-// Custom hook — pulls all data-fetching out of the component
-// ---------------------------------------------------------------------------
-
-interface MetricsData<T> {
-	blackoutPeriods: IBlackoutPeriod[];
-	throughputData: RunChartData | null;
-	wipOverTimeData: RunChartData | null;
-	inProgressItems: IWorkItem[];
-	cycleTimeData: T[];
-	percentileValues: IPercentileValue[];
-	sizePercentileValues: IPercentileValue[];
-	allFeaturesForSizeChart: IFeature[];
-	startedItems: RunChartData | null;
-	predictabilityData: IForecastPredictabilityScore | null;
-	throughputPbcData: ProcessBehaviourChartData | null;
-	wipPbcData: ProcessBehaviourChartData | null;
-	totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
-	cycleTimePbcData: ProcessBehaviourChartData | null;
-	featureSizePbcData: ProcessBehaviourChartData | null;
-	estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
-	featureSizeEstimationData: IFeatureSizeEstimationResponse | null;
-	serviceLevelExpectation: IPercentileValue | null;
-	totalWorkItemAge: number | null;
-}
-
-function useMetricsData<
-	T extends IWorkItem | IFeature,
-	E extends IFeatureOwner,
->(
-	entity: E,
-	metricsService: IMetricsService<T>,
-	startDate: Date,
-	endDate: Date,
-): MetricsData<T> {
-	const { blackoutPeriodService } = useContext(ApiServiceContext);
-	const { getTerm } = useTerminology();
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
-
-	const [blackoutPeriods, setBlackoutPeriods] = useState<IBlackoutPeriod[]>([]);
-	const [throughputData, setThroughputData] = useState<RunChartData | null>(
-		null,
-	);
-	const [wipOverTimeData, setWipOverTimeData] = useState<RunChartData | null>(
-		null,
-	);
-	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
-	const [cycleTimeData, setCycleTimeData] = useState<T[]>([]);
-	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
-		[],
-	);
-	const [sizePercentileValues, setSizePercentileValues] = useState<
-		IPercentileValue[]
-	>([]);
-	const [allFeaturesForSizeChart, setAllFeaturesForSizeChart] = useState<
-		IFeature[]
-	>([]);
-	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
-	const [predictabilityData, setPredictabilityData] =
-		useState<IForecastPredictabilityScore | null>(null);
-	const [throughputPbcData, setThroughputPbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [wipPbcData, setWipPbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [totalWorkItemAgePbcData, setTotalWorkItemAgePbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [cycleTimePbcData, setCycleTimePbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [featureSizePbcData, setFeatureSizePbcData] =
-		useState<ProcessBehaviourChartData | null>(null);
-	const [estimationVsCycleTimeData, setEstimationVsCycleTimeData] =
-		useState<IEstimationVsCycleTimeResponse | null>(null);
-	const [featureSizeEstimationData, setFeatureSizeEstimationData] =
-		useState<IFeatureSizeEstimationResponse | null>(null);
-	const [serviceLevelExpectation, setServiceLevelExpectation] =
-		useState<IPercentileValue | null>(null);
-	const [totalWorkItemAge, setTotalWorkItemAge] = useState<number | null>(null);
-
-	useEffect(() => {
-		blackoutPeriodService
-			.getAll()
-			.then(setBlackoutPeriods)
-			.catch(() => {
-				/* optional — fall back to empty */
-			});
-	}, [blackoutPeriodService]);
-
-	useEffect(() => {
-		metricsService
-			.getMultiItemForecastPredictabilityScore(entity.id, startDate, endDate)
-			.then(setPredictabilityData)
-			.catch((error) =>
-				console.error("Error fetching predictability data:", error),
-			);
-	}, [entity, metricsService, startDate, endDate]);
-
-	useEffect(() => {
-		metricsService
-			.getTotalWorkItemAge(entity.id)
-			.then(setTotalWorkItemAge)
-			.catch((error) =>
-				console.error("Error fetching total work item age:", error),
-			);
-	}, [entity, metricsService]);
-
-	useEffect(() => {
-		metricsService
-			.getThroughput(entity.id, startDate, endDate)
-			.then(setThroughputData)
-			.catch((error) => console.error("Error getting throughput:", error));
-	}, [entity, metricsService, startDate, endDate]);
-
-	useEffect(() => {
-		metricsService
-			.getStartedItems(entity.id, startDate, endDate)
-			.then(setStartedItems)
-			.catch((error) =>
-				console.error(`Error getting started ${workItemsTerm}:`, error),
-			);
-	}, [entity, metricsService, startDate, endDate, workItemsTerm]);
-
-	useEffect(() => {
-		const fetch = async () => {
-			const items = await metricsService.getInProgressItems(entity.id);
-			setInProgressItems(items);
-			const wipData = await metricsService.getWorkInProgressOverTime(
-				entity.id,
-				startDate,
-				endDate,
-			);
-			setWipOverTimeData(wipData);
-		};
-		fetch().catch((error) =>
-			console.error(`Error getting ${workItemsTerm} in progress:`, error),
-		);
-	}, [entity, metricsService, startDate, endDate, workItemsTerm]);
-
-	useEffect(() => {
-		const fetch = async () => {
-			const data = await metricsService.getCycleTimeData(
-				entity.id,
-				startDate,
-				endDate,
-			);
-			setCycleTimeData(data);
-			const percentiles = await metricsService.getCycleTimePercentiles(
-				entity.id,
-				startDate,
-				endDate,
-			);
-			setPercentileValues(percentiles);
-		};
-		fetch().catch((error) =>
-			console.error(`Error fetching ${cycleTimeTerm} data:`, error),
-		);
-	}, [entity, metricsService, startDate, endDate, cycleTimeTerm]);
-
-	useEffect(() => {
-		if (!isProjectMetricsService(metricsService)) return;
-		const svc = metricsService as IProjectMetricsService;
-		const fetch = async () => {
-			setSizePercentileValues(
-				await svc.getSizePercentiles(entity.id, startDate, endDate),
-			);
-			setAllFeaturesForSizeChart(
-				await svc.getAllFeaturesForSizeChart(entity.id, startDate, endDate),
-			);
-			setFeatureSizePbcData(
-				await svc.getFeatureSizePbc(entity.id, startDate, endDate),
-			);
-			setFeatureSizeEstimationData(
-				await svc.getFeatureSizeEstimation(entity.id, startDate, endDate),
-			);
-		};
-		fetch().catch((error) =>
-			console.error("Error fetching Size Percentile Data:", error),
-		);
-	}, [metricsService, entity, startDate, endDate]);
-
-	useEffect(() => {
-		if (
-			entity.serviceLevelExpectationProbability > 0 &&
-			entity.serviceLevelExpectationRange > 0
-		) {
-			setServiceLevelExpectation({
-				value: entity.serviceLevelExpectationRange,
-				percentile: entity.serviceLevelExpectationProbability,
-			});
-		}
-	}, [entity]);
-
-	useEffect(() => {
-		metricsService
-			.getEstimationVsCycleTimeData(entity.id, startDate, endDate)
-			.then(setEstimationVsCycleTimeData)
-			.catch((error) =>
-				console.error("Error fetching estimation vs cycle time data:", error),
-			);
-	}, [entity, metricsService, startDate, endDate]);
-
-	useEffect(() => {
-		const fetch = async () => {
-			const [throughputPbc, wipPbc, totalWorkItemAgePbc, cycleTimePbc] =
-				await Promise.all([
-					metricsService.getThroughputPbc(entity.id, startDate, endDate),
-					metricsService.getWipPbc(entity.id, startDate, endDate),
-					metricsService.getTotalWorkItemAgePbc(entity.id, startDate, endDate),
-					metricsService.getCycleTimePbc(entity.id, startDate, endDate),
-				]);
-			setThroughputPbcData(throughputPbc);
-			setWipPbcData(wipPbc);
-			setTotalWorkItemAgePbcData(totalWorkItemAgePbc);
-			setCycleTimePbcData(cycleTimePbc);
-		};
-		fetch().catch((error) =>
-			console.error("Error fetching process behaviour chart data:", error),
-		);
-	}, [entity, metricsService, startDate, endDate]);
-
-	return {
-		blackoutPeriods,
-		throughputData,
-		wipOverTimeData,
-		inProgressItems,
-		cycleTimeData,
-		percentileValues,
-		sizePercentileValues,
-		allFeaturesForSizeChart,
-		startedItems,
-		predictabilityData,
-		throughputPbcData,
-		wipPbcData,
-		totalWorkItemAgePbcData,
-		cycleTimePbcData,
-		featureSizePbcData,
-		estimationVsCycleTimeData,
-		featureSizeEstimationData,
-		serviceLevelExpectation,
-		totalWorkItemAge,
-	};
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export const BaseMetricsView = <
 	T extends IWorkItem | IFeature,
 	E extends IFeatureOwner,
@@ -828,6 +591,7 @@ export const BaseMetricsView = <
 		estimationVsCycleTimeData,
 		featureSizeEstimationData,
 		serviceLevelExpectation,
+		featureSizeTarget,
 		totalWorkItemAge,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
@@ -863,6 +627,19 @@ export const BaseMetricsView = <
 			allFeaturesForSizeChart,
 		],
 	);
+
+	const ragTerms: RagTerms = {
+		workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+		workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+		feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
+		features: getTerm(TERMINOLOGY_KEYS.FEATURES),
+		cycleTime: getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+		throughput: getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
+		wip: getTerm(TERMINOLOGY_KEYS.WIP),
+		workItemAge: getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE),
+		blocked: getTerm(TERMINOLOGY_KEYS.BLOCKED),
+		sle: getTerm(TERMINOLOGY_KEYS.SLE),
+	};
 
 	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
 
@@ -909,6 +686,7 @@ export const BaseMetricsView = <
 			entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
 		blockedCount: blockedItems.length,
 		hasBlockedConfig,
+		terms: ragTerms,
 		featuresInProgress,
 		featureWip,
 		predictabilityScore: predictabilityData?.predictabilityScore ?? null,
@@ -930,6 +708,9 @@ export const BaseMetricsView = <
 		blackoutDayIndices: throughputData?.blackoutDayIndices ?? [],
 		cycleTimes: (cycleTimeData as unknown as IWorkItem[]).map(
 			(item) => item.cycleTime,
+		),
+		featureSizes: (allFeaturesForSizeChart as unknown as IFeature[]).map(
+			(item) => item.size ?? 0,
 		),
 		agingItems: inProgressItems.map((item) => ({
 			workItemAge: item.workItemAge,
@@ -955,7 +736,7 @@ export const BaseMetricsView = <
 				.map((item) => item.parentWorkItemReference)
 				.filter(Boolean),
 		).size,
-		featureSizeTarget: null,
+		featureSizeTarget,
 		sizePercentileValues,
 		estimationStatus: estimationVsCycleTimeData?.status ?? "NotConfigured",
 		estimationDataPoints: (estimationVsCycleTimeData?.dataPoints ?? []).map(

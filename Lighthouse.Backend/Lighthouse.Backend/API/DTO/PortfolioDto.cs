@@ -16,10 +16,20 @@ namespace Lighthouse.Backend.API.DTO
             {
                 Features.Add(new EntityReferenceDto(feature.Id, feature.Name));
             }
+
+            if (portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems)
+            {
+                FeatureSizeTargetProbability = portfolio.DefaultWorkItemPercentile;
+                FeatureSizeTargetRange = portfolio.PercentileHistoryInDays ?? 0;
+            }
         }
 
         public List<EntityReferenceDto> Features { get; } = [];
 
         public List<EntityReferenceDto> InvolvedTeams { get; } = [];
+
+        public int FeatureSizeTargetProbability { get; }
+
+        public int FeatureSizeTargetRange { get; }
     }
 }

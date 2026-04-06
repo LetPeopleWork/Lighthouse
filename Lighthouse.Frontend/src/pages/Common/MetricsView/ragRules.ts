@@ -3,132 +3,188 @@ type RagResult = {
 	readonly tipText: string;
 };
 
+export type RagTerms = {
+	readonly workItem: string;
+	readonly workItems: string;
+	readonly feature: string;
+	readonly features: string;
+	readonly cycleTime: string;
+	readonly throughput: string;
+	readonly wip: string;
+	readonly workItemAge: string;
+	readonly blocked: string;
+	readonly sle: string;
+};
+
 export function computeWipOverviewRag(
 	wipCount: number,
 	systemWipLimit: number | undefined,
+	terms: RagTerms,
 ): RagResult {
 	if (!systemWipLimit || systemWipLimit <= 0) {
-		return { ragStatus: "red", tipText: "Define System WIP Limit." };
+		return {
+			ragStatus: "red",
+			tipText: `Define System ${terms.wip} Limit in settings.`,
+		};
 	}
 	if (wipCount > systemWipLimit) {
-		return { ragStatus: "red", tipText: "Close items to bring WIP down." };
+		return {
+			ragStatus: "red",
+			tipText: `${terms.wip} is ${wipCount}, exceeding the limit of ${systemWipLimit}. Close items to bring it down.`,
+		};
 	}
 	if (wipCount < systemWipLimit) {
 		return {
 			ragStatus: "amber",
-			tipText: "Start more items to operate at best capacity.",
+			tipText: `${terms.wip} is ${wipCount} of ${systemWipLimit}. Start more items to operate at full capacity.`,
 		};
 	}
-	return { ragStatus: "green", tipText: "You match your System WIP Limit." };
+	return {
+		ragStatus: "green",
+		tipText: `${terms.wip} matches the System ${terms.wip} Limit of ${systemWipLimit}.`,
+	};
 }
 
 export function computeBlockedOverviewRag(
 	blockedCount: number,
 	hasBlockedConfig: boolean,
+	terms: RagTerms,
 ): RagResult {
 	if (!hasBlockedConfig) {
 		return {
 			ragStatus: "red",
-			tipText: "Define blocked indicators in settings.",
+			tipText: `Define ${terms.blocked} indicators in settings to track blocked work.`,
 		};
 	}
 	if (blockedCount >= 2) {
 		return {
 			ragStatus: "red",
-			tipText: "Focus on unblocking blocked work.",
+			tipText: `${blockedCount} ${terms.blocked} ${terms.workItems}. Focus on unblocking them before starting new work.`,
 		};
 	}
 	if (blockedCount === 1) {
-		return { ragStatus: "amber", tipText: "Do not ignore blocked items." };
+		return {
+			ragStatus: "amber",
+			tipText: `1 ${terms.blocked} ${terms.workItem}. Do not ignore it.`,
+		};
 	}
-	return { ragStatus: "green", tipText: "No blockers." };
+	return {
+		ragStatus: "green",
+		tipText: `No ${terms.blocked} ${terms.workItems}.`,
+	};
 }
 
 export function computeFeaturesWorkedOnRag(
 	featureCount: number,
 	featureWip: number | undefined,
+	terms: RagTerms,
 ): RagResult {
 	if (!featureWip || featureWip <= 0) {
-		return { ragStatus: "red", tipText: "Define Feature WIP in settings." };
+		return {
+			ragStatus: "red",
+			tipText: `Define ${terms.feature} ${terms.wip} in settings.`,
+		};
 	}
 	if (featureCount > featureWip) {
 		return {
 			ragStatus: "red",
-			tipText: "Focus your work to get features done more quickly.",
+			tipText: `Working on ${featureCount} ${terms.features}, exceeding the limit of ${featureWip}. Focus to finish faster.`,
 		};
 	}
 	if (featureCount < featureWip) {
 		return {
 			ragStatus: "amber",
-			tipText: "Consider starting work for another feature.",
+			tipText: `Working on ${featureCount} of ${featureWip} ${terms.features}. Consider starting another.`,
 		};
 	}
-	return { ragStatus: "green", tipText: "Working at capacity." };
+	return {
+		ragStatus: "green",
+		tipText: `Working on ${featureCount} ${terms.features}, matching the ${terms.feature} ${terms.wip} limit.`,
+	};
 }
 
 export function computePredictabilityScoreRag(
 	score: number | null,
+	terms: RagTerms,
 ): RagResult | undefined {
 	if (score === null) {
 		return undefined;
 	}
+	const pct = (score * 100).toFixed(1);
 	if (score < 0.4) {
 		return {
 			ragStatus: "red",
-			tipText: "Throughput is highly variable; forecasts will be unreliable.",
+			tipText: `Predictability score is ${pct}% (below 40%). ${terms.throughput} is highly variable; forecasts will be unreliable.`,
 		};
 	}
 	if (score <= 0.6) {
 		return {
 			ragStatus: "amber",
-			tipText: "Moderate predictability; analyze bulk closings.",
+			tipText: `Predictability score is ${pct}% (between 40–60%). Analyze bulk closings to improve stability.`,
 		};
 	}
 	return {
 		ragStatus: "green",
-		tipText: "Process is reasonably stable; forecasts are trustworthy.",
+		tipText: `Predictability score is ${pct}% (above 60%). Forecasts are trustworthy.`,
 	};
+}
+
+function calculateSLEStats(
+	sle: { percentile: number; value: number },
+	inputNumbers: ReadonlyArray<number>,
+): { totalItems: number; percentageWithinSLE: number } {
+	const totalItems = inputNumbers.length;
+	if (totalItems === 0) {
+		return { totalItems: 0, percentageWithinSLE: 0 };
+	}
+	const itemsWithinSLE = inputNumbers.filter((v) => v <= sle.value).length;
+	const percentageWithinSLE = (itemsWithinSLE / totalItems) * 100;
+	return { totalItems, percentageWithinSLE };
 }
 
 export function computeCycleTimePercentilesRag(
 	sle: { percentile: number; value: number } | null,
-	percentileValues: ReadonlyArray<{ percentile: number; value: number }>,
+	cycleTimes: ReadonlyArray<number>,
+	terms: RagTerms,
 ): RagResult {
 	if (!sle) {
 		return {
 			ragStatus: "red",
-			tipText: "Define SLE in settings based on historical data.",
+			tipText: `Define a ${terms.sle} in settings based on historical ${terms.cycleTime} data.`,
 		};
 	}
 
-	const matching = percentileValues.find(
-		(p) => p.percentile === sle.percentile,
+	const { totalItems, percentageWithinSLE } = calculateSLEStats(
+		sle,
+		cycleTimes,
 	);
-	if (!matching) {
-		return {
-			ragStatus: "green",
-			tipText: "Consider lowering the SLE target.",
-		};
-	}
 
-	const deviation =
-		sle.value > 0 ? (matching.value - sle.value) / sle.value : 0;
-
-	if (deviation > 0.15) {
+	if (totalItems === 0) {
 		return {
 			ragStatus: "red",
-			tipText: "Look at oldest items in progress.",
+			tipText: `Define a ${terms.sle} in settings based on historical ${terms.cycleTime} data.`,
 		};
 	}
-	if (deviation > 0) {
+
+	if (percentageWithinSLE >= sle.percentile) {
 		return {
-			ragStatus: "amber",
-			tipText: "Focus on items approaching the SLE.",
+			ragStatus: "green",
+			tipText: `${percentageWithinSLE.toFixed(1)}% of ${terms.workItems} are within the ${terms.sle} target of ${sle.percentile}% @ ${sle.value} days. Consider tightening the target.`,
 		};
 	}
+
+	const difference = sle.percentile - percentageWithinSLE;
+
+	if (difference > 20) {
+		return {
+			ragStatus: "red",
+			tipText: `Only ${percentageWithinSLE.toFixed(1)}% within the ${terms.sle} target (${sle.percentile}% @ ${sle.value} days) — ${difference.toFixed(1)}pp below. Focus on the oldest items.`,
+		};
+	}
+
 	return {
-		ragStatus: "green",
-		tipText: "Consider lowering the SLE target.",
+		ragStatus: "amber",
+		tipText: `${percentageWithinSLE.toFixed(1)}% within the ${terms.sle} target (${sle.percentile}% @ ${sle.value} days) — ${difference.toFixed(1)}pp below. Focus on items approaching the limit.`,
 	};
 }
 
@@ -136,15 +192,19 @@ export function computeStartedVsClosedRag(
 	startedTotal: number,
 	closedTotal: number,
 	systemWipLimit: number | undefined,
+	terms: RagTerms,
 ): RagResult {
 	if (!systemWipLimit || systemWipLimit <= 0) {
-		return { ragStatus: "red", tipText: "Define System WIP Limit." };
+		return {
+			ragStatus: "red",
+			tipText: `Define System ${terms.wip} Limit in settings.`,
+		};
 	}
 
 	if (startedTotal === 0 && closedTotal === 0) {
 		return {
 			ragStatus: "green",
-			tipText: "You close as much as you start.",
+			tipText: `Started and closed are both 0. Flow is balanced.`,
 		};
 	}
 
@@ -152,7 +212,7 @@ export function computeStartedVsClosedRag(
 	if (absDiff < 2) {
 		return {
 			ragStatus: "green",
-			tipText: "You close as much as you start.",
+			tipText: `Started (${startedTotal}) and closed (${closedTotal}) are balanced.`,
 		};
 	}
 
@@ -162,20 +222,20 @@ export function computeStartedVsClosedRag(
 	if (difference <= 5) {
 		return {
 			ragStatus: "green",
-			tipText: "You close as much as you start.",
+			tipText: `Started (${startedTotal}) and closed (${closedTotal}) are within 5% of each other.`,
 		};
 	}
 
 	if (startedTotal > closedTotal) {
 		return {
 			ragStatus: "red",
-			tipText: "You start more than you finish; focus on in-progress work.",
+			tipText: `Started (${startedTotal}) exceeds closed (${closedTotal}) by ${difference.toFixed(1)}%. Focus on finishing in-progress ${terms.workItems}.`,
 		};
 	}
 
 	return {
 		ragStatus: "amber",
-		tipText: "Process may be starving; keep an eye on it.",
+		tipText: `Closed (${closedTotal}) significantly exceeds started (${startedTotal}). The process may be starving.`,
 	};
 }
 
@@ -184,11 +244,12 @@ export function computeTotalWorkItemAgeRag(
 	currentWip: number,
 	systemWipLimit: number | undefined,
 	sleDays: number | undefined,
+	terms: RagTerms,
 ): RagResult {
 	if (!systemWipLimit || systemWipLimit <= 0 || !sleDays || sleDays <= 0) {
 		return {
 			ragStatus: "red",
-			tipText: "Define System WIP Limit and SLE.",
+			tipText: `Define System ${terms.wip} Limit and ${terms.sle} to enable ${terms.workItemAge} analysis.`,
 		};
 	}
 
@@ -197,7 +258,7 @@ export function computeTotalWorkItemAgeRag(
 	if (totalAge > referenceValue) {
 		return {
 			ragStatus: "red",
-			tipText: "Total age exceeds reference value.",
+			tipText: `Total ${terms.workItemAge} is ${totalAge} days, exceeding the reference value of ${referenceValue} (${terms.wip} limit ${systemWipLimit} × ${terms.sle} ${sleDays} days).`,
 		};
 	}
 
@@ -205,156 +266,167 @@ export function computeTotalWorkItemAgeRag(
 	if (tomorrowProjection > referenceValue) {
 		return {
 			ragStatus: "amber",
-			tipText: "Approaching reference value tomorrow.",
+			tipText: `Total ${terms.workItemAge} is ${totalAge}. Tomorrow's projection (${tomorrowProjection}) would exceed the reference value of ${referenceValue}.`,
 		};
 	}
 
 	return {
 		ragStatus: "green",
-		tipText: "Total age is within healthy range.",
+		tipText: `Total ${terms.workItemAge} is ${totalAge}, within the reference value of ${referenceValue} (${terms.wip} limit ${systemWipLimit} × ${terms.sle} ${sleDays} days).`,
 	};
 }
 
 export function computeThroughputRag(
 	periodValues: ReadonlyArray<number>,
 	blackoutDayIndices: ReadonlyArray<number>,
+	terms: RagTerms,
 ): RagResult {
 	if (periodValues.length === 0) {
-		return { ragStatus: "green", tipText: "Stable, predictable delivery." };
+		return {
+			ragStatus: "green",
+			tipText: `Stable, predictable ${terms.throughput}.`,
+		};
 	}
 
 	const blackoutSet = new Set(blackoutDayIndices);
-	let maxConsecutiveZeros = 0;
-	let currentRun = 0;
+	let zeroRuns = 0;
 
-	for (let i = 0; i < periodValues.length; i++) {
-		if (blackoutSet.has(i)) {
-			currentRun = 0;
-			continue;
-		}
-		if (periodValues[i] === 0) {
-			currentRun++;
-			maxConsecutiveZeros = Math.max(maxConsecutiveZeros, currentRun);
-		} else {
-			currentRun = 0;
+	for (let i = 0; i <= periodValues.length - 3; i++) {
+		const window = [i, i + 1, i + 2];
+		const allZero = window.every(
+			(idx) => !blackoutSet.has(idx) && periodValues[idx] === 0,
+		);
+		if (allZero) {
+			zeroRuns++;
 		}
 	}
 
-	if (maxConsecutiveZeros >= 2) {
+	if (zeroRuns >= 2) {
 		return {
 			ragStatus: "red",
-			tipText: "Nothing is finishing; check for blockers or excessive WIP.",
+			tipText: `${zeroRuns} runs of 3+ consecutive zero-${terms.throughput} days detected. Check for blockers or excessive ${terms.wip}.`,
 		};
 	}
-	if (maxConsecutiveZeros === 1) {
+	if (zeroRuns === 1) {
 		return {
 			ragStatus: "amber",
-			tipText: "Analyze what happened — inspect the PBC.",
+			tipText: `1 run of 3 consecutive zero-${terms.throughput} days detected. Inspect the PBC to understand what happened.`,
 		};
 	}
-	return { ragStatus: "green", tipText: "Stable, predictable delivery." };
+	return {
+		ragStatus: "green",
+		tipText: `No extended zero-${terms.throughput} runs detected. ${terms.throughput} is stable.`,
+	};
 }
 
 export function computeCycleTimeScatterplotRag(
 	sle: { percentile: number; value: number } | null,
 	cycleTimes: ReadonlyArray<number>,
+	terms: RagTerms,
 ): RagResult {
 	if (!sle) {
 		return {
 			ragStatus: "red",
-			tipText: "Define a Service Level Expectation based on historical data.",
+			tipText: `Define a ${terms.sle} based on historical ${terms.cycleTime} data.`,
 		};
 	}
 
 	if (cycleTimes.length === 0) {
 		return {
 			ragStatus: "green",
-			tipText: "Healthy cycle time behavior.",
+			tipText: `No completed ${terms.workItems} to analyze. ${terms.cycleTime} behavior looks healthy.`,
 		};
 	}
 
 	const aboveCount = cycleTimes.filter((ct) => ct > sle.value).length;
 	const abovePercent = (aboveCount / cycleTimes.length) * 100;
-
-	// SLE says X% should be within Y days → allowed above = (100-X)%
 	const allowedAbove = 100 - sle.percentile;
 	const redThreshold = allowedAbove + 10;
 
 	if (abovePercent >= redThreshold) {
 		return {
 			ragStatus: "red",
-			tipText:
-				"Consider whether your SLE is realistic. Analyze the oldest items.",
+			tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days (allowed: ${allowedAbove}%, threshold: ${redThreshold}%). Analyze the oldest items.`,
 		};
 	}
 	if (abovePercent > allowedAbove) {
 		return {
 			ragStatus: "amber",
-			tipText: "Focus on the oldest item first, and actively unblock items.",
+			tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days (allowed: ${allowedAbove}%). Focus on the oldest items first.`,
 		};
 	}
 	return {
 		ragStatus: "green",
-		tipText: "Healthy cycle time behavior.",
+		tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days, within the allowed ${allowedAbove}%.`,
 	};
 }
-
-// -----------------------------------------------------------------------
-// M4 — Aging and Flow Stability
-// -----------------------------------------------------------------------
 
 export function computeWorkItemAgeChartRag(
 	sle: { percentile: number; value: number } | null,
 	hasBlockedConfig: boolean,
 	items: ReadonlyArray<{ workItemAge: number; isBlocked: boolean }>,
+	terms: RagTerms,
 ): RagResult {
 	if (!sle) {
-		return { ragStatus: "red", tipText: "Define SLE in settings." };
+		return {
+			ragStatus: "red",
+			tipText: `Define a ${terms.sle} in settings to enable ${terms.workItemAge} analysis.`,
+		};
 	}
 	if (!hasBlockedConfig) {
 		return {
 			ragStatus: "red",
-			tipText: "Define blocked indicators in settings.",
+			tipText: `Define ${terms.blocked} indicators in settings to track blocked ${terms.workItems}.`,
 		};
 	}
 
-	const aboveSle = items.some((i) => i.workItemAge > sle.value);
-	if (aboveSle) {
+	if (items.length === 0) {
+		return {
+			ragStatus: "green",
+			tipText: `No ${terms.workItems} in progress. All ${terms.workItemAge}s are within healthy ranges.`,
+		};
+	}
+
+	const aboveSle = items.filter((i) => i.workItemAge > sle.value);
+	const abovePercent = (aboveSle.length / items.length) * 100;
+	const allowedAbove = 100 - sle.percentile;
+	const hasBlocked = items.some((i) => i.isBlocked);
+	const anyAbove = aboveSle.length > 0;
+
+	if (abovePercent > allowedAbove || (anyAbove && hasBlocked)) {
 		return {
 			ragStatus: "red",
-			tipText: "Items exceed the SLE; focus on resolving them.",
+			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days (${abovePercent.toFixed(1)}%, allowed: ${allowedAbove}%)${hasBlocked ? `, and some are ${terms.blocked}` : ""}. Resolve immediately.`,
 		};
 	}
-
-	const threshold = sle.value * 0.85;
-	const approachingSle = items.some((i) => i.workItemAge >= threshold);
-	const hasBlocked = items.some((i) => i.isBlocked);
-
-	if (approachingSle || hasBlocked) {
+	if (anyAbove || hasBlocked) {
 		return {
 			ragStatus: "amber",
-			tipText: "Items are nearing the SLE or are blocked.",
+			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days${hasBlocked ? `, and some are ${terms.blocked}` : ""}. Monitor closely.`,
 		};
 	}
-
 	return {
 		ragStatus: "green",
-		tipText: "All items are within healthy age ranges.",
+		tipText: `All ${terms.workItems} are within the ${terms.sle} of ${sle.value} days.`,
 	};
 }
 
 export function computeWipOverTimeRag(
 	wipValues: ReadonlyArray<number>,
 	systemWipLimit: number | undefined,
+	terms: RagTerms,
 ): RagResult {
 	if (!systemWipLimit || systemWipLimit <= 0) {
-		return { ragStatus: "red", tipText: "Define System WIP Limit." };
+		return {
+			ragStatus: "red",
+			tipText: `Define System ${terms.wip} Limit in settings.`,
+		};
 	}
 
 	if (wipValues.length === 0) {
 		return {
 			ragStatus: "green",
-			tipText: "Operating within WIP boundaries.",
+			tipText: `No ${terms.wip} data available. Operating within boundaries.`,
 		};
 	}
 
@@ -363,13 +435,9 @@ export function computeWipOverTimeRag(
 	let below = 0;
 
 	for (const value of wipValues) {
-		if (value > systemWipLimit) {
-			above++;
-		} else if (value === systemWipLimit) {
-			at++;
-		} else {
-			below++;
-		}
+		if (value > systemWipLimit) above++;
+		else if (value === systemWipLimit) at++;
+		else below++;
 	}
 
 	const total = wipValues.length;
@@ -378,68 +446,69 @@ export function computeWipOverTimeRag(
 	if (atPercent > 50) {
 		return {
 			ragStatus: "green",
-			tipText: "Operating within WIP boundaries.",
+			tipText: `${atPercent.toFixed(1)}% of days at the ${terms.wip} limit of ${systemWipLimit}. Flow is consistent.`,
 		};
 	}
 
-	if (above > at + below && above !== at + below) {
+	if (above > at + below) {
 		return {
 			ragStatus: "red",
-			tipText: "WIP frequently exceeds the limit; reduce work in progress.",
+			tipText: `${terms.wip} exceeded the limit of ${systemWipLimit} on ${above} of ${total} days. Reduce work in progress.`,
 		};
 	}
 
 	if (below > above + at) {
 		return {
 			ragStatus: "amber",
-			tipText: "WIP is often below capacity; consider starting more work.",
+			tipText: `${terms.wip} was below the limit of ${systemWipLimit} on ${below} of ${total} days. Consider starting more work.`,
 		};
 	}
 
 	return {
 		ragStatus: "amber",
-		tipText: "WIP distribution is uneven; aim for consistency.",
+		tipText: `${terms.wip} distribution is uneven across the limit of ${systemWipLimit}. Aim for consistency.`,
 	};
 }
 
 export function computeTotalWorkItemAgeOverTimeRag(
 	startValue: number,
 	endValue: number,
+	terms: RagTerms,
 ): RagResult {
 	if (startValue === 0 && endValue === 0) {
 		return {
 			ragStatus: "green",
-			tipText: "Total age is stable over the period.",
+			tipText: `Total ${terms.workItemAge} is 0 throughout the period.`,
 		};
 	}
 
 	if (startValue === 0 && endValue > 0) {
 		return {
 			ragStatus: "red",
-			tipText: "Total age is growing; investigate root causes.",
+			tipText: `Total ${terms.workItemAge} grew from 0 to ${endValue}. Investigate root causes.`,
 		};
 	}
 
 	const change = (endValue - startValue) / startValue;
+	const changePct = (change * 100).toFixed(1);
 
 	if (change > 0.1) {
 		return {
 			ragStatus: "red",
-			tipText: "Total age is growing; investigate root causes.",
+			tipText: `Total ${terms.workItemAge} grew by ${changePct}% (${startValue} → ${endValue}). Investigate root causes.`,
 		};
 	}
 
 	if (change < -0.1) {
 		return {
 			ragStatus: "amber",
-			tipText:
-				"Total age is decreasing significantly; verify items are still in progress.",
+			tipText: `Total ${terms.workItemAge} dropped by ${Math.abs(Number(changePct))}% (${startValue} → ${endValue}). Verify items are still in progress.`,
 		};
 	}
 
 	return {
 		ragStatus: "green",
-		tipText: "Total age is stable over the period.",
+		tipText: `Total ${terms.workItemAge} is stable at ${endValue} days (${changePct}% change).`,
 	};
 }
 
@@ -447,24 +516,27 @@ export function computeSimplifiedCfdRag(
 	startedTotal: number,
 	closedTotal: number,
 	systemWipLimit: number | undefined,
+	terms: RagTerms,
 ): RagResult {
-	return computeStartedVsClosedRag(startedTotal, closedTotal, systemWipLimit);
+	return computeStartedVsClosedRag(
+		startedTotal,
+		closedTotal,
+		systemWipLimit,
+		terms,
+	);
 }
-
-// -----------------------------------------------------------------------
-// M5 — Portfolio and Correlation
-// -----------------------------------------------------------------------
 
 export function computeWorkDistributionRag(
 	unlinkedCount: number,
 	totalCount: number,
 	featureWip: number | undefined,
 	distributionRate: number,
+	terms: RagTerms,
 ): RagResult {
 	if (totalCount === 0) {
 		return {
 			ragStatus: "green",
-			tipText: "Distribution is healthy.",
+			tipText: `No ${terms.workItems} to evaluate. Distribution is healthy.`,
 		};
 	}
 
@@ -472,104 +544,101 @@ export function computeWorkDistributionRag(
 	if (unlinkedPercent >= 20) {
 		return {
 			ragStatus: "red",
-			tipText: "Too many items not linked to a feature; link work items.",
+			tipText: `${unlinkedPercent.toFixed(1)}% of ${terms.workItems} (${unlinkedCount} of ${totalCount}) are not linked to a ${terms.feature}. Link them to improve visibility.`,
 		};
 	}
 
 	if (!featureWip || featureWip <= 0) {
 		return {
 			ragStatus: "red",
-			tipText: "Define Feature WIP in settings.",
+			tipText: `Define ${terms.feature} ${terms.wip} in settings.`,
 		};
 	}
 
-	const overRatio =
-		featureWip > 0 ? (distributionRate - featureWip) / featureWip : 0;
+	const overRatio = (distributionRate - featureWip) / featureWip;
 
 	if (overRatio > 0.2) {
 		return {
 			ragStatus: "red",
-			tipText: "Spread too thin across features; focus on fewer initiatives.",
+			tipText: `Work is spread across ${distributionRate.toFixed(1)} ${terms.features}, exceeding the ${terms.feature} ${terms.wip} of ${featureWip} by more than 20%. Focus on fewer initiatives.`,
 		};
 	}
 
 	if (overRatio > 0) {
 		return {
 			ragStatus: "amber",
-			tipText: "Slightly above Feature WIP; consider reducing scope.",
+			tipText: `Work is spread across ${distributionRate.toFixed(1)} ${terms.features}, slightly above the ${terms.feature} ${terms.wip} of ${featureWip}. Consider reducing scope.`,
 		};
 	}
 
 	return {
 		ragStatus: "green",
-		tipText: "Distribution is healthy.",
+		tipText: `Work is spread across ${distributionRate.toFixed(1)} ${terms.features}, within the ${terms.feature} ${terms.wip} of ${featureWip}.`,
 	};
 }
 
 export function computeFeatureSizeRag(
 	featureSizeTarget: { percentile: number; value: number } | null,
-	percentileValues: ReadonlyArray<{ percentile: number; value: number }>,
+	itemSizes: ReadonlyArray<number>,
+	terms: RagTerms,
 ): RagResult {
 	if (!featureSizeTarget) {
 		return {
 			ragStatus: "red",
-			tipText: "Define Feature Size Target in settings.",
+			tipText: `Define a ${terms.feature} Size Target in settings.`,
 		};
 	}
 
-	const matching = percentileValues.find(
-		(p) => p.percentile === featureSizeTarget.percentile,
-	);
-	if (!matching) {
+	if (itemSizes.length === 0) {
 		return {
 			ragStatus: "green",
-			tipText: "Feature sizes are within target range.",
+			tipText: `No ${terms.features} to evaluate. Sizes are within target range.`,
 		};
 	}
 
-	const deviation =
-		featureSizeTarget.value > 0
-			? (matching.value - featureSizeTarget.value) / featureSizeTarget.value
-			: 0;
+	const { percentageWithinSLE } = calculateSLEStats(
+		featureSizeTarget,
+		itemSizes,
+	);
+	const difference = featureSizeTarget.percentile - percentageWithinSLE;
 
-	if (deviation > 0.15) {
+	if (difference > 20) {
 		return {
 			ragStatus: "red",
-			tipText:
-				"Feature sizes significantly exceed target; break down features.",
+			tipText: `Only ${percentageWithinSLE.toFixed(1)}% of ${terms.features} are within the size target of ${featureSizeTarget.value} (target: ${featureSizeTarget.percentile}%, gap: ${difference.toFixed(1)}pp). Break down large ${terms.features}.`,
 		};
 	}
-	if (deviation > 0) {
+	if (difference > 0) {
 		return {
 			ragStatus: "amber",
-			tipText: "Feature sizes slightly above target; monitor trends.",
+			tipText: `${percentageWithinSLE.toFixed(1)}% of ${terms.features} are within the size target of ${featureSizeTarget.value} (target: ${featureSizeTarget.percentile}%, gap: ${difference.toFixed(1)}pp). Monitor trends.`,
 		};
 	}
 	return {
 		ragStatus: "green",
-		tipText: "Feature sizes are within target range.",
+		tipText: `${percentageWithinSLE.toFixed(1)}% of ${terms.features} are within the size target of ${featureSizeTarget.value}, meeting the ${featureSizeTarget.percentile}% target.`,
 	};
 }
 
 export function computeEstimationVsCycleTimeRag(
 	estimationStatus: string,
 	dataPoints: ReadonlyArray<{ estimate: number; cycleTime: number }>,
+	terms: RagTerms,
 ): RagResult {
-	if (estimationStatus !== "Configured") {
+	if (estimationStatus === "NotConfigured") {
 		return {
 			ragStatus: "red",
-			tipText: "Configure estimation settings to enable correlation.",
+			tipText: `Configure estimation settings to enable correlation with ${terms.cycleTime}.`,
 		};
 	}
 
 	if (dataPoints.length < 2) {
 		return {
 			ragStatus: "green",
-			tipText: "Estimates correlate with actual cycle times.",
+			tipText: `Not enough data points to compute correlation yet.`,
 		};
 	}
 
-	// Spearman rank correlation coefficient
 	const ranked = (arr: ReadonlyArray<number>): number[] => {
 		const sorted = [...arr].map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
 		const ranks = new Array<number>(arr.length);
@@ -596,32 +665,25 @@ export function computeEstimationVsCycleTimeRag(
 	if (rho >= 0.6) {
 		return {
 			ragStatus: "green",
-			tipText: "Estimates correlate with actual cycle times.",
+			tipText: `Spearman correlation is ${rho.toFixed(2)} (≥ 0.6). Estimates correlate well with actual ${terms.cycleTime}.`,
 		};
 	}
 	if (rho >= 0.3) {
 		return {
 			ragStatus: "amber",
-			tipText:
-				"Weak correlation between estimates and cycle times; review estimation approach.",
+			tipText: `Spearman correlation is ${rho.toFixed(2)} (0.3–0.6). Weak correlation between estimates and ${terms.cycleTime}. Review your estimation approach.`,
 		};
 	}
 	return {
 		ragStatus: "red",
-		tipText: "No meaningful correlation; estimates do not predict cycle time.",
+		tipText: `Spearman correlation is ${rho.toFixed(2)} (< 0.3). No meaningful correlation between estimates and ${terms.cycleTime}.`,
 	};
 }
-
-// -----------------------------------------------------------------------
-// M6 — PBC Widget Family
-// -----------------------------------------------------------------------
 
 type PbcInput = {
 	readonly status: string;
 	readonly baselineConfigured: boolean;
-	readonly dataPoints: ReadonlyArray<{
-		specialCauses: ReadonlyArray<string>;
-	}>;
+	readonly dataPoints: ReadonlyArray<{ specialCauses: ReadonlyArray<string> }>;
 };
 
 export function computePbcRag(data: PbcInput): RagResult {
@@ -642,7 +704,8 @@ export function computePbcRag(data: PbcInput): RagResult {
 	if (allCauses.has("LargeChange")) {
 		return {
 			ragStatus: "red",
-			tipText: "Signal detected: Large-magnitude change in process behaviour.",
+			tipText:
+				"Signal detected: Large-magnitude change in process behaviour. Investigate recent changes.",
 		};
 	}
 
@@ -650,12 +713,13 @@ export function computePbcRag(data: PbcInput): RagResult {
 		return {
 			ragStatus: "amber",
 			tipText:
-				"Signal detected: Moderate change in process behaviour; investigate.",
+				"Signal detected: Moderate change in process behaviour. Investigate before it escalates.",
 		};
 	}
 
 	return {
 		ragStatus: "green",
-		tipText: "Process behaviour is within expected limits.",
+		tipText:
+			"Process behaviour is within expected limits. No signals detected.",
 	};
 }

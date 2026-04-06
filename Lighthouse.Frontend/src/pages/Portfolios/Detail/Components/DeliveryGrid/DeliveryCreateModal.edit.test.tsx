@@ -100,6 +100,8 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		remainingFeatures: 0,
+		featureSizeTargetProbability: 0,
+		featureSizeTargetRange: 0,
 	};
 
 	const twoWeeksFromNow = getTwoWeeksFromNow();

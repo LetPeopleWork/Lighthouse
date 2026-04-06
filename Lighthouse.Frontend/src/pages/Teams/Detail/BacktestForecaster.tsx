@@ -17,7 +17,6 @@ import { useContext, useEffect, useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
-import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { ITeam } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -83,8 +82,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	// Historical Throughput state
 	const [historicalThroughput, setHistoricalThroughput] =
 		useState<RunChartData | null>(null);
-	const [predictabilityScore, setPredictabilityScore] =
-		useState<IForecastPredictabilityScore | null>(null);
 	const [isLoadingHistorical, setIsLoadingHistorical] =
 		useState<boolean>(false);
 	const [historicalError, setHistoricalError] = useState<string | null>(null);
@@ -126,7 +123,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	useEffect(() => {
 		if (!backtestResult) {
 			setHistoricalThroughput(null);
-			setPredictabilityScore(null);
 			setHistoricalError(null);
 			setHistoricalStartDate(null);
 			setActualPeriodThroughput(null);
@@ -146,27 +142,20 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 
 				setHistoricalStartDate(historyStartDate);
 
-				const [throughputData, predictability, actualThroughputData] =
-					await Promise.all([
-						teamMetricsService.getThroughput(
-							team.id,
-							historyStartDate,
-							historyEndDate,
-						),
-						teamMetricsService.getMultiItemForecastPredictabilityScore(
-							team.id,
-							historyStartDate,
-							historyEndDate,
-						),
-						teamMetricsService.getThroughput(
-							team.id,
-							backtestResult.startDate,
-							backtestResult.endDate,
-						),
-					]);
+				const [throughputData, actualThroughputData] = await Promise.all([
+					teamMetricsService.getThroughput(
+						team.id,
+						historyStartDate,
+						historyEndDate,
+					),
+					teamMetricsService.getThroughput(
+						team.id,
+						backtestResult.startDate,
+						backtestResult.endDate,
+					),
+				]);
 
 				setHistoricalThroughput(throughputData);
-				setPredictabilityScore(predictability);
 				setActualPeriodThroughput(actualThroughputData);
 			} catch (error) {
 				const errorMessage =
@@ -405,7 +394,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 												startDate={historicalStartDate}
 												title="Historical Throughput"
 												displayTotal={true}
-												predictabilityData={predictabilityScore}
 											/>
 										</Box>
 									)}

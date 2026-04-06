@@ -5,6 +5,8 @@ import type { IFeatureOwner } from "../IFeatureOwner";
 
 export interface IPortfolio extends IFeatureOwner {
 	involvedTeams: IEntityReference[];
+	featureSizeTargetProbability: number;
+	featureSizeTargetRange: number;
 }
 
 export class Portfolio implements IPortfolio {
@@ -21,6 +23,9 @@ export class Portfolio implements IPortfolio {
 
 	serviceLevelExpectationProbability = 0;
 	serviceLevelExpectationRange = 0;
+
+	featureSizeTargetProbability = 0;
+	featureSizeTargetRange = 0;
 
 	systemWIPLimit = 0;
 

@@ -74,6 +74,7 @@ describe("categoryMetadata", () => {
 		expect(widgets.map((w) => w.widgetKey)).toEqual([
 			"predictabilityScore",
 			"percentiles",
+			"predictabilityScoreDetails",
 			"throughputPbc",
 			"wipPbc",
 			"totalWorkItemAgePbc",

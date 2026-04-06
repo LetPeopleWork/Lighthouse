@@ -2,25 +2,17 @@ import {
 	Box,
 	Card,
 	CardContent,
-	Chip,
 	Table,
 	TableBody,
 	TableCell,
 	TableRow,
 	Typography,
-	useTheme,
 } from "@mui/material";
 import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
-import {
-	certainColor,
-	confidentColor,
-	realisticColor,
-	riskyColor,
-} from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
 interface StartedVsFinishedDisplayProps {
@@ -33,7 +25,6 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	closedItems,
 }) => {
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const theme = useTheme();
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -86,57 +77,6 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	const closedTotal = closedItems?.total ?? 0;
 	const closedAverage = calculateAverage(closedItems);
 
-	const calculateDifference = (): number => {
-		if (startedTotal === 0 && closedTotal === 0) return 0;
-		if (startedTotal === 0) return 100;
-		if (closedTotal === 0) return 100;
-
-		const larger = Math.max(startedTotal, closedTotal);
-		const smaller = Math.min(startedTotal, closedTotal);
-		return ((larger - smaller) / larger) * 100;
-	};
-
-	const isTotalDifferenceLessThanTwo = (): boolean => {
-		return Math.abs(startedTotal - closedTotal) < 2;
-	};
-
-	const getDifferenceColor = (difference: number): string => {
-		if (isTotalDifferenceLessThanTwo()) return confidentColor;
-		if (difference <= 5) return certainColor;
-		if (difference <= 10) return realisticColor;
-		if (difference <= 15) return confidentColor;
-		return riskyColor;
-	};
-
-	const getDifferenceText = (): {
-		text: string;
-		color: string;
-	} => {
-		const difference = calculateDifference();
-		const color = getDifferenceColor(difference);
-
-		if (isTotalDifferenceLessThanTwo() || difference <= 5) {
-			return {
-				text: `Steady`,
-				color,
-			};
-		}
-
-		if (startedTotal > closedTotal) {
-			return {
-				text: `Starting More`,
-				color,
-			};
-		}
-
-		return {
-			text: `Closing More`,
-			color,
-		};
-	};
-
-	const differenceInfo = getDifferenceText();
-
 	return (
 		<>
 			<Card
@@ -178,19 +118,6 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 						>
 							{`Started vs. Closed ${workItemsTerm}`}
 						</Typography>
-						<Chip
-							label={differenceInfo.text}
-							size="small"
-							sx={{
-								backgroundColor: differenceInfo.color,
-								color: "#ffffff",
-								fontWeight: "bold",
-								boxShadow: theme.customShadows?.subtle,
-								"& .MuiChip-label": {
-									fontSize: "clamp(0.65rem, 1.2vw, 0.9rem)",
-								},
-							}}
-						/>
 					</Box>
 					<Box
 						sx={{

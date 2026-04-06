@@ -27,18 +27,9 @@ vi.mock("./BacktestResultDisplay", () => ({
 
 // Mock the BarRunChart component
 vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
-	default: ({
-		title,
-		predictabilityData,
-	}: {
-		title: string;
-		predictabilityData: object | null;
-	}) => (
+	default: ({ title }: { title: string }) => (
 		<div data-testid="bar-run-chart">
 			<span>{title}</span>
-			{predictabilityData && (
-				<span data-testid="predictability-present">Has Predictability</span>
-			)}
 		</div>
 	),
 }));
@@ -296,9 +287,6 @@ describe("BacktestForecaster component", () => {
 				expect.any(Date),
 				expect.any(Date),
 			);
-			expect(
-				mockTeamMetricsService.getMultiItemForecastPredictabilityScore,
-			).toHaveBeenCalledWith(1, expect.any(Date), expect.any(Date));
 		});
 	});
 
@@ -332,7 +320,6 @@ describe("BacktestForecaster component", () => {
 
 		await waitFor(() => {
 			expect(screen.getByTestId("bar-run-chart")).toBeInTheDocument();
-			expect(screen.getByTestId("predictability-present")).toBeInTheDocument();
 		});
 	});
 

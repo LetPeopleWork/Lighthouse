@@ -137,6 +137,8 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		remainingFeatures: 3,
+		featureSizeTargetProbability: 0,
+		featureSizeTargetRange: 0,
 	};
 
 	const getTwoWeeksFromNow = (): Date => {

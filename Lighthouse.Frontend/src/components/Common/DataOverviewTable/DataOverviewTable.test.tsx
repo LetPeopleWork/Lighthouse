@@ -85,6 +85,8 @@ const samplePortfolioData: IPortfolio[] = [
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		involvedTeams: [],
+		featureSizeTargetProbability: 0,
+		featureSizeTargetRange: 0,
 	},
 	{
 		id: 2,
@@ -97,6 +99,8 @@ const samplePortfolioData: IPortfolio[] = [
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		involvedTeams: [],
+		featureSizeTargetProbability: 0,
+		featureSizeTargetRange: 0,
 	},
 ];
 

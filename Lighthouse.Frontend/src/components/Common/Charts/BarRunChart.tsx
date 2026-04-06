@@ -1,34 +1,21 @@
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-	Box,
-	Card,
-	CardContent,
-	Chip,
-	IconButton,
-	Typography,
-	useTheme,
-} from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import type React from "react";
 import { useState } from "react";
-import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
-import { getPredictabilityScoreColor } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
 import BlackoutOverlay from "./BlackoutOverlay";
-import PredictabilityScore from "./PredictabilityScore";
 
 interface BarRunChartProps {
 	chartData: RunChartData;
 	startDate: Date;
 	displayTotal?: boolean;
 	title?: string;
-	predictabilityData?: IForecastPredictabilityScore | null;
 }
 
 const BarRunChart: React.FC<BarRunChartProps> = ({
@@ -36,13 +23,11 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 	startDate,
 	displayTotal = false,
 	title = "Bar Chart",
-	predictabilityData = null,
 }) => {
 	const theme = useTheme();
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogTitle, setDialogTitle] = useState<string>("");
-	const [isFlipped, setIsFlipped] = useState(false);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -61,45 +46,11 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 		}
 	};
 
-	const handleFlip = (event: React.MouseEvent) => {
-		// Prevent the dialog from opening when flipping the card
-		event.stopPropagation();
-		setIsFlipped(!isFlipped);
-	};
-
 	const handleCloseDialog = () => {
 		setDialogOpen(false);
 	};
-
-	const renderPredictabilityContent = () => {
-		if (!predictabilityData) return null;
-
-		return (
-			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
-				<CardContent
-					sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-				>
-					<Box
-						display="flex"
-						justifyContent="space-between"
-						alignItems="center"
-						mb={2}
-					>
-						<Typography variant="h6">Predictability Score</Typography>
-						<IconButton onClick={handleFlip} size="small">
-							<ArrowBackIcon fontSize="small" />
-						</IconButton>
-					</Box>
-					<Box sx={{ flex: 1, width: "100%" }}>
-						<PredictabilityScore data={predictabilityData} title="" />
-					</Box>
-				</CardContent>
-			</Card>
-		);
-	};
-
-	const renderBarChartContent = () => {
-		return (
+	return (
+		<>
 			<BaseRunChart
 				chartData={chartData}
 				startDate={startDate}
@@ -115,29 +66,6 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 							flexDirection: "column",
 						}}
 					>
-						{/* Predictability Chip */}
-						{predictabilityData && (
-							<Chip
-								label={`Predictability Score: ${(predictabilityData.predictabilityScore * 100).toFixed(1)}%`}
-								size="small"
-								onClick={handleFlip}
-								sx={{
-									position: "absolute",
-									top: -24,
-									right: 8,
-									zIndex: 1,
-									cursor: "pointer",
-									backgroundColor: getPredictabilityScoreColor(
-										predictabilityData.predictabilityScore,
-									),
-									color: "#ffffff",
-									fontWeight: "bold",
-									"&:hover": { opacity: 0.9 },
-									boxShadow:
-										theme.customShadows?.subtle || "0 2px 4px rgba(0,0,0,0.1)",
-								}}
-							/>
-						)}
 						<Box sx={{ flex: 1, minHeight: 0 }}>
 							<BarChart
 								style={{ height: "100%", width: "100%" }}
@@ -208,12 +136,6 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 					</Box>
 				)}
 			</BaseRunChart>
-		);
-	};
-
-	return (
-		<>
-			{isFlipped ? renderPredictabilityContent() : renderBarChartContent()}
 
 			<WorkItemsDialog
 				title={dialogTitle}

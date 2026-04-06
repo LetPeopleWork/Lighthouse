@@ -3,10 +3,7 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
-import {
-	ForecastPredictabilityScore,
-	type IForecastPredictabilityScore,
-} from "../../../models/Forecasts/ForecastPredictabilityScore";
+import { ForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
@@ -23,22 +20,12 @@ vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	default: ({
 		title,
 		chartData,
-		predictabilityData,
 	}: {
 		title: string;
 		chartData: RunChartData;
-		predictabilityData?: IForecastPredictabilityScore;
 	}) => (
 		<div data-testid={`bar-run-chart-${title}`}>
 			<div data-testid="chart-data-count">{chartData.history}</div>
-			<div data-testid="predictability-data">
-				{predictabilityData
-					? "has-predictability-data"
-					: "no-predictability-data"}
-			</div>
-			<div data-testid="predictability-score">
-				{predictabilityData ? predictabilityData.predictabilityScore : "none"}
-			</div>
 		</div>
 	),
 }));
@@ -204,12 +191,20 @@ vi.mock("./FeaturesWorkedOnWidget", () => ({
 	),
 }));
 
-vi.mock("./PredictabilityScoreWidget", () => ({
+vi.mock("./PredictabilityScoreOverviewWidget", () => ({
 	default: ({ score }: { score: number | null }) => (
 		<div data-testid="predictability-score-widget">
 			<div data-testid="predictability-score-value">
 				{score !== null ? score : "loading"}
 			</div>
+		</div>
+	),
+}));
+
+vi.mock("./PredictabilityScoreDetailsWidget", () => ({
+	default: () => (
+		<div data-testid="predictability-score-details-widget">
+			Predictability Score Details
 		</div>
 	),
 }));
@@ -1239,28 +1234,6 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it("passes predictability data to BarRunChart component", async () => {
-			renderWithRouter(
-				<BaseMetricsView
-					entity={mockProject}
-					metricsService={mockMetricsService}
-					title="Features"
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
-
-			// Wait for data to be fetched and passed to components
-			await waitFor(() => {
-				expect(screen.getByTestId("predictability-data")).toHaveTextContent(
-					"has-predictability-data",
-				);
-				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
-					"0.73",
-				);
-			});
-		});
-
 		it("refetches predictability data when start date changes", async () => {
 			renderWithRouter(
 				<BaseMetricsView
@@ -1412,16 +1385,6 @@ describe("BaseMetricsView component", () => {
 				);
 			});
 
-			// BarRunChart should still render but without predictability data
-			await waitFor(() => {
-				expect(screen.getByTestId("predictability-data")).toHaveTextContent(
-					"no-predictability-data",
-				);
-				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
-					"none",
-				);
-			});
-
 			consoleSpy.mockRestore();
 		});
 
@@ -1443,52 +1406,11 @@ describe("BaseMetricsView component", () => {
 				/>,
 			);
 
-			// BarRunChart should render without predictability data
+			// Component should render without errors when predictability data is null
 			await waitFor(() => {
-				expect(screen.getByTestId("predictability-data")).toHaveTextContent(
-					"no-predictability-data",
-				);
-				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
-					"none",
-				);
-			});
-		});
-
-		it("passes correct predictability score values to BarRunChart", async () => {
-			const customPredictabilityData = new ForecastPredictabilityScore(
-				[
-					{ percentile: 50, value: 8 },
-					{ percentile: 85, value: 12 },
-				],
-				0.456,
-				new Map([
-					[5, 10],
-					[8, 20],
-				]),
-			);
-
-			const customService: IMetricsService<IWorkItem> = {
-				...mockMetricsService,
-				getMultiItemForecastPredictabilityScore: vi
-					.fn()
-					.mockResolvedValue(customPredictabilityData),
-			};
-
-			renderWithRouter(
-				<BaseMetricsView
-					entity={mockProject}
-					metricsService={customService}
-					title="Features"
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
-
-			// Verify the exact predictability score is passed through
-			await waitFor(() => {
-				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
-					"0.456",
-				);
+				expect(
+					nullPredictabilityService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalled();
 			});
 		});
 
@@ -2207,8 +2129,8 @@ describe("BaseMetricsView component", () => {
 
 		it("shows red RAG for throughput when consecutive zeros exist", async () => {
 			const zeroThroughputData = new RunChartData(
-				generateWorkItemMapForRunChart([0, 0, 5]),
-				3,
+				generateWorkItemMapForRunChart([0, 0, 0, 0, 5]),
+				5,
 				5,
 			);
 			const svc = createMockMetricsService<IWorkItem>();
