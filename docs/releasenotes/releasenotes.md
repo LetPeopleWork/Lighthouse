@@ -28,6 +28,7 @@ Each category chip now displays an **icon** and shows a **tooltip** on hover exp
 Widgets now feature improved header actions:
 
 - **Info button (ℹ️):** Click the info icon on any widget to see a brief description of what the widget shows and a *Learn More* link to the full documentation.
+- **View Data button (📊):** Click the table icon on any widget to open a dialog showing all of the work items that feed that widget. This replaces the previous click-anywhere-on-the-card behavior for the Cycle Time Percentiles and Started vs. Closed widgets — those widgets no longer open a full-dataset dialog on card click. Charts that support context-specific drill-ins (e.g. clicking a single bar, bubble, or data point) continue to work as before.
 - **Inline RAG chip:** The RAG status indicator has moved from the widget footer into the header area. Hover over the chip to see the actionable guidance tip.
 
 ### RAG Status Indicators

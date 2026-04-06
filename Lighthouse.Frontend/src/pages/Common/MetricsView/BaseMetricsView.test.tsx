@@ -194,9 +194,7 @@ vi.mock("./FeaturesWorkedOnWidget", () => ({
 vi.mock("./PredictabilityScoreOverviewWidget", () => ({
 	default: ({ score }: { score: number | null }) => (
 		<div data-testid="predictability-score-widget">
-			<div data-testid="predictability-score-value">
-				{score ?? "loading"}
-			</div>
+			<div data-testid="predictability-score-value">{score ?? "loading"}</div>
 		</div>
 	),
 }));
@@ -413,11 +411,13 @@ vi.mock("./WidgetShell", () => ({
 		children,
 		header,
 		info,
+		viewData,
 	}: {
 		widgetKey: string;
 		children: ReactNode;
 		header?: { ragStatus: string; tipText: string };
 		info?: { description: string; learnMoreUrl: string };
+		viewData?: { title: string; items: unknown[] };
 	}) => (
 		<div data-testid={`widget-shell-${widgetKey}`}>
 			{header && (
@@ -439,6 +439,16 @@ vi.mock("./WidgetShell", () => ({
 					>
 						Learn More
 					</a>
+				</div>
+			)}
+			{viewData && (
+				<div data-testid={`widget-view-data-${widgetKey}`}>
+					<span data-testid={`widget-view-data-title-${widgetKey}`}>
+						{viewData.title}
+					</span>
+					<span data-testid={`widget-view-data-count-${widgetKey}`}>
+						{viewData.items.length}
+					</span>
 				</div>
 			)}
 			{children}
@@ -3109,6 +3119,148 @@ describe("BaseMetricsView component", () => {
 				expect(
 					screen.getByTestId("widget-info-link-wipOverview"),
 				).toHaveAttribute("href", expect.stringContaining("widgets.html#"));
+			});
+		});
+	});
+
+	describe("View Data Shell Wiring", () => {
+		it("passes viewData to cycle time percentiles widget", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// flow-overview default category includes percentiles
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-percentiles"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-view-data-count-percentiles"),
+				).toHaveTextContent("2");
+			});
+		});
+
+		it("passes viewData to started vs finished widget", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// flow-overview default category includes startedVsFinished
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-startedVsFinished"),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("passes viewData to wip overview widget with in-progress items", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-wipOverview"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-view-data-count-wipOverview"),
+				).toHaveTextContent("2");
+			});
+		});
+
+		it("passes viewData to throughput widget", async () => {
+			// throughput is in the throughput category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"throughput",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-throughput"),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("passes viewData to cycle time scatter plot widget", async () => {
+			// cycleScatter is in the cycle-time category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"cycle-time",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-cycleScatter"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-view-data-count-cycleScatter"),
+				).toHaveTextContent("2");
+			});
+		});
+
+		it("passes viewData to work item aging widget", async () => {
+			// aging is in the wip-aging category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"wip-aging",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-aging"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-view-data-count-aging"),
+				).toHaveTextContent("2");
 			});
 		});
 	});

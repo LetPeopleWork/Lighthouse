@@ -61,6 +61,7 @@ import {
 } from "./ragRules";
 import { useCategorySelection } from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
+import type { ViewDataPayload } from "./WidgetShell";
 import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
 import { getWidgetInfo } from "./widgetInfoMetadata";
@@ -304,6 +305,195 @@ function buildWidgetFooters(
 	};
 }
 
+type ViewDataInputs = {
+	readonly title: string;
+	readonly inProgressItems: IWorkItem[];
+	readonly blockedItems: IWorkItem[];
+	readonly featuresInProgress: IWorkItem[] | undefined;
+	readonly cycleTimeData: IWorkItem[];
+	readonly startedItems: RunChartData | null;
+	readonly throughputData: RunChartData | null;
+	readonly wipOverTimeData: RunChartData | null;
+	readonly allFeaturesForSizeChart: IFeature[];
+	readonly serviceLevelExpectation: IPercentileValue | null;
+	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
+	readonly workItemLookup: Map<number, IWorkItem>;
+	readonly terms: {
+		workItems: string;
+		features: string;
+		cycleTime: string;
+		workItemAge: string;
+		blocked: string;
+	};
+};
+
+function buildViewData(
+	inputs: ViewDataInputs,
+): Record<string, ViewDataPayload | undefined> {
+	const { terms } = inputs;
+
+	const cycleTimeHighlight = {
+		title: terms.cycleTime,
+		description: "days",
+		valueGetter: (item: IWorkItem) => item.cycleTime,
+	};
+	const ageHighlight = {
+		title: terms.workItemAge,
+		description: "days",
+		valueGetter: (item: IWorkItem) => item.workItemAge,
+	};
+	const ageCycleHighlight = {
+		title: `${terms.workItemAge}/${terms.cycleTime}`,
+		description: "days",
+		valueGetter: (item: IWorkItem) =>
+			item.cycleTime > 0 ? item.cycleTime : item.workItemAge,
+	};
+
+	const throughputItems = extractWorkItems(
+		inputs.throughputData?.workItemsPerUnitOfTime,
+	);
+	const wipOverTimeItems = extractWorkItems(
+		inputs.wipOverTimeData?.workItemsPerUnitOfTime,
+	);
+
+	const startedVsFinishedItems = (() => {
+		const items: IWorkItem[] = [];
+		if (inputs.startedItems) {
+			const startedWorkItems = extractWorkItems(
+				inputs.startedItems.workItemsPerUnitOfTime,
+			);
+			const notClosedStartedItems = startedWorkItems.filter(
+				(item) => item.closedDate === null,
+			);
+			items.push(...notClosedStartedItems);
+		}
+		if (inputs.throughputData) {
+			items.push(...throughputItems);
+		}
+		return items;
+	})();
+
+	const workDistributionItems = [
+		...inputs.cycleTimeData,
+		...inputs.inProgressItems,
+	];
+
+	const estimationItems =
+		inputs.estimationVsCycleTimeData?.dataPoints
+			?.flatMap((dp) =>
+				dp.workItemIds.map((id) => inputs.workItemLookup.get(id)),
+			)
+			.filter((item): item is IWorkItem => item !== undefined) ?? [];
+
+	return {
+		wipOverview: {
+			title: `${inputs.title} in Progress`,
+			items: inputs.inProgressItems,
+			highlightColumn: ageHighlight,
+		},
+		blockedOverview: {
+			title: `${terms.blocked} ${terms.workItems}`,
+			items: inputs.blockedItems,
+			highlightColumn: ageHighlight,
+		},
+		featuresWorkedOnOverview: inputs.featuresInProgress
+			? {
+					title: `${terms.features} being Worked On`,
+					items: inputs.featuresInProgress,
+					highlightColumn: ageHighlight,
+				}
+			: undefined,
+		percentiles: {
+			title: `Closed ${terms.workItems}`,
+			items: inputs.cycleTimeData,
+			highlightColumn: cycleTimeHighlight,
+			sle: inputs.serviceLevelExpectation?.value,
+		},
+		startedVsFinished: {
+			title: `Started and Closed ${terms.workItems}`,
+			items: startedVsFinishedItems,
+			highlightColumn: ageCycleHighlight,
+		},
+		totalWorkItemAge: {
+			title: `${inputs.title} in Progress`,
+			items: inputs.inProgressItems,
+			highlightColumn: ageHighlight,
+		},
+		throughput: {
+			title: `${inputs.title} Completed`,
+			items: throughputItems,
+			highlightColumn: cycleTimeHighlight,
+		},
+		cycleScatter: {
+			title: `Closed ${terms.workItems}`,
+			items: inputs.cycleTimeData,
+			highlightColumn: cycleTimeHighlight,
+			sle: inputs.serviceLevelExpectation?.value,
+		},
+		workDistribution: {
+			title: `${terms.workItems} Distribution`,
+			items: workDistributionItems,
+			highlightColumn: ageCycleHighlight,
+		},
+		aging: {
+			title: `${terms.workItems} in Progress`,
+			items: inputs.inProgressItems,
+			highlightColumn: ageHighlight,
+		},
+		wipOverTime: {
+			title: `${inputs.title} In Progress`,
+			items: wipOverTimeItems,
+			highlightColumn: ageCycleHighlight,
+		},
+		totalWorkItemAgeOverTime: {
+			title: `${inputs.title} Contributing to Total Age`,
+			items: wipOverTimeItems,
+			highlightColumn: ageHighlight,
+		},
+		stacked: {
+			title: `Started and Closed ${terms.workItems}`,
+			items: startedVsFinishedItems,
+			highlightColumn: ageCycleHighlight,
+		},
+		estimationVsCycleTime: {
+			title: `${terms.workItems} with Estimates`,
+			items: estimationItems,
+			highlightColumn: cycleTimeHighlight,
+		},
+		featureSize: {
+			title: `${terms.features}`,
+			items: inputs.allFeaturesForSizeChart as unknown as IWorkItem[],
+			highlightColumn: ageCycleHighlight,
+		},
+		throughputPbc: {
+			title: `${inputs.title} Completed`,
+			items: throughputItems,
+			highlightColumn: cycleTimeHighlight,
+		},
+		wipPbc: {
+			title: `${inputs.title} In Progress`,
+			items: wipOverTimeItems,
+			highlightColumn: ageCycleHighlight,
+		},
+		totalWorkItemAgePbc: {
+			title: `${inputs.title} Contributing to Total Age`,
+			items: wipOverTimeItems,
+			highlightColumn: ageHighlight,
+		},
+		cycleTimePbc: {
+			title: `Closed ${terms.workItems}`,
+			items: inputs.cycleTimeData,
+			highlightColumn: cycleTimeHighlight,
+			sle: inputs.serviceLevelExpectation?.value,
+		},
+		featureSizePbc: {
+			title: `${terms.features}`,
+			items: inputs.allFeaturesForSizeChart as unknown as IWorkItem[],
+			highlightColumn: ageCycleHighlight,
+		},
+	};
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic helper avoids coupling to specific entity/metrics type
 function buildWidgetNodes(ctx: {
 	entity: IFeatureOwner;
@@ -375,11 +565,7 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		percentiles: (
-			<CycleTimePercentiles
-				percentileValues={ctx.percentileValues}
-				serviceLevelExpectation={ctx.serviceLevelExpectation}
-				items={ctx.cycleTimeData}
-			/>
+			<CycleTimePercentiles percentileValues={ctx.percentileValues} />
 		),
 		startedVsFinished: (
 			<StartedVsFinishedDisplay
@@ -758,6 +944,28 @@ export const BaseMetricsView = <
 		featureSizePbcData,
 	});
 
+	const widgetViewData = buildViewData({
+		title,
+		inProgressItems,
+		blockedItems,
+		featuresInProgress,
+		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
+		startedItems,
+		throughputData,
+		wipOverTimeData,
+		allFeaturesForSizeChart,
+		serviceLevelExpectation,
+		estimationVsCycleTimeData,
+		workItemLookup,
+		terms: {
+			workItems: ragTerms.workItems,
+			features: ragTerms.features,
+			cycleTime: ragTerms.cycleTime,
+			workItemAge: ragTerms.workItemAge,
+			blocked: ragTerms.blocked,
+		},
+	});
+
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
 		.filter((w) => widgetNodes[w.widgetKey] != null)
@@ -770,6 +978,7 @@ export const BaseMetricsView = <
 					showTips={showTips}
 					header={widgetFooters[w.widgetKey]}
 					info={getWidgetInfo(w.widgetKey)}
+					viewData={widgetViewData[w.widgetKey]}
 				>
 					{widgetNodes[w.widgetKey]}
 				</WidgetShell>

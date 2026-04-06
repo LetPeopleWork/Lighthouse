@@ -11,7 +11,9 @@ Following a brief overview over the various metric widgets that are available in
 {:toc}
 
 # Details
-Many Charts and Widgets are clickable and will provide you more details about the work items they visualize. You will see the mouse changing to a "hand" icon - in such a case you can click and a dialog with more details will pop up.
+Every widget on the Metrics Dashboard includes a **View Data** button (table icon) in its header. Clicking it opens a dialog showing the full set of work items that feed the widget. This gives you quick access to the underlying data without navigating away.
+
+Some charts also support **chart-specific drill-ins**: clicking a bar, bubble, data point, or pie segment opens a dialog scoped to that particular subset (e.g. items for a single day or a specific parent feature). These context-specific interactions remain unchanged.
 
 # Status Indicators
 
@@ -219,7 +221,7 @@ As a rule of thumb, you should try to match your started items with how many ite
 
 This can help you to prepare just enough items for your team(s). Whether you do it daily or in bigger batches (for example having a refinement session per week), using this information helps you make sure you are neither under- nor over-prepared.
 
-If you want to know more details, you can click on the widget, and it will show you the specific items that were closed and opened in the selected time range.
+If you want to know more details, use the **View Data** button in the widget header to see all started and closed items for the selected time range.
 
 ## Status Indicator
 
@@ -374,7 +376,7 @@ In case you have defined a [Service Level Expectation](../teams/edit.html#servic
 
 ![SLE Widget](../assets/features/metrics/servicelevelexpectation.png)
 
-If you click anywhere on the widget (independent if you look at percentiles or the SLE), a dialog will open that will show you all the items that were closed in the respective date range. If you have defined an SLE, the Cycle Time coloring is based on how close (or above) the item got to the SLE.
+Use the **View Data** button in the widget header to see all items that were closed in the respective date range. If you have defined an SLE, the Cycle Time coloring is based on how close (or above) the item got to the SLE.
 
 ![Closed Items Dialog](../assets/features/metrics/closeditemsdialog.png)
 
