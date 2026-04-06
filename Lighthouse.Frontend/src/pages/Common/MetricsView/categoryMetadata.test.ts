@@ -67,6 +67,7 @@ describe("categoryMetadata", () => {
 		const widgets = getWidgetsForCategory("throughput", "team");
 		expect(widgets.map((w) => w.widgetKey)).toEqual([
 			"startedVsFinished",
+			"predictabilityScore",
 			"throughput",
 			"stacked",
 			"throughputPbc",
@@ -89,7 +90,6 @@ describe("categoryMetadata", () => {
 	it("predictability contains expected widgets in order for team", () => {
 		const widgets = getWidgetsForCategory("predictability", "team");
 		expect(widgets.map((w) => w.widgetKey)).toEqual([
-			"predictabilityScore",
 			"percentiles",
 			"predictabilityScoreDetails",
 			"throughputPbc",
@@ -147,12 +147,12 @@ describe("categoryMetadata", () => {
 		expect(wipAging.map((w) => w.widgetKey)).toContain("wipOverview");
 	});
 
-	it("predictabilityScore appears in flow-overview, predictability, and portfolio", () => {
+	it("predictabilityScore appears in flow-overview, throughput, and portfolio", () => {
 		const overview = getWidgetsForCategory("flow-overview", "team");
-		const pred = getWidgetsForCategory("predictability", "team");
+		const tp = getWidgetsForCategory("throughput", "team");
 		const port = getWidgetsForCategory("portfolio", "team");
 		expect(overview.map((w) => w.widgetKey)).toContain("predictabilityScore");
-		expect(pred.map((w) => w.widgetKey)).toContain("predictabilityScore");
+		expect(tp.map((w) => w.widgetKey)).toContain("predictabilityScore");
 		expect(port.map((w) => w.widgetKey)).toContain("predictabilityScore");
 	});
 
