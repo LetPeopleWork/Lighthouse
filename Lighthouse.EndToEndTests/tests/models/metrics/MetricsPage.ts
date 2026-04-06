@@ -70,6 +70,7 @@ export const MetricsWidgetNames = {
 	WorkDistributionByFeature: "Work Distribution by Feature",
 	FeatureSize: "Feature Size",
 	EstimationVsCycleTime: "Estimation vs. Cycle Time",
+	FeatureSizeProcessBehaviourChart: "Feature Size Process Behaviour Chart",
 };
 
 export class MetricsPage {
@@ -126,8 +127,29 @@ export class MetricsPage {
 		],
 	};
 
-	constructor(page: Page) {
+	constructor(page: Page, mode: "team" | "portfolio") {
 		this.page = page;
+
+		// Remove Features being worked on if we're on the portfolio Level
+		if (mode === "portfolio") {
+			this.categoryWidgets[MetricsCategories.PortfolioAndFeatures] =
+				this.categoryWidgets[MetricsCategories.PortfolioAndFeatures].filter(
+					([name]) => name !== MetricsWidgetNames.FeaturesBeingWorkedOnOverview,
+				);
+		}
+
+		// Remove Feature Size and Feature Size Process Behaviour Chart from team level as they don't make sense without the context of a portfolio
+		if (mode === "team") {
+			this.categoryWidgets[MetricsCategories.Predictability] =
+				this.categoryWidgets[MetricsCategories.Predictability].filter(
+					([name]) =>
+						name !== MetricsWidgetNames.FeatureSizeProcessBehaviourChart,
+				);
+			this.categoryWidgets[MetricsCategories.PortfolioAndFeatures] =
+				this.categoryWidgets[MetricsCategories.PortfolioAndFeatures].filter(
+					([name]) => name !== MetricsWidgetNames.FeatureSize,
+				);
+		}
 	}
 
 	async switchCategory(

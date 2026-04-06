@@ -62,7 +62,7 @@ export class PortfolioDetailPage {
 
 	async goToMetrics(): Promise<MetricsPage> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
-		return new MetricsPage(this.page);
+		return new MetricsPage(this.page, "portfolio");
 	}
 
 	async goToDeliveries(): Promise<DeliveriesPage> {

@@ -251,52 +251,6 @@ testWithData(
 			"features/backtest.png",
 		);
 
-		// Go to Metrics Tab
-		const metricsPage = await teamDetailPage.goToMetrics();
-
-		// Metrics Overview
-		await takePageScreenshot(
-			metricsPage.page,
-			"features/metrics/metricsoverview.png",
-		);
-
-		const metricCategoriesMap = new Map<MetricsCategories, number>([
-			[MetricsCategories.FlowOverview, 7],
-			[MetricsCategories.CycleTime, 5],
-			[MetricsCategories.Throughput, 5],
-			[MetricsCategories.WipAging, 7],
-			[MetricsCategories.Predictability, 6],
-			[MetricsCategories.PortfolioAndFeatures, 3],
-		]);
-
-		for (const [
-			category,
-			expectedWidgetCount,
-		] of metricCategoriesMap.entries()) {
-			const metrics = await metricsPage.switchCategory(category);
-			expect(metrics.length).toBe(expectedWidgetCount);
-
-			for (const metricWidget of metrics) {
-				await takeElementScreenshot(
-					metricWidget.Widget,
-					`features/metrics/${metricWidget.Id}.png`,
-				);
-			}
-		}
-
-		await metricsPage.switchCategory(MetricsCategories.FlowOverview);
-
-		const cycleTimePercentilesWidget = await metricsPage.getWidgetByName(
-			MetricsWidgetNames.CycleTimePercentiles,
-		);
-
-		const workItemsDialog = await cycleTimePercentilesWidget.openDialog();
-		await takeElementScreenshot(
-			workItemsDialog.page.getByRole("dialog"),
-			"features/metrics/workitemsdialog.png",
-		);
-		await workItemsDialog.close();
-
 		overviewPage.lightHousePage.goToOverview();
 
 		// portfolio Deletion Dialog
@@ -320,33 +274,6 @@ testWithData(
 			portfolioDetailPage.page,
 			"features/portfoliodetail.png",
 			3,
-		);
-
-		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
-
-		await portfolioMetricsPage.switchCategory(
-			MetricsCategories.PortfolioAndFeatures,
-		);
-
-		const featureSizeWidget = await portfolioMetricsPage.getWidgetByName(
-			MetricsWidgetNames.FeatureSize,
-		);
-
-		await takeElementScreenshot(
-			featureSizeWidget.Widget,
-			"features/metrics/featuresize.png",
-		);
-
-		await portfolioMetricsPage.switchCategory(MetricsCategories.Predictability);
-
-		const featureSizeProcessBehaviourWidget =
-			await portfolioMetricsPage.getWidgetByName(
-				MetricsWidgetNames.CycleTimeProcessBehaviourChart,
-			);
-
-		await takeElementScreenshot(
-			featureSizeProcessBehaviourWidget.Widget,
-			"features/metrics/featureSizeProcessBehaviourChart.png",
 		);
 
 		let deliveryPage = await portfolioDetailPage.goToDeliveries();
@@ -404,11 +331,101 @@ testWithData(
 		);
 	},
 );
+testWithData(
+	"Take @screenshot of Metrics",
+	async ({ testData, overviewPage, request }) => {
+		await updateTeams(request, overviewPage, testData.teams);
+		await updatePortfolios(request, overviewPage, testData.portfolios);
 
+		await overviewPage.lightHousePage.goToOverview();
+
+		// Go to Metrics Tab
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		// Metrics Overview
+		await takePageScreenshot(
+			metricsPage.page,
+			"features/metrics/metricsoverview.png",
+		);
+
+		const metricCategoriesMap = new Map<MetricsCategories, number>([
+			[MetricsCategories.FlowOverview, 7],
+			[MetricsCategories.CycleTime, 5],
+			[MetricsCategories.Throughput, 5],
+			[MetricsCategories.WipAging, 7],
+			[MetricsCategories.Predictability, 6],
+			[MetricsCategories.PortfolioAndFeatures, 4],
+		]);
+
+		for (const [
+			category,
+			expectedWidgetCount,
+		] of metricCategoriesMap.entries()) {
+			const metrics = await metricsPage.switchCategory(category);
+			expect(metrics.length).toBe(expectedWidgetCount);
+
+			for (const metricWidget of metrics) {
+				await takeElementScreenshot(
+					metricWidget.Widget,
+					`features/metrics/${metricWidget.Id}.png`,
+				);
+			}
+		}
+
+		await metricsPage.switchCategory(MetricsCategories.FlowOverview);
+
+		const cycleTimePercentilesWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CycleTimePercentiles,
+		);
+
+		const workItemsDialog = await cycleTimePercentilesWidget.openDialog();
+		await takeElementScreenshot(
+			workItemsDialog.page.getByRole("dialog"),
+			"features/metrics/workitemsdialog.png",
+		);
+		await workItemsDialog.close();
+
+		overviewPage.lightHousePage.goToOverview();
+
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0].name,
+		);
+		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
+
+		await portfolioMetricsPage.switchCategory(
+			MetricsCategories.PortfolioAndFeatures,
+		);
+
+		const featureSizeWidget = await portfolioMetricsPage.getWidgetByName(
+			MetricsWidgetNames.FeatureSize,
+		);
+
+		await takeElementScreenshot(
+			featureSizeWidget.Widget,
+			"features/metrics/featuresize.png",
+		);
+
+		await portfolioMetricsPage.switchCategory(MetricsCategories.Predictability);
+
+		const featureSizeProcessBehaviourWidget =
+			await portfolioMetricsPage.getWidgetByName(
+				MetricsWidgetNames.CycleTimeProcessBehaviourChart,
+			);
+
+		await takeElementScreenshot(
+			featureSizeProcessBehaviourWidget.Widget,
+			"features/metrics/featureSizeProcessBehaviourChart.png",
+		);
+	},
+);
 testWithData(
 	"Take @screenshot of Estimation vs Cycle Time Chart",
 	async ({ overviewPage, testData, request }) => {
 		await updateWorkTrackingSystems(overviewPage, testData.connections);
+
+		await overviewPage.lightHousePage.goToOverview();
+
 		await updateTeams(request, overviewPage, testData.teams);
 
 		await overviewPage.lightHousePage.goToOverview();
