@@ -278,6 +278,7 @@ function buildWidgetFooters(
 		),
 		featureSize: computeFeatureSizeRag(
 			inputs.featureSizeTarget,
+			inputs.sizePercentileValues,
 			inputs.featureSizes,
 			inputs.terms,
 		),
@@ -709,9 +710,13 @@ export const BaseMetricsView = <
 		cycleTimes: (cycleTimeData as unknown as IWorkItem[]).map(
 			(item) => item.cycleTime,
 		),
-		featureSizes: (allFeaturesForSizeChart as unknown as IFeature[]).map(
-			(item) => item.size ?? 0,
-		),
+		featureSizes: (allFeaturesForSizeChart as unknown as IFeature[])
+			.filter(
+				(item) =>
+					item.size !== undefined &&
+					(item.stateCategory === "ToDo" || item.stateCategory === "Doing"),
+			)
+			.map((item) => item.size),
 		agingItems: inProgressItems.map((item) => ({
 			workItemAge: item.workItemAge,
 			isBlocked: item.isBlocked,

@@ -184,7 +184,7 @@ describe("ragRules", () => {
 		});
 
 		it("returns green at 100%", () => {
-			const result = computePredictabilityScoreRag(1.0, terms);
+			const result = computePredictabilityScoreRag(1, terms);
 			expect(result?.ragStatus).toBe("green");
 			expect(result?.tipText).toContain("above 60%");
 		});
@@ -230,7 +230,7 @@ describe("ragRules", () => {
 		it("returns green when all cycle times are within SLE", () => {
 			const sle = { percentile: 85, value: 10 };
 			// 20 items, 17 ≤ 10, 3 > 10 → 85% >= 85%
-			const cycleTimes = [...Array(17).fill(5), 11, 12, 13];
+			const cycleTimes = [...new Array(17).fill(5), 11, 12, 13];
 			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("green");
 		});
@@ -238,7 +238,10 @@ describe("ragRules", () => {
 		it("returns amber when gap is exactly 1pp below target", () => {
 			// SLE: 85% within 100. 84 of 100 within → 84%. Gap = 1pp < 20
 			const sle = { percentile: 85, value: 100 };
-			const cycleTimes = [...Array(84).fill(50), ...Array(16).fill(150)];
+			const cycleTimes = [
+				...new Array(84).fill(50),
+				...new Array(16).fill(150),
+			];
 			const result = computeCycleTimePercentilesRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
@@ -405,7 +408,7 @@ describe("ragRules", () => {
 			// If 18% above → between 15% and 25% → amber
 			const sle = { percentile: 85, value: 10 };
 			// 18 of 100 items above 10 days
-			const cycleTimes = Array(82).fill(5).concat(Array(18).fill(15));
+			const cycleTimes = [...new Array(82).fill(5), ...new Array(18).fill(15)];
 			const result = computeCycleTimeScatterplotRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
@@ -414,7 +417,7 @@ describe("ragRules", () => {
 			// SLE: 85% within 10 days → 15% allowed, red at 25%+
 			// 30% above
 			const sle = { percentile: 85, value: 10 };
-			const cycleTimes = Array(70).fill(5).concat(Array(30).fill(15));
+			const cycleTimes = [...new Array(70).fill(5), ...new Array(30).fill(15)];
 			const result = computeCycleTimeScatterplotRag(sle, cycleTimes, terms);
 			expect(result.ragStatus).toBe("red");
 		});
@@ -466,7 +469,7 @@ describe("ragRules", () => {
 			// 1 of 10 above SLE → 10% <= allowedAbove(15%) → anyAbove=true → amber
 			const items = [
 				{ workItemAge: 15, isBlocked: false },
-				...Array(9).fill({ workItemAge: 5, isBlocked: false }),
+				...new Array(9).fill({ workItemAge: 5, isBlocked: false }),
 			];
 			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("amber");
@@ -635,39 +638,102 @@ describe("ragRules", () => {
 
 	describe("computeFeatureSizeRag", () => {
 		it("returns red when no feature size target is set", () => {
-			const result = computeFeatureSizeRag(null, [], terms);
+			const result = computeFeatureSizeRag(null, [], [], terms);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("Feature Size Target");
 		});
 
-		it("returns green when most items are within target", () => {
-			const target = { percentile: 85, value: 10 };
-			// All 10 items ≤ 10 → 100% >= 85% target
-			const sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-			const result = computeFeatureSizeRag(target, sizes, terms);
+		it("returns green when no active items to evaluate", () => {
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const result = computeFeatureSizeRag(target, percentiles, [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns amber when percentage is slightly below target (within 20pp)", () => {
-			const target = { percentile: 85, value: 10 };
-			// 8 of 10 ≤ 10 → 80%. Gap = 5pp (< 20)
-			const sizes = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12];
-			const result = computeFeatureSizeRag(target, sizes, terms);
+		it("returns green when no percentile data available", () => {
+			const target = { percentile: 85, value: 90 };
+			const result = computeFeatureSizeRag(target, [], [3, 5, 7], terms);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when no matching percentile found", () => {
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 70, value: 5 }];
+			const result = computeFeatureSizeRag(
+				target,
+				percentiles,
+				[3, 5, 7],
+				terms,
+			);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when violations are within the allowed percentage", () => {
+			// 85th percentile size = 7. Allowed above = 15%.
+			// 1 of 10 above 7 = 10% → within 15% → green
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [1, 2, 3, 4, 5, 6, 7, 7, 7, 9];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns green when no items exceed the threshold", () => {
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [1, 2, 3, 4, 5];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber when violations exceed allowed percentage but within red threshold", () => {
+			// 85th percentile size = 7. Allowed above = 15%, red at > 25%.
+			// 2 of 10 above 7 = 20% → between 15% and 25% → amber
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [1, 2, 3, 4, 5, 6, 7, 7, 8, 9];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
-		it("returns red when percentage is far below target (>20pp)", () => {
-			const target = { percentile: 85, value: 10 };
-			// 6 of 10 ≤ 10 → 60%. Gap = 25pp (> 20)
-			const sizes = [1, 2, 3, 4, 5, 6, 11, 12, 13, 14];
-			const result = computeFeatureSizeRag(target, sizes, terms);
+		it("returns red when violations exceed the red threshold", () => {
+			// 85th percentile size = 7. Allowed above = 15%, red at 25%.
+			// 3 of 10 above 7 = 30% → > 25% → red
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
-		it("returns green when no items to evaluate", () => {
-			const target = { percentile: 85, value: 10 };
-			const result = computeFeatureSizeRag(target, [], terms);
+		it("returns green when violations are exactly at allowed percentage", () => {
+			// 85th percentile size = 7. Allowed = 15%.
+			// 15 of 100 above 7 = 15% → exactly at limit → green
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [...new Array(85).fill(5), ...new Array(15).fill(10)];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
 			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber when violations are exactly at the red threshold", () => {
+			// 85th percentile size = 7. Allowed = 15%, red at > 25%.
+			// 25 of 100 above 7 = 25% → not > 25% → amber
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [...new Array(75).fill(5), ...new Array(25).fill(10)];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("includes the threshold size and percentages in the tip text", () => {
+			const target = { percentile: 85, value: 90 };
+			const percentiles = [{ percentile: 85, value: 7 }];
+			const sizes = [...new Array(75).fill(5), ...new Array(25).fill(10)];
+			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+			expect(result.tipText).toContain("85th percentile");
+			expect(result.tipText).toContain("7");
+			expect(result.tipText).toContain("15%"); // allowedAbove
 		});
 	});
 

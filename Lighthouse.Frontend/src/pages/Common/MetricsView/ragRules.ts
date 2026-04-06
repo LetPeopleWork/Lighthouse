@@ -346,18 +346,18 @@ export function computeCycleTimeScatterplotRag(
 	if (abovePercent >= redThreshold) {
 		return {
 			ragStatus: "red",
-			tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days (allowed: ${allowedAbove}%, threshold: ${redThreshold}%). Analyze the oldest items.`,
+			tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days (expected: ${allowedAbove}%, threshold: ${redThreshold}%). Analyze the oldest items.`,
 		};
 	}
 	if (abovePercent > allowedAbove) {
 		return {
 			ragStatus: "amber",
-			tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days (allowed: ${allowedAbove}%). Focus on the oldest items first.`,
+			tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days (expected: ${allowedAbove}%). Focus on the oldest items first.`,
 		};
 	}
 	return {
 		ragStatus: "green",
-		tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days, within the allowed ${allowedAbove}%.`,
+		tipText: `${abovePercent.toFixed(1)}% of ${terms.workItems} exceed the ${terms.sle} of ${sle.value} days, within the expected ${allowedAbove}%.`,
 	};
 }
 
@@ -393,16 +393,18 @@ export function computeWorkItemAgeChartRag(
 	const hasBlocked = items.some((i) => i.isBlocked);
 	const anyAbove = aboveSle.length > 0;
 
+	const blockedSuffix = hasBlocked ? `, and some are ${terms.blocked}` : "";
+
 	if (abovePercent > allowedAbove || (anyAbove && hasBlocked)) {
 		return {
 			ragStatus: "red",
-			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days (${abovePercent.toFixed(1)}%, allowed: ${allowedAbove}%)${hasBlocked ? `, and some are ${terms.blocked}` : ""}. Resolve immediately.`,
+			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days (${abovePercent.toFixed(1)}%, expected: ${allowedAbove}%)${blockedSuffix}. Resolve immediately.`,
 		};
 	}
 	if (anyAbove || hasBlocked) {
 		return {
 			ragStatus: "amber",
-			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days${hasBlocked ? `, and some are ${terms.blocked}` : ""}. Monitor closely.`,
+			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days${blockedSuffix}. Monitor closely.`,
 		};
 	}
 	return {
@@ -579,7 +581,8 @@ export function computeWorkDistributionRag(
 
 export function computeFeatureSizeRag(
 	featureSizeTarget: { percentile: number; value: number } | null,
-	itemSizes: ReadonlyArray<number>,
+	sizePercentileValues: ReadonlyArray<{ percentile: number; value: number }>,
+	activeItemSizes: ReadonlyArray<number>,
 	terms: RagTerms,
 ): RagResult {
 	if (!featureSizeTarget) {
@@ -589,34 +592,47 @@ export function computeFeatureSizeRag(
 		};
 	}
 
-	if (itemSizes.length === 0) {
+	if (activeItemSizes.length === 0 || sizePercentileValues.length === 0) {
 		return {
 			ragStatus: "green",
-			tipText: `No ${terms.features} to evaluate. Sizes are within target range.`,
+			tipText: `No active ${terms.features} to evaluate.`,
 		};
 	}
 
-	const { percentageWithinSLE } = calculateSLEStats(
-		featureSizeTarget,
-		itemSizes,
+	// Find the computed size at the target percentile (e.g. 85th = 7 child items)
+	const targetPercentileSize = sizePercentileValues.find(
+		(p) => p.percentile === featureSizeTarget.percentile,
 	);
-	const difference = featureSizeTarget.percentile - percentageWithinSLE;
 
-	if (difference > 20) {
+	if (!targetPercentileSize) {
+		return {
+			ragStatus: "green",
+			tipText: `No historical size data at the ${featureSizeTarget.percentile}th percentile yet.`,
+		};
+	}
+
+	// How many active features exceed the historical threshold?
+	const aboveCount = activeItemSizes.filter(
+		(s) => s > targetPercentileSize.value,
+	).length;
+	const abovePercent = (aboveCount / activeItemSizes.length) * 100;
+	const allowedAbove = 100 - featureSizeTarget.percentile; // e.g. 15% for 85th
+
+	if (abovePercent > allowedAbove + 10) {
 		return {
 			ragStatus: "red",
-			tipText: `Only ${percentageWithinSLE.toFixed(1)}% of ${terms.features} are within the size target of ${featureSizeTarget.value} (target: ${featureSizeTarget.percentile}%, gap: ${difference.toFixed(1)}pp). Break down large ${terms.features}.`,
+			tipText: `${abovePercent.toFixed(1)}% of active ${terms.features} exceed the ${featureSizeTarget.percentile}th percentile size of ${targetPercentileSize.value} items (expected: ${allowedAbove}%). Break down large ${terms.features}.`,
 		};
 	}
-	if (difference > 0) {
+	if (abovePercent > allowedAbove) {
 		return {
 			ragStatus: "amber",
-			tipText: `${percentageWithinSLE.toFixed(1)}% of ${terms.features} are within the size target of ${featureSizeTarget.value} (target: ${featureSizeTarget.percentile}%, gap: ${difference.toFixed(1)}pp). Monitor trends.`,
+			tipText: `${abovePercent.toFixed(1)}% of active ${terms.features} exceed the ${featureSizeTarget.percentile}th percentile size of ${targetPercentileSize.value} items (expected: ${allowedAbove}%). Monitor closely.`,
 		};
 	}
 	return {
 		ragStatus: "green",
-		tipText: `${percentageWithinSLE.toFixed(1)}% of ${terms.features} are within the size target of ${featureSizeTarget.value}, meeting the ${featureSizeTarget.percentile}% target.`,
+		tipText: `${abovePercent.toFixed(1)}% of active ${terms.features} exceed the ${featureSizeTarget.percentile}th percentile size of ${targetPercentileSize.value} items, within the expected ${allowedAbove}%.`,
 	};
 }
 
