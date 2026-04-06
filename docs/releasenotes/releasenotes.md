@@ -6,25 +6,40 @@ nav_order: 95
 
 # vNext
 
-## Metrics Dashboard — RAG Status Indicators
+## Metrics Dashboard — Category Taxonomy & Widget Chrome Improvements
 
-Every widget on the Metrics Dashboard now shows a **Red / Amber / Green (RAG)** status indicator in its footer. RAG status is computed from live data and your team's configuration (SLE, System WIP Limit, Feature WIP, blocked indicators, etc.) so you can spot issues at a glance without interpreting each chart individually.
+### Redesigned Dashboard Categories
 
-**Widget coverage by category:**
+The Metrics Dashboard now organizes widgets into **six focused categories**, each answering a specific question about your delivery system:
 
-| Category | Widgets with RAG |
+| Category | Question |
 |---|---|
-| Flow Health | WIP Overview, Blocked Overview, Features Worked On, Started vs Finished, Total Work Item Age, Throughput, Cycle Time Percentiles, Cycle Time Scatterplot, Work Distribution, WIP Over Time |
-| Aging & Stability | Work Item Age Chart, WIP Over Time, Total Work Item Age Over Time, Simplified CFD |
-| Predictability | Predictability Score, Throughput PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC |
-| Portfolio | Work Distribution, Feature Size, Estimation vs Cycle Time |
+| **Flow Overview** | How is my system doing at a glance? |
+| **Cycle Time** | How long do items take? |
+| **Throughput** | How much are we delivering? |
+| **WIP & Aging** | Where is work getting stuck? |
+| **Predictability** | Can we trust our forecasts? |
+| **Portfolio & Features** | How do features flow through the system? |
+
+Each category chip now displays an **icon** and shows a **tooltip** on hover explaining what the category helps you understand.
+
+### Widget Header Chrome
+
+Widgets now feature improved header actions:
+
+- **Info button (ℹ️):** Click the info icon on any widget to see a brief description of what the widget shows and a *Learn More* link to the full documentation.
+- **Inline RAG chip:** The RAG status indicator has moved from the widget footer into the header area. Hover over the chip to see the actionable guidance tip.
+
+### RAG Status Indicators
+
+Every widget on the Metrics Dashboard shows a **Red / Amber / Green (RAG)** status indicator. RAG status is computed from live data and your team's configuration (SLE, System WIP Limit, Feature WIP, blocked indicators, etc.) so you can spot issues at a glance without interpreting each chart individually.
 
 **How it works:**
 - Each widget computes its RAG from the same data the chart displays — no separate API calls.
 - **Red** = action required (missing configuration, threshold exceeded, or process signal).
 - **Amber** = attention needed (approaching limits or moderate changes).
 - **Green** = within healthy operating range.
-- Toggle the *Show Tips* button in the dashboard header to see actionable guidance alongside each status.
+- Toggle the *Show Tips* button in the dashboard header to show or hide the RAG chips.
 
 **Process Behaviour Charts (PBC)** use a shared RAG contract: if a baseline is not configured or the data is insufficient, the status is Red. A Large-magnitude signal is Red, a Moderate signal is Amber, and no special causes means Green.
 

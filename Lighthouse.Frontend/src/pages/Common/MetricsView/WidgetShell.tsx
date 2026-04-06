@@ -1,5 +1,16 @@
-import { Box, Chip, Typography, useTheme } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import {
+	Box,
+	Chip,
+	IconButton,
+	Link,
+	Popover,
+	Tooltip,
+	Typography,
+	useTheme,
+} from "@mui/material";
 import type React from "react";
+import { useRef, useState } from "react";
 
 type RagStatus = "red" | "amber" | "green" | "none";
 
@@ -8,11 +19,17 @@ type WidgetFooter = {
 	readonly tipText: string;
 };
 
+type WidgetInfo = {
+	readonly description: string;
+	readonly learnMoreUrl: string;
+};
+
 export interface WidgetShellProps {
 	readonly title?: string;
 	readonly widgetKey: string;
 	readonly showTips?: boolean;
-	readonly footer?: WidgetFooter;
+	readonly header?: WidgetFooter;
+	readonly info?: WidgetInfo;
 	readonly children: React.ReactNode;
 }
 
@@ -22,14 +39,25 @@ const ragColorMap: Record<Exclude<RagStatus, "none">, string> = {
 	green: "#2e7d32",
 };
 
+const ragLabelMap: Record<Exclude<RagStatus, "none">, string> = {
+	red: "Act",
+	amber: "Observe",
+	green: "Sustain",
+};
+
 const WidgetShell: React.FC<WidgetShellProps> = ({
 	title,
 	widgetKey,
 	showTips = true,
-	footer,
+	header,
+	info,
 	children,
 }) => {
 	const theme = useTheme();
+	const [infoOpen, setInfoOpen] = useState(false);
+	const infoAnchorRef = useRef<HTMLButtonElement>(null);
+
+	const hasHeader = !!title || (header && showTips) || !!info;
 
 	return (
 		<Box
@@ -41,46 +69,87 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 				flexDirection: "column",
 			}}
 		>
-			{title && (
-				<Box data-testid={`widget-shell-header-${widgetKey}`} sx={{ pb: 0.5 }}>
-					<Typography variant="subtitle2" color="text.primary">
-						{title}
-					</Typography>
-				</Box>
-			)}
-
-			<Box sx={{ flex: 1, minHeight: 0 }}>{children}</Box>
-
-			{footer && showTips && (
+			{hasHeader && (
 				<Box
-					data-testid={`widget-shell-footer-${widgetKey}`}
+					data-testid={`widget-shell-header-${widgetKey}`}
 					sx={{
 						display: "flex",
 						alignItems: "center",
 						gap: 1,
-						pt: 0.5,
-						borderTop: `1px solid ${theme.palette.divider}`,
+						pb: 0.5,
 					}}
 				>
-					{footer.ragStatus !== "none" && (
-						<Chip
-							label={footer.ragStatus.toUpperCase()}
-							size="small"
-							data-testid={`widget-rag-${widgetKey}`}
-							sx={{
-								backgroundColor: ragColorMap[footer.ragStatus],
-								color: "#fff",
-								fontWeight: 600,
-								fontSize: "0.65rem",
-								height: 20,
-							}}
-						/>
+					{info && (
+						<>
+							<IconButton
+								size="small"
+								data-testid={`widget-info-${widgetKey}`}
+								ref={infoAnchorRef}
+								onClick={() => setInfoOpen((prev) => !prev)}
+								sx={{ color: theme.palette.text.secondary }}
+							>
+								<InfoOutlinedIcon fontSize="small" />
+							</IconButton>
+							<Popover
+								open={infoOpen}
+								anchorEl={infoAnchorRef.current}
+								onClose={() => setInfoOpen(false)}
+								anchorOrigin={{
+									vertical: "bottom",
+									horizontal: "right",
+								}}
+								transformOrigin={{
+									vertical: "top",
+									horizontal: "right",
+								}}
+							>
+								<Box sx={{ p: 2, maxWidth: 300 }}>
+									<Typography variant="body2" sx={{ mb: 1 }}>
+										{info.description}
+									</Typography>
+									<Link
+										href={info.learnMoreUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										variant="body2"
+									>
+										Learn More
+									</Link>
+								</Box>
+							</Popover>
+						</>
 					)}
-					<Typography variant="caption" color="text.secondary">
-						{footer.tipText}
-					</Typography>
+					{header && showTips && header.ragStatus !== "none" && (
+						<Tooltip title={header.tipText} arrow>
+							<Chip
+								label={ragLabelMap[header.ragStatus]}
+								size="small"
+								data-testid={`widget-rag-${widgetKey}`}
+								sx={{
+									backgroundColor: ragColorMap[header.ragStatus],
+									color: "#fff",
+									fontWeight: 600,
+									fontSize: "0.65rem",
+									height: 20,
+								}}
+							/>
+						</Tooltip>
+					)}
+
+					{!title && <Box sx={{ flex: 1 }} />}
+					{title && (
+						<Typography
+							variant="subtitle2"
+							color="text.primary"
+							sx={{ flex: 1 }}
+						>
+							{title}
+						</Typography>
+					)}
 				</Box>
 			)}
+
+			<Box sx={{ flex: 1, minHeight: 0 }}>{children}</Box>
 		</Box>
 	);
 };

@@ -412,10 +412,12 @@ vi.mock("./WidgetShell", () => ({
 		widgetKey,
 		children,
 		footer,
+		info,
 	}: {
 		widgetKey: string;
 		children: ReactNode;
 		footer?: { ragStatus: string; tipText: string };
+		info?: { description: string; learnMoreUrl: string };
 	}) => (
 		<div data-testid={`widget-shell-${widgetKey}`}>
 			{footer && (
@@ -424,6 +426,19 @@ vi.mock("./WidgetShell", () => ({
 						{footer.ragStatus}
 					</span>
 					<span data-testid={`widget-tip-${widgetKey}`}>{footer.tipText}</span>
+				</div>
+			)}
+			{info && (
+				<div data-testid={`widget-info-${widgetKey}`}>
+					<span data-testid={`widget-info-desc-${widgetKey}`}>
+						{info.description}
+					</span>
+					<a
+						data-testid={`widget-info-link-${widgetKey}`}
+						href={info.learnMoreUrl}
+					>
+						Learn More
+					</a>
 				</div>
 			)}
 			{children}
@@ -741,29 +756,16 @@ describe("BaseMetricsView component", () => {
 			}
 		});
 
-		// Check components are rendered with correct data (flow-health category by default)
+		// Check components are rendered with correct data (flow-overview category by default)
 		await waitFor(() => {
 			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
 			expect(screen.getByTestId("wip-overview-count")).toHaveTextContent("2");
 			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
-			expect(
-				screen.getByTestId("bar-run-chart-Features Completed"),
-			).toBeInTheDocument();
-			expect(screen.getByTestId("cycle-time-scatter-plot")).toBeInTheDocument();
-			expect(
-				screen.getByTestId("line-run-chart-Features In Progress Over Time"),
-			).toBeInTheDocument();
 			expect(screen.getByTestId("started-vs-finished")).toBeInTheDocument();
 			expect(
 				screen.getByTestId("total-work-item-age-widget"),
 			).toBeInTheDocument();
-			expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
 		});
-
-		// Check that service level expectation is set correctly
-		expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
-			"85:14",
-		);
 	});
 
 	it("passes size percentile values to FeatureSizeScatterPlotChart when using Project entity", async () => {
@@ -854,22 +856,15 @@ describe("BaseMetricsView component", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
 			expect(screen.getByTestId("wip-overview-count")).toHaveTextContent("2");
-			expect(
-				screen.getByTestId("bar-run-chart-Work Items Completed"),
-			).toBeInTheDocument();
+			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
 		});
-
-		// Check that service level expectation is set correctly
-		expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
-			"80:10",
-		);
 	});
 
 	it("renders Total Work Item Age widget and chart correctly", async () => {
-		// totalWorkItemAgeOverTime is in aging-stability category
+		// totalWorkItemAgeOverTime is in wip-aging category
 		localStorage.setItem(
 			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-			"aging-stability",
+			"wip-aging",
 		);
 
 		renderWithRouter(
@@ -884,7 +879,7 @@ describe("BaseMetricsView component", () => {
 
 		// Wait for components to render
 		await waitFor(() => {
-			// Check Total Work Item Age Widget is rendered (in aging-stability)
+			// Check Total Work Item Age Widget is rendered (in wip-aging)
 			expect(
 				screen.getByTestId("total-work-item-age-widget"),
 			).toBeInTheDocument();
@@ -1116,7 +1111,6 @@ describe("BaseMetricsView component", () => {
 		expect(
 			await screen.findByTestId("date-range-selector"),
 		).toBeInTheDocument();
-		expect(screen.getByTestId("cycle-time-scatter-plot")).toBeInTheDocument();
 
 		consoleSpy.mockRestore();
 	});
@@ -1130,7 +1124,7 @@ describe("BaseMetricsView component", () => {
 		// Overview category to see all overview widgets
 		localStorage.setItem(
 			`lighthouse:metrics:team:${mockTeam.id}:category`,
-			"overview",
+			"flow-overview",
 		);
 
 		renderWithRouter(
@@ -1168,6 +1162,12 @@ describe("BaseMetricsView component", () => {
 		projectWithoutSLE.serviceLevelExpectationProbability = 0;
 		projectWithoutSLE.serviceLevelExpectationRange = 0;
 
+		// cycleScatter is in cycle-time category where SLE testid is visible
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${projectWithoutSLE.id}:category`,
+			"cycle-time",
+		);
+
 		renderWithRouter(
 			<BaseMetricsView
 				entity={projectWithoutSLE}
@@ -1192,6 +1192,12 @@ describe("BaseMetricsView component", () => {
 		projectWithPartialSLE.lastUpdated = new Date();
 		projectWithPartialSLE.serviceLevelExpectationProbability = 85;
 		projectWithPartialSLE.serviceLevelExpectationRange = 0;
+
+		// cycleScatter is in cycle-time category where SLE testid is visible
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${projectWithPartialSLE.id}:category`,
+			"cycle-time",
+		);
 
 		renderWithRouter(
 			<BaseMetricsView
@@ -1499,6 +1505,19 @@ describe("BaseMetricsView component", () => {
 	});
 
 	describe("WorkDistributionChart functionality", () => {
+		beforeEach(() => {
+			// workDistribution is in the portfolio category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"portfolio",
+			);
+			// mockMetricsService lacks getFeaturesInProgress so ownerType is "portfolio" even for mockTeam
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
+				"portfolio",
+			);
+		});
+
 		it("renders WorkDistributionChart with combined cycle time and in-progress data", async () => {
 			renderWithRouter(
 				<BaseMetricsView
@@ -2105,6 +2124,19 @@ describe("BaseMetricsView component", () => {
 	});
 
 	describe("M3 RAG Footers — Flow Throughput and Cycle Widgets", () => {
+		beforeEach(() => {
+			// throughput/cycleScatter/stacked widgets are in throughput and cycle-time categories
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"throughput",
+			);
+			// mockMetricsService lacks getFeaturesInProgress so ownerType is "portfolio" even for mockTeam
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
+				"throughput",
+			);
+		});
+
 		it("shows green RAG for throughput when no consecutive zero periods", async () => {
 			// Default mock: throughputData = [3, 5] → no zeros → Green
 			renderWithRouter(
@@ -2155,6 +2187,12 @@ describe("BaseMetricsView component", () => {
 
 		it("shows green RAG for cycle time percentiles when actual is below SLE", async () => {
 			// SLE = {85, 14}, percentiles has {85, 12} → (12-14)/14 = -14% → Green
+			// percentiles widget is in cycle-time category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"cycle-time",
+			);
+
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -2177,6 +2215,12 @@ describe("BaseMetricsView component", () => {
 
 		it("shows red RAG for cycle time percentiles when actual exceeds SLE by >15%", async () => {
 			// SLE = {85, 14}, create percentiles where 85th = 17 → (17-14)/14 = 21% → Red
+			// percentiles widget is in cycle-time category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"cycle-time",
+			);
+
 			const svc = createMockMetricsService<IWorkItem>();
 			svc.getCycleTimePercentiles = vi.fn().mockResolvedValue([
 				{ percentile: 50, value: 9 },
@@ -2203,6 +2247,12 @@ describe("BaseMetricsView component", () => {
 
 		it("shows green RAG for cycle time scatterplot when all items within SLE", async () => {
 			// SLE value = 14, cycleTimes = [9, 10] → 0% above → Green
+			// cycleScatter is in cycle-time category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"cycle-time",
+			);
+
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -2288,6 +2338,12 @@ describe("BaseMetricsView component", () => {
 
 		it("shows red RAG for total work item age when no WIP limit is set", async () => {
 			// mockProject.systemWIPLimit = 0 → undefined → Red
+			// totalWorkItemAge widget is in wip-aging category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"wip-aging",
+			);
+
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -2665,11 +2721,11 @@ describe("BaseMetricsView component", () => {
 		beforeEach(() => {
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"aging-stability",
+				"wip-aging",
 			);
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
-				"aging-stability",
+				"wip-aging",
 			);
 		});
 		it("shows green RAG for aging chart when SLE and blocked config present and items healthy", async () => {
@@ -2757,6 +2813,12 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("shows red RAG for simplified CFD when no WIP limit", async () => {
+			// stacked widget is in throughput category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"throughput",
+			);
+
 			// Same as startedVsClosed → no WIP limit → Red
 			renderWithRouter(
 				<BaseMetricsView
@@ -3020,6 +3082,33 @@ describe("BaseMetricsView component", () => {
 				expect(screen.getByTestId("widget-rag-cycleTimePbc")).toHaveTextContent(
 					"green",
 				);
+			});
+		});
+	});
+
+	describe("Widget Info Metadata Integration", () => {
+		it("passes info metadata through the widget shell for rendered widgets", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// flow-overview default category includes wipOverview which should have info
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-info-wipOverview"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-info-desc-wipOverview"),
+				).toHaveTextContent(/WIP/i);
+				expect(
+					screen.getByTestId("widget-info-link-wipOverview"),
+				).toHaveAttribute("href", expect.stringContaining("widgets.html#"));
 			});
 		});
 	});

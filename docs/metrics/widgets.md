@@ -13,6 +13,34 @@ Following a brief overview over the various metric widgets that are available in
 # Details
 Many Charts and Widgets are clickable and will provide you more details about the work items they visualize. You will see the mouse changing to a "hand" icon - in such a case you can click and a dialog with more details will pop up.
 
+# Status Indicators
+
+Most widgets display a status indicator in one of three states. The labels used in the UI are:
+
+| Status | Colour | Meaning |
+|---|---|---|
+| **Sustain** | 🟢 Green | The metric is healthy. Keep doing what you're doing. |
+| **Observe** | 🟡 Amber | Something warrants attention. Monitor closely and consider action. |
+| **Act** | 🔴 Red | Something requires immediate action or configuration is missing. |
+
+Each widget section below documents exactly how the status is calculated.
+
+# Dashboard Categories
+
+Widgets are organized into six dashboard categories. Each category groups related metrics around a specific question. Use the category selector at the top of the metrics page to switch between them.
+
+| Category | Question it answers | Widgets |
+|---|---|---|
+| **Flow Overview** | How is my system doing at a glance? | Work Items In Progress, Blocked Items, Features Worked On (Teams only), Total Work Item Age, Predictability Score, Started vs. Closed, Cycle Time Percentiles |
+| **Cycle Time** | How long do items take? | Cycle Time Percentiles, Total Work Item Age, Cycle Time Scatterplot, Work Item Aging Chart, Cycle Time PBC |
+| **Throughput** | How much are we delivering? | Started vs. Closed, Throughput Run Chart, Simplified CFD, Throughput PBC |
+| **WIP & Aging** | Where is work getting stuck? | Work Items In Progress, Total Work Item Age, Work Item Aging Chart, WIP Over Time, Total Work Item Age Over Time, WIP PBC, Total Work Item Age PBC |
+| **Predictability** | Can we trust our forecasts? | Predictability Score, Cycle Time Percentiles, Predictability Score Details, Throughput PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
+| **Portfolio & Features** | How do features flow through the system? | Features Worked On (Teams only), Predictability Score, Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
+
+{: .note}
+Some widgets appear in more than one category when they are relevant to multiple questions. A few widgets are scoped to Teams only or Portfolios only as noted above.
+
 # Work Items In Progress
 
 |--------------|-------------------------|
@@ -40,6 +68,34 @@ Lastly, you can see the number of items that are currently blocked. The *Goal* i
 {: .important}
 This widget is **not affected** by the date filtering. It always shows the **current** Work In Progress.
 
+## Status Indicator
+
+The widget contains three separate status indicators — one for each sub-metric:
+
+**WIP count**
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* current WIP exceeds the limit. |
+| 🟡 Observe | WIP is below the limit (capacity is available). |
+| 🟢 Sustain | WIP exactly matches the System WIP Limit. |
+
+**Features Worked On**
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No Feature WIP is configured, *or* the number of features being worked on exceeds the limit. |
+| 🟡 Observe | Fewer features are being worked on than the Feature WIP limit. |
+| 🟢 Sustain | Feature count exactly matches the Feature WIP limit. |
+
+**Blocked Items**
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No blocked indicators are configured, *or* 2 or more items are blocked. |
+| 🟡 Observe | Exactly 1 item is blocked. |
+| 🟢 Sustain | No items are blocked. |
+
 # WIP Over Time
 
 |--------------|-------------------------|
@@ -57,6 +113,14 @@ If you have defined a *System WIP Limit*, you can show this as a horizontal line
 
 {: .note}
 If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, making it easy to identify expected gaps in your WIP data.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* WIP exceeded the limit on more days than it was at or below the limit. |
+| 🟡 Observe | WIP was below the limit on more days than it was at or above it, *or* the distribution across above/at/below is uneven without a clear majority. |
+| 🟢 Sustain | WIP was exactly at the System WIP Limit on more than 50% of days. |
 
 # Work Item Aging Chart
 
@@ -82,6 +146,14 @@ If there is a blocked item, it will appear as a red dot in the chart.
 
 {: .note}
 Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Portfolios. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No SLE is configured, *or* no blocked indicators are configured, *or* the percentage of items exceeding the SLE is greater than the allowed percentage (100% − SLE percentile) *and* at least one item is also blocked. |
+| 🟡 Observe | Some items exceed the SLE or at least one item is blocked, but not both conditions together. |
+| 🟢 Sustain | All in-progress items are within the SLE and no items are blocked. |
 
 # Work Distribution
 
@@ -119,6 +191,14 @@ This visualization helps you:
 {: .note}
 The chart combines both completed work items (from the selected date range) and items currently in progress to give you a complete picture of work distribution. This means you can see not just what was done, but also what's currently being worked on under each parent item.
 
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | 20% or more of work items are not linked to a feature, *or* no Feature WIP is configured, *or* work is spread across more than 120% of the Feature WIP limit. |
+| 🟡 Observe | Work is spread across slightly more features than the Feature WIP limit (up to 120% of it), *or* unlinked items are below 20%. |
+| 🟢 Sustain | Work is spread across a number of features within the Feature WIP limit, and fewer than 20% of items are unlinked. |
+
 # Started vs. Closed
 
 |--------------|-------------------------|
@@ -140,6 +220,14 @@ As a rule of thumb, you should try to match your started items with how many ite
 This can help you to prepare just enough items for your team(s). Whether you do it daily or in bigger batches (for example having a refinement session per week), using this information helps you make sure you are neither under- nor over-prepared.
 
 If you want to know more details, you can click on the widget, and it will show you the specific items that were closed and opened in the selected time range.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* started count exceeds closed count by more than 5%. |
+| 🟡 Observe | Closed significantly exceeds started (process may be starving for new work). |
+| 🟢 Sustain | Both are 0, *or* the absolute difference is less than 2, *or* the relative difference is within 5%. |
 
 # Throughput Run Chart
 
@@ -163,6 +251,15 @@ If [Blackout Periods](../settings/configuration.html#blackout-periods) are confi
 
 On the top right, you will see the *Predictability Score*. If you click on it, another widget is brought up:
 
+## Status Indicator
+
+The Throughput Run Chart checks for runs of 3 or more consecutive zero-throughput days (excluding configured Blackout Periods).
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | 2 or more separate runs of 3+ consecutive zero-throughput days detected. |
+| 🟡 Observe | Exactly 1 run of 3 consecutive zero-throughput days detected. |
+| 🟢 Sustain | No extended zero-throughput runs detected. |
 
 # Predictability Score
 
@@ -190,6 +287,14 @@ The idea behind the score is that, if your percentiles are very much "away" from
 {: .important}
 The goal is not to be at 100%. In fact, that's far from realistic. We believe any value above 60% is decent. The intent of this chart is to show the results of an MCS for various inputs. For example if the throughput is distributed differently, or you take a longer or different range.
 
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | Score is below 40% — throughput is highly variable and forecasts will be unreliable. |
+| 🟡 Observe | Score is between 40% and 60% — investigate whether bulk closings or other patterns are affecting stability. |
+| 🟢 Sustain | Score is above 60% — forecasts are considered trustworthy. |
+
 # Process Behaviour Charts
 
 |--------------|-------------------------|
@@ -215,6 +320,16 @@ You can click a chip (e.g. *Large Change*) to highlight points that match that s
 
 {: .note}
 If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on all PBC charts. This prevents you from misinterpreting expected gaps or dips as special causes.
+
+## Status Indicator (all PBC charts)
+
+All PBC charts share the same status logic:
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No baseline is configured, *or* a **Large Change** special cause is detected in any data point. |
+| 🟡 Observe | A **Moderate Change** special cause is detected (but no Large Change). |
+| 🟢 Sustain | A baseline is configured and no special causes are detected. |
 
 ## Cycle Time Process Behaviour Chart
 
@@ -263,6 +378,14 @@ If you click anywhere on the widget (independent if you look at percentiles or t
 
 ![Closed Items Dialog](../assets/features/metrics/closeditemsdialog.png)
 
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No SLE is configured, *or* no closed items exist in the range, *or* the percentage of items within the SLE is more than 20 percentage points below the SLE target. |
+| 🟡 Observe | The percentage of items within the SLE is below the target by up to 20 percentage points. |
+| 🟢 Sustain | The percentage of items within the SLE meets or exceeds the configured target percentile. Consider tightening the target. |
+
 # Cycle Time Scatterplot
 
 |--------------|-------------------------|
@@ -285,6 +408,16 @@ The chart also distinguishes items by type, using different colors for each item
 If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, the corresponding date ranges are highlighted with a hatched overlay on this chart, helping you distinguish expected gaps from anomalies.
 
 ![Cycle Time with Blackout](../assets/features/metrics/cycletime_blackout.png)
+
+## Status Indicator
+
+The allowed percentage of items above the SLE is `100% − SLE percentile` (e.g. 15% for an 85th-percentile SLE).
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No SLE is configured, *or* the percentage of items exceeding the SLE is more than 10 percentage points above the allowed threshold. |
+| 🟡 Observe | The percentage of items exceeding the SLE is above the allowed threshold but within 10 percentage points of it. |
+| 🟢 Sustain | The percentage of items exceeding the SLE is within the expected threshold. |
 
 # Estimation vs. Cycle Time
 
@@ -316,6 +449,19 @@ Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), you can click 
 {: .note}
 This chart only appears after you've configured an estimation field. If no estimation field is configured, the chart will not be visible.
 
+## Status Indicator
+
+The status is based on the **Spearman rank correlation** between estimates and actual cycle times — a measure of whether higher estimates consistently lead to longer cycle times.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | Estimation is not configured, *or* the Spearman correlation is below 0.3 — no meaningful relationship between estimates and cycle time. |
+| 🟡 Observe | Correlation is between 0.3 and 0.6 — a weak relationship exists; review your estimation approach. |
+| 🟢 Sustain | Correlation is 0.6 or above — estimates correlate well with actual cycle time. |
+
+{: .note}
+A minimum of 2 data points is required to calculate correlation. With fewer items, the status defaults to **Sustain** until enough data is available.
+
 # Simplified Cumulative Flow Diagram (CFD)
 
 |--------------|-------------------------|
@@ -331,6 +477,16 @@ If you enable the trend lines, the start and end points of both areas will be co
 1. Making the lines parallel - this means you control your WIP well. If the lines are not parallel, you either start more than you finish or finish more than you start.
 2. Bring the lines closer together - this means you will decrease your Cycle Time.
 3. Increase the *angle* of the lines - this means you will increase your Throughput.
+
+## Status Indicator
+
+The CFD uses the same logic as [Started vs. Closed](#started-vs-closed): it compares the total number of items started against the total number of items closed over the selected period.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* started count exceeds closed count by more than 5%. |
+| 🟡 Observe | Closed significantly exceeds started (process may be starving). |
+| 🟢 Sustain | Started and closed are balanced (within 5% or an absolute difference of less than 2). |
 
 # Total Work Item Age
 
@@ -355,6 +511,16 @@ Your Total Work Item Age would be 10 days.
 {: .important}
 This widget is **not affected** by date filtering. It always shows the **current** total age of all items in progress.
 
+## Status Indicator
+
+The reference value is calculated as: **System WIP Limit × SLE days**. This represents the maximum acceptable total age if every in-progress item were exactly at the SLE boundary.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | System WIP Limit or SLE is not configured, *or* the current total age already exceeds the reference value. |
+| 🟡 Observe | The current total age is within the reference value, but adding today's WIP count (one additional day of aging) would push it over. |
+| 🟢 Sustain | The current total age is within the reference value and not projected to exceed it tomorrow. |
+
 ## Total Work Item Age Over Time
 
 To see how your total work item age has evolved, there's also a run chart showing the historical trend:
@@ -370,6 +536,16 @@ If you click on a specific day, it will show you which items contributed to the 
 
 {: .note}
 The age calculation for historical dates shows how old each item was on that specific date, not its current age. An item started 10 days ago would show age 1 on its first day, age 2 on its second day, and so on.
+
+### Status Indicator (Over Time chart)
+
+The over-time chart compares the total work item age at the **start** of the selected period to the value at the **end**.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | Total age grew from 0 to a positive value, *or* it grew by more than 10% over the period. |
+| 🟡 Observe | Total age dropped by more than 10% — items may have been removed or completed in a burst; verify the data. |
+| 🟢 Sustain | Total age is stable (within ±10% change), or is 0 throughout. |
 
 # Feature Size
 
@@ -417,3 +593,16 @@ This allows you to see:
 Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), you can show percentile lines to understand your feature delivery patterns. Multiple features with the same size and time value are grouped in a bubble - the larger the bubble, the more features it represents.
 
 Click on any bubble to see detailed information about the feature(s) it represents.
+
+## Status Indicator
+
+The Feature Size chart compares active (in-progress) features against a configured **Feature Size Target** percentile, derived from historical feature sizes.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No Feature Size Target is configured, *or* more than `(100% − target percentile) + 10%` of active features exceed the historical size at the target percentile. |
+| 🟡 Observe | More than `100% − target percentile` of active features exceed the threshold, but within the 10 percentage point buffer. |
+| 🟢 Sustain | The proportion of oversized active features is within the expected range. |
+
+{: .note}
+If no active features or no historical size data exist yet, the status defaults to **Sustain**.

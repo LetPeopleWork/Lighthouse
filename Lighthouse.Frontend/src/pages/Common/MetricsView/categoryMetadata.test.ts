@@ -7,50 +7,33 @@ import {
 } from "./categoryMetadata";
 
 describe("categoryMetadata", () => {
-	it("returns all five categories", () => {
+	it("returns all six categories in order", () => {
 		const categories = getCategories();
-		expect(categories).toHaveLength(5);
+		expect(categories).toHaveLength(6);
 		expect(categories.map((c: CategoryDefinition) => c.key)).toEqual([
-			"flow-health",
-			"aging-stability",
+			"flow-overview",
+			"cycle-time",
+			"throughput",
+			"wip-aging",
 			"predictability",
 			"portfolio",
-			"overview",
 		]);
 	});
 
-	it("default category is flow-health", () => {
-		expect(getDefaultCategoryKey()).toBe("flow-health");
+	it("every category has a displayName, icon, and hoverText", () => {
+		for (const cat of getCategories()) {
+			expect(cat.displayName).toBeTruthy();
+			expect(cat.icon).toBeTruthy();
+			expect(cat.hoverText).toBeTruthy();
+		}
 	});
 
-	it("flow-health contains expected widgets in order for team", () => {
-		const widgets = getWidgetsForCategory("flow-health", "team");
-		expect(widgets.map((w) => w.widgetKey)).toEqual([
-			"wipOverview",
-			"startedVsFinished",
-			"percentiles",
-			"totalWorkItemAge",
-			"throughput",
-			"cycleScatter",
-			"workDistribution",
-			"wipOverTime",
-		]);
+	it("default category is flow-overview", () => {
+		expect(getDefaultCategoryKey()).toBe("flow-overview");
 	});
 
-	it("aging-stability contains expected widgets in order for team", () => {
-		const widgets = getWidgetsForCategory("aging-stability", "team");
-		expect(widgets.map((w) => w.widgetKey)).toEqual([
-			"wipOverview",
-			"totalWorkItemAge",
-			"aging",
-			"wipOverTime",
-			"totalWorkItemAgeOverTime",
-			"stacked",
-		]);
-	});
-
-	it("overview contains expected widgets in order for team", () => {
-		const widgets = getWidgetsForCategory("overview", "team");
+	it("flow-overview contains expected widgets in order for team", () => {
+		const widgets = getWidgetsForCategory("flow-overview", "team");
 		expect(widgets.map((w) => w.widgetKey)).toEqual([
 			"wipOverview",
 			"blockedOverview",
@@ -62,11 +45,45 @@ describe("categoryMetadata", () => {
 		]);
 	});
 
-	it("overview excludes team-only widgets for portfolio", () => {
-		const widgets = getWidgetsForCategory("overview", "portfolio");
+	it("flow-overview excludes team-only widgets for portfolio", () => {
+		const widgets = getWidgetsForCategory("flow-overview", "portfolio");
 		expect(widgets.map((w) => w.widgetKey)).not.toContain(
 			"featuresWorkedOnOverview",
 		);
+	});
+
+	it("cycle-time contains expected widgets in order for team", () => {
+		const widgets = getWidgetsForCategory("cycle-time", "team");
+		expect(widgets.map((w) => w.widgetKey)).toEqual([
+			"percentiles",
+			"totalWorkItemAge",
+			"cycleScatter",
+			"aging",
+			"cycleTimePbc",
+		]);
+	});
+
+	it("throughput contains expected widgets in order for team", () => {
+		const widgets = getWidgetsForCategory("throughput", "team");
+		expect(widgets.map((w) => w.widgetKey)).toEqual([
+			"startedVsFinished",
+			"throughput",
+			"stacked",
+			"throughputPbc",
+		]);
+	});
+
+	it("wip-aging contains expected widgets in order for team", () => {
+		const widgets = getWidgetsForCategory("wip-aging", "team");
+		expect(widgets.map((w) => w.widgetKey)).toEqual([
+			"wipOverview",
+			"totalWorkItemAge",
+			"aging",
+			"wipOverTime",
+			"totalWorkItemAgeOverTime",
+			"wipPbc",
+			"totalWorkItemAgePbc",
+		]);
 	});
 
 	it("predictability contains expected widgets in order for team", () => {
@@ -117,23 +134,21 @@ describe("categoryMetadata", () => {
 	});
 
 	it("widgets appear in multiple categories", () => {
-		const flow = getWidgetsForCategory("flow-health", "team");
-		const aging = getWidgetsForCategory("aging-stability", "team");
-		expect(flow.map((w) => w.widgetKey)).toContain("wipOverTime");
-		expect(aging.map((w) => w.widgetKey)).toContain("wipOverTime");
+		const cycleTime = getWidgetsForCategory("cycle-time", "team");
+		const wipAging = getWidgetsForCategory("wip-aging", "team");
+		expect(cycleTime.map((w) => w.widgetKey)).toContain("aging");
+		expect(wipAging.map((w) => w.widgetKey)).toContain("aging");
 	});
 
-	it("wipOverview appears in flow-health, aging-stability, and overview", () => {
-		const flow = getWidgetsForCategory("flow-health", "team");
-		const aging = getWidgetsForCategory("aging-stability", "team");
-		const overview = getWidgetsForCategory("overview", "team");
-		expect(flow.map((w) => w.widgetKey)).toContain("wipOverview");
-		expect(aging.map((w) => w.widgetKey)).toContain("wipOverview");
+	it("wipOverview appears in flow-overview and wip-aging", () => {
+		const overview = getWidgetsForCategory("flow-overview", "team");
+		const wipAging = getWidgetsForCategory("wip-aging", "team");
 		expect(overview.map((w) => w.widgetKey)).toContain("wipOverview");
+		expect(wipAging.map((w) => w.widgetKey)).toContain("wipOverview");
 	});
 
-	it("predictabilityScore appears in overview, predictability, and portfolio", () => {
-		const overview = getWidgetsForCategory("overview", "team");
+	it("predictabilityScore appears in flow-overview, predictability, and portfolio", () => {
+		const overview = getWidgetsForCategory("flow-overview", "team");
 		const pred = getWidgetsForCategory("predictability", "team");
 		const port = getWidgetsForCategory("portfolio", "team");
 		expect(overview.map((w) => w.widgetKey)).toContain("predictabilityScore");
@@ -148,5 +163,17 @@ describe("categoryMetadata", () => {
 				expect(validSizes).toContain(w.size);
 			}
 		}
+	});
+
+	it("category display names match the story taxonomy", () => {
+		const categories = getCategories();
+		expect(categories.map((c) => c.displayName)).toEqual([
+			"Flow Overview",
+			"Cycle Time",
+			"Throughput",
+			"WIP & Aging",
+			"Predictability",
+			"Portfolio & Features",
+		]);
 	});
 });

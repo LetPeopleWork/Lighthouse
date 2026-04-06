@@ -7,9 +7,9 @@ describe("useCategorySelection", () => {
 		localStorage.clear();
 	});
 
-	it("returns flow-health as default when nothing stored", () => {
+	it("returns flow-overview as default when nothing stored", () => {
 		const { result } = renderHook(() => useCategorySelection("team", 1));
-		expect(result.current.selectedCategory).toBe("flow-health");
+		expect(result.current.selectedCategory).toBe("flow-overview");
 	});
 
 	it("reads stored category from localStorage", () => {
@@ -36,6 +36,6 @@ describe("useCategorySelection", () => {
 			"not-a-real-category",
 		);
 		const { result } = renderHook(() => useCategorySelection("portfolio", 5));
-		expect(result.current.selectedCategory).toBe("flow-health");
+		expect(result.current.selectedCategory).toBe("flow-overview");
 	});
 });

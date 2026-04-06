@@ -63,6 +63,7 @@ import { useCategorySelection } from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
 import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
+import { getWidgetInfo } from "./widgetInfoMetadata";
 
 export interface BaseMetricsViewProps<
 	T extends IWorkItem | IFeature,
@@ -767,7 +768,8 @@ export const BaseMetricsView = <
 				<WidgetShell
 					widgetKey={w.widgetKey}
 					showTips={showTips}
-					footer={widgetFooters[w.widgetKey]}
+					header={widgetFooters[w.widgetKey]}
+					info={getWidgetInfo(w.widgetKey)}
 				>
 					{widgetNodes[w.widgetKey]}
 				</WidgetShell>
