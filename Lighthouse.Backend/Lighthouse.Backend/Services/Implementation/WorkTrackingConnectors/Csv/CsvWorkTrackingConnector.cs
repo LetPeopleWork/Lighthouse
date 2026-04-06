@@ -89,48 +89,66 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(ConnectionValidationResult.Success());
         }
 
-        public Task<bool> ValidateTeamSettings(Team team)
+        public Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
         {
             return ValidateQueryOwnerForCsv(team);
         }
 
-        public Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
+        public Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio)
         {
             return ValidateQueryOwnerForCsv(portfolio);
         }
 
-        private Task<bool> ValidateQueryOwnerForCsv(IWorkItemQueryOwner owner)
+        private Task<ConnectionValidationResult> ValidateQueryOwnerForCsv(IWorkItemQueryOwner owner)
         {
             var csvContent = owner.DataRetrievalValue;
 
             if (string.IsNullOrEmpty(csvContent))
             {
-                // Must have CSV
-                return Task.FromResult(false);
+                return Task.FromResult(ConnectionValidationResult.Failure(
+                    "missing_csv_content",
+                    "No CSV content was provided.",
+                    "Paste or upload CSV content before validating.",
+                    "DataRetrievalValue"));
             }
 
             if (owner.WorkItemTypes.Count == 0)
             {
-                // Work Item Types are not skippable
-                return Task.FromResult(false);
+                return Task.FromResult(ConnectionValidationResult.Failure(
+                    "missing_work_item_types",
+                    "At least one work item type is required for CSV validation.",
+                    fieldName: "WorkItemTypes"));
             }
 
             if (owner.ToDoStates.Count == 0 || owner.DoingStates.Count == 0 || owner.DoneStates.Count == 0)
             {
-                // States are not optional
-                return Task.FromResult(false);
+                return Task.FromResult(ConnectionValidationResult.Failure(
+                    "missing_states",
+                    "To Do, Doing, and Done states are required for CSV validation.",
+                    fieldName: "States"));
             }
 
             try
             {
                 var isValid = IsValidCsv(owner);
 
-                return Task.FromResult(isValid);
+                if (!isValid)
+                {
+                    return Task.FromResult(ConnectionValidationResult.Failure(
+                        "invalid_csv",
+                        "CSV content is invalid or missing required columns.",
+                        "Check CSV delimiter and required headers in your connection options."));
+                }
+
+                return Task.FromResult(ConnectionValidationResult.Success());
             }
             catch (Exception ex)
             {
                 logger.LogInformation(ex, "Could not read CSV for {Name} - Validation failed", owner.Name);
-                return Task.FromResult(true);
+                return Task.FromResult(ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "CSV validation failed due to an unexpected parsing error.",
+                    ex.Message));
             }
         }
 

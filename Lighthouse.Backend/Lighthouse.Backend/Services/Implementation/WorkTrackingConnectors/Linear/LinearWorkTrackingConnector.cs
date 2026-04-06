@@ -217,7 +217,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        public async Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
+        public async Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio)
         {
             try
             {
@@ -228,16 +228,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 logger.LogInformation("Found {TotalProjects} projects in workspace for portfolio {ProjectName}",
                     projects.Count, portfolio.Name);
 
-                return projects.Count > 0;
+                if (projects.Count == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_features_found",
+                        "No portfolio features were found for this configuration.",
+                        "No Linear projects were returned for the current workspace settings.");
+                }
+
+                return ConnectionValidationResult.Success();
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Portfolio validation failed due to an unexpected error.",
+                    ex.Message);
             }
         }
 
-        public async Task<bool> ValidateTeamSettings(Team team)
+        public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
         {
             try
             {
@@ -246,7 +257,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 if (string.IsNullOrEmpty(teamName))
                 {
                     logger.LogWarning("Team {TeamName} has no Linear team identity configured. Please select a team via the wizard.", team.Name);
-                    return false;
+                    return ConnectionValidationResult.Failure(
+                        "missing_team_name",
+                        "No Linear team was selected for this configuration.",
+                        "Select a team in the data retrieval step or re-run the team wizard.",
+                        "DataRetrievalValue");
                 }
 
                 var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName);
@@ -254,7 +269,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 if (string.IsNullOrEmpty(teamId))
                 {
                     logger.LogWarning("Could not resolve Linear team ID for team name '{TeamName}'. Please reconfigure via the team wizard.", teamName);
-                    return false;
+                    return ConnectionValidationResult.Failure(
+                        "invalid_team_name",
+                        "The selected Linear team could not be resolved.",
+                        "Re-run the team wizard and choose a valid Linear team.",
+                        "DataRetrievalValue");
                 }
 
                 logger.LogInformation("Validating Team Settings for Team {TeamName} with resolved team identity {TeamId}", team.Name, teamId);
@@ -264,12 +283,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", filteredIssues.Count, team.Name);
 
-                return filteredIssues.Count > 0;
+                if (filteredIssues.Count == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_work_items_found",
+                        "No work items were found for this team configuration.",
+                        "Check selected states and team data in Linear.");
+                }
+
+                return ConnectionValidationResult.Success();
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during Validation of Team Settings for Team {TeamName}. The configured team name may be invalid — please reconfigure via the team wizard.", team.Name);
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Team validation failed due to an unexpected error.",
+                    ex.Message);
             }
         }
 

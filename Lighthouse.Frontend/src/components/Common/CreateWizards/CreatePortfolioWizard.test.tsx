@@ -10,6 +10,7 @@ import type {
 } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
@@ -422,6 +423,42 @@ describe("CreatePortfolioWizard", () => {
 			});
 			expect(screen.getByText("Epic")).toBeInTheDocument();
 			expect(screen.getByText("Feature")).toBeInTheDocument();
+		});
+
+		it("shows validation details when validation throws ApiError", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			const validatePortfolioSettings = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(400, "No features were found.", "Check your query."),
+				);
+			renderWizard({ validatePortfolioSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+
+			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
+			await user.type(dataRetrievalInput, "MyPortfolioQuery");
+			fireEvent.click(screen.getByText("Add ToDo State"));
+			fireEvent.click(screen.getByText("Add Doing State"));
+			fireEvent.click(screen.getByText("Add Done State"));
+			fireEvent.click(screen.getByText("Add Work Item Type"));
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			await waitFor(() => {
+				expect(screen.getByText("No features were found.")).toBeInTheDocument();
+				expect(screen.getByText("Check your query.")).toBeInTheDocument();
+			});
 		});
 
 		it("wizard cancel returns to Load Data step", async () => {

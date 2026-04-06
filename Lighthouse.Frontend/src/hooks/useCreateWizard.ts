@@ -8,6 +8,7 @@ import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../services/Api/ApiError";
 export const STEPS = [
 	"Choose Connection",
 	"Load Data",
@@ -68,6 +69,9 @@ export function useCreateWizard<TDto>({
 
 	const [validating, setValidating] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
+	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
+		string | null
+	>(null);
 	const [saving, setSaving] = useState(false);
 
 	const [availableWizards, setAvailableWizards] = useState<
@@ -106,6 +110,7 @@ export function useCreateWizard<TDto>({
 		setDoingStates([]);
 		setDoneStates([]);
 		setValidationError(null);
+		setValidationTechnicalDetails(null);
 
 		const wizards = getWizardsForSystem(
 			connection.workTrackingSystem,
@@ -156,6 +161,7 @@ export function useCreateWizard<TDto>({
 	const runValidation = async (): Promise<boolean> => {
 		setValidating(true);
 		setValidationError(null);
+		setValidationTechnicalDetails(null);
 		try {
 			const dto = buildDto(currentBase(), name);
 			const isValid = await validateSettings(dto);
@@ -163,12 +169,19 @@ export function useCreateWizard<TDto>({
 				setValidationError(
 					"Validation failed. Check your configuration and try again.",
 				);
+				setValidationTechnicalDetails(null);
 			}
 			return isValid;
-		} catch {
-			setValidationError(
-				"Validation failed. Check your configuration and try again.",
-			);
+		} catch (error) {
+			if (error instanceof ApiError) {
+				setValidationError(error.message);
+				setValidationTechnicalDetails(error.technicalDetails ?? null);
+			} else {
+				setValidationError(
+					"Validation failed. Check your configuration and try again.",
+				);
+				setValidationTechnicalDetails(null);
+			}
 			return false;
 		} finally {
 			setValidating(false);
@@ -205,10 +218,15 @@ export function useCreateWizard<TDto>({
 
 		setValidating(true);
 		setValidationError(null);
+		setValidationTechnicalDetails(null);
 		try {
 			const isValid = await validateSettings(buildDto(merged, name));
 			setActiveStep(isValid ? STEP_NAME_CREATE : STEP_CONFIGURE);
-		} catch {
+		} catch (error) {
+			if (error instanceof ApiError) {
+				setValidationError(error.message);
+				setValidationTechnicalDetails(error.technicalDetails ?? null);
+			}
 			setActiveStep(STEP_CONFIGURE);
 		} finally {
 			setValidating(false);
@@ -271,6 +289,7 @@ export function useCreateWizard<TDto>({
 		setName,
 		validating,
 		validationError,
+		validationTechnicalDetails,
 		saving,
 		availableWizards,
 		activeWizard,

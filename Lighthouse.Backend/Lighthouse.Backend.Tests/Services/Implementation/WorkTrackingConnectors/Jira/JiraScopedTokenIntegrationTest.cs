@@ -37,9 +37,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("project = LGHTHSDMO AND issueKey = LGHTHSDMO-11");
 
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.True);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]
@@ -48,9 +48,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio("project = LGHTHSDMO");
 
-            var isValid = await subject.ValidatePortfolioSettings(portfolio);
+            var result = await subject.ValidatePortfolioSettings(portfolio);
 
-            Assert.That(isValid, Is.True);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]

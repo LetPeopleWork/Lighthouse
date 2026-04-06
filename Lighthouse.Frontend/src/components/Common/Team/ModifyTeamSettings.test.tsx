@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
@@ -335,6 +336,20 @@ describe("ModifyTeamSettings", () => {
 
 		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	it("shows validation message and details when validate throws ApiError", async () => {
+		await renderModifyTeamSettings();
+		mockValidateTeamSettings.mockRejectedValue(
+			new ApiError(400, "No work items were found.", "Check your query."),
+		);
+
+		fireEvent.click(screen.getByText("Save"));
+
+		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
+		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+		expect(screen.getByText("No work items were found.")).toBeInTheDocument();
+		expect(screen.getByText("Check your query.")).toBeInTheDocument();
 	});
 
 	it("does not render a standalone Validate button", async () => {

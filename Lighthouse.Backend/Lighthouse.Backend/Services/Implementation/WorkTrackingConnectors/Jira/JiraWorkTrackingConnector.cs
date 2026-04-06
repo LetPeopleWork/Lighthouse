@@ -564,7 +564,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .ToList();
         }
 
-        public async Task<bool> ValidateTeamSettings(Team team)
+        public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
         {
             try
             {
@@ -576,16 +576,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Issues with specified Query settings", totalItems);
 
-                return totalItems > 0;
+                if (totalItems == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_work_items_found",
+                        "No work items were found for this team configuration.",
+                        "Check your JQL query, selected issue types, and mapped states.",
+                        "DataRetrievalValue");
+                }
+
+                return ConnectionValidationResult.Success();
             }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Team validation failed due to an unexpected error.",
+                    exception.Message);
             }
         }
 
-        public async Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
+        public async Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio)
         {
             try
             {
@@ -597,12 +609,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
 
-                return totalFeatures > 0;
+                if (totalFeatures == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_features_found",
+                        "No portfolio features were found for this configuration.",
+                        "Check your JQL query, selected issue types, and mapped states.",
+                        "DataRetrievalValue");
+                }
+
+                return ConnectionValidationResult.Success();
             }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Portfolio validation failed due to an unexpected error.",
+                    exception.Message);
             }
         }
 
@@ -611,13 +635,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var features = new List<Feature>();
 
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
-
-            var portfolioLinkFieldName = !portfolio.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[portfolio.WorkTrackingSystemConnectionId][JiraFieldNames.ParentLinkFieldName] : string.Empty;
+            var portfolioLinkFieldName = !portfolio.ParentOverrideAdditionalFieldDefinitionId.HasValue
+                ? FieldNames[portfolio.WorkTrackingSystemConnectionId][JiraFieldNames.ParentLinkFieldName]
+                : string.Empty;
 
             foreach (var issue in issues)
             {
                 var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
-
                 TrySetParentForJiraDataCenter(workItem, issue, portfolioLinkFieldName);
 
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);

@@ -180,4 +180,18 @@ describe("TeamService", () => {
 			mockTeamSettings,
 		);
 	});
+
+	it("should support object-shaped validation responses", async () => {
+		const mockTeamSettings = createMockTeamSettings();
+
+		mockedAxios.post.mockResolvedValueOnce({ data: { isValid: true } });
+
+		const isValid = await teamService.validateTeamSettings(mockTeamSettings);
+
+		expect(isValid).toBe(true);
+		expect(mockedAxios.post).toHaveBeenCalledWith(
+			"/teams/validate",
+			mockTeamSettings,
+		);
+	});
 });

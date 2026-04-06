@@ -491,6 +491,19 @@ describe("CreateWizardShell", () => {
 			expect(screen.getByText(/validation failed/i)).toBeInTheDocument();
 		});
 
+		it("shows validation technical details when provided", () => {
+			render(
+				<CreateWizardShell
+					{...baseProps()}
+					activeStep={STEP_CONFIGURE}
+					validationError="Validation failed."
+					validationTechnicalDetails="Check your query."
+				/>,
+			);
+			expect(screen.getByText("Validation failed.")).toBeInTheDocument();
+			expect(screen.getByText("Check your query.")).toBeInTheDocument();
+		});
+
 		it("does not show validationError when null", () => {
 			render(
 				<CreateWizardShell

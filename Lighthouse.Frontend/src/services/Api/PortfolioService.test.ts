@@ -166,4 +166,19 @@ describe("PortfolioService", () => {
 			mockProjectSettings,
 		);
 	});
+
+	it("should support object-shaped validation responses", async () => {
+		const mockProjectSettings = createMockProjectSettings();
+
+		mockedAxios.post.mockResolvedValueOnce({ data: { isValid: true } });
+
+		const isValid =
+			await portfolioService.validatePortfolioSettings(mockProjectSettings);
+
+		expect(isValid).toBe(true);
+		expect(mockedAxios.post).toHaveBeenCalledWith(
+			"/portfolios/validate",
+			mockProjectSettings,
+		);
+	});
 });

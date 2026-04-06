@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -195,12 +196,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [TestCase(true)]
-        [TestCase(false)]
-        public async Task ValidatePortfolioSettings_GivenPortfolioSettings_ReturnsResultFromWorkItemService(bool expectedResult)
+        public async Task ValidatePortfolioSettings_GivenValidPortfolioSettings_ReturnsOkResultFromWorkItemService()
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
             var portfolioSettingDto = new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1886 };
+            var expectedResult = ConnectionValidationResult.Success();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
@@ -218,8 +218,39 @@ namespace Lighthouse.Backend.Tests.API
                 var okObjectResult = response.Result as OkObjectResult;
                 Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
 
-                var value = okObjectResult.Value;
-                Assert.That(value, Is.EqualTo(expectedResult));
+                var value = okObjectResult.Value as ConnectionValidationResult;
+                Assert.That(value, Is.Not.Null);
+                Assert.That(value!.IsValid, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task ValidatePortfolioSettings_GivenInvalidPortfolioSettings_ReturnsBadRequestResultFromWorkItemService()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            var portfolioSettingDto = new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1886 };
+            var expectedResult = ConnectionValidationResult.Failure("no_features_found", "No features found.", "Check query.");
+
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
+            workTrackingConnectorServiceMock.Setup(x => x.ValidatePortfolioSettings(It.IsAny<Portfolio>())).ReturnsAsync(expectedResult);
+
+            var subject = CreateSubject();
+
+            var response = await subject.ValidatePortfolioSettings(portfolioSettingDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestObjectResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestObjectResult!.StatusCode, Is.EqualTo(400));
+
+                var value = badRequestObjectResult.Value as ConnectionValidationResult;
+                Assert.That(value, Is.Not.Null);
+                Assert.That(value!.IsValid, Is.False);
+                Assert.That(value.Code, Is.EqualTo("no_features_found"));
             }
         }
 

@@ -110,17 +110,26 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckTeamConstraint = true)]
-        public async Task<ActionResult<bool>> ValidateTeamSettings(TeamSettingDto teamSettingDto)
+        public async Task<ActionResult<object>> ValidateTeamSettings(TeamSettingDto teamSettingDto)
         {
-            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, teamSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
+            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);
+            if (workTrackingSystem == null)
             {
-                var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
-                team.SyncTeamWithTeamSettings(teamSettingDto);
+                return NotFound();
+            }
 
-                var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
+            team.SyncTeamWithTeamSettings(teamSettingDto);
 
-                return await workItemService.ValidateTeamSettings(team);
-            });
+            var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+
+            var validationResult = await workItemService.ValidateTeamSettings(team);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult);
+            }
+
+            return Ok(validationResult);
         }
     }
 }

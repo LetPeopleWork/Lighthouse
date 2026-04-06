@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -470,6 +471,32 @@ describe("ModifyProjectSettings", () => {
 		fireEvent.click(screen.getByText("Save"));
 		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+	});
+
+	it("shows validation message and details when validate throws ApiError", async () => {
+		render(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+			/>,
+		);
+		mockValidateProjectSettings.mockRejectedValue(
+			new ApiError(400, "No features were found.", "Check your query."),
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.click(screen.getByText("Save"));
+		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
+		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+		expect(screen.getByText("No features were found.")).toBeInTheDocument();
+		expect(screen.getByText("Check your query.")).toBeInTheDocument();
 	});
 
 	it("does not render a standalone Validate button", async () => {

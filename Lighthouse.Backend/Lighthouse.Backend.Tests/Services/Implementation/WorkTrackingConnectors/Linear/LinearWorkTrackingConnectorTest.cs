@@ -59,9 +59,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var team = CreateTeam();
 
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.True);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]
@@ -74,9 +74,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateTeam();
             team.DataRetrievalValue = teamId;
 
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Message, Is.Not.Empty);
         }
 
         [Test]
@@ -157,9 +158,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var project = CreatePortfolio();
 
-            var isValid = await subject.ValidatePortfolioSettings(project);
+            var result = await subject.ValidatePortfolioSettings(project);
 
-            Assert.That(isValid, Is.True);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]
@@ -170,9 +171,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreatePortfolio();
             project.DataRetrievalValue = "NonExistentProject";
 
-            var isValid = await subject.ValidatePortfolioSettings(project);
+            var result = await subject.ValidatePortfolioSettings(project);
 
-            Assert.That(isValid, Is.True);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]

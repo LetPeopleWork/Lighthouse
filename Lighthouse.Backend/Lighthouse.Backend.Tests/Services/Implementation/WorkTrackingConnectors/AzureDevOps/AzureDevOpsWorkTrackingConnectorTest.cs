@@ -774,9 +774,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.EqualTo(expectedValue));
+            Assert.That(result.IsValid, Is.EqualTo(expectedValue));
         }
 
         [Test]
@@ -793,9 +793,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             team.WorkTrackingSystemConnection = connectionSetting;
 
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Message, Is.Not.Empty);
         }
 
         [Test]
@@ -808,9 +809,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var isValid = await subject.ValidatePortfolioSettings(portfolio);
+            var result = await subject.ValidatePortfolioSettings(portfolio);
 
-            Assert.That(isValid, Is.EqualTo(expectedValue));
+            Assert.That(result.IsValid, Is.EqualTo(expectedValue));
         }
 
         [Test]
@@ -828,9 +829,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             portfolio.WorkTrackingSystemConnection = connectionSetting;
 
-            var isValid = await subject.ValidatePortfolioSettings(portfolio);
+            var result = await subject.ValidatePortfolioSettings(portfolio);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Message, Is.Not.Empty);
         }
 
         [Test]
@@ -844,9 +846,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var isValid = await subject.ValidatePortfolioSettings(portfolio);
+            var result = await subject.ValidatePortfolioSettings(portfolio);
 
-            Assert.That(isValid, Is.True);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]

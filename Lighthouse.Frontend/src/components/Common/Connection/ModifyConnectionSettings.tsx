@@ -567,7 +567,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					{validationErrorMessage && (
 						<Grid size={{ xs: 12 }}>
 							<Alert severity="error">
-								<Typography variant="body2">{validationErrorMessage}</Typography>
+								<Typography variant="body2">
+									{validationErrorMessage}
+								</Typography>
 								{validationTechnicalDetails && (
 									<Typography
 										variant="caption"

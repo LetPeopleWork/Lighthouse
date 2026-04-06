@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        public async Task<bool> ValidateTeamSettings(Team team)
+        public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
         {
             try
             {
@@ -175,16 +175,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items with specified Query", workItemCount);
 
-                return workItemCount > 0;
+                if (workItemCount == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_work_items_found",
+                        "No work items were found for this team configuration.",
+                        "Check your query, selected work item types, and mapped states.",
+                        "DataRetrievalValue");
+                }
+
+                return ConnectionValidationResult.Success();
             }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Team validation failed due to an unexpected error.",
+                    exception.Message);
             }
         }
 
-        public async Task<bool> ValidatePortfolioSettings(Portfolio portfolio)
+        public async Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio)
         {
             try
             {
@@ -197,12 +209,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
 
-                return workItemCount > 0;
+                if (workItemCount == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_features_found",
+                        "No portfolio features were found for this configuration.",
+                        "Check your query, selected work item types, and mapped states.",
+                        "DataRetrievalValue");
+                }
+
+                return ConnectionValidationResult.Success();
             }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Portfolio validation failed due to an unexpected error.",
+                    exception.Message);
             }
         }
 

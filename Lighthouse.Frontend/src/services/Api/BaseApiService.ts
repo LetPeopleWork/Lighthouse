@@ -38,7 +38,11 @@ export class BaseApiService {
 
 		const status = err.response?.status ?? "UNKNOWN";
 		const data: unknown = err.response?.data;
-		const parsed = BaseApiService.parseApiErrorPayload(data, err.message, status);
+		const parsed = BaseApiService.parseApiErrorPayload(
+			data,
+			err.message,
+			status,
+		);
 
 		return new ApiError(
 			status,

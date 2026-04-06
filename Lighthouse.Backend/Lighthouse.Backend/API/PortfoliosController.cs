@@ -84,19 +84,26 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
-        public async Task<ActionResult<bool>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto)
+        public async Task<ActionResult<object>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto)
         {
-            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, portfolioSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
+            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(portfolioSettingDto.WorkTrackingSystemConnectionId);
+            if (workTrackingSystem == null)
             {
-                var portfolio = new Portfolio { WorkTrackingSystemConnection = workTrackingSystem };
-                portfolio.SyncWithPortfolioSettings(portfolioSettingDto, teamRepository);
+                return NotFound();
+            }
 
-                var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var portfolio = new Portfolio { WorkTrackingSystemConnection = workTrackingSystem };
+            portfolio.SyncWithPortfolioSettings(portfolioSettingDto, teamRepository);
 
-                var result = await workItemService.ValidatePortfolioSettings(portfolio);
+            var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-                return result;
-            });
+            var validationResult = await workItemService.ValidatePortfolioSettings(portfolio);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult);
+            }
+
+            return Ok(validationResult);
         }
     }
 }

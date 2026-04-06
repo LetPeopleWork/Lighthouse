@@ -1,4 +1,9 @@
-import { Container, type SelectChangeEvent, Typography } from "@mui/material";
+import {
+	Alert,
+	Container,
+	type SelectChangeEvent,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -55,6 +60,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formValid,
+		validationError,
+		validationTechnicalDetails,
 		updateSettings,
 		handleWorkTrackingSystemChange,
 		handleSave,
@@ -231,6 +238,22 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
 						/>
+
+						{validationError && (
+							<Grid size={{ xs: 12 }}>
+								<Alert severity="error">
+									<Typography variant="body2">{validationError}</Typography>
+									{validationTechnicalDetails && (
+										<Typography
+											variant="caption"
+											sx={{ display: "block", mt: 1 }}
+										>
+											{validationTechnicalDetails}
+										</Typography>
+									)}
+								</Alert>
+							</Grid>
+						)}
 
 						<Grid
 							size={{ xs: 12 }}

@@ -61,6 +61,7 @@ export interface CreateWizardShellProps {
 	onRemoveDoneState: (s: string) => void;
 	onReorderDoneStates: (s: string[]) => void;
 	validationError: string | null;
+	validationTechnicalDetails?: string | null;
 	configInputsValid: boolean;
 	validating: boolean;
 	// name & create step
@@ -110,6 +111,7 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 	onRemoveDoneState,
 	onReorderDoneStates,
 	validationError,
+	validationTechnicalDetails,
 	configInputsValid,
 	validating,
 	nameLabel,
@@ -237,7 +239,15 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 						{renderActiveWizardDialog()}
 						{validationError && (
 							<Alert severity="error" sx={{ mt: 1 }}>
-								{validationError}
+								<Typography variant="body2">{validationError}</Typography>
+								{validationTechnicalDetails && (
+									<Typography
+										variant="caption"
+										sx={{ display: "block", mt: 1 }}
+									>
+										{validationTechnicalDetails}
+									</Typography>
+								)}
 							</Alert>
 						)}
 					</Box>

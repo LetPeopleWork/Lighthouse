@@ -79,11 +79,15 @@ export class TeamService extends BaseApiService implements ITeamService {
 
 	async validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.post<boolean>(
-				"/teams/validate",
-				teamSettings,
-			);
-			return response.data;
+			const response = await this.apiService.post<
+				boolean | { isValid?: boolean }
+			>("/teams/validate", teamSettings);
+
+			if (typeof response.data === "boolean") {
+				return response.data;
+			}
+
+			return response.data.isValid === true;
 		});
 	}
 

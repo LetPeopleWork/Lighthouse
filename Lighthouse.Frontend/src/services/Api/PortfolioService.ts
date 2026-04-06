@@ -114,11 +114,15 @@ export class PortfolioService
 		portfolioSettings: IPortfolioSettings,
 	): Promise<boolean> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.post<boolean>(
-				"/portfolios/validate",
-				portfolioSettings,
-			);
-			return response.data;
+			const response = await this.apiService.post<
+				boolean | { isValid?: boolean }
+			>("/portfolios/validate", portfolioSettings);
+
+			if (typeof response.data === "boolean") {
+				return response.data;
+			}
+
+			return response.data.isValid === true;
 		});
 	}
 }

@@ -10,6 +10,7 @@ import type {
 } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
@@ -564,6 +565,44 @@ describe("CreateTeamWizard", () => {
 				expect(screen.getByText(/validation failed/i)).toBeInTheDocument();
 			});
 			expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+		});
+
+		it("shows validation details when validation throws ApiError", async () => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			const validateTeamSettings = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(400, "No work items were found.", "Check your query."),
+				);
+			renderWizard({ validateTeamSettings });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /My ADO Connection/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(
+				screen.getByRole("button", { name: /My ADO Connection/i }),
+			);
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+
+			const dataRetrievalInput = screen.getByLabelText("WIQL Query");
+			await user.type(dataRetrievalInput, String.raw`MyProject\MyBoard`);
+			fireEvent.click(screen.getByText("Add ToDo State"));
+			fireEvent.click(screen.getByText("Add Doing State"));
+			fireEvent.click(screen.getByText("Add Done State"));
+			fireEvent.click(screen.getByText("Add Work Item Type"));
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("No work items were found."),
+				).toBeInTheDocument();
+				expect(screen.getByText("Check your query.")).toBeInTheDocument();
+			});
 		});
 
 		it("does not show WorkItemTypes for Linear (isWorkItemTypesRequired=false)", async () => {

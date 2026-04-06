@@ -3,6 +3,7 @@ import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../services/Api/ApiError";
 
 export interface ModifySettingsBase {
 	name: string;
@@ -88,6 +89,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [formValid, setFormValid] = useState(false);
+	const [validationError, setValidationError] = useState<string | null>(null);
+	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
+		string | null
+	>(null);
 
 	// Flattening effects by moving logic to named functions
 	useEffect(() => {
@@ -137,10 +142,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		value: TSettings[K] | null,
 	) => {
 		if (value === null && !NULLABLE_FIELDS.has(key as string)) return;
+		setValidationError(null);
+		setValidationTechnicalDetails(null);
 		setSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
 
 	const handleWorkTrackingSystemChange = (name: string) => {
+		setValidationError(null);
+		setValidationTechnicalDetails(null);
 		const system = workTrackingSystems.find((s) => s.name === name) ?? null;
 		setSelectedWorkTrackingSystem(system);
 		if (system) {
@@ -159,15 +168,34 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 
 	const handleSave = async () => {
 		if (!settings) return;
+		setValidationError(null);
+		setValidationTechnicalDetails(null);
 		const updated = {
 			...settings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
 		};
-		if (
-			!modifyDefaultSettings &&
-			!(await validateSettings(updated as TSettings))
-		)
-			return;
+
+		if (!modifyDefaultSettings) {
+			try {
+				const isValid = await validateSettings(updated as TSettings);
+				if (!isValid) {
+					setValidationError(
+						"Validation failed. Check your configuration and try again.",
+					);
+					setValidationTechnicalDetails(null);
+					return;
+				}
+			} catch (error) {
+				if (error instanceof ApiError) {
+					setValidationError(error.message);
+					setValidationTechnicalDetails(error.technicalDetails ?? null);
+					return;
+				}
+
+				throw error;
+			}
+		}
+
 		await saveSettings(updated as TSettings);
 	};
 
@@ -190,6 +218,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formValid,
+		validationError,
+		validationTechnicalDetails,
 		updateSettings,
 		handleWorkTrackingSystemChange,
 		handleSave,

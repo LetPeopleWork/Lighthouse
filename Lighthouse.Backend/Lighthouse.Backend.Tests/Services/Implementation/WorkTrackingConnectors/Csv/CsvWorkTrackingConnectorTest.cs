@@ -33,9 +33,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DoneStates = ["Done"]
             };
 
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.EqualTo(expectedResult));
+            Assert.That(result.IsValid, Is.EqualTo(expectedResult));
         }
 
         [Test]
@@ -52,9 +52,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DoneStates = ["Done"]
             };
             
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(result.IsValid, Is.False);
         }
         
         [Test]
@@ -78,9 +78,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DoneStates = doneStates.ToList()
             };
             
-            var isValid = await subject.ValidateTeamSettings(team);
+            var result = await subject.ValidateTeamSettings(team);
 
-            Assert.That(isValid, Is.False);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
@@ -248,9 +248,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
-            var isValid = await subject.ValidatePortfolioSettings(project);
+            var result = await subject.ValidatePortfolioSettings(project);
 
-            Assert.That(isValid, Is.EqualTo(expectedResult));
+            Assert.That(result.IsValid, Is.EqualTo(expectedResult));
         }
 
         [Test]

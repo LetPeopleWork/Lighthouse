@@ -14,9 +14,9 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection);
 
-        Task<bool> ValidateTeamSettings(Team team);
+        Task<ConnectionValidationResult> ValidateTeamSettings(Team team);
 
-        Task<bool> ValidatePortfolioSettings(Portfolio portfolio);
+        Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio);
 
         Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates);
     }
