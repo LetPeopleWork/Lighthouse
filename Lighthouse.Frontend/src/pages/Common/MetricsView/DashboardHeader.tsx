@@ -1,5 +1,5 @@
+import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import {
 	Box,
 	ButtonBase,
@@ -77,7 +77,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 						aria-pressed={showTips}
 						data-testid="metrics-tips-toggle"
 					>
-						<LightbulbOutlinedIcon fontSize="small" />
+						<AnalyticsOutlinedIcon fontSize="small" />
 					</IconButton>
 				</Tooltip>
 			</Box>
