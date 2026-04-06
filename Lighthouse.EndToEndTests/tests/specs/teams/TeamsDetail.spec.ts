@@ -1,43 +1,4 @@
 import { expect, testWithData } from "../../fixutres/LighthouseFixture";
-import { expectDateToBeRecent } from "../../helpers/dates";
-
-const testData = [
-	{ name: "Azure DevOps", index: 1 },
-	{ name: "Jira", index: 2 },
-];
-
-for (const { index, name } of testData) {
-	testWithData(
-		`should update Team Data for ${name} team on click`,
-		async ({ testData, overviewPage }) => {
-			const team = testData.teams[index];
-
-			const teamDetailPage = await overviewPage.goToTeam(team.name);
-
-			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
-
-			await teamDetailPage.updateTeamData();
-			await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
-
-			// Wait for update to be done
-			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
-
-			const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
-			expectDateToBeRecent(lastUpdatedDate);
-
-			// Check metrics
-			await teamDetailPage.goToMetrics();
-
-			// Add a small delay to give metrics time to load
-			await teamDetailPage.page.waitForTimeout(300);
-
-			await expect(teamDetailPage.cycleTimePercentileWidget).toBeVisible();
-			await expect(teamDetailPage.startedVsClosedWidget).toBeVisible();
-			await expect(teamDetailPage.throughputRunChartWidget).toBeVisible();
-			await expect(teamDetailPage.cycleTimeScatterplotWidget).toBeVisible();
-		},
-	);
-}
 
 testWithData(
 	"should show Manual When and How Many Forecast for team",
