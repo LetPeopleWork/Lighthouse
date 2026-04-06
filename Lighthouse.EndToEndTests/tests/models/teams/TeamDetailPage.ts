@@ -1,7 +1,7 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
+import { MetricsPage } from "../metrics/MetricsPage";
 import { TeamEditPage } from "./TeamEditPage";
-import { WorkItemsInProgressDialog } from "./WorkItemsInProgressDialog";
 
 export class TeamDetailPage {
 	page: Page;
@@ -108,8 +108,9 @@ export class TeamDetailPage {
 		await this.page.getByRole("tab", { name: "Features" }).click();
 	}
 
-	async goToMetrics(): Promise<void> {
+	async goToMetrics(): Promise<MetricsPage> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
+		return new MetricsPage(this.page);
 	}
 
 	async goToForecasts(): Promise<void> {
@@ -124,37 +125,6 @@ export class TeamDetailPage {
 		return getLastUpdatedDateFromText(lastUpdatedText);
 	}
 
-	async openWorkItemsInProgressDialog(): Promise<WorkItemsInProgressDialog> {
-		await this.workItemsInProgressWidget
-			.getByRole("heading", { name: "Work Items in Progress:" })
-			.click();
-		return new WorkItemsInProgressDialog(this.page);
-	}
-
-	async openClosedItemsDialog(): Promise<WorkItemsInProgressDialog> {
-		await this.cycleTimePercentileWidget.click();
-		return new WorkItemsInProgressDialog(this.page);
-	}
-
-	async openSleWidget(): Promise<void> {
-		await this.sleWidgetButton.click();
-	}
-
-	async closeSleWidget(): Promise<void> {
-		await this.returnToCycleTimePercentilesButton.click();
-	}
-
-	async openPredictabilityScoreWidget(): Promise<void> {
-		await this.page
-			.getByRole("button")
-			.filter({ hasText: "Predictability Score" })
-			.click();
-
-		await expect(
-			this.page.getByRole("heading", { name: "Predictability Score" }),
-		).toBeVisible();
-	}
-
 	getFeatureLink(featureName: string): Locator {
 		return this.page.getByRole("link", { name: featureName });
 	}
@@ -167,156 +137,5 @@ export class TeamDetailPage {
 		const url = new URL(this.page.url());
 		const teamId = url.pathname.split("/").pop() ?? "0";
 		return Number.parseInt(teamId, 10);
-	}
-
-	get cycleTimePercentileWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-percentiles")
-			.locator("div")
-			.filter({ hasText: /^Cycle Time PercentilesSLE:.*$/ })
-			.first();
-	}
-
-	get cycleTimeScatterplotWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-cycleScatter")
-			.locator("div")
-			.filter({ hasText: /^Cycle Time50%70%85%95%Service.*$/ })
-			.nth(1);
-	}
-
-	get throughputRunChartWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-throughput")
-			.locator("div")
-			.filter({ hasText: /^Work Items CompletedTotal:.*$/ })
-			.nth(1);
-	}
-
-	get predictabilityScoreChartWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-throughput")
-			.locator("div")
-			.filter({ hasText: "Predictability Score" })
-			.nth(1);
-	}
-
-	get wipOverTimeWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-wipOverTime")
-			.locator("div")
-			.filter({ hasText: /^Work Items In Progress Over.*$/ })
-			.nth(1);
-	}
-
-	get workItemAgingChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-aging")
-			.locator("div")
-			.filter({ hasText: /^Work Item Aging50%70%85%95%.*$/ })
-			.nth(1);
-	}
-
-	get workDistributionChart(): Locator {
-		return this.page
-			.locator("div")
-			.filter({ hasText: /^Work Distribution.*$/ })
-			.nth(2);
-	}
-
-	get simplifiedCfdWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-stacked")
-			.locator("div")
-			.filter({ hasText: "Simplified Cumulative Flow" })
-			.nth(1);
-	}
-
-	get sleWidgetButton(): Locator {
-		return this.page.getByRole("button", { name: "SLE: 70% @ 7 days" });
-	}
-
-	get sleWidget(): Locator {
-		return this.page.getByText(
-			"Service Level ExpectationTarget:70% of all work items are done within 7 days or",
-		);
-	}
-
-	get returnToCycleTimePercentilesButton(): Locator {
-		return this.page
-			.locator(".MuiCardContent-root > div > .MuiButtonBase-root")
-			.first();
-	}
-
-	get workItemsInProgressWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-itemsInProgress")
-			.locator("div")
-			.filter({ hasText: /^Work Items in Progress:.*$/ })
-			.first();
-	}
-
-	get startedVsClosedWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-startedVsFinished")
-			.locator("div")
-			.filter({ hasText: "Started vs. Closed Work" })
-			.first();
-	}
-
-	get totalWorkItemAgeWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-totalWorkItemAge")
-			.locator("div")
-			.filter({ hasText: /^Total Work Item Age.*days$/ })
-			.first();
-	}
-
-	get totalWorkItemAgeRunChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-totalWorkItemAgeOverTime")
-			.locator("div")
-			.filter({ hasText: /^Work Items Total Work Item Age Over Time.*$/ })
-			.nth(1);
-	}
-
-	get throughputProcessBehaviorChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-throughputPbc")
-			.locator("div")
-			.filter({ hasText: /^Throughput Process Behaviour Chart.*$/ })
-			.nth(1);
-	}
-
-	get workInProgressProcessBehaviorChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-wipPbc")
-			.locator("div")
-			.filter({ hasText: /^Work In Progress Process Behaviour Chart.*$/ })
-			.nth(1);
-	}
-
-	get totalWorkItemAgeProcessBehaviorChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-totalWorkItemAgePbc")
-			.locator("div")
-			.filter({ hasText: /^Total Work Item Age Process Behaviour Chart.*$/ })
-			.nth(1);
-	}
-
-	get cycleTimeProcessBehaviorChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-cycleTimePbc")
-			.locator("div")
-			.filter({ hasText: /^Cycle Time Process Behaviour Chart.*$/ })
-			.nth(1);
-	}
-
-	get estimationVsCycleTimeWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-estimationVsCycleTime")
-			.locator("div")
-			.filter({ hasText: /^Estimation vs. Cycle Time.*$/ })
-			.nth(1);
 	}
 }

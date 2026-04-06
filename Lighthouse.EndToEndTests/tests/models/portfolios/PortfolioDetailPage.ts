@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
+import { MetricsPage } from "../metrics/MetricsPage";
 import { DeliveriesPage } from "./Deliveries/DeliveriesPage";
 import { PortfolioEditPage } from "./PortfolioEditPage";
 
@@ -59,8 +60,9 @@ export class PortfolioDetailPage {
 		await this.refreshFeatureButton.click();
 	}
 
-	async goToMetrics(): Promise<void> {
+	async goToMetrics(): Promise<MetricsPage> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
+		return new MetricsPage(this.page);
 	}
 
 	async goToDeliveries(): Promise<DeliveriesPage> {
@@ -71,40 +73,6 @@ export class PortfolioDetailPage {
 
 	get refreshFeatureButton(): Locator {
 		return this.page.getByRole("button", { name: "Refresh Features" });
-	}
-
-	get featureSizeWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-featureSize")
-			.locator("div")
-			.filter({ hasText: "Features Size50%70%85%95%To" })
-			.nth(1);
-	}
-
-	get featureSizeProcessBehaviourChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-featureSizePbc")
-			.locator("div")
-			.filter({
-				hasText: /^Feature Size Process Behaviour Chart.*$/,
-			})
-			.nth(1);
-	}
-
-	get totalWorkItemAgeWidget(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-totalWorkItemAge")
-			.locator("div")
-			.filter({ hasText: /^Total Work Item Age.*days$/ })
-			.first();
-	}
-
-	get totalWorkItemAgeRunChart(): Locator {
-		return this.page
-			.getByTestId("dashboard-item-totalWorkItemAgeOverTime")
-			.locator("div")
-			.filter({ hasText: /^Features Total Work Item Age Over Time.*$/ })
-			.nth(1);
 	}
 
 	get portfolioId(): number {

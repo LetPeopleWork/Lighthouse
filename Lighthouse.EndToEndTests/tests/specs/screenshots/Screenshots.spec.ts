@@ -13,6 +13,10 @@ import {
 	takeDialogScreenshot as takeElementScreenshot,
 	takePageScreenshot,
 } from "../../helpers/screenshots";
+import {
+	MetricsCategories,
+	MetricsWidgetNames,
+} from "../../models/metrics/MetricsPage";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
 
 const updateWorkTrackingSystems = async (
@@ -248,113 +252,50 @@ testWithData(
 		);
 
 		// Go to Metrics Tab
-		await teamDetailPage.goToMetrics();
+		const metricsPage = await teamDetailPage.goToMetrics();
 
-		await takeElementScreenshot(
-			teamDetailPage.workItemsInProgressWidget,
-			"features/metrics/workitemsinprogress.png",
+		// Metrics Overview
+		await takePageScreenshot(
+			metricsPage.page,
+			"features/metrics/metricsoverview.png",
 		);
 
-		const workItemsInProgressDialog =
-			await teamDetailPage.openWorkItemsInProgressDialog();
-		await takeElementScreenshot(
-			workItemsInProgressDialog.page.getByRole("dialog"),
-			"features/metrics/workitemsinprogress_dialog.png",
+		const metricCategoriesMap = new Map<MetricsCategories, number>([
+			[MetricsCategories.FlowOverview, 7],
+			[MetricsCategories.CycleTime, 5],
+			[MetricsCategories.Throughput, 5],
+			[MetricsCategories.WipAging, 7],
+			[MetricsCategories.Predictability, 6],
+			[MetricsCategories.PortfolioAndFeatures, 3],
+		]);
+
+		for (const [
+			category,
+			expectedWidgetCount,
+		] of metricCategoriesMap.entries()) {
+			const metrics = await metricsPage.switchCategory(category);
+			expect(metrics.length).toBe(expectedWidgetCount);
+
+			for (const metricWidget of metrics) {
+				await takeElementScreenshot(
+					metricWidget.Widget,
+					`features/metrics/${metricWidget.Id}.png`,
+				);
+			}
+		}
+
+		await metricsPage.switchCategory(MetricsCategories.FlowOverview);
+
+		const cycleTimePercentilesWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CycleTimePercentiles,
 		);
 
-		await workItemsInProgressDialog.close();
-
+		const workItemsDialog = await cycleTimePercentilesWidget.openDialog();
 		await takeElementScreenshot(
-			teamDetailPage.cycleTimePercentileWidget,
-			"features/metrics/cycletimepercentiles.png",
+			workItemsDialog.page.getByRole("dialog"),
+			"features/metrics/workitemsdialog.png",
 		);
-
-		await teamDetailPage.openSleWidget();
-		await takeElementScreenshot(
-			teamDetailPage.sleWidget,
-			"features/metrics/servicelevelexpectation.png",
-		);
-
-		await teamDetailPage.closeSleWidget();
-
-		const closedItemDialog = await teamDetailPage.openClosedItemsDialog();
-		await takeElementScreenshot(
-			closedItemDialog.page.getByRole("dialog"),
-			"features/metrics/closeditemsdialog.png",
-		);
-		await closedItemDialog.close();
-
-		await takeElementScreenshot(
-			teamDetailPage.startedVsClosedWidget,
-			"features/metrics/startedVsClosed.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.throughputRunChartWidget,
-			"features/metrics/throughputRunChart.png",
-		);
-
-		await teamDetailPage.openPredictabilityScoreWidget();
-		await takeElementScreenshot(
-			teamDetailPage.predictabilityScoreChartWidget,
-			"features/metrics/predictabilityscore.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.cycleTimeScatterplotWidget,
-			"features/metrics/cycleTimeScatterplot.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.wipOverTimeWidget,
-			"features/metrics/wipOverTime.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.workDistributionChart,
-			"features/metrics/workDistributionChart.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.workItemAgingChart,
-			"features/metrics/workItemAgingChart.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.simplifiedCfdWidget,
-			"features/metrics/simplifiedCFD.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.totalWorkItemAgeWidget,
-			"features/metrics/totalWorkItemAge.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.totalWorkItemAgeRunChart,
-			"features/metrics/totalWorkItemAgeRunChart.png",
-		);
-
-		// PBCs
-		await takeElementScreenshot(
-			teamDetailPage.throughputProcessBehaviorChart,
-			"features/metrics/throughputProcessBehaviorChart.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.workInProgressProcessBehaviorChart,
-			"features/metrics/workInProgressProcessBehaviorChart.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.totalWorkItemAgeProcessBehaviorChart,
-			"features/metrics/totalWorkItemAgeProcessBehaviorChart.png",
-		);
-
-		await takeElementScreenshot(
-			teamDetailPage.cycleTimeProcessBehaviorChart,
-			"features/metrics/cycleTimeProcessBehaviorChart.png",
-		);
+		await workItemsDialog.close();
 
 		overviewPage.lightHousePage.goToOverview();
 
@@ -381,15 +322,30 @@ testWithData(
 			3,
 		);
 
-		await portfolioDetailPage.goToMetrics();
+		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
-		await takeElementScreenshot(
-			portfolioDetailPage.featureSizeWidget,
-			"features/metrics/featuresize.png",
+		await portfolioMetricsPage.switchCategory(
+			MetricsCategories.PortfolioAndFeatures,
+		);
+
+		const featureSizeWidget = await portfolioMetricsPage.getWidgetByName(
+			MetricsWidgetNames.FeatureSize,
 		);
 
 		await takeElementScreenshot(
-			portfolioDetailPage.featureSizeProcessBehaviourChart,
+			featureSizeWidget.Widget,
+			"features/metrics/featuresize.png",
+		);
+
+		await portfolioMetricsPage.switchCategory(MetricsCategories.Predictability);
+
+		const featureSizeProcessBehaviourWidget =
+			await portfolioMetricsPage.getWidgetByName(
+				MetricsWidgetNames.CycleTimeProcessBehaviourChart,
+			);
+
+		await takeElementScreenshot(
+			featureSizeProcessBehaviourWidget.Widget,
 			"features/metrics/featureSizeProcessBehaviourChart.png",
 		);
 
@@ -464,10 +420,14 @@ testWithData(
 		await expect(teamEditPage.saveButton).toBeEnabled();
 		const teamDetailPage = await teamEditPage.save();
 
-		await teamDetailPage.goToMetrics();
+		const teamMetricsPage = await teamDetailPage.goToMetrics();
+
+		const estimationVsCycleTimeWidget = await teamMetricsPage.getWidgetByName(
+			MetricsWidgetNames.EstimationVsCycleTime,
+		);
 
 		await takeElementScreenshot(
-			teamDetailPage.estimationVsCycleTimeWidget,
+			estimationVsCycleTimeWidget.Widget,
 			"features/metrics/estimationVsCycleTime.png",
 		);
 	},

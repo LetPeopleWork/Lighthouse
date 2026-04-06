@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-export class WorkItemsInProgressDialog {
+export class WorkItemsDialog {
 	page: Page;
 
 	constructor(page: Page) {
