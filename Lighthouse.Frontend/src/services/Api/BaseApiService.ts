@@ -29,8 +29,6 @@ export class BaseApiService {
 		} catch (error) {
 			const apiError = BaseApiService.createApiErrorFromAxios(error);
 			if (apiError) throw apiError;
-
-			console.error("Error during async function execution:", error);
 			throw error;
 		}
 	}
@@ -40,19 +38,94 @@ export class BaseApiService {
 
 		const status = err.response?.status ?? "UNKNOWN";
 		const data: unknown = err.response?.data;
-		let message = "An error occurred";
+		const parsed = BaseApiService.parseApiErrorPayload(data, err.message, status);
 
-		if (data && typeof data === "object" && "message" in data) {
-			const { message: msg } = data as { message?: unknown };
-			message = typeof msg === "string" ? msg : message;
-		} else if (typeof data === "string") {
-			message = data;
-		} else {
-			message = err.message ?? String(status);
+		return new ApiError(
+			status,
+			parsed.message,
+			parsed.technicalDetails,
+			parsed.fieldName,
+		);
+	}
+
+	private static parseApiErrorPayload(
+		data: unknown,
+		axiosMessage: string | undefined,
+		status: string | number,
+	): {
+		message: string;
+		technicalDetails?: string;
+		fieldName?: string;
+	} {
+		const fallbackMessage = axiosMessage ?? String(status);
+
+		if (typeof data === "string") {
+			return { message: data };
 		}
 
-		console.error("API Error:", status, message);
-		return new ApiError(status, message);
+		if (data && typeof data === "object") {
+			const payload = data as {
+				message?: unknown;
+				Message?: unknown;
+				errors?: unknown;
+				technicalDetails?: unknown;
+				TechnicalDetails?: unknown;
+				fieldName?: unknown;
+				FieldName?: unknown;
+			};
+
+			return {
+				message: BaseApiService.extractMessage(payload, fallbackMessage),
+				technicalDetails: BaseApiService.extractString(
+					payload.technicalDetails,
+					payload.TechnicalDetails,
+				),
+				fieldName: BaseApiService.extractString(
+					payload.fieldName,
+					payload.FieldName,
+				),
+			};
+		}
+
+		return { message: fallbackMessage };
+	}
+
+	private static extractMessage(
+		payload: {
+			message?: unknown;
+			Message?: unknown;
+			errors?: unknown;
+		},
+		fallbackMessage: string,
+	): string {
+		const directMessage = BaseApiService.extractString(
+			payload.message,
+			payload.Message,
+		);
+		if (directMessage) {
+			return directMessage;
+		}
+
+		if (Array.isArray(payload.errors)) {
+			const stringErrors = payload.errors.filter(
+				(error): error is string => typeof error === "string",
+			);
+			if (stringErrors.length > 0) {
+				return stringErrors.join("\n");
+			}
+		}
+
+		return fallbackMessage;
+	}
+
+	private static extractString(...values: unknown[]): string | undefined {
+		for (const value of values) {
+			if (typeof value === "string") {
+				return value;
+			}
+		}
+
+		return undefined;
 	}
 
 	protected static deserializeTeam(item: ITeam) {

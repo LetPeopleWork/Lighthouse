@@ -2,6 +2,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -140,7 +141,9 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorServiceMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Success());
 
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
 
@@ -151,11 +154,57 @@ namespace Lighthouse.Backend.Tests.API
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result, Is.InstanceOf<ActionResult<bool>>());
+                Assert.That(result, Is.InstanceOf<ActionResult<object>>());
                 var okResult = result.Result as OkObjectResult;
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.True);
+                Assert.That(okResult.Value, Is.InstanceOf<ConnectionValidationResult>());
+
+                var response = (ConnectionValidationResult)okResult.Value!;
+                Assert.That(response.IsValid, Is.True);
+                Assert.That(response.Code, Is.EqualTo("valid"));
+                Assert.That(response.Message, Is.EqualTo("Connection validated successfully."));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_DetailedValidationFailure_ReturnsBadRequestWithMessage()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var subject = CreateSubject();
+
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorServiceMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Failure(
+                    "authentication_failed",
+                    "Authentication failed for Azure DevOps."));
+
+            workTrackingConnectorFactoryMock
+                .Setup(x => x.GetWorkTrackingConnector(WorkTrackingSystems.AzureDevOps))
+                .Returns(workTrackingConnectorServiceMock.Object);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Id = 12,
+                Name = "Connection",
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+            };
+
+            var result = await subject.ValidateConnection(connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ActionResult<object>>());
+                var badRequestResult = result.Result as BadRequestObjectResult;
+
+                Assert.That(badRequestResult, Is.Not.Null);
+                Assert.That(badRequestResult!.StatusCode, Is.EqualTo(400));
+                Assert.That(badRequestResult.Value, Is.InstanceOf<ConnectionValidationResult>());
+
+                var response = (ConnectionValidationResult)badRequestResult.Value!;
+                Assert.That(response.Code, Is.EqualTo("authentication_failed"));
+                Assert.That(response.Message, Is.EqualTo("Authentication failed for Azure DevOps."));
             }
         }
 
@@ -165,7 +214,9 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorServiceMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Success());
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(WorkTrackingSystems.Jira)).Returns(workTrackingConnectorServiceMock.Object);
             
             var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
@@ -175,12 +226,17 @@ namespace Lighthouse.Backend.Tests.API
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result, Is.InstanceOf<ActionResult<bool>>());
+                Assert.That(result, Is.InstanceOf<ActionResult<object>>());
                 var objectResult = result.Result as ObjectResult;
 
                 Assert.That(objectResult, Is.Not.Null);
                 Assert.That(objectResult.StatusCode, Is.EqualTo(403));
-                Assert.That(objectResult.Value, Is.False);
+                Assert.That(objectResult.Value, Is.InstanceOf<ConnectionValidationResult>());
+
+                var response = (ConnectionValidationResult)objectResult.Value!;
+                Assert.That(response.IsValid, Is.False);
+                Assert.That(response.Code, Is.EqualTo("license_limit_exceeded"));
+                Assert.That(response.Message, Is.EqualTo("You've exceeded the number of additional fields allowed on your plan."));
             }
         }
 
@@ -190,7 +246,9 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorServiceMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Success());
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
 
             cryptoServiceMock.Setup(x => x.Encrypt("SecretValue")).Returns("EncryptedSecret");
@@ -214,7 +272,9 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorServiceMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Success());
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
 
             cryptoServiceMock.Setup(x => x.Decrypt("ExistingEncryptedSecret")).Returns("ExistingEncryptedSecret"); // Already encrypted
@@ -235,7 +295,9 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorServiceMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Success());
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
 
             cryptoServiceMock.Setup(x => x.Encrypt("NewSecretValue")).Returns("EncryptedNewSecret");
@@ -361,7 +423,7 @@ namespace Lighthouse.Backend.Tests.API
                 workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object);
         }
 
-        private void AddAdditionalFieldDefinitionToDto(WorkTrackingSystemConnectionDto connectionDto,
+        private static void AddAdditionalFieldDefinitionToDto(WorkTrackingSystemConnectionDto connectionDto,
             int additionalFieldCount)
         {
             for (var count = 0; count < additionalFieldCount; count++)

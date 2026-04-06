@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
@@ -321,8 +322,48 @@ describe("ModifyConnectionSettings", () => {
 				expect(defaultProps.validateConnectionSettings).toHaveBeenCalled();
 			});
 			await waitFor(() => {
-				expect(screen.getByRole("alert")).toBeInTheDocument();
+				expect(
+					screen.getByText(
+						"Could not connect to the Work Tracking System with the provided settings. Please review and try again.",
+					),
+				).toBeInTheDocument();
 			});
+			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
+		});
+
+		it("shows API error details when validation throws ApiError", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockRejectedValue(
+				new ApiError(
+					400,
+					"Authentication failed for Azure DevOps.",
+					"Check your Personal Access Token permissions and make sure it is still valid.",
+				),
+			);
+
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Authentication failed for Azure DevOps."),
+				).toBeInTheDocument();
+				expect(
+					screen.getByText(
+						/Check your Personal Access Token permissions and make sure it is still valid\./i,
+					),
+				).toBeInTheDocument();
+			});
+
 			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
 		});
 	});

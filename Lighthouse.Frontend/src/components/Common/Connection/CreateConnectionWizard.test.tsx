@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
@@ -449,6 +450,45 @@ describe("CreateConnectionWizard", () => {
 			// Should still be on Auth step
 			expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
 			expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
+		});
+
+		it("shows detailed backend validation message when validation throws ApiError", async () => {
+			const user = userEvent.setup();
+			const validateConnection = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(
+						400,
+						"Authentication failed for Azure DevOps.",
+						"Check your Personal Access Token permissions and make sure it is still valid.",
+					),
+				);
+			renderWizard({ validateConnection });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Azure DevOps/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Azure DevOps/i }));
+			await waitFor(() => {
+				expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
+			});
+			await user.type(
+				screen.getByLabelText("Organization URL"),
+				"https://dev.azure.com/org",
+			);
+			await user.type(screen.getByLabelText("Access Token"), "my-token");
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+			await waitFor(() => {
+				expect(
+					screen.getByText("Authentication failed for Azure DevOps."),
+				).toBeInTheDocument();
+				expect(
+					screen.getByText(
+						/Check your Personal Access Token permissions and make sure it is still valid\./i,
+					),
+				).toBeInTheDocument();
+			});
 		});
 
 		it("renders auth method selector when system has multiple auth methods", async () => {

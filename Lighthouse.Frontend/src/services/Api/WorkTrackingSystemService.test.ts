@@ -106,6 +106,34 @@ describe("WorkTrackingSystemService", () => {
 		);
 	});
 
+	it("should validate work tracking system connection from structured response", async () => {
+		const mockConnection: IWorkTrackingSystemConnection = {
+			id: 0,
+			name: "Azure DevOps",
+			workTrackingSystem: "AzureDevOps",
+			authenticationMethodKey: "ado.pat",
+			additionalFieldDefinitions: [],
+			writeBackMappingDefinitions: [],
+			workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
+			options: [
+				{
+					key: "apiToken",
+					value: "token123",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		};
+		mockedAxios.post.mockResolvedValueOnce({ data: { isValid: true } });
+
+		const isValid =
+			await workTrackingSystemService.validateWorkTrackingSystemConnection(
+				mockConnection,
+			);
+
+		expect(isValid).toBe(true);
+	});
+
 	it("should get configured work tracking systems", async () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{

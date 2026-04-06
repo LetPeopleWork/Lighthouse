@@ -80,6 +80,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const [validationErrorMessage, setValidationErrorMessage] = useState<
 		string | null
 	>(null);
+	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
+		string | null
+	>(null);
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
@@ -256,6 +259,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	}, [name, allOptions, isEditMode, originalAuthMethodKey, selectedAuthMethod]);
 
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
+		setValidationErrorMessage(null);
+		setValidationTechnicalDetails(null);
 		const system = supportedSystems.find(
 			(s) => s.workTrackingSystem === event.target.value,
 		);
@@ -285,6 +290,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	};
 
 	const handleAuthMethodChange = (event: SelectChangeEvent<string>) => {
+		setValidationErrorMessage(null);
+		setValidationTechnicalDetails(null);
 		const availableMethods =
 			selectedWorkTrackingSystem?.availableAuthenticationMethods ?? [];
 		const method = availableMethods.find((m) => m.key === event.target.value);
@@ -298,6 +305,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		changedOption: IWorkTrackingSystemOption,
 		newValue: string,
 	) => {
+		setValidationErrorMessage(null);
+		setValidationTechnicalDetails(null);
 		setAuthOptions((prev) =>
 			prev.map((option) =>
 				option.key === changedOption.key
@@ -311,6 +320,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		changedOption: IWorkTrackingSystemOption,
 		newValue: string,
 	) => {
+		setValidationErrorMessage(null);
+		setValidationTechnicalDetails(null);
 		setOtherOptions((prev) =>
 			prev.map((option) =>
 				option.key === changedOption.key
@@ -321,12 +332,15 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	};
 
 	const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setValidationErrorMessage(null);
+		setValidationTechnicalDetails(null);
 		setName(event.target.value);
 	};
 
 	const handleSave = async () => {
 		if (selectedWorkTrackingSystem && selectedAuthMethod) {
 			setValidationErrorMessage(null);
+			setValidationTechnicalDetails(null);
 
 			const connection: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
@@ -351,12 +365,18 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			} catch (error) {
 				if (error instanceof ApiError && error.code === 403) {
 					setValidationErrorMessage(
-						"You've exceeded the number of additional fields allowed on your plan.",
+						error.message ||
+							"You've exceeded the number of additional fields allowed on your plan.",
 					);
+					setValidationTechnicalDetails(error.technicalDetails ?? null);
+				} else if (error instanceof ApiError) {
+					setValidationErrorMessage(error.message);
+					setValidationTechnicalDetails(error.technicalDetails ?? null);
 				} else {
 					setValidationErrorMessage(
 						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
 					);
+					setValidationTechnicalDetails(null);
 				}
 				return;
 			}
@@ -544,6 +564,21 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					)}
 
 					{/* Validation + Save Actions */}
+					{validationErrorMessage && (
+						<Grid size={{ xs: 12 }}>
+							<Alert severity="error">
+								<Typography variant="body2">{validationErrorMessage}</Typography>
+								{validationTechnicalDetails && (
+									<Typography
+										variant="caption"
+										sx={{ display: "block", mt: 1 }}
+									>
+										{validationTechnicalDetails}
+									</Typography>
+								)}
+							</Alert>
+						</Grid>
+					)}
 					<Grid
 						size={{ xs: 12 }}
 						sx={{
@@ -555,10 +590,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						<ValidationActions
 							onSave={handleSave}
 							inputsValid={inputsValid}
-							validationFailedMessage={
-								validationErrorMessage ??
-								`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`
-							}
+							validationFailedMessage={undefined}
 							disableSave={disableSave}
 							saveTooltip={saveTooltip}
 						/>

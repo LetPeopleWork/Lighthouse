@@ -20,6 +20,7 @@ import type {
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
+import { ApiError } from "../../../services/Api/ApiError";
 import ActionButton from "../ActionButton/ActionButton";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 
@@ -61,6 +62,9 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const [connectionName, setConnectionName] = useState("");
 	const [validating, setValidating] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
+	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
+		string | null
+	>(null);
 	const [saving, setSaving] = useState(false);
 
 	const getAllAuthOptionKeys = useCallback(
@@ -93,6 +97,8 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const selectSystem = (system: IWorkTrackingSystemConnection) => {
 		setSelectedSystem(system);
 		setConnectionName(system.name);
+		setValidationError(null);
+		setValidationTechnicalDetails(null);
 
 		const availableMethods = system.availableAuthenticationMethods ?? [];
 		const defaultMethod = availableMethods[0] ?? null;
@@ -191,13 +197,8 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const runValidation = useCallback(async (): Promise<boolean> => {
 		const dto = buildConnectionDto();
 		if (!dto) return false;
-		try {
-			const isValid = await validateConnection(dto);
 
-			return isValid;
-		} catch {
-			return false;
-		}
+		return await validateConnection(dto);
 	}, [buildConnectionDto, validateConnection]);
 
 	const handleCreate = async () => {
@@ -215,20 +216,34 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		if (activeStep === 1) {
 			setValidating(true);
 			setValidationError(null);
-			const isValid = await runValidation();
-			setValidating(false);
-			if (isValid) {
-				setActiveStep(2);
-			} else {
-				setValidationError(
-					"Could not validate the connection. Check your settings and try again.",
-				);
+			setValidationTechnicalDetails(null);
+			try {
+				const isValid = await runValidation();
+				if (isValid) {
+					setActiveStep(2);
+				} else {
+					setValidationError(
+						"Could not validate the connection. Check your settings and try again.",
+					);
+				}
+			} catch (error) {
+				if (error instanceof ApiError && error.code !== 403) {
+					setValidationError(error.message);
+					setValidationTechnicalDetails(error.technicalDetails ?? null);
+				} else {
+					setValidationError(
+						"Could not validate the connection. Check your settings and try again.",
+					);
+				}
+			} finally {
+				setValidating(false);
 			}
 		}
 	};
 
 	const handleBack = () => {
 		setValidationError(null);
+		setValidationTechnicalDetails(null);
 		setActiveStep((prev) => prev - 1);
 	};
 
@@ -303,7 +318,12 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 
 			{validationError && (
 				<Alert severity="error" sx={{ width: "100%" }}>
-					{validationError}
+					<Typography variant="body2">{validationError}</Typography>
+					{validationTechnicalDetails && (
+						<Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+							{validationTechnicalDetails}
+						</Typography>
+					)}
 				</Alert>
 			)}
 		</Box>

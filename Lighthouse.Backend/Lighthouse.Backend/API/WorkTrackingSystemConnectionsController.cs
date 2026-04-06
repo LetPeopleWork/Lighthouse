@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Models.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -83,7 +84,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("validate")]
-        public async Task<ActionResult<bool>> ValidateConnection(WorkTrackingSystemConnectionDto connectionDto)
+        public async Task<ActionResult<object>> ValidateConnection(WorkTrackingSystemConnectionDto connectionDto)
         {
             PatchWorkTrackingSystemConnectionSecretsIfNeeded(connectionDto);
             EncryptSecretValuesIfNeeded(connectionDto);
@@ -93,17 +94,25 @@ namespace Lighthouse.Backend.API
 
             if (!connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService))
             {
-                return StatusCode(StatusCodes.Status403Forbidden, false);
+                return StatusCode(StatusCodes.Status403Forbidden, ConnectionValidationResult.Failure(
+                    "license_limit_exceeded",
+                    "You've exceeded the number of additional fields allowed on your plan."));
             }
 
             if (!connection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService))
             {
-                return StatusCode(StatusCodes.Status403Forbidden, false);
+                return StatusCode(StatusCodes.Status403Forbidden, ConnectionValidationResult.Failure(
+                    "license_limit_exceeded",
+                    "Write-back mappings are not available on your current plan."));
             }
 
-            var isConnectionValid = await workItemService.ValidateConnection(connection);
+            var validationResult = await workItemService.ValidateConnection(connection);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult);
+            }
 
-            return Ok(isConnectionValid);
+            return Ok(validationResult);
         }
 
         private void EncryptSecretValuesIfNeeded(WorkTrackingSystemConnectionDto connectionDto)

@@ -21,9 +21,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var connection = CreateWorkTrackingSystemConnection();
 
-            var isValid = await subject.ValidateConnection(connection);
+            var result = await subject.ValidateConnection(connection);
 
-            Assert.That(isValid, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Message, Is.EqualTo("Connection validated successfully."));
+            }
         }
 
         [Test]

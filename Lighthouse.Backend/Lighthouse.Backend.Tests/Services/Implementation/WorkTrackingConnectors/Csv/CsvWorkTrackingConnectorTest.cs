@@ -90,9 +90,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var connection = GetWorkTrackingSystemFactory().CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
 
-            var isValid = await subject.ValidateConnection(connection);
+            var result = await subject.ValidateConnection(connection);
 
-            Assert.That(isValid, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Message, Is.EqualTo("Connection validated successfully."));
+            }
         }
 
         [Test]
@@ -112,9 +117,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var option = connection.Options.Single(o => o.Key == optionKey);
             option.Value = string.Empty;
 
-            var isValid = await subject.ValidateConnection(connection);
+            var result = await subject.ValidateConnection(connection);
 
-            Assert.That(isValid, Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("missing_required_option"));
+                Assert.That(result.Message, Is.EqualTo("Some required CSV connection options are missing."));
+            }
         }
 
         [TestCase(CsvWorkTrackingOptionNames.CreatedDateHeader)]
@@ -131,9 +141,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var option = connection.Options.Single(o => o.Key == optionKey);
             option.Value = string.Empty;
 
-            var isValid = await subject.ValidateConnection(connection);
+            var result = await subject.ValidateConnection(connection);
 
-            Assert.That(isValid, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Message, Is.EqualTo("Connection validated successfully."));
+            }
         }
 
         [Test]

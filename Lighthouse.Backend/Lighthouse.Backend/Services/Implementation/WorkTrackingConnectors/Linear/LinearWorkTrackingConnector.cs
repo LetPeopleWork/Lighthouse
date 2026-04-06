@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Models.Validation;
 
 using static Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear.LinearWorkTrackingConnector.LinearResponses;
 
@@ -190,7 +191,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return parentFeatures;
         }
 
-        public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
+        public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
             try
             {
@@ -204,12 +205,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                     }";
 
                 _ = await SendQuery<ViewerResponse>(connection, viewerQuery);
-                return true;
+                return ConnectionValidationResult.Success();
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to validate Linear connection");
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Could not validate the Linear connection with the provided settings.",
+                    ex.Message);
             }
         }
 

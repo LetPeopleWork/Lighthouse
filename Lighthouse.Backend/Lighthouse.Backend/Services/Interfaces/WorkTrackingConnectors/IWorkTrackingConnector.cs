@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
@@ -11,7 +12,7 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds);
 
-        Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);
+        Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection);
 
         Task<bool> ValidateTeamSettings(Team team);
 

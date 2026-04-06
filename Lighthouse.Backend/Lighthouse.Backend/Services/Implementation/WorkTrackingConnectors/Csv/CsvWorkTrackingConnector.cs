@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Models.Validation;
 using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
@@ -74,10 +75,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(new List<Feature>());
         }
 
-        public Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
+        public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
             var optionsEmpty = connection.Options.Where(o => !o.IsOptional).Any(o => string.IsNullOrEmpty(o.Value));
-            return Task.FromResult(!optionsEmpty);
+
+            if (optionsEmpty)
+            {
+                return Task.FromResult(ConnectionValidationResult.Failure(
+                    "missing_required_option",
+                    "Some required CSV connection options are missing."));
+            }
+
+            return Task.FromResult(ConnectionValidationResult.Success());
         }
 
         public Task<bool> ValidateTeamSettings(Team team)

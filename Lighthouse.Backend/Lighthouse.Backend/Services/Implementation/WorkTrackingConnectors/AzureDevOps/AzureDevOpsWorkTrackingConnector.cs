@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Models.Validation;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -83,20 +84,80 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return features;
         }
 
-        public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
+        public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
+            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
+            if (!Uri.TryCreate(url, UriKind.Absolute, out _))
+            {
+                return ConnectionValidationResult.Failure(
+                    "invalid_url",
+                    "The Azure DevOps URL appears to be invalid.",
+                    "Provide a full URL, for example https://dev.azure.com/your-org.",
+                    AzureDevOpsWorkTrackingOptionNames.Url);
+            }
+
             try
             {
                 var witClient = GetWorkItemTrackingHttpClient(connection);
 
                 await VerifyConnection(witClient);
 
-                var fieldsValid = await VerifyFields(witClient, connection.AdditionalFieldDefinitions);
-                return fieldsValid;
+                var missingFields = await GetMissingAdditionalFields(witClient, connection.AdditionalFieldDefinitions);
+                if (missingFields.Count > 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "additional_fields_invalid",
+                        $"Some additional fields could not be found: {string.Join(", ", missingFields)}",
+                        "Verify field names or references in Azure DevOps and update the additional field configuration.",
+                        "Additional Fields");
+                }
+
+                return ConnectionValidationResult.Success();
+            }
+            catch (VssUnauthorizedException ex)
+            {
+                logger.LogInformation(ex, "Azure DevOps authentication failed for connection {ConnectionName}", connection.Name);
+
+                return ConnectionValidationResult.Failure(
+                    "authentication_failed",
+                    "Authentication failed for Azure DevOps.",
+                    "Check your Personal Access Token permissions and make sure it is still valid.",
+                    AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
+            }
+            catch (VssServiceException ex)
+            {
+                logger.LogInformation(ex, "Azure DevOps service validation failed for connection {ConnectionName}", connection.Name);
+
+                return ConnectionValidationResult.Failure(
+                    "connection_failed",
+                    "Azure DevOps rejected the connection settings.",
+                    ex.Message);
+            }
+            catch (HttpRequestException ex)
+            {
+                logger.LogInformation(ex, "Azure DevOps endpoint validation failed for connection {ConnectionName}", connection.Name);
+
+                return ConnectionValidationResult.Failure(
+                    "connection_failed",
+                    "Could not reach Azure DevOps with the provided URL.",
+                    ex.Message,
+                    AzureDevOpsWorkTrackingOptionNames.Url);
+            }
+            catch (UriFormatException ex)
+            {
+                logger.LogInformation(ex, "Azure DevOps URL parsing failed for connection {ConnectionName}", connection.Name);
+
+                return ConnectionValidationResult.Failure(
+                    "invalid_url",
+                    "The Azure DevOps URL appears to be invalid.",
+                    ex.Message,
+                    AzureDevOpsWorkTrackingOptionNames.Url);
             }
             catch
             {
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Connection validation failed due to an unexpected error.");
             }
         }
 
@@ -416,22 +477,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
         }
 
-        private async Task<bool> VerifyFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
+        private static async Task<List<string>> GetMissingAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
-            // Assign unique temp id's as they may all be 0 right now
+            var fieldDefinitions = additionalFieldDefinitions.ToList();
             var tempId = -1;
-            additionalFieldDefinitions.ForEach(f => f.Id = tempId--);
+            fieldDefinitions.ForEach(f => f.Id = tempId--);
 
-            var customFieldReferences = await GetCustomFieldReferences(witClient, additionalFieldDefinitions);
+            var customFieldReferences = await GetCustomFieldReferences(witClient, fieldDefinitions);
 
-            var missingReference = 0;
-            foreach (var customFieldReference in customFieldReferences.Where(cf => string.IsNullOrEmpty(cf.Value)))
-            {
-                logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
-                missingReference++;
-            }
-
-            return missingReference <= 0;
+            return fieldDefinitions
+                .Where(field => string.IsNullOrEmpty(customFieldReferences[field.Id]))
+                .Select(field => field.Reference)
+                .ToList();
         }
 
         private static async Task<Dictionary<int, string>> GetCustomFieldReferences(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)

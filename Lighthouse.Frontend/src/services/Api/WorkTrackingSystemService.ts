@@ -45,11 +45,18 @@ export class WorkTrackingSystemService
 		workTrackingConnection: IWorkTrackingSystemConnection,
 	): Promise<boolean> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.post<boolean>(
+			const response = await this.apiService.post<
+				boolean | { isValid?: boolean }
+			>(
 				"/worktrackingsystemconnections/validate",
 				this.serializeConnectionForApi(workTrackingConnection),
 			);
-			return response.data;
+
+			if (typeof response.data === "boolean") {
+				return response.data;
+			}
+
+			return response.data.isValid === true;
 		});
 	}
 

@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -85,8 +86,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await CreateFeaturesFromIssues(project, issues);
         }
 
-        public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
+        public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
+            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
+            if (!Uri.TryCreate(url, UriKind.Absolute, out _))
+            {
+                return ConnectionValidationResult.Failure(
+                    "invalid_url",
+                    "The Jira URL appears to be invalid.",
+                    "Provide a full URL, for example https://your-domain.atlassian.net.",
+                    JiraWorkTrackingOptionNames.Url);
+            }
+
             try
             {
                 var client = await GetJiraRestClientAsync(connection);
@@ -94,15 +105,51 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 if (!response.IsSuccessStatusCode)
                 {
                     logger.LogInformation("Authentication is not valid for {Connection}", connection.Name);
-                    return false;
+
+                    return ConnectionValidationResult.Failure(
+                        "authentication_failed",
+                        "Authentication failed for Jira.",
+                        $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}.",
+                        JiraWorkTrackingOptionNames.ApiToken);
                 }
 
-                var fieldsValid = await ValidateFields(connection);
-                return fieldsValid;
+                var missingFields = await GetMissingAdditionalFields(connection);
+                if (missingFields.Count > 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "additional_fields_invalid",
+                        $"Some additional fields could not be found: {string.Join(", ", missingFields)}",
+                        "Verify field names or references in Jira and update the additional field configuration.",
+                        "Additional Fields");
+                }
+
+                return ConnectionValidationResult.Success();
+            }
+            catch (HttpRequestException ex)
+            {
+                logger.LogInformation(ex, "Jira endpoint validation failed for connection {ConnectionName}", connection.Name);
+
+                return ConnectionValidationResult.Failure(
+                    "connection_failed",
+                    "Could not reach Jira with the provided URL.",
+                    ex.Message,
+                    JiraWorkTrackingOptionNames.Url);
+            }
+            catch (UriFormatException ex)
+            {
+                logger.LogInformation(ex, "Jira URL parsing failed for connection {ConnectionName}", connection.Name);
+
+                return ConnectionValidationResult.Failure(
+                    "invalid_url",
+                    "The Jira URL appears to be invalid.",
+                    ex.Message,
+                    JiraWorkTrackingOptionNames.Url);
             }
             catch
             {
-                return false;
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Connection validation failed due to an unexpected error.");
             }
         }
 
@@ -507,18 +554,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return boards;
         }
 
-        private async Task<bool> ValidateFields(WorkTrackingSystemConnection connection)
+        private async Task<List<string>> GetMissingAdditionalFields(WorkTrackingSystemConnection connection)
         {
             var customFieldReferences = await GetCustomFieldReferences(connection);
 
-            var missingReference = 0;
-            foreach (var customFieldReference in customFieldReferences.Where(cf => string.IsNullOrEmpty(cf.Value)))
-            {
-                logger.LogInformation("Additional Field {FieldName} does not exit", customFieldReference.Key);
-                missingReference++;
-            }
-
-            return missingReference <= 0;
+            return customFieldReferences
+                .Where(cf => string.IsNullOrEmpty(cf.Value))
+                .Select(cf => cf.Key)
+                .ToList();
         }
 
         public async Task<bool> ValidateTeamSettings(Team team)

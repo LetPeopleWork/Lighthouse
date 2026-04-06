@@ -21,9 +21,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = LinearWorkTrackingOptionNames.ApiKey, Value = apiKey, IsSecret = true },
                 ]);
 
-            var isValid = await subject.ValidateConnection(connectionSetting);
+            var result = await subject.ValidateConnection(connectionSetting);
 
-            Assert.That(isValid, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Message, Is.EqualTo("Connection validated successfully."));
+            }
         }
 
         [Test]
@@ -38,9 +43,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = LinearWorkTrackingOptionNames.ApiKey, Value = apiKey, IsSecret = true },
                 ]);
 
-            var isValid = await subject.ValidateConnection(connectionSetting);
+            var result = await subject.ValidateConnection(connectionSetting);
 
-            Assert.That(isValid, Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Does.Contain("Linear"));
+            }
         }
 
         [Test]

@@ -684,9 +684,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "30", IsSecret = false },
                 ]);
 
-            var isValid = await subject.ValidateConnection(connectionSetting);
+            var result = await subject.ValidateConnection(connectionSetting);
 
-            Assert.That(isValid, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Message, Is.EqualTo("Connection validated successfully."));
+            }
         }
 
         [Test]
@@ -705,9 +710,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
                 ]);
 
-            var isValid = await subject.ValidateConnection(connectionSetting);
+            var result = await subject.ValidateConnection(connectionSetting);
 
-            Assert.That(isValid, Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Is.Not.Empty);
+            }
         }
 
         [Test]
@@ -743,9 +752,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 });
             }
 
-            var isValid = await subject.ValidateConnection(connectionSetting);
+            var result = await subject.ValidateConnection(connectionSetting);
 
-            Assert.That(isValid, Is.EqualTo(expectedValidationResult));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.EqualTo(expectedValidationResult));
+                Assert.That(result.Message, Is.Not.Empty);
+            }
         }
 
         [Test]
