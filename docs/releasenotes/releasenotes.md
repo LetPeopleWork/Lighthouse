@@ -4,9 +4,28 @@ layout: home
 nav_order: 95
 ---
 
-# vNext
+# Lighthouse v26.4.7.1
 
-## Metrics Dashboard — Category Taxonomy & Widget Chrome Improvements
+## Simplified Onboarding
+
+Getting started with Lighthouse is now faster and more guided. The creation flow for **Work Tracking Systems**, **Teams**, and **Portfolios** has been redesigned as a focused step-by-step process — surfacing only what you need to get connected, and deferring advanced settings to the edit view.
+
+![Work Tracking System Setup](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/concepts/worktrackingsystem_type_selection.png)
+
+Key changes:
+
+- **Connection type first**: Choose your provider before filling in any fields. Each authentication method now includes a short description so you know which one to pick.
+- **Validate on create**: The separate *Validate* button is gone. Lighthouse now validates your connection automatically when you press *Create* and reports specifically what went wrong if it fails.
+- **Improved error messages**: When a connection fails validation, Lighthouse tells you *why* — whether the URL is unreachable, the credentials are rejected, or a referenced additional field is invalid.
+- **Guided Team and Portfolio flows**: After picking a connection and entering a name, the wizard walks you through data retrieval, work item types, and states in sequence — and offers to create immediately once enough information is ready.
+
+Advanced options (additional fields, sync settings, state mappings) remain fully accessible after creation in the edit view.
+
+## Metrics Dashboard Overhaulded
+
+The Metrics Dashboard has been significantly redesigned to make it easier to navigate and interpret your flow data at a glance.
+
+![Metrics Dashboard Overview](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/metricsoverview.png)
 
 ### Redesigned Dashboard Categories
 
@@ -23,26 +42,75 @@ The Metrics Dashboard now organizes widgets into **six focused categories**, eac
 
 Each category chip now displays an **icon** and shows a **tooltip** on hover explaining what the category helps you understand.
 
-### Widget Header Chrome
+### Widget Header
 
 Widgets now feature improved header actions:
 
 - **Info button (ℹ️):** Click the info icon on any widget to see a brief description of what the widget shows and a *Learn More* link to the full documentation.
 - **View Data button (📊):** Click the table icon on any widget to open a dialog showing all of the work items that feed that widget. This replaces the previous click-anywhere-on-the-card behavior for the Cycle Time Percentiles and Started vs. Closed widgets — those widgets no longer open a full-dataset dialog on card click. Charts that support context-specific drill-ins (e.g. clicking a single bar, bubble, or data point) continue to work as before.
-- **Inline RAG chip:** The RAG status indicator has moved from the widget footer into the header area. Hover over the chip to see the actionable guidance tip.
+- **Inline RAG chip:** Hover over the chip to see the actionable guidance tip.
 
 ### RAG Status Indicators
 
 Every widget on the Metrics Dashboard shows a **Red / Amber / Green (RAG)** status indicator. RAG status is computed from live data and your team's configuration (SLE, System WIP Limit, Feature WIP, blocked indicators, etc.) so you can spot issues at a glance without interpreting each chart individually.
 
 **How it works:**
-- Each widget computes its RAG from the same data the chart displays — no separate API calls.
 - **Red** = action required (missing configuration, threshold exceeded, or process signal).
 - **Amber** = attention needed (approaching limits or moderate changes).
 - **Green** = within healthy operating range.
 - Toggle the *Show Tips* button in the dashboard header to show or hide the RAG chips.
 
-**Process Behaviour Charts (PBC)** use a shared RAG contract: if a baseline is not configured or the data is insufficient, the status is Red. A Large-magnitude signal is Red, a Moderate signal is Amber, and no special causes means Green.
+## Other UX Improvements
+
+### Improved State Mapping UX
+
+Configuring state mappings on teams and portfolios is now significantly more intuitive:
+
+- **Source states are picked from Doing**: You can only select states that are currently in the *Doing* list — no freeform typing required.
+- **Auto-sync with Doing**: Adding a mapping automatically replaces the included states in your Doing list with the new mapping name. Removing the mapping restores the original states.
+- **No duplicates**: A state can only belong to one mapping at a time, keeping your configuration clean.
+
+A reminder is shown after saving to indicate that a data refresh is needed for changes to take effect.
+
+### Feature Progress Bar Simplified
+
+On the Feature List, if a feature is tracked by only a single team, Lighthouse now shows a single progress bar instead of displaying both a team bar and an identical total bar. This removes redundant information and makes the list easier to read at a glance.
+
+### More Specific Validation Messages
+
+When a connection fails validation, Lighthouse now reports specifically what went wrong — whether the URL is wrong, credentials are invalid, or there is a problem with a referenced additional field. This makes it easier to identify and fix issues without guessing.
+
+### Settings No Longer Reload Unexpectedly
+
+Settings pages no longer reload while you are actively editing them due to background data updates. Your in-progress changes are preserved while the app continues to refresh data in the background.
+
+### Automatic Browser Cache Invalidation
+
+When a new version of Lighthouse is deployed, browsers now automatically load the updated interface instead of serving a stale cached version. No manual hard-refresh is needed after an update.
+
+## ⚠️ Breaking Change: Tags Removed from Teams and Portfolios
+
+The **Tags** field has been removed from Team and Portfolio configuration. If you previously used tags to organise or filter your teams and portfolios, this capability is no longer available.
+
+## Open-Source Software (OSS) Attribution
+
+The *System Info* page in System Settings now includes an **OSS Attribution** section listing all open-source components bundled with Lighthouse, along with their versions and licenses. This makes it straightforward to review every third-party dependency that Lighthouse ships with.
+
+## Bug Fixes and Other Improvements
+
+- **Standalone real-time updates fixed**: The SignalR connection in the Standalone (desktop) edition was broken, preventing live updates from appearing in the UI without a manual page reload. This has been fixed.
+- **Write-back with duplicate work items**: When a work item appeared multiple times across queries, write-back would fail. Lighthouse now handles duplicates correctly.
+- Updated various third-party dependencies.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Myriam Greger](https://www.linkedin.com/in/myriam-greger/)
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.3.28.14...v26.4.7.1)
 
 # Lighthouse v26.3.28.14
 
