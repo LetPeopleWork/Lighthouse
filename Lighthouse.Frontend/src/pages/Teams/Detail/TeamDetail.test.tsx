@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
 	createMockTeamService,
@@ -22,6 +23,10 @@ vi.mock("./TeamForecastView", () => ({
 
 vi.mock("./TeamMetricsView", () => ({
 	default: () => <div data-testid="team-metrics-view">Team Metrics View</div>,
+}));
+
+vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
+	default: () => <div data-testid="team-settings-editor">Settings Editor</div>,
 }));
 
 // Mock the useTerminology hook
@@ -369,6 +374,127 @@ describe("TeamDetail component", () => {
 		// Should show forecasts view
 		await waitFor(() => {
 			expect(screen.getByTestId("team-forecast-view")).toBeInTheDocument();
+		});
+	});
+
+	describe("settings tab update deferral", () => {
+		beforeEach(() => {
+			// Start every test in this group on the settings tab
+			mockParams = { id: "1", tab: "settings" };
+		});
+
+		const buildSettingsTabContext = () => {
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeam = vi.fn().mockResolvedValue(mockTeam);
+			mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+				id: 1,
+				name: "Test Team",
+				featureWIP: 1,
+				automaticallyAdjustFeatureWIP: false,
+				throughputHistory: 30,
+				useFixedDatesForThroughput: false,
+				throughputHistoryStartDate: new Date("2024-01-01"),
+				throughputHistoryEndDate: new Date("2024-01-31"),
+				serviceLevelExpectationProbability: 85,
+				serviceLevelExpectationRange: 10,
+				systemWIPLimit: 0,
+			});
+
+			let capturedCallback: ((update: IUpdateStatus) => void) | null = null;
+			const mockUpdateService = createMockUpdateSubscriptionService();
+			mockUpdateService.subscribeToTeamUpdates = vi
+				.fn()
+				.mockImplementation(
+					async (_id: number, callback: (update: IUpdateStatus) => void) => {
+						capturedCallback = callback;
+					},
+				);
+			mockUpdateService.unsubscribeFromTeamUpdates = vi.fn();
+			mockUpdateService.getUpdateStatus = vi.fn().mockResolvedValue(null);
+
+			const mockApiContext = createMockApiServiceContext({
+				teamService: mockTeamService,
+				updateSubscriptionService: mockUpdateService,
+			});
+
+			return {
+				mockTeamService,
+				mockApiContext,
+				getCallback: () => capturedCallback,
+			};
+		};
+
+		it("does not reload team when SignalR fires Completed while settings tab is active", async () => {
+			const { mockTeamService, mockApiContext, getCallback } =
+				buildSettingsTabContext();
+
+			render(
+				<BrowserRouter>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TeamDetail />
+					</ApiServiceContext.Provider>
+				</BrowserRouter>,
+			);
+
+			await waitFor(() =>
+				expect(screen.getByTestId("team-settings-editor")).toBeInTheDocument(),
+			);
+
+			const callsBefore = (mockTeamService.getTeam as ReturnType<typeof vi.fn>)
+				.mock.calls.length;
+
+			// Background update completes while the user is on the settings tab
+			await act(async () => {
+				await getCallback()?.({
+					status: "Completed",
+					updateType: "Team",
+					id: 1,
+				});
+			});
+
+			// Team data must NOT have been reloaded
+			expect(mockTeamService.getTeam).toHaveBeenCalledTimes(callsBefore);
+		});
+
+		it("reloads team data when leaving settings tab after a deferred update", async () => {
+			const user = userEvent.setup();
+			const { mockTeamService, mockApiContext, getCallback } =
+				buildSettingsTabContext();
+
+			render(
+				<BrowserRouter>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TeamDetail />
+					</ApiServiceContext.Provider>
+				</BrowserRouter>,
+			);
+
+			await waitFor(() =>
+				expect(screen.getByTestId("team-settings-editor")).toBeInTheDocument(),
+			);
+
+			// Background update completes while on settings
+			await act(async () => {
+				await getCallback()?.({
+					status: "Completed",
+					updateType: "Team",
+					id: 1,
+				});
+			});
+
+			const callsAfterDeferred = (
+				mockTeamService.getTeam as ReturnType<typeof vi.fn>
+			).mock.calls.length;
+
+			// User navigates away from settings
+			await user.click(screen.getByRole("tab", { name: "Forecasts" }));
+
+			// The deferred refresh must now fire
+			await waitFor(() => {
+				expect(mockTeamService.getTeam).toHaveBeenCalledTimes(
+					callsAfterDeferred + 1,
+				);
+			});
 		});
 	});
 });

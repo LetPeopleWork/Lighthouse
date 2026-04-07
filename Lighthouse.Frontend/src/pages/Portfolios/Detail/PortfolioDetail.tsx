@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
@@ -60,6 +60,11 @@ const PortfolioDetail: React.FC = () => {
 	const [activeView, setActiveView] = useState<PortfolioViewType>(
 		getInitialActiveView(tab),
 	);
+	const [pendingPortfolioRefresh, setPendingPortfolioRefresh] = useState(false);
+
+	// Always reflect the latest activeView inside async subscription callbacks
+	const activeViewRef = useRef(activeView);
+	activeViewRef.current = activeView;
 
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
 
@@ -178,8 +183,12 @@ const PortfolioDetail: React.FC = () => {
 		const setUpPortfolioUpdateSubscription = async () => {
 			const handlePortfolioUpdate = async (update: IUpdateStatus) => {
 				if (update.status === "Completed") {
-					// Portfolio was updated - reload data!
-					await fetchPortfolio();
+					if (activeViewRef.current === "settings") {
+						// Defer the reload until the user leaves the settings tab
+						setPendingPortfolioRefresh(true);
+					} else {
+						await fetchPortfolio();
+					}
 				}
 
 				updatePortfolioRefreshButton(update);
@@ -239,6 +248,14 @@ const PortfolioDetail: React.FC = () => {
 		updateSubscriptionService,
 		subscribedToUpdates,
 	]);
+
+	// Flush any pending background refresh as soon as the user leaves the settings tab
+	useEffect(() => {
+		if (pendingPortfolioRefresh && activeView !== "settings") {
+			setPendingPortfolioRefresh(false);
+			void fetchPortfolio();
+		}
+	}, [activeView, pendingPortfolioRefresh, fetchPortfolio]);
 
 	return (
 		<SnackbarErrorHandler>

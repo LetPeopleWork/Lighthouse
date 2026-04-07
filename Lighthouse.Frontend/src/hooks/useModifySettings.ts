@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
@@ -94,6 +94,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		string | null
 	>(null);
 
+	// --- Keep latest callback refs in sync without triggering re-fetches ---
+	const getSettingsRef = useRef(getSettings);
+	const getWorkTrackingSystemsRef = useRef(getWorkTrackingSystems);
+	const additionalFetchRef = useRef(additionalFetch);
+	getSettingsRef.current = getSettings;
+	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
+	additionalFetchRef.current = additionalFetch;
+
 	// Flattening effects by moving logic to named functions
 	useEffect(() => {
 		if (settings) {
@@ -117,8 +125,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			setLoading(true);
 			try {
 				const [fetchedSettings, systems] = await Promise.all([
-					getSettings(),
-					getWorkTrackingSystems(),
+					getSettingsRef.current(),
+					getWorkTrackingSystemsRef.current(),
 				]);
 				setSettings(fetchedSettings);
 				setWorkTrackingSystems(systems);
@@ -127,7 +135,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 						(s) => s.id === fetchedSettings.workTrackingSystemConnectionId,
 					) ?? null,
 				);
-				await additionalFetch?.();
+				await additionalFetchRef.current?.();
 			} catch (error) {
 				console.error("Error fetching data", error);
 			} finally {
@@ -135,7 +143,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			}
 		};
 		fetchData();
-	}, [getSettings, getWorkTrackingSystems, additionalFetch]);
+		// Intentionally empty: load once on mount.
+		// Callbacks are always current via refs; no re-fetch on identity changes.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const updateSettings = <K extends keyof TSettings>(
 		key: K,

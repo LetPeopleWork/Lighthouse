@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
@@ -80,6 +80,11 @@ const TeamDetail: React.FC = () => {
 	const [activeView, setActiveView] = useState<TeamViewType>(
 		getInitialView(tab, undefined),
 	);
+	const [pendingTeamRefresh, setPendingTeamRefresh] = useState(false);
+
+	// Always reflect the latest activeView inside async subscription callbacks
+	const activeViewRef = useRef(activeView);
+	activeViewRef.current = activeView;
 
 	const { teamService, updateSubscriptionService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
@@ -132,9 +137,13 @@ const TeamDetail: React.FC = () => {
 		const setUpTeamUpdateSubscription = async () => {
 			const handleTeamUpdate = async (update: IUpdateStatus) => {
 				if (update.status === "Completed") {
-					// Team was updated - reload data!
 					setIsTeamUpdating(false);
-					await fetchTeam();
+					if (activeViewRef.current === "settings") {
+						// Defer the reload until the user leaves the settings tab
+						setPendingTeamRefresh(true);
+					} else {
+						await fetchTeam();
+					}
 				} else {
 					// Team Update is in progress - update Button
 					updateTeamRefreshButton(update);
@@ -182,6 +191,14 @@ const TeamDetail: React.FC = () => {
 			navigate(`/teams/${id}/${newView}`, { replace: true });
 		}
 	}, [team, activeView, id, navigate]);
+
+	// Flush any pending background refresh as soon as the user leaves the settings tab
+	useEffect(() => {
+		if (pendingTeamRefresh && activeView !== "settings") {
+			setPendingTeamRefresh(false);
+			void fetchTeam();
+		}
+	}, [activeView, pendingTeamRefresh, fetchTeam]);
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,

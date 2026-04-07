@@ -1,6 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -9,7 +16,10 @@ import type { ILicensingService } from "../../../services/Api/LicensingService";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
-import type { IUpdateSubscriptionService } from "../../../services/UpdateSubscriptionService";
+import type {
+	IUpdateStatus,
+	IUpdateSubscriptionService,
+} from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
 	createMockLicensingService,
@@ -76,6 +86,15 @@ vi.mock("../../../components/Common/ActionButton/ActionButton", () => ({
 		</button>
 	),
 }));
+
+vi.mock(
+	"../../../components/Common/ProjectSettings/ModifyProjectSettings",
+	() => ({
+		default: () => (
+			<div data-testid="portfolio-settings-editor">Settings Editor</div>
+		),
+	}),
+);
 
 const mockPortfolioService: IPortfolioService = createMockPortfolioService();
 const mockTeamService: ITeamService = createMockTeamService();
@@ -297,5 +316,91 @@ describe("PortfolioDetail component", () => {
 
 	afterEach(() => {
 		vi.clearAllMocks();
+	});
+
+	describe("settings tab update deferral", () => {
+		beforeEach(() => {
+			// Capture the subscription callback so tests can fire SignalR events
+			mockSubscribeToFeatureUpdates.mockImplementation(
+				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+					capturedFeatureCallback = callback;
+				},
+			);
+
+			capturedFeatureCallback = null;
+		});
+
+		let capturedFeatureCallback: ((update: IUpdateStatus) => void) | null =
+			null;
+
+		const renderOnSettingsTab = () => {
+			render(
+				<MockApiServiceProvider>
+					<MemoryRouter initialEntries={["/portfolios/2/settings"]}>
+						<Routes>
+							<Route
+								path="/portfolios/:id/:tab"
+								element={<PortfolioDetail />}
+							/>
+							<Route path="/portfolios/:id" element={<PortfolioDetail />} />
+						</Routes>
+					</MemoryRouter>
+				</MockApiServiceProvider>,
+			);
+		};
+
+		it("does not reload portfolio when SignalR fires Completed while settings tab is active", async () => {
+			renderOnSettingsTab();
+
+			await waitFor(() =>
+				expect(
+					screen.getByTestId("portfolio-settings-editor"),
+				).toBeInTheDocument(),
+			);
+
+			const callsBefore = mockGetPortfolio.mock.calls.length;
+
+			// Background update completes while the user is on the settings tab
+			await act(async () => {
+				await capturedFeatureCallback?.({
+					status: "Completed",
+					updateType: "Features",
+					id: 2,
+				});
+			});
+
+			// Portfolio data must NOT have been reloaded
+			expect(mockGetPortfolio).toHaveBeenCalledTimes(callsBefore);
+		});
+
+		it("reloads portfolio when leaving settings tab after a deferred update", async () => {
+			const user = userEvent.setup();
+			renderOnSettingsTab();
+
+			await waitFor(() =>
+				expect(
+					screen.getByTestId("portfolio-settings-editor"),
+				).toBeInTheDocument(),
+			);
+
+			// Background update completes while on settings
+			await act(async () => {
+				await capturedFeatureCallback?.({
+					status: "Completed",
+					updateType: "Features",
+					id: 2,
+				});
+			});
+
+			const callsAfterDeferred = mockGetPortfolio.mock.calls.length;
+
+			// User navigates away from settings
+			await user.click(screen.getByRole("tab", { name: "Features" }));
+
+			// The deferred refresh must now fire
+			await waitFor(() => {
+				expect(mockGetPortfolio).toHaveBeenCalledTimes(callsAfterDeferred + 1);
+			});
+		});
 	});
 });

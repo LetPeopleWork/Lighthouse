@@ -414,4 +414,47 @@ describe("useModifySettings", () => {
 			});
 		});
 	});
+
+	describe("callback identity stability", () => {
+		it("does not re-fetch when callback references change after initial load", async () => {
+			const args = makeHookArgs();
+			const { rerender } = renderHook((props) => useModifySettings(props), {
+				initialProps: args,
+			});
+
+			await waitFor(() => expect(args.getSettings).toHaveBeenCalledTimes(1));
+
+			// Simulate a parent re-render producing new function identities
+			const refreshedArgs = makeHookArgs();
+			rerender(refreshedArgs);
+
+			await act(async () => {});
+
+			// New callback should never have been invoked — no second fetch
+			expect(refreshedArgs.getSettings).not.toHaveBeenCalled();
+			// Original fetch count stays at exactly 1
+			expect(args.getSettings).toHaveBeenCalledTimes(1);
+		});
+
+		it("preserves in-progress edits when callback references change", async () => {
+			const args = makeHookArgs();
+			const { result, rerender } = renderHook(
+				(props) => useModifySettings(props),
+				{ initialProps: args },
+			);
+
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			// User edits the form
+			act(() => result.current.updateSettings("name", "Edited Name" as never));
+			expect(result.current.settings?.name).toBe("Edited Name");
+
+			// Parent re-renders (e.g. isUpdating flag changes) — new callback identities
+			rerender(makeHookArgs());
+			await act(async () => {});
+
+			// Edit must survive the re-render
+			expect(result.current.settings?.name).toBe("Edited Name");
+		});
+	});
 });
