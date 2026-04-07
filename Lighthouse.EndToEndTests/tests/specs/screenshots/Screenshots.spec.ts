@@ -104,12 +104,16 @@ const updatePortfolios = async (
 
 		const portfolioDetailPage = await editPortfolioPage.save();
 
-		updateTeam(api, portfolio.id);
+		await updateTeam(api, portfolio.id);
 
 		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 	}
 
 	await updatePortfolio(api, portfolios[0].id);
+
+	await expect(overviewPage.lightHousePage.updateAllButton).toBeEnabled();
+	await overviewPage.lightHousePage.goToSettings();
+	await overviewPage.lightHousePage.goToOverview();
 };
 
 test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
@@ -367,6 +371,10 @@ testWithData(
 			expect(metrics.length).toBe(expectedWidgetCount);
 
 			for (const metricWidget of metrics) {
+				if (metricWidget.name === MetricsWidgetNames.EstimationVsCycleTime) {
+					continue; // Skip Estimation vs Cycle Time chart as it is covered in a separate test and has a different setup process
+				}
+
 				await takeElementScreenshot(
 					metricWidget.Widget,
 					`features/metrics/${metricWidget.Id}.png`,
@@ -390,11 +398,15 @@ testWithData(
 		);
 		await workItemsDialog.close();
 
-		overviewPage.lightHousePage.goToOverview();
+		overviewPage = await overviewPage.lightHousePage.goToOverview();
 
 		const portfolioDetailPage = await overviewPage.goToPortfolio(
 			testData.portfolios[0].name,
 		);
+
+		await portfolioDetailPage.refreshFeatures();
+		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
+
 		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
 		availableWidgets = await portfolioMetricsPage.switchCategory(

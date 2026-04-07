@@ -24,7 +24,10 @@ export class LighthousePage {
 	}
 
 	async goToOverview(): Promise<OverviewPage> {
-		await this.page.getByRole("link", { name: "Overview" }).click();
+		await this.page
+			.getByText("LighthouseOverviewSystem")
+			.getByRole("link", { name: "Overview" })
+			.click();
 		return new OverviewPage(this.page, this);
 	}
 
