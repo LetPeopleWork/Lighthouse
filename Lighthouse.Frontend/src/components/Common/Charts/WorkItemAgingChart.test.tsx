@@ -208,6 +208,7 @@ describe("WorkItemAgingChart component", () => {
 		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 	});
+
 	it("displays correct chart title", () => {
 		render(
 			<WorkItemAgingChart
@@ -220,7 +221,8 @@ describe("WorkItemAgingChart component", () => {
 
 		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 	});
-	it("renders 'No items in progress' when there are no items", () => {
+
+	it("renders empty chart with no data points when there are no items", () => {
 		render(
 			<WorkItemAgingChart
 				inProgressItems={[]}
@@ -230,10 +232,13 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		expect(screen.getByText("No items in progress")).toBeInTheDocument();
-		expect(
-			screen.queryByTestId("mock-chart-container"),
-		).not.toBeInTheDocument();
+		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+
+		const series = JSON.parse(
+			screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
+		);
+		expect(series[0].data).toHaveLength(0);
 	});
 
 	it("renders percentile chips with correct labels", () => {
@@ -246,12 +251,10 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Use getAllByText to handle multiple elements and check chips specifically
 		const percentile50Elements = screen.getAllByText("50%");
 		const percentile85Elements = screen.getAllByText("85%");
 		const percentile95Elements = screen.getAllByText("95%");
 
-		// Should have at least one element for each percentile (the chip)
 		expect(percentile50Elements.length).toBeGreaterThan(0);
 		expect(percentile85Elements.length).toBeGreaterThan(0);
 		expect(percentile95Elements.length).toBeGreaterThan(0);
@@ -295,21 +298,16 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Find the chip by its role and aria-label or use a more specific query
 		const chips = screen.getAllByRole("button");
 		const percentile50Chip = chips.find((chip) => chip.textContent === "50%");
 
 		expect(percentile50Chip).toBeInTheDocument();
-
-		// Initially, the percentile should be visible (reference line should exist)
 		expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
 
-		// Click to toggle visibility
 		if (percentile50Chip) {
 			fireEvent.click(percentile50Chip);
 		}
 
-		// After clicking, we can verify the chip was clicked
 		expect(percentile50Chip).toBeInTheDocument();
 	});
 
@@ -324,16 +322,11 @@ describe("WorkItemAgingChart component", () => {
 		);
 
 		const sleChip = screen.getByText("Service Level Expectation");
-
-		// Click to toggle visibility
 		fireEvent.click(sleChip);
-
-		// Verify the chip was clicked
 		expect(sleChip).toBeInTheDocument();
 	});
 
 	it("groups items correctly by state and age", () => {
-		// This test verifies the grouping logic through the component rendering
 		render(
 			<WorkItemAgingChart
 				inProgressItems={mockInProgressItems}
@@ -343,7 +336,6 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// The chart should render with the grouped data
 		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 	});
@@ -361,7 +353,6 @@ describe("WorkItemAgingChart component", () => {
 		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 
-		// No percentile chips should be rendered
 		expect(screen.queryByTestId("reference-line-50%")).not.toBeInTheDocument();
 		expect(screen.queryByTestId("reference-line-85%")).not.toBeInTheDocument();
 		expect(screen.queryByTestId("reference-line-95%")).not.toBeInTheDocument();
@@ -377,7 +368,6 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Verify chart components are rendered
 		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		expect(screen.getByText("X Axis")).toBeInTheDocument();
@@ -395,7 +385,6 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// All percentiles should be visible initially
 		expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
 		expect(screen.getByTestId("reference-line-85%")).toBeInTheDocument();
 		expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
@@ -418,11 +407,12 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Component should render empty state when items are filtered out due to missing/invalid state
-		expect(screen.getByText("No items in progress")).toBeInTheDocument();
-		expect(
-			screen.queryByTestId("mock-chart-container"),
-		).not.toBeInTheDocument();
+		// Items with empty state are filtered out — chart renders but with no data points
+		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+		const series = JSON.parse(
+			screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
+		);
+		expect(series[0].data).toHaveLength(0);
 	});
 
 	it("handles items with states not in doingStates list", () => {
@@ -446,15 +436,15 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Component should render empty state when no items match doingStates
-		expect(screen.getByText("No items in progress")).toBeInTheDocument();
-		expect(
-			screen.queryByTestId("mock-chart-container"),
-		).not.toBeInTheDocument();
+		// No items match doingStates — chart renders but with no data points
+		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+		const series = JSON.parse(
+			screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
+		);
+		expect(series[0].data).toHaveLength(0);
 	});
 
 	it("correctly extracts age from work items", () => {
-		// Test that the component correctly uses workItemAge property
 		const itemWithSpecificAge: IWorkItem[] = [
 			{
 				...mockInProgressItems[0],
@@ -471,7 +461,6 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// The chart should render with the item
 		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 	});
 
@@ -486,7 +475,6 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			// Chart should render with blocked items
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 		});
@@ -540,7 +528,6 @@ describe("WorkItemAgingChart component", () => {
 			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
 
 			const colorMap = getColorMapForKeys(["Bug", "Story"], true);
-			// First group's color should match the color map for 'Bug'
 			expect(series?.[0]?.data?.[0]?.color).toBe(colorMap.Bug);
 			expect(series?.[0]?.data?.[0]?.color).not.toBe(
 				testTheme.palette.primary.main,
@@ -557,13 +544,11 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			// Chart should render and handle grouping correctly
 			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
 
 		it("marks group as blocked if any item in group is blocked", () => {
-			// Test with items that have same state and age but different blocked status
 			const mixedBlockedItems: IWorkItem[] = [
 				{
 					...mockInProgressItems[0],
@@ -587,11 +572,10 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			// Chart should render with grouped items
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
 
-		it("handles empty blocked items array", () => {
+		it("renders empty chart with no data points when blocked items array is empty", () => {
 			render(
 				<WorkItemAgingChart
 					inProgressItems={[]}
@@ -601,8 +585,11 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			// Should show empty state
-			expect(screen.getByText("No items in progress")).toBeInTheDocument();
+			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+			const series = JSON.parse(
+				screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
+			);
+			expect(series[0].data).toHaveLength(0);
 		});
 	});
 
@@ -635,7 +622,6 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			// Chart should render with all items matched despite different casing
 			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
@@ -659,7 +645,6 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			// Chart should render with item matched despite casing difference
 			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
