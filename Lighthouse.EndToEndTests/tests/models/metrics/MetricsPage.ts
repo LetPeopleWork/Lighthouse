@@ -165,15 +165,16 @@ export class MetricsPage {
 		);
 	}
 
-	async getWidgetByName(name: string): Promise<MetricsWidget> {
-		const widgetId = Object.values(MetricsWidgetNames).find(
-			(key) => key === name,
-		);
+	async getWidgetByName(
+		name: string,
+		availableWidgets: MetricsWidget[],
+	): Promise<MetricsWidget> {
+		const widget = availableWidgets.find((widget) => widget.Name === name);
 
-		if (!widgetId) {
+		if (!widget) {
 			throw new Error(`Widget with name ${name} not found`);
 		}
 
-		return new MetricsWidget(this.page, name, widgetId);
+		return widget;
 	}
 }

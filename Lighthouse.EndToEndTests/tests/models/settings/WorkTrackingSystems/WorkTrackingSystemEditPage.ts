@@ -17,10 +17,6 @@ export class WorkTrackingSystemEditPage {
 		await this.page.getByLabel(optionName, { exact: true }).fill(optionValue);
 	}
 
-	async validate(): Promise<void> {
-		await this.validateButton.click();
-	}
-
 	async create(): Promise<OverviewPage> {
 		await this.createButton.click();
 
@@ -32,10 +28,6 @@ export class WorkTrackingSystemEditPage {
 		await this.page.evaluate(() => {
 			window.scrollTo({ top: 0, behavior: "auto" });
 		});
-	}
-
-	get validateButton(): Locator {
-		return this.page.getByRole("button", { name: "Validate" });
 	}
 
 	get createButton(): Locator {

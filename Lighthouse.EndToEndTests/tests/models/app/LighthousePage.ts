@@ -165,4 +165,8 @@ export class LighthousePage {
 		await openInNewTabAction();
 		return await popup;
 	}
+
+	get updateAllButton(): Locator {
+		return this.page.getByTestId("update-all-button");
+	}
 }

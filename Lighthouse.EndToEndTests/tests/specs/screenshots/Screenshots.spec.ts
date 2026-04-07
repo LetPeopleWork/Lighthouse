@@ -53,9 +53,8 @@ const updateWorkTrackingSystems = async (
 			wtsDetails.optionValue,
 		);
 
-		await editWorkTrackingSystem.validate();
 		await expect(editWorkTrackingSystem.createButton).toBeEnabled();
-		await editWorkTrackingSystem.create();
+		overviewPage = await editWorkTrackingSystem.create();
 	}
 };
 
@@ -67,21 +66,23 @@ const updateTeams = async (
 	const teamNames = ["Lighthouse Team", "Dawg Pound", "Team HecKING"];
 
 	for (const team of teams) {
-		const teamPage = await overviewPage.lightHousePage.goToOverview();
-		const editTeam = await teamPage.editTeam(team.name);
+		const editTeam = await overviewPage.editTeam(team.name);
 
 		const newTeamName = teamNames[teams.indexOf(team)];
 		await editTeam.setName(newTeamName);
 		team.name = newTeamName;
 
-		await expect(editTeam.saveButton).toBeEnabled();
+		await editTeam.save();
 
-		const teamDetailPage = await editTeam.save();
+		await updateTeam(api, team.id);
 
-		updateTeam(api, team.id);
-
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+		await overviewPage.lightHousePage.goToSettings();
+		await overviewPage.lightHousePage.goToOverview();
 	}
+
+	await expect(overviewPage.lightHousePage.updateAllButton).toBeEnabled();
+	await overviewPage.lightHousePage.goToSettings();
+	await overviewPage.lightHousePage.goToOverview();
 };
 
 const updatePortfolios = async (
@@ -373,10 +374,13 @@ testWithData(
 			}
 		}
 
-		await metricsPage.switchCategory(MetricsCategories.FlowOverview);
+		let availableWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowOverview,
+		);
 
 		const cycleTimePercentilesWidget = await metricsPage.getWidgetByName(
 			MetricsWidgetNames.CycleTimePercentiles,
+			availableWidgets,
 		);
 
 		const workItemsDialog = await cycleTimePercentilesWidget.openDialog();
@@ -393,12 +397,13 @@ testWithData(
 		);
 		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
-		await portfolioMetricsPage.switchCategory(
+		availableWidgets = await portfolioMetricsPage.switchCategory(
 			MetricsCategories.PortfolioAndFeatures,
 		);
 
 		const featureSizeWidget = await portfolioMetricsPage.getWidgetByName(
 			MetricsWidgetNames.FeatureSize,
+			availableWidgets,
 		);
 
 		await takeElementScreenshot(
@@ -406,11 +411,14 @@ testWithData(
 			"features/metrics/featuresize.png",
 		);
 
-		await portfolioMetricsPage.switchCategory(MetricsCategories.Predictability);
+		availableWidgets = await portfolioMetricsPage.switchCategory(
+			MetricsCategories.Predictability,
+		);
 
 		const featureSizeProcessBehaviourWidget =
 			await portfolioMetricsPage.getWidgetByName(
 				MetricsWidgetNames.CycleTimeProcessBehaviourChart,
+				availableWidgets,
 			);
 
 		await takeElementScreenshot(
@@ -424,23 +432,31 @@ testWithData(
 	async ({ overviewPage, testData, request }) => {
 		await updateWorkTrackingSystems(overviewPage, testData.connections);
 
-		await overviewPage.lightHousePage.goToOverview();
-
 		await updateTeams(request, overviewPage, testData.teams);
-
-		await overviewPage.lightHousePage.goToOverview();
 
 		const team = testData.teams[2];
 		const teamEditPage = await overviewPage.editTeam(team.name);
 
 		await teamEditPage.setEstimationField("Story Points");
 		await expect(teamEditPage.saveButton).toBeEnabled();
-		const teamDetailPage = await teamEditPage.save();
+		await teamEditPage.save();
 
+		await overviewPage.lightHousePage.goToSettings();
+		await overviewPage.lightHousePage.goToOverview();
+
+		const teamDetailPage = await overviewPage.goToTeam(team.name);
 		const teamMetricsPage = await teamDetailPage.goToMetrics();
+
+		// Force switch to reload charts
+		teamMetricsPage.switchCategory(MetricsCategories.FlowOverview);
+
+		const availableWidgets = await teamMetricsPage.switchCategory(
+			MetricsCategories.PortfolioAndFeatures,
+		);
 
 		const estimationVsCycleTimeWidget = await teamMetricsPage.getWidgetByName(
 			MetricsWidgetNames.EstimationVsCycleTime,
+			availableWidgets,
 		);
 
 		await takeElementScreenshot(
