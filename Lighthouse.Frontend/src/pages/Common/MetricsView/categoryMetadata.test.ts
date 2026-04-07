@@ -90,7 +90,7 @@ describe("categoryMetadata", () => {
 	it("predictability contains expected widgets in order for team", () => {
 		const widgets = getWidgetsForCategory("predictability", "team");
 		expect(widgets.map((w) => w.widgetKey)).toEqual([
-			"percentiles",
+			"cycleScatter",
 			"predictabilityScoreDetails",
 			"throughputPbc",
 			"wipPbc",

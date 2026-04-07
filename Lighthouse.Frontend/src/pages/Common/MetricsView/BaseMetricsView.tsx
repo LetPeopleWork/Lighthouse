@@ -505,6 +505,7 @@ function buildWidgetNodes(ctx: {
 	featuresInProgress: IWorkItem[] | undefined;
 	featureWip: number | undefined;
 	featureTerm: string;
+	featuresTerm: string;
 	predictabilityData: IForecastPredictabilityScore | null;
 	percentileValues: IPercentileValue[];
 	serviceLevelExpectation: IPercentileValue | null;
@@ -551,7 +552,7 @@ function buildWidgetNodes(ctx: {
 			<FeaturesWorkedOnWidget
 				featureCount={ctx.featuresInProgress.length}
 				featureWip={ctx.featureWip}
-				title={`${ctx.featureTerm} being Worked On`}
+				title={`${ctx.featuresTerm} being Worked On`}
 			/>
 		) : null,
 		predictabilityScore: (
@@ -787,6 +788,7 @@ export const BaseMetricsView = <
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const workInProgressTerm = getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
@@ -841,6 +843,7 @@ export const BaseMetricsView = <
 		featuresInProgress,
 		featureWip,
 		featureTerm,
+		featuresTerm,
 		predictabilityData,
 		percentileValues,
 		serviceLevelExpectation,
