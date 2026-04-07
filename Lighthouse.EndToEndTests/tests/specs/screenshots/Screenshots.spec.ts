@@ -429,7 +429,7 @@ testWithData(
 
 		const featureSizeProcessBehaviourWidget =
 			await portfolioMetricsPage.getWidgetByName(
-				MetricsWidgetNames.CycleTimeProcessBehaviourChart,
+				MetricsWidgetNames.FeatureSizeProcessBehaviourChart,
 				availableWidgets,
 			);
 
