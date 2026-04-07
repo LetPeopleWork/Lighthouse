@@ -393,7 +393,7 @@ Process Behaviour Charts (PBCs) help you understand whether changes in your syst
 
 In order to get the chart, you must configure a *baseline* for your PBC. You do this in the [Team Settings](https://docs.lighthouse.letpeople.work/teams/edit.html#process-behaviour-chart-baseline) or [Portfolio Settings](https://docs.lighthouse.letpeople.work/portfolios/edit.html#process-behaviour-chart-baseline). Once you did this, the charts will appear in your [Metrics tab](https://docs.lighthouse.letpeople.work/metrics/widgets.html#process-behaviour-charts):
 
-![Cycle Time Process Behaviour Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleTimeProcessBehaviorChart.png)
+![Cycle Time Process Behaviour Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleTimePbc.png)
 
 ## Adjustments to Additional Fields Configuration
 If you add or modify the additional fields, you must make sure to refresh your teams and portfolios before the fields are loaded. This was not obvious, thus we added a small info box about it.
@@ -756,12 +756,12 @@ Lighthouse now supports using Jira's *Flagged* field to mark work items as block
 ## Categorization for Items in Scatterplots
 The Work Item Aging, Cycle Time, and Feature Size chart are all now displaying the different types of items with a specific color. The Feature Size Chart is categorizing by *Status Category*, while the other two are differentiating by *Item Type*. The categories are visualized on top as a legend, and can be toggled on and off through clicking.
 
-![Cycle Time Scatterplot](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleTimeScatterplot.png)
+![Cycle Time Scatterplot](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleScatter.png)
 
 ## Context for Work Distribution Chart
 The Work Distribution chart now includes tabular data views for detailed insights into underlying items. This gives some more context to the pie chart that visualizes the distribution. Additionally, the colors are aligned with the colors used for seperating items in the scatterplots (see above).
 
-![Work Distribution Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workDistributionChart.png)
+![Work Distribution Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workDistribution.png)
 
 ## Continuous Improvements & Bug Fixes
 - Fixed issue with Work Item Chart and Capitalization that could cause display inconsistencies.
@@ -782,7 +782,7 @@ Special Thanks to everyone who contributed their feedback to this release:
 ## Work Distribution Chart
 The Work Distribution chart provides a visual breakdown of how work items are distributed across their parent work items (such as Features, Epics, or Initiatives). This pie chart helps you understand where your team’s effort is focused.
 
-![Work Distribution Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workDistributionChart.png)
+![Work Distribution Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workDistribution.png)
 
 Hovering over the chart will show you which item had how many child items. Clicking on it will bring up a dialog with additional information.
 

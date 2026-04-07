@@ -62,11 +62,6 @@ Then you will also see the number of the Features that are currently being worke
 {: .note}
 The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this metric is not available for *Portfolios*, but only for *Teams*.
 
-Lastly, you can see the number of items that are currently blocked. The *Goal* is always set to 0.
-
-
-![WIP Details](../assets/features/metrics/workitemsinprogress_dialog.png)
-
 {: .important}
 This widget is **not affected** by the date filtering. It always shows the **current** Work In Progress.
 
@@ -133,7 +128,7 @@ If [Blackout Periods](../settings/configuration.html#blackout-periods) are confi
 
 The Work Item Aging Chart shows you all in progress items on a scatter plot:
 
-![Work Item Aging Chart](../assets/features/metrics/workItemAgingChart.png)
+![Work Item Aging Chart](../assets/features/metrics/aging.png)
 
 On the x-axis you will find the different states you've configured in the settings of your team/portfolio.
 On the y-axis, you'll see how long each particular item is in progress already.
@@ -166,7 +161,7 @@ Jira note: Lighthouse identifies blocked items using the blocked tags or blocked
 
 The Work Distribution chart provides a visual breakdown of how work items are distributed across their parent work items (such as Features, Epics, or Initiatives). This pie chart helps you understand where your team's effort is focused.
 
-![Work Distribution Chart](../assets/features/metrics/workDistributionChart.png)
+![Work Distribution Chart](../assets/features/metrics/workDistribution.png)
 
 The chart displays:
 - Each segment represents a parent work item and its associated child items
@@ -210,7 +205,7 @@ The chart combines both completed work items (from the selected date range) and 
 
 The *Started vs. Closed* widget shows you how many items you were completing (your total Throughput) and how many items were started (also called *Arrival rate*) during the selected time frame. It will also show you how many items were closed and started on average per day with your current settings:
 
-![Started vs. Closed](../assets/features/metrics/startedVsClosed.png)
+![Started vs. Closed](../assets/features/metrics/startedVsFinished.png)
 
 The goal is to quickly see whether you are having a stable WIP, or if you either start more items than you close (increasing WIP) or close more than you start (decreasing WIP). The widget includes a visual indication that shows you a *Red/Amber/Green* kind of scale, depending on how *far apart* the arrival and throughput numbers are.
 
@@ -242,7 +237,7 @@ To visualize the Throughput, there is a Run Chart shows the Throughput over time
 
 You can see how many items were closed each day over the last several days. The more 'stable' your throughput is, the more accurate your forecast will be.
 
-![Throughput Run Chart](../assets/features/metrics/throughputRunChart.png)
+![Throughput Run Chart](../assets/features/metrics/throughput.png)
 
 This widget will adjust based on the selected time range. If you want to know which exact items were closed, you can click on a specific day and get more details.
 
@@ -272,7 +267,7 @@ The Throughput Run Chart checks for runs of 3 or more consecutive zero-throughpu
 
 The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will run an *MCS How Many* forecast for the number of days in the date range. For example, if you have selected the last 30 days, Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
 
-![Predictability Score](../assets/features/metrics/predictabilityscore.png)
+![Predictability Score](../assets/features/metrics/predictabilityScoreDetails.png)
 
 The score is calculated like this:
 > (*Value at 95th Percentile* / *Value at 50% Percentile*) * 100
@@ -335,19 +330,19 @@ All PBC charts share the same status logic:
 
 ## Cycle Time Process Behaviour Chart
 
-![Cycle Time Process Behaviour Chart](../assets/features/metrics/cycleTimeProcessBehaviorChart.png)
+![Cycle Time Process Behaviour Chart](../assets/features/metrics/cycleTimePbc.png)
 
 ## Throughput Process Behaviour Chart
 
-![Throughput Process Behaviour Chart](../assets/features/metrics/throughputProcessBehaviorChart.png)
+![Throughput Process Behaviour Chart](../assets/features/metrics/throughputPbc.png)
 
 ## Total Work Item Age Process Behaviour Chart
 
-![Total Work Item Age Process Behaviour Chart](../assets/features/metrics/totalWorkItemAgeProcessBehaviorChart.png)
+![Total Work Item Age Process Behaviour Chart](../assets/features/metrics/totalWorkItemAgePbc.png)
 
 ## Work In Progress Process Behaviour Chart
 
-![Work In Progress Process Behaviour Chart](../assets/features/metrics/workInProgressProcessBehaviorChart.png)
+![Work In Progress Process Behaviour Chart](../assets/features/metrics/wipPbc.png)
 
 ## Feature Size Process Behaviour Chart
 
@@ -370,15 +365,13 @@ The Feature Size PBC only exists for Portfolios.
 
 In this widget you can see the different percentiles of your Cycle Time. It's to get a quick view of where you stand, for example if you want to compare it to your Service Level Expectation.
 
-![Cycle Time Percentiles](../assets/features/metrics/cycletimepercentiles.png)
+![Cycle Time Percentiles](../assets/features/metrics/percentiles.png)
 
-In case you have defined a [Service Level Expectation](../teams/edit.html#service-level-expectation), you will see the SLE on the top right. You can *click* on this to see additional details:
-
-![SLE Widget](../assets/features/metrics/servicelevelexpectation.png)
+In case you have defined a [Service Level Expectation](../teams/edit.html#service-level-expectation), you will see the SLE on the top right.
 
 Use the **View Data** button in the widget header to see all items that were closed in the respective date range. If you have defined an SLE, the Cycle Time coloring is based on how close (or above) the item got to the SLE.
 
-![Closed Items Dialog](../assets/features/metrics/closeditemsdialog.png)
+![Closed Items Dialog](../assets/features/metrics/workitemsdialog.png)
 
 ## Status Indicator
 
@@ -398,7 +391,7 @@ Use the **View Data** button in the widget header to see all items that were clo
 The Scatterplot shows the individual items in a chart, where the x-axis shows the dates the items were closed, and the y-axis how long they were in progress.
 If there are items that were closed on the same day with the same cycle time, they are represented in a single bubble. The more items a bubble is representing, the bigger it is.
 
-![Cycle Time Scatterplot](../assets/features/metrics/cycleTimeScatterplot.png)
+![Cycle Time Scatterplot](../assets/features/metrics/cycleScatter.png)
 
 This visual allows you to see patterns or outliers. Hovering over a dot will give you additional information, and with a click you'll get a more detailed view about the item(s) represented by the specific dot.
 
@@ -473,7 +466,7 @@ A minimum of 2 data points is required to calculate correlation. With fewer item
 
 This simplified version of a Cumulative Flow Diagram shows you how many items were in which state category (*Doing* or *Done*) over the selected time period. This helps you see patterns and problems with your flow. It's a *simplified* CFD because you will not see the detailed state itself, but just the overall category.
 
-![Simplified CFD](../assets/features/metrics/simplifiedCFD.png)
+![Simplified CFD](../assets/features/metrics/stacked.png)
 
 If you enable the trend lines, the start and end points of both areas will be connected. In general you want to aim for:
 1. Making the lines parallel - this means you control your WIP well. If the lines are not parallel, you either start more than you finish or finish more than you start.
@@ -527,7 +520,7 @@ The reference value is calculated as: **System WIP Limit × SLE days**. This rep
 
 To see how your total work item age has evolved, there's also a run chart showing the historical trend:
 
-![Total Work Item Age Run Chart](../assets/features/metrics/totalWorkItemAgeRunChart.png)
+![Total Work Item Age Run Chart](../assets/features/metrics/totalWorkItemAgeOverTime.png)
 
 This chart visualizes how the cumulative age of your WIP has changed over the selected time period. You can use this to:
 - Identify periods where age accumulated (indicating items getting stuck)
