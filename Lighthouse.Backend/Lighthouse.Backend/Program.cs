@@ -179,7 +179,20 @@ namespace Lighthouse.Backend
             });
 
             app.UseDefaultFiles();
-            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                // Don't cache index.html to ensure users always get the latest version, but allow caching for other static assets
+                OnPrepareResponse = ctx =>
+                {
+                    if (ctx.File.Name == "index.html")
+                    {
+                        ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+                        ctx.Context.Response.Headers.Pragma = "no-cache";
+                        ctx.Context.Response.Headers.Expires = "0";
+                    }
+                }
+            });
+
 
             app.UseRouting();
             app.UseAuthentication();
