@@ -7,6 +7,8 @@ nav_order: 32
 
 Following a brief overview over the various metric widgets that are available in Lighthouse.
 
+![Metrics Overview](../assets/features/metrics/metricsoverview.png)
+
 - TOC
 {:toc}
 
@@ -33,43 +35,35 @@ Widgets are organized into six dashboard categories. Each category groups relate
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| **Flow Overview** | How is my system doing at a glance? | Work Items In Progress, Blocked Items, Features Worked On (Teams only), Total Work Item Age, Predictability Score, Started vs. Closed, Cycle Time Percentiles |
+| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Started vs. Closed, Cycle Time Percentiles |
 | **Cycle Time** | How long do items take? | Cycle Time Percentiles, Total Work Item Age, Cycle Time Scatterplot, Work Item Aging Chart, Cycle Time PBC |
 | **Throughput** | How much are we delivering? | Started vs. Closed, Throughput Run Chart, Simplified CFD, Throughput PBC |
-| **WIP & Aging** | Where is work getting stuck? | Work Items In Progress, Total Work Item Age, Work Item Aging Chart, WIP Over Time, Total Work Item Age Over Time, WIP PBC, Total Work Item Age PBC |
+| **WIP & Aging** | Where is work getting stuck? | WIP Overview, Blocked Overview, Total Work Item Age, Work Item Aging Chart, WIP Over Time, Total Work Item Age Over Time, WIP PBC, Total Work Item Age PBC |
 | **Predictability** | Can we trust our forecasts? | Predictability Score, Cycle Time Percentiles, Predictability Score Details, Throughput PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
-| **Portfolio & Features** | How do features flow through the system? | Features Worked On (Teams only), Predictability Score, Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
+| **Portfolio & Features** | How do features flow through the system? | Features Worked On Overview (Teams only), Predictability Score, Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
 
 {: .note}
 Some widgets appear in more than one category when they are relevant to multiple questions. A few widgets are scoped to Teams only or Portfolios only as noted above.
 
-# Work Items In Progress
+# WIP Overview
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
-| **Flow Metric** | WIP, Work Item Age |
+| **Flow Metric** | WIP |
 | **Affected by Filtering** | No |
 
-This widget shows details to the items in progress.
+This widget shows the total number of items currently in progress based on the states you configured as *Doing*.
 
-![Work Items In Progress](../assets/features/metrics/workitemsinprogress.png)
+![WIP Overview](../assets/features/metrics/wipOverview.png)
 
-First, you will see the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration. If a *System WIP Limit* is specified for the Team or Portfolio, this is visualized as well on the Widget and colored accordingly.
-These are all the items that match your *Work Item Query* and are in a *Doing State*. You can see the total number of items in progress right now. If you want to know more details, you click on the widget, you can see the specific work items in progress, together with their *Work Item Age*.
+If a *System WIP Limit* is configured for the Team or Portfolio, the widget visualizes that goal and colors the value accordingly.
 
-Then you will also see the number of the Features that are currently being worked on. With a click on it will reveal more details. The teams [Feature WIP](../teams/edit.html#feature-wip) is visualized as a *Goal* on the widget.
-
-{: .note}
-The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this metric is not available for *Portfolios*, but only for *Teams*.
+Use the **View Data** button to open the full list of in-progress items that currently contribute to the count.
 
 {: .important}
 This widget is **not affected** by the date filtering. It always shows the **current** Work In Progress.
 
 ## Status Indicator
-
-The widget contains three separate status indicators — one for each sub-metric:
-
-**WIP count**
 
 | Status | Condition |
 |---|---|
@@ -77,21 +71,56 @@ The widget contains three separate status indicators — one for each sub-metric
 | 🟡 Observe | WIP is below the limit (capacity is available). |
 | 🟢 Sustain | WIP exactly matches the System WIP Limit. |
 
-**Features Worked On**
+# Blocked Overview
 
-| Status | Condition |
-|---|---|
-| 🔴 Act | No Feature WIP is configured, *or* the number of features being worked on exceeds the limit. |
-| 🟡 Observe | Fewer features are being worked on than the Feature WIP limit. |
-| 🟢 Sustain | Feature count exactly matches the Feature WIP limit. |
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Work Item Age |
+| **Affected by Filtering** | No |
 
-**Blocked Items**
+This widget shows how many items are currently blocked.
+
+![Blocked Overview](../assets/features/metrics/blockedOverview.png)
+
+The target is always zero blocked items. Use the **View Data** button to see all currently blocked items.
+
+{: .important}
+This widget is **not affected** by the date filtering. It always shows the **current** blocked state.
+
+## Status Indicator
 
 | Status | Condition |
 |---|---|
 | 🔴 Act | No blocked indicators are configured, *or* 2 or more items are blocked. |
 | 🟡 Observe | Exactly 1 item is blocked. |
 | 🟢 Sustain | No items are blocked. |
+
+# Features Worked On Overview
+
+|--------------|-------------------------|
+| **Applies to** | Teams only |
+| **Flow Metric** | WIP |
+| **Affected by Filtering** | No |
+
+This widget shows how many parent features currently have at least one child item in progress.
+
+![Features Worked On Overview](../assets/features/metrics/featuresWorkedOnOverview.png)
+
+The team's [Feature WIP](../teams/edit.html#feature-wip) is visualized as a goal on the widget.
+
+{: .note}
+The number is based on parent items that are actively being worked on. It does not matter whether the parent feature is in *To Do*, *Doing*, or *Done*.
+
+{: .important}
+This metric is only available for Teams and is **not affected** by date filtering.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No Feature WIP is configured, *or* the number of features being worked on exceeds the limit. |
+| 🟡 Observe | Fewer features are being worked on than the Feature WIP limit. |
+| 🟢 Sustain | Feature count exactly matches the Feature WIP limit. |
 
 # WIP Over Time
 
@@ -266,6 +295,10 @@ The Throughput Run Chart checks for runs of 3 or more consecutive zero-throughpu
 | **Affected by Filtering** | Yes |
 
 The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will run an *MCS How Many* forecast for the number of days in the date range. For example, if you have selected the last 30 days, Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
+
+![Predictability Score Overview](../assets/features/metrics/predictabilityScore.png)
+
+The overview widget gives you the score at a glance. If you want to inspect how the distribution was calculated, open the details view.
 
 ![Predictability Score](../assets/features/metrics/predictabilityScoreDetails.png)
 
