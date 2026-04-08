@@ -29,6 +29,20 @@ jobs:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
           path: ./artifacts/standalone
 
+      - name: Extract portable ZIP for signing
+        shell: bash
+        run: |
+          PORTABLE_ZIP=$(find ./artifacts/standalone -name "*-portable-win-x64.zip" 2>/dev/null | head -1)
+          if [ -z "$PORTABLE_ZIP" ]; then
+            echo "ERROR: No portable ZIP found"
+            exit 1
+          fi
+          echo "Found portable ZIP: $(basename "$PORTABLE_ZIP")"
+          mkdir -p ./artifacts/portable-extracted
+          7z x "$PORTABLE_ZIP" -o./artifacts/portable-extracted
+          echo "=== Extracted portable contents ==="
+          ls -la ./artifacts/portable-extracted/
+
       - name: Sign on Windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -53,6 +67,10 @@ jobs:
           # Standalone MSIs
           $standaloneMsis = Get-ChildItem -Path ./artifacts/standalone -Filter "Lighthouse*.msi" | Where-Object { $_.Name -notlike "*.msi.zip*" }
           foreach ($file in $standaloneMsis) { Sign-File $file.FullName }
+
+          # Portable EXEs (extracted)
+          $portableExes = Get-ChildItem -Path ./artifacts/portable-extracted -Filter "*.exe"
+          foreach ($file in $portableExes) { Sign-File $file.FullName }
         env:
           CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
 
@@ -91,8 +109,29 @@ jobs:
           for file in ./artifacts/standalone/*.msi; do
             [ -f "$file" ] && [[ "$file" != *.msi.zip ]] && sign_file "$file"
           done
+
+          # Portable EXEs (extracted from ZIP)
+          for file in ./artifacts/portable-extracted/*.exe; do
+            [ -f "$file" ] && sign_file "$file"
+          done
         env:
           YUBI_PIN: ${{ secrets.YUBI_PIN }}
+
+      - name: Repack portable ZIP after signing
+        shell: bash
+        run: |
+          PORTABLE_ZIP=$(find ./artifacts/standalone -name "*-portable-win-x64.zip" 2>/dev/null | head -1)
+          if [ -z "$PORTABLE_ZIP" ]; then
+            echo "ERROR: No portable ZIP found to repack"
+            exit 1
+          fi
+          echo "Repacking $(basename "$PORTABLE_ZIP") with signed EXEs"
+          rm "$PORTABLE_ZIP"
+          cd ./artifacts/portable-extracted
+          7z a "../../standalone/$(basename "$PORTABLE_ZIP")" .
+          cd -
+          echo "=== Repacked portable ZIP ==="
+          ls -lh ./artifacts/standalone/
 
       - name: Re-sign NSIS updater sig after code signing
         shell: bash
@@ -139,6 +178,7 @@ jobs:
         run: |
           SERVER_COUNT=0
           STANDALONE_COUNT=0
+          PORTABLE_COUNT=0
 
           for file in ./artifacts/server/Lighthouse*.exe; do
             [ -f "$file" ] && SERVER_COUNT=$((SERVER_COUNT + 1))
@@ -151,8 +191,13 @@ jobs:
             [ -f "$file" ] && [[ "$file" != *.msi.zip ]] && STANDALONE_COUNT=$((STANDALONE_COUNT + 1))
           done
 
+          for file in ./artifacts/portable-extracted/*.exe; do
+            [ -f "$file" ] && PORTABLE_COUNT=$((PORTABLE_COUNT + 1))
+          done
+
           echo "Server files found: ${SERVER_COUNT}"
           echo "Standalone files found: ${STANDALONE_COUNT}"
+          echo "Portable EXEs signed: ${PORTABLE_COUNT}"
 
           if [ "$SERVER_COUNT" -eq 0 ]; then
             echo "ERROR: No server files were signed"
@@ -166,7 +211,13 @@ jobs:
             exit 1
           fi
 
-          echo "Signing coverage OK: ${SERVER_COUNT} server file(s), ${STANDALONE_COUNT} standalone file(s)"
+          if [ "$PORTABLE_COUNT" -eq 0 ]; then
+            echo "ERROR: No portable EXEs were signed"
+            ls -la ./artifacts/portable-extracted/ || true
+            exit 1
+          fi
+
+          echo "Signing coverage OK: ${SERVER_COUNT} server file(s), ${STANDALONE_COUNT} standalone file(s), ${PORTABLE_COUNT} portable EXE(s)"
 
       - name: Delete unsigned server artifact
         uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118

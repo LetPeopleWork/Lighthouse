@@ -150,6 +150,39 @@ jobs:
           echo "=== Standalone output ==="
           ls -la "${OUTPUT_DIR}/"
 
+      - name: Build portable ZIP
+        shell: bash
+        run: |
+          RELEASE_EXE="./Lighthouse.Frontend/src-tauri/target/release/Lighthouse.exe"
+          RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
+          PORTABLE_DIR="./portable-staging"
+          OUTPUT_DIR="./standalone-output"
+          VERSION="${{ inputs.version }}"
+
+          if [ ! -f "$RELEASE_EXE" ]; then
+            echo "ERROR: Release EXE not found at $RELEASE_EXE"
+            exit 1
+          fi
+
+          mkdir -p "${PORTABLE_DIR}"
+
+          # Copy the Tauri frontend EXE
+          cp "$RELEASE_EXE" "${PORTABLE_DIR}/Lighthouse.exe"
+
+          # Copy the backend sidecar and all resources (DLLs, appsettings, etc.)
+          cp -r "${RESOURCES_DIR}/." "${PORTABLE_DIR}/"
+
+          echo "=== Portable staging contents ==="
+          ls -la "${PORTABLE_DIR}/"
+
+          # Zip it up — naming consistent with other artifacts
+          cd "${PORTABLE_DIR}"
+          7z a "../${OUTPUT_DIR}/Lighthouse-${VERSION}-portable-win-x64.zip" .
+          cd -
+
+          echo "=== Portable ZIP created ==="
+          ls -lh "${OUTPUT_DIR}/Lighthouse-${VERSION}-portable-win-x64.zip"
+
       - name: Upload unsigned standalone artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
