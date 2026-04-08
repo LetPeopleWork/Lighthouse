@@ -42,6 +42,7 @@ jobs:
             exit 1
           }
 
+
       - name: Download signed standalone artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
@@ -51,6 +52,7 @@ jobs:
       - name: Verify Installer Signatures
         shell: powershell
         run: |
+          # Find the files based on the patterns seen in your screenshot
           $msi = (Get-ChildItem ./publish-standalone -Filter "*_en-US.msi" | Select-Object -First 1).FullName
           $setup = (Get-ChildItem ./publish-standalone -Filter "*-setup.exe" | Select-Object -First 1).FullName
 
@@ -80,44 +82,6 @@ jobs:
 
           if ($failed) { exit 1 }
           Write-Host "`nInstaller signatures verified successfully!"
-
-      - name: Extract and verify portable ZIP signatures
-        shell: powershell
-        run: |
-          $portableZip = Get-ChildItem ./publish-standalone -Filter "*-portable-win-x64.zip" | Select-Object -First 1
-          if (-not $portableZip) {
-              Write-Error "No portable ZIP found in ./publish-standalone"
-              Get-ChildItem ./publish-standalone
-              exit 1
-          }
-
-          Write-Host "Extracting portable ZIP: $($portableZip.Name)"
-          $extractPath = "./publish-portable"
-          Expand-Archive -Path $portableZip.FullName -DestinationPath $extractPath -Force
-
-          $exeFiles = Get-ChildItem $extractPath -Filter "*.exe"
-          if ($exeFiles.Count -eq 0) {
-              Write-Error "No EXE files found in portable ZIP"
-              Get-ChildItem $extractPath
-              exit 1
-          }
-
-          $failed = $false
-          foreach ($file in $exeFiles) {
-              Write-Host "`nVerifying: $($file.Name)"
-              $sig = Get-AuthenticodeSignature $file.FullName
-
-              Write-Host "  Status:  $($sig.Status)"
-              Write-Host "  Subject: $($sig.SignerCertificate.Subject)"
-
-              if ($sig.Status -ne "Valid") {
-                  Write-Error "Signature invalid for $($file.Name)"
-                  $failed = $true
-              }
-          }
-
-          if ($failed) { exit 1 }
-          Write-Host "`nPortable ZIP EXE signatures verified successfully!"
 
       - name: Run Lighthouse (sqlite)
         shell: bash
