@@ -458,11 +458,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<IEnumerable<TeamProjectReference>> GetAllProjects(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var projectClient = GetClient<ProjectHttpClient>(workTrackingSystemConnection);
+            var allProjects = new List<TeamProjectReference>();
+            string? continuationToken = null;
 
-            var projects = await ExecuteWithThrottle(projectClient.BaseAddress.ToString(),
-                () => projectClient.GetProjects());
+            do
+            {
+                var page = await ExecuteWithThrottle(projectClient.BaseAddress.ToString(),
+                    () => projectClient.GetProjects(continuationToken: continuationToken));
 
-            return projects;
+                allProjects.AddRange(page);
+                continuationToken = (page as IPagedList<TeamProjectReference>)?.ContinuationToken;
+            }
+            while (!string.IsNullOrEmpty(continuationToken));
+
+            return allProjects;
         }
 
         private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query)
@@ -860,7 +869,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var parentReference =
                 workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId);
-            
+
             if (!string.IsNullOrEmpty(parentReference))
             {
                 return parentReference;
