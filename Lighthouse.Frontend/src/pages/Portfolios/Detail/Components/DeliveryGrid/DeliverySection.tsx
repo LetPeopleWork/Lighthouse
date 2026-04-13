@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useMemo } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
@@ -28,11 +28,14 @@ import FeatureName from "../../../../../components/Common/FeatureName/FeatureNam
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
+import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { Delivery } from "../../../../../models/Delivery";
 import { DeliverySelectionMode } from "../../../../../models/DeliveryRules";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
+import type { IWorkItem } from "../../../../../models/WorkItem";
+import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../utils/featureName";
 
@@ -57,6 +60,29 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	onEdit,
 	teams,
 }) => {
+	const { featureService } = useContext(ApiServiceContext);
+
+	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
+	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
+	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
+
+	const handleShowFeatureDetails = useCallback(
+		async (feature: IFeature) => {
+			setSelectedFeature(feature);
+			setFeatureWorkItems([]);
+			setIsWorkItemsDialogOpen(true);
+
+			const items = await featureService.getFeatureWorkItems(feature.id);
+			setFeatureWorkItems(items);
+		},
+		[featureService],
+	);
+
+	const handleCloseWorkItemsDialog = () => {
+		setIsWorkItemsDialogOpen(false);
+		setSelectedFeature(null);
+	};
+
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -126,7 +152,11 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				flex: 1,
 				sortable: false,
 				renderCell: ({ row }) => (
-					<FeatureProgressIndicator feature={row} teams={teams} />
+					<FeatureProgressIndicator
+						feature={row}
+						teams={teams}
+						onShowDetails={() => handleShowFeatureDetails(row)}
+					/>
 				),
 			},
 			{
@@ -159,7 +189,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			},
 			createStateColumn(),
 		],
-		[featureTerm, delivery, teams],
+		[featureTerm, delivery, teams, handleShowFeatureDetails],
 	);
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
@@ -391,6 +421,14 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					</AccordionDetails>
 				</Accordion>
 			</Box>
+			{selectedFeature && (
+				<WorkItemsDialog
+					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
+					items={featureWorkItems}
+					open={isWorkItemsDialogOpen}
+					onClose={handleCloseWorkItemsDialog}
+				/>
+			)}
 		</Paper>
 	);
 };
