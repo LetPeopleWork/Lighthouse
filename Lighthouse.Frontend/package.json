@@ -22,7 +22,7 @@
 		"@mui/icons-material": "^7.3.9",
 		"@mui/lab": "^7.0.0",
 		"@mui/material": "^7.3.9",
-		"@mui/system": "^7.3.9",
+		"@mui/system": "^7.3.10",
 		"@mui/x-charts": "8.11.3",
 		"@mui/x-data-grid": "^8.28.2",
 		"@mui/x-date-pickers": "8.11.3",
