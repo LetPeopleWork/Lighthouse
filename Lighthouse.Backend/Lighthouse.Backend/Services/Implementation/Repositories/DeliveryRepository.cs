@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         private IQueryable<Delivery> GetAllDeliveriesWithIncludes()
         {
             return Context.Deliveries
-                    .Include(d => d.Portfolio)
+                    .Include(d => d.Portfolio).ThenInclude(p => p!.Teams)
                     .Include(d => d.Features).ThenInclude(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
                     .Include(d => d.Features).ThenInclude(f => f.FeatureWork).ThenInclude(fw => fw.Team);
         }
