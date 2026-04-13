@@ -38,6 +38,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 
 	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 
 	const parentMap = useParentWorkItems(features);
@@ -152,7 +153,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog
-					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} Stories`}
+					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
 					items={featureWorkItems}
 					open={isWorkItemsDialogOpen}
 					onClose={handleCloseWorkItemsDialog}

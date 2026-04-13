@@ -26,9 +26,9 @@ import FeatureListDataGrid from "../../../../../components/Common/FeatureListDat
 import FeatureProgressIndicator from "../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
-import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
+import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { Delivery } from "../../../../../models/Delivery";
 import { DeliverySelectionMode } from "../../../../../models/DeliveryRules";
 import type { IEntityReference } from "../../../../../models/EntityReference";
@@ -189,7 +189,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			},
 			createStateColumn(),
 		],
-		[featureTerm, delivery, teams],
+		[featureTerm, delivery, teams, handleShowFeatureDetails],
 	);
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
@@ -423,7 +423,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			</Box>
 			{selectedFeature && (
 				<WorkItemsDialog
-					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} Stories`}
+					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
 					items={featureWorkItems}
 					open={isWorkItemsDialogOpen}
 					onClose={handleCloseWorkItemsDialog}

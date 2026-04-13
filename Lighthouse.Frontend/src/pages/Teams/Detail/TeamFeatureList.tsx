@@ -36,6 +36,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 
 	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
@@ -157,7 +158,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog
-					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} Stories`}
+					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
 					items={featureWorkItems}
 					open={isWorkItemsDialogOpen}
 					onClose={handleCloseWorkItemsDialog}

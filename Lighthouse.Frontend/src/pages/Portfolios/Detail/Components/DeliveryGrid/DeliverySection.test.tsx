@@ -1,11 +1,16 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import { WhenForecast } from "../../../../../models/Forecasts/WhenForecast";
+import type { IWorkItem } from "../../../../../models/WorkItem";
 import DeliverySection from "./DeliverySection";
+
+const { mockGetFeatureWorkItems } = vi.hoisted(() => ({
+	mockGetFeatureWorkItems: vi.fn(),
+}));
 
 // Mock dependencies
 vi.mock("../../../../../services/TerminologyContext", () => ({
@@ -14,7 +19,68 @@ vi.mock("../../../../../services/TerminologyContext", () => ({
 	}),
 }));
 
+vi.mock("../../../../../services/Api/ApiServiceContext", () => ({
+	ApiServiceContext: {
+		_currentValue: {
+			featureService: {
+				getFeatureWorkItems: mockGetFeatureWorkItems,
+			},
+		},
+	},
+}));
+
+vi.mock(
+	"../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator",
+	() => ({
+		default: ({
+			feature,
+			onShowDetails,
+		}: {
+			feature: { id: number };
+			onShowDetails: () => void;
+		}) => (
+			<button
+				type="button"
+				data-testid={`show-details-${feature.id}`}
+				onClick={onShowDetails}
+			>
+				Show Details
+			</button>
+		),
+	}),
+);
+
+vi.mock(
+	"../../../../../components/Common/WorkItemsDialog/WorkItemsDialog",
+	() => ({
+		default: ({
+			title,
+			items,
+			open,
+			onClose,
+		}: {
+			title: string;
+			items: IWorkItem[];
+			open: boolean;
+			onClose: () => void;
+		}) =>
+			open ? (
+				<div data-testid="work-items-dialog">
+					<span data-testid="dialog-title">{title}</span>
+					<span data-testid="dialog-item-count">{items.length} items</span>
+					<button type="button" onClick={onClose}>
+						Close
+					</button>
+				</div>
+			) : null,
+	}),
+);
+
 describe("DeliverySection", () => {
+	beforeEach(() => {
+		mockGetFeatureWorkItems.mockReset();
+	});
+
 	const mockDelivery = new Delivery();
 	mockDelivery.id = 1;
 	mockDelivery.name = "Test Delivery";
@@ -35,7 +101,6 @@ describe("DeliverySection", () => {
 	mockFeature.remainingWork = { "1": 5 };
 	mockFeature.totalWork = { "1": 10 };
 	mockFeature.forecasts = [];
-	mockFeature.forecasts = [];
 
 	const mockTeams: IEntityReference[] = [
 		{ id: 1, name: "Team Alpha" },
@@ -45,7 +110,7 @@ describe("DeliverySection", () => {
 	const mockProps = {
 		delivery: mockDelivery,
 		features: [mockFeature],
-		isExpanded: false,
+		isExpanded: true,
 		isLoadingFeatures: false,
 		onToggleExpanded: vi.fn(),
 		onDelete: vi.fn(),
@@ -151,6 +216,175 @@ describe("DeliverySection", () => {
 
 		// onToggleExpanded should not be called when clicking edit button
 		expect(mockProps.onToggleExpanded).not.toHaveBeenCalled();
+	});
+
+	describe("WorkItemsDialog", () => {
+		it("should not show WorkItemsDialog by default", () => {
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} />
+				</MemoryRouter>,
+			);
+
+			expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+		});
+
+		it("should open WorkItemsDialog when feature details are requested", async () => {
+			mockGetFeatureWorkItems.mockResolvedValue([]);
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} />
+				</MemoryRouter>,
+			);
+
+			fireEvent.click(screen.getByTestId("show-details-1"));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			});
+		});
+
+		it("should call getFeatureWorkItems with the correct feature id", async () => {
+			mockGetFeatureWorkItems.mockResolvedValue([]);
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} />
+				</MemoryRouter>,
+			);
+
+			fireEvent.click(screen.getByTestId("show-details-1"));
+
+			await waitFor(() => {
+				expect(mockGetFeatureWorkItems).toHaveBeenCalledWith(mockFeature.id);
+			});
+		});
+
+		it("should display the correct feature name in the dialog title", async () => {
+			mockGetFeatureWorkItems.mockResolvedValue([]);
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} />
+				</MemoryRouter>,
+			);
+
+			fireEvent.click(screen.getByTestId("show-details-1"));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("dialog-title")).toHaveTextContent(
+					"Test Feature",
+				);
+			});
+		});
+
+		it("should display work items in the dialog once loaded", async () => {
+			const mockWorkItems: IWorkItem[] = [
+				{ referenceId: "wi-1", name: "Story 1" } as IWorkItem,
+				{ referenceId: "wi-2", name: "Story 2" } as IWorkItem,
+			];
+			mockGetFeatureWorkItems.mockResolvedValue(mockWorkItems);
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} />
+				</MemoryRouter>,
+			);
+
+			fireEvent.click(screen.getByTestId("show-details-1"));
+
+			// Dialog opens immediately with 0 items while loading
+			await waitFor(() => {
+				expect(screen.getByTestId("dialog-item-count")).toHaveTextContent(
+					"0 items",
+				);
+			});
+
+			// Items populate once the service resolves
+			await waitFor(() => {
+				expect(screen.getByTestId("dialog-item-count")).toHaveTextContent(
+					"2 items",
+				);
+			});
+		});
+
+		it("should close the dialog when onClose is triggered", async () => {
+			mockGetFeatureWorkItems.mockResolvedValue([]);
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} />
+				</MemoryRouter>,
+			);
+
+			fireEvent.click(screen.getByTestId("show-details-1"));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			});
+
+			fireEvent.click(screen.getByText("Close"));
+
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("work-items-dialog"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("should clear work items when a new feature is opened before the previous resolves", async () => {
+			// Simulate a delayed first call followed by a fast second call
+			let resolveFirst!: (value: IWorkItem[]) => void;
+			const firstCall = new Promise<IWorkItem[]>((res) => {
+				resolveFirst = res;
+			});
+			mockGetFeatureWorkItems.mockReturnValueOnce(firstCall);
+			mockGetFeatureWorkItems.mockResolvedValueOnce([]);
+
+			const secondFeature = new Feature();
+			secondFeature.id = 2;
+			secondFeature.name = "Second Feature";
+			secondFeature.remainingWork = { "1": 2 };
+			secondFeature.totalWork = { "1": 5 };
+			secondFeature.forecasts = [];
+
+			const propsWithTwoFeatures = {
+				...mockProps,
+				features: [mockFeature, secondFeature],
+			};
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...propsWithTwoFeatures} />
+				</MemoryRouter>,
+			);
+
+			// Open first feature - dialog opens, work items are empty (loading)
+			fireEvent.click(screen.getByTestId("show-details-1"));
+			await waitFor(() => {
+				expect(screen.getByTestId("dialog-item-count")).toHaveTextContent(
+					"0 items",
+				);
+			});
+
+			// Open second feature before first resolves - items should still be empty (reset)
+			fireEvent.click(screen.getByTestId("show-details-2"));
+			await waitFor(() => {
+				expect(screen.getByTestId("dialog-item-count")).toHaveTextContent(
+					"0 items",
+				);
+			});
+
+			// Resolve the first (now stale) call - items should not bleed into the second feature's dialog
+			resolveFirst([
+				{ referenceId: "wi-stale", name: "Stale Item" } as IWorkItem,
+			]);
+
+			// The dialog for the second feature should not show the stale items
+			// (this validates setFeatureWorkItems([]) is called on each open)
+			expect(mockGetFeatureWorkItems).toHaveBeenCalledTimes(2);
+		});
 	});
 
 	describe("Forecast Chips", () => {
