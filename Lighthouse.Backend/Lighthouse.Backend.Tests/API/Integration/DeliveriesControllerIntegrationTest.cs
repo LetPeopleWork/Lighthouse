@@ -200,6 +200,180 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task UpdateDelivery_ManualSelection_ChangeFeatures_ReturnsOk()
+        {
+            // Arrange - create portfolio with team and features
+            var portfolio = await AddPortfolio();
+            var features = await AddFeatures(portfolio);
+
+            // Create a manual delivery with features 0 and 1
+            var createRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [features[0].Id, features[1].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+
+            var createJson = JsonSerializer.Serialize(createRequest);
+            var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
+            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", createContent);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Get created delivery ID
+            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+            var createdDelivery = deliveries!.Single(d => d.Name == "Release 1");
+
+            // Act - Update delivery: remove feature 1, add feature 2
+            var updateRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1 Updated",
+                Date = DateTime.UtcNow.AddDays(35),
+                FeatureIds = [features[0].Id, features[2].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+
+            var updateJson = JsonSerializer.Serialize(updateRequest);
+            var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
+            var updateResponse = await Client.PutAsync($"/api/deliveries/{createdDelivery.Id}", updateContent);
+
+            // Assert - update should succeed
+            Assert.That(updateResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            // Verify persisted state
+            var verifyResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            verifyResponse.EnsureSuccessStatusCode();
+            var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+            var updatedDelivery = updatedDeliveries!.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(updatedDelivery.Name, Is.EqualTo("Release 1 Updated"));
+                Assert.That(updatedDelivery.Features, Is.EquivalentTo(new[] { features[0].Id, features[2].Id }));
+            }
+        }
+
+        [Test]
+        public async Task UpdateDelivery_ManualSelection_NameOnlyChange_ReturnsOk()
+        {
+            // Arrange - create portfolio with team and features
+            var portfolio = await AddPortfolio();
+            var features = await AddFeatures(portfolio);
+
+            // Create a manual delivery with features 0 and 1
+            var createRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [features[0].Id, features[1].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+
+            var createJson = JsonSerializer.Serialize(createRequest);
+            var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
+            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", createContent);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Get created delivery ID
+            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+            var createdDelivery = deliveries!.Single(d => d.Name == "Release 1");
+
+            // Act - Update only name; same features
+            var updateRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1 Renamed",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [features[0].Id, features[1].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+
+            var updateJson = JsonSerializer.Serialize(updateRequest);
+            var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
+            var updateResponse = await Client.PutAsync($"/api/deliveries/{createdDelivery.Id}", updateContent);
+
+            // Assert
+            Assert.That(updateResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            // Verify persisted state
+            var verifyResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            verifyResponse.EnsureSuccessStatusCode();
+            var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+            var updatedDelivery = updatedDeliveries!.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(updatedDelivery.Name, Is.EqualTo("Release 1 Renamed"));
+                Assert.That(updatedDelivery.Features, Is.EquivalentTo(new[] { features[0].Id, features[1].Id }));
+            }
+        }
+
+        [Test]
+        public async Task UpdateDelivery_ManualSelection_ConsecutiveUpdates_ReturnsOk()
+        {
+            // Arrange
+            var portfolio = await AddPortfolio();
+            var features = await AddFeatures(portfolio);
+
+            var createRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [features[0].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+
+            var createJson = JsonSerializer.Serialize(createRequest);
+            var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
+            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", createContent);
+            createResponse.EnsureSuccessStatusCode();
+
+            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+            var deliveryId = deliveries!.Single().Id;
+
+            // Act - First update: add feature
+            var update1 = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [features[0].Id, features[1].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+            var update1Response = await Client.PutAsync($"/api/deliveries/{deliveryId}",
+                new StringContent(JsonSerializer.Serialize(update1), Encoding.UTF8, "application/json"));
+            Assert.That(update1Response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            // Act - Second update: swap features
+            var update2 = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [features[1].Id, features[2].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+            var update2Response = await Client.PutAsync($"/api/deliveries/{deliveryId}",
+                new StringContent(JsonSerializer.Serialize(update2), Encoding.UTF8, "application/json"));
+
+            // Assert
+            Assert.That(update2Response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            var verifyResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+
+            Assert.That(updatedDeliveries!.Single().Features, Is.EquivalentTo(new[] { features[1].Id, features[2].Id }));
+        }
+
         private async Task<Portfolio> AddPortfolio()
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };

@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.Tests.API
     public class DeliveriesControllerTest
     {
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
-        private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
 
         private Mock<ILicenseService> licenseServiceMock;
@@ -25,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
@@ -33,6 +31,8 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRuleServiceMock.Setup(x =>
                     x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns([]);
+
+            deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
 
             portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Portfolio());
         }
@@ -105,8 +105,7 @@ namespace Lighthouse.Backend.Tests.API
             var featureIds = new List<int> { 1, 2 };
 
             var features = GetTestFeatures(featureIds);
-            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(features[0]);
-            featureRepositoryMock.Setup(x => x.GetById(2)).Returns(features[1]);
+            deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(features);
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
 
@@ -244,7 +243,6 @@ namespace Lighthouse.Backend.Tests.API
         {
             return new DeliveriesController(
                 deliveryRepositoryMock.Object,
-                featureRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 licenseServiceMock.Object,
                 deliveryRuleServiceMock.Object);
@@ -418,9 +416,8 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = [1, 2]
             };
 
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
-            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(feature1);
-            featureRepositoryMock.Setup(x => x.GetById(2)).Returns(feature2);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature> { feature1, feature2 });
             deliveryRepositoryMock.Setup(x => x.Save()).Returns(Task.CompletedTask);
 
             var controller = CreateSubject();
@@ -497,7 +494,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = [1]
             };
 
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns((Delivery)null);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns((Delivery)null);
 
             var controller = CreateSubject();
 
@@ -523,8 +520,8 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = [999]
             };
 
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
-            featureRepositoryMock.Setup(x => x.GetById(999)).Returns((Feature)null);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
 
             var controller = CreateSubject();
 
@@ -730,7 +727,7 @@ namespace Lighthouse.Backend.Tests.API
             const int portfolioId = 1;
             var featureIds = new List<int> { 1 };
             var features = GetTestFeatures(featureIds);
-            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(features[0]);
+            deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(features);
 
             var request = new UpdateDeliveryRequest
             {
@@ -769,7 +766,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             var deliveryId = 1;
             var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
             {
@@ -799,7 +796,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             var deliveryId = 1;
             var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
             {
@@ -827,7 +824,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int deliveryId = 1;
             var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
             {
@@ -867,11 +864,11 @@ namespace Lighthouse.Backend.Tests.API
                 RuleDefinitionJson = "{\"Version\":1,\"Conditions\":[]}",
                 RuleSchemaVersion = 1
             };
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var featureIds = new List<int> { 1 };
             var features = GetTestFeatures(featureIds);
-            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(features[0]);
+            deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(features);
 
             var request = new UpdateDeliveryRequest
             {

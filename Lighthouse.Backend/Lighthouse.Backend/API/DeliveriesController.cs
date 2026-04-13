@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class DeliveriesController(
         IDeliveryRepository deliveryRepository,
-        IRepository<Feature> featureRepository,
         IRepository<Portfolio> portfolioRepository,
         ILicenseService licenseService,
         IDeliveryRuleService deliveryRuleService)
@@ -101,7 +100,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Delivery date must be in the future");
             }
 
-            var existingDelivery = deliveryRepository.GetById(deliveryId);
+            var existingDelivery = deliveryRepository.GetByIdForUpdate(deliveryId);
             if (existingDelivery == null)
             {
                 return NotFound($"Delivery with ID {deliveryId} not found");
@@ -159,18 +158,17 @@ namespace Lighthouse.Backend.API
             delivery.RuleDefinitionJson = null;
             delivery.RuleSchemaVersion = null;
             delivery.Features.Clear();
-            
-            var featureList = new List<Feature>();
+
+            var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds);
+
             foreach (var featureId in request.FeatureIds)
             {
-                var feature = featureRepository.GetById(featureId);
-                if (feature == null)
+                if (featureList.All(f => f.Id != featureId))
                 {
                     return NotFound($"Feature with ID {featureId} does not exist");
                 }
-                featureList.Add(feature);
             }
-            
+
             delivery.Features.AddRange(featureList);
 
             return null;

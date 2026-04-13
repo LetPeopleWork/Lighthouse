@@ -29,10 +29,26 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     .ToList();
         }
 
+        public Delivery? GetByIdForUpdate(int id)
+        {
+            return Context.Deliveries
+                    .Include(d => d.Features)
+                    .SingleOrDefault(x => x.Id == id);
+        }
+
+        public List<Feature> GetFeaturesByIds(IEnumerable<int> featureIds)
+        {
+            var idList = featureIds.ToList();
+            return Context.Features
+                    .Include(f => f.Portfolios)
+                    .Where(f => idList.Contains(f.Id))
+                    .ToList();
+        }
+
         private IQueryable<Delivery> GetAllDeliveriesWithIncludes()
         {
             return Context.Deliveries
-                    .Include(d => d.Portfolio)
+                    .Include(d => d.Portfolio).ThenInclude(p => p.Teams)
                     .Include(d => d.Features).ThenInclude(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
                     .Include(d => d.Features).ThenInclude(f => f.FeatureWork).ThenInclude(fw => fw.Team);
         }

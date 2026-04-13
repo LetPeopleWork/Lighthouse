@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API
     public class DeliveriesControllerUtcTest
     {
         private Mock<IDeliveryRepository> deliveryRepository;
-        private Mock<IRepository<Feature>> featureRepository;
         private Mock<IRepository<Portfolio>> portfolioRepository;
         private Mock<ILicenseService> licenseService;
         private DeliveriesController subject;
@@ -22,13 +21,13 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             deliveryRepository = new Mock<IDeliveryRepository>();
-            featureRepository = new Mock<IRepository<Feature>>();
             portfolioRepository = new Mock<IRepository<Portfolio>>();
             licenseService = new Mock<ILicenseService>();
 
+            deliveryRepository.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
+
             subject = new DeliveriesController(
                 deliveryRepository.Object,
-                featureRepository.Object,
                 portfolioRepository.Object,
                 licenseService.Object,
                 Mock.Of<IDeliveryRuleService>());
@@ -150,7 +149,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1);
-            deliveryRepository.Setup(x => x.GetById(deliveryId))
+            deliveryRepository.Setup(x => x.GetByIdForUpdate(deliveryId))
                 .Returns(existingDelivery);
 
             // Act
@@ -178,7 +177,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1);
-            deliveryRepository.Setup(x => x.GetById(deliveryId))
+            deliveryRepository.Setup(x => x.GetByIdForUpdate(deliveryId))
                 .Returns(existingDelivery);
 
             // Act
@@ -208,7 +207,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1);
-            deliveryRepository.Setup(x => x.GetById(deliveryId))
+            deliveryRepository.Setup(x => x.GetByIdForUpdate(deliveryId))
                 .Returns(existingDelivery);
 
             // Act
