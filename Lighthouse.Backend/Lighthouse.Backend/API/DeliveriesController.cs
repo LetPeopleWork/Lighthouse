@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.API
             existingDelivery.Name = request.Name;
             existingDelivery.Date = utcDate;
             existingDelivery.SelectionMode = request.SelectionMode;
-            
+
             switch (existingDelivery.SelectionMode)
             {
                 case DeliverySelectionMode.RuleBased:
@@ -161,16 +161,16 @@ namespace Lighthouse.Backend.API
 
             var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds);
 
-            foreach (var featureId in request.FeatureIds)
+            var missingIds = request.FeatureIds
+                .Except(featureList.Select(f => f.Id))
+                .ToList();
+
+            if (missingIds.Count != 0)
             {
-                if (featureList.All(f => f.Id != featureId))
-                {
-                    return NotFound($"Feature with ID {featureId} does not exist");
-                }
+                return NotFound($"Feature with ID {missingIds[0]} does not exist");
             }
 
             delivery.Features.AddRange(featureList);
-
             return null;
         }
 
@@ -188,8 +188,8 @@ namespace Lighthouse.Backend.API
             };
             delivery.RuleDefinitionJson = JsonSerializer.Serialize(ruleSet);
             delivery.RuleSchemaVersion = DeliveryRuleSet.SchemaVersion;
-            
-            
+
+
             delivery.Features.Clear();
             var portfolioFeatures = GetFeaturesForPortfolio(delivery.PortfolioId);
             var matchingFeatures = deliveryRuleService.GetMatchingFeaturesForRuleset(ruleSet, portfolioFeatures);
