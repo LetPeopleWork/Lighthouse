@@ -130,6 +130,7 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 								{
 									data: yValues,
 									color: theme.palette.primary.main,
+									showMark: true,
 									valueFormatter: (
 										value: number | null,
 										params: { dataIndex: number },

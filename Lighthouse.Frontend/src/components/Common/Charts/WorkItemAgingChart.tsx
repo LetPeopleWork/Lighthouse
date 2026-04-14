@@ -1,7 +1,7 @@
 import { Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import type { Theme } from "@mui/material/styles";
 import {
-	ChartContainer,
+	ChartsContainer,
 	ChartsReferenceLine,
 	ChartsTooltip,
 	ChartsXAxis,
@@ -277,156 +277,162 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 						))}
 					</Stack>
 
-					<ChartContainer
-						sx={{ flex: 1, minHeight: 0, height: "100%" }}
-						xAxis={[
-							{
-								id: "stateAxis",
-								scaleType: "linear",
-								data: doingStates.map((_, index) => index),
-								label: "State",
-								min: -0.5,
-								max: doingStates.length - 0.5,
-								tickNumber: doingStates.length,
-								tickLabelInterval: () => true,
-								disableTicks: false,
-								valueFormatter: (value: number) => {
-									const index = Math.round(value);
-									return index >= 0 && index < doingStates.length
-										? doingStates[index]
-										: "";
+					{groupedDataPoints.length > 0 ? (
+						<ChartsContainer
+							sx={{ flex: 1, minHeight: 0, height: "100%" }}
+							xAxis={[
+								{
+									id: "stateAxis",
+									scaleType: "linear",
+									data: doingStates.map((_, index) => index),
+									label: "State",
+									min: -0.5,
+									max: doingStates.length - 0.5,
+									tickNumber: doingStates.length,
+									tickLabelInterval: () => true,
+									disableTicks: false,
+									valueFormatter: (value: number) => {
+										const index = Math.round(value);
+										return index >= 0 && index < doingStates.length
+											? doingStates[index]
+											: "";
+									},
 								},
-							},
-						]}
-						yAxis={[
-							{
-								id: "ageAxis",
-								scaleType: "linear",
-								label: `${workItemAgeTerm} (days)`,
-								min: 1,
-								max: getMaxYAxisHeightValue(),
-								valueFormatter: integerValueFormatter,
-							},
-						]}
-						series={[
-							{
-								type: "scatter",
-								data: groupedDataPoints.map((group, index) => ({
-									x: group.stateIndex,
-									y: group.age,
-									id: index,
-									itemCount: group.items.length,
-									color: getMarkerColor(group, colorMap, theme),
-								})),
-								xAxisId: "stateAxis",
-								yAxisId: "ageAxis",
-								color: theme.palette.primary.main,
-								markerSize: 4,
-								highlightScope: {
-									highlight: "item",
-									fade: "global",
+							]}
+							yAxis={[
+								{
+									id: "ageAxis",
+									scaleType: "linear",
+									label: `${workItemAgeTerm} (days)`,
+									min: 1,
+									max: getMaxYAxisHeightValue(),
+									valueFormatter: integerValueFormatter,
 								},
-								valueFormatter: (item) => {
-									if (item?.id === undefined) return "";
+							]}
+							series={[
+								{
+									type: "scatter",
+									data: groupedDataPoints.map((group, index) => ({
+										x: group.stateIndex,
+										y: group.age,
+										id: index,
+										itemCount: group.items.length,
+										color: getMarkerColor(group, colorMap, theme),
+									})),
+									xAxisId: "stateAxis",
+									yAxisId: "ageAxis",
+									color: theme.palette.primary.main,
+									markerSize: 4,
+									highlightScope: {
+										highlight: "item",
+										fade: "global",
+									},
+									valueFormatter: (item) => {
+										if (item?.id === undefined) return "";
 
-									const group = groupedDataPoints[item.id as number];
-									if (!group) return "";
+										const group = groupedDataPoints[item.id as number];
+										if (!group) return "";
 
-									const numberOfItems = group.items.length ?? 0;
+										const numberOfItems = group.items.length ?? 0;
 
-									if (numberOfItems === 1) {
-										const workItem = group.items[0];
-										return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
-									}
+										if (numberOfItems === 1) {
+											const workItem = group.items[0];
+											return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
+										}
 
-									return `${numberOfItems} ${workItemsTerm} in ${group.state} (Click for details)`;
+										return `${numberOfItems} ${workItemsTerm} in ${group.state} (Click for details)`;
+									},
 								},
-							},
-						]}
-					>
-						{percentileValues.map((p) => {
-							const forecastLevel = new ForecastLevel(p.percentile);
-							return visiblePercentiles[p.percentile] ? (
+							]}
+						>
+							{percentileValues.map((p) => {
+								const forecastLevel = new ForecastLevel(p.percentile);
+								return visiblePercentiles[p.percentile] ? (
+									<ChartsReferenceLine
+										key={`percentile-${p.percentile}`}
+										y={p.value}
+										label={`${p.percentile}%`}
+										labelAlign="end"
+										lineStyle={{
+											stroke: forecastLevel.color,
+											strokeWidth: 1,
+											strokeDasharray: "5 5",
+										}}
+									/>
+								) : null;
+							})}
+							{sleVisible && serviceLevelExpectation && (
 								<ChartsReferenceLine
-									key={`percentile-${p.percentile}`}
-									y={p.value}
-									label={`${p.percentile}%`}
-									labelAlign="end"
+									key="sle-reference-line"
+									y={serviceLevelExpectation.value}
+									label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
+									labelAlign="start"
 									lineStyle={{
-										stroke: forecastLevel.color,
-										strokeWidth: 1,
-										strokeDasharray: "5 5",
+										stroke: theme.palette.primary.main,
+										strokeWidth: 2,
+										strokeDasharray: "3 3",
 									}}
 								/>
-							) : null;
-						})}
-						{sleVisible && serviceLevelExpectation && (
-							<ChartsReferenceLine
-								key="sle-reference-line"
-								y={serviceLevelExpectation.value}
-								label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
-								labelAlign="start"
-								lineStyle={{
-									stroke: theme.palette.primary.main,
-									strokeWidth: 2,
-									strokeDasharray: "3 3",
+							)}
+							{doingStates.slice(0, -1).map((stateName, index) => (
+								<ChartsReferenceLine
+									key={`vertical-grid-${stateName}`}
+									x={index + 0.5}
+									lineStyle={{
+										stroke: theme.palette.divider,
+										strokeWidth: 1,
+										opacity: 0.3,
+									}}
+								/>
+							))}
+							<ChartsXAxis />
+							<ChartsYAxis />
+							<ScatterPlot
+								slots={{
+									marker: (props) =>
+										ScatterMarker(props, {
+											groupedDataPoints,
+											theme,
+											workItemTerm,
+											workItemsTerm,
+											blockedTerm,
+											colorMap,
+											onShowItems: handleShowItems,
+										}),
 								}}
 							/>
-						)}
-						{doingStates.slice(0, -1).map((stateName, index) => (
-							<ChartsReferenceLine
-								key={`vertical-grid-${stateName}`}
-								x={index + 0.5}
-								lineStyle={{
-									stroke: theme.palette.divider,
-									strokeWidth: 1,
-									opacity: 0.3,
+							<ChartsTooltip
+								trigger="item"
+								sx={{
+									zIndex: 1200,
+									maxWidth: "400px",
+									"& .MuiChartsTooltip-mark": {
+										display: "none",
+									},
+									"& .MuiChartsTooltip-markContainer": {
+										display: "none",
+									},
+									"& .MuiChartsTooltip-table": {
+										maxWidth: "100%",
+										wordBreak: "break-word",
+									},
+									"& .MuiChartsTooltip-valueCell": {
+										whiteSpace: "pre-line",
+										maxWidth: "300px",
+										overflowWrap: "break-word",
+									},
+									"& .MuiPopper-root": {
+										transition: "opacity 0.2s ease-in-out",
+										transitionDelay: "150ms",
+									},
 								}}
 							/>
-						))}
-						<ChartsXAxis />
-						<ChartsYAxis />
-						<ScatterPlot
-							slots={{
-								marker: (props) =>
-									ScatterMarker(props, {
-										groupedDataPoints,
-										theme,
-										workItemTerm,
-										workItemsTerm,
-										blockedTerm,
-										colorMap,
-										onShowItems: handleShowItems,
-									}),
-							}}
-						/>
-						<ChartsTooltip
-							trigger="item"
-							sx={{
-								zIndex: 1200,
-								maxWidth: "400px",
-								"& .MuiChartsTooltip-mark": {
-									display: "none",
-								},
-								"& .MuiChartsTooltip-markContainer": {
-									display: "none",
-								},
-								"& .MuiChartsTooltip-table": {
-									maxWidth: "100%",
-									wordBreak: "break-word",
-								},
-								"& .MuiChartsTooltip-valueCell": {
-									whiteSpace: "pre-line",
-									maxWidth: "300px",
-									overflowWrap: "break-word",
-								},
-								"& .MuiPopper-root": {
-									transition: "opacity 0.2s ease-in-out",
-									transitionDelay: "150ms",
-								},
-							}}
-						/>
-					</ChartContainer>
+						</ChartsContainer>
+					) : (
+						<Typography variant="body2" color="text.secondary">
+							No work items in progress
+						</Typography>
+					)}
 				</CardContent>
 			</Card>
 			<WorkItemsDialog

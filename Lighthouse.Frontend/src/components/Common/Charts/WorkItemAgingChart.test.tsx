@@ -55,7 +55,7 @@ vi.mock("@mui/x-charts", async () => {
 	const actual = await vi.importActual("@mui/x-charts");
 	return {
 		...actual,
-		ChartContainer: vi.fn(({ series, children }) => (
+		ChartsContainer: vi.fn(({ series, children }) => (
 			<div
 				data-testid="mock-chart-container"
 				data-series={series ? JSON.stringify(series) : undefined}
@@ -222,7 +222,7 @@ describe("WorkItemAgingChart component", () => {
 		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 	});
 
-	it("renders empty chart with no data points when there are no items", () => {
+	it("renders fallback message when there are no items", () => {
 		render(
 			<WorkItemAgingChart
 				inProgressItems={[]}
@@ -232,13 +232,10 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
-
-		const series = JSON.parse(
-			screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
-		);
-		expect(series[0].data).toHaveLength(0);
+		expect(
+			screen.queryByTestId("mock-chart-container"),
+		).not.toBeInTheDocument();
+		expect(screen.getByText("No work items in progress")).toBeInTheDocument();
 	});
 
 	it("renders percentile chips with correct labels", () => {
@@ -407,12 +404,11 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Items with empty state are filtered out — chart renders but with no data points
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-		const series = JSON.parse(
-			screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
-		);
-		expect(series[0].data).toHaveLength(0);
+		// Items with empty state are filtered out — fallback message shown
+		expect(
+			screen.queryByTestId("mock-chart-container"),
+		).not.toBeInTheDocument();
+		expect(screen.getByText("No work items in progress")).toBeInTheDocument();
 	});
 
 	it("handles items with states not in doingStates list", () => {
@@ -436,12 +432,11 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// No items match doingStates — chart renders but with no data points
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-		const series = JSON.parse(
-			screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
-		);
-		expect(series[0].data).toHaveLength(0);
+		// No items match doingStates — fallback message shown
+		expect(
+			screen.queryByTestId("mock-chart-container"),
+		).not.toBeInTheDocument();
+		expect(screen.getByText("No work items in progress")).toBeInTheDocument();
 	});
 
 	it("correctly extracts age from work items", () => {
@@ -575,7 +570,7 @@ describe("WorkItemAgingChart component", () => {
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
 
-		it("renders empty chart with no data points when blocked items array is empty", () => {
+		it("renders fallback message when blocked items array is empty", () => {
 			render(
 				<WorkItemAgingChart
 					inProgressItems={[]}
@@ -585,11 +580,10 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-			const series = JSON.parse(
-				screen.getByTestId("mock-chart-container").dataset.series ?? "[]",
-			);
-			expect(series[0].data).toHaveLength(0);
+			expect(
+				screen.queryByTestId("mock-chart-container"),
+			).not.toBeInTheDocument();
+			expect(screen.getByText("No work items in progress")).toBeInTheDocument();
 		});
 	});
 

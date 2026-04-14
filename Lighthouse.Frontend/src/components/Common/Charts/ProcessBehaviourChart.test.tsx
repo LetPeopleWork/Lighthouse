@@ -51,7 +51,7 @@ vi.mock("@mui/x-charts", () => ({
 			{children}
 		</div>
 	)),
-	ChartContainer: vi.fn(({ children }) => (
+	ChartsContainer: vi.fn(({ children }) => (
 		<div data-testid="mock-chart-container">{children}</div>
 	)),
 	ChartsXAxis: vi.fn(() => <div data-testid="mock-x-axis" />),
@@ -821,8 +821,8 @@ describe("ProcessBehaviourChart", () => {
 			expect(screen.getByTestId("mock-chart-container")).toBeDefined();
 		});
 
-		it("passes blackoutColor in mark context via ChartContainer series", async () => {
-			const { ChartContainer } = vi.mocked(await import("@mui/x-charts"));
+		it("passes blackoutColor in mark context via ChartsContainer series", async () => {
+			const { ChartsContainer } = vi.mocked(await import("@mui/x-charts"));
 
 			const data = createReadyChartData({
 				dataPoints: [
@@ -845,13 +845,13 @@ describe("ProcessBehaviourChart", () => {
 			);
 
 			// ChartContainer should be called (chart renders)
-			expect(ChartContainer).toHaveBeenCalled();
+			expect(ChartsContainer).toHaveBeenCalled();
 		});
 	});
 
 	describe("Cycle Time Date-Only Labels", () => {
 		it("uses date-only format for CycleTime PBC x-axis labels even with DateTime xAxisKind", async () => {
-			const { ChartContainer } = vi.mocked(await import("@mui/x-charts"));
+			const { ChartsContainer } = vi.mocked(await import("@mui/x-charts"));
 
 			const utcDatetime = "2026-03-27T14:30:00Z";
 			const data = createReadyChartData({
@@ -877,7 +877,7 @@ describe("ProcessBehaviourChart", () => {
 
 			// Extract the valueFormatter from the xAxis config passed to ChartContainer
 			const lastCall =
-				ChartContainer.mock.calls[ChartContainer.mock.calls.length - 1];
+				ChartsContainer.mock.calls[ChartsContainer.mock.calls.length - 1];
 			const xAxisConfig = (
 				lastCall[0] as {
 					xAxis: { valueFormatter?: (value: number) => string }[];

@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import {
 	BarPlot,
-	ChartContainer,
+	ChartsContainer,
 	ChartsReferenceLine,
 	ChartsXAxis,
 	ChartsYAxis,
@@ -121,7 +121,7 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 			{/* Bar Chart with Percentiles */}
 			{hasResults && (
 				<Box sx={{ position: "relative", height: 400 }}>
-					<ChartContainer
+					<ChartsContainer
 						height={400}
 						xAxis={[
 							{
@@ -181,7 +181,7 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 						<BarPlot />
 						<ChartsXAxis axisId="forecastAxis" />
 						<ChartsYAxis axisId="countAxis" />
-					</ChartContainer>
+					</ChartsContainer>
 				</Box>
 			)}
 

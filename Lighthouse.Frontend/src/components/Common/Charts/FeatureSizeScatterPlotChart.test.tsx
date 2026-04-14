@@ -57,7 +57,7 @@ vi.mock("@mui/x-charts", () => {
 	}
 
 	return {
-		ChartContainer: ({
+		ChartsContainer: ({
 			children,
 			height,
 			xAxis,
@@ -154,6 +154,7 @@ vi.mock("@mui/x-charts", () => {
 							x: 100 + index * 50,
 							y: 200 + index * 30,
 							dataIndex: entry.dataIndex,
+							seriesId: String(entry.seriesIndex),
 							seriesIndex: entry.seriesIndex,
 							data: entry.datum,
 							color:
@@ -165,6 +166,7 @@ vi.mock("@mui/x-charts", () => {
 							x: number;
 							y: number;
 							dataIndex: number;
+							seriesId: string;
 							data: ChartDatum;
 							color: string;
 							isHighlighted: boolean;
@@ -512,12 +514,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			// Because the mocked chart flips the first two flattened points, the first marker
 			// will be for the Doing series in this scenario; clicking it should open the dialog
-			// for "Doing Group".
+			// for "Doing Group" (v9: seriesId+dataIndex lookup correctly identifies Doing Group).
 			fireEvent.click(markerButtons[0]);
 
 			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
 			expect(screen.getByTestId("feature-0")).toHaveTextContent(
-				"Done Group - Size: 5",
+				"Doing Group - Size: 4",
 			);
 		});
 

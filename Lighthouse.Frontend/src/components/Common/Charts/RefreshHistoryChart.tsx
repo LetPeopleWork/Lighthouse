@@ -1,7 +1,7 @@
 import { useTheme } from "@mui/material";
 import {
 	BarPlot,
-	ChartContainer,
+	ChartsContainer,
 	ChartsXAxis,
 	ChartsYAxis,
 	LinePlot,
@@ -29,7 +29,7 @@ const RefreshHistoryChart: React.FC<RefreshHistoryChartProps> = ({ data }) => {
 	}));
 
 	return (
-		<ChartContainer
+		<ChartsContainer
 			dataset={dataset}
 			xAxis={[{ scaleType: "band", dataKey: "label" }]}
 			yAxis={[
@@ -61,7 +61,7 @@ const RefreshHistoryChart: React.FC<RefreshHistoryChartProps> = ({ data }) => {
 			<ChartsXAxis />
 			<ChartsYAxis axisId="items" label="Items" />
 			<ChartsYAxis axisId="duration" label="Duration (s)" />
-		</ChartContainer>
+		</ChartsContainer>
 	);
 };
 

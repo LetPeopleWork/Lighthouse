@@ -7,7 +7,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import {
-	ChartContainer,
+	ChartsContainer,
 	ChartsReferenceLine,
 	ChartsTooltip,
 	ChartsXAxis,
@@ -277,7 +277,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						)}
 					</Stack>
 
-					<ChartContainer
+					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
 							{
@@ -422,7 +422,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								},
 							}}
 						/>
-					</ChartContainer>
+					</ChartsContainer>
 				</CardContent>
 			</Card>
 			<WorkItemsDialog

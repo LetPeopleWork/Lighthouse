@@ -145,6 +145,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 										{
 											data: yValues,
 											color: theme.palette.primary.main,
+											showMark: true,
 											valueFormatter: (
 												_value: number | null,
 												params: { dataIndex: number },
