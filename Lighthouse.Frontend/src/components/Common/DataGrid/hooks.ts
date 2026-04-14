@@ -75,16 +75,79 @@ export function useColumnOrder(initialColumnOrder: string[]) {
 }
 
 /**
+ * Sanitizes the grid state to prevent storage poisoning.
+ * Ensures only expected properties are saved and values are typed correctly.
+ */
+function sanitizeGridState(dirtyState: PersistedGridState): PersistedGridState {
+	const cleanState: PersistedGridState = {
+		sortModel: undefined,
+		columnVisibilityModel: undefined,
+		columnOrder: undefined,
+		columnWidths: undefined,
+	};
+
+	if (!dirtyState || typeof dirtyState !== "object") return cleanState;
+
+	// 1. Sanitize Column Order (Array of strings)
+	if (Array.isArray(dirtyState.columnOrder)) {
+		cleanState.columnOrder = dirtyState.columnOrder
+			.filter((item): item is string => typeof item === "string")
+			// Remove potential script tags or excessive lengths
+			.map((s) => s.replaceAll(/[<>]/g, "").substring(0, 100));
+	}
+
+	// 2. Sanitize Column Widths (Object with numeric values)
+	if (dirtyState.columnWidths && typeof dirtyState.columnWidths === "object") {
+		const widths: Record<string, number> = {};
+		for (const [key, value] of Object.entries(dirtyState.columnWidths)) {
+			if (typeof value === "number") {
+				widths[key.replaceAll(/[<>]/g, "").substring(0, 100)] = value;
+			}
+		}
+		cleanState.columnWidths = widths;
+	}
+
+	// 3. Sanitize Visibility Model (Object with boolean values)
+	if (
+		dirtyState.columnVisibilityModel &&
+		typeof dirtyState.columnVisibilityModel === "object"
+	) {
+		const visibility: Record<string, boolean> = {};
+		for (const [key, value] of Object.entries(
+			dirtyState.columnVisibilityModel,
+		)) {
+			visibility[key.replaceAll(/[<>]/g, "").substring(0, 100)] =
+				Boolean(value);
+		}
+		cleanState.columnVisibilityModel = visibility;
+	}
+
+	// 4. Sanitize Sort Model (Array of objects)
+	if (Array.isArray(dirtyState.sortModel)) {
+		cleanState.sortModel = dirtyState.sortModel.filter(
+			(s) =>
+				s &&
+				typeof s.field === "string" &&
+				(s.sort === "asc" || s.sort === "desc" || s.sort === null),
+		);
+	}
+
+	return cleanState;
+}
+
+/**
  * Hook for persisting grid state to localStorage
  * @param storageKey - Unique key for localStorage
  * @returns Object with persisted state and control functions
  */
 export function usePersistedGridState(storageKey: string) {
+	// 1. Sanitize on Initial Load
 	const [state, setState] = useState<PersistedGridState>(() => {
 		try {
 			const stored = localStorage.getItem(storageKey);
 			if (stored) {
-				return JSON.parse(stored);
+				const parsed = JSON.parse(stored);
+				return sanitizeGridState(parsed);
 			}
 		} catch (error) {
 			console.error("Error loading persisted grid state:", error);
@@ -100,30 +163,31 @@ export function usePersistedGridState(storageKey: string) {
 	const saveState = useCallback(
 		(newState: PersistedGridState) => {
 			setState((prev) => {
-				const merged = { ...prev, ...newState } as PersistedGridState;
+				const merged = { ...prev, ...newState };
+				const sanitized = sanitizeGridState(merged); // <-- Sanitize before write
 				try {
-					localStorage.setItem(storageKey, JSON.stringify(merged));
+					localStorage.setItem(storageKey, JSON.stringify(sanitized));
 				} catch (error) {
-					console.error("Error saving grid state to localStorage:", error);
+					console.error("Error saving grid state:", error);
 				}
-				return merged;
+				return sanitized;
 			});
 		},
 		[storageKey],
 	);
 
-	// Allow callers to provide a function updater to safely merge the new state
 	const updateState = useCallback(
 		(updater: (prev: PersistedGridState) => PersistedGridState) => {
 			setState((prev) => {
 				const next = updater(prev);
-				const merged = { ...prev, ...next } as PersistedGridState;
+				const merged = { ...prev, ...next };
+				const sanitized = sanitizeGridState(merged); // <-- Sanitize before write
 				try {
-					localStorage.setItem(storageKey, JSON.stringify(merged));
+					localStorage.setItem(storageKey, JSON.stringify(sanitized));
 				} catch (error) {
-					console.error("Error saving grid state to localStorage:", error);
+					console.error("Error saving grid state:", error);
 				}
-				return merged;
+				return sanitized;
 			});
 		},
 		[storageKey],
