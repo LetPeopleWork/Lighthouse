@@ -11,7 +11,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import {
-	ChartContainer,
+	ChartsContainer,
 	ChartsReferenceLine,
 	ChartsTooltip,
 	ChartsXAxis,
@@ -420,7 +420,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 
 					<Box sx={{ flex: 1, minHeight: 0 }}>
 						<SpecialCauseMarkContext.Provider value={markContext}>
-							<ChartContainer
+							<ChartsContainer
 								xAxis={[
 									useEqualSpacing
 										? {
@@ -456,6 +456,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 										type: "line",
 										data: chartData.yValues,
 										color: defaultColor,
+										showMark: true,
 										valueFormatter: (
 											value: number | null,
 											params: { dataIndex: number },
@@ -541,7 +542,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 										}}
 									/>
 								)}
-							</ChartContainer>
+							</ChartsContainer>
 						</SpecialCauseMarkContext.Provider>
 					</Box>
 				</CardContent>

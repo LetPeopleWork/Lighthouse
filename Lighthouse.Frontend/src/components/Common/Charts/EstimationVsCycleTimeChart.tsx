@@ -7,7 +7,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import {
-	ChartContainer,
+	ChartsContainer,
 	ChartsTooltip,
 	ChartsXAxis,
 	ChartsYAxis,
@@ -186,7 +186,7 @@ const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 						</Typography>
 					)}
 
-					<ChartContainer
+					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[xAxisConfig]}
 						yAxis={[
@@ -277,7 +277,7 @@ const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 								},
 							}}
 						/>
-					</ChartContainer>
+					</ChartsContainer>
 				</CardContent>
 			</Card>
 			<WorkItemsDialog

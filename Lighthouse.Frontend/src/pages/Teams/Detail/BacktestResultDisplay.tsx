@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid";
 import { styled } from "@mui/system";
 import {
 	BarPlot,
-	ChartContainer,
+	ChartsContainer,
 	ChartsReferenceLine,
 	ChartsXAxis,
 	ChartsYAxis,
@@ -158,7 +158,7 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 				</Typography>
 			</Grid>
 			<Grid size={{ xs: 12, md: 8 }}>
-				<ChartContainer
+				<ChartsContainer
 					dataset={chartData}
 					yAxis={[
 						{
@@ -210,7 +210,7 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 							strokeWidth: 2,
 						}}
 					/>
-				</ChartContainer>
+				</ChartsContainer>
 			</Grid>
 			<Grid size={{ xs: 12, md: 4 }}>
 				<Typography variant="body1" fontWeight="bold" gutterBottom>

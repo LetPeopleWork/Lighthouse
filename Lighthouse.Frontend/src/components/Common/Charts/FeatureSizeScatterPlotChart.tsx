@@ -9,7 +9,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import {
-	ChartContainer,
+	ChartsContainer,
 	ChartsReferenceLine,
 	ChartsTooltip,
 	ChartsXAxis,
@@ -70,128 +70,16 @@ type ScatterPropsExtended = ScatterMarkerProps & {
 	item?: ScatterDatum;
 	dataIndex?: number;
 	seriesIndex?: number | string;
-	seriesId?: number | string;
+	seriesId?: string;
 	color?: string;
 };
 
 type MarkerOptions = {
-	seriesGroupedDataMap?: Map<string | number, IGroupedFeature[]>;
-	seriesGroupKeyMapMap?: Map<string | number, Map<string, number>>;
+	seriesGroupedDataMap?: Map<string, IGroupedFeature[]>;
 	theme: Theme;
 	featuresTerm: string;
 	colorMap: Record<string, string>;
 	onShowItems: (items: IFeature[]) => void;
-};
-
-const getDatum = (props: ScatterPropsExtended): ScatterDatum | undefined => {
-	return props.data ?? props.datum ?? props.item;
-};
-
-const getExplicitGroupByIndex = (
-	datumGroupIndex: number | undefined,
-	allGroupedDataPoints: IGroupedFeature[],
-	seriesGroup: IGroupedFeature,
-): IGroupedFeature => {
-	if (typeof datumGroupIndex !== "number") return seriesGroup;
-
-	const explicitGroup = allGroupedDataPoints[datumGroupIndex];
-	return explicitGroup && explicitGroup !== seriesGroup
-		? explicitGroup
-		: seriesGroup;
-};
-
-const getExplicitGroupByKey = (
-	datumGroupKey: string | undefined,
-	seriesIndexOrId: string | number,
-	seriesGroupKeyMapMap: Map<string | number, Map<string, number>> | undefined,
-	allGroupedDataPoints: IGroupedFeature[],
-	seriesGroup: IGroupedFeature,
-): IGroupedFeature => {
-	if (typeof datumGroupKey !== "string" || !seriesGroupKeyMapMap) {
-		return seriesGroup;
-	}
-
-	const seriesKeyMap = seriesGroupKeyMapMap.get(seriesIndexOrId);
-	const explicitIdx = seriesKeyMap?.get(datumGroupKey);
-
-	if (typeof explicitIdx !== "number") return seriesGroup;
-
-	const explicitGroup = allGroupedDataPoints[explicitIdx];
-	return explicitGroup && explicitGroup !== seriesGroup
-		? explicitGroup
-		: seriesGroup;
-};
-
-const getGroupFromSeries = (
-	props: ScatterPropsExtended,
-	datum: ScatterDatum | undefined,
-	allGroupedDataPoints: IGroupedFeature[],
-	seriesGroupedDataMap?: Map<string | number, IGroupedFeature[]>,
-	seriesGroupKeyMapMap?: Map<string | number, Map<string, number>>,
-): IGroupedFeature | undefined => {
-	if (!seriesGroupedDataMap) return undefined;
-
-	const seriesIndexOrId = props.seriesIndex ?? props.seriesId;
-	if (seriesIndexOrId === undefined) return undefined;
-
-	const seriesGrouped = seriesGroupedDataMap.get(seriesIndexOrId);
-	const dataIndex = props.dataIndex ?? 0;
-
-	if (!seriesGrouped || typeof dataIndex !== "number") return undefined;
-
-	const seriesGroup = seriesGrouped[dataIndex];
-	if (!seriesGroup) return undefined;
-
-	const datumGroupIndex = datum?.groupIndex;
-	const datumGroupKey = datum?.groupKey;
-
-	if (typeof datumGroupIndex === "number") {
-		return getExplicitGroupByIndex(
-			datumGroupIndex,
-			allGroupedDataPoints,
-			seriesGroup,
-		);
-	}
-
-	return getExplicitGroupByKey(
-		datumGroupKey,
-		seriesIndexOrId,
-		seriesGroupKeyMapMap,
-		allGroupedDataPoints,
-		seriesGroup,
-	);
-};
-
-const getGroupByIndex = (
-	datumGroupIndex: number | undefined,
-	allGroupedDataPoints: IGroupedFeature[],
-): IGroupedFeature | undefined => {
-	return typeof datumGroupIndex === "number"
-		? allGroupedDataPoints[datumGroupIndex]
-		: undefined;
-};
-
-const getGroupByKey = (
-	datumGroupKey: string | undefined,
-	groupKeyMap: Map<string, number>,
-	allGroupedDataPoints: IGroupedFeature[],
-): IGroupedFeature | undefined => {
-	if (typeof datumGroupKey !== "string") return undefined;
-
-	const idx = groupKeyMap.get(datumGroupKey);
-	return typeof idx === "number" ? allGroupedDataPoints[idx] : undefined;
-};
-
-const getGroupByCoordinates = (
-	props: ScatterPropsExtended,
-	datum: ScatterDatum | undefined,
-	allGroupedDataPoints: IGroupedFeature[],
-): IGroupedFeature | undefined => {
-	const datumX = datum?.x ?? props.x;
-	const datumY = datum?.y ?? props.y;
-	return allGroupedDataPoints.find(
-		(g) => g.size === datumX && g.cycleTime === datumY,
-	);
 };
 
 const renderFallbackMarker = (
@@ -224,47 +112,25 @@ const renderFallbackMarker = (
 	);
 };
 
-const ScatterMarker = (
-	props: ScatterMarkerProps,
-	allGroupedDataPoints: IGroupedFeature[],
-	groupKeyMap: Map<string, number>,
-	options: MarkerOptions,
-) => {
-	const {
-		seriesGroupedDataMap,
-		seriesGroupKeyMapMap,
-		theme,
-		featuresTerm,
-		colorMap,
-		onShowItems,
-	} = options;
+const ScatterMarker = (props: ScatterMarkerProps, options: MarkerOptions) => {
+	const { seriesGroupedDataMap, theme, featuresTerm, colorMap, onShowItems } =
+		options;
 
-	const propsExtended = props as ScatterPropsExtended;
-	const datum = getDatum(propsExtended);
-
-	const group =
-		getGroupFromSeries(
-			propsExtended,
-			datum,
-			allGroupedDataPoints,
-			seriesGroupedDataMap,
-			seriesGroupKeyMapMap,
-		) ??
-		getGroupByIndex(datum?.groupIndex, allGroupedDataPoints) ??
-		getGroupByKey(datum?.groupKey, groupKeyMap, allGroupedDataPoints) ??
-		getGroupByCoordinates(propsExtended, datum, allGroupedDataPoints);
+	// v9: use seriesId (string) + dataIndex for direct lookup
+	const group = (seriesGroupedDataMap?.get(props.seriesId) ?? [])[
+		props.dataIndex
+	];
 
 	if (!group) {
-		return renderFallbackMarker(propsExtended, theme);
+		return renderFallbackMarker(props as ScatterPropsExtended, theme);
 	}
 
 	const bubbleSize = getBubbleSize(group.items.length);
 	const stateCategory = group.items[0]?.stateCategory || group.state || "ToDo";
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
-	const providedColor = propsExtended.color;
 	const bubbleColor = hasBlockedItems
 		? errorColor
-		: (providedColor ?? colorMap[stateCategory] ?? theme.palette.primary.main);
+		: (props.color ?? colorMap[stateCategory] ?? theme.palette.primary.main);
 
 	const handleOpenFeatures = () => {
 		if (group.items.length > 0) {
@@ -554,9 +420,9 @@ const FeatureSizeScatterPlotChart: React.FC<
 			? `${featuresTerm} Details`
 			: `Selected ${featuresTerm}`;
 
-	const { series, seriesGroupedDataMap, seriesGroupKeyMapMap } = useMemo(() => {
-		const dataMap = new Map<number, IGroupedFeature[]>();
-		const keyMapMap = new Map<number, Map<string, number>>();
+	const { series, seriesGroupedDataMap } = useMemo(() => {
+		const dataMap = new Map<string, IGroupedFeature[]>();
+		const keyMapMap = new Map<string, Map<string, number>>();
 
 		const s = stateCategories
 			.filter((state) => visibleStateCategories[state] !== false)
@@ -566,14 +432,14 @@ const FeatureSizeScatterPlotChart: React.FC<
 						(g.items[0]?.stateCategory || g.state || "ToDo") === stateCategory,
 				);
 
-				dataMap.set(seriesIndex, seriesGrouped);
+				dataMap.set(String(seriesIndex), seriesGrouped);
 
 				const seriesKeyMap = new Map<string, number>();
 				for (const group of seriesGrouped) {
 					const globalIdx = allGroupedDataPoints.indexOf(group);
 					seriesKeyMap.set(getGroupKey(group), globalIdx);
 				}
-				keyMapMap.set(seriesIndex, seriesKeyMap);
+				keyMapMap.set(String(seriesIndex), seriesKeyMap);
 
 				const seriesData = seriesGrouped.map((group) =>
 					createSeriesDataPoint(
@@ -589,7 +455,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 
 				return {
 					type: "scatter" as const,
-					id: seriesIndex,
+					id: String(seriesIndex),
 					label: getStateCategoryDisplayName(stateCategory),
 					data: seriesData,
 					xAxisId: "sizeAxis",
@@ -610,7 +476,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 				};
 			});
 		return {
-			series: s,
+			series: s.filter((entry) => entry.data.length > 0),
 			seriesGroupedDataMap: dataMap,
 			seriesGroupKeyMapMap: keyMapMap,
 		};
@@ -710,7 +576,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 							)}
 						</Stack>
 					)}
-					<ChartContainer
+					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
 							{
@@ -771,9 +637,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 						<ScatterPlot
 							slots={{
 								marker: (props) =>
-									ScatterMarker(props, allGroupedDataPoints, groupKeyMap, {
+									ScatterMarker(props, {
 										seriesGroupedDataMap,
-										seriesGroupKeyMapMap,
 										theme,
 										featuresTerm,
 										colorMap,
@@ -801,7 +666,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 								},
 							}}
 						/>
-					</ChartContainer>
+					</ChartsContainer>
 				</CardContent>
 			</Card>
 			{dialogOpen && selectedItems.length > 0 && (

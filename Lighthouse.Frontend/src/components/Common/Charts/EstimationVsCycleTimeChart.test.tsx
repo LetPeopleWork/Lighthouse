@@ -35,7 +35,7 @@ vi.mock("@mui/x-charts", async () => {
 	const actual = await vi.importActual("@mui/x-charts");
 	return {
 		...actual,
-		ChartContainer: vi.fn(({ series, children, xAxis, yAxis }) => (
+		ChartsContainer: vi.fn(({ series, children, xAxis, yAxis }) => (
 			<div
 				data-testid="mock-chart-container"
 				data-series={series ? JSON.stringify(series) : undefined}
