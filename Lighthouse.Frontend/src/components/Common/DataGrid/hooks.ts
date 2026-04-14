@@ -164,7 +164,7 @@ export function usePersistedGridState(storageKey: string) {
 		(newState: PersistedGridState) => {
 			setState((prev) => {
 				const merged = { ...prev, ...newState };
-				const sanitized = sanitizeGridState(merged); // <-- Sanitize before write
+				const sanitized = sanitizeGridState(merged);
 				try {
 					localStorage.setItem(storageKey, JSON.stringify(sanitized));
 				} catch (error) {
@@ -181,7 +181,7 @@ export function usePersistedGridState(storageKey: string) {
 			setState((prev) => {
 				const next = updater(prev);
 				const merged = { ...prev, ...next };
-				const sanitized = sanitizeGridState(merged); // <-- Sanitize before write
+				const sanitized = sanitizeGridState(merged);
 				try {
 					localStorage.setItem(storageKey, JSON.stringify(sanitized));
 				} catch (error) {
