@@ -21,8 +21,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@melloware/react-logviewer':
-        specifier: ^6.5.1
-        version: 6.5.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^6.5.2
+        version: 6.5.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@microsoft/signalr':
         specifier: ^10.0.0
         version: 10.0.0
@@ -574,8 +574,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@melloware/react-logviewer@6.5.1':
-    resolution: {integrity: sha512-ZDC8ATqdmvzPx+He7mZyG2/8nRnt0Hkn3ZWNOyzFw0LZ8RME4/t2ZStmaUK9YqJlAWnnUyMVHIg/wqaG2skZRg==}
+  '@melloware/react-logviewer@6.5.2':
+    resolution: {integrity: sha512-ZvlwhkJzM+aX+z3DaJOiL4Tm+0QwU44jupuQyyAAza3PNPeJ4QQIaYGRkM3rYKRPbXVO7SO1zvOYHRfrGzpKww==}
     peerDependencies:
       react: '>=17.0.0'
       react-dom: '>=17.0.0'
@@ -2856,7 +2856,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@melloware/react-logviewer@6.5.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@melloware/react-logviewer@6.5.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       hotkeys-js: 4.0.3
       immutable: 5.1.5
