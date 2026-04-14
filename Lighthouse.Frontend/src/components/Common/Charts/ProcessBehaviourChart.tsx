@@ -1,10 +1,8 @@
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
 	Box,
 	Card,
 	CardContent,
 	Chip,
-	IconButton,
 	Stack,
 	Tooltip,
 	Typography,
@@ -365,13 +363,6 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 						sx={{ mb: 1 }}
 					>
 						<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
-						{!data.baselineConfigured && (
-							<Tooltip title="No Baseline Configured">
-								<IconButton size="small" aria-label="No Baseline Configured">
-									<InfoOutlinedIcon fontSize="small" />
-								</IconButton>
-							</Tooltip>
-						)}
 						{hasAnySpecialCause && (
 							<Stack direction="row" spacing={0.5}>
 								{specialCausePriority.map((cause) => {

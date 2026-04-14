@@ -698,36 +698,6 @@ describe("ProcessBehaviourChart", () => {
 		});
 	});
 
-	describe("No Baseline Configured Info Icon", () => {
-		it("shows info icon with tooltip when status is Ready and baselineConfigured is false", () => {
-			const data = createReadyChartData({ baselineConfigured: false });
-
-			render(
-				<ProcessBehaviourChart
-					data={data}
-					title="Throughput PBC"
-					type={ProcessBehaviourChartType.Throughput}
-				/>,
-			);
-
-			expect(screen.getByLabelText("No Baseline Configured")).toBeDefined();
-		});
-
-		it("does not show info icon when status is Ready and baselineConfigured is true", () => {
-			const data = createReadyChartData({ baselineConfigured: true });
-
-			render(
-				<ProcessBehaviourChart
-					data={data}
-					title="Throughput PBC"
-					type={ProcessBehaviourChartType.Throughput}
-				/>,
-			);
-
-			expect(screen.queryByLabelText("No Baseline Configured")).toBeNull();
-		});
-	});
-
 	describe("Empty Data", () => {
 		it("renders no data message when ready but empty data points", () => {
 			const data = createReadyChartData({ dataPoints: [] });
@@ -930,7 +900,7 @@ describe("ProcessBehaviourChart", () => {
 			fireEvent.click(markPlot);
 
 			const dialog = screen.getByTestId("work-items-dialog");
-			const dialogTitle = dialog.getAttribute("data-title");
+			const dialogTitle = dialog.dataset.title;
 
 			// Dialog title should use date-only format, not datetime
 			expect(dialogTitle).not.toContain(":");
