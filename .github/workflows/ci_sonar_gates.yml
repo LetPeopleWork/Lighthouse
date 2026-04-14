@@ -46,3 +46,21 @@ jobs:
           scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+        with:
+          version: 9
+          run_install: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+      
+      - name: Audit Frontend Dependencies
+        if: inputs.frontend-ran && github.ref == 'refs/heads/main'
+        working-directory: ./Lighthouse.Frontend
+        run: pnpm audit --audit-level=low

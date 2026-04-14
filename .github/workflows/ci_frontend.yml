@@ -23,11 +23,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      
-      - name: Audit Frontend Dependencies
-        working-directory: ./Lighthouse.Frontend
-        run: pnpm audit --audit-level=low
-
       - name: Upload Sonar report metadata
         uses: actions/upload-artifact@v7
         with:
