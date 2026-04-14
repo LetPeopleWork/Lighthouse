@@ -47,13 +47,21 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
+      - name: Checkout
+        if: inputs.frontend-ran
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: '0'
+
       - name: Setup pnpm
+        if: inputs.frontend-ran
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
         with:
           version: 9
           run_install: false
 
       - name: Use Node.js
+        if: inputs.frontend-ran
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
           node-version: '24'
