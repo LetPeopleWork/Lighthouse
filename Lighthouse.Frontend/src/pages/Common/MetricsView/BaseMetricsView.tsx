@@ -916,10 +916,11 @@ export const BaseMetricsView = <
 					wipOverTimeData.getValueOnDay(i),
 				)
 			: [],
-		totalAgeStart: wipOverTimeData?.getValueOnDay(0) ?? 0,
-		totalAgeEnd: wipOverTimeData
-			? wipOverTimeData.getValueOnDay(Math.max(0, wipOverTimeData.history - 1))
-			: 0,
+		totalAgeStart: totalWorkItemAgePbcData?.dataPoints[0]?.yValue ?? 0,
+		totalAgeEnd:
+			totalWorkItemAgePbcData?.dataPoints[
+				totalWorkItemAgePbcData.dataPoints.length - 1
+			]?.yValue ?? 0,
 		unlinkedCount: [
 			...(cycleTimeData as unknown as IWorkItem[]),
 			...inProgressItems,

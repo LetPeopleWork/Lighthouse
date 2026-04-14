@@ -2799,9 +2799,14 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("shows green RAG for total age over time when start and end are equal", async () => {
-			// wipOverTimeData: history=2, day 0 = 2 items, day 1 = 4 items
-			// Starts at 2, ends at 4 → (4-2)/2 = 100% increase → Red
-			// With default data, getValueOnDay(0) = 2, getValueOnDay(1) = 4
+			(mockMetricsService.getTotalWorkItemAgePbc as Mock).mockResolvedValue({
+				dataPoints: [{ yValue: 50 }, { yValue: 40 }, { yValue: 50 }],
+
+				upperControlLimit: 100,
+				lowerControlLimit: 0,
+				average: 50,
+			});
+
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -2818,7 +2823,7 @@ describe("BaseMetricsView component", () => {
 				).toBeInTheDocument();
 				expect(
 					screen.getByTestId("widget-rag-totalWorkItemAgeOverTime"),
-				).toHaveTextContent("red");
+				).toHaveTextContent("green");
 			});
 		});
 
