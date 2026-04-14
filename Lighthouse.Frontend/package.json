@@ -69,7 +69,8 @@
 		"overrides": {
 			"immutable": ">=5.1.5",
 			"picomatch": "^4.0.4",
-			"yaml": "^1.10.3"
+			"yaml": "^1.10.3",
+			"follow-redirects@<=1.15.11": ">=1.16.0"
 		},
 		"ignoredBuiltDependencies": [
 			"esbuild"
