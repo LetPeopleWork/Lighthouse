@@ -133,7 +133,14 @@ const LicenseStatusDialog: React.FC<LicenseStatusDialogProps> = ({
 	const renderContent = () => {
 		if (isLoading) {
 			return (
-				<Box display="flex" justifyContent="center" alignItems="center" p={4}>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center",
+						p: 4,
+					}}
+				>
 					<CircularProgress />
 					<Typography variant="body1" sx={{ ml: 2 }}>
 						Loading license information...
@@ -166,7 +173,7 @@ const LicenseStatusDialog: React.FC<LicenseStatusDialogProps> = ({
 			<>
 				{getStatusMessage()}
 
-				<Box display="flex" alignItems="center" mb={2}>
+				<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
 					{getStatusIcon()}
 					<Typography variant="h6" sx={{ ml: 1 }}>
 						License Status

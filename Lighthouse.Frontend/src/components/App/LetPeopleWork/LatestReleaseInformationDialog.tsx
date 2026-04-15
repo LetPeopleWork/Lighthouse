@@ -50,7 +50,7 @@ const LatestReleaseInformationDialog: React.FC<
 			<DialogTitle>Update Available</DialogTitle>
 			<DialogContent>
 				{isUpdateSupported && (
-					<Box display="flex" alignItems="center" mb={2}>
+					<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
 						<UpdateIcon color="primary" sx={{ marginRight: 1 }} />
 						<Typography variant="body1">
 							Click "Install Update" to automatically download and install the
@@ -73,7 +73,7 @@ const LatestReleaseInformationDialog: React.FC<
 				)}
 
 				{isInstalling && (
-					<Box display="flex" alignItems="center" mb={2}>
+					<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
 						<CircularProgress size={20} sx={{ marginRight: 1 }} />
 						<Typography variant="body1">
 							Installing update... Please do not close this window.
@@ -81,7 +81,7 @@ const LatestReleaseInformationDialog: React.FC<
 					</Box>
 				)}
 
-				<Box display="flex" alignItems="center" mb={2}>
+				<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
 					<DownloadIcon color="primary" sx={{ marginRight: 1 }} />
 					<Typography variant="body1">
 						To update Lighthouse manually, please consult the{" "}
@@ -143,13 +143,13 @@ const LatestReleaseInformationDialog: React.FC<
 								))}
 							</List>
 
-							<Typography variant="body1" marginTop={2}>
+							<Typography variant="body1" sx={{ marginTop: 2 }}>
 								<GitHubIcon />
 								<MuiLink
 									href={release.link}
 									target="_blank"
 									rel="noopener noreferrer"
-									marginLeft={2}
+									sx={{ marginLeft: 2 }}
 								>
 									See GitHub for more details
 								</MuiLink>

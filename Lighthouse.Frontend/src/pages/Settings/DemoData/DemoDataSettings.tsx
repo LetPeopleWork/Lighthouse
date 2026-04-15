@@ -91,7 +91,7 @@ const DemoDataSettings: React.FC = () => {
 
 	if (loading) {
 		return (
-			<Box display="flex" justifyContent="center" p={4}>
+			<Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
 				<Typography>Loading demo scenarios...</Typography>
 			</Box>
 		);
@@ -201,7 +201,7 @@ const DemoDataSettings: React.FC = () => {
 			>
 				<Stack
 					direction={isMobile ? "column" : "row"}
-					alignItems="center"
+					sx={{ alignItems: "center" }}
 					spacing={2}
 				>
 					<ContactMailIcon color="primary" fontSize="large" />

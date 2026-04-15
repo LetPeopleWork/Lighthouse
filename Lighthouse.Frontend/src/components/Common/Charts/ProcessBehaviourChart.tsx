@@ -358,9 +358,11 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 				>
 					<Stack
 						direction="row"
-						justifyContent="space-between"
-						alignItems="center"
-						sx={{ mb: 1 }}
+						sx={{
+							justifyContent: "space-between",
+							alignItems: "center",
+							mb: 1,
+						}}
 					>
 						<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
 						{hasAnySpecialCause && (

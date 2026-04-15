@@ -77,7 +77,11 @@ const BoardInformationDisplay: React.FC<BoardInformationDisplayProps> = ({
 		<InputGroup title="Board Information" initiallyExpanded={true}>
 			<Grid container spacing={2}>
 				<Grid size={{ xs: 12 }}>
-					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+					<Typography
+						variant="subtitle2"
+						sx={{ fontWeight: "bold" }}
+						gutterBottom
+					>
 						Query
 					</Typography>
 					{boardInformation.dataRetrievalValue ? (
@@ -118,28 +122,44 @@ const BoardInformationDisplay: React.FC<BoardInformationDisplayProps> = ({
 				</Grid>
 
 				<Grid size={{ xs: 12 }}>
-					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+					<Typography
+						variant="subtitle2"
+						sx={{ fontWeight: "bold" }}
+						gutterBottom
+					>
 						Work Item Types
 					</Typography>
 					{renderList(boardInformation.workItemTypes)}
 				</Grid>
 
 				<Grid size={{ xs: 12 }}>
-					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+					<Typography
+						variant="subtitle2"
+						sx={{ fontWeight: "bold" }}
+						gutterBottom
+					>
 						To Do States
 					</Typography>
 					{renderList(boardInformation.toDoStates)}
 				</Grid>
 
 				<Grid size={{ xs: 12 }}>
-					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+					<Typography
+						variant="subtitle2"
+						sx={{ fontWeight: "bold" }}
+						gutterBottom
+					>
 						Doing States
 					</Typography>
 					{renderList(boardInformation.doingStates)}
 				</Grid>
 
 				<Grid size={{ xs: 12 }}>
-					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+					<Typography
+						variant="subtitle2"
+						sx={{ fontWeight: "bold" }}
+						gutterBottom
+					>
 						Done States
 					</Typography>
 					{renderList(boardInformation.doneStates)}

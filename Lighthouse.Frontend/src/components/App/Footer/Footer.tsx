@@ -32,17 +32,19 @@ const Footer: React.FC = () => {
 		>
 			<Container maxWidth={false}>
 				<Box
-					display="flex"
-					flexDirection={isMobile ? "column" : "row"}
-					justifyContent="space-between"
-					alignItems={isMobile ? "center" : "flex-start"}
-					gap={isMobile ? 2 : 0}
+					sx={{
+						display: "flex",
+						flexDirection: isMobile ? "column" : "row",
+						justifyContent: "space-between",
+						alignItems: isMobile ? "center" : "flex-start",
+						gap: isMobile ? 2 : 0,
+					}}
 				>
 					<Box>
 						<LetPeopleWorkLogo />
 					</Box>
 
-					<Box textAlign="center">
+					<Box sx={{ textAlign: "center" }}>
 						<Typography variant="body2" sx={{ mb: 1 }}>
 							Contact us:
 						</Typography>
@@ -70,7 +72,7 @@ const Footer: React.FC = () => {
 						</Box>
 					</Box>
 
-					<Box textAlign="right">
+					<Box sx={{ textAlign: "right" }}>
 						<LighthouseVersion />
 					</Box>
 				</Box>

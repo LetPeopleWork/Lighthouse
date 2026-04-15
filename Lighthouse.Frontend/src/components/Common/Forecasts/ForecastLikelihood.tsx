@@ -21,7 +21,7 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({
 	const formattedLikelihood = likelihood.toFixed(2);
 
 	return (
-		<Grid container direction="column" sx={{ width: "100%" }}>
+		<Grid container sx={{ width: "100%", flexDirection: "column" }}>
 			{showText && (
 				<Typography
 					variant="body1"

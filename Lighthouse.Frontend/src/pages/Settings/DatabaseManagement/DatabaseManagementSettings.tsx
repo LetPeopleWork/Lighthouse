@@ -283,7 +283,7 @@ const DatabaseManagementSettings: React.FC = () => {
 					<Stack
 						direction={isMobile ? "column" : "row"}
 						spacing={2}
-						alignItems="flex-start"
+						sx={{ alignItems: "flex-start" }}
 					>
 						<TextField
 							label="Backup Password"
@@ -341,7 +341,7 @@ const DatabaseManagementSettings: React.FC = () => {
 						<Stack
 							direction={isMobile ? "column" : "row"}
 							spacing={2}
-							alignItems="flex-start"
+							sx={{ alignItems: "flex-start" }}
 						>
 							<TextField
 								label="Backup Password"

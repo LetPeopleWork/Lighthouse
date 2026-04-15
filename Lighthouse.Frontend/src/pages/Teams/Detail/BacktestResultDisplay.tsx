@@ -213,7 +213,7 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 				</ChartsContainer>
 			</Grid>
 			<Grid size={{ xs: 12, md: 4 }}>
-				<Typography variant="body1" fontWeight="bold" gutterBottom>
+				<Typography variant="body1" sx={{ fontWeight: "bold" }} gutterBottom>
 					Forecast Percentiles:
 				</Typography>
 				{fixedOrderPercentiles.map((percentile) => (
@@ -223,7 +223,7 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 				))}
 				{averageForecast && (
 					<>
-						<ResultLabel variant="body1" fontWeight="bold">
+						<ResultLabel variant="body1" sx={{ fontWeight: "bold" }}>
 							Average:
 						</ResultLabel>
 						<Typography variant="body2">
@@ -232,7 +232,7 @@ const BacktestResultDisplay: React.FC<BacktestResultDisplayProps> = ({
 						</Typography>
 					</>
 				)}
-				<ResultLabel variant="body1" fontWeight="bold">
+				<ResultLabel variant="body1" sx={{ fontWeight: "bold" }}>
 					Actual Throughput:
 				</ResultLabel>
 				<Typography variant="body2">

@@ -100,7 +100,7 @@ const InputGroup: React.FC<InputGroupProps> = ({
 			/>
 			<Collapse in={expanded} timeout={300}>
 				<CardContent sx={{ pt: 3 }}>
-					<Grid container spacing={2} direction="column">
+					<Grid container spacing={2}>
 						{React.Children.map(children, (child) => (
 							<Grid size={{ xs: 12 }} style={{ width: "100%" }}>
 								{child}

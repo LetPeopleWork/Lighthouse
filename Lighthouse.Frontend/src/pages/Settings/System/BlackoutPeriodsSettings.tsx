@@ -150,7 +150,14 @@ const BlackoutPeriodsSettings: React.FC<BlackoutPeriodsSettingsProps> = ({
 
 	if (loading) {
 		return (
-			<Box display="flex" justifyContent="center" alignItems="center" p={2}>
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					p: 2,
+				}}
+			>
 				<CircularProgress />
 				<Typography variant="body1" sx={{ ml: 2 }}>
 					Loading blackout periods...

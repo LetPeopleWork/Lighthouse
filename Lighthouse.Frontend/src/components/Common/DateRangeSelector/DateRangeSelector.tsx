@@ -64,7 +64,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					<Typography
 						variant="subtitle2"
 						color="text.primary"
-						fontWeight="medium"
+						sx={{ fontWeight: "medium" }}
 					>
 						Start Date
 					</Typography>
@@ -99,7 +99,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					<Typography
 						variant="subtitle2"
 						color="text.primary"
-						fontWeight="medium"
+						sx={{ fontWeight: "medium" }}
 					>
 						End Date
 					</Typography>

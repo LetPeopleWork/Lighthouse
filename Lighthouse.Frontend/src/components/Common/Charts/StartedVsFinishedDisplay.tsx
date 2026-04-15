@@ -64,7 +64,13 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 					minHeight: 0, // allow children to shrink inside flex container
 				}}
 			>
-				<Box display="flex" justifyContent="space-between" alignItems="center">
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
 					<Typography
 						variant="h6"
 						gutterBottom

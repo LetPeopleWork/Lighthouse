@@ -18,10 +18,12 @@ export const DeliveryHeader: React.FC<DeliveryHeaderProps> = ({
 	return (
 		<Box>
 			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="flex-start"
-				mb={2}
+				sx={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "flex-start",
+					mb: 2,
+				}}
 			>
 				<Box>
 					<Typography variant="h5" sx={{ mb: 1 }}>

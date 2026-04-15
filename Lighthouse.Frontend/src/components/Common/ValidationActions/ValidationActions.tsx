@@ -65,7 +65,7 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 	};
 
 	return (
-		<Stack direction="row" spacing={1} alignItems="center">
+		<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
 			{validationState === "failed" && validationFailedMessage && (
 				<Alert severity="error" sx={{ mt: 2 }}>
 					{validationFailedMessage}

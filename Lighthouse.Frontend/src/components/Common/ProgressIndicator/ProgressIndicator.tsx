@@ -107,7 +107,7 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 						{progressableItem.totalWork > 0 ? (
 							`${Number.isNaN(completionPercentage) ? 0 : completionPercentage}% (${completedItems}/${progressableItem.totalWork})`
 						) : (
-							<Box display="flex" alignItems="center">
+							<Box sx={{ display: "flex", alignItems: "center" }}>
 								Could not determine work
 								<Tooltip
 									title={`The remaining and total work could not be determined. This can happen if the work was added to a ${teamTerm} in your ${workTrackingSystemTerm}, but you have not defined this ${teamTerm} yet in Lighthouse.`}
