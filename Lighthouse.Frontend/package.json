@@ -66,9 +66,8 @@
 		"vitest-sonar-reporter": "^3.0.0"
 	},
 	"pnpm": {
-		"overrides": {
-		},
-		"ignoredBuiltDependencies": [
+		"overrides": {},
+		"onlyBuiltDependencies": [
 			"esbuild"
 		]
 	}
