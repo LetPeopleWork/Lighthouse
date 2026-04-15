@@ -10,9 +10,9 @@ const QuickSettingsBar: React.FC<QuickSettingsBarProps> = ({ children }) => {
 		<Stack
 			direction="row"
 			spacing={1}
-			alignItems="center"
 			sx={{
 				display: "flex",
+				alignItems: "center",
 				justifyContent: "center",
 			}}
 		>

@@ -172,14 +172,15 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 										}
 									}}
 									slotProps={{
+										...params.slotProps,
 										input: {
-											...params.InputProps,
+											...params.slotProps.input,
 											endAdornment: (
 												<>
 													{isLoading ? (
 														<CircularProgress color="inherit" size={20} />
 													) : null}
-													{params.InputProps.endAdornment}
+													{params.slotProps.input.endAdornment}
 												</>
 											),
 										},

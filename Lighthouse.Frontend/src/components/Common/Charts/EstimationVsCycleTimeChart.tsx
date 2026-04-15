@@ -166,9 +166,11 @@ const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 				>
 					<Stack
 						direction="row"
-						justifyContent="space-between"
-						alignItems="center"
-						sx={{ mb: 1 }}
+						sx={{
+							justifyContent: "space-between",
+							alignItems: "center",
+							mb: 1,
+						}}
 					>
 						<Typography variant="h6">Estimation vs. {cycleTimeTerm}</Typography>
 					</Stack>

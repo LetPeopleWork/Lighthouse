@@ -99,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onLogout }) => {
 
 				{isMobile ? (
 					<>
-						<Box display="flex" alignItems="center">
+						<Box sx={{ display: "flex", alignItems: "center" }}>
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<IconButton

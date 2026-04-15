@@ -57,7 +57,13 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					minHeight: 0,
 				}}
 			>
-				<Box display="flex" justifyContent="space-between" alignItems="center">
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
 					<Typography
 						variant="h6"
 						gutterBottom
@@ -104,8 +110,10 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 												>
 													<Typography
 														variant="body1"
-														fontWeight="bold"
-														sx={{ color: forecastLevel.color }}
+														sx={{
+															fontWeight: "bold",
+															color: forecastLevel.color,
+														}}
 														style={{
 															fontSize: "clamp(0.85rem, 1.8vw, 0.95rem)",
 														}}

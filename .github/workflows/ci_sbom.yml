@@ -26,16 +26,18 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
-        with:
-          node-version: "24"
-
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
         with:
-          version: 9
+          version: 10
           run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: '25'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
 
       - name: Install pnpm dependencies
         working-directory: ./Lighthouse.Frontend

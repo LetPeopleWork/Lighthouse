@@ -1,5 +1,4 @@
-import { Typography, useTheme } from "@mui/material";
-import { Box } from "@mui/system";
+import { Box, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import { Link } from "react-router-dom";
 
@@ -8,7 +7,7 @@ const LighthouseLogo: React.FC = () => {
 
 	return (
 		<Link to="/" style={{ textDecoration: "none" }}>
-			<Box display="flex" alignItems="center">
+			<Box sx={{ display: "flex", alignItems: "center" }}>
 				<img
 					src="/icons/icon-512x512.png"
 					alt="Lighthouse logo"

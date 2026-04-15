@@ -30,7 +30,10 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 	const categories = getCategories();
 
 	return (
-		<Box display="flex" gap={1} flexWrap="wrap" data-testid="category-selector">
+		<Box
+			sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}
+			data-testid="category-selector"
+		>
 			{categories.map((cat) => (
 				<Tooltip key={cat.key} title={cat.hoverText} arrow>
 					<Chip

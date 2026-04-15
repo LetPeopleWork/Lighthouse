@@ -318,7 +318,7 @@ Thank you for your support!
 	const renderContent = () => {
 		if (isLoading) {
 			return (
-				<Box display="flex" alignItems="center" p={2}>
+				<Box sx={{ display: "flex", alignItems: "center", p: 2 }}>
 					<CircularProgress size={16} sx={{ mr: 1 }} />
 					<Typography variant="body2">Loading...</Typography>
 				</Box>
@@ -327,12 +327,12 @@ Thank you for your support!
 
 		if (error) {
 			return (
-				<Box p={2}>
-					<Box display="flex" alignItems="center" mb={1}>
+				<Box sx={{ p: 2 }}>
+					<Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
 						<ErrorIcon
 							style={{ color: errorColor, fontSize: 20, marginRight: 8 }}
 						/>
-						<Typography variant="body2" fontWeight="bold">
+						<Typography variant="body2" sx={{ fontWeight: "bold" }}>
 							Error
 						</Typography>
 					</Box>
@@ -345,7 +345,7 @@ Thank you for your support!
 
 		if (!licenseStatus) {
 			return (
-				<Box p={2}>
+				<Box sx={{ p: 2 }}>
 					<Typography variant="body2" color="text.secondary">
 						License information unavailable
 					</Typography>
@@ -355,8 +355,8 @@ Thank you for your support!
 
 		if (!licenseStatus.hasLicense) {
 			return (
-				<Box p={2}>
-					<Typography variant="body2" fontWeight="bold" gutterBottom>
+				<Box sx={{ p: 2 }}>
+					<Typography variant="body2" sx={{ fontWeight: "bold" }} gutterBottom>
 						No License
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
@@ -369,13 +369,12 @@ Thank you for your support!
 
 		// Has license - show details
 		return (
-			<Box p={2} minWidth={280}>
-				<Box display="flex" alignItems="center" mb={1}>
+			<Box sx={{ p: 2, minWidth: 280 }}>
+				<Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
 					{getStatusIcon()}
 					<Typography
 						variant="body2"
-						fontWeight="bold"
-						sx={{ ml: getStatusIcon() ? 1 : 0 }}
+						sx={{ fontWeight: "bold", ml: getStatusIcon() ? 1 : 0 }}
 					>
 						{(() => {
 							if (!licenseStatus.isValid) return "Invalid License";

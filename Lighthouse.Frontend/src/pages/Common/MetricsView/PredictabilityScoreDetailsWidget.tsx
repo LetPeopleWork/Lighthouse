@@ -14,7 +14,7 @@ const PredictabilityScoreDetailsWidget: React.FC<
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>
-				<Typography variant="h6" mb={2}>
+				<Typography variant="h6" sx={{ mb: 2 }}>
 					Predictability Score
 				</Typography>
 				<Box sx={{ flex: 1, width: "100%" }}>
