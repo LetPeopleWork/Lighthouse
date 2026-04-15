@@ -174,7 +174,7 @@ jobs:
           name: Lighthouse-win-x64-${{ inputs.version }}
 
       - name: Upload signed server artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: ./artifacts/server
@@ -185,7 +185,7 @@ jobs:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
 
       - name: Upload signed standalone artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
           path: ./artifacts/standalone
