@@ -19,7 +19,7 @@
 		"@emotion/styled": "^11.14.1",
 		"@melloware/react-logviewer": "^6.5.2",
 		"@microsoft/signalr": "^10.0.0",
-		"@mui/icons-material": "^7.3.9",
+		"@mui/icons-material": "^9.0.0",
 		"@mui/lab": "^7.0.0",
 		"@mui/material": "^9.0.0",
 		"@mui/system": "^9.0.0",
