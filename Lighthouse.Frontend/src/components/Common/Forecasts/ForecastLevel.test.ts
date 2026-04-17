@@ -1,6 +1,6 @@
 import CertainIcon from "@mui/icons-material/CheckCircle";
-import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
-import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import ConfidentIcon from "@mui/icons-material/CheckCircleOutlined";
+import RiskyIcon from "@mui/icons-material/ErrorOutlined";
 import RealisticIcon from "@mui/icons-material/QueryBuilder";
 import { describe, expect, it } from "vitest";
 import {
@@ -15,7 +15,7 @@ describe("ForecastLevel class", () => {
 	it("should set the level, IconComponent, and color for probability <= 50", () => {
 		const forecastLevel = new ForecastLevel(50);
 		expect(forecastLevel.level).toBe("Risky");
-		expect(forecastLevel.IconComponent).toBe(ErrorOutlineOutlinedIcon);
+		expect(forecastLevel.IconComponent).toBe(RiskyIcon);
 		expect(forecastLevel.color).toBe(riskyColor);
 	});
 
@@ -29,7 +29,7 @@ describe("ForecastLevel class", () => {
 	it("should set the level, IconComponent, and color for 70 < probability <= 85", () => {
 		const forecastLevel = new ForecastLevel(85);
 		expect(forecastLevel.level).toBe("Confident");
-		expect(forecastLevel.IconComponent).toBe(CheckCircleOutlineOutlinedIcon);
+		expect(forecastLevel.IconComponent).toBe(ConfidentIcon);
 		expect(forecastLevel.color).toBe(confidentColor);
 	});
 

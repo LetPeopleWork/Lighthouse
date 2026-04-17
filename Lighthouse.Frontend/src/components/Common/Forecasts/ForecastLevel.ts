@@ -1,6 +1,6 @@
 import CertainIcon from "@mui/icons-material/CheckCircle";
-import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
-import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import ConfidentIcon from "@mui/icons-material/CheckCircleOutlined";
+import RiskyIcon from "@mui/icons-material/ErrorOutlined";
 import RealisticIcon from "@mui/icons-material/QueryBuilder";
 import {
 	certainColor,
@@ -18,7 +18,7 @@ export class ForecastLevel {
 		switch (true) {
 			case probability <= 50:
 				this.level = "Risky";
-				this.IconComponent = ErrorOutlineOutlinedIcon;
+				this.IconComponent = RiskyIcon;
 				this.color = riskyColor;
 				break;
 			case probability <= 70:
@@ -28,7 +28,7 @@ export class ForecastLevel {
 				break;
 			case probability <= 85:
 				this.level = "Confident";
-				this.IconComponent = CheckCircleOutlineOutlinedIcon;
+				this.IconComponent = ConfidentIcon;
 				this.color = confidentColor;
 				break;
 			default:
