@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	computeArrivalsRunChartRag,
 	computeBlockedOverviewRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
@@ -887,6 +888,75 @@ describe("ragRules", () => {
 				],
 			};
 			const result = computePbcRag(data);
+			expect(result.ragStatus).toBe("red");
+		});
+	});
+
+	describe("computeArrivalsRunChartRag", () => {
+		it("returns red when no system WIP limit is defined", () => {
+			const result = computeArrivalsRunChartRag([], [], 5, 5, undefined, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define System WIP Limit");
+		});
+
+		it("returns red when arrivals materially exceed departures", () => {
+			const result = computeArrivalsRunChartRag(
+				[3, 2, 1],
+				[],
+				20,
+				10,
+				5,
+				terms,
+			);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("exceeds closed");
+		});
+
+		it("returns green when arrivals and departures are balanced with no batching", () => {
+			const result = computeArrivalsRunChartRag(
+				[1, 1, 1, 1, 1],
+				[],
+				5,
+				5,
+				5,
+				terms,
+			);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber when balance is green but batching is detected", () => {
+			// 2+ runs of 3 consecutive zero-arrival days
+			const values = [5, 0, 0, 0, 1, 0, 0, 0, 1];
+			const result = computeArrivalsRunChartRag(values, [], 5, 5, 5, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("batches");
+		});
+
+		it("excludes blackout days from batching detection", () => {
+			// Same zero runs but blackout covers the zero days
+			const values = [5, 0, 0, 0, 1, 0, 0, 0, 1];
+			const blackouts = [1, 2, 3, 5, 6, 7];
+			const result = computeArrivalsRunChartRag(
+				values,
+				blackouts,
+				5,
+				5,
+				5,
+				terms,
+			);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber from balance when closed exceeds started", () => {
+			const result = computeArrivalsRunChartRag([1, 1], [], 5, 20, 5, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("starving");
+		});
+
+		it("does not upgrade balance red to amber for batching", () => {
+			// Balance is already red, batching should not override
+			const values = [0, 0, 0, 0, 0, 0, 0];
+			const result = computeArrivalsRunChartRag(values, [], 20, 5, 5, terms);
 			expect(result.ragStatus).toBe("red");
 		});
 	});

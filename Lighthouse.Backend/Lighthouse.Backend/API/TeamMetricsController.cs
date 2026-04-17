@@ -58,6 +58,22 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpGet("arrivals")]
+        public ActionResult<RunChartData> GetArrivals(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var data = teamMetricsService.GetArrivalsForTeam(team, startDate, endDate);
+                data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
+                return data;
+            });
+        }
+
         [HttpGet("wipOverTime")]
         public ActionResult<RunChartData> GetWorkInProgressOverTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
@@ -153,6 +169,18 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 AnnotateBlackoutDays(teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)));
+        }
+
+        [HttpGet("arrivals/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetArrivalsProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                AnnotateBlackoutDays(teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate)));
         }
 
         [HttpGet("wipOverTime/pbc")]

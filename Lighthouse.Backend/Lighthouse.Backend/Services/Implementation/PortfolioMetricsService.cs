@@ -191,6 +191,17 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public RunChartData GetArrivalsForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            return GetStartedItemsForPortfolio(portfolio, startDate, endDate);
+        }
+
+        public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            return BuildDailyRunChartProcessBehaviourChart(portfolio, startDate, endDate,
+                (s, e) => GetArrivalsForPortfolio(portfolio, s, e));
+        }
+
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             var throughput = GetThroughputForPortfolio(portfolio, startDate, endDate);

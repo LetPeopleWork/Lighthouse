@@ -22,6 +22,10 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetStartedItemsForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
+        RunChartData GetArrivalsForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
+        ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
         ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio);

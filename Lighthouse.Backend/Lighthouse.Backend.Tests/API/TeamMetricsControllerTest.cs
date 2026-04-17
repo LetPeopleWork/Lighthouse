@@ -171,6 +171,124 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetArrivals_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivals(1337, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetArrivals_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivals(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetArrivals_TeamExists_GetsArrivalsFromTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedArrivals = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
+            teamMetricsServiceMock.Setup(service => service.GetArrivalsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedArrivals);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivals(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedArrivals));
+            }
+        }
+
+        [Test]
+        public void GetArrivalsPbc_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivalsProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetArrivalsPbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivalsProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetArrivalsPbc_TeamExists_ReturnsPbcFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedPbc = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = 5.0,
+                UpperNaturalProcessLimit = 10.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1, 2])],
+            };
+            teamMetricsServiceMock.Setup(service => service.GetArrivalsProcessBehaviourChart(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivalsProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
+
+        [Test]
         public void GetFeaturesInProgress_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();

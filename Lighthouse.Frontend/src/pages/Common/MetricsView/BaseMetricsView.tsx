@@ -40,6 +40,7 @@ import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
 import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget";
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
 import {
+	computeArrivalsRunChartRag,
 	computeBlockedOverviewRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
@@ -186,6 +187,9 @@ type RagInputs = {
 	readonly totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
 	readonly cycleTimePbcData: ProcessBehaviourChartData | null;
 	readonly featureSizePbcData: ProcessBehaviourChartData | null;
+	readonly arrivalsPbcData: ProcessBehaviourChartData | null;
+	readonly arrivalsValues: ReadonlyArray<number>;
+	readonly arrivalsBlackoutDayIndices: ReadonlyArray<number>;
 	readonly terms: RagTerms;
 };
 
@@ -302,6 +306,17 @@ function buildWidgetFooters(
 		featureSizePbc: inputs.featureSizePbcData
 			? computePbcRag(inputs.featureSizePbcData)
 			: undefined,
+		arrivals: computeArrivalsRunChartRag(
+			inputs.arrivalsValues,
+			inputs.arrivalsBlackoutDayIndices,
+			inputs.startedTotal,
+			inputs.closedTotal,
+			inputs.systemWipLimit,
+			inputs.terms,
+		),
+		arrivalsPbc: inputs.arrivalsPbcData
+			? computePbcRag(inputs.arrivalsPbcData)
+			: undefined,
 	};
 }
 
@@ -317,6 +332,7 @@ type ViewDataInputs = {
 	readonly allFeaturesForSizeChart: IFeature[];
 	readonly serviceLevelExpectation: IPercentileValue | null;
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
+	readonly arrivalsData: RunChartData | null;
 	readonly workItemLookup: Map<number, IWorkItem>;
 	readonly terms: {
 		workItems: string;
@@ -491,6 +507,16 @@ function buildViewData(
 			items: inputs.allFeaturesForSizeChart as unknown as IWorkItem[],
 			highlightColumn: ageCycleHighlight,
 		},
+		arrivals: {
+			title: `${inputs.title} Started`,
+			items: extractWorkItems(inputs.arrivalsData?.workItemsPerUnitOfTime),
+			highlightColumn: ageCycleHighlight,
+		},
+		arrivalsPbc: {
+			title: `${inputs.title} Started`,
+			items: extractWorkItems(inputs.arrivalsData?.workItemsPerUnitOfTime),
+			highlightColumn: ageCycleHighlight,
+		},
 	};
 }
 
@@ -531,6 +557,8 @@ function buildWidgetNodes(ctx: {
 	totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
 	cycleTimePbcData: ProcessBehaviourChartData | null;
 	featureSizePbcData: ProcessBehaviourChartData | null;
+	arrivalsData: RunChartData | null;
+	arrivalsPbcData: ProcessBehaviourChartData | null;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -666,6 +694,14 @@ function buildWidgetNodes(ctx: {
 					estimationData={ctx.featureSizeEstimationData ?? undefined}
 				/>
 			) : null,
+		arrivals: ctx.arrivalsData ? (
+			<BarRunChart
+				title={`${ctx.title} Started`}
+				startDate={ctx.startDate}
+				chartData={ctx.arrivalsData}
+				displayTotal={true}
+			/>
+		) : null,
 	};
 
 	const pbcConfigs = [
@@ -698,6 +734,12 @@ function buildWidgetNodes(ctx: {
 			data: ctx.featureSizePbcData,
 			titleSuffix: `${ctx.featureTerm} Size`,
 			type: ProcessBehaviourChartType.FeatureSize,
+		},
+		{
+			id: "arrivalsPbc",
+			data: ctx.arrivalsPbcData,
+			titleSuffix: "Arrivals",
+			type: ProcessBehaviourChartType.Throughput,
 		},
 	];
 
@@ -782,6 +824,8 @@ export const BaseMetricsView = <
 		serviceLevelExpectation,
 		featureSizeTarget,
 		totalWorkItemAge,
+		arrivalsData,
+		arrivalsPbcData,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
 	const { getTerm } = useTerminology();
@@ -869,6 +913,8 @@ export const BaseMetricsView = <
 		totalWorkItemAgePbcData,
 		cycleTimePbcData,
 		featureSizePbcData,
+		arrivalsData,
+		arrivalsPbcData,
 	});
 
 	const widgetFooters = buildWidgetFooters({
@@ -946,6 +992,13 @@ export const BaseMetricsView = <
 		totalWorkItemAgePbcData,
 		cycleTimePbcData,
 		featureSizePbcData,
+		arrivalsPbcData,
+		arrivalsValues: arrivalsData
+			? Array.from({ length: arrivalsData.history }, (_, i) =>
+					arrivalsData.getValueOnDay(i),
+				)
+			: [],
+		arrivalsBlackoutDayIndices: arrivalsData?.blackoutDayIndices ?? [],
 	});
 
 	const widgetViewData = buildViewData({
@@ -960,6 +1013,7 @@ export const BaseMetricsView = <
 		allFeaturesForSizeChart,
 		serviceLevelExpectation,
 		estimationVsCycleTimeData,
+		arrivalsData,
 		workItemLookup,
 		terms: {
 			workItems: ragTerms.workItems,

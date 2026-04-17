@@ -696,6 +696,59 @@ export function computeEstimationVsCycleTimeRag(
 	};
 }
 
+export function computeArrivalsRunChartRag(
+	arrivalsValues: ReadonlyArray<number>,
+	blackoutDayIndices: ReadonlyArray<number>,
+	startedTotal: number,
+	closedTotal: number,
+	systemWipLimit: number | undefined,
+	terms: RagTerms,
+): RagResult {
+	if (!systemWipLimit || systemWipLimit <= 0) {
+		return {
+			ragStatus: "red",
+			tipText: `Define System ${terms.wip} Limit in settings.`,
+		};
+	}
+
+	// Primary signal: arrivals-vs-departures balance (reuse Started vs. Closed thresholds)
+	const balanceResult = computeStartedVsClosedRag(
+		startedTotal,
+		closedTotal,
+		systemWipLimit,
+		terms,
+	);
+
+	if (balanceResult.ragStatus === "red") {
+		return balanceResult;
+	}
+
+	// Secondary signal: batching/continuity of arrivals
+	if (arrivalsValues.length > 0) {
+		const blackoutSet = new Set(blackoutDayIndices);
+		let zeroRuns = 0;
+
+		for (let i = 0; i <= arrivalsValues.length - 3; i++) {
+			const window = [i, i + 1, i + 2];
+			const allZero = window.every(
+				(idx) => !blackoutSet.has(idx) && arrivalsValues[idx] === 0,
+			);
+			if (allZero) {
+				zeroRuns++;
+			}
+		}
+
+		if (zeroRuns >= 2 && balanceResult.ragStatus === "green") {
+			return {
+				ragStatus: "amber",
+				tipText: `Arrivals are balanced overall, but ${zeroRuns} runs of 3+ consecutive zero-arrival days suggest work is starting in batches rather than continuously.`,
+			};
+		}
+	}
+
+	return balanceResult;
+}
+
 type PbcInput = {
 	readonly status: string;
 	readonly baselineConfigured: boolean;

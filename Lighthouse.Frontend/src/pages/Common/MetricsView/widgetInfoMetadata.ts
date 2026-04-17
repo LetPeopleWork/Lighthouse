@@ -260,6 +260,29 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No baseline is configured, or a Large Change signal is detected.",
 		},
 	},
+	arrivals: {
+		description:
+			"Daily count of items started (arrivals) over the selected range, shown as a run chart.",
+		learnMoreUrl: `${DOCS_BASE}#arrivals-run-chart`,
+		statusGuidance: {
+			sustain:
+				"Arrivals are balanced with departures and no significant batching is detected.",
+			observe:
+				"Arrivals are balanced overall, but noticeable batching suggests work is starting in bursts rather than continuously.",
+			act: "No System WIP Limit is configured, or arrivals materially exceed departures.",
+		},
+	},
+	arrivalsPbc: {
+		description:
+			"Process Behaviour Chart for arrivals — highlights special-cause variation in intake rate.",
+		learnMoreUrl: `${DOCS_BASE}#arrivals-process-behaviour-chart`,
+		statusGuidance: {
+			sustain:
+				"A baseline is configured and no special-cause signals are detected.",
+			observe: "A Moderate Change signal is detected (without Large Change).",
+			act: "No baseline is configured, or a Large Change signal is detected.",
+		},
+	},
 };
 
 export function getWidgetInfo(widgetKey: string): WidgetInfoEntry | undefined {

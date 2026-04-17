@@ -35,6 +35,8 @@ describe("TotalWorkItemAgeWidget", () => {
 		getTotalWorkItemAgePbc: vi.fn(),
 		getCycleTimePbc: vi.fn(),
 		getEstimationVsCycleTimeData: vi.fn(),
+		getArrivals: vi.fn(),
+		getArrivalsPbc: vi.fn(),
 	});
 
 	it("renders loading state initially", () => {

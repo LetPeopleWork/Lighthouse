@@ -52,6 +52,22 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpGet("arrivals")]
+        public ActionResult<RunChartData> GetArrivals(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+            {
+                var data = portfolioMetricsService.GetArrivalsForPortfolio(portfolio, startDate, endDate);
+                data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
+                return data;
+            });
+        }
+
         [HttpGet("wipOverTime")]
         public ActionResult<RunChartData> GetFeaturesInProgressOverTime(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
@@ -161,6 +177,18 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 AnnotateBlackoutDays(portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate)));
+        }
+
+        [HttpGet("arrivals/pbc")]
+        public ActionResult<ProcessBehaviourChart> GetArrivalsProcessBehaviourChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                AnnotateBlackoutDays(portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate)));
         }
 
         [HttpGet("wipOverTime/pbc")]

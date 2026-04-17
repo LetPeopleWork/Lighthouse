@@ -62,6 +62,8 @@ function createMockTeamMetricsService(): IMetricsService<IWorkItem> {
 		getEstimationVsCycleTimeData: vi
 			.fn()
 			.mockResolvedValue({ status: "NotConfigured" }),
+		getArrivals: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
+		getArrivalsPbc: vi.fn().mockResolvedValue(null),
 	};
 }
 

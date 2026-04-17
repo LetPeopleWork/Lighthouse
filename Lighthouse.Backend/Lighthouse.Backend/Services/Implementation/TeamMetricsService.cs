@@ -151,6 +151,17 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public RunChartData GetArrivalsForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            return GetStartedItemsForTeam(team, startDate, endDate);
+        }
+
+        public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        {
+            return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
+                (s, e) => GetArrivalsForTeam(team, s, e));
+        }
+
         public RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Created Items of type {WorkItemTypes} for Team {TeamName} between {StartDate} and {EndDate}", string.Join(", ", workItemTypes), team.Name, startDate.Date, endDate.Date);

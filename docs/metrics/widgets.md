@@ -37,9 +37,9 @@ Widgets are organized into six dashboard categories. Each category groups relate
 |---|---|---|
 | **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Started vs. Closed, Cycle Time Percentiles |
 | **Cycle Time** | How long do items take? | Cycle Time Percentiles, Total Work Item Age, Cycle Time Scatterplot, Work Item Aging Chart, Cycle Time PBC |
-| **Throughput** | How much are we delivering? | Started vs. Closed, Throughput Run Chart, Simplified CFD, Throughput PBC |
+| **Throughput** | How much are we delivering? | Started vs. Closed, Throughput Run Chart, Arrivals Run Chart, Simplified CFD, Throughput PBC, Arrivals PBC |
 | **WIP & Aging** | Where is work getting stuck? | WIP Overview, Blocked Overview, Total Work Item Age, Work Item Aging Chart, WIP Over Time, Total Work Item Age Over Time, WIP PBC, Total Work Item Age PBC |
-| **Predictability** | Can we trust our forecasts? | Predictability Score, Cycle Time Percentiles, Predictability Score Details, Throughput PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
+| **Predictability** | Can we trust our forecasts? | Predictability Score, Cycle Time Percentiles, Predictability Score Details, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
 | **Portfolio & Features** | How do features flow through the system? | Features Worked On Overview (Teams only), Predictability Score, Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
 
 {: .note}
@@ -286,6 +286,44 @@ The Throughput Run Chart checks for runs of 3 or more consecutive zero-throughpu
 | 🔴 Act | 2 or more separate runs of 3+ consecutive zero-throughput days detected. |
 | 🟡 Observe | Exactly 1 run of 3 consecutive zero-throughput days detected. |
 | 🟢 Sustain | No extended zero-throughput runs detected. |
+
+# Arrivals Run Chart
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Arrivals (items started) |
+| **Affected by Filtering** | Yes |
+
+The Arrivals Run Chart shows the daily count of work items that were started (arrived into the system) over the selected date range. This complements the Throughput Run Chart by visualizing the intake side of flow: how much new work is entering the system each day.
+
+Comparing Arrivals with Throughput helps you understand whether your flow is balanced — whether you are starting work at roughly the same rate you finish it — and whether arrivals are continuous or batched.
+
+{: .note}
+If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why arrivals were zero on certain days.
+
+## Status Indicator
+
+The Arrivals Run Chart uses a two-factor status:
+
+1. **Primary signal:** Arrivals-versus-departures balance (using the same thresholds as Started vs. Closed).
+2. **Secondary signal:** Batching detection — runs of 3+ consecutive zero-arrival days (excluding Blackout Periods) suggest work is starting in bursts rather than continuously.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* arrivals materially exceed departures. |
+| 🟡 Observe | Arrivals are balanced overall, but noticeable batching (2+ runs of 3+ consecutive zero-arrival days) suggests work is starting in bursts. *Or* closed significantly exceeds started (process may be starving). |
+| 🟢 Sustain | Arrivals are balanced with departures and no significant batching is detected. |
+
+# Arrivals Process Behaviour Chart
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Arrivals (items started) |
+| **Affected by Filtering** | Yes |
+
+The Arrivals PBC applies the same XmR-chart analysis as the other PBC widgets, but focused on the intake rate. It highlights special-cause variation in how many items are started per day, helping you detect unexpected changes in your arrival pattern.
+
+The Arrivals PBC shares the same status logic as all other PBC charts (see [Status Indicator](#status-indicator-all-pbc-charts)).
 
 # Predictability Score
 

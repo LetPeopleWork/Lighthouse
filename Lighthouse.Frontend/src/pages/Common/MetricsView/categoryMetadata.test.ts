@@ -92,7 +92,9 @@ describe("categoryMetadata", () => {
 		expect(widgets.map((w) => w.widgetKey)).toEqual([
 			"cycleScatter",
 			"predictabilityScoreDetails",
+			"arrivals",
 			"throughputPbc",
+			"arrivalsPbc",
 			"wipPbc",
 			"totalWorkItemAgePbc",
 			"cycleTimePbc",

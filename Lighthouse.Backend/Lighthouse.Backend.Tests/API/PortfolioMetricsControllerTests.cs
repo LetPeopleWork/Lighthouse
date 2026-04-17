@@ -132,6 +132,112 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetArrivals_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetArrivals(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetArrivals_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetArrivals(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetArrivals_PortfolioExists_GetsArrivalsFromService()
+        {
+            var portfolio = new Portfolio { Id = 1 };
+            portfolioRepository.Setup(repo => repo.GetById(1)).Returns(portfolio);
+
+            var expectedArrivals = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
+            projectMetricsService.Setup(service => service.GetArrivalsForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedArrivals);
+
+            var response = subject.GetArrivals(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedArrivals));
+            }
+        }
+
+        [Test]
+        public void GetArrivalsPbc_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetArrivalsProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetArrivalsPbc_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetArrivalsProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+        }
+
+        [Test]
+        public void GetArrivalsPbc_PortfolioExists_ReturnsPbcFromService()
+        {
+            var portfolio = new Portfolio { Id = 1 };
+            portfolioRepository.Setup(repo => repo.GetById(1)).Returns(portfolio);
+
+            var expectedPbc = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                XAxisKind = XAxisKind.Date,
+                Average = 5.0,
+                UpperNaturalProcessLimit = 10.0,
+                LowerNaturalProcessLimit = 0.0,
+                DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1, 2])],
+            };
+            projectMetricsService.Setup(service => service.GetArrivalsProcessBehaviourChart(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
+
+            var response = subject.GetArrivalsProcessBehaviourChart(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPbc));
+            }
+        }
+
+        [Test]
         public void GetFeaturesInProgressOverTime_WithValidInput_ReturnsOk()
         {
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);

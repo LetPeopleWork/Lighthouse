@@ -39,6 +39,8 @@ export interface MetricsData<T> {
 	serviceLevelExpectation: IPercentileValue | null;
 	featureSizeTarget: IPercentileValue | null;
 	totalWorkItemAge: number | null;
+	arrivalsData: RunChartData | null;
+	arrivalsPbcData: ProcessBehaviourChartData | null;
 }
 
 function isProjectMetricsService(
@@ -106,6 +108,9 @@ export function useMetricsData<
 	const [featureSizeTarget, setFeatureSizeTarget] =
 		useState<IPercentileValue | null>(null);
 	const [totalWorkItemAge, setTotalWorkItemAge] = useState<number | null>(null);
+	const [arrivalsData, setArrivalsData] = useState<RunChartData | null>(null);
+	const [arrivalsPbcData, setArrivalsPbcData] =
+		useState<ProcessBehaviourChartData | null>(null);
 
 	useEffect(() => {
 		blackoutPeriodService
@@ -243,18 +248,32 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate]);
 
 	useEffect(() => {
+		metricsService
+			.getArrivals(entity.id, startDate, endDate)
+			.then(setArrivalsData)
+			.catch((error) => console.error("Error fetching arrivals data:", error));
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
 		const fetch = async () => {
-			const [throughputPbc, wipPbc, totalWorkItemAgePbc, cycleTimePbc] =
-				await Promise.all([
-					metricsService.getThroughputPbc(entity.id, startDate, endDate),
-					metricsService.getWipPbc(entity.id, startDate, endDate),
-					metricsService.getTotalWorkItemAgePbc(entity.id, startDate, endDate),
-					metricsService.getCycleTimePbc(entity.id, startDate, endDate),
-				]);
+			const [
+				throughputPbc,
+				wipPbc,
+				totalWorkItemAgePbc,
+				cycleTimePbc,
+				arrivalsPbc,
+			] = await Promise.all([
+				metricsService.getThroughputPbc(entity.id, startDate, endDate),
+				metricsService.getWipPbc(entity.id, startDate, endDate),
+				metricsService.getTotalWorkItemAgePbc(entity.id, startDate, endDate),
+				metricsService.getCycleTimePbc(entity.id, startDate, endDate),
+				metricsService.getArrivalsPbc(entity.id, startDate, endDate),
+			]);
 			setThroughputPbcData(throughputPbc);
 			setWipPbcData(wipPbc);
 			setTotalWorkItemAgePbcData(totalWorkItemAgePbc);
 			setCycleTimePbcData(cycleTimePbc);
+			setArrivalsPbcData(arrivalsPbc);
 		};
 		fetch().catch((error) =>
 			console.error("Error fetching process behaviour chart data:", error),
@@ -282,5 +301,7 @@ export function useMetricsData<
 		serviceLevelExpectation,
 		featureSizeTarget,
 		totalWorkItemAge,
+		arrivalsData,
+		arrivalsPbcData,
 	};
 }

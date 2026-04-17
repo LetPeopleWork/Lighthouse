@@ -77,6 +77,18 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IEstimationVsCycleTimeResponse>;
+
+	getArrivals(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData>;
+
+	getArrivalsPbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -317,6 +329,39 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				await this.apiService.get<IEstimationVsCycleTimeResponse>(
 					`/${this.api}/${id}/metrics/estimationVsCycleTime?${this.getDateFormatString(startDate, endDate)}`,
 				);
+
+			return response.data;
+		});
+	}
+
+	async getArrivals(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RunChartData>(
+				`/${this.api}/${id}/metrics/arrivals?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return new RunChartData(
+				response.data.workItemsPerUnitOfTime,
+				response.data.history,
+				response.data.total,
+				response.data.blackoutDayIndices,
+			);
+		});
+	}
+
+	async getArrivalsPbc(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ProcessBehaviourChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviourChartData>(
+				`/${this.api}/${id}/metrics/arrivals/pbc?${this.getDateFormatString(startDate, endDate)}`,
+			);
 
 			return response.data;
 		});

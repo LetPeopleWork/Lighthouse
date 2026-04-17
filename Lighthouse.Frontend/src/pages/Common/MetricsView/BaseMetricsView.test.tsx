@@ -620,6 +620,8 @@ describe("BaseMetricsView component", () => {
 			getTotalWorkItemAgePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getCycleTimePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getFeatureSizePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getArrivals: vi.fn().mockResolvedValue(mockStartedItemsData),
+			getArrivalsPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getFeatureSizeEstimation: vi.fn().mockResolvedValue({
 				status: "NotConfigured",
 				estimationUnit: null,
@@ -1083,6 +1085,8 @@ describe("BaseMetricsView component", () => {
 			getEstimationVsCycleTimeData: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
+			getArrivals: vi.fn().mockRejectedValue(new Error("API error")),
+			getArrivalsPbc: vi.fn().mockRejectedValue(new Error("API error")),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1487,6 +1491,8 @@ describe("BaseMetricsView component", () => {
 				getEstimationVsCycleTimeData: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),
+				getArrivals: vi.fn().mockRejectedValue(new Error("API error")),
+				getArrivalsPbc: vi.fn().mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi

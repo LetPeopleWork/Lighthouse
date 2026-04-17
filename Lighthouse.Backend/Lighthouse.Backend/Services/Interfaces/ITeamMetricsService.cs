@@ -22,6 +22,10 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        RunChartData GetArrivalsForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+
         RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate);
 
         RunChartData GetWorkInProgressOverTimeForTeam(Team team, DateTime startDate, DateTime endDate);

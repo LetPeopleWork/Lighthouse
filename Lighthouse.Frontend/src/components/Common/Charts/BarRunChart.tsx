@@ -40,7 +40,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 			// Use UTC methods to avoid timezone issues
 			day.setUTCDate(day.getUTCDate() + dataIndex);
 			const formattedDate = day.toLocaleDateString();
-			setDialogTitle(`${workItemsTerm} Closed on ${formattedDate}`);
+			setDialogTitle(`${workItemsTerm} on ${formattedDate}`);
 			setSelectedItems(items);
 			setDialogOpen(true);
 		}
@@ -117,10 +117,10 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 											}
 
 											if (numberOfClosedItems > 0) {
-												return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)${suffix}`;
+												return `${numberOfClosedItems} ${workItemsTerm} (Click for details)${suffix}`;
 											}
 
-											return `No Closed ${workItemsTerm}${suffix}`;
+											return `No ${workItemsTerm}${suffix}`;
 										},
 									},
 								]}

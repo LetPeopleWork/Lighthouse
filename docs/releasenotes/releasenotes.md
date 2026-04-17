@@ -4,6 +4,19 @@ layout: home
 nav_order: 95
 ---
 
+# vNext
+
+## Arrivals Metrics
+
+The Metrics Dashboard now includes **Arrivals** as a first-class metric for both Teams and Portfolios:
+
+- **Arrivals Run Chart**: Shows the daily count of work items started over the selected date range. Complements the Throughput Run Chart by visualizing the intake side of flow.
+- **Arrivals Process Behaviour Chart**: Applies XmR-chart analysis to the arrival rate, highlighting special-cause variation in how many items enter the system per day.
+
+Both widgets appear in the **Throughput** category. The Arrivals PBC also appears in the **Predictability** category alongside the other PBC charts.
+
+The Arrivals Run Chart includes a two-factor status indicator that checks both arrivals-versus-departures balance and whether arrivals are continuous or batched.
+
 # Lighthouse v26.4.7.1
 
 ## Simplified Onboarding

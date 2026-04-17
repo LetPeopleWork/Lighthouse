@@ -98,7 +98,9 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	predictability: [
 		{ widgetKey: "cycleScatter", size: "large" },
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
+		{ widgetKey: "arrivals", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
+		{ widgetKey: "arrivalsPbc", size: "large" },
 		{ widgetKey: "wipPbc", size: "large" },
 		{ widgetKey: "totalWorkItemAgePbc", size: "large" },
 		{ widgetKey: "cycleTimePbc", size: "large" },

@@ -181,7 +181,7 @@ describe("BarRunChart component", () => {
 
 		// Verify dialog is opened with the correct title and content
 		expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
-		expect(screen.getByText(/Items Closed on/)).toBeInTheDocument();
+		expect(screen.getByText(/Items on/)).toBeInTheDocument();
 
 		// Dialog should contain table headers
 		expect(screen.getByText("Name")).toBeInTheDocument();
