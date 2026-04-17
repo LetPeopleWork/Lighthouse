@@ -20,7 +20,7 @@
 		"@melloware/react-logviewer": "^6.5.2",
 		"@microsoft/signalr": "^10.0.0",
 		"@mui/icons-material": "^9.0.0",
-		"@mui/lab": "^7.0.0",
+		"@mui/lab": "9.0.0-beta.2",
 		"@mui/material": "^9.0.0",
 		"@mui/system": "^9.0.0",
 		"@mui/x-charts": "9.0.1",
