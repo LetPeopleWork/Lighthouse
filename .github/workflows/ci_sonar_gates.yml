@@ -63,7 +63,7 @@ jobs:
         if: inputs.frontend-ran
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
-          node-version: '25'
+          node-version: '24'
           cache: 'pnpm'
           cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
       
