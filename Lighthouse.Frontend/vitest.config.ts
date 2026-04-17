@@ -26,16 +26,14 @@ export default defineConfig({
 			},
 		},
 
-		// GitHub Actions optimized settings
 		pool: "threads",
 		isolate: true,
-		maxWorkers: process.env.CI ? undefined : 4,
+		maxWorkers: undefined,
 		fileParallelism: true,
 
 		// CI-specific optimizations
 		...(process.env.CI && {
 			// Reduce memory usage on CI
-			pool: "forks", // More stable than threads on CI
 			bail: 1, // Optional: fail fast
 		}),
 	},
