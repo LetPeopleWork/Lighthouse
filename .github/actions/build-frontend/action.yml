@@ -77,8 +77,6 @@ runs:
     - name: Frontend SonarCloud
       if: ${{ inputs.run-tests == 'true' }}
       uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
-      args: >
-        -Dsonar.verbose=true
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       with:
