@@ -1,6 +1,6 @@
 import CertainIcon from "@mui/icons-material/CheckCircle";
-import ConfidentIcon from "@mui/icons-material/CheckCircleOutlined";
-import RiskyIcon from "@mui/icons-material/ErrorOutlined";
+import ConfidentIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import RiskyIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import RealisticIcon from "@mui/icons-material/QueryBuilder";
 import { describe, expect, it } from "vitest";
 import { ForecastLevel } from "./ForecastLevel";
