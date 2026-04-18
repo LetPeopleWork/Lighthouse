@@ -60,8 +60,6 @@ export class TeamDetailPage {
 				.fill(year);
 		}
 
-		await this.page.getByRole("button", { name: "Forecast" }).first().click();
-
 		const likelihood =
 			(await this.page.getByRole("heading", { name: "%" }).textContent()) ??
 			"0";
@@ -81,7 +79,7 @@ export class TeamDetailPage {
 			await this.page.keyboard.press("Enter");
 		}
 
-		await this.page.getByRole("button", { name: "Forecast" }).nth(1).click();
+		await this.page.getByRole("button", { name: "Forecast" }).click();
 	}
 
 	async runBacktest(): Promise<void> {

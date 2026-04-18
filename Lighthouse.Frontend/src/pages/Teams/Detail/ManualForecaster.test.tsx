@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import dayjs from "dayjs";
 import type React from "react";
-import type { IForecastInputCandidates } from "../../../models/Forecasts/ForecastInputCandidates";
+import type {
+	IFeatureCandidate,
+	IForecastInputCandidates,
+} from "../../../models/Forecasts/ForecastInputCandidates";
 import { HowManyForecast } from "../../../models/Forecasts/HowManyForecast";
 import type { IManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { ManualForecast } from "../../../models/Forecasts/ManualForecast";
@@ -101,6 +104,8 @@ vi.mock("../../../components/Common/Forecasts/ForecastLikelihood", () => ({
 describe("ManualForecaster component", () => {
 	const mockOnRemainingItemsChange = vi.fn();
 	const mockOnTargetDateChange = vi.fn();
+	const mockOnModeChange = vi.fn();
+	const mockOnFeatureSelectionChange = vi.fn();
 
 	const defaultCandidates: IForecastInputCandidates = {
 		currentWipCount: 3,
@@ -115,6 +120,10 @@ describe("ManualForecaster component", () => {
 		forecastInputCandidates: null as IForecastInputCandidates | null,
 		onRemainingItemsChange: mockOnRemainingItemsChange,
 		onTargetDateChange: mockOnTargetDateChange,
+		mode: "manual" as "manual" | "features",
+		selectedFeatures: [] as IFeatureCandidate[],
+		onModeChange: mockOnModeChange,
+		onFeatureSelectionChange: mockOnFeatureSelectionChange,
 	};
 
 	beforeEach(() => {
@@ -403,6 +412,214 @@ describe("ManualForecaster component", () => {
 				screen.getByText(/How Many Work Items will you get done till/),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("forecast-likelihood")).toBeInTheDocument();
+		});
+	});
+
+	describe("Mode toggle", () => {
+		it("should render a mode toggle with Manual and Features options", () => {
+			render(<ManualForecaster {...defaultProps} />);
+			expect(
+				screen.getByRole("group", { name: /forecast mode/i }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Manual" }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Features" }),
+			).toBeInTheDocument();
+		});
+
+		it("should show the Manual button as selected in Manual mode", () => {
+			render(<ManualForecaster {...defaultProps} mode="manual" />);
+			const manualBtn = screen.getByRole("button", { name: "Manual" });
+			expect(manualBtn).toHaveAttribute("aria-pressed", "true");
+		});
+
+		it("should call onModeChange with 'features' when Features toggle clicked", () => {
+			render(<ManualForecaster {...defaultProps} mode="manual" />);
+			fireEvent.click(screen.getByRole("button", { name: "Features" }));
+			expect(mockOnModeChange).toHaveBeenCalledWith("features");
+		});
+
+		it("should call onModeChange with 'manual' when Manual toggle clicked in Features mode", () => {
+			render(<ManualForecaster {...defaultProps} mode="features" />);
+			fireEvent.click(screen.getByRole("button", { name: "Manual" }));
+			expect(mockOnModeChange).toHaveBeenCalledWith("manual");
+		});
+	});
+
+	describe("Features mode UI", () => {
+		const candidatesWithFeatures: IForecastInputCandidates = {
+			currentWipCount: 3,
+			backlogCount: 12,
+			features: [
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+				{ id: 2, name: "Feature Beta", remainingWork: 8 },
+				{ id: 3, name: "Feature Gamma", remainingWork: 3 },
+			],
+		};
+
+		it("should NOT show manual numeric input in Features mode", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(
+				screen.queryByLabelText("Number of Work Items"),
+			).not.toBeInTheDocument();
+		});
+
+		it("should render feature search input in Features mode", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(screen.getByLabelText(/search features/i)).toBeInTheDocument();
+		});
+
+		it("should render selectable feature chips from forecastInputCandidates.features", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(screen.getByText("Feature Alpha")).toBeInTheDocument();
+			expect(screen.getByText("Feature Beta")).toBeInTheDocument();
+			expect(screen.getByText("Feature Gamma")).toBeInTheDocument();
+		});
+
+		it("should filter visible features based on search text", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			const searchInput = screen.getByLabelText(/search features/i);
+			fireEvent.change(searchInput, { target: { value: "Alpha" } });
+			expect(screen.getByText("Feature Alpha")).toBeInTheDocument();
+			expect(screen.queryByText("Feature Beta")).not.toBeInTheDocument();
+			expect(screen.queryByText("Feature Gamma")).not.toBeInTheDocument();
+		});
+
+		it("should call onFeatureSelectionChange when a feature chip is clicked", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={[]}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			fireEvent.click(screen.getByText("Feature Alpha"));
+			expect(mockOnFeatureSelectionChange).toHaveBeenCalledWith([
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+			]);
+		});
+
+		it("should show selected features as chips with a remove button", () => {
+			const selectedFeatures: IFeatureCandidate[] = [
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+			];
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={selectedFeatures}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(screen.getByLabelText("Remove Feature Alpha")).toBeInTheDocument();
+		});
+
+		it("should call onFeatureSelectionChange with feature removed when remove button clicked", () => {
+			const selectedFeatures: IFeatureCandidate[] = [
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+				{ id: 2, name: "Feature Beta", remainingWork: 8 },
+			];
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={selectedFeatures}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			fireEvent.click(screen.getByLabelText("Remove Feature Alpha"));
+			expect(mockOnFeatureSelectionChange).toHaveBeenCalledWith([
+				{ id: 2, name: "Feature Beta", remainingWork: 8 },
+			]);
+		});
+
+		it("should show aggregate remaining-work total from selected features", () => {
+			const selectedFeatures: IFeatureCandidate[] = [
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+				{ id: 2, name: "Feature Beta", remainingWork: 8 },
+			];
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={selectedFeatures}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(screen.getByText(/13 work items/i)).toBeInTheDocument();
+		});
+
+		it("should show zero-hint when no features are selected in Features mode", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={[]}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(
+				screen.getByText(
+					/Forecasting requires at least 1 remaining work item/i,
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should show empty-state message when no features are available", () => {
+			const candidatesNoFeatures: IForecastInputCandidates = {
+				currentWipCount: 3,
+				backlogCount: 12,
+				features: [],
+			};
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					forecastInputCandidates={candidatesNoFeatures}
+				/>,
+			);
+			expect(screen.getByText(/no features available/i)).toBeInTheDocument();
+		});
+
+		it("should show the manual numeric input in Manual mode, not the feature search", () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="manual"
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			expect(screen.getByLabelText("Number of Work Items")).toBeInTheDocument();
+			expect(
+				screen.queryByLabelText(/search features/i),
+			).not.toBeInTheDocument();
 		});
 	});
 });

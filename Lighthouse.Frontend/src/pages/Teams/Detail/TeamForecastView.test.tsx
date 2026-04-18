@@ -8,7 +8,10 @@ import {
 import dayjs from "dayjs";
 import { describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import type { IForecastInputCandidates } from "../../../models/Forecasts/ForecastInputCandidates";
+import type {
+	IFeatureCandidate,
+	IForecastInputCandidates,
+} from "../../../models/Forecasts/ForecastInputCandidates";
 import { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -70,6 +73,10 @@ vi.mock("./ManualForecaster", () => ({
 		forecastInputCandidates,
 		onRemainingItemsChange,
 		onTargetDateChange,
+		mode,
+		selectedFeatures,
+		onModeChange,
+		onFeatureSelectionChange,
 	}: {
 		remainingItems: number;
 		targetDate: unknown;
@@ -77,6 +84,10 @@ vi.mock("./ManualForecaster", () => ({
 		manualForecastResult: unknown;
 		onRemainingItemsChange: (value: number) => void;
 		onTargetDateChange: (date: unknown) => void;
+		mode: string;
+		selectedFeatures: IFeatureCandidate[];
+		onModeChange: (mode: string) => void;
+		onFeatureSelectionChange: (features: IFeatureCandidate[]) => void;
 	}) => (
 		<div data-testid="manual-forecaster">
 			<span data-testid="remaining-items-value">{remainingItems}</span>
@@ -85,6 +96,10 @@ vi.mock("./ManualForecaster", () => ({
 			</span>
 			<span data-testid="forecast-candidates-value">
 				{forecastInputCandidates ? "has-candidates" : "null"}
+			</span>
+			<span data-testid="forecast-mode-value">{mode}</span>
+			<span data-testid="selected-features-count">
+				{selectedFeatures?.length ?? 0}
 			</span>
 			<button
 				type="button"
@@ -106,6 +121,50 @@ vi.mock("./ManualForecaster", () => ({
 				onClick={() => onTargetDateChange(dayjs().add(1, "week"))}
 			>
 				Change Target Date
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-switch-to-features"
+				onClick={() => onModeChange("features")}
+			>
+				Switch to Features
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-switch-to-manual"
+				onClick={() => onModeChange("manual")}
+			>
+				Switch to Manual
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-feature-selection"
+				onClick={() =>
+					onFeatureSelectionChange([
+						{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+					])
+				}
+			>
+				Select Feature
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-feature-selection-multi"
+				onClick={() =>
+					onFeatureSelectionChange([
+						{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+						{ id: 2, name: "Feature Beta", remainingWork: 8 },
+					])
+				}
+			>
+				Select Two Features
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-zero-feature-selection"
+				onClick={() => onFeatureSelectionChange([])}
+			>
+				Clear Feature Selection
 			</button>
 		</div>
 	),
@@ -765,6 +824,131 @@ describe("TeamForecastView component", () => {
 			expect(clearButton).toBeInTheDocument();
 
 			expect(() => fireEvent.click(clearButton)).not.toThrow();
+		});
+	});
+
+	describe("Feature mode orchestration", () => {
+		it("should default to Manual mode and pass mode to ManualForecaster", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
+			expect(screen.getByTestId("forecast-mode-value")).toHaveTextContent(
+				"manual",
+			);
+		});
+
+		it("should switch to Features mode when onModeChange called with features", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
+			});
+			expect(screen.getByTestId("forecast-mode-value")).toHaveTextContent(
+				"features",
+			);
+		});
+
+		it("should run debounced forecast with feature aggregate when features selected and aggregate > 0", async () => {
+			mockForecastService.runManualForecast.mockResolvedValueOnce({
+				remainingItems: 5,
+				targetDate: null,
+				whenForecasts: [],
+				howManyForecasts: [],
+				likelihood: 0,
+			});
+
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
+				});
+
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-feature-selection"));
+				});
+
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
+					mockTeam.id,
+					5,
+					null,
+				);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should NOT run forecast when feature selection results in aggregate of 0", async () => {
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
+				});
+
+				await act(async () => {
+					fireEvent.click(
+						screen.getByTestId("simulate-zero-feature-selection"),
+					);
+				});
+
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runManualForecast).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should pass selectedFeatures to ManualForecaster", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
+			});
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-feature-selection"));
+			});
+			expect(screen.getByTestId("selected-features-count")).toHaveTextContent(
+				"1",
+			);
+		});
+
+		it("should not leak feature selections into manual mode remaining-items state", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
+
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
+			});
+
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-feature-selection-multi"));
+			});
+
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-switch-to-manual"));
+			});
+
+			// Manual remaining-items state must remain 10 (initial), not 13 (feature aggregate)
+			expect(screen.getByTestId("remaining-items-value")).toHaveTextContent(
+				"10",
+			);
 		});
 	});
 });

@@ -1,11 +1,21 @@
 import { Grid } from "@mui/material";
 import type dayjs from "dayjs";
 import type React from "react";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
-import type { IForecastInputCandidates } from "../../../models/Forecasts/ForecastInputCandidates";
+import type {
+	IFeatureCandidate,
+	IForecastInputCandidates,
+} from "../../../models/Forecasts/ForecastInputCandidates";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -28,6 +38,22 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		useState<ManualForecast | null>(null);
 	const [forecastInputCandidates, setForecastInputCandidates] =
 		useState<IForecastInputCandidates | null>(null);
+	const [forecastMode, setForecastMode] = useState<"manual" | "features">(
+		"manual",
+	);
+	const [selectedFeatures, setSelectedFeatures] = useState<IFeatureCandidate[]>(
+		[],
+	);
+
+	const featureAggregateRemainingWork = useMemo(
+		() => selectedFeatures.reduce((sum, f) => sum + f.remainingWork, 0),
+		[selectedFeatures],
+	);
+
+	const effectiveRemainingItems =
+		forecastMode === "features"
+			? featureAggregateRemainingWork
+			: remainingItems;
 
 	const [newItemForecastResult, setNewItemForecastResult] =
 		useState<ManualForecast | null>(null);
@@ -106,11 +132,11 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		}
 
 		const timer = setTimeout(() => {
-			runForecast(remainingItems, targetDate);
+			runForecast(effectiveRemainingItems, targetDate);
 		}, DEBOUNCE_MS);
 
 		return () => clearTimeout(timer);
-	}, [remainingItems, targetDate, runForecast]);
+	}, [effectiveRemainingItems, targetDate, runForecast]);
 
 	const handleRemainingItemsChange = useCallback((value: number) => {
 		hasInteractedRef.current = true;
@@ -121,6 +147,20 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		hasInteractedRef.current = true;
 		setTargetDate(date);
 	}, []);
+
+	const handleModeChange = useCallback((newMode: "manual" | "features") => {
+		hasInteractedRef.current = true;
+		setForecastMode(newMode);
+		setManualForecastResult(null);
+	}, []);
+
+	const handleFeatureSelectionChange = useCallback(
+		(features: IFeatureCandidate[]) => {
+			hasInteractedRef.current = true;
+			setSelectedFeatures(features);
+		},
+		[],
+	);
 
 	const onRunNewItemForecast = async (
 		startDate: Date,
@@ -188,6 +228,10 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					forecastInputCandidates={forecastInputCandidates}
 					onRemainingItemsChange={handleRemainingItemsChange}
 					onTargetDateChange={handleTargetDateChange}
+					mode={forecastMode}
+					selectedFeatures={selectedFeatures}
+					onModeChange={handleModeChange}
+					onFeatureSelectionChange={handleFeatureSelectionChange}
 				/>
 			</InputGroup>
 			<InputGroup title={`New ${workItemsTerm} Creation Forecast`}>

@@ -1,10 +1,12 @@
-import { Close } from "@mui/icons-material";
+import { Close, Search } from "@mui/icons-material";
 import {
 	Chip,
 	IconButton,
 	InputAdornment,
 	Stack,
 	TextField,
+	ToggleButton,
+	ToggleButtonGroup,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -13,9 +15,13 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
+import { useState } from "react";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
-import type { IForecastInputCandidates } from "../../../models/Forecasts/ForecastInputCandidates";
+import type {
+	IFeatureCandidate,
+	IForecastInputCandidates,
+} from "../../../models/Forecasts/ForecastInputCandidates";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -65,6 +71,10 @@ interface ManualForecasterProps {
 	forecastInputCandidates: IForecastInputCandidates | null;
 	onRemainingItemsChange: (value: number) => void;
 	onTargetDateChange: (date: dayjs.Dayjs | null) => void;
+	mode?: "manual" | "features";
+	selectedFeatures?: IFeatureCandidate[];
+	onModeChange?: (mode: "manual" | "features") => void;
+	onFeatureSelectionChange?: (features: IFeatureCandidate[]) => void;
 }
 
 const ManualForecaster: React.FC<ManualForecasterProps> = ({
@@ -74,71 +84,211 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	forecastInputCandidates,
 	onRemainingItemsChange,
 	onTargetDateChange,
+	mode = "manual",
+	selectedFeatures = [],
+	onModeChange,
+	onFeatureSelectionChange,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
-	const showZeroHint = remainingItems === 0;
+	const [featureSearchQuery, setFeatureSearchQuery] = useState("");
+
+	const featureAggregate = selectedFeatures.reduce(
+		(sum, f) => sum + f.remainingWork,
+		0,
+	);
+	const showZeroHint =
+		mode === "manual" ? remainingItems === 0 : featureAggregate === 0;
+
+	const filteredFeatures = (forecastInputCandidates?.features ?? []).filter(
+		(f) => f.name.toLowerCase().includes(featureSearchQuery.toLowerCase()),
+	);
+
+	const handleFeatureClick = (feature: IFeatureCandidate) => {
+		const alreadySelected = selectedFeatures.some((f) => f.id === feature.id);
+		if (!alreadySelected) {
+			onFeatureSelectionChange?.([...selectedFeatures, feature]);
+		}
+	};
+
+	const handleFeatureRemove = (feature: IFeatureCandidate) => {
+		onFeatureSelectionChange?.(
+			selectedFeatures.filter((f) => f.id !== feature.id),
+		);
+	};
 
 	return (
 		<Grid container spacing={3}>
+			<Grid size={{ xs: 12 }}>
+				<ToggleButtonGroup
+					value={mode}
+					exclusive
+					onChange={(_, newMode) => {
+						if (newMode) onModeChange?.(newMode);
+					}}
+					aria-label="Forecast mode"
+					size="small"
+				>
+					<ToggleButton value="manual" aria-label="Manual">
+						Manual
+					</ToggleButton>
+					<ToggleButton value="features" aria-label="Features">
+						Features
+					</ToggleButton>
+				</ToggleButtonGroup>
+			</Grid>
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Typography variant="subtitle2" gutterBottom>
 					How many {workItemsTerm} need to be completed?
 				</Typography>
-				<TextField
-					label={`Number of ${workItemsTerm}`}
-					type="number"
-					fullWidth
-					value={remainingItems}
-					onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
-					error={showZeroHint}
-					helperText={
-						showZeroHint
-							? `Forecasting requires at least 1 remaining ${workItemsTerm.toLowerCase()}.`
-							: undefined
-					}
-					slotProps={{
-						input: {
-							endAdornment: remainingItems > 0 && (
-								<InputAdornment position="end">
-									<IconButton
-										aria-label="Clear remaining items"
-										onClick={() => onRemainingItemsChange(0)}
-										edge="end"
-										size="small"
-									>
-										<Close />
-									</IconButton>
-								</InputAdornment>
-							),
-						},
-					}}
-				/>
-				{forecastInputCandidates && (
-					<Stack
-						direction="row"
-						spacing={1}
-						sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
-					>
-						<Chip
-							label={`Currently in Progress: ${forecastInputCandidates.currentWipCount}`}
-							size="small"
-							onClick={() =>
-								onRemainingItemsChange(forecastInputCandidates.currentWipCount)
+
+				{mode === "manual" && (
+					<>
+						<TextField
+							label={`Number of ${workItemsTerm}`}
+							type="number"
+							fullWidth
+							value={remainingItems}
+							onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
+							error={showZeroHint}
+							helperText={
+								showZeroHint
+									? `Forecasting requires at least 1 remaining ${workItemsTerm.toLowerCase()}.`
+									: undefined
 							}
-							variant="outlined"
+							slotProps={{
+								input: {
+									endAdornment: remainingItems > 0 && (
+										<InputAdornment position="end">
+											<IconButton
+												aria-label="Clear remaining items"
+												onClick={() => onRemainingItemsChange(0)}
+												edge="end"
+												size="small"
+											>
+												<Close />
+											</IconButton>
+										</InputAdornment>
+									),
+								},
+							}}
 						/>
-						<Chip
-							label={`Backlog: ${forecastInputCandidates.backlogCount}`}
-							size="small"
-							onClick={() =>
-								onRemainingItemsChange(forecastInputCandidates.backlogCount)
-							}
-							variant="outlined"
-						/>
-					</Stack>
+						{forecastInputCandidates && (
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
+							>
+								<Chip
+									label={`Currently in Progress: ${forecastInputCandidates.currentWipCount}`}
+									size="small"
+									onClick={() =>
+										onRemainingItemsChange(
+											forecastInputCandidates.currentWipCount,
+										)
+									}
+									variant="outlined"
+								/>
+								<Chip
+									label={`Backlog: ${forecastInputCandidates.backlogCount}`}
+									size="small"
+									onClick={() =>
+										onRemainingItemsChange(forecastInputCandidates.backlogCount)
+									}
+									variant="outlined"
+								/>
+							</Stack>
+						)}
+					</>
 				)}
+
+				{mode === "features" && (
+					<>
+						<TextField
+							label="Search Features"
+							fullWidth
+							size="small"
+							value={featureSearchQuery}
+							onChange={(e) => setFeatureSearchQuery(e.target.value)}
+							slotProps={{
+								input: {
+									startAdornment: (
+										<InputAdornment position="start">
+											<Search fontSize="small" />
+										</InputAdornment>
+									),
+								},
+							}}
+						/>
+
+						{(forecastInputCandidates?.features ?? []).length === 0 ? (
+							<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+								No features available
+							</Typography>
+						) : (
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
+							>
+								{filteredFeatures.map((feature) => {
+									const isSelected = selectedFeatures.some(
+										(f) => f.id === feature.id,
+									);
+									return (
+										!isSelected && (
+											<Chip
+												key={feature.id}
+												label={feature.name}
+												size="small"
+												onClick={() => handleFeatureClick(feature)}
+												variant="outlined"
+											/>
+										)
+									);
+								})}
+							</Stack>
+						)}
+
+						{selectedFeatures.length > 0 && (
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
+							>
+								{selectedFeatures.map((feature) => (
+									<Chip
+										key={feature.id}
+										label={feature.name}
+										size="small"
+										variant="filled"
+										onDelete={() => handleFeatureRemove(feature)}
+										deleteIcon={
+											<IconButton
+												aria-label={`Remove ${feature.name}`}
+												size="small"
+											>
+												<Close fontSize="small" />
+											</IconButton>
+										}
+									/>
+								))}
+							</Stack>
+						)}
+
+						<Typography variant="body2" sx={{ mt: 1 }}>
+							{featureAggregate} {workItemsTerm}
+						</Typography>
+
+						{showZeroHint && (
+							<Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+								{`Forecasting requires at least 1 remaining ${workItemsTerm.toLowerCase()}.`}
+							</Typography>
+						)}
+					</>
+				)}
+
 				{manualForecastResult?.whenForecasts &&
 					manualForecastResult.whenForecasts.length > 0 && (
 						<Grid container sx={{ mt: 2 }}>
