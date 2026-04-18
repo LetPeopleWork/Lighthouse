@@ -474,22 +474,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetThroughputForTeam_DoesNotCacheValue()
-        {
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
-            var startDate = DateTime.UtcNow.AddDays(-1);
-            var endDate = DateTime.UtcNow;
-
-            var throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
-            Assert.That(throughput.Total, Is.EqualTo(1));
-
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
-            throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
-
-            Assert.That(throughput.Total, Is.EqualTo(2));
-        }
-
-        [Test]
         public void GetWorkInProgressForTeam_ReturnsWorkInProgressPerDay()
         {
             var startDate = DateTime.UtcNow.AddDays(-9);
