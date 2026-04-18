@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Services.Implementation
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             var throughput = GetThroughputForPortfolio(portfolio, startDate, endDate);
-            return GetMultiItemForecastPredictabilityScore(throughput, startDate, endDate);
+            return GetMultiItemForecastPredictabilityScore(throughput);
         }
 
         public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio)

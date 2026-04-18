@@ -818,7 +818,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var howManyForecast = new HowManyForecast();
             var expectedResult = new ForecastPredictabilityScore(howManyForecast);
 
-            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 8)).Returns(howManyForecast);
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 30)).Returns(howManyForecast);
 
             var score = subject.GetMultiItemForecastPredictabilityScoreForTeam(testTeam, startDate, endDate);
 

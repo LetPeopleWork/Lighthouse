@@ -13,9 +13,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();
 
-        protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput, DateTime startDate, DateTime endDate)
+        protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput)
         {
-            var numberOfDays = (endDate - startDate).Days + 1;
+            var numberOfDays = 30;
 
             var howManyForecast = ForecastService.HowMany(throughput, numberOfDays);
 

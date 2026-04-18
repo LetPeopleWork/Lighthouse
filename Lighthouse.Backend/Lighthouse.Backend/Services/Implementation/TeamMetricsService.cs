@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Services.Implementation
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             var throughput = GetBlackoutAwareThroughputForTeam(team, startDate, endDate);
-            return GetMultiItemForecastPredictabilityScore(throughput, startDate, endDate);
+            return GetMultiItemForecastPredictabilityScore(throughput);
         }
 
         public IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate)

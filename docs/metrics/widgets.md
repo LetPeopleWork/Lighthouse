@@ -332,7 +332,7 @@ The Arrivals PBC shares the same status logic as all other PBC charts (see [Stat
 | **Flow Metric** | Throughput |
 | **Affected by Filtering** | Yes |
 
-The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will run an *MCS How Many* forecast for the number of days in the date range. For example, if you have selected the last 30 days, Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
+The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
 
 ![Predictability Score Overview](../assets/features/metrics/predictabilityScore.png)
 
