@@ -218,9 +218,9 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Status = BaselineStatus.Ready,
                 XAxisKind = XAxisKind.Date,
-                Average = 5.0,
-                UpperNaturalProcessLimit = 10.0,
-                LowerNaturalProcessLimit = 0.0,
+                Average = 5,
+                UpperNaturalProcessLimit = 10,
+                LowerNaturalProcessLimit = 0,
                 DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1, 2])],
             };
             projectMetricsService.Setup(service => service.GetArrivalsProcessBehaviourChart(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
@@ -549,9 +549,9 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Status = BaselineStatus.Ready,
                 XAxisKind = XAxisKind.Date,
-                Average = 2.5,
-                UpperNaturalProcessLimit = 5.0,
-                LowerNaturalProcessLimit = 0.0,
+                Average = 2,
+                UpperNaturalProcessLimit = 5,
+                LowerNaturalProcessLimit = 0,
                 DataPoints = [new ProcessBehaviourChartDataPoint("2025-01-01", 3, [], [1, 2])],
             };
             projectMetricsService.Setup(service => service.GetThroughputProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);

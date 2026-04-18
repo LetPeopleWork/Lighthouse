@@ -34,11 +34,11 @@ namespace Lighthouse.Backend.API.DTO
 
         public XAxisKind XAxisKind { get; init; }
 
-        public double Average { get; init; }
+        public int Average { get; init; }
 
-        public double UpperNaturalProcessLimit { get; init; }
+        public int UpperNaturalProcessLimit { get; init; }
 
-        public double LowerNaturalProcessLimit { get; init; }
+        public int LowerNaturalProcessLimit { get; init; }
 
         public bool BaselineConfigured { get; init; } = true;
 

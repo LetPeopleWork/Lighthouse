@@ -10,9 +10,9 @@ namespace Lighthouse.Backend.Services.Implementation
     }
 
     public record XmRResult(
-        double Average,
-        double UpperNaturalProcessLimit,
-        double LowerNaturalProcessLimit,
+        int Average,
+        int UpperNaturalProcessLimit,
+        int LowerNaturalProcessLimit,
         IReadOnlyList<IReadOnlyList<SpecialCauseType>> SpecialCauseClassifications);
 
     public static class XmRCalculator
@@ -32,7 +32,8 @@ namespace Lighthouse.Backend.Services.Implementation
             if (baselineValues.Length < 2)
             {
                 var classifications = CreateEmptyClassifications(displayValues.Length);
-                return new XmRResult(average, average, average, classifications);
+                var roundedAverage = (int)Math.Round(average);
+                return new XmRResult(roundedAverage, roundedAverage, roundedAverage, classifications);
             }
 
             var movingRanges = new double[baselineValues.Length - 1];
@@ -56,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var specialCauseClassifications = ClassifyAllPoints(
                 displayValues, average, unpl, lnpl, sigma);
 
-            return new XmRResult(average, unpl, lnpl, specialCauseClassifications);
+            return new XmRResult((int)Math.Round(average), (int)Math.Round(unpl), (int)Math.Round(lnpl), specialCauseClassifications);
         }
 
         private static SpecialCauseType[][] CreateEmptyClassifications(int length)

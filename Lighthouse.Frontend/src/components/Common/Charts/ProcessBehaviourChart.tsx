@@ -494,7 +494,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 
 								<ChartsReferenceLine
 									y={data.average}
-									label={`Average = ${data.average.toFixed(1)}`}
+									label={`Average = ${data.average.toFixed(0)}`}
 									labelAlign="end"
 									lineStyle={{
 										stroke: neutralColor,
@@ -508,7 +508,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 
 								<ChartsReferenceLine
 									y={data.upperNaturalProcessLimit}
-									label={`UNPL = ${data.upperNaturalProcessLimit.toFixed(1)}`}
+									label={`UNPL = ${data.upperNaturalProcessLimit.toFixed(0)}`}
 									labelAlign="end"
 									lineStyle={{
 										stroke: neutralColor,
@@ -523,7 +523,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 								{data.lowerNaturalProcessLimit > 0 && (
 									<ChartsReferenceLine
 										y={data.lowerNaturalProcessLimit}
-										label={`LNPL = ${data.lowerNaturalProcessLimit.toFixed(1)}`}
+										label={`LNPL = ${data.lowerNaturalProcessLimit.toFixed(0)}`}
 										labelAlign="end"
 										lineStyle={{
 											stroke: neutralColor,

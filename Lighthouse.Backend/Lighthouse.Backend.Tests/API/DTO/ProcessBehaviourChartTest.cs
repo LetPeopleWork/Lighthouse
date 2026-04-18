@@ -60,9 +60,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Status = BaselineStatus.Ready,
                 StatusReason = string.Empty,
                 XAxisKind = XAxisKind.Date,
-                Average = 6.5,
-                UpperNaturalProcessLimit = 14.0,
-                LowerNaturalProcessLimit = 0.0,
+                Average = 7,
+                UpperNaturalProcessLimit = 14,
+                LowerNaturalProcessLimit = 0,
                 DataPoints = dataPoints,
             };
 
@@ -70,8 +70,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Assert.That(dto.Status, Is.EqualTo(BaselineStatus.Ready));
                 Assert.That(dto.XAxisKind, Is.EqualTo(XAxisKind.Date));
-                Assert.That(dto.Average, Is.EqualTo(6.5));
-                Assert.That(dto.UpperNaturalProcessLimit, Is.EqualTo(14.0));
+                Assert.That(dto.Average, Is.EqualTo(7));
+                Assert.That(dto.UpperNaturalProcessLimit, Is.EqualTo(14));
                 Assert.That(dto.LowerNaturalProcessLimit, Is.Zero);
                 Assert.That(dto.DataPoints, Has.Length.EqualTo(2));
             }
@@ -135,9 +135,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Status = BaselineStatus.Ready,
                 XAxisKind = XAxisKind.DateTime,
-                Average = 5.0,
-                UpperNaturalProcessLimit = 10.0,
-                LowerNaturalProcessLimit = 0.0,
+                Average = 5,
+                UpperNaturalProcessLimit = 10,
+                LowerNaturalProcessLimit = 0,
                 DataPoints = [point],
             };
 

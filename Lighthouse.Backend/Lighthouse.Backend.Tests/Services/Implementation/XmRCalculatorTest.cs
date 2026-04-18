@@ -51,9 +51,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Average, Is.EqualTo(5.0));
-                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(5.0));
-                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(5.0));
+                Assert.That(result.Average, Is.EqualTo(5));
+                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(5));
+                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(5));
                 Assert.That(result.SpecialCauseClassifications, Has.Count.EqualTo(2));
             }
         }
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = XmRCalculator.Calculate(baseline, display);
 
-            Assert.That(result.Average, Is.EqualTo(25.0));
+            Assert.That(result.Average, Is.EqualTo(25));
         }
 
         [Test]
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Baseline: 10, 20, 30, 40
             // Moving ranges: |20-10|=10, |30-20|=10, |40-30|=10 → MRbar = 10
-            // UNPL = 25 + 2.66 * 10 = 51.6
+            // UNPL = 25 + 2.66 * 10 = 51.6 → rounds to 52
             // LNPL = 25 - 2.66 * 10 = -1.6 → clamped to 0 (zero-bounded)
             var baseline = new[] { 10, 20, 30, 40 };
             var display = new[] { 25 };
@@ -85,8 +85,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Average, Is.EqualTo(25.0));
-                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(51.6).Within(0.01));
+                Assert.That(result.Average, Is.EqualTo(25));
+                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(52));
                 Assert.That(result.LowerNaturalProcessLimit, Is.Zero);
             }
         }
@@ -107,13 +107,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Calculate_ZeroBoundedData_LnplNotNegative()
         {
             // When LNPL naturally positive, it stays as-is
-            // Baseline: 100, 110, 100, 110 → avg=105, MRbar=10, LNPL=78.4
+            // Baseline: 100, 110, 100, 110 → avg=105, MRbar=10, LNPL=78.4 → rounds to 78
             var baseline = new[] { 100, 110, 100, 110 };
             var display = new[] { 105 };
 
             var result = XmRCalculator.Calculate(baseline, display);
 
-            Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(78.4).Within(0.01));
+            Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(78));
         }
 
         [Test]
@@ -195,9 +195,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Average, Is.EqualTo(5.0));
-                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(5.0));
-                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(5.0));
+                Assert.That(result.Average, Is.EqualTo(5));
+                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(5));
+                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(5));
             }
         }
 
@@ -453,8 +453,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Baseline period completely separate from display
             // Baseline: 100, 120, 100, 120 → average=110, MRbar=20
-            // UNPL = 110 + 53.2 = 163.2
-            // LNPL = 110 - 53.2 = 56.8 (positive, not clamped)
+            // UNPL = 110 + 53.2 = 163.2 → rounds to 163
+            // LNPL = 110 - 53.2 = 56.8 → rounds to 57 (positive, not clamped)
             var baseline = new[] { 100, 120, 100, 120 };
             var display = new[] { 110, 115, 170 };
 
@@ -462,11 +462,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Average, Is.EqualTo(110.0));
-                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(163.2).Within(0.01));
-                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(56.8).Within(0.01));
+                Assert.That(result.Average, Is.EqualTo(110));
+                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(163));
+                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(57));
                 Assert.That(result.SpecialCauseClassifications, Has.Count.EqualTo(3));
-                AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.LargeChange); // 170 > UNPL 163.2
+                AssertHasCause(result.SpecialCauseClassifications, 2, SpecialCauseType.LargeChange); // 170 > UNPL 163
             }
         }
 
@@ -485,8 +485,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Calculate_TwoBaselineValues_ComputesLimitsFromSingleMovingRange()
         {
             // Two baseline values: 100, 110 → average=105, MRbar=10
-            // UNPL = 105 + 2.66*10 = 131.6
-            // LNPL = 105 - 2.66*10 = 78.4 (positive, not clamped)
+            // UNPL = 105 + 2.66*10 = 131.6 → rounds to 132
+            // LNPL = 105 - 2.66*10 = 78.4 → rounds to 78 (positive, not clamped)
             var baseline = new[] { 100, 110 };
             var display = new[] { 105 };
 
@@ -494,9 +494,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Average, Is.EqualTo(105.0));
-                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(131.6).Within(0.01));
-                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(78.4).Within(0.01));
+                Assert.That(result.Average, Is.EqualTo(105));
+                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(132));
+                Assert.That(result.LowerNaturalProcessLimit, Is.EqualTo(78));
             }
         }
 
@@ -744,6 +744,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             for (var i = 8; i < 15; i++)
             {
                 AssertDoesNotHaveCause(result.SpecialCauseClassifications, i, SpecialCauseType.SmallShift);
+            }
+        }
+
+        [Test]
+        public void Calculate_MidpointRounding_UsesDefaultToEvenRounding()
+        {
+            // Verify output uses default .NET Math.Round behavior (banker's rounding / to-even).
+            // Baseline [2, 3]: average = 2.5 → rounds to 2 (nearest even), not 3.
+            // MRbar = 1, UNPL = 2.5 + 2.66 = 5.16 → rounds to 5.
+            // LNPL = 2.5 - 2.66 = -0.16 → clamped to 0.
+            var baseline = new[] { 2, 3 };
+            var display = new[] { 2 };
+
+            var result = XmRCalculator.Calculate(baseline, display);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Average, Is.EqualTo(2));
+                Assert.That(result.UpperNaturalProcessLimit, Is.EqualTo(5));
+                Assert.That(result.LowerNaturalProcessLimit, Is.Zero);
             }
         }
     }

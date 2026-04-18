@@ -314,7 +314,7 @@ describe("ProcessBehaviourChart", () => {
 				/>,
 			);
 
-			expect(screen.getByTestId("reference-line-Average = 10.0")).toBeDefined();
+			expect(screen.getByTestId("reference-line-Average = 10")).toBeDefined();
 			expect(screen.queryByLabelText("Average visibility toggle")).toBeNull();
 		});
 
@@ -329,7 +329,7 @@ describe("ProcessBehaviourChart", () => {
 				/>,
 			);
 
-			expect(screen.getByTestId("reference-line-UNPL = 20.0")).toBeDefined();
+			expect(screen.getByTestId("reference-line-UNPL = 20")).toBeDefined();
 			expect(screen.queryByLabelText("UNPL visibility toggle")).toBeNull();
 		});
 
@@ -344,7 +344,7 @@ describe("ProcessBehaviourChart", () => {
 				/>,
 			);
 
-			expect(screen.getByTestId("reference-line-LNPL = 2.0")).toBeDefined();
+			expect(screen.getByTestId("reference-line-LNPL = 2")).toBeDefined();
 		});
 
 		it("does not render LNPL reference line when value equals 0", () => {
