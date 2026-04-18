@@ -1642,7 +1642,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Features, Has.Count.EqualTo(2));
-                Assert.That(result.Features.Select(f => f.Id), Is.EquivalentTo(new[] { 1, 3 }));
+                Assert.That(result.Features.Select(f => f.Id), Is.EquivalentTo([1, 3]));
             }
         }
 
