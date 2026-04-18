@@ -100,12 +100,11 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Throughput for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
-            var throughputByDay = GenerateThroughputRunChart(startDate, endDate, closedItemsOfTeam);
-
-            var throughput = new RunChartData(throughputByDay);
-
-            return throughput;
+            return GetFromCacheIfExists(team, $"Throughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
+                return new RunChartData(GenerateThroughputRunChart(startDate, endDate, closedItemsOfTeam));
+            }, logger);
         }
 
         public RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -143,12 +142,11 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Started Items for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var startedItems = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Done || i.StateCategory == StateCategories.Doing));
-            var startedItemsByDay = GenerateStartedRunChart(startDate, endDate, startedItems);
-
-            var throughput = new RunChartData(startedItemsByDay);
-
-            return throughput;
+            return GetFromCacheIfExists(team, $"StartedItems_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var startedItems = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Done || i.StateCategory == StateCategories.Doing));
+                return new RunChartData(GenerateStartedRunChart(startDate, endDate, startedItems));
+            }, logger);
         }
 
         public RunChartData GetArrivalsForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -179,15 +177,12 @@ namespace Lighthouse.Backend.Services.Implementation
         public RunChartData GetWorkInProgressOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting WIP Over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
-
-            var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
-            var wipOverTime = GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam);
-
-            logger.LogDebug("Finished updating WIP Over Time for Team {TeamName}", team.Name);
-
-            var throughput = new RunChartData(wipOverTime);
-
-            return throughput;
+            
+            return GetFromCacheIfExists(team, $"WipOverTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
+                return new RunChartData(GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam));
+            }, logger);
         }
 
         private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -204,8 +199,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate)
         {
-            var throughput = GetBlackoutAwareThroughputForTeam(team, startDate, endDate);
-            return GetMultiItemForecastPredictabilityScore(throughput);
+            return GetFromCacheIfExists(team, $"ForecastPredictabilityScore_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var throughput = GetBlackoutAwareThroughputForTeam(team, startDate, endDate);
+                return GetMultiItemForecastPredictabilityScore(throughput);
+            }, logger);
         }
 
         public IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -220,24 +218,31 @@ namespace Lighthouse.Backend.Services.Implementation
         public IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
-            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+            
+            return GetFromCacheIfExists(team, $"CycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+                var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
 
-            var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
-
-            return [
-                new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
-                new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
-                new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
-                new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
-            ];
+                return (IEnumerable<PercentileValue>)
+                [
+                    new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
+                    new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
+                    new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
+                    new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
+                ];
+            }, logger);
         }
 
         public EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Estimation vs Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate);
-            return BuildEstimationVsCycleTimeResponse(team, closedItems);
+            return GetFromCacheIfExists(team, $"EstimationVsCycleTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+                return BuildEstimationVsCycleTimeResponse(team, closedItems);
+            }, logger);
         }
 
         public int GetTotalWorkItemAge(Team team)

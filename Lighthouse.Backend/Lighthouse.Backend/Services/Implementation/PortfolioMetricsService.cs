@@ -20,18 +20,14 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Throughput for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var portfolioFeatures = featureRepository.GetAllByPredicate(f =>
-                f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                f.StateCategory == StateCategories.Done);
+            return GetFromCacheIfExists(portfolio, $"Throughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var portfolioFeatures = featureRepository.GetAllByPredicate(f =>
+                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
+                    f.StateCategory == StateCategories.Done);
 
-            var throughputByDay = GenerateThroughputRunChart(
-                startDate,
-                endDate,
-                portfolioFeatures);
-
-            logger.LogDebug("Finished calculating Throughput for Portfolio {PortfolioName}", portfolio.Name);
-
-            return new RunChartData(throughputByDay);
+                return new RunChartData(GenerateThroughputRunChart(startDate, endDate, portfolioFeatures));
+            }, logger);
         }
 
         public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -144,19 +140,15 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Features In Progress Over Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var features = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
-                .ToList();
+            return GetFromCacheIfExists(portfolio, $"FeaturesInProgressOverTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var features = featureRepository.GetAllByPredicate(f =>
+                        f.Portfolios.Any(p => p.Id == portfolio.Id) &&
+                        (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
+                    .ToList();
 
-            var wipOverTime = GenerateWorkInProgressByDay(
-                startDate,
-                endDate,
-                features);
-
-            logger.LogDebug("Finished calculating Features In Progress Over Time for Portfolio {PortfolioName}", portfolio.Name);
-
-            return new RunChartData(wipOverTime);
+                return new RunChartData(GenerateWorkInProgressByDay(startDate, endDate, features));
+            }, logger);
         }
 
         private (int[] Values, int[][] WorkItemIdsPerDay) GetTotalWorkItemAgeOverTime(Portfolio portfolio, DateTime startDate,
@@ -183,12 +175,14 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Started Items for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var startedItems = featureRepository.GetAllByPredicate(f => f.Portfolios.Any(p => p.Id == portfolio.Id) && (f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.Doing));
-            var startedItemsByDay = GenerateStartedRunChart(startDate, endDate, startedItems);
+            return GetFromCacheIfExists(portfolio, $"StartedItems_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var startedItems = featureRepository.GetAllByPredicate(f =>
+                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
+                    (f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.Doing));
 
-            var throughput = new RunChartData(startedItemsByDay);
-
-            return throughput;
+                return new RunChartData(GenerateStartedRunChart(startDate, endDate, startedItems));
+            }, logger);
         }
 
         public RunChartData GetArrivalsForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -204,8 +198,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            var throughput = GetThroughputForPortfolio(portfolio, startDate, endDate);
-            return GetMultiItemForecastPredictabilityScore(throughput);
+            return GetFromCacheIfExists(portfolio, $"ForecastPredictabilityScore_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var throughput = GetThroughputForPortfolio(portfolio, startDate, endDate);
+                return GetMultiItemForecastPredictabilityScore(throughput);
+            }, logger);
         }
 
         public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio)
@@ -228,21 +225,24 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cycle Time Percentiles for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
-            var cycleTimes = closedFeaturesInDateRange.Select(f => f.CycleTime).Where(ct => ct > 0).ToList();
-
-            if (cycleTimes.Count == 0)
+            return GetFromCacheIfExists(portfolio, $"CycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                logger.LogDebug("No closed features found in the specified date range for Portfolio {PortfolioName}", portfolio.Name);
-                return [];
-            }
+                var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
+                var cycleTimes = closedFeaturesInDateRange.Select(f => f.CycleTime).Where(ct => ct > 0).ToList();
 
-            return [
-                new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
-                new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
-                new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
-                new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
-            ];
+                if (cycleTimes.Count == 0)
+                {
+                    return Enumerable.Empty<PercentileValue>();
+                }
+
+                return
+                [
+                    new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
+                    new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
+                    new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
+                    new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
+                ];
+            }, logger);
         }
 
         public IEnumerable<Feature> GetCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -256,21 +256,24 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Size Percentiles for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
-            var sizes = closedFeaturesInDateRange.Select(f => f.Size).Where(s => s > 0).ToList();
-
-            if (sizes.Count == 0)
+            return GetFromCacheIfExists(portfolio, $"SizePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                logger.LogDebug("No closed features found in the specified date range for Portfolio {PortfolioName}", portfolio.Name);
-                return [];
-            }
+                var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
+                var sizes = closedFeaturesInDateRange.Select(f => f.Size).Where(s => s > 0).ToList();
 
-            return [
-                new PercentileValue(50, PercentileCalculator.CalculatePercentile(sizes, 50)),
-                new PercentileValue(70, PercentileCalculator.CalculatePercentile(sizes, 70)),
-                new PercentileValue(85, PercentileCalculator.CalculatePercentile(sizes, 85)),
-                new PercentileValue(95, PercentileCalculator.CalculatePercentile(sizes, 95))
-            ];
+                if (sizes.Count == 0)
+                {
+                    return Enumerable.Empty<PercentileValue>();
+                }
+
+                return
+                [
+                    new PercentileValue(50, PercentileCalculator.CalculatePercentile(sizes, 50)),
+                    new PercentileValue(70, PercentileCalculator.CalculatePercentile(sizes, 70)),
+                    new PercentileValue(85, PercentileCalculator.CalculatePercentile(sizes, 85)),
+                    new PercentileValue(95, PercentileCalculator.CalculatePercentile(sizes, 95))
+                ];
+            }, logger);
         }
 
         public IEnumerable<Feature> GetAllFeaturesForSizeChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -299,8 +302,11 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Estimation vs Cycle Time Data for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
-            return BuildEstimationVsCycleTimeResponse(portfolio, closedFeatures);
+            return GetFromCacheIfExists(portfolio, $"EstimationVsCycleTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
+                return BuildEstimationVsCycleTimeResponse(portfolio, closedFeatures);
+            }, logger);
         }
 
         public FeatureSizeEstimationResponse GetFeatureSizeEstimationData(Portfolio portfolio, DateTime startDate, DateTime endDate)
