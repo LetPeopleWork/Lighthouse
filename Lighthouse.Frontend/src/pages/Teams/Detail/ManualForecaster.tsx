@@ -1,7 +1,9 @@
 import { Close } from "@mui/icons-material";
 import {
+	Chip,
 	IconButton,
 	InputAdornment,
+	Stack,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -11,9 +13,9 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
+import type { IForecastInputCandidates } from "../../../models/Forecasts/ForecastInputCandidates";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -40,31 +42,49 @@ function getLocaleDateFormat(): string {
 	return format;
 }
 
+function getDaysUntilFriday(dayOfWeek: number): number {
+	if (dayOfWeek === 6) return 6; // Saturday: next Friday is 6 days away
+	if (dayOfWeek === 0) return 5; // Sunday: next Friday is 5 days away
+	return 5 - dayOfWeek; // Mon–Fri: days remaining until Friday
+}
+
+function getEndOfWeek(): dayjs.Dayjs {
+	const today = dayjs();
+	const dayOfWeek = today.day(); // 0=Sun, 1=Mon, ..., 6=Sat
+	return today.add(getDaysUntilFriday(dayOfWeek), "day");
+}
+
+function getEndOfMonth(): dayjs.Dayjs {
+	return dayjs().endOf("month");
+}
+
 interface ManualForecasterProps {
 	remainingItems: number;
 	targetDate: dayjs.Dayjs | null;
 	manualForecastResult: ManualForecast | null;
+	forecastInputCandidates: IForecastInputCandidates | null;
 	onRemainingItemsChange: (value: number) => void;
 	onTargetDateChange: (date: dayjs.Dayjs | null) => void;
-	onRunManualForecast: () => Promise<void>;
 }
 
 const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	remainingItems,
 	targetDate,
 	manualForecastResult,
+	forecastInputCandidates,
 	onRemainingItemsChange,
 	onTargetDateChange,
-	onRunManualForecast,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
+	const showZeroHint = remainingItems === 0;
 
 	return (
 		<Grid container spacing={3}>
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Typography variant="subtitle2" gutterBottom>
-					When?
+					How many {workItemsTerm} need to be completed?
 				</Typography>
 				<TextField
 					label={`Number of ${workItemsTerm}`}
@@ -72,6 +92,12 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 					fullWidth
 					value={remainingItems}
 					onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
+					error={showZeroHint}
+					helperText={
+						showZeroHint
+							? `Forecasting requires at least 1 remaining ${workItemsTerm.toLowerCase()}.`
+							: undefined
+					}
 					slotProps={{
 						input: {
 							endAdornment: remainingItems > 0 && (
@@ -89,6 +115,30 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 						},
 					}}
 				/>
+				{forecastInputCandidates && (
+					<Stack
+						direction="row"
+						spacing={1}
+						sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
+					>
+						<Chip
+							label={`Currently in Progress: ${forecastInputCandidates.currentWipCount}`}
+							size="small"
+							onClick={() =>
+								onRemainingItemsChange(forecastInputCandidates.currentWipCount)
+							}
+							variant="outlined"
+						/>
+						<Chip
+							label={`Backlog: ${forecastInputCandidates.backlogCount}`}
+							size="small"
+							onClick={() =>
+								onRemainingItemsChange(forecastInputCandidates.backlogCount)
+							}
+							variant="outlined"
+						/>
+					</Stack>
+				)}
 				{manualForecastResult?.whenForecasts &&
 					manualForecastResult.whenForecasts.length > 0 && (
 						<Grid container sx={{ mt: 2 }}>
@@ -103,7 +153,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 			</Grid>
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Typography variant="subtitle2" gutterBottom>
-					How Many?
+					What is your target completion date?
 				</Typography>
 				<LocalizationProvider dateAdapter={AdapterDayjs}>
 					<DatePicker
@@ -120,6 +170,40 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 						}}
 					/>
 				</LocalizationProvider>
+				<Stack
+					direction="row"
+					spacing={1}
+					sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
+				>
+					<Chip
+						label="End of week"
+						size="small"
+						onClick={() => onTargetDateChange(getEndOfWeek())}
+						variant="outlined"
+					/>
+					<Chip
+						label="End of month"
+						size="small"
+						onClick={() => onTargetDateChange(getEndOfMonth())}
+						variant="outlined"
+					/>
+					<Chip
+						label="+1 week"
+						size="small"
+						onClick={() =>
+							onTargetDateChange((targetDate ?? dayjs()).add(1, "week"))
+						}
+						variant="outlined"
+					/>
+					<Chip
+						label="+2 weeks"
+						size="small"
+						onClick={() =>
+							onTargetDateChange((targetDate ?? dayjs()).add(2, "weeks"))
+						}
+						variant="outlined"
+					/>
+				</Stack>
 				{manualForecastResult?.howManyForecasts &&
 					manualForecastResult.howManyForecasts.length > 0 && (
 						<Grid container sx={{ mt: 2 }}>
@@ -146,16 +230,6 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 						/>
 					</Grid>
 				)}
-			<Grid
-				size={{ xs: 12 }}
-				sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}
-			>
-				<ActionButton
-					onClickHandler={onRunManualForecast}
-					buttonText="Forecast"
-					disabled={!remainingItems && !targetDate}
-				/>
-			</Grid>
 		</Grid>
 	);
 };

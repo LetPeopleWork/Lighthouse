@@ -1138,6 +1138,50 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void GetForecastInputCandidates_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetForecastInputCandidates(1337);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_TeamExists_DelegatesToTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedCandidates = new ForecastInputCandidatesDto
+            {
+                CurrentWipCount = 3,
+                BacklogCount = 7,
+                Features = [new FeatureCandidateDto { Id = 42, Name = "Feature A", RemainingWork = 5 }]
+            };
+            teamMetricsServiceMock.Setup(service => service.GetForecastInputCandidates(team)).Returns(expectedCandidates);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetForecastInputCandidates(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedCandidates));
+            }
+        }
+
         private TeamMetricsController CreateSubject()
         {
             return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);

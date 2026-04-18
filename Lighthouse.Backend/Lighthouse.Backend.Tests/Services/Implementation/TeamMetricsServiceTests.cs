@@ -1514,6 +1514,140 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result.DataPoints[0].XValue, Is.EqualTo("2025-06-05T14:30:00Z"));
         }
 
+        #region GetForecastInputCandidates
+
+        [Test]
+        public void GetForecastInputCandidates_OnlyDoingItems_CurrentWipCountEqualsDoingCount()
+        {
+            AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<Feature>().AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            Assert.That(result.CurrentWipCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_DoingAndToDoItems_BacklogCountEqualsSum()
+        {
+            AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty);
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<Feature>().AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            Assert.That(result.BacklogCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_ItemsFromOtherTeam_ExcludedFromCounts()
+        {
+            AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            AddWorkItem(StateCategories.Doing, 2, string.Empty);
+            AddWorkItem(StateCategories.ToDo, 2, string.Empty);
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<Feature>().AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.CurrentWipCount, Is.EqualTo(1));
+                Assert.That(result.BacklogCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_NoItems_ReturnsBothCountsZero()
+        {
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<Feature>().AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.CurrentWipCount, Is.Zero);
+                Assert.That(result.BacklogCount, Is.Zero);
+            }
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_FeatureWithRemainingWorkForTeam_IncludesInFeatureList()
+        {
+            var feature = new Feature { Id = 1, Name = "Feature A" };
+            feature.FeatureWork.Add(new FeatureWork(testTeam, 5, 10, feature));
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(new[] { feature }.AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Features, Has.Count.EqualTo(1));
+                Assert.That(result.Features[0].Id, Is.EqualTo(1));
+                Assert.That(result.Features[0].Name, Is.EqualTo("Feature A"));
+                Assert.That(result.Features[0].RemainingWork, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_FeatureWithZeroRemainingWorkForTeam_ExcludedFromFeatureList()
+        {
+            var feature = new Feature { Id = 1, Name = "Feature Done" };
+            feature.FeatureWork.Add(new FeatureWork(testTeam, 0, 10, feature));
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(new[] { feature }.AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            Assert.That(result.Features, Is.Empty);
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_FeatureWithRemainingWorkForDifferentTeam_ExcludedFromFeatureList()
+        {
+            var otherTeam = new Team { Id = 99, Name = "Other Team" };
+            var feature = new Feature { Id = 1, Name = "Feature B" };
+            feature.FeatureWork.Add(new FeatureWork(otherTeam, 8, 10, feature));
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(new[] { feature }.AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            Assert.That(result.Features, Is.Empty);
+        }
+
+        [Test]
+        public void GetForecastInputCandidates_MultipleFeatures_OnlyIncludesFeaturesWithRemainingWork()
+        {
+            var featureA = new Feature { Id = 1, Name = "Feature A" };
+            featureA.FeatureWork.Add(new FeatureWork(testTeam, 3, 10, featureA));
+
+            var featureB = new Feature { Id = 2, Name = "Feature B" };
+            featureB.FeatureWork.Add(new FeatureWork(testTeam, 0, 5, featureB));
+
+            var featureC = new Feature { Id = 3, Name = "Feature C" };
+            featureC.FeatureWork.Add(new FeatureWork(testTeam, 7, 12, featureC));
+
+            featureRepositoryMock.Setup(r => r.GetAll()).Returns(new[] { featureA, featureB, featureC }.AsQueryable());
+
+            var result = subject.GetForecastInputCandidates(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Features, Has.Count.EqualTo(2));
+                Assert.That(result.Features.Select(f => f.Id), Is.EquivalentTo(new[] { 1, 3 }));
+            }
+        }
+
+        #endregion
+
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
         {
             var workItem = new WorkItem

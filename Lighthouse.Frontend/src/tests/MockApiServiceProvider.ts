@@ -154,6 +154,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getEstimationVsCycleTimeData: vi.fn(),
 		getArrivals: vi.fn(),
 		getArrivalsPbc: vi.fn(),
+		getForecastInputCandidates: vi.fn(),
 	};
 };
 

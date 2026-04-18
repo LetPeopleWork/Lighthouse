@@ -1,3 +1,4 @@
+import type { IForecastInputCandidates } from "../../models/Forecasts/ForecastInputCandidates";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseMetricsService, type ITeamMetricsService } from "./MetricsService";
 
@@ -22,6 +23,17 @@ export class TeamMetricsService
 			});
 
 			return workItems;
+		});
+	}
+
+	async getForecastInputCandidates(
+		teamId: number,
+	): Promise<IForecastInputCandidates> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IForecastInputCandidates>(
+				`/teams/${teamId}/metrics/forecastInputCandidates`,
+			);
+			return response.data;
 		});
 	}
 }

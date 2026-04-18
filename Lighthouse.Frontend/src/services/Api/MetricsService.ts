@@ -1,4 +1,5 @@
 import type { IFeature } from "../../models/Feature";
+import type { IForecastInputCandidates } from "../../models/Forecasts/ForecastInputCandidates";
 import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
@@ -93,6 +94,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
 	getFeaturesInProgress(teamId: number): Promise<IWorkItem[]>;
+	getForecastInputCandidates(teamId: number): Promise<IForecastInputCandidates>;
 }
 
 export interface IProjectMetricsService extends IMetricsService<IFeature> {

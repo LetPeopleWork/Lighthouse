@@ -111,6 +111,13 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpGet("forecastInputCandidates")]
+        public ActionResult<ForecastInputCandidatesDto> GetForecastInputCandidates(int teamId)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetForecastInputCandidates(team));
+        }
+
         [HttpGet("cycleTimePercentiles")]
         public ActionResult<IEnumerable<PercentileValue>> GetCycleTimePercentilesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team);
 
         IEnumerable<WorkItem> GetCurrentWipForTeam(Team team);
+
+        ForecastInputCandidatesDto GetForecastInputCandidates(Team team);
         
         IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 

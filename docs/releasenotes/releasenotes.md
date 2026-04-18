@@ -6,6 +6,16 @@ nav_order: 95
 
 # vNext
 
+## Redesigned Team Forecast
+
+The Team Forecast has been redesigned to make forecasting faster and more intuitive:
+
+- **Auto-run forecast**: The forecast now runs automatically as you type — no more "Forecast" button. Results update 300ms after your last change.
+- **Smart quick-pick chips**: Select your remaining work directly from contextual suggestions. WIP and Backlog counts are pulled automatically from your team's current state so you can pick a sensible starting point with one click.
+- **Date shortcuts**: Choose common target dates instantly — *End of week*, *End of month*, *+1 week*, or *+2 weeks* — without opening the date picker.
+- **Zero-value guard**: If remaining items is set to 0, the forecast pauses and shows an inline hint rather than running a nonsensical forecast.
+- **Stale-response protection**: Rapid changes no longer produce out-of-order results. Only the response to the most recent request updates the display.
+
 ## Arrivals Metrics
 
 The Metrics Dashboard now includes **Arrivals** as a first-class metric for both Teams and Portfolios:

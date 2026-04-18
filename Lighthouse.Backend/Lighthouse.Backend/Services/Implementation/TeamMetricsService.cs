@@ -77,6 +77,37 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public ForecastInputCandidatesDto GetForecastInputCandidates(Team team)
+        {
+            logger.LogDebug("Getting Forecast Input Candidates for Team {TeamName}", team.Name);
+
+            var currentWipCount = GetCurrentWipForTeam(team).Count();
+
+            var backlogCount = workItemRepository
+                .GetAllByPredicate(i => i.TeamId == team.Id &&
+                    (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.ToDo))
+                .Count();
+
+            var features = featureRepository.GetAll()
+                .Where(f => f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.RemainingWorkItems > 0))
+                .Select(f => new FeatureCandidateDto
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    RemainingWork = f.FeatureWork
+                        .Where(fw => fw.TeamId == team.Id)
+                        .Sum(fw => fw.RemainingWorkItems)
+                })
+                .ToList();
+
+            return new ForecastInputCandidatesDto
+            {
+                CurrentWipCount = currentWipCount,
+                BacklogCount = backlogCount,
+                Features = features
+            };
+        }
+
         public RunChartData GetCurrentThroughputForTeamForecast(Team team)
         {
             logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);

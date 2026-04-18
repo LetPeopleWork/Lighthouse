@@ -1,8 +1,17 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import dayjs from "dayjs";
 import { describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import type { IForecastInputCandidates } from "../../../models/Forecasts/ForecastInputCandidates";
 import { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import TeamForecastView from "./TeamForecastView";
@@ -58,19 +67,45 @@ vi.mock("./ManualForecaster", () => ({
 	default: ({
 		remainingItems,
 		targetDate,
-		onRunManualForecast,
+		forecastInputCandidates,
+		onRemainingItemsChange,
+		onTargetDateChange,
 	}: {
 		remainingItems: number;
 		targetDate: unknown;
-		onRunManualForecast: () => void;
+		forecastInputCandidates: IForecastInputCandidates | null;
+		manualForecastResult: unknown;
+		onRemainingItemsChange: (value: number) => void;
+		onTargetDateChange: (date: unknown) => void;
 	}) => (
 		<div data-testid="manual-forecaster">
 			<span data-testid="remaining-items-value">{remainingItems}</span>
 			<span data-testid="target-date-value">
 				{targetDate ? "has-date" : "null"}
 			</span>
-			<button type="button" onClick={onRunManualForecast}>
-				Run Forecast
+			<span data-testid="forecast-candidates-value">
+				{forecastInputCandidates ? "has-candidates" : "null"}
+			</span>
+			<button
+				type="button"
+				data-testid="simulate-remaining-change"
+				onClick={() => onRemainingItemsChange(15)}
+			>
+				Change Remaining Items
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-zero-remaining"
+				onClick={() => onRemainingItemsChange(0)}
+			>
+				Set Zero Remaining
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-date-change"
+				onClick={() => onTargetDateChange(dayjs().add(1, "week"))}
+			>
+				Change Target Date
 			</button>
 		</div>
 	),
@@ -190,8 +225,18 @@ describe("TeamForecastView component", () => {
 		runBacktest: vi.fn(),
 	};
 
+	const mockTeamMetricsService = {
+		getForecastInputCandidates: vi.fn().mockResolvedValue({
+			currentWipCount: 3,
+			backlogCount: 12,
+			features: [],
+		}),
+	};
+
 	const mockApiServiceContext = createMockApiServiceContext({
 		forecastService: mockForecastService,
+		teamMetricsService:
+			mockTeamMetricsService as unknown as IApiServiceContext["teamMetricsService"],
 	});
 
 	const renderWithProviders = (component: React.ReactElement) => {
@@ -206,6 +251,11 @@ describe("TeamForecastView component", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockTeamMetricsService.getForecastInputCandidates.mockResolvedValue({
+			currentWipCount: 3,
+			backlogCount: 12,
+			features: [],
+		});
 	});
 
 	it("should render without errors", () => {
@@ -219,9 +269,11 @@ describe("TeamForecastView component", () => {
 		expect(screen.getByTestId("new-item-forecaster")).toBeInTheDocument();
 	});
 
-	describe("ManualForecaster with optional parameters", () => {
-		it("should initialize with remainingItems=10 and targetDate=null", () => {
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
+	describe("ManualForecaster auto-run behavior", () => {
+		it("should initialize with remainingItems=10 and targetDate=null", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
 
 			expect(screen.getByTestId("remaining-items-value")).toHaveTextContent(
 				"10",
@@ -229,7 +281,55 @@ describe("TeamForecastView component", () => {
 			expect(screen.getByTestId("target-date-value")).toHaveTextContent("null");
 		});
 
-		it("should call forecast service with remainingItems and null when only remainingItems provided", async () => {
+		it("should NOT run forecast on initial render", async () => {
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+					vi.advanceTimersByTime(500);
+				});
+				expect(mockForecastService.runManualForecast).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should run forecast after user changes remaining items (debounced)", async () => {
+			mockForecastService.runManualForecast.mockResolvedValueOnce({
+				remainingItems: 15,
+				targetDate: null,
+				whenForecasts: [],
+				howManyForecasts: [],
+				likelihood: 0,
+			});
+
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				// Trigger state change — React flushes effects after this act
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-remaining-change"));
+				});
+
+				// Advance timer to fire the debounce callback
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
+					mockTeam.id,
+					15,
+					null,
+				);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should run forecast after user changes target date (debounced)", async () => {
 			mockForecastService.runManualForecast.mockResolvedValueOnce({
 				remainingItems: 10,
 				targetDate: new Date(),
@@ -238,73 +338,179 @@ describe("TeamForecastView component", () => {
 				likelihood: 0,
 			});
 
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
 
-			const runForecastButton = screen.getByText("Run Forecast");
-			fireEvent.click(runForecastButton);
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-date-change"));
+				});
 
-			await waitFor(() => {
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
 				expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
 					mockTeam.id,
 					10,
-					null,
+					expect.any(Object),
 				);
-			});
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 
-		it("should handle errors when forecast fails with partial parameters", async () => {
-			const errorMessage = "Forecast failed with partial parameters";
+		it("should NOT run forecast when remainingItems becomes 0", async () => {
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-zero-remaining"));
+				});
+
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runManualForecast).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should NOT fire again within debounce window on rapid changes", async () => {
+			mockForecastService.runManualForecast.mockResolvedValue({
+				remainingItems: 15,
+				targetDate: null,
+				whenForecasts: [],
+				howManyForecasts: [],
+				likelihood: 0,
+			});
+
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				// First click — starts the debounce timer
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-remaining-change"));
+				});
+
+				// Advance only 100ms (not enough for debounce)
+				act(() => {
+					vi.advanceTimersByTime(100);
+				});
+
+				// Second click before debounce fires — resets the timer
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-remaining-change"));
+				});
+
+				// Advance remaining debounce time — only one call should happen
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runManualForecast).toHaveBeenCalledTimes(1);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should handle forecast service errors gracefully", async () => {
+			const errorMessage = "Forecast service failed";
 			mockForecastService.runManualForecast.mockRejectedValueOnce(
 				new Error(errorMessage),
 			);
 
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
+			vi.useFakeTimers();
 
-			const runForecastButton = screen.getByText("Run Forecast");
-			fireEvent.click(runForecastButton);
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
+
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-remaining-change"));
+			});
+
+			act(() => {
+				vi.advanceTimersByTime(300);
+			});
+
+			// Restore real timers before waiting for async error display
+			vi.useRealTimers();
 
 			await waitFor(() => {
 				expect(screen.getByText(errorMessage)).toBeInTheDocument();
 			});
 		});
+
+		it("should handle non-Error forecast failures with generic message", async () => {
+			mockForecastService.runManualForecast.mockRejectedValueOnce(
+				"String error message",
+			);
+
+			vi.useFakeTimers();
+
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
+
+			await act(async () => {
+				fireEvent.click(screen.getByTestId("simulate-remaining-change"));
+			});
+
+			act(() => {
+				vi.advanceTimersByTime(300);
+			});
+
+			vi.useRealTimers();
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Failed to run manual forecast. Please try again."),
+				).toBeInTheDocument();
+			});
+		});
 	});
 
-	it("should display error snackbar when forecast service fails", async () => {
-		const errorMessage = "Forecast service failed";
-		mockForecastService.runManualForecast.mockRejectedValueOnce(
-			new Error(errorMessage),
-		);
+	describe("getForecastInputCandidates", () => {
+		it("should call getForecastInputCandidates on mount", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
 
-		renderWithProviders(<TeamForecastView team={mockTeam} />);
-
-		const runForecastButton = screen.getByText("Run Forecast");
-		fireEvent.click(runForecastButton);
-
-		await waitFor(() => {
-			expect(screen.getByText(errorMessage)).toBeInTheDocument();
+			expect(
+				mockTeamMetricsService.getForecastInputCandidates,
+			).toHaveBeenCalledWith(mockTeam.id);
 		});
 
-		expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
-			mockTeam.id,
-			10, // default remainingItems
-			null, // initial targetDate is null
-		);
-	});
+		it("should pass forecastInputCandidates to ManualForecaster when loaded", async () => {
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={mockTeam} />);
+			});
 
-	it("should display generic error message for non-Error objects", async () => {
-		mockForecastService.runManualForecast.mockRejectedValueOnce(
-			"String error message",
-		);
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("forecast-candidates-value"),
+				).toHaveTextContent("has-candidates");
+			});
+		});
 
-		renderWithProviders(<TeamForecastView team={mockTeam} />);
+		it("should show null candidates while loading", () => {
+			// Don't await — check initial render before promise resolves
+			renderWithProviders(<TeamForecastView team={mockTeam} />);
 
-		const runForecastButton = screen.getByText("Run Forecast");
-		fireEvent.click(runForecastButton);
-
-		await waitFor(() => {
-			expect(
-				screen.getByText("Failed to run manual forecast. Please try again."),
-			).toBeInTheDocument();
+			expect(screen.getByTestId("forecast-candidates-value")).toHaveTextContent(
+				"null",
+			);
 		});
 	});
 
@@ -355,7 +561,9 @@ describe("TeamForecastView component", () => {
 		it("should not run new item forecast when team is missing", async () => {
 			// Create a team with null properties but maintaining type safety
 			const nullTeam = {} as Team;
-			renderWithProviders(<TeamForecastView team={nullTeam} />);
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={nullTeam} />);
+			});
 
 			// Check if the button exists before trying to click it
 			const newItemForecastButton = screen.queryByText("Run New Item Forecast");
@@ -363,9 +571,6 @@ describe("TeamForecastView component", () => {
 			if (newItemForecastButton) {
 				fireEvent.click(newItemForecastButton);
 			}
-
-			// Wait a bit to ensure no async call is made
-			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			expect(mockForecastService.runItemPrediction).not.toHaveBeenCalled();
 		});
@@ -540,15 +745,15 @@ describe("TeamForecastView component", () => {
 
 		it("should not run backtest when team is missing", async () => {
 			const nullTeam = {} as Team;
-			renderWithProviders(<TeamForecastView team={nullTeam} />);
+			await act(async () => {
+				renderWithProviders(<TeamForecastView team={nullTeam} />);
+			});
 
 			const runBacktestButton = screen.queryByText("Run Backtest");
 
 			if (runBacktestButton) {
 				fireEvent.click(runBacktestButton);
 			}
-
-			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			expect(mockForecastService.runBacktest).not.toHaveBeenCalled();
 		});
