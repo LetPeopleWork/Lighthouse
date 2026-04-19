@@ -50,7 +50,6 @@ export const MetricsWidgetNames = {
 	FeaturesBeingWorkedOnOverview: "Features Being Worked On Overview",
 	TotalWorkItemAgeOverview: "Total Work Item Age Overview",
 	PredictabilityScoreOverview: "Predictability Score Overview",
-	StartedVsFinished: "Started vs. Finished",
 	CycleTimePercentiles: "Cycle Time Percentiles",
 	CycleTimeScatterplot: "Cycle Time Scatterplot",
 	WorkItemAgingChart: "Work Item Aging Chart",
@@ -69,6 +68,7 @@ export const MetricsWidgetNames = {
 	FeatureSize: "Feature Size",
 	EstimationVsCycleTime: "Estimation vs. Cycle Time",
 	FeatureSizeProcessBehaviourChart: "Feature Size Process Behaviour Chart",
+	FeatureSizePercentiles: "Feature Size Percentiles",
 };
 
 export class MetricsPage {

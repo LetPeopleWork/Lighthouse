@@ -355,10 +355,10 @@ testWithData(
 		);
 
 		const metricCategoriesMap = new Map<MetricsCategories, number>([
-			[MetricsCategories.FlowOverview, 8],
+			[MetricsCategories.FlowOverview, 9],
 			[MetricsCategories.FlowMetrics, 6],
 			[MetricsCategories.Predictability, 7],
-			[MetricsCategories.PortfolioAndFeatures, 1],
+			[MetricsCategories.PortfolioAndFeatures, 2],
 		]);
 
 		for (const [
@@ -369,7 +369,7 @@ testWithData(
 			expect(metrics.length).toBe(expectedWidgetCount);
 
 			for (const metricWidget of metrics) {
-				if (metricWidget.name === MetricsWidgetNames.EstimationVsCycleTime) {
+				if (metricWidget.name === MetricsWidgetNames.EstimationVsCycleTime || metricWidget.name === MetricsWidgetNames.FeatureSizePercentiles) {
 					continue; // Skip Estimation vs Cycle Time chart as it is covered in a separate test and has a different setup process
 				}
 
@@ -434,6 +434,20 @@ testWithData(
 		await takeElementScreenshot(
 			featureSizeProcessBehaviourWidget.Widget,
 			"features/metrics/featureSizeProcessBehaviourChart.png",
+		);
+
+		availableWidgets = await portfolioMetricsPage.switchCategory(
+			MetricsCategories.FlowOverview,
+		);
+
+		const featureSizePercentilesWidget = await portfolioMetricsPage.getWidgetByName(
+			MetricsWidgetNames.FeatureSizePercentiles,
+			availableWidgets,
+		);
+
+		await takeElementScreenshot(
+			featureSizePercentilesWidget.Widget,
+			"features/metrics/featureSizePercentiles.png",
 		);
 	},
 );
