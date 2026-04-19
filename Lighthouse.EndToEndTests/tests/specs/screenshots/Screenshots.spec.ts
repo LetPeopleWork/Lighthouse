@@ -356,8 +356,8 @@ testWithData(
 
 		const metricCategoriesMap = new Map<MetricsCategories, number>([
 			[MetricsCategories.FlowOverview, 9],
-			[MetricsCategories.FlowMetrics, 6],
-			[MetricsCategories.Predictability, 7],
+			[MetricsCategories.FlowMetrics, 7],
+			[MetricsCategories.Predictability, 6],
 			[MetricsCategories.PortfolioAndFeatures, 2],
 		]);
 

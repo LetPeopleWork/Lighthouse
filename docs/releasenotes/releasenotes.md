@@ -4,24 +4,13 @@ layout: home
 nav_order: 95
 ---
 
-# vNext
+# Lighthouse v26.4.19.8
 
-## Flow Overview Trend Indicators
+## Metrics Improvements
+We've worked on the feedback we got from the UX overhaul, and refined our Metrics further. Following changes were made in this release.
 
-All Flow Overview info widgets now display trend indicators comparing the current date range to a prior period:
-
-- **WIP Overview**, **Features Worked On** (Teams), and **Total Work Item Age** compare snapshot values at the start and end of the selected range.
-- **Predictability Score**, **Cycle Time Percentiles**, **Total Throughput**, **Total Arrivals**, and **Feature Size Percentiles** compare the current period against an equal-length window immediately before the start date.
-- Percentile tooltip rows now use a `previous → **current**` format with the current-period value emphasized.
-
-## Date-Aware Snapshot Widgets
-
-WIP Overview, Features Worked On, and Total Work Item Age now resolve their values as of the selected end date rather than always returning the current state. Changing the date range will change the displayed counts to reflect the system at that point in time.
-
-## Simplified Dashboard Categories
-
-The dashboard category model has been consolidated from six categories to four:
-
+### Simplified Metrics Categories
+The available categories in the Metrics section have been consolidated from six categories to four:
 | Before | After |
 |---|---|
 | Flow Overview | **Flow Overview** (unchanged) |
@@ -31,28 +20,80 @@ The dashboard category model has been consolidated from six categories to four:
 | Predictability | **Predictability** (unchanged) |
 | Portfolio & Features | **Portfolio & Features** (unchanged) |
 
-Previously stored category selections for the retired keys (`cycle-time`, `throughput`, `wip-aging`) are automatically migrated to **Flow Metrics**.
+Each chart is now appearing exactly in one category. While the *Flow Overview* will show you the status at a quick glance, the *Flow Metrics* will allow you to dive deeper and get into details.
 
-## Redesigned Team Forecast
-
-The Team Forecast has been redesigned to make forecasting faster and more intuitive:
-
-- **Auto-run forecast**: The forecast now runs automatically as you type — no more "Forecast" button. Results update 300ms after your last change.
-- **Smart quick-pick chips**: Select your remaining work directly from contextual suggestions. WIP and Backlog counts are pulled automatically from your team's current state so you can pick a sensible starting point with one click.
-- **Date shortcuts**: Choose common target dates instantly — *End of week*, *End of month*, *+1 week*, or *+2 weeks* — without opening the date picker.
-- **Zero-value guard**: If remaining items is set to 0, the forecast pauses and shows an inline hint rather than running a nonsensical forecast.
-- **Stale-response protection**: Rapid changes no longer produce out-of-order results. Only the response to the most recent request updates the display.
-
-## Arrivals Metrics
-
+### Arrivals Run Chart and Process Behaviour Chart
 The Metrics Dashboard now includes **Arrivals** as a first-class metric for both Teams and Portfolios:
 
 - **Arrivals Run Chart**: Shows the daily count of work items started over the selected date range. Complements the Throughput Run Chart by visualizing the intake side of flow.
 - **Arrivals Process Behaviour Chart**: Applies XmR-chart analysis to the arrival rate, highlighting special-cause variation in how many items enter the system per day.
 
-Both widgets appear in the **Throughput** category. The Arrivals PBC also appears in the **Predictability** category alongside the other PBC charts.
+The Run Chart is part of the Flow Metrics category, while the PBC can be found in the **Predictability** category alongside the other PBCs.
 
 The Arrivals Run Chart includes a two-factor status indicator that checks both arrivals-versus-departures balance and whether arrivals are continuous or batched.
+
+![Arrivals Run Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/arrivals.png)
+
+### Total Throughput and Total Arrivals Info Widgets
+To give a decent overview, both the Throughput as well as your arrivles (items you've started) are now visualized in an individual Metric on the *Flow Overview* page.
+
+![Total Throughput](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/totalThroughput.png)
+
+### Removal of Started vs. Closed Widget
+As we have an individual widget for Total Throughput and Total Arrivals, this widget was obsolete and was removed.
+
+### Feature Size Percentiles
+For Portfolios, you can now also see in the *Flow Overview* page a summary of your Feature Sizes (similar to the Cycle Time Scatterplot). This allows you to see how big your features are at a quick glance.
+
+![Feature Size Percentiles](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/featureSizePercentiles.png)
+
+### Trend Indicators
+All Flow Overview info widgets now display trend indicators comparing the current date range to a prior period:
+
+- **WIP Overview**, **Features Worked On** (Teams), and **Total Work Item Age** compare snapshot values at the start and end of the selected range.
+- **Predictability Score**, **Cycle Time Percentiles**, **Total Throughput**, **Total Arrivals**, and **Feature Size Percentiles** compare the current period against an equal-length window immediately before the start date.
+- Percentile tooltip rows now use a `previous → **current**` format with the current-period value emphasized.
+
+The trends are neutral, and simply indicate whether you things are increasing or decreasing compared to a previous period.
+
+### Time Filter for Widgets
+While previously the WIP Overview, Features Worked On, and Total Work Item Age were simply ignoring any time selected, and showed the current state, they will now resolve their values as of the selected end date. Changing the date range will change the displayed counts to reflect the system at that point in time.
+
+**Note:** The Blocked Items widget does *not* support this (yet)
+
+### Other Metrics Improvements
+Apart from the above, the following things related to metrics were improved:
+- The Predictability Score was adjusted to give more accurate results. Previously, with an increase of the input, the score had a tendency to be too optimistic
+- Removed the Info icon when a baseline was missing in the PBCs - it will be reflected in the RAG status instead
+- The Control Limits as well as the Average Lines for PBCs are now rounded to not have any decimals
+- Total Work Item Age over Time RAG status was showing the wrong values
+
+## Redesigned Team Forecast
+The Team Forecast has been redesigned to make forecasting faster and more intuitive:
+
+- **Auto-run forecast**: The forecast now runs automatically as you type — no more "Forecast" button.
+- **Smart quick-pick chips**: Select your remaining work directly from contextual suggestions. WIP and Backlog counts are pulled automatically from your team's current state so you can pick a sensible starting point with one click.
+- **Feature Selection**: Switch to *Feature Mode* and select Features from your backlog. It will automatically use the remaining work of all selected Features to run the forecast.
+- **Date shortcuts**: Choose common target dates instantly — *End of week*, *End of month*, *+1 week*, or *+2 weeks* — without opening the date picker.
+
+![Feature Mode](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/teamdetail.png)
+
+## Bug Fixes and Other Improvements
+- **Product Board**: Various references to the newly introduced [Product Board](https://ideas.letpeople.work) were added
+- **Load all Azure DevOps Boards**: Previously only the first 100 boards on any Azure DevOps Projects were shown. Now all boards are loaded.
+- **Show Work Items for Features in Delivery**: You can now, similar to the Team and Portfolio Feature view, see what Work Items belong to a feature when expanding the Delivery View
+- **Update Manual Deliveries**: Fixed issue that prevented any update to a delivery that used manual feature selection mode
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Myriam Greger](https://www.linkedin.com/in/myriam-greger/)
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) 
+- [Sascha Lucius](https://www.linkedin.com/in/sascha-lucius/)
+- [Chandan Bala](https://www.linkedin.com/in/chandan-bala-7251b9242/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.7.1...v26.4.19.8)
 
 # Lighthouse v26.4.7.1
 

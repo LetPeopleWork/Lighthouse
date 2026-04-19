@@ -79,6 +79,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Ben Richards**](https://www.linkedin.com/in/iambenrichards/)  
 - [**Manuel Opitz**](https://www.linkedin.com/in/manuel-opitz-3812351a9/)  
 - [**Liz Rettig**](https://www.linkedin.com/in/lizrettig-agilecoach/)  
+- [**Sascha Lucius**](https://www.linkedin.com/in/sascha-lucius/)  
 
 
 ---

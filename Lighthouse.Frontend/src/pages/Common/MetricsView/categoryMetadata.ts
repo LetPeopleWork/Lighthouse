@@ -73,10 +73,10 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "stacked", size: "large" },
 		{ widgetKey: "wipOverTime", size: "large" },
 		{ widgetKey: "totalWorkItemAgeOverTime", size: "large" },
+		{ widgetKey: "arrivals", size: "large" },
 	],
 	predictability: [
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
-		{ widgetKey: "arrivals", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
 		{ widgetKey: "arrivalsPbc", size: "large" },
 		{ widgetKey: "wipPbc", size: "large" },

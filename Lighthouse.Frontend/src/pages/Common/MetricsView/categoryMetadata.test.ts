@@ -208,6 +208,7 @@ describe("categoryMetadata", () => {
 				"stacked",
 				"wipOverTime",
 				"totalWorkItemAgeOverTime",
+				"arrivals",
 			]);
 		});
 
@@ -215,7 +216,6 @@ describe("categoryMetadata", () => {
 			const widgets = getWidgetsForCategory("predictability", "team");
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"predictabilityScoreDetails",
-				"arrivals",
 				"throughputPbc",
 				"arrivalsPbc",
 				"wipPbc",
