@@ -54,7 +54,9 @@ describe("FeedbackDialog", () => {
 	it("displays feedback structure information", () => {
 		render(<FeedbackDialog open={true} onClose={mockOnClose} />);
 
-		expect(screen.getByText("For Feature Requests:")).toBeInTheDocument();
+		expect(
+			screen.getByText("For Feature Requests on Product Board:"),
+		).toBeInTheDocument();
 		expect(screen.getByText("For Bugs:")).toBeInTheDocument();
 		expect(
 			screen.getByText(/Steps to reproduce the issue/),
@@ -132,7 +134,10 @@ describe("FeedbackDialog", () => {
 
 		// Check for main sections
 		expect(
-			screen.getByText("Preferred Way: Join Our Slack Community"),
+			screen.getByText("Preferred Way: Share Ideas on Our Product Board"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("For Bugs: Reach Out on Slack"),
 		).toBeInTheDocument();
 		expect(screen.getByText("Alternative: Email Feedback")).toBeInTheDocument();
 		expect(

@@ -2,6 +2,7 @@ import BugReportIcon from "@mui/icons-material/BugReport";
 import SlackIcon from "@mui/icons-material/Chat";
 import EmailIcon from "@mui/icons-material/Email";
 import HandshakeIcon from "@mui/icons-material/Handshake";
+import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import {
 	Box,
@@ -40,14 +41,38 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ open, onClose }) => {
 					<Box
 						sx={{ display: "flex", alignItems: "center", gap: 1, mt: 3, mb: 2 }}
 					>
-						<SlackIcon color="primary" />
+						<TipsAndUpdatesIcon color="primary" />
 						<Typography variant="h6" component="h3">
-							Preferred Way: Join Our Slack Community
+							Preferred Way: Share Ideas on Our Product Board
 						</Typography>
 					</Box>
 					<Typography variant="body1" sx={{ mb: 2 }}>
-						Our preferred way of getting feedback is through our Slack Channel
-						where you can engage with the community and development team:
+						For feature requests, the best place is our Product Board. You can
+						browse existing ideas, submit your own suggestions, and vote on the
+						features you care about most:
+					</Typography>
+					<Box sx={{ pl: 2, mb: 2 }}>
+						<Link
+							href="https://ideas.letpeople.work"
+							target="_blank"
+							rel="noopener noreferrer"
+							variant="body1"
+						>
+							Visit the Lighthouse Product Board
+						</Link>
+					</Box>
+
+					<Box
+						sx={{ display: "flex", alignItems: "center", gap: 1, mt: 3, mb: 2 }}
+					>
+						<SlackIcon color="primary" />
+						<Typography variant="h6" component="h3">
+							For Bugs: Reach Out on Slack
+						</Typography>
+					</Box>
+					<Typography variant="body1" sx={{ mb: 2 }}>
+						Bugs do not belong on the Product Board. Please report bugs in our
+						Slack Community so we can help quickly and gather context with you:
 					</Typography>
 					<Box sx={{ pl: 2, mb: 2 }}>
 						<Link
@@ -69,7 +94,8 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ open, onClose }) => {
 						</Typography>
 					</Box>
 					<Typography variant="body1" sx={{ mb: 2 }}>
-						You can also provide feedback via email to{" "}
+						If Slack is not an option, you can also send bug reports and
+						feedback via email to{" "}
 						<Link
 							href="mailto:lighthouse@letpeople.work"
 							variant="body1"
@@ -89,7 +115,7 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ open, onClose }) => {
 					</Box>
 					<Box sx={{ pl: 2, mb: 2 }}>
 						<Typography variant="body2" component="div">
-							<strong>For Feature Requests:</strong>
+							<strong>For Feature Requests on Product Board:</strong>
 							<br />• Description of the desired functionality
 							<br />• Use case and expected benefits
 							<br />• Any relevant context or examples

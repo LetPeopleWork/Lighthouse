@@ -19,8 +19,11 @@ We use our Slack Community also to look for feedback, asking for support where w
 # Support Our Work
 Lighthouse is completely free and open-source. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework){:target="_blank"}. Your support helps us maintain and improve Lighthouse for everyone!
 
-# Bugs or Feature Requests
-If you have a feature request or found a potential bug, you can best reach us via [Slack](#join-our-slack-community) or [email](mailto:contact@letpeople.work). When doing so, please describe it in as much detail as possible.
+# Feature Requests
+For feature requests and ideas, our preferred way is our [Product Board](https://ideas.letpeople.work){:target="_blank"}. Please check existing ideas, add your own, and vote on what matters most to you.
+
+# Bugs
+Bugs do not belong on the Product Board. If you found a potential bug, please reach out via [Slack](#join-our-slack-community) or [email](mailto:contact@letpeople.work) and share as much detail as possible.
 
 # Documentation
 If you find something that can be improved in the documentation, you can contribute by letting us know about it!

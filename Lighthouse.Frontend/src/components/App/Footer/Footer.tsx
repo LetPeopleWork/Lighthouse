@@ -1,6 +1,7 @@
 import EmailIcon from "@mui/icons-material/Email";
 import ForumIcon from "@mui/icons-material/Forum";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import {
 	Box,
@@ -63,6 +64,11 @@ const Footer: React.FC = () => {
 								link="https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A"
 								icon={ForumIcon}
 								tooltip="Join our Slack Community"
+							/>
+							<ExternalLinkButton
+								link="https://ideas.letpeople.work"
+								icon={TipsAndUpdatesIcon}
+								tooltip="Share Feature Requests on our Product Board"
 							/>
 							<ExternalLinkButton
 								link="https://ko-fi.com/letpeoplework"
