@@ -157,6 +157,11 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getForecastInputCandidates: vi.fn(),
 		getThroughputInfo: vi.fn(),
 		getArrivalsInfo: vi.fn(),
+		getFeaturesWorkedOnInfo: vi.fn(),
+		getWipOverviewInfo: vi.fn(),
+		getTotalWorkItemAgeInfo: vi.fn(),
+		getPredictabilityScoreInfo: vi.fn(),
+		getCycleTimePercentilesInfo: vi.fn(),
 	};
 };
 
@@ -186,6 +191,10 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getThroughputInfo: vi.fn(),
 		getArrivalsInfo: vi.fn(),
 		getFeatureSizePercentilesInfo: vi.fn(),
+		getWipOverviewInfo: vi.fn(),
+		getTotalWorkItemAgeInfo: vi.fn(),
+		getPredictabilityScoreInfo: vi.fn(),
+		getCycleTimePercentilesInfo: vi.fn(),
 	};
 };
 

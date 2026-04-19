@@ -209,7 +209,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
             var expectedArrivals = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
-            teamMetricsServiceMock.Setup(service => service.GetArrivalsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedArrivals);
+            teamMetricsServiceMock.Setup(service => service.GetStartedItemsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedArrivals);
 
             var subject = CreateSubject();
 
@@ -293,7 +293,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetFeaturesInProgress(1337);
+            var response = subject.GetFeaturesInProgress(1337, DateTime.UtcNow.Date);
 
             using (Assert.EnterMultipleScope())
             {
@@ -320,13 +320,13 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "GCZ"
             };
 
-
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
             var expectedFeatures = new List<Feature> { feature1, feature2 };
-            teamMetricsServiceMock.Setup(service => service.GetCurrentFeaturesInProgressForTeam(team)).Returns(expectedFeatures);
+            teamMetricsServiceMock.Setup(service => service.GetCurrentFeaturesInProgressForTeam(team, asOfDate)).Returns(expectedFeatures);
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeaturesInProgress(team.Id);
+            var response = subject.GetFeaturesInProgress(team.Id, asOfDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCurrentWipForTeam(1337);
+            var response = subject.GetCurrentWipForTeam(1337, DateTime.UtcNow.Date);
 
             using (Assert.EnterMultipleScope())
             {
@@ -364,6 +364,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
             var item1 = new WorkItem
             {
                 Name = "Vfl",
@@ -377,11 +378,11 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var expectedItems = new List<WorkItem> { item1, item2 };
-            teamMetricsServiceMock.Setup(service => service.GetCurrentWipForTeam(team)).Returns(expectedItems);
+            teamMetricsServiceMock.Setup(service => service.GetWipSnapshotForTeam(team, asOfDate)).Returns(expectedItems);
 
             var subject = CreateSubject();
 
-            var response = subject.GetCurrentWipForTeam(team.Id);
+            var response = subject.GetCurrentWipForTeam(team.Id, asOfDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -640,7 +641,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetTotalWorkItemAge(1337);
+            var response = subject.GetTotalWorkItemAge(1337, DateTime.UtcNow.Date);
 
             using (Assert.EnterMultipleScope())
             {
@@ -658,11 +659,12 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
             const int expectedTotalAge = 42;
-            teamMetricsServiceMock.Setup(service => service.GetTotalWorkItemAge(team)).Returns(expectedTotalAge);
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            teamMetricsServiceMock.Setup(service => service.GetTotalWorkItemAge(team, asOfDate)).Returns(expectedTotalAge);
 
             var subject = CreateSubject();
 
-            var response = subject.GetTotalWorkItemAge(team.Id);
+            var response = subject.GetTotalWorkItemAge(team.Id, asOfDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1263,6 +1265,209 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var response = subject.GetArrivalsInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── WipOverviewInfo ─────────────────────────────────────────────────────
+
+        [Test]
+        public void GetWipOverviewInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetWipOverviewInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetWipOverviewInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetWipOverviewInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetWipOverviewInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new WipOverviewInfoDto(5, new InfoWidgetComparisonDto("up", "WIP", "2026-01-10", "5", "2026-01-01", "3", "+66.7%", null));
+            teamMetricsServiceMock.Setup(s => s.GetWipOverviewInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+            var response = subject.GetWipOverviewInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── FeaturesWorkedOnInfo ────────────────────────────────────────────────
+
+        [Test]
+        public void GetFeaturesWorkedOnInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetFeaturesWorkedOnInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetFeaturesWorkedOnInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetFeaturesWorkedOnInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetFeaturesWorkedOnInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new FeaturesWorkedOnInfoDto(2, new InfoWidgetComparisonDto("down", "Features Being Worked On", "2026-01-10", "2", "2026-01-01", "3", "-33.3%", null));
+            teamMetricsServiceMock.Setup(s => s.GetFeaturesWorkedOnInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+            var response = subject.GetFeaturesWorkedOnInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── TotalWorkItemAgeInfo ────────────────────────────────────────────────
+
+        [Test]
+        public void GetTotalWorkItemAgeInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetTotalWorkItemAgeInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetTotalWorkItemAgeInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new TotalWorkItemAgeInfoDto(42, new InfoWidgetComparisonDto("up", "Total Work Item Age", "2026-01-10", "42", "2026-01-01", "30", "+40.0%", null));
+            teamMetricsServiceMock.Setup(s => s.GetTotalWorkItemAgeInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+            var response = subject.GetTotalWorkItemAgeInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── PredictabilityScoreInfo ─────────────────────────────────────────────
+
+        [Test]
+        public void GetPredictabilityScoreInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetPredictabilityScoreInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetPredictabilityScoreInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetPredictabilityScoreInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetPredictabilityScoreInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new PredictabilityScoreInfoDto(0.73, new InfoWidgetComparisonDto("up", "Predictability Score", "curr", "73%", "prev", "60%", "+13pp", null));
+            teamMetricsServiceMock.Setup(s => s.GetPredictabilityScoreInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+            var response = subject.GetPredictabilityScoreInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── CycleTimePercentilesInfo ────────────────────────────────────────────
+
+        [Test]
+        public void GetCycleTimePercentilesInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetCycleTimePercentilesInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetCycleTimePercentilesInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new CycleTimePercentilesInfoDto(
+                [new PercentileValueDto(50, 5), new PercentileValueDto(85, 10)],
+                new InfoWidgetComparisonDto("up", "Cycle Time Percentiles", "curr", null, "prev", null, null,
+                    [new TrendDetailRowDto("50th", "5", "3"), new TrendDetailRowDto("85th", "10", "7")]));
+            teamMetricsServiceMock.Setup(s => s.GetCycleTimePercentilesInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+            var response = subject.GetCycleTimePercentilesInfo(team.Id, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {

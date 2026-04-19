@@ -22,8 +22,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        RunChartData GetArrivalsForTeam(Team team, DateTime startDate, DateTime endDate);
-
         ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
 
         RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate);
@@ -32,9 +30,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team);
-
-        IEnumerable<WorkItem> GetCurrentWipForTeam(Team team);
+        IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate);
 
         IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate);
 
@@ -50,9 +46,17 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate);
 
-        int GetTotalWorkItemAge(Team team);
-
         int GetTotalWorkItemAge(Team team, DateTime endDate);
+
+        WipOverviewInfoDto GetWipOverviewInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        FeaturesWorkedOnInfoDto GetFeaturesWorkedOnInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        TotalWorkItemAgeInfoDto GetTotalWorkItemAgeInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        PredictabilityScoreInfoDto GetPredictabilityScoreInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
         Task UpdateTeamMetrics(Team team);
     }

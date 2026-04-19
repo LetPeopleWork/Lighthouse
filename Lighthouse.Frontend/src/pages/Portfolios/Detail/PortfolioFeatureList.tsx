@@ -80,6 +80,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				try {
 					const inProgress = await teamMetricsService.getFeaturesInProgress(
 						team.id,
+						new Date(),
 					);
 					featuresByTeam[team.id] = inProgress.map(
 						(feature) => feature.referenceId,

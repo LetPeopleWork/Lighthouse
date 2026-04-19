@@ -119,7 +119,10 @@ describe("TeamMetricsView component", () => {
 
 		// Assert
 		await waitFor(() => {
-			expect(mockGetFeaturesInProgress).toHaveBeenCalledWith(team.id);
+			expect(mockGetFeaturesInProgress).toHaveBeenCalledWith(
+				team.id,
+				expect.any(Date),
+			);
 		});
 	});
 
@@ -255,7 +258,10 @@ describe("TeamMetricsView component", () => {
 
 		// Assert
 		await waitFor(() => {
-			expect(mockGetFeaturesInProgress).toHaveBeenCalledWith(team.id);
+			expect(mockGetFeaturesInProgress).toHaveBeenCalledWith(
+				team.id,
+				expect.any(Date),
+			);
 			expect(consoleSpy).toHaveBeenCalledWith(
 				"Error fetching Features in progress:",
 				expect.any(Error),

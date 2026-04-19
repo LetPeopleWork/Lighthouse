@@ -471,6 +471,104 @@ namespace Lighthouse.Backend.Services.Implementation
             return "flat";
         }
 
+        protected static WipOverviewInfoDto BuildWipOverviewInfoDto(
+            int currentCount, int previousCount, DateTime asOfDate, DateTime previousDate)
+        {
+            var direction = DetermineIntCountDirection(currentCount, previousCount);
+            var percentageDelta = ComputePercentageDelta(currentCount, previousCount);
+            var comparison = new InfoWidgetComparisonDto(
+                direction, "WIP", $"{asOfDate:yyyy-MM-dd}", currentCount.ToString(),
+                $"{previousDate:yyyy-MM-dd}", previousCount.ToString(), percentageDelta, null);
+            return new WipOverviewInfoDto(currentCount, comparison);
+        }
+
+        protected static FeaturesWorkedOnInfoDto BuildFeaturesWorkedOnInfoDto(
+            int currentCount, int previousCount, DateTime asOfDate, DateTime previousDate)
+        {
+            var direction = DetermineIntCountDirection(currentCount, previousCount);
+            var percentageDelta = ComputePercentageDelta(currentCount, previousCount);
+            var comparison = new InfoWidgetComparisonDto(
+                direction, "Features Being Worked On", $"{asOfDate:yyyy-MM-dd}", currentCount.ToString(),
+                $"{previousDate:yyyy-MM-dd}", previousCount.ToString(), percentageDelta, null);
+            return new FeaturesWorkedOnInfoDto(currentCount, comparison);
+        }
+
+        protected static TotalWorkItemAgeInfoDto BuildTotalWorkItemAgeInfoDto(
+            int currentAge, int previousAge, DateTime asOfDate, DateTime previousDate)
+        {
+            var direction = DetermineIntCountDirection(currentAge, previousAge);
+            var percentageDelta = ComputePercentageDelta(currentAge, previousAge);
+            var comparison = new InfoWidgetComparisonDto(
+                direction, "Total Work Item Age", $"{asOfDate:yyyy-MM-dd}", currentAge.ToString(),
+                $"{previousDate:yyyy-MM-dd}", previousAge.ToString(), percentageDelta, null);
+            return new TotalWorkItemAgeInfoDto(currentAge, comparison);
+        }
+
+        protected static PredictabilityScoreInfoDto BuildPredictabilityScoreInfoDto(
+            double currentScore, double previousScore,
+            DateTime currentStart, DateTime currentEnd,
+            DateTime previousStart, DateTime previousEnd)
+        {
+            string direction;
+            var currentPct = (int)Math.Round(currentScore * 100);
+            var previousPct = (int)Math.Round(previousScore * 100);
+            if (previousPct == 0) direction = "none";
+            else if (Math.Abs(currentPct - previousPct) <= 5) direction = "flat";
+            else if (currentPct > previousPct) direction = "up";
+            else direction = "down";
+
+            var currentLabel = $"{currentStart:yyyy-MM-dd} – {currentEnd:yyyy-MM-dd}";
+            var previousLabel = $"{previousStart:yyyy-MM-dd} – {previousEnd:yyyy-MM-dd}";
+            var percentageDelta = previousPct == 0 ? null : $"{(currentPct - previousPct):+#;-#;0}pp";
+
+            var comparison = new InfoWidgetComparisonDto(
+                direction, "Predictability Score", currentLabel, $"{currentPct}%",
+                previousLabel, $"{previousPct}%", percentageDelta, null);
+            return new PredictabilityScoreInfoDto(currentScore, comparison);
+        }
+
+        protected static CycleTimePercentilesInfoDto BuildCycleTimePercentilesInfoDto(
+            List<PercentileValue> currentPercentiles,
+            List<PercentileValue> previousPercentiles,
+            DateTime currentStart, DateTime currentEnd,
+            DateTime previousStart, DateTime previousEnd)
+        {
+            var percentileDtos = currentPercentiles
+                .Select(p => new PercentileValueDto(p.Percentile, p.Value))
+                .ToArray();
+
+            if (currentPercentiles.Count == 0 && previousPercentiles.Count == 0)
+            {
+                var emptyComparison = new InfoWidgetComparisonDto(
+                    "none", "Cycle Time Percentiles", null, null, null, null, null, null);
+                return new CycleTimePercentilesInfoDto(percentileDtos, emptyComparison);
+            }
+
+            var detailRows = currentPercentiles
+                .Select(cp =>
+                {
+                    var pp = previousPercentiles.FirstOrDefault(p => p.Percentile == cp.Percentile);
+                    return new TrendDetailRowDto(
+                        $"{cp.Percentile}th",
+                        cp.Value.ToString(),
+                        pp?.Value.ToString() ?? "–");
+                })
+                .ToArray();
+
+            var currentMedian = currentPercentiles.FirstOrDefault(p => p.Percentile == 50)?.Value ?? 0;
+            var previousMedian = previousPercentiles.FirstOrDefault(p => p.Percentile == 50)?.Value ?? 0;
+            var direction = DetermineIntCountDirection(currentMedian, previousMedian);
+
+            var currentLabel = $"{currentStart:yyyy-MM-dd} – {currentEnd:yyyy-MM-dd}";
+            var previousLabel = $"{previousStart:yyyy-MM-dd} – {previousEnd:yyyy-MM-dd}";
+
+            var comparison = new InfoWidgetComparisonDto(
+                direction, "Cycle Time Percentiles", currentLabel, null,
+                previousLabel, null, null, detailRows);
+
+            return new CycleTimePercentilesInfoDto(percentileDtos, comparison);
+        }
+
         private static string? ComputePercentageDelta(int current, int previous)
         {
             if (previous == 0) return null;

@@ -31,26 +31,41 @@ Each widget section below documents exactly how the status is calculated.
 
 # Dashboard Categories
 
-Widgets are organized into six dashboard categories. Each category groups related metrics around a specific question. Use the category selector at the top of the metrics page to switch between them.
+Widgets are organized into four dashboard categories. Each category groups related metrics around a specific question. Use the category selector at the top of the metrics page to switch between them.
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Started vs. Closed, Cycle Time Percentiles |
-| **Cycle Time** | How long do items take? | Cycle Time Percentiles, Total Work Item Age, Cycle Time Scatterplot, Work Item Aging Chart, Cycle Time PBC |
-| **Throughput** | How much are we delivering? | Started vs. Closed, Throughput Run Chart, Arrivals Run Chart, Simplified CFD, Throughput PBC, Arrivals PBC |
-| **WIP & Aging** | Where is work getting stuck? | WIP Overview, Blocked Overview, Total Work Item Age, Work Item Aging Chart, WIP Over Time, Total Work Item Age Over Time, WIP PBC, Total Work Item Age PBC |
-| **Predictability** | Can we trust our forecasts? | Predictability Score, Cycle Time Percentiles, Predictability Score Details, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
-| **Portfolio & Features** | How do features flow through the system? | Features Worked On Overview (Teams only), Predictability Score, Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
+| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
+| **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
+| **Predictability** | Can we trust our forecasts? | Predictability Score Details, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
+| **Portfolio & Features** | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
 
 {: .note}
 Some widgets appear in more than one category when they are relevant to multiple questions. A few widgets are scoped to Teams only or Portfolios only as noted above.
+
+## Trend Indicators
+
+Flow Overview widgets display trend indicators comparing the current date range to a prior period of equal length. Each widget's trend uses one of two comparison methods:
+
+| Method | Widgets | How it works |
+|---|---|---|
+| **Snapshot compare** | WIP Overview, Features Worked On (Teams), Total Work Item Age | Compares the snapshot value at the end date against the snapshot value at the start date. |
+| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Feature Size Percentiles | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
+
+Blocked Overview does not show a trend indicator.
+
+For percentile widgets (Cycle Time Percentiles and Feature Size Percentiles), the trend tooltip shows a per-percentile breakdown in `previous → **current**` format with the current-period values emphasized.
+
+## Date-Aware Snapshots
+
+The WIP Overview, Features Worked On, and Total Work Item Age widgets use the selected date range to determine which items to include. The backend resolves the snapshot as of the end date rather than always returning the current state. This means changing the date range will change the displayed values to reflect the system state at the selected date.
 
 # WIP Overview
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | WIP |
-| **Affected by Filtering** | No |
+| **Affected by Filtering** | Yes — snapshot as of selected end date |
 
 This widget shows the total number of items currently in progress based on the states you configured as *Doing*.
 
@@ -59,9 +74,6 @@ This widget shows the total number of items currently in progress based on the s
 If a *System WIP Limit* is configured for the Team or Portfolio, the widget visualizes that goal and colors the value accordingly.
 
 Use the **View Data** button to open the full list of in-progress items that currently contribute to the count.
-
-{: .important}
-This widget is **not affected** by the date filtering. It always shows the **current** Work In Progress.
 
 ## Status Indicator
 
@@ -100,7 +112,7 @@ This widget is **not affected** by the date filtering. It always shows the **cur
 |--------------|-------------------------|
 | **Applies to** | Teams only |
 | **Flow Metric** | WIP |
-| **Affected by Filtering** | No |
+| **Affected by Filtering** | Yes — snapshot as of selected end date |
 
 This widget shows how many parent features currently have at least one child item in progress.
 
@@ -111,8 +123,8 @@ The team's [Feature WIP](../teams/edit.html#feature-wip) is visualized as a goal
 {: .note}
 The number is based on parent items that are actively being worked on. It does not matter whether the parent feature is in *To Do*, *Doing*, or *Done*.
 
-{: .important}
-This metric is only available for Teams and is **not affected** by date filtering.
+{: .note}
+This metric is only available for Teams.
 
 ## Status Indicator
 
@@ -559,7 +571,7 @@ The CFD uses the same logic as [Started vs. Closed](#started-vs-closed): it comp
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Work Item Age, WIP |
-| **Affected by Filtering** | No (Widget), Yes (Chart) |
+| **Affected by Filtering** | Yes — snapshot as of selected end date (Widget), Yes (Chart) |
 
 The Total Work Item Age widget shows the cumulative age of all items currently in progress. This metric helps you understand the overall "inventory" age of your work in progress.
 

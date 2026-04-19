@@ -537,6 +537,7 @@ function buildWidgetNodes(ctx: {
 	entity: IFeatureOwner;
 	title: string;
 	startDate: Date;
+	endDate: Date;
 	inProgressItems: IWorkItem[];
 	blockedItems: IWorkItem[];
 	blockedTerm: string;
@@ -615,6 +616,7 @@ function buildWidgetNodes(ctx: {
 			<TotalWorkItemAgeWidget
 				entityId={ctx.entity.id}
 				metricsService={ctx.metricsService}
+				asOfDate={ctx.endDate}
 			/>
 		),
 		throughput: ctx.throughputData ? (
@@ -843,6 +845,11 @@ export const BaseMetricsView = <
 		throughputInfo,
 		arrivalsInfo,
 		featureSizePercentilesInfo,
+		wipOverviewInfo,
+		featuresWorkedOnInfo,
+		totalWorkItemAgeInfo,
+		predictabilityScoreInfo,
+		cycleTimePercentilesInfo,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
 	const { getTerm } = useTerminology();
@@ -898,6 +905,7 @@ export const BaseMetricsView = <
 		entity,
 		title,
 		startDate,
+		endDate,
 		inProgressItems,
 		blockedItems,
 		blockedTerm,
@@ -1055,6 +1063,11 @@ export const BaseMetricsView = <
 			? FeatureSizePercentilesWidget.getTrendPayload(featureSizePercentilesInfo)
 					.trendPayload
 			: undefined,
+		wipOverview: wipOverviewInfo?.comparison,
+		featuresWorkedOnOverview: featuresWorkedOnInfo?.comparison,
+		totalWorkItemAge: totalWorkItemAgeInfo?.comparison,
+		predictabilityScore: predictabilityScoreInfo?.comparison,
+		percentiles: cycleTimePercentilesInfo?.comparison,
 	};
 
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);

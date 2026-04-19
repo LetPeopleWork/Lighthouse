@@ -627,6 +627,38 @@ describe("BaseMetricsView component", () => {
 					metricLabel: "Feature Size Percentiles",
 				},
 			}),
+			getWipOverviewInfo: vi.fn().mockResolvedValue({
+				count: 0,
+				comparison: { direction: "none", metricLabel: "WIP" },
+			}),
+			getFeaturesWorkedOnInfo: vi.fn().mockResolvedValue({
+				count: 0,
+				comparison: {
+					direction: "none",
+					metricLabel: "Features Being Worked On",
+				},
+			}),
+			getTotalWorkItemAgeInfo: vi.fn().mockResolvedValue({
+				totalAge: 0,
+				comparison: {
+					direction: "none",
+					metricLabel: "Total Work Item Age",
+				},
+			}),
+			getPredictabilityScoreInfo: vi.fn().mockResolvedValue({
+				score: 0,
+				comparison: {
+					direction: "none",
+					metricLabel: "Predictability Score",
+				},
+			}),
+			getCycleTimePercentilesInfo: vi.fn().mockResolvedValue({
+				percentiles: [],
+				comparison: {
+					direction: "none",
+					metricLabel: "Cycle Time Percentiles",
+				},
+			}),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -721,6 +753,7 @@ describe("BaseMetricsView component", () => {
 			);
 			expect(projectMetricsService.getInProgressItems).toHaveBeenCalledWith(
 				mockProject.id,
+				expect.any(Date),
 			);
 			expect(
 				projectMetricsService.getWorkInProgressOverTime,
@@ -874,11 +907,11 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
-	it("renders Total Work Item Age Over Time run chart correctly in wip-aging category", async () => {
-		// totalWorkItemAgeOverTime is in wip-aging category
+	it("renders Total Work Item Age Over Time run chart correctly in flow-metrics category", async () => {
+		// totalWorkItemAgeOverTime is in flow-metrics category
 		localStorage.setItem(
 			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-			"wip-aging",
+			"flow-metrics",
 		);
 
 		renderWithRouter(
@@ -893,7 +926,7 @@ describe("BaseMetricsView component", () => {
 
 		// Wait for components to render
 		await waitFor(() => {
-			// Check Total Work Item Age Run Chart is rendered (in wip-aging)
+			// Check Total Work Item Age Run Chart is rendered (in flow-metrics)
 			expect(
 				screen.getByTestId(
 					"total-work-item-age-run-chart-Features Total Work Item Age Over Time",
@@ -1080,6 +1113,16 @@ describe("BaseMetricsView component", () => {
 			getArrivalsPbc: vi.fn().mockRejectedValue(new Error("API error")),
 			getThroughputInfo: vi.fn().mockRejectedValue(new Error("API error")),
 			getArrivalsInfo: vi.fn().mockRejectedValue(new Error("API error")),
+			getWipOverviewInfo: vi.fn().mockRejectedValue(new Error("API error")),
+			getTotalWorkItemAgeInfo: vi
+				.fn()
+				.mockRejectedValue(new Error("API error")),
+			getPredictabilityScoreInfo: vi
+				.fn()
+				.mockRejectedValue(new Error("API error")),
+			getCycleTimePercentilesInfo: vi
+				.fn()
+				.mockRejectedValue(new Error("API error")),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1169,10 +1212,10 @@ describe("BaseMetricsView component", () => {
 		projectWithoutSLE.serviceLevelExpectationProbability = 0;
 		projectWithoutSLE.serviceLevelExpectationRange = 0;
 
-		// cycleScatter is in cycle-time category where SLE testid is visible
+		// cycleScatter is in flow-metrics category where SLE testid is visible
 		localStorage.setItem(
 			`lighthouse:metrics:portfolio:${projectWithoutSLE.id}:category`,
-			"cycle-time",
+			"flow-metrics",
 		);
 
 		renderWithRouter(
@@ -1200,10 +1243,10 @@ describe("BaseMetricsView component", () => {
 		projectWithPartialSLE.serviceLevelExpectationProbability = 85;
 		projectWithPartialSLE.serviceLevelExpectationRange = 0;
 
-		// cycleScatter is in cycle-time category where SLE testid is visible
+		// cycleScatter is in flow-metrics category where SLE testid is visible
 		localStorage.setItem(
 			`lighthouse:metrics:portfolio:${projectWithPartialSLE.id}:category`,
-			"cycle-time",
+			"flow-metrics",
 		);
 
 		renderWithRouter(
@@ -1488,6 +1531,16 @@ describe("BaseMetricsView component", () => {
 				getArrivalsPbc: vi.fn().mockRejectedValue(new Error("API error")),
 				getThroughputInfo: vi.fn().mockRejectedValue(new Error("API error")),
 				getArrivalsInfo: vi.fn().mockRejectedValue(new Error("API error")),
+				getWipOverviewInfo: vi.fn().mockRejectedValue(new Error("API error")),
+				getTotalWorkItemAgeInfo: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getPredictabilityScoreInfo: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getCycleTimePercentilesInfo: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi
@@ -2136,15 +2189,15 @@ describe("BaseMetricsView component", () => {
 
 	describe("M3 RAG Footers — Flow Throughput and Cycle Widgets", () => {
 		beforeEach(() => {
-			// throughput/cycleScatter/stacked widgets are in throughput and cycle-time categories
+			// throughput/cycleScatter/stacked widgets are in flow-metrics category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"throughput",
+				"flow-metrics",
 			);
 			// mockMetricsService lacks getFeaturesInProgress so ownerType is "portfolio" even for mockTeam
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
-				"throughput",
+				"flow-metrics",
 			);
 		});
 
@@ -2258,10 +2311,10 @@ describe("BaseMetricsView component", () => {
 
 		it("shows green RAG for cycle time scatterplot when all items within SLE", async () => {
 			// SLE value = 14, cycleTimes = [9, 10] → 0% above → Green
-			// cycleScatter is in cycle-time category
+			// cycleScatter is in flow-metrics category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-metrics",
 			);
 
 			renderWithRouter(
@@ -2669,19 +2722,19 @@ describe("BaseMetricsView component", () => {
 		beforeEach(() => {
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"wip-aging",
+				"flow-metrics",
 			);
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockTeam.id}:category`,
-				"wip-aging",
+				"flow-metrics",
 			);
 		});
 		it("shows green RAG for aging chart when SLE and blocked config present and items healthy", async () => {
 			// mockProject has SLE = {85, 14}. inProgressItems have workItemAge = 10, 8 (both below SLE and threshold)
-			// aging widget is in cycle-time category
+			// aging widget is in flow-metrics category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-metrics",
 			);
 
 			renderWithRouter(
@@ -2704,10 +2757,10 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("shows red RAG for aging chart when no blocked config", async () => {
-			// aging widget is in cycle-time category
+			// aging widget is in flow-metrics category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-metrics",
 			);
 
 			renderWithRouter(
@@ -2781,7 +2834,7 @@ describe("BaseMetricsView component", () => {
 			// stacked widget is in throughput category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"throughput",
+				"flow-metrics",
 			);
 
 			// Same as startedVsClosed → no WIP limit → Red
@@ -3126,7 +3179,7 @@ describe("BaseMetricsView component", () => {
 			// throughput is in the throughput category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"throughput",
+				"flow-metrics",
 			);
 
 			renderWithRouter(
@@ -3147,10 +3200,10 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("passes viewData to cycle time scatter plot widget", async () => {
-			// cycleScatter is in the cycle-time category
+			// cycleScatter is in the flow-metrics category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-metrics",
 			);
 
 			renderWithRouter(
@@ -3174,10 +3227,10 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("passes viewData to work item aging widget", async () => {
-			// aging is in the cycle-time category
+			// aging is in the flow-metrics category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-metrics",
 			);
 
 			renderWithRouter(

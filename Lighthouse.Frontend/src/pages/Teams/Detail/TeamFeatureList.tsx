@@ -78,6 +78,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		const fetchFeaturesInProgress = async () => {
 			const inProgress = await teamMetricsService.getFeaturesInProgress(
 				team.id,
+				new Date(),
 			);
 			setFeaturesInProgress(inProgress.map((feature) => feature.referenceId));
 		};

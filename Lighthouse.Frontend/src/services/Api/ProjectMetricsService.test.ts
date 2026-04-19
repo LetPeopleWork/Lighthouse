@@ -134,11 +134,14 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce({ data: mockWorkItems });
 
 			// Act
-			const result = await service.getInProgressItems(projectId);
+			const result = await service.getInProgressItems(
+				projectId,
+				new Date(2025, 5, 15),
+			);
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/portfolios/${projectId}/metrics/currentwip`,
+				`/portfolios/${projectId}/metrics/wip?asOfDate=2025-06-15`,
 			);
 			expect(result.length).toBe(2);
 			expect(result[0].id).toBe(1);
@@ -297,11 +300,14 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce({ data: mockTotalAge });
 
 			// Act
-			const result = await service.getTotalWorkItemAge(projectId);
+			const result = await service.getTotalWorkItemAge(
+				projectId,
+				new Date(2025, 5, 15),
+			);
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/portfolios/${projectId}/metrics/totalWorkItemAge`,
+				`/portfolios/${projectId}/metrics/totalWorkItemAge?asOfDate=2025-06-15`,
 			);
 			expect(result).toBe(250);
 		});
@@ -312,9 +318,9 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockRejectedValueOnce(new Error(errorMessage));
 
 			// Act & Assert
-			await expect(service.getTotalWorkItemAge(projectId)).rejects.toThrow(
-				errorMessage,
-			);
+			await expect(
+				service.getTotalWorkItemAge(projectId, new Date()),
+			).rejects.toThrow(errorMessage);
 		});
 	});
 
@@ -446,6 +452,128 @@ describe("ProjectMetricsService", () => {
 
 			expect(mockGet).toHaveBeenCalledWith(
 				`/portfolios/${projectId}/metrics/featureSizePercentilesInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.percentiles).toHaveLength(2);
+			expect(result.comparison.direction).toBe("up");
+		});
+	});
+
+	describe("getWipOverviewInfo", () => {
+		it("should call the correct API endpoint and return WIP overview info", async () => {
+			const mockInfo = {
+				count: 5,
+				comparison: {
+					direction: "up",
+					metricLabel: "WIP",
+					currentLabel: "2023-01-31",
+					currentValue: "5",
+					previousLabel: "2023-01-01",
+					previousValue: "3",
+					percentageDelta: "+66.7%",
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getWipOverviewInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/wipOverviewInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.count).toBe(5);
+			expect(result.comparison.direction).toBe("up");
+		});
+	});
+
+	describe("getTotalWorkItemAgeInfo", () => {
+		it("should call the correct API endpoint and return total work item age info", async () => {
+			const mockInfo = {
+				totalAge: 42,
+				comparison: {
+					direction: "up",
+					metricLabel: "Total Work Item Age",
+					currentLabel: "2023-01-31",
+					currentValue: "42",
+					previousLabel: "2023-01-01",
+					previousValue: "30",
+					percentageDelta: "+40.0%",
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getTotalWorkItemAgeInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/totalWorkItemAgeInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.totalAge).toBe(42);
+			expect(result.comparison.direction).toBe("up");
+		});
+	});
+
+	describe("getPredictabilityScoreInfo", () => {
+		it("should call the correct API endpoint and return predictability score info", async () => {
+			const mockInfo = {
+				score: 0.73,
+				comparison: {
+					direction: "up",
+					metricLabel: "Predictability Score",
+					currentLabel: "2023-01-01 – 2023-01-31",
+					currentValue: "73%",
+					previousLabel: "2022-12-01 – 2022-12-31",
+					previousValue: "60%",
+					percentageDelta: "+13pp",
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getPredictabilityScoreInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/predictabilityScoreInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.score).toBe(0.73);
+			expect(result.comparison.direction).toBe("up");
+		});
+	});
+
+	describe("getCycleTimePercentilesInfo", () => {
+		it("should call the correct API endpoint and return cycle time percentiles info", async () => {
+			const mockInfo = {
+				percentiles: [
+					{ percentile: 50, value: 5 },
+					{ percentile: 85, value: 10 },
+				],
+				comparison: {
+					direction: "up",
+					metricLabel: "Cycle Time Percentiles",
+					detailRows: [
+						{ label: "50th", currentValue: "5", previousValue: "3" },
+						{ label: "85th", currentValue: "10", previousValue: "7" },
+					],
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getCycleTimePercentilesInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/cycleTimePercentilesInfo?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result.percentiles).toHaveLength(2);
 			expect(result.comparison.direction).toBe("up");

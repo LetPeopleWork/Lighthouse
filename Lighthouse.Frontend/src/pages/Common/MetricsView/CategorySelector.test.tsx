@@ -13,9 +13,9 @@ describe("CategorySelector", () => {
 		expect(
 			screen.getByTestId("category-chip-flow-overview"),
 		).toBeInTheDocument();
-		expect(screen.getByTestId("category-chip-cycle-time")).toBeInTheDocument();
-		expect(screen.getByTestId("category-chip-throughput")).toBeInTheDocument();
-		expect(screen.getByTestId("category-chip-wip-aging")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("category-chip-flow-metrics"),
+		).toBeInTheDocument();
 		expect(
 			screen.getByTestId("category-chip-predictability"),
 		).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("CategorySelector", () => {
 			/>,
 		);
 		const selected = screen.getByTestId("category-chip-flow-overview");
-		const unselected = screen.getByTestId("category-chip-cycle-time");
+		const unselected = screen.getByTestId("category-chip-flow-metrics");
 		expect(selected.className).not.toBe(unselected.className);
 	});
 

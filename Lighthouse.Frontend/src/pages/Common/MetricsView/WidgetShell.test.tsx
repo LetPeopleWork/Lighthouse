@@ -449,7 +449,7 @@ describe("WidgetShell", () => {
 			expect(await screen.findByText("+25.0%")).toBeInTheDocument();
 		});
 
-		it("renders detail rows in tooltip when provided", async () => {
+		it("renders detail rows in tooltip with previous arrow current format", async () => {
 			const user = userEvent.setup();
 			const trendWithDetails: TrendPayload = {
 				direction: "up",
@@ -468,6 +468,13 @@ describe("WidgetShell", () => {
 			await user.hover(trendEl);
 			expect(await screen.findByText("50th")).toBeInTheDocument();
 			expect(await screen.findByText("85th")).toBeInTheDocument();
+			expect(await screen.findByText(/4 →/)).toBeInTheDocument();
+			expect(await screen.findByText(/10 →/)).toBeInTheDocument();
+			// Current values are bold
+			const boldElements = document.querySelectorAll("strong");
+			const boldTexts = Array.from(boldElements).map((el) => el.textContent);
+			expect(boldTexts).toContain("5");
+			expect(boldTexts).toContain("12");
 		});
 
 		it("renders header when trend is provided even without title", () => {

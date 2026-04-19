@@ -30,108 +30,123 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            return BuildThroughputProcessBehaviourChart(portfolio, startDate, endDate,
-                (s, e) => GetThroughputForPortfolio(portfolio, s, e));
+            return GetFromCacheIfExists(portfolio, $"ThroughputProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                return BuildThroughputProcessBehaviourChart(portfolio, startDate, endDate,
+                    (s, e) => GetThroughputForPortfolio(portfolio, s, e));
+            }, logger);
         }
 
         public ProcessBehaviourChart GetWipProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            return BuildDailyRunChartProcessBehaviourChart(portfolio, startDate, endDate,
-                (s, e) => GetFeaturesInProgressOverTimeForPortfolio(portfolio, s, e));
+            return GetFromCacheIfExists(portfolio, $"WipProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                return BuildDailyRunChartProcessBehaviourChart(portfolio, startDate, endDate,
+                    (s, e) => GetFeaturesInProgressOverTimeForPortfolio(portfolio, s, e));
+            }, logger);
         }
 
         public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            return BuildTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate,
-                (s, e) => GetTotalWorkItemAgeOverTime(portfolio, s, e));
+            return GetFromCacheIfExists(portfolio, $"TotalWorkItemAgeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+             {
+                 return BuildTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate,
+                     (s, e) => GetTotalWorkItemAgeOverTime(portfolio, s, e));
+             }, logger);
         }
 
         public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            return BuildCycleTimeProcessBehaviourChart(portfolio, startDate, endDate,
-                (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e));
+            return GetFromCacheIfExists(portfolio, $"CycleTimeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+             {
+                 return BuildCycleTimeProcessBehaviourChart(portfolio, startDate, endDate,
+                     (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e));
+             }, logger);
         }
 
         public ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Feature Size Process Behaviour Chart for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var baselineStart = portfolio.ProcessBehaviourChartBaselineStartDate;
-            var baselineEnd = portfolio.ProcessBehaviourChartBaselineEndDate;
-            var baselineConfigured = baselineStart != null || baselineEnd != null;
+            return GetFromCacheIfExists(portfolio, $"FeatureSizeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+             {
+                 var baselineStart = portfolio.ProcessBehaviourChartBaselineStartDate;
+                 var baselineEnd = portfolio.ProcessBehaviourChartBaselineEndDate;
+                 var baselineConfigured = baselineStart != null || baselineEnd != null;
 
-            if (!baselineConfigured)
-            {
-                baselineStart = startDate;
-                baselineEnd = endDate;
-            }
+                 if (!baselineConfigured)
+                 {
+                     baselineStart = startDate;
+                     baselineEnd = endDate;
+                 }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays);
-            if (!validation.IsValid)
-            {
-                return new ProcessBehaviourChart
-                {
-                    Status = BaselineStatus.BaselineInvalid,
-                    StatusReason = validation.ErrorMessage,
-                    XAxisKind = XAxisKind.DateTime,
-                    Average = 0,
-                    UpperNaturalProcessLimit = 0,
-                    LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baselineConfigured,
-                    DataPoints = [],
-                };
-            }
+                 var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays);
+                 if (!validation.IsValid)
+                 {
+                     return new ProcessBehaviourChart
+                     {
+                         Status = BaselineStatus.BaselineInvalid,
+                         StatusReason = validation.ErrorMessage,
+                         XAxisKind = XAxisKind.DateTime,
+                         Average = 0,
+                         UpperNaturalProcessLimit = 0,
+                         LowerNaturalProcessLimit = 0,
+                         BaselineConfigured = baselineConfigured,
+                         DataPoints = [],
+                     };
+                 }
 
-            var baselineItems = GetFeaturesClosedInDateRange(portfolio, baselineStart!.Value, baselineEnd!.Value)
-                .Where(f => f.Size > 0)
-                .OrderBy(f => f.ClosedDate)
-                .ThenBy(f => f.Id)
-                .ToList();
+                 var baselineItems = GetFeaturesClosedInDateRange(portfolio, baselineStart!.Value, baselineEnd!.Value)
+                     .Where(f => f.Size > 0)
+                     .OrderBy(f => f.ClosedDate)
+                     .ThenBy(f => f.Id)
+                     .ToList();
 
-            var displayItems = GetFeaturesClosedInDateRange(portfolio, startDate, endDate)
-                .Where(f => f.Size > 0)
-                .OrderBy(f => f.ClosedDate)
-                .ThenBy(f => f.Id)
-                .ToList();
+                 var displayItems = GetFeaturesClosedInDateRange(portfolio, startDate, endDate)
+                     .Where(f => f.Size > 0)
+                     .OrderBy(f => f.ClosedDate)
+                     .ThenBy(f => f.Id)
+                     .ToList();
 
-            var baselineValues = baselineItems.Select(f => f.Size).ToArray();
-            var displayValues = displayItems.Select(f => f.Size).ToArray();
+                 var baselineValues = baselineItems.Select(f => f.Size).ToArray();
+                 var displayValues = displayItems.Select(f => f.Size).ToArray();
 
-            if (displayValues.Length == 0)
-            {
-                return new ProcessBehaviourChart
-                {
-                    Status = BaselineStatus.InsufficientData,
-                    StatusReason = "No closed features with a non-zero size were found in the selected date range.",
-                    XAxisKind = XAxisKind.DateTime,
-                    Average = 0,
-                    UpperNaturalProcessLimit = 0,
-                    LowerNaturalProcessLimit = 0,
-                    BaselineConfigured = baselineConfigured,
-                    DataPoints = [],
-                };
-            }
+                 if (displayValues.Length == 0)
+                 {
+                     return new ProcessBehaviourChart
+                     {
+                         Status = BaselineStatus.InsufficientData,
+                         StatusReason = "No closed features with a non-zero size were found in the selected date range.",
+                         XAxisKind = XAxisKind.DateTime,
+                         Average = 0,
+                         UpperNaturalProcessLimit = 0,
+                         LowerNaturalProcessLimit = 0,
+                         BaselineConfigured = baselineConfigured,
+                         DataPoints = [],
+                     };
+                 }
 
-            var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues);
+                 var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues);
 
-            var dataPoints = new ProcessBehaviourChartDataPoint[displayItems.Count];
-            for (var i = 0; i < displayItems.Count; i++)
-            {
-                var feature = displayItems[i];
-                var xValue = feature.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                dataPoints[i] = new ProcessBehaviourChartDataPoint(xValue, feature.Size, xmrResult.SpecialCauseClassifications[i], [feature.Id]);
-            }
+                 var dataPoints = new ProcessBehaviourChartDataPoint[displayItems.Count];
+                 for (var i = 0; i < displayItems.Count; i++)
+                 {
+                     var feature = displayItems[i];
+                     var xValue = feature.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                     dataPoints[i] = new ProcessBehaviourChartDataPoint(xValue, feature.Size, xmrResult.SpecialCauseClassifications[i], [feature.Id]);
+                 }
 
-            return new ProcessBehaviourChart
-            {
-                Status = BaselineStatus.Ready,
-                XAxisKind = XAxisKind.DateTime,
-                Average = xmrResult.Average,
-                UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
-                LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
-                BaselineConfigured = baselineConfigured,
-                DataPoints = dataPoints,
-            };
+                 return new ProcessBehaviourChart
+                 {
+                     Status = BaselineStatus.Ready,
+                     XAxisKind = XAxisKind.DateTime,
+                     Average = xmrResult.Average,
+                     UpperNaturalProcessLimit = xmrResult.UpperNaturalProcessLimit,
+                     LowerNaturalProcessLimit = xmrResult.LowerNaturalProcessLimit,
+                     BaselineConfigured = baselineConfigured,
+                     DataPoints = dataPoints,
+                 };
+             }, logger);
         }
 
         public RunChartData GetFeaturesInProgressOverTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -203,11 +218,6 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio)
-        {
-            return GetInProgressFeaturesForPortfolio(portfolio, DateTime.UtcNow.Date);
-        }
-        
         public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio, DateTime asOfDate)
         {
             logger.LogDebug("Getting WIP snapshot for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, asOfDate.Date);
@@ -320,11 +330,6 @@ namespace Lighthouse.Backend.Services.Implementation
             return BuildFeatureSizeEstimationResponse(portfolio, allFeatures);
         }
 
-        public int GetTotalWorkItemAge(Portfolio portfolio)
-        {
-            return GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
-        }
-
         public int GetTotalWorkItemAge(Portfolio portfolio, DateTime endDate)
         {
             logger.LogDebug("Getting Total Work Item Age snapshot for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, endDate.Date);
@@ -387,6 +392,60 @@ namespace Lighthouse.Backend.Services.Implementation
                 var previousPercentiles = GetSizePercentilesForPortfolio(portfolio, previousStart, previousEnd).ToList();
 
                 return BuildFeatureSizePercentilesInfoDto(currentPercentiles, previousPercentiles, currentStart: startDate, currentEnd: endDate, previousStart: previousStart, previousEnd: previousEnd);
+            }, logger);
+        }
+
+        public WipOverviewInfoDto GetWipOverviewInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting WIP Overview Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"WipOverviewInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentCount = GetInProgressFeaturesForPortfolio(portfolio, endDate).Count();
+                var previousCount = GetInProgressFeaturesForPortfolio(portfolio, startDate).Count();
+                return BuildWipOverviewInfoDto(currentCount, previousCount, endDate, startDate);
+            }, logger);
+        }
+
+        public TotalWorkItemAgeInfoDto GetTotalWorkItemAgeInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Total Work Item Age Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"TotalWorkItemAgeInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentAge = GetTotalWorkItemAge(portfolio, endDate);
+                var previousAge = GetTotalWorkItemAge(portfolio, startDate);
+                return BuildTotalWorkItemAgeInfoDto(currentAge, previousAge, endDate, startDate);
+            }, logger);
+        }
+
+        public PredictabilityScoreInfoDto GetPredictabilityScoreInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Predictability Score Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"PredictabilityScoreInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentScore = GetMultiItemForecastPredictabilityScoreForPortfolio(portfolio, startDate, endDate);
+                var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                var previousEnd = startDate.AddDays(-1);
+                var previousStart = startDate.AddDays(-periodDays);
+                var previousScore = GetMultiItemForecastPredictabilityScoreForPortfolio(portfolio, previousStart, previousEnd);
+                return BuildPredictabilityScoreInfoDto(currentScore.PredictabilityScore, previousScore.PredictabilityScore, startDate, endDate, previousStart, previousEnd);
+            }, logger);
+        }
+
+        public CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Percentiles Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"CycleTimePercentilesInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentPercentiles = GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
+                var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                var previousEnd = startDate.AddDays(-1);
+                var previousStart = startDate.AddDays(-periodDays);
+                var previousPercentiles = GetCycleTimePercentilesForPortfolio(portfolio, previousStart, previousEnd).ToList();
+                return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
             }, logger);
         }
 

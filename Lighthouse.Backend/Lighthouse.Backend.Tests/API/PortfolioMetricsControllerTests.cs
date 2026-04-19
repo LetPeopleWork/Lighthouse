@@ -264,11 +264,12 @@ namespace Lighthouse.Backend.Tests.API
             {
                 new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1" }
             };
-            
-            projectMetricsService.Setup(x => x.GetInProgressFeaturesForPortfolio(project))
+
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            projectMetricsService.Setup(x => x.GetInProgressFeaturesForPortfolio(project, asOfDate))
                 .Returns(features);
 
-            var result = subject.GetInProgressFeatures(1);
+            var result = subject.GetInProgressFeatures(1, asOfDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -416,7 +417,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTotalWorkItemAge_ProjectIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetTotalWorkItemAge(1337);
+            var response = subject.GetTotalWorkItemAge(1337, DateTime.UtcNow.Date);
 
             using (Assert.EnterMultipleScope())
             {
@@ -431,9 +432,10 @@ namespace Lighthouse.Backend.Tests.API
         public void GetTotalWorkItemAge_ProjectExists_GetsTotalWorkItemAgeFromProjectMetricsService()
         {
             const int expectedTotalAge = 56;
-            projectMetricsService.Setup(service => service.GetTotalWorkItemAge(project)).Returns(expectedTotalAge);
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            projectMetricsService.Setup(service => service.GetTotalWorkItemAge(project, asOfDate)).Returns(expectedTotalAge);
 
-            var response = subject.GetTotalWorkItemAge(project.Id);
+            var response = subject.GetTotalWorkItemAge(project.Id, asOfDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -959,6 +961,145 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService.Setup(s => s.GetFeatureSizePercentilesInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
 
             var response = subject.GetFeatureSizePercentilesInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── WipOverviewInfo ─────────────────────────────────────────────────────
+
+        [Test]
+        public void GetWipOverviewInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetWipOverviewInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetWipOverviewInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetWipOverviewInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetWipOverviewInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new WipOverviewInfoDto(4, new InfoWidgetComparisonDto("up", "WIP", "2026-01-10", "4", "2026-01-01", "2", "+100.0%", null));
+            projectMetricsService.Setup(s => s.GetWipOverviewInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetWipOverviewInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── TotalWorkItemAgeInfo ────────────────────────────────────────────────
+
+        [Test]
+        public void GetTotalWorkItemAgeInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetTotalWorkItemAgeInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetTotalWorkItemAgeInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new TotalWorkItemAgeInfoDto(55, new InfoWidgetComparisonDto("down", "Total Work Item Age", "2026-01-10", "55", "2026-01-01", "70", "-21.4%", null));
+            projectMetricsService.Setup(s => s.GetTotalWorkItemAgeInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetTotalWorkItemAgeInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── PredictabilityScoreInfo ─────────────────────────────────────────────
+
+        [Test]
+        public void GetPredictabilityScoreInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetPredictabilityScoreInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetPredictabilityScoreInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetPredictabilityScoreInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetPredictabilityScoreInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new PredictabilityScoreInfoDto(0.85, new InfoWidgetComparisonDto("flat", "Predictability Score", "curr", "85%", "prev", "82%", "+3pp", null));
+            projectMetricsService.Setup(s => s.GetPredictabilityScoreInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetPredictabilityScoreInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── CycleTimePercentilesInfo ────────────────────────────────────────────
+
+        [Test]
+        public void GetCycleTimePercentilesInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetCycleTimePercentilesInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetCycleTimePercentilesInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new CycleTimePercentilesInfoDto(
+                [new PercentileValueDto(50, 8), new PercentileValueDto(85, 15)],
+                new InfoWidgetComparisonDto("down", "Cycle Time Percentiles", "curr", null, "prev", null, null,
+                    [new TrendDetailRowDto("50th", "8", "10"), new TrendDetailRowDto("85th", "15", "20")]));
+            projectMetricsService.Setup(s => s.GetCycleTimePercentilesInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetCycleTimePercentilesInfo(project.Id, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {

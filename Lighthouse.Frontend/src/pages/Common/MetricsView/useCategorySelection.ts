@@ -7,8 +7,17 @@ import {
 
 const validKeys = new Set(getCategories().map((c) => c.key));
 
-function isValidCategoryKey(value: string): value is CategoryKey {
-	return validKeys.has(value as CategoryKey);
+const retiredKeyMap: Record<string, CategoryKey> = {
+	"cycle-time": "flow-metrics",
+	throughput: "flow-metrics",
+	"wip-aging": "flow-metrics",
+};
+
+function resolveStoredKey(value: string): CategoryKey | null {
+	if (validKeys.has(value as CategoryKey)) {
+		return value as CategoryKey;
+	}
+	return retiredKeyMap[value] ?? null;
 }
 
 export function useCategorySelection(
@@ -24,8 +33,11 @@ export function useCategorySelection(
 		useState<CategoryKey>(() => {
 			try {
 				const stored = localStorage.getItem(storageKey);
-				if (stored && isValidCategoryKey(stored)) {
-					return stored;
+				if (stored) {
+					const resolved = resolveStoredKey(stored);
+					if (resolved) {
+						return resolved;
+					}
 				}
 			} catch {
 				/* ignore storage errors */

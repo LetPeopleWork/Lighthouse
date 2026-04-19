@@ -17,11 +17,13 @@ import { useTerminology } from "../../../services/TerminologyContext";
 interface TotalWorkItemAgeWidgetProps {
 	entityId: number;
 	metricsService: IMetricsService<IWorkItem | IFeature>;
+	asOfDate: Date;
 }
 
 const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
 	entityId,
 	metricsService,
+	asOfDate,
 }) => {
 	const [totalAge, setTotalAge] = useState<number | null>(null);
 	const [loading, setLoading] = useState<boolean>(true);
@@ -36,7 +38,10 @@ const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
 			setLoading(true);
 			setError(null);
 			try {
-				const age = await metricsService.getTotalWorkItemAge(entityId);
+				const age = await metricsService.getTotalWorkItemAge(
+					entityId,
+					asOfDate,
+				);
 				setTotalAge(age);
 			} catch (err) {
 				console.error("Error fetching total work item age:", err);
@@ -48,7 +53,7 @@ const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
 		};
 
 		fetchTotalAge();
-	}, [entityId, metricsService]);
+	}, [entityId, metricsService, asOfDate]);
 
 	return (
 		<Card

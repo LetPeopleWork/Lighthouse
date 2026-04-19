@@ -32,4 +32,24 @@ namespace Lighthouse.Backend.API.DTO
     public record FeatureSizePercentilesInfoDto(
         PercentileValueDto[] Percentiles,
         InfoWidgetComparisonDto Comparison);
+
+    public record WipOverviewInfoDto(
+        int Count,
+        InfoWidgetComparisonDto Comparison);
+
+    public record FeaturesWorkedOnInfoDto(
+        int Count,
+        InfoWidgetComparisonDto Comparison);
+
+    public record TotalWorkItemAgeInfoDto(
+        int TotalAge,
+        InfoWidgetComparisonDto Comparison);
+
+    public record PredictabilityScoreInfoDto(
+        double Score,
+        InfoWidgetComparisonDto Comparison);
+
+    public record CycleTimePercentilesInfoDto(
+        PercentileValueDto[] Percentiles,
+        InfoWidgetComparisonDto Comparison);
 }

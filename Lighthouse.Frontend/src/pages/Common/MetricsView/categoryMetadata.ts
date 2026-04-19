@@ -1,8 +1,6 @@
 export type CategoryKey =
 	| "flow-overview"
-	| "cycle-time"
-	| "throughput"
-	| "wip-aging"
+	| "flow-metrics"
 	| "predictability"
 	| "portfolio";
 
@@ -29,22 +27,10 @@ const categories: readonly CategoryDefinition[] = [
 		hoverText: "How is my flow performing right now?",
 	},
 	{
-		key: "cycle-time",
-		displayName: "Cycle Time",
-		icon: "Timer",
-		hoverText: "How long do items take to complete?",
-	},
-	{
-		key: "throughput",
-		displayName: "Throughput",
+		key: "flow-metrics",
+		displayName: "Flow Metrics",
 		icon: "ShowChart",
-		hoverText: "How many items are we completing over time?",
-	},
-	{
-		key: "wip-aging",
-		displayName: "WIP & Aging",
-		icon: "HourglassEmpty",
-		hoverText: "How much work is in progress and how old is it?",
+		hoverText: "Detailed flow metrics and trends over time",
 	},
 	{
 		key: "predictability",
@@ -80,15 +66,11 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 			ownerFilter: "portfolio-only",
 		},
 	],
-	"cycle-time": [
+	"flow-metrics": [
 		{ widgetKey: "cycleScatter", size: "large" },
 		{ widgetKey: "aging", size: "large" },
-	],
-	throughput: [
 		{ widgetKey: "throughput", size: "large" },
 		{ widgetKey: "stacked", size: "large" },
-	],
-	"wip-aging": [
 		{ widgetKey: "wipOverTime", size: "large" },
 		{ widgetKey: "totalWorkItemAgeOverTime", size: "large" },
 	],

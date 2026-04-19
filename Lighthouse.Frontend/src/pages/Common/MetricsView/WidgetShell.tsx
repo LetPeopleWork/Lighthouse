@@ -91,7 +91,11 @@ function buildTrendTooltipContent(trend: TrendPayload): React.ReactNode {
 			</Typography>
 			{trend.currentLabel && (
 				<Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-					<Typography variant="caption" color="text.secondary">
+					<Typography
+						variant="caption"
+						color="text.secondary"
+						sx={{ fontWeight: 600 }}
+					>
 						{trend.currentLabel}
 					</Typography>
 					<Typography variant="caption" sx={{ fontWeight: 600 }}>
@@ -104,7 +108,7 @@ function buildTrendTooltipContent(trend: TrendPayload): React.ReactNode {
 					<Typography variant="caption" color="text.secondary">
 						{trend.previousLabel}
 					</Typography>
-					<Typography variant="caption" sx={{ fontWeight: 600 }}>
+					<Typography variant="caption" color="text.secondary">
 						{trend.previousValue}
 					</Typography>
 				</Box>
@@ -133,7 +137,7 @@ function buildTrendTooltipContent(trend: TrendPayload): React.ReactNode {
 								{row.label}
 							</Typography>
 							<Typography variant="caption">
-								{row.currentValue} / {row.previousValue}
+								{row.previousValue} → <strong>{row.currentValue}</strong>
 							</Typography>
 						</Box>
 					))}

@@ -13,6 +13,8 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 describe("TotalWorkItemAgeWidget", () => {
+	const testAsOfDate = new Date("2026-04-15");
+
 	const createMockMetricsService = (
 		totalAge: number | null,
 		shouldError = false,
@@ -39,6 +41,10 @@ describe("TotalWorkItemAgeWidget", () => {
 		getArrivalsPbc: vi.fn(),
 		getThroughputInfo: vi.fn(),
 		getArrivalsInfo: vi.fn(),
+		getWipOverviewInfo: vi.fn(),
+		getTotalWorkItemAgeInfo: vi.fn(),
+		getPredictabilityScoreInfo: vi.fn(),
+		getCycleTimePercentilesInfo: vi.fn(),
 	});
 
 	it("renders loading state initially", () => {
@@ -46,7 +52,11 @@ describe("TotalWorkItemAgeWidget", () => {
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
@@ -58,7 +68,11 @@ describe("TotalWorkItemAgeWidget", () => {
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
@@ -68,17 +82,24 @@ describe("TotalWorkItemAgeWidget", () => {
 		});
 	});
 
-	it("calls getTotalWorkItemAge with correct entity ID", async () => {
+	it("calls getTotalWorkItemAge with correct entity ID and asOfDate", async () => {
 		const mockService = createMockMetricsService(100);
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={42} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={42}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
 		await waitFor(() => {
-			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(42);
+			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(
+				42,
+				testAsOfDate,
+			);
 		});
 	});
 
@@ -87,7 +108,11 @@ describe("TotalWorkItemAgeWidget", () => {
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
@@ -101,7 +126,11 @@ describe("TotalWorkItemAgeWidget", () => {
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
@@ -117,7 +146,11 @@ describe("TotalWorkItemAgeWidget", () => {
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
@@ -133,7 +166,11 @@ describe("TotalWorkItemAgeWidget", () => {
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
@@ -147,22 +184,36 @@ describe("TotalWorkItemAgeWidget", () => {
 		const mockService = createMockMetricsService(100);
 		const { rerender } = render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={1} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={1}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
 		await waitFor(() => {
-			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(1);
+			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(
+				1,
+				testAsOfDate,
+			);
 		});
 
 		rerender(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget entityId={2} metricsService={mockService} />
+				<TotalWorkItemAgeWidget
+					entityId={2}
+					metricsService={mockService}
+					asOfDate={testAsOfDate}
+				/>
 			</TestWrapper>,
 		);
 
 		await waitFor(() => {
-			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(2);
+			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(
+				2,
+				testAsOfDate,
+			);
 		});
 	});
 });

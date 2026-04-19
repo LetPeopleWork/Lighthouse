@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetInProgressFeaturesForProject_ReturnsActiveFeatures()
         {
             // Act
-            var result = subject.GetInProgressFeaturesForPortfolio(portfolio).ToList();
+            var result = subject.GetInProgressFeaturesForPortfolio(portfolio, DateTime.UtcNow.Date).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -335,7 +335,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature.Portfolios.Add(otherProject);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -353,7 +353,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -389,7 +389,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature3.Portfolios.Add(portfolio);
             features.Add(feature3);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
 
             // 11 + 6 + 3 = 20
             Assert.That(totalAge, Is.EqualTo(20));
@@ -426,7 +426,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature3.Portfolios.Add(portfolio);
             features.Add(feature3);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.EqualTo(8));
         }
@@ -445,7 +445,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.EqualTo(10));
         }

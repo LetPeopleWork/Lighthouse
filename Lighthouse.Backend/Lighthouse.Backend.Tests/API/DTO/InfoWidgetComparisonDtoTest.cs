@@ -130,4 +130,101 @@ namespace Lighthouse.Backend.Tests.API.DTO
             }
         }
     }
+
+    public class WipOverviewInfoDtoTest
+    {
+        [Test]
+        public void Constructor_SetsAllFields()
+        {
+            var comparison = new InfoWidgetComparisonDto("up", "WIP", "2026-04-19", "5", "2026-04-05", "3", "+66.7%", null);
+            var subject = new WipOverviewInfoDto(5, comparison);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Count, Is.EqualTo(5));
+                Assert.That(subject.Comparison, Is.Not.Null);
+                Assert.That(subject.Comparison.Direction, Is.EqualTo("up"));
+            }
+        }
+    }
+
+    public class FeaturesWorkedOnInfoDtoTest
+    {
+        [Test]
+        public void Constructor_SetsAllFields()
+        {
+            var comparison = new InfoWidgetComparisonDto("down", "Features Being Worked On", "2026-04-19", "2", "2026-04-05", "3", "-33.3%", null);
+            var subject = new FeaturesWorkedOnInfoDto(2, comparison);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Count, Is.EqualTo(2));
+                Assert.That(subject.Comparison, Is.Not.Null);
+                Assert.That(subject.Comparison.Direction, Is.EqualTo("down"));
+            }
+        }
+    }
+
+    public class TotalWorkItemAgeInfoDtoTest
+    {
+        [Test]
+        public void Constructor_SetsAllFields()
+        {
+            var comparison = new InfoWidgetComparisonDto("up", "Total Work Item Age", "2026-04-19", "42", "2026-04-05", "30", "+40.0%", null);
+            var subject = new TotalWorkItemAgeInfoDto(42, comparison);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.TotalAge, Is.EqualTo(42));
+                Assert.That(subject.Comparison, Is.Not.Null);
+                Assert.That(subject.Comparison.Direction, Is.EqualTo("up"));
+            }
+        }
+    }
+
+    public class PredictabilityScoreInfoDtoTest
+    {
+        [Test]
+        public void Constructor_SetsAllFields()
+        {
+            var comparison = new InfoWidgetComparisonDto("up", "Predictability Score", "2026-04-05 – 2026-04-19", "73%", "2026-03-22 – 2026-04-04", "60%", "+13pp", null);
+            var subject = new PredictabilityScoreInfoDto(0.73, comparison);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Score, Is.EqualTo(0.73));
+                Assert.That(subject.Comparison, Is.Not.Null);
+                Assert.That(subject.Comparison.Direction, Is.EqualTo("up"));
+            }
+        }
+    }
+
+    public class CycleTimePercentilesInfoDtoTest
+    {
+        [Test]
+        public void Constructor_SetsAllFields()
+        {
+            var detailRows = new[]
+            {
+                new TrendDetailRowDto("50th", "5", "3"),
+                new TrendDetailRowDto("85th", "10", "7"),
+            };
+            var comparison = new InfoWidgetComparisonDto("up", "Cycle Time Percentiles", "curr", null, "prev", null, null, detailRows);
+            var percentiles = new[]
+            {
+                new PercentileValueDto(50, 5),
+                new PercentileValueDto(85, 10),
+            };
+
+            var subject = new CycleTimePercentilesInfoDto(percentiles, comparison);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Percentiles, Has.Length.EqualTo(2));
+                Assert.That(subject.Percentiles[0].Percentile, Is.EqualTo(50));
+                Assert.That(subject.Comparison, Is.Not.Null);
+                Assert.That(subject.Comparison.DetailRows, Has.Length.EqualTo(2));
+            }
+        }
+    }
 }

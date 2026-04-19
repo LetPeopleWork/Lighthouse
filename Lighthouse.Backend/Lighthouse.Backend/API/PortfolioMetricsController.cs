@@ -84,12 +84,12 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        [HttpGet("currentwip")]
-        public ActionResult<IEnumerable<FeatureDto>> GetInProgressFeatures(int portfolioId)
+        [HttpGet("wip")]
+        public ActionResult<IEnumerable<FeatureDto>> GetInProgressFeatures(int portfolioId, [FromQuery] DateTime asOfDate)
         {
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio);
+                var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate);
                 return features.Select(f => new FeatureDto(f));
             });
         }
@@ -162,9 +162,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("totalWorkItemAge")]
-        public ActionResult<int> GetTotalWorkItemAge(int portfolioId)
+        public ActionResult<int> GetTotalWorkItemAge(int portfolioId, [FromQuery] DateTime asOfDate)
         {
-            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolioMetricsService.GetTotalWorkItemAge);
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetTotalWorkItemAge(portfolio, asOfDate));
         }
 
         [HttpGet("throughputInfo")]
@@ -201,6 +201,54 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 portfolioMetricsService.GetFeatureSizePercentilesInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
+        [HttpGet("wipOverviewInfo")]
+        public ActionResult<WipOverviewInfoDto> GetWipOverviewInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetWipOverviewInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
+        [HttpGet("totalWorkItemAgeInfo")]
+        public ActionResult<TotalWorkItemAgeInfoDto> GetTotalWorkItemAgeInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetTotalWorkItemAgeInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
+        [HttpGet("predictabilityScoreInfo")]
+        public ActionResult<PredictabilityScoreInfoDto> GetPredictabilityScoreInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetPredictabilityScoreInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
+        [HttpGet("cycleTimePercentilesInfo")]
+        public ActionResult<CycleTimePercentilesInfoDto> GetCycleTimePercentilesInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetCycleTimePercentilesInfoForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("throughput/pbc")]

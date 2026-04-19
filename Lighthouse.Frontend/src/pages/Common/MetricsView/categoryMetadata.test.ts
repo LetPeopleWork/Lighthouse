@@ -9,14 +9,12 @@ import {
 } from "./categoryMetadata";
 
 describe("categoryMetadata", () => {
-	it("returns all six categories in order", () => {
+	it("returns all four categories in order", () => {
 		const categories = getCategories();
-		expect(categories).toHaveLength(6);
+		expect(categories).toHaveLength(4);
 		expect(categories.map((c: CategoryDefinition) => c.key)).toEqual([
 			"flow-overview",
-			"cycle-time",
-			"throughput",
-			"wip-aging",
+			"flow-metrics",
 			"predictability",
 			"portfolio",
 		]);
@@ -47,9 +45,7 @@ describe("categoryMetadata", () => {
 		const categories = getCategories();
 		expect(categories.map((c) => c.displayName)).toEqual([
 			"Flow Overview",
-			"Cycle Time",
-			"Throughput",
-			"WIP & Aging",
+			"Flow Metrics",
 			"Predictability",
 			"Portfolio & Features",
 		]);
@@ -203,25 +199,13 @@ describe("categoryMetadata", () => {
 			);
 		});
 
-		it("cycle-time contains expected widgets in order for team", () => {
-			const widgets = getWidgetsForCategory("cycle-time", "team");
+		it("flow-metrics contains expected widgets in order for team", () => {
+			const widgets = getWidgetsForCategory("flow-metrics", "team");
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"cycleScatter",
 				"aging",
-			]);
-		});
-
-		it("throughput contains expected widgets in order for team", () => {
-			const widgets = getWidgetsForCategory("throughput", "team");
-			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"throughput",
 				"stacked",
-			]);
-		});
-
-		it("wip-aging contains expected widgets in order for team", () => {
-			const widgets = getWidgetsForCategory("wip-aging", "team");
-			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"wipOverTime",
 				"totalWorkItemAgeOverTime",
 			]);

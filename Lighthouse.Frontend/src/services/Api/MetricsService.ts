@@ -8,8 +8,13 @@ import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/Estima
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type {
 	IArrivalsInfo,
+	ICycleTimePercentilesInfo,
 	IFeatureSizePercentilesInfo,
+	IFeaturesWorkedOnInfo,
+	IPredictabilityScoreInfo,
 	IThroughputInfo,
+	ITotalWorkItemAgeInfo,
+	IWipOverviewInfo,
 } from "../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
@@ -36,7 +41,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 	): Promise<RunChartData>;
 
-	getInProgressItems(id: number): Promise<IWorkItem[]>;
+	getInProgressItems(id: number, asOfDate: Date): Promise<IWorkItem[]>;
 
 	getCycleTimeData(id: number, startDate: Date, endDate: Date): Promise<T[]>;
 
@@ -52,7 +57,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 	): Promise<ForecastPredictabilityScore>;
 
-	getTotalWorkItemAge(id: number): Promise<number>;
+	getTotalWorkItemAge(id: number, asOfDate: Date): Promise<number>;
 
 	getThroughputPbc(
 		id: number,
@@ -107,11 +112,40 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IArrivalsInfo>;
+
+	getWipOverviewInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IWipOverviewInfo>;
+
+	getTotalWorkItemAgeInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ITotalWorkItemAgeInfo>;
+
+	getPredictabilityScoreInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPredictabilityScoreInfo>;
+
+	getCycleTimePercentilesInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICycleTimePercentilesInfo>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
-	getFeaturesInProgress(teamId: number): Promise<IWorkItem[]>;
+	getFeaturesInProgress(teamId: number, asOfDate: Date): Promise<IWorkItem[]>;
 	getForecastInputCandidates(teamId: number): Promise<IForecastInputCandidates>;
+	getFeaturesWorkedOnInfo(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeaturesWorkedOnInfo>;
 }
 
 export interface IProjectMetricsService extends IMetricsService<IFeature> {
@@ -214,10 +248,10 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getInProgressItems(id: number): Promise<IWorkItem[]> {
+	async getInProgressItems(id: number, asOfDate: Date): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItem[]>(
-				`/${this.api}/${id}/metrics/currentwip`,
+				`/${this.api}/${id}/metrics/wip?asOfDate=${this.formatLocalDate(asOfDate)}`,
 			);
 
 			const workItems = response.data.map((workItem) => {
@@ -278,10 +312,10 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getTotalWorkItemAge(id: number): Promise<number> {
+	async getTotalWorkItemAge(id: number, asOfDate: Date): Promise<number> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<number>(
-				`/${this.api}/${id}/metrics/totalWorkItemAge`,
+				`/${this.api}/${id}/metrics/totalWorkItemAge?asOfDate=${this.formatLocalDate(asOfDate)}`,
 			);
 
 			return response.data;
@@ -413,6 +447,58 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IArrivalsInfo>(
 				`/${this.api}/${id}/metrics/arrivalsInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getWipOverviewInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IWipOverviewInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IWipOverviewInfo>(
+				`/${this.api}/${id}/metrics/wipOverviewInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getTotalWorkItemAgeInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ITotalWorkItemAgeInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ITotalWorkItemAgeInfo>(
+				`/${this.api}/${id}/metrics/totalWorkItemAgeInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getPredictabilityScoreInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPredictabilityScoreInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IPredictabilityScoreInfo>(
+				`/${this.api}/${id}/metrics/predictabilityScoreInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getCycleTimePercentilesInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICycleTimePercentilesInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ICycleTimePercentilesInfo>(
+				`/${this.api}/${id}/metrics/cycleTimePercentilesInfo?${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
 		});

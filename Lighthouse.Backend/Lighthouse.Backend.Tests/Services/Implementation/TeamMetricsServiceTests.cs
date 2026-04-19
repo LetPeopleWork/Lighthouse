@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.ToDo, 1, "Feature1");
             AddWorkItem(StateCategories.Done, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date.AddDays(5)).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
@@ -106,11 +106,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
 
@@ -119,12 +119,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
             subject.InvalidateTeamMetrics(testTeam);
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam).ToList();
+            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 
@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
 
-            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, string.Empty);
 
-            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
 
-            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(3));
         }
@@ -177,11 +177,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
 
@@ -190,12 +190,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
             subject.InvalidateTeamMetrics(testTeam);
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
+            featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 
@@ -826,7 +826,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var closedItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
             closedItem.ClosedDate = DateTime.UtcNow.AddDays(-1);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -836,7 +836,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, string.Empty);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -847,7 +847,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var workItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
             workItem.StartedDate = DateTime.UtcNow.AddDays(-5);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -864,7 +864,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var workItem3 = AddWorkItem(StateCategories.Doing, 1, string.Empty);
             workItem3.StartedDate = DateTime.UtcNow.AddDays(-1);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
 
             // 6 + 4 + 2 = 12
             Assert.That(totalAge, Is.EqualTo(12));
@@ -882,7 +882,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -895,7 +895,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItem.CreatedDate = DateTime.UtcNow.AddDays(-7);
             workItem.ClosedDate = null;
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
 
             Assert.That(totalAge, Is.EqualTo(8));
         }
@@ -1526,8 +1526,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, string.Empty);
             AddWorkItem(StateCategories.Doing, 1, string.Empty);
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
-
-            featureRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<Feature>().AsQueryable());
 
             var result = subject.GetForecastInputCandidates(testTeam);
 

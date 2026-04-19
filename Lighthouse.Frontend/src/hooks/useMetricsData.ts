@@ -7,8 +7,13 @@ import type { IEstimationVsCycleTimeResponse } from "../models/Metrics/Estimatio
 import type { IFeatureSizeEstimationResponse } from "../models/Metrics/FeatureSizeEstimationData";
 import type {
 	IArrivalsInfo,
+	ICycleTimePercentilesInfo,
 	IFeatureSizePercentilesInfo,
+	IFeaturesWorkedOnInfo,
+	IPredictabilityScoreInfo,
 	IThroughputInfo,
+	ITotalWorkItemAgeInfo,
+	IWipOverviewInfo,
 } from "../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../models/Metrics/RunChartData";
@@ -20,6 +25,7 @@ import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type {
 	IMetricsService,
 	IProjectMetricsService,
+	ITeamMetricsService,
 } from "../services/Api/MetricsService";
 import { useTerminology } from "../services/TerminologyContext";
 
@@ -49,6 +55,11 @@ export interface MetricsData<T> {
 	throughputInfo: IThroughputInfo | null;
 	arrivalsInfo: IArrivalsInfo | null;
 	featureSizePercentilesInfo: IFeatureSizePercentilesInfo | null;
+	wipOverviewInfo: IWipOverviewInfo | null;
+	featuresWorkedOnInfo: IFeaturesWorkedOnInfo | null;
+	totalWorkItemAgeInfo: ITotalWorkItemAgeInfo | null;
+	predictabilityScoreInfo: IPredictabilityScoreInfo | null;
+	cycleTimePercentilesInfo: ICycleTimePercentilesInfo | null;
 }
 
 function isProjectMetricsService(
@@ -61,6 +72,10 @@ function isProjectMetricsService(
 		"getFeatureSizeEstimation" in service &&
 		"getFeatureSizePercentilesInfo" in service
 	);
+}
+
+function isTeamMetricsService(service: object): service is ITeamMetricsService {
+	return "getFeaturesWorkedOnInfo" in service;
 }
 
 export function useMetricsData<
@@ -126,6 +141,16 @@ export function useMetricsData<
 	const [arrivalsInfo, setArrivalsInfo] = useState<IArrivalsInfo | null>(null);
 	const [featureSizePercentilesInfo, setFeatureSizePercentilesInfo] =
 		useState<IFeatureSizePercentilesInfo | null>(null);
+	const [wipOverviewInfo, setWipOverviewInfo] =
+		useState<IWipOverviewInfo | null>(null);
+	const [featuresWorkedOnInfo, setFeaturesWorkedOnInfo] =
+		useState<IFeaturesWorkedOnInfo | null>(null);
+	const [totalWorkItemAgeInfo, setTotalWorkItemAgeInfo] =
+		useState<ITotalWorkItemAgeInfo | null>(null);
+	const [predictabilityScoreInfo, setPredictabilityScoreInfo] =
+		useState<IPredictabilityScoreInfo | null>(null);
+	const [cycleTimePercentilesInfo, setCycleTimePercentilesInfo] =
+		useState<ICycleTimePercentilesInfo | null>(null);
 	useEffect(() => {
 		blackoutPeriodService
 			.getAll()
@@ -146,12 +171,12 @@ export function useMetricsData<
 
 	useEffect(() => {
 		metricsService
-			.getTotalWorkItemAge(entity.id)
+			.getTotalWorkItemAge(entity.id, endDate)
 			.then(setTotalWorkItemAge)
 			.catch((error) =>
 				console.error("Error fetching total work item age:", error),
 			);
-	}, [entity, metricsService]);
+	}, [entity, metricsService, endDate]);
 
 	useEffect(() => {
 		metricsService
@@ -171,7 +196,7 @@ export function useMetricsData<
 
 	useEffect(() => {
 		const fetch = async () => {
-			const items = await metricsService.getInProgressItems(entity.id);
+			const items = await metricsService.getInProgressItems(entity.id, endDate);
 			setInProgressItems(items);
 			const wipData = await metricsService.getWorkInProgressOverTime(
 				entity.id,
@@ -288,6 +313,52 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate]);
 
 	useEffect(() => {
+		metricsService
+			.getWipOverviewInfo(entity.id, startDate, endDate)
+			.then(setWipOverviewInfo)
+			.catch((error) =>
+				console.error("Error fetching WIP overview info:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
+		metricsService
+			.getTotalWorkItemAgeInfo(entity.id, startDate, endDate)
+			.then(setTotalWorkItemAgeInfo)
+			.catch((error) =>
+				console.error("Error fetching total work item age info:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
+		metricsService
+			.getPredictabilityScoreInfo(entity.id, startDate, endDate)
+			.then(setPredictabilityScoreInfo)
+			.catch((error) =>
+				console.error("Error fetching predictability score info:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
+		metricsService
+			.getCycleTimePercentilesInfo(entity.id, startDate, endDate)
+			.then(setCycleTimePercentilesInfo)
+			.catch((error) =>
+				console.error("Error fetching cycle time percentiles info:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
+		if (!isTeamMetricsService(metricsService)) return;
+		metricsService
+			.getFeaturesWorkedOnInfo(entity.id, startDate, endDate)
+			.then(setFeaturesWorkedOnInfo)
+			.catch((error) =>
+				console.error("Error fetching features worked on info:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
 		const fetch = async () => {
 			const [
 				throughputPbc,
@@ -339,5 +410,10 @@ export function useMetricsData<
 		throughputInfo,
 		arrivalsInfo,
 		featureSizePercentilesInfo,
+		wipOverviewInfo,
+		featuresWorkedOnInfo,
+		totalWorkItemAgeInfo,
+		predictabilityScoreInfo,
+		cycleTimePercentilesInfo,
 	};
 }

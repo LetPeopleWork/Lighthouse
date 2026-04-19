@@ -28,6 +28,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			try {
 				const featuresData = await teamMetricsService.getFeaturesInProgress(
 					team.id,
+					new Date(),
 				);
 				setInProgressFeatures(featuresData);
 			} catch (err) {

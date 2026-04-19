@@ -38,4 +38,25 @@ describe("useCategorySelection", () => {
 		const { result } = renderHook(() => useCategorySelection("portfolio", 5));
 		expect(result.current.selectedCategory).toBe("flow-overview");
 	});
+
+	it("maps retired cycle-time key to flow-metrics", () => {
+		localStorage.setItem("lighthouse:metrics:team:10:category", "cycle-time");
+		const { result } = renderHook(() => useCategorySelection("team", 10));
+		expect(result.current.selectedCategory).toBe("flow-metrics");
+	});
+
+	it("maps retired throughput key to flow-metrics", () => {
+		localStorage.setItem("lighthouse:metrics:team:11:category", "throughput");
+		const { result } = renderHook(() => useCategorySelection("team", 11));
+		expect(result.current.selectedCategory).toBe("flow-metrics");
+	});
+
+	it("maps retired wip-aging key to flow-metrics", () => {
+		localStorage.setItem(
+			"lighthouse:metrics:portfolio:12:category",
+			"wip-aging",
+		);
+		const { result } = renderHook(() => useCategorySelection("portfolio", 12));
+		expect(result.current.selectedCategory).toBe("flow-metrics");
+	});
 });

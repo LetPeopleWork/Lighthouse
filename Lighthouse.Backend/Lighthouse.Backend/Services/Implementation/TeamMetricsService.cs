@@ -19,13 +19,13 @@ namespace Lighthouse.Backend.Services.Implementation
         private const string ThroughputMetricIdentifier = "Throughput";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
 
-        public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team)
+        public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate)
         {
-            logger.LogDebug("Getting Feature Wip for Team {TeamName}", team.Name);
+            logger.LogDebug("Getting Feature Wip for Team {TeamName} as of {AsOfDate}", team.Name, asOfDate.Date);
 
-            return GetFromCacheIfExists<IEnumerable<Feature>, Team>(team, FeatureWipMetricIdentifier, () =>
+            return GetFromCacheIfExists<IEnumerable<Feature>, Team>(team, $"{FeatureWipMetricIdentifier}_{asOfDate:yyyy-MM-dd}", () =>
             {
-                var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
+                var activeWorkItemsForTeam = GetWipSnapshotForTeam(team, asOfDate);
                 var featureReferences = activeWorkItemsForTeam.Select(wi => wi.ParentReferenceId).Distinct().ToList();
 
                 var features = new List<Feature>();
@@ -56,22 +56,17 @@ namespace Lighthouse.Backend.Services.Implementation
                     }
                 }
 
-                logger.LogDebug("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count);
+                logger.LogDebug("Finished updating Feature Wip for Team {TeamName} as of {AsOfDate} - Found {FeatureWIP} Features in Progress", team.Name, asOfDate.Date, featureReferences.Count);
 
                 return features;
             }, logger);
-        }
-
-        public IEnumerable<WorkItem> GetCurrentWipForTeam(Team team)
-        {
-            return GetWipSnapshotForTeam(team, DateTime.UtcNow.Date);
         }
 
         public ForecastInputCandidatesDto GetForecastInputCandidates(Team team)
         {
             logger.LogDebug("Getting Forecast Input Candidates for Team {TeamName}", team.Name);
 
-            var currentWipCount = GetCurrentWipForTeam(team).Count();
+            var currentWipCount = GetWipSnapshotForTeam(team, DateTime.UtcNow.Date).Count();
 
             var backlogCount = workItemRepository
                 .GetAllByPredicate(i => i.TeamId == team.Id &&
@@ -130,33 +125,48 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
         {
-            var throughput = GetThroughputForTeam(team, startDate, endDate);
-            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
-            return FilterBlackoutDaysFromRunChart(throughput, startDate, endDate, blackoutPeriods);
+            return GetFromCacheIfExists(team, $"BlackoutAwareThroughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var throughput = GetThroughputForTeam(team, startDate, endDate);
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                return FilterBlackoutDaysFromRunChart(throughput, startDate, endDate, blackoutPeriods);
+            }, logger);
         }
 
         public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
         {
-            return BuildThroughputProcessBehaviourChart(team, startDate, endDate,
-                (s, e) => GetThroughputForTeam(team, s, e));
+            return GetFromCacheIfExists(team, $"ThroughputProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                return BuildThroughputProcessBehaviourChart(team, startDate, endDate,
+                    (s, e) => GetThroughputForTeam(team, s, e));
+            }, logger);
         }
 
         public ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
         {
-            return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
-                (s, e) => GetWorkInProgressOverTimeForTeam(team, s, e));
+            return GetFromCacheIfExists(team, $"WipProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
+                    (s, e) => GetWorkInProgressOverTimeForTeam(team, s, e));
+            }, logger);
         }
 
         public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
         {
-            return BuildTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate,
-                (s, e) => GetTotalWorkItemAgeOverTimeForTeam(team, s, e));
+            return GetFromCacheIfExists(team, $"TotalWorkItemAgeProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                return BuildTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate,
+                    (s, e) => GetTotalWorkItemAgeOverTimeForTeam(team, s, e));
+            }, logger);
         }
 
         public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
         {
-            return BuildCycleTimeProcessBehaviourChart(team, startDate, endDate,
-                (s, e) => GetClosedItemsForTeam(team, s, e));
+            return GetFromCacheIfExists(team, $"CycleTimeProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                return BuildCycleTimeProcessBehaviourChart(team, startDate, endDate,
+                    (s, e) => GetClosedItemsForTeam(team, s, e));
+            }, logger);
         }
 
         public RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -170,29 +180,30 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public RunChartData GetArrivalsForTeam(Team team, DateTime startDate, DateTime endDate)
-        {
-            return GetStartedItemsForTeam(team, startDate, endDate);
-        }
-
         public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
         {
-            return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
-                (s, e) => GetArrivalsForTeam(team, s, e));
+            return GetFromCacheIfExists(team, $"ArrivalsProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+             {
+                 return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
+                     (s, e) => GetStartedItemsForTeam(team, s, e));
+             }, logger);
         }
 
         public RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Created Items of type {WorkItemTypes} for Team {TeamName} between {StartDate} and {EndDate}", string.Join(", ", workItemTypes), team.Name, startDate.Date, endDate.Date);
 
-            var includedWorkItems = workItemTypes.Select(itemTypes => itemTypes.ToLowerInvariant()).ToList();
+            return GetFromCacheIfExists(team, $"CreatedItems_{string.Join("-", workItemTypes)}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+                         {
+                             var includedWorkItems = workItemTypes.Select(itemTypes => itemTypes.ToLowerInvariant()).ToList();
 
-            var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
-            var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam.Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant())));
+                             var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
+                             var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam.Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant())));
 
-            var throughput = new RunChartData(creationRunChart);
+                             var throughput = new RunChartData(creationRunChart);
 
-            return throughput;
+                             return throughput;
+                         }, logger);
         }
 
         public RunChartData GetWorkInProgressOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -266,11 +277,6 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public int GetTotalWorkItemAge(Team team)
-        {
-            return GetTotalWorkItemAge(team, DateTime.UtcNow.Date);
-        }
-
         public int GetTotalWorkItemAge(Team team, DateTime endDate)
         {
             logger.LogDebug("Getting Total Work Item Age snapshot for Team {TeamName} at {EndDate}", team.Name, endDate.Date);
@@ -327,14 +333,80 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(team, $"ArrivalsInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
                          {
-                             var currentArrivals = GetArrivalsForTeam(team, startDate, endDate);
+                             var currentArrivals = GetStartedItemsForTeam(team, startDate, endDate);
                              var periodDays = (endDate.Date - startDate.Date).Days + 1;
                              var previousEnd = startDate.AddDays(-1);
                              var previousStart = startDate.AddDays(-periodDays);
-                             var previousArrivals = GetArrivalsForTeam(team, previousStart, previousEnd);
+                             var previousArrivals = GetStartedItemsForTeam(team, previousStart, previousEnd);
 
                              return BuildArrivalsInfoDto(currentArrivals.Total, previousArrivals.Total, periodDays, startDate, endDate, previousStart, previousEnd);
                          }, logger);
+        }
+
+        public WipOverviewInfoDto GetWipOverviewInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting WIP Overview Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"WipOverviewInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentCount = GetWipSnapshotForTeam(team, endDate).Count();
+                var previousCount = GetWipSnapshotForTeam(team, startDate).Count();
+                return BuildWipOverviewInfoDto(currentCount, previousCount, endDate, startDate);
+            }, logger);
+        }
+
+        public FeaturesWorkedOnInfoDto GetFeaturesWorkedOnInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Features Worked On Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"FeaturesWorkedOnInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentCount = GetCurrentFeaturesInProgressForTeam(team, endDate).Count();
+                var previousCount = GetCurrentFeaturesInProgressForTeam(team, startDate).Count();
+                return BuildFeaturesWorkedOnInfoDto(currentCount, previousCount, endDate, startDate);
+            }, logger);
+        }
+
+        public TotalWorkItemAgeInfoDto GetTotalWorkItemAgeInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Total Work Item Age Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"TotalWorkItemAgeInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentAge = GetTotalWorkItemAge(team, endDate);
+                var previousAge = GetTotalWorkItemAge(team, startDate);
+                return BuildTotalWorkItemAgeInfoDto(currentAge, previousAge, endDate, startDate);
+            }, logger);
+        }
+
+        public PredictabilityScoreInfoDto GetPredictabilityScoreInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Predictability Score Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"PredictabilityScoreInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentScore = GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate);
+                var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                var previousEnd = startDate.AddDays(-1);
+                var previousStart = startDate.AddDays(-periodDays);
+                var previousScore = GetMultiItemForecastPredictabilityScoreForTeam(team, previousStart, previousEnd);
+                return BuildPredictabilityScoreInfoDto(currentScore.PredictabilityScore, previousScore.PredictabilityScore, startDate, endDate, previousStart, previousEnd);
+            }, logger);
+        }
+
+        public CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Percentiles Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"CycleTimePercentilesInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentPercentiles = GetCycleTimePercentilesForTeam(team, startDate, endDate).ToList();
+                var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                var previousEnd = startDate.AddDays(-1);
+                var previousStart = startDate.AddDays(-periodDays);
+                var previousPercentiles = GetCycleTimePercentilesForTeam(team, previousStart, previousEnd).ToList();
+                return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
+            }, logger);
         }
 
         public void InvalidateTeamMetrics(Team team)
@@ -359,7 +431,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var featureWip = GetCurrentFeaturesInProgressForTeam(team).Count();
+            var featureWip = GetCurrentFeaturesInProgressForTeam(team, DateTime.UtcNow.Date).Count();
             team.FeatureWIP = featureWip;
         }
 
@@ -369,11 +441,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDate.Date && i.ClosedDate.Value.Date <= endDate.Date);
             return closedItemsInDateRange;
-        }
-
-        private IEnumerable<WorkItem> GetInProgressWorkItemsForTeam(Team team)
-        {
-            return workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
         }
 
         private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int effectiveDaysNeeded)

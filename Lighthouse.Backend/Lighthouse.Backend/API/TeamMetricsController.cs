@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
-                var data = teamMetricsService.GetArrivalsForTeam(team, startDate, endDate);
+                var data = teamMetricsService.GetStartedItemsForTeam(team, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
                 return data;
             });
@@ -91,22 +91,22 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("featuresInProgress")]
-        public ActionResult<IEnumerable<FeatureDto>> GetFeaturesInProgress(int teamId)
+        public ActionResult<IEnumerable<FeatureDto>> GetFeaturesInProgress(int teamId, [FromQuery] DateTime asOfDate)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
-                var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team);
+                var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team, asOfDate);
 
                 return features.Select(f => new FeatureDto(f));
             });
         }
 
-        [HttpGet("currentwip")]
-        public ActionResult<IEnumerable<WorkItemDto>> GetCurrentWipForTeam(int teamId)
+        [HttpGet("wip")]
+        public ActionResult<IEnumerable<WorkItemDto>> GetCurrentWipForTeam(int teamId, [FromQuery] DateTime asOfDate)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
-                var workItems = teamMetricsService.GetCurrentWipForTeam(team);
+                var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate);
                 return workItems.Select(w => new WorkItemDto(w));
             });
         }
@@ -161,9 +161,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("totalWorkItemAge")]
-        public ActionResult<int> GetTotalWorkItemAge(int teamId)
+        public ActionResult<int> GetTotalWorkItemAge(int teamId, [FromQuery] DateTime asOfDate)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetTotalWorkItemAge);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetTotalWorkItemAge(team, asOfDate));
         }
 
         [HttpGet("throughputInfo")]
@@ -188,6 +188,66 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 teamMetricsService.GetArrivalsInfoForTeam(team, startDate, endDate));
+        }
+
+        [HttpGet("wipOverviewInfo")]
+        public ActionResult<WipOverviewInfoDto> GetWipOverviewInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetWipOverviewInfoForTeam(team, startDate, endDate));
+        }
+
+        [HttpGet("featuresWorkedOnInfo")]
+        public ActionResult<FeaturesWorkedOnInfoDto> GetFeaturesWorkedOnInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetFeaturesWorkedOnInfoForTeam(team, startDate, endDate));
+        }
+
+        [HttpGet("totalWorkItemAgeInfo")]
+        public ActionResult<TotalWorkItemAgeInfoDto> GetTotalWorkItemAgeInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetTotalWorkItemAgeInfoForTeam(team, startDate, endDate));
+        }
+
+        [HttpGet("predictabilityScoreInfo")]
+        public ActionResult<PredictabilityScoreInfoDto> GetPredictabilityScoreInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetPredictabilityScoreInfoForTeam(team, startDate, endDate));
+        }
+
+        [HttpGet("cycleTimePercentilesInfo")]
+        public ActionResult<CycleTimePercentilesInfoDto> GetCycleTimePercentilesInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetCycleTimePercentilesInfoForTeam(team, startDate, endDate));
         }
 
         [HttpGet("throughput/pbc")]

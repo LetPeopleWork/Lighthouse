@@ -5,10 +5,9 @@ import type { IFeatureOwner } from "../models/IFeatureOwner";
 import { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
-import type { IWorkItem } from "../models/WorkItem";
 import type {
-	IMetricsService,
 	IProjectMetricsService,
+	ITeamMetricsService,
 } from "../services/Api/MetricsService";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { useMetricsData } from "./useMetricsData";
@@ -41,7 +40,7 @@ vi.mock("../services/TerminologyContext", () => ({
 	}),
 }));
 
-function createMockTeamMetricsService(): IMetricsService<IWorkItem> {
+function createMockTeamMetricsService(): ITeamMetricsService {
 	return {
 		getThroughput: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
 		getStartedItems: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
@@ -64,6 +63,11 @@ function createMockTeamMetricsService(): IMetricsService<IWorkItem> {
 			.mockResolvedValue({ status: "NotConfigured" }),
 		getArrivals: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
 		getArrivalsPbc: vi.fn().mockResolvedValue(null),
+		getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+		getForecastInputCandidates: vi.fn().mockResolvedValue({
+			remainingItems: 0,
+			wipItems: 0,
+		}),
 		getThroughputInfo: vi.fn().mockResolvedValue({
 			total: 0,
 			dailyAverage: 0,
@@ -73,6 +77,32 @@ function createMockTeamMetricsService(): IMetricsService<IWorkItem> {
 			total: 0,
 			dailyAverage: 0,
 			comparison: { direction: "none", metricLabel: "Total Arrivals" },
+		}),
+		getWipOverviewInfo: vi.fn().mockResolvedValue({
+			count: 0,
+			comparison: { direction: "none", metricLabel: "WIP" },
+		}),
+		getFeaturesWorkedOnInfo: vi.fn().mockResolvedValue({
+			count: 0,
+			comparison: {
+				direction: "none",
+				metricLabel: "Features Being Worked On",
+			},
+		}),
+		getTotalWorkItemAgeInfo: vi.fn().mockResolvedValue({
+			totalAge: 0,
+			comparison: { direction: "none", metricLabel: "Total Work Item Age" },
+		}),
+		getPredictabilityScoreInfo: vi.fn().mockResolvedValue({
+			score: 0,
+			comparison: { direction: "none", metricLabel: "Predictability Score" },
+		}),
+		getCycleTimePercentilesInfo: vi.fn().mockResolvedValue({
+			percentiles: [],
+			comparison: {
+				direction: "none",
+				metricLabel: "Cycle Time Percentiles",
+			},
 		}),
 	};
 }
@@ -152,7 +182,10 @@ describe("useMetricsData", () => {
 				startDate,
 				endDate,
 			);
-			expect(service.getInProgressItems).toHaveBeenCalledWith(entity.id);
+			expect(service.getInProgressItems).toHaveBeenCalledWith(
+				entity.id,
+				endDate,
+			);
 			expect(service.getWorkInProgressOverTime).toHaveBeenCalledWith(
 				entity.id,
 				startDate,
@@ -171,7 +204,10 @@ describe("useMetricsData", () => {
 			expect(
 				service.getMultiItemForecastPredictabilityScore,
 			).toHaveBeenCalledWith(entity.id, startDate, endDate);
-			expect(service.getTotalWorkItemAge).toHaveBeenCalledWith(entity.id);
+			expect(service.getTotalWorkItemAge).toHaveBeenCalledWith(
+				entity.id,
+				endDate,
+			);
 			expect(service.getEstimationVsCycleTimeData).toHaveBeenCalledWith(
 				entity.id,
 				startDate,

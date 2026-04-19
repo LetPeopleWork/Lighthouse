@@ -6,6 +6,33 @@ nav_order: 95
 
 # vNext
 
+## Flow Overview Trend Indicators
+
+All Flow Overview info widgets now display trend indicators comparing the current date range to a prior period:
+
+- **WIP Overview**, **Features Worked On** (Teams), and **Total Work Item Age** compare snapshot values at the start and end of the selected range.
+- **Predictability Score**, **Cycle Time Percentiles**, **Total Throughput**, **Total Arrivals**, and **Feature Size Percentiles** compare the current period against an equal-length window immediately before the start date.
+- Percentile tooltip rows now use a `previous → **current**` format with the current-period value emphasized.
+
+## Date-Aware Snapshot Widgets
+
+WIP Overview, Features Worked On, and Total Work Item Age now resolve their values as of the selected end date rather than always returning the current state. Changing the date range will change the displayed counts to reflect the system at that point in time.
+
+## Simplified Dashboard Categories
+
+The dashboard category model has been consolidated from six categories to four:
+
+| Before | After |
+|---|---|
+| Flow Overview | **Flow Overview** (unchanged) |
+| Cycle Time | Merged into **Flow Metrics** |
+| Throughput | Merged into **Flow Metrics** |
+| WIP & Aging | Merged into **Flow Metrics** |
+| Predictability | **Predictability** (unchanged) |
+| Portfolio & Features | **Portfolio & Features** (unchanged) |
+
+Previously stored category selections for the retired keys (`cycle-time`, `throughput`, `wip-aging`) are automatically migrated to **Flow Metrics**.
+
 ## Redesigned Team Forecast
 
 The Team Forecast has been redesigned to make forecasting faster and more intuitive:
