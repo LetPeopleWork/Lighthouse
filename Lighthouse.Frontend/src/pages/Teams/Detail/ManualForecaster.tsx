@@ -126,7 +126,12 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 					value={mode}
 					exclusive
 					onChange={(_, newMode) => {
-						if (newMode) onModeChange?.(newMode);
+						if (newMode) {
+							if (mode === "features" && newMode === "manual") {
+								onRemainingItemsChange(featureAggregate);
+							}
+							onModeChange?.(newMode);
+						}
 					}}
 					aria-label="Forecast mode"
 					size="small"

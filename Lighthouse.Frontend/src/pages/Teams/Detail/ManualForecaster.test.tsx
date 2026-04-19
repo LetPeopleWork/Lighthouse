@@ -687,5 +687,23 @@ describe("ManualForecaster component", () => {
 			expect(screen.getByLabelText("Number of Work Items")).toBeInTheDocument();
 			expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 		});
+
+		it("should carry over feature aggregate to remainingItems when switching from features to manual", () => {
+			const selectedFeatures: IFeatureCandidate[] = [
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+				{ id: 2, name: "Feature Beta", remainingWork: 8 },
+			];
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={selectedFeatures}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Manual" }));
+			expect(mockOnRemainingItemsChange).toHaveBeenCalledWith(13);
+			expect(mockOnModeChange).toHaveBeenCalledWith("manual");
+		});
 	});
 });
