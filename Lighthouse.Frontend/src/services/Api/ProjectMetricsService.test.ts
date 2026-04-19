@@ -419,4 +419,36 @@ describe("ProjectMetricsService", () => {
 			expect(result.comparison.direction).toBe("none");
 		});
 	});
+
+	describe("getFeatureSizePercentilesInfo", () => {
+		it("should call the correct API endpoint and return feature size percentiles info", async () => {
+			const mockInfo = {
+				percentiles: [
+					{ percentile: 50, value: 5 },
+					{ percentile: 85, value: 12 },
+				],
+				comparison: {
+					direction: "up",
+					metricLabel: "Feature Size Percentiles",
+					detailRows: [
+						{ label: "50th", currentValue: "5", previousValue: "3" },
+						{ label: "85th", currentValue: "12", previousValue: "10" },
+					],
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getFeatureSizePercentilesInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/featureSizePercentilesInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.percentiles).toHaveLength(2);
+			expect(result.comparison.direction).toBe("up");
+		});
+	});
 });

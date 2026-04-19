@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const string ThroughputMetricIdentifier = "Throughput";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
-        private const string WipMetricIdentifier = "WIP";
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team)
         {

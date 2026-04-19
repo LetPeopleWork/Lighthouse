@@ -191,6 +191,18 @@ namespace Lighthouse.Backend.API
                 portfolioMetricsService.GetArrivalsInfoForPortfolio(portfolio, startDate, endDate));
         }
 
+        [HttpGet("featureSizePercentilesInfo")]
+        public ActionResult<FeatureSizePercentilesInfoDto> GetFeatureSizePercentilesInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetFeatureSizePercentilesInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
         [HttpGet("throughput/pbc")]
         public ActionResult<ProcessBehaviourChart> GetThroughputProcessBehaviourChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

@@ -479,6 +479,59 @@ namespace Lighthouse.Backend.Services.Implementation
             return $"{sign}{delta:F1}%";
         }
 
+        protected static FeatureSizePercentilesInfoDto BuildFeatureSizePercentilesInfoDto(
+            List<PercentileValue> currentPercentiles,
+            List<PercentileValue> previousPercentiles,
+            DateTime currentStart,
+            DateTime currentEnd,
+            DateTime previousStart,
+            DateTime previousEnd)
+        {
+            var percentileDtos = currentPercentiles
+                .Select(p => new PercentileValueDto(p.Percentile, p.Value))
+                .ToArray();
+
+            if (currentPercentiles.Count == 0 && previousPercentiles.Count == 0)
+            {
+                var emptyComparison = new InfoWidgetComparisonDto(
+                    "none",
+                    "Feature Size Percentiles",
+                    null, null, null, null, null, null);
+                return new FeatureSizePercentilesInfoDto(percentileDtos, emptyComparison);
+            }
+
+            var detailRows = currentPercentiles
+                .Select(cp =>
+                {
+                    var pp = previousPercentiles.FirstOrDefault(p => p.Percentile == cp.Percentile);
+                    return new TrendDetailRowDto(
+                        $"{cp.Percentile}th",
+                        cp.Value.ToString(),
+                        pp?.Value.ToString() ?? "–");
+                })
+                .ToArray();
+
+            // Direction based on median (50th) percentile comparison
+            var currentMedian = currentPercentiles.FirstOrDefault(p => p.Percentile == 50)?.Value ?? 0;
+            var previousMedian = previousPercentiles.FirstOrDefault(p => p.Percentile == 50)?.Value ?? 0;
+            var direction = DetermineIntCountDirection(currentMedian, previousMedian);
+
+            var currentLabel = $"{currentStart:yyyy-MM-dd} – {currentEnd:yyyy-MM-dd}";
+            var previousLabel = $"{previousStart:yyyy-MM-dd} – {previousEnd:yyyy-MM-dd}";
+
+            var comparison = new InfoWidgetComparisonDto(
+                direction,
+                "Feature Size Percentiles",
+                currentLabel,
+                null,
+                previousLabel,
+                null,
+                null,
+                detailRows);
+
+            return new FeatureSizePercentilesInfoDto(percentileDtos, comparison);
+        }
+
         protected static EstimationVsCycleTimeResponse BuildEstimationVsCycleTimeResponse(
             WorkTrackingSystemOptionsOwner owner,
             IEnumerable<WorkItemBase> closedItems)

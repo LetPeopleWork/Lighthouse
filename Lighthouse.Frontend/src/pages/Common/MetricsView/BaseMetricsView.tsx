@@ -11,7 +11,6 @@ import ProcessBehaviourChart, {
 	ProcessBehaviourChartType,
 } from "../../../components/Common/Charts/ProcessBehaviourChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
-import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
@@ -23,6 +22,11 @@ import type { IForecastPredictabilityScore } from "../../../models/Forecasts/For
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
+import type {
+	IArrivalsInfo,
+	IFeatureSizePercentilesInfo,
+	IThroughputInfo,
+} from "../../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -36,6 +40,7 @@ import { getWidgetsForCategory } from "./categoryMetadata";
 import type { DashboardItem } from "./Dashboard";
 import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
+import FeatureSizePercentilesWidget from "./FeatureSizePercentilesWidget";
 import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
 import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget";
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
@@ -50,7 +55,6 @@ import {
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
-	computeStartedVsClosedRag,
 	computeThroughputRag,
 	computeTotalWorkItemAgeOverTimeRag,
 	computeTotalWorkItemAgeRag,
@@ -60,6 +64,9 @@ import {
 	computeWorkItemAgeChartRag,
 	type RagTerms,
 } from "./ragRules";
+import TotalArrivalsWidget from "./TotalArrivalsWidget";
+import TotalThroughputWidget from "./TotalThroughputWidget";
+import type { TrendPayload } from "./trendTypes";
 import { useCategorySelection } from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
 import type { ViewDataPayload } from "./WidgetShell";
@@ -225,12 +232,6 @@ function buildWidgetFooters(
 		percentiles: computeCycleTimePercentilesRag(
 			inputs.sle,
 			inputs.cycleTimes,
-			inputs.terms,
-		),
-		startedVsFinished: computeStartedVsClosedRag(
-			inputs.startedTotal,
-			inputs.closedTotal,
-			inputs.systemWipLimit,
 			inputs.terms,
 		),
 		totalWorkItemAge:
@@ -425,11 +426,6 @@ function buildViewData(
 			highlightColumn: cycleTimeHighlight,
 			sle: inputs.serviceLevelExpectation?.value,
 		},
-		startedVsFinished: {
-			title: `Started and Closed ${terms.workItems}`,
-			items: startedVsFinishedItems,
-			highlightColumn: ageCycleHighlight,
-		},
 		totalWorkItemAge: {
 			title: `${inputs.title} in Progress`,
 			items: inputs.inProgressItems,
@@ -559,6 +555,9 @@ function buildWidgetNodes(ctx: {
 	featureSizePbcData: ProcessBehaviourChartData | null;
 	arrivalsData: RunChartData | null;
 	arrivalsPbcData: ProcessBehaviourChartData | null;
+	throughputInfo: IThroughputInfo | null;
+	arrivalsInfo: IArrivalsInfo | null;
+	featureSizePercentilesInfo: IFeatureSizePercentilesInfo | null;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -595,12 +594,6 @@ function buildWidgetNodes(ctx: {
 		),
 		percentiles: (
 			<CycleTimePercentiles percentileValues={ctx.percentileValues} />
-		),
-		startedVsFinished: (
-			<StartedVsFinishedDisplay
-				startedItems={ctx.startedItems}
-				closedItems={ctx.throughputData}
-			/>
 		),
 		totalWorkItemAge: (
 			<TotalWorkItemAgeWidget
@@ -701,6 +694,15 @@ function buildWidgetNodes(ctx: {
 				chartData={ctx.arrivalsData}
 				displayTotal={true}
 			/>
+		) : null,
+		totalThroughput: ctx.throughputInfo ? (
+			<TotalThroughputWidget data={ctx.throughputInfo} />
+		) : null,
+		totalArrivals: ctx.arrivalsInfo ? (
+			<TotalArrivalsWidget data={ctx.arrivalsInfo} />
+		) : null,
+		featureSizePercentiles: ctx.featureSizePercentilesInfo ? (
+			<FeatureSizePercentilesWidget data={ctx.featureSizePercentilesInfo} />
 		) : null,
 	};
 
@@ -826,6 +828,9 @@ export const BaseMetricsView = <
 		totalWorkItemAge,
 		arrivalsData,
 		arrivalsPbcData,
+		throughputInfo,
+		arrivalsInfo,
+		featureSizePercentilesInfo,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
 	const { getTerm } = useTerminology();
@@ -915,6 +920,9 @@ export const BaseMetricsView = <
 		featureSizePbcData,
 		arrivalsData,
 		arrivalsPbcData,
+		throughputInfo,
+		arrivalsInfo,
+		featureSizePercentilesInfo,
 	});
 
 	const widgetFooters = buildWidgetFooters({
@@ -1024,6 +1032,19 @@ export const BaseMetricsView = <
 		},
 	});
 
+	const widgetTrends: Record<string, TrendPayload | undefined> = {
+		totalThroughput: throughputInfo
+			? TotalThroughputWidget.getTrendPayload(throughputInfo).trendPayload
+			: undefined,
+		totalArrivals: arrivalsInfo
+			? TotalArrivalsWidget.getTrendPayload(arrivalsInfo).trendPayload
+			: undefined,
+		featureSizePercentiles: featureSizePercentilesInfo
+			? FeatureSizePercentilesWidget.getTrendPayload(featureSizePercentilesInfo)
+					.trendPayload
+			: undefined,
+	};
+
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
 		.filter((w) => widgetNodes[w.widgetKey] != null)
@@ -1037,6 +1058,7 @@ export const BaseMetricsView = <
 					header={widgetFooters[w.widgetKey]}
 					info={getWidgetInfo(w.widgetKey)}
 					viewData={widgetViewData[w.widgetKey]}
+					trend={widgetTrends[w.widgetKey]}
 				>
 					{widgetNodes[w.widgetKey]}
 				</WidgetShell>

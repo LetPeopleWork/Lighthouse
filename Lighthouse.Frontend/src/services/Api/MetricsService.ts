@@ -8,6 +8,7 @@ import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/Estima
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type {
 	IArrivalsInfo,
+	IFeatureSizePercentilesInfo,
 	IThroughputInfo,
 } from "../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
@@ -137,6 +138,12 @@ export interface IProjectMetricsService extends IMetricsService<IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IFeatureSizeEstimationResponse>;
+
+	getFeatureSizePercentilesInfo(
+		portfolioId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeatureSizePercentilesInfo>;
 }
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>

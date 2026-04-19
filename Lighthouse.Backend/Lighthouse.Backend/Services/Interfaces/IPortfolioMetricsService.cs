@@ -52,6 +52,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         ArrivalsInfoDto GetArrivalsInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
+        FeatureSizePercentilesInfoDto GetFeatureSizePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
         void InvalidatePortfolioMetrics(Portfolio portfolio);
     }
 }

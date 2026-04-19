@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Services.Implementation
         : BaseMetricsService(appSettingService.GetFeatureRefreshSettings().Interval, serviceProvider),
             IPortfolioMetricsService
     {
-        private readonly string inProgressFeaturesMetricIdentifier = "InProgressFeatures";
-
         public RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Throughput for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
@@ -210,18 +208,18 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetInProgressFeaturesForPortfolio(portfolio, DateTime.UtcNow.Date);
         }
         
-        public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio, DateTime endDate)
+        public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio, DateTime asOfDate)
         {
-            logger.LogDebug("Getting WIP snapshot for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, endDate.Date);
+            logger.LogDebug("Getting WIP snapshot for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, asOfDate.Date);
 
-            return GetFromCacheIfExists(portfolio, $"WipSnapshot_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"WipSnapshot_{asOfDate:yyyy-MM-dd}", () =>
             {
                 var features = featureRepository.GetAllByPredicate(f =>
                     f.Portfolios.Any(p => p.Id == portfolio.Id) &&
                     (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
                     .ToList();
 
-                return GenerateWorkInProgressByDay(endDate, endDate, features)[0].OfType<Feature>();
+                return GenerateWorkInProgressByDay(asOfDate, asOfDate, features)[0].OfType<Feature>();
             }
             , logger);
         }
@@ -374,6 +372,22 @@ namespace Lighthouse.Backend.Services.Implementation
 
                  return BuildArrivalsInfoDto(currentArrivals.Total, previousArrivals.Total, periodDays, startDate, endDate, previousStart, previousEnd);
              }, logger);
+        }
+
+        public FeatureSizePercentilesInfoDto GetFeatureSizePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Feature Size Percentiles Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"FeatureSizePercentilesInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var currentPercentiles = GetSizePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
+                var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                var previousEnd = startDate.AddDays(-1);
+                var previousStart = startDate.AddDays(-periodDays);
+                var previousPercentiles = GetSizePercentilesForPortfolio(portfolio, previousStart, previousEnd).ToList();
+
+                return BuildFeatureSizePercentilesInfoDto(currentPercentiles, previousPercentiles, currentStart: startDate, currentEnd: endDate, previousStart: previousStart, previousEnd: previousEnd);
+            }, logger);
         }
 
         public void InvalidatePortfolioMetrics(Portfolio portfolio)

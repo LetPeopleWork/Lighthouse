@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
+import type { TrendPayload } from "./trendTypes";
 import WidgetShell from "./WidgetShell";
 
 vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
@@ -338,5 +339,146 @@ describe("WidgetShell", () => {
 		);
 		expect(screen.getByTestId("dialog-items-count")).toHaveTextContent("2");
 		expect(screen.getByTestId("dialog-sle")).toHaveTextContent("14");
+	});
+
+	describe("trend chrome", () => {
+		const upTrend: TrendPayload = {
+			direction: "up",
+			metricLabel: "Total Throughput",
+			currentLabel: "2026-04-01 – 2026-04-10",
+			currentValue: "25",
+			previousLabel: "2026-03-22 – 2026-03-31",
+			previousValue: "20",
+			percentageDelta: "+25.0%",
+		};
+
+		it("renders trend arrow when trend prop is provided with direction up", () => {
+			render(
+				<WidgetShell widgetKey="test-widget" trend={upTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			expect(
+				screen.getByTestId("widget-trend-test-widget"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("widget-trend-arrow-test-widget"),
+			).toBeInTheDocument();
+		});
+
+		it("renders down arrow for direction down", () => {
+			const downTrend: TrendPayload = {
+				...upTrend,
+				direction: "down",
+				currentValue: "15",
+				previousValue: "20",
+				percentageDelta: "-25.0%",
+			};
+			render(
+				<WidgetShell widgetKey="test-widget" trend={downTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			expect(
+				screen.getByTestId("widget-trend-arrow-test-widget"),
+			).toBeInTheDocument();
+		});
+
+		it("renders flat indicator for direction flat", () => {
+			const flatTrend: TrendPayload = {
+				...upTrend,
+				direction: "flat",
+				currentValue: "20",
+				previousValue: "20",
+				percentageDelta: "0.0%",
+			};
+			render(
+				<WidgetShell widgetKey="test-widget" trend={flatTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			expect(
+				screen.getByTestId("widget-trend-arrow-test-widget"),
+			).toBeInTheDocument();
+		});
+
+		it("does not render trend indicator when direction is none", () => {
+			const noneTrend: TrendPayload = {
+				direction: "none",
+				metricLabel: "Total Throughput",
+			};
+			render(
+				<WidgetShell widgetKey="test-widget" trend={noneTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			expect(
+				screen.queryByTestId("widget-trend-test-widget"),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not render trend indicator when trend prop is absent", () => {
+			render(
+				<WidgetShell widgetKey="test-widget">
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			expect(
+				screen.queryByTestId("widget-trend-test-widget"),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows trend tooltip with metric label and values on hover", async () => {
+			const user = userEvent.setup();
+			render(
+				<WidgetShell widgetKey="test-widget" trend={upTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			const trendEl = screen.getByTestId("widget-trend-test-widget");
+			await user.hover(trendEl);
+			expect(await screen.findByText("Total Throughput")).toBeInTheDocument();
+			expect(
+				await screen.findByText("2026-04-01 – 2026-04-10"),
+			).toBeInTheDocument();
+			expect(await screen.findByText("25")).toBeInTheDocument();
+			expect(
+				await screen.findByText("2026-03-22 – 2026-03-31"),
+			).toBeInTheDocument();
+			expect(await screen.findByText("20")).toBeInTheDocument();
+			expect(await screen.findByText("+25.0%")).toBeInTheDocument();
+		});
+
+		it("renders detail rows in tooltip when provided", async () => {
+			const user = userEvent.setup();
+			const trendWithDetails: TrendPayload = {
+				direction: "up",
+				metricLabel: "Feature Size Percentiles",
+				detailRows: [
+					{ label: "50th", currentValue: "5", previousValue: "4" },
+					{ label: "85th", currentValue: "12", previousValue: "10" },
+				],
+			};
+			render(
+				<WidgetShell widgetKey="test-widget" trend={trendWithDetails}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			const trendEl = screen.getByTestId("widget-trend-test-widget");
+			await user.hover(trendEl);
+			expect(await screen.findByText("50th")).toBeInTheDocument();
+			expect(await screen.findByText("85th")).toBeInTheDocument();
+		});
+
+		it("renders header when trend is provided even without title", () => {
+			render(
+				<WidgetShell widgetKey="test-widget" trend={upTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+			expect(
+				screen.getByTestId("widget-shell-header-test-widget"),
+			).toBeInTheDocument();
+		});
 	});
 });

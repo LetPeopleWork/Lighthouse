@@ -1,4 +1,7 @@
+import EastIcon from "@mui/icons-material/East";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import NorthEastIcon from "@mui/icons-material/NorthEast";
+import SouthEastIcon from "@mui/icons-material/SouthEast";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import {
 	Box,
@@ -16,6 +19,7 @@ import WorkItemsDialog, {
 	type HighlightColumnDefinition,
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
+import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 
 type RagStatus = "red" | "amber" | "green" | "none";
@@ -45,6 +49,7 @@ export interface WidgetShellProps {
 	readonly header?: WidgetFooter;
 	readonly info?: WidgetInfo;
 	readonly viewData?: ViewDataPayload;
+	readonly trend?: TrendPayload;
 	readonly children: React.ReactNode;
 }
 
@@ -69,6 +74,108 @@ const infoGuidanceOrder: ReadonlyArray<{
 	{ guidanceKey: "act", ragStatus: "red" },
 ];
 
+const trendArrowMap: Record<
+	Exclude<TrendPayload["direction"], "none">,
+	React.ReactNode
+> = {
+	up: <NorthEastIcon fontSize="small" />,
+	down: <SouthEastIcon fontSize="small" />,
+	flat: <EastIcon fontSize="small" />,
+};
+
+function buildTrendTooltipContent(trend: TrendPayload): React.ReactNode {
+	return (
+		<Box sx={{ p: 0.5, minWidth: 160 }}>
+			<Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+				{trend.metricLabel}
+			</Typography>
+			{trend.currentLabel && (
+				<Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+					<Typography variant="caption" color="text.secondary">
+						{trend.currentLabel}
+					</Typography>
+					<Typography variant="caption" sx={{ fontWeight: 600 }}>
+						{trend.currentValue}
+					</Typography>
+				</Box>
+			)}
+			{trend.previousLabel && (
+				<Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+					<Typography variant="caption" color="text.secondary">
+						{trend.previousLabel}
+					</Typography>
+					<Typography variant="caption" sx={{ fontWeight: 600 }}>
+						{trend.previousValue}
+					</Typography>
+				</Box>
+			)}
+			{trend.percentageDelta && (
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					sx={{ display: "block", mt: 0.25 }}
+				>
+					{trend.percentageDelta}
+				</Typography>
+			)}
+			{trend.detailRows && trend.detailRows.length > 0 && (
+				<Box sx={{ mt: 0.5 }}>
+					{trend.detailRows.map((row) => (
+						<Box
+							key={row.label}
+							sx={{
+								display: "flex",
+								justifyContent: "space-between",
+								gap: 2,
+							}}
+						>
+							<Typography variant="caption" color="text.secondary">
+								{row.label}
+							</Typography>
+							<Typography variant="caption">
+								{row.currentValue} / {row.previousValue}
+							</Typography>
+						</Box>
+					))}
+				</Box>
+			)}
+		</Box>
+	);
+}
+
+const TrendChrome: React.FC<{
+	widgetKey: string;
+	trend: TrendPayload;
+}> = ({ widgetKey, trend }) => {
+	return (
+		<Tooltip title={buildTrendTooltipContent(trend)} arrow>
+			<Box
+				data-testid={`widget-trend-${widgetKey}`}
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					cursor: "default",
+				}}
+			>
+				<Box
+					data-testid={`widget-trend-arrow-${widgetKey}`}
+					sx={{
+						display: "inline-flex",
+						alignItems: "center",
+						color: "text.secondary",
+					}}
+				>
+					{
+						trendArrowMap[
+							trend.direction as Exclude<TrendPayload["direction"], "none">
+						]
+					}
+				</Box>
+			</Box>
+		</Tooltip>
+	);
+};
+
 const WidgetShell: React.FC<WidgetShellProps> = ({
 	title,
 	widgetKey,
@@ -76,6 +183,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	header,
 	info,
 	viewData,
+	trend,
 	children,
 }) => {
 	const theme = useTheme();
@@ -84,7 +192,9 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	const infoAnchorRef = useRef<HTMLButtonElement>(null);
 
 	const hasViewData = !!viewData && viewData.items.length > 0;
-	const hasHeader = !!title || (header && showTips) || !!info || hasViewData;
+	const hasTrend = !!trend && trend.direction !== "none";
+	const hasHeader =
+		!!title || (header && showTips) || !!info || hasViewData || hasTrend;
 	const showInfoGuidance = showTips && !!info?.statusGuidance;
 
 	return (
@@ -201,6 +311,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 								</IconButton>
 							</Tooltip>
 						)}
+						{hasTrend && <TrendChrome widgetKey={widgetKey} trend={trend} />}
 						{header && showTips && header.ragStatus !== "none" && (
 							<Tooltip title={header.tipText} arrow>
 								<Chip

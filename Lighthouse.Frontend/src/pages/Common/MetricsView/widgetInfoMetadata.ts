@@ -77,18 +77,6 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No SLE is configured, no closed items exist in range, or within-SLE performance is more than 20 percentage points below target.",
 		},
 	},
-	startedVsFinished: {
-		description:
-			"Compares items started versus completed to show whether WIP is growing, shrinking, or stable.",
-		learnMoreUrl: `${DOCS_BASE}#started-vs-closed`,
-		statusGuidance: {
-			sustain:
-				"Started and closed are balanced (both 0, difference under 2, or within 5%).",
-			observe:
-				"Closed significantly exceeds started, which may indicate starving the process.",
-			act: "No System WIP Limit is configured, or started exceeds closed by more than 5%.",
-		},
-	},
 	totalWorkItemAge: {
 		description:
 			"Sum of ages of all items currently in progress — a measure of your WIP inventory burden.",
@@ -281,6 +269,41 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 				"A baseline is configured and no special-cause signals are detected.",
 			observe: "A Moderate Change signal is detected (without Large Change).",
 			act: "No baseline is configured, or a Large Change signal is detected.",
+		},
+	},
+	totalThroughput: {
+		description:
+			"Total number of items completed in the selected range with daily average and trend comparison.",
+		learnMoreUrl: `${DOCS_BASE}#throughput-run-chart`,
+		statusGuidance: {
+			sustain:
+				"Throughput trend is stable or improving compared to the previous period.",
+			observe:
+				"Throughput shows a slight decline compared to the previous period.",
+			act: "Throughput has significantly declined compared to the previous period.",
+		},
+	},
+	totalArrivals: {
+		description:
+			"Total number of items started in the selected range with daily average and trend comparison.",
+		learnMoreUrl: `${DOCS_BASE}#arrivals-run-chart`,
+		statusGuidance: {
+			sustain: "Arrivals trend is stable compared to the previous period.",
+			observe:
+				"Arrivals show a slight increase compared to the previous period.",
+			act: "Arrivals have significantly increased compared to the previous period.",
+		},
+	},
+	featureSizePercentiles: {
+		description:
+			"Size distribution percentiles for completed features with trend comparison to the previous period.",
+		learnMoreUrl: `${DOCS_BASE}#feature-size`,
+		statusGuidance: {
+			sustain:
+				"Feature sizes are stable or shrinking compared to the previous period.",
+			observe:
+				"Feature sizes show a slight increase compared to the previous period.",
+			act: "Feature sizes have significantly increased compared to the previous period.",
 		},
 	},
 };

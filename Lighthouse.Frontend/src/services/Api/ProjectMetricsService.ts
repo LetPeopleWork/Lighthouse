@@ -1,5 +1,6 @@
 import type { IFeature } from "../../models/Feature";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
+import type { IFeatureSizePercentilesInfo } from "../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import {
@@ -73,6 +74,20 @@ export class ProjectMetricsService
 				await this.apiService.get<IFeatureSizeEstimationResponse>(
 					`/portfolios/${projectId}/metrics/featureSizeEstimation?${this.getDateFormatString(startDate, endDate)}`,
 				);
+
+			return response.data;
+		});
+	}
+
+	async getFeatureSizePercentilesInfo(
+		portfolioId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeatureSizePercentilesInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IFeatureSizePercentilesInfo>(
+				`/portfolios/${portfolioId}/metrics/featureSizePercentilesInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
 
 			return response.data;
 		});

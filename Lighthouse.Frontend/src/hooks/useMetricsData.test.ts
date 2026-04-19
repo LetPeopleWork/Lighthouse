@@ -86,6 +86,13 @@ function createMockProjectMetricsService(): IProjectMetricsService {
 		getFeatureSizeEstimation: vi
 			.fn()
 			.mockResolvedValue({ status: "NotConfigured" }),
+		getFeatureSizePercentilesInfo: vi.fn().mockResolvedValue({
+			percentiles: [],
+			comparison: {
+				direction: "none",
+				metricLabel: "Feature Size Percentiles",
+			},
+		}),
 	} as unknown as IProjectMetricsService;
 }
 

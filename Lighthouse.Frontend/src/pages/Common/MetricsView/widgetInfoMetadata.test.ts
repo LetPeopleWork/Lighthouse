@@ -16,7 +16,6 @@ describe("widgetInfoMetadata", () => {
 			"predictabilityScore",
 			"predictabilityScoreDetails",
 			"percentiles",
-			"startedVsFinished",
 			"totalWorkItemAge",
 			"throughput",
 			"cycleScatter",
@@ -32,6 +31,11 @@ describe("widgetInfoMetadata", () => {
 			"totalWorkItemAgePbc",
 			"cycleTimePbc",
 			"featureSizePbc",
+			"arrivals",
+			"arrivalsPbc",
+			"totalThroughput",
+			"totalArrivals",
+			"featureSizePercentiles",
 		];
 
 		for (const key of expectedWidgetKeys) {

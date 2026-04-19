@@ -1194,6 +1194,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         #endregion
 
+        #region GetFeatureSizePercentilesInfoForPortfolio
+
+        [Test]
+        public void GetFeatureSizePercentilesInfoForPortfolio_ReturnsPercentilesWithComparison()
+        {
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var team = new Team();
+            features[0].AddOrUpdateWorkForTeam(team, 3, 5);
+            features[1].AddOrUpdateWorkForTeam(team, 3, 15);
+
+            var result = subject.GetFeatureSizePercentilesInfoForPortfolio(portfolio, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Percentiles, Has.Length.EqualTo(4));
+                Assert.That(result.Percentiles[0].Percentile, Is.EqualTo(50));
+                Assert.That(result.Comparison, Is.Not.Null);
+                Assert.That(result.Comparison.MetricLabel, Is.EqualTo("Feature Size Percentiles"));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizePercentilesInfoForPortfolio_NoClosedItems_ReturnsEmptyPercentiles()
+        {
+            var startDate = new DateTime(2077, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2077, 1, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var result = subject.GetFeatureSizePercentilesInfoForPortfolio(portfolio, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Percentiles, Has.Length.EqualTo(0));
+                Assert.That(result.Comparison.Direction, Is.EqualTo("none"));
+            }
+        }
+
+        [Test]
+        public void GetFeatureSizePercentilesInfoForPortfolio_ComparisonContainsDetailRows()
+        {
+            var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var team = new Team();
+            features[0].AddOrUpdateWorkForTeam(team, 3, 5);
+            features[1].AddOrUpdateWorkForTeam(team, 3, 15);
+
+            var result = subject.GetFeatureSizePercentilesInfoForPortfolio(portfolio, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Comparison.DetailRows, Is.Not.Null);
+            }
+        }
+
+        #endregion
+
         private void SetupTestData()
         {
             portfolio = new Portfolio

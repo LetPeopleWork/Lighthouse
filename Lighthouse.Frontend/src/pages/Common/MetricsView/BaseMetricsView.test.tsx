@@ -207,25 +207,6 @@ vi.mock("./PredictabilityScoreDetailsWidget", () => ({
 	),
 }));
 
-vi.mock("../../../components/Common/Charts/StartedVsFinishedDisplay", () => ({
-	default: ({
-		startedItems,
-		closedItems,
-	}: {
-		startedItems: RunChartData | null;
-		closedItems: RunChartData | null;
-	}) => (
-		<div data-testid="started-vs-finished">
-			<div data-testid="started-items">
-				{startedItems ? startedItems.history : 0}
-			</div>
-			<div data-testid="closed-items">
-				{closedItems ? closedItems.history : 0}
-			</div>
-		</div>
-	),
-}));
-
 vi.mock("../../../components/Common/Charts/StackedAreaChart", () => ({
 	default: ({
 		title,
@@ -639,6 +620,13 @@ describe("BaseMetricsView component", () => {
 				categoryValues: [],
 				featureEstimations: [],
 			}),
+			getFeatureSizePercentilesInfo: vi.fn().mockResolvedValue({
+				percentiles: [],
+				comparison: {
+					direction: "none",
+					metricLabel: "Feature Size Percentiles",
+				},
+			}),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -660,6 +648,11 @@ describe("BaseMetricsView component", () => {
 				startDate: Date,
 				endDate: Date,
 			) => Promise<IFeatureSizeEstimationResponse>;
+			getFeatureSizePercentilesInfo?: (
+				id: number,
+				startDate: Date,
+				endDate: Date,
+			) => Promise<unknown>;
 		};
 	}
 

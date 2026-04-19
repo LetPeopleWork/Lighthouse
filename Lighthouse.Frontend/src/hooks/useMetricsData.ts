@@ -7,6 +7,7 @@ import type { IEstimationVsCycleTimeResponse } from "../models/Metrics/Estimatio
 import type { IFeatureSizeEstimationResponse } from "../models/Metrics/FeatureSizeEstimationData";
 import type {
 	IArrivalsInfo,
+	IFeatureSizePercentilesInfo,
 	IThroughputInfo,
 } from "../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
@@ -47,6 +48,7 @@ export interface MetricsData<T> {
 	arrivalsPbcData: ProcessBehaviourChartData | null;
 	throughputInfo: IThroughputInfo | null;
 	arrivalsInfo: IArrivalsInfo | null;
+	featureSizePercentilesInfo: IFeatureSizePercentilesInfo | null;
 }
 
 function isProjectMetricsService(
@@ -56,7 +58,8 @@ function isProjectMetricsService(
 		"getAllFeaturesForSizeChart" in service &&
 		"getSizePercentiles" in service &&
 		"getFeatureSizePbc" in service &&
-		"getFeatureSizeEstimation" in service
+		"getFeatureSizeEstimation" in service &&
+		"getFeatureSizePercentilesInfo" in service
 	);
 }
 
@@ -121,6 +124,8 @@ export function useMetricsData<
 		null,
 	);
 	const [arrivalsInfo, setArrivalsInfo] = useState<IArrivalsInfo | null>(null);
+	const [featureSizePercentilesInfo, setFeatureSizePercentilesInfo] =
+		useState<IFeatureSizePercentilesInfo | null>(null);
 	useEffect(() => {
 		blackoutPeriodService
 			.getAll()
@@ -215,6 +220,9 @@ export function useMetricsData<
 			);
 			setFeatureSizeEstimationData(
 				await svc.getFeatureSizeEstimation(entity.id, startDate, endDate),
+			);
+			setFeatureSizePercentilesInfo(
+				await svc.getFeatureSizePercentilesInfo(entity.id, startDate, endDate),
 			);
 		};
 		fetch().catch((error) =>
@@ -330,5 +338,6 @@ export function useMetricsData<
 		arrivalsPbcData,
 		throughputInfo,
 		arrivalsInfo,
+		featureSizePercentilesInfo,
 	};
 }

@@ -185,6 +185,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getArrivalsPbc: vi.fn(),
 		getThroughputInfo: vi.fn(),
 		getArrivalsInfo: vi.fn(),
+		getFeatureSizePercentilesInfo: vi.fn(),
 	};
 };
 

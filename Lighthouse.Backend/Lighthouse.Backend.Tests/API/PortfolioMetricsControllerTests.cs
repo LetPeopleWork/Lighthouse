@@ -928,5 +928,44 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result!.Value, Is.EqualTo(expectedInfo));
             }
         }
+
+        // ── FeatureSizePercentilesInfo ───────────────────────────────────────────
+
+        [Test]
+        public void GetFeatureSizePercentilesInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetFeatureSizePercentilesInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetFeatureSizePercentilesInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetFeatureSizePercentilesInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetFeatureSizePercentilesInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new FeatureSizePercentilesInfoDto(
+                [new PercentileValueDto(50, 5), new PercentileValueDto(85, 12)],
+                new InfoWidgetComparisonDto("up", "Feature Size Percentiles", "curr", null, "prev", null, null,
+                    [new TrendDetailRowDto("50th", "5", "3"), new TrendDetailRowDto("85th", "12", "10")]));
+            projectMetricsService.Setup(s => s.GetFeatureSizePercentilesInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetFeatureSizePercentilesInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
     }
 }
