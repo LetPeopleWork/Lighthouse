@@ -11,14 +11,12 @@ We've worked on the feedback we got from the UX overhaul, and refined our Metric
 
 ### Simplified Metrics Categories
 The available categories in the Metrics section have been consolidated from six categories to four:
-| Before | After |  
-|---|---|  
-| Flow Overview | **Flow Overview** (unchanged) |  
-| Cycle Time | Merged into **Flow Metrics** |  
-| Throughput | Merged into **Flow Metrics** |  
-| WIP & Aging | Merged into **Flow Metrics** |  
-| Predictability | **Predictability** (unchanged) |  
-| Portfolio & Features | **Portfolio & Features** (unchanged) |  
+- Flow Overview -->  **Flow Overview** (unchanged)
+- Cycle Time --> Merged into **Flow Metrics**
+- Throughput --> Merged into **Flow Metrics**
+- WIP & Aging --> Merged into **Flow Metrics**
+- Predictability --> **Predictability** (unchanged)
+- Portfolio & Features --> **Portfolio & Features** (unchanged)
 
 Each chart is now appearing exactly in one category. While the *Flow Overview* will show you the status at a quick glance, the *Flow Metrics* will allow you to dive deeper and get into details.
 
