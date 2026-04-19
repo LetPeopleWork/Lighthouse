@@ -516,7 +516,23 @@ function buildViewData(
 	};
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic helper avoids coupling to specific entity/metrics type
+function buildPbcNode(
+	data: ProcessBehaviourChartData | null,
+	titleSuffix: string,
+	type: ProcessBehaviourChartType,
+	workItemLookup: Map<number, IWorkItem>,
+): ReactNode | null {
+	if (!data) return null;
+	return (
+		<ProcessBehaviourChart
+			data={data}
+			title={titleSuffix}
+			workItemLookup={workItemLookup}
+			type={type}
+		/>
+	);
+}
+
 function buildWidgetNodes(ctx: {
 	entity: IFeatureOwner;
 	title: string;
@@ -746,16 +762,12 @@ function buildWidgetNodes(ctx: {
 	];
 
 	for (const config of pbcConfigs) {
-		if (config.data) {
-			nodes[config.id] = (
-				<ProcessBehaviourChart
-					data={config.data}
-					title={config.titleSuffix}
-					workItemLookup={ctx.workItemLookup}
-					type={config.type}
-				/>
-			);
-		}
+		nodes[config.id] = buildPbcNode(
+			config.data,
+			config.titleSuffix,
+			config.type,
+			ctx.workItemLookup,
+		);
 	}
 
 	return nodes;
