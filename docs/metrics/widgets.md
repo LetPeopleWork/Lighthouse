@@ -13,7 +13,9 @@ Following a brief overview over the various metric widgets that are available in
 {:toc}
 
 # Details
-Every widget on the Metrics Dashboard includes a **View Data** button (table icon) in its header. Clicking it opens a dialog showing the full set of work items that feed the widget. This gives you quick access to the underlying data without navigating away.
+Widgets that are backed by a concrete set of work items include a **View Data** button (table icon) in their header. Clicking it opens a dialog showing the full set of work items that feed the widget. This gives you quick access to the underlying data without navigating away.
+
+Summary widgets such as **Total Throughput**, **Total Arrivals**, **Feature Size Percentiles**, and **Predictability Score** focus on rollup values and trend comparisons instead of item-level drill-ins.
 
 Some charts also support **chart-specific drill-ins**: clicking a bar, bubble, data point, or pie segment opens a dialog scoped to that particular subset (e.g. items for a single day or a specific parent feature). These context-specific interactions remain unchanged.
 
@@ -237,36 +239,6 @@ The chart combines both completed work items (from the selected date range) and 
 | 🟡 Observe | Work is spread across slightly more features than the Feature WIP limit (up to 120% of it), *or* unlinked items are below 20%. |
 | 🟢 Sustain | Work is spread across a number of features within the Feature WIP limit, and fewer than 20% of items are unlinked. |
 
-# Started vs. Closed
-
-|--------------|-------------------------|
-| **Applies to** | Teams and Portfolios |
-| **Flow Metric** | Throughput, WIP |
-| **Affected by Filtering** | Yes |
-
-The *Started vs. Closed* widget shows you how many items you were completing (your total Throughput) and how many items were started (also called *Arrival rate*) during the selected time frame. It will also show you how many items were closed and started on average per day with your current settings:
-
-![Started vs. Closed](../assets/features/metrics/startedVsFinished.png)
-
-The goal is to quickly see whether you are having a stable WIP, or if you either start more items than you close (increasing WIP) or close more than you start (decreasing WIP). The widget includes a visual indication that shows you a *Red/Amber/Green* kind of scale, depending on how *far apart* the arrival and throughput numbers are.
-
-As a rule of thumb, you should try to match your started items with how many items leave your process. This is where the daily average can help: If you close 1.1 items per day, you know that you should more or less start:
-- 1 new item per day OR
-- 5 items per week OR
-- 11 items every two weeks
-
-This can help you to prepare just enough items for your team(s). Whether you do it daily or in bigger batches (for example having a refinement session per week), using this information helps you make sure you are neither under- nor over-prepared.
-
-If you want to know more details, use the **View Data** button in the widget header to see all started and closed items for the selected time range.
-
-## Status Indicator
-
-| Status | Condition |
-|---|---|
-| 🔴 Act | No System WIP Limit is configured, *or* started count exceeds closed count by more than 5%. |
-| 🟡 Observe | Closed significantly exceeds started (process may be starving for new work). |
-| 🟢 Sustain | Both are 0, *or* the absolute difference is less than 2, *or* the relative difference is within 5%. |
-
 # Throughput Run Chart
 
 |--------------|-------------------------|
@@ -299,6 +271,58 @@ The Throughput Run Chart checks for runs of 3 or more consecutive zero-throughpu
 | 🟡 Observe | Exactly 1 run of 3 consecutive zero-throughput days detected. |
 | 🟢 Sustain | No extended zero-throughput runs detected. |
 
+# Total Throughput
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Throughput |
+| **Affected by Filtering** | Yes |
+
+This overview widget shows the total number of items closed in the selected date range, together with the average number closed per day.
+
+![Total Throughput](../assets/features/metrics/totalThroughput.png)
+
+The trend indicator compares the selected date range against the immediately preceding period of the same length.
+
+{: .note}
+This widget is a summary view. For item-level detail and daily drill-ins, use the [Throughput Run Chart](#throughput-run-chart).
+
+## Status Indicator
+
+Although the widget displays only closed items, its status is based on the same started-versus-closed balance logic used elsewhere in Lighthouse.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* started count exceeds closed count by more than 5%. |
+| 🟡 Observe | Closed significantly exceeds started (process may be starving). |
+| 🟢 Sustain | Started and closed are balanced (within 5% or an absolute difference of less than 2). |
+
+# Total Arrivals
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Arrivals (items started) |
+| **Affected by Filtering** | Yes |
+
+This overview widget shows the total number of items started in the selected date range, together with the average number started per day.
+
+![Total Arrivals](../assets/features/metrics/totalArrivals.png)
+
+The trend indicator compares the selected date range against the immediately preceding period of the same length.
+
+{: .note}
+This widget is a summary view. For day-level detail and batching patterns, use the [Arrivals Run Chart](#arrivals-run-chart).
+
+## Status Indicator
+
+Although the widget displays only started items, its status is based on the same started-versus-closed balance logic used elsewhere in Lighthouse.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No System WIP Limit is configured, *or* started count exceeds closed count by more than 5%. |
+| 🟡 Observe | Closed significantly exceeds started (process may be starving). |
+| 🟢 Sustain | Started and closed are balanced (within 5% or an absolute difference of less than 2). |
+
 # Arrivals Run Chart
 
 |--------------|-------------------------|
@@ -310,6 +334,10 @@ The Arrivals Run Chart shows the daily count of work items that were started (ar
 
 Comparing Arrivals with Throughput helps you understand whether your flow is balanced — whether you are starting work at roughly the same rate you finish it — and whether arrivals are continuous or batched.
 
+![Arrivals Run Chart](../assets/features/metrics/arrivals.png)
+
+If you click on a specific day, it will show you which items were started on that day.
+
 {: .note}
 If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why arrivals were zero on certain days.
 
@@ -318,13 +346,13 @@ If [Blackout Periods](../settings/configuration.html#blackout-periods) are confi
 The Arrivals Run Chart uses a two-factor status:
 
 1. **Primary signal:** Arrivals-versus-departures balance (using the same thresholds as Started vs. Closed).
-2. **Secondary signal:** Batching detection — runs of 3+ consecutive zero-arrival days (excluding Blackout Periods) suggest work is starting in bursts rather than continuously.
+2. **Secondary signal:** Batching detection — 3-day windows with zero arrivals (excluding Blackout Periods) suggest work is starting in bursts rather than continuously.
 
 | Status | Condition |
 |---|---|
-| 🔴 Act | No System WIP Limit is configured, *or* arrivals materially exceed departures. |
-| 🟡 Observe | Arrivals are balanced overall, but noticeable batching (2+ runs of 3+ consecutive zero-arrival days) suggests work is starting in bursts. *Or* closed significantly exceeds started (process may be starving). |
-| 🟢 Sustain | Arrivals are balanced with departures and no significant batching is detected. |
+| 🔴 Act | No System WIP Limit is configured, *or* started count exceeds closed count by more than 5%. |
+| 🟡 Observe | Closed significantly exceeds started (process may be starving), *or* started and closed are otherwise balanced but 2 or more 3-day windows with zero arrivals are detected (excluding Blackout Periods). |
+| 🟢 Sustain | Started and closed are balanced (within 5% or an absolute difference of less than 2) and no significant batching is detected. |
 
 # Arrivals Process Behaviour Chart
 
@@ -334,6 +362,8 @@ The Arrivals Run Chart uses a two-factor status:
 | **Affected by Filtering** | Yes |
 
 The Arrivals PBC applies the same XmR-chart analysis as the other PBC widgets, but focused on the intake rate. It highlights special-cause variation in how many items are started per day, helping you detect unexpected changes in your arrival pattern.
+
+![Arrivals Process Behaviour Chart](../assets/features/metrics/arrivalsPbc.png)
 
 The Arrivals PBC shares the same status logic as all other PBC charts (see [Status Indicator](#status-indicator-all-pbc-charts)).
 
@@ -463,6 +493,36 @@ Use the **View Data** button in the widget header to see all items that were clo
 | 🔴 Act | No SLE is configured, *or* no closed items exist in the range, *or* the percentage of items within the SLE is more than 20 percentage points below the SLE target. |
 | 🟡 Observe | The percentage of items within the SLE is below the target by up to 20 percentage points. |
 | 🟢 Sustain | The percentage of items within the SLE meets or exceeds the configured target percentile. Consider tightening the target. |
+
+# Feature Size Percentiles
+
+|--------------|-------------------------|
+| **Applies to** | Portfolios |
+| **Flow Metric** | Feature Size |
+| **Affected by Filtering** | Yes |
+
+This overview widget shows the 50th, 70th, 85th, and 95th percentiles of feature size for completed features in the selected date range. Feature size is measured as the number of child work items linked to each feature.
+
+![Feature Size Percentiles](../assets/features/metrics/featureSizePercentiles.png)
+
+The trend indicator compares the selected date range against the immediately preceding period of the same length. Its direction is derived from the 50th percentile, while the tooltip shows a per-percentile breakdown in `previous → **current**` format.
+
+{: .note}
+This widget is only available for Portfolios.
+
+{: .note}
+The displayed percentiles summarize historical feature sizes, but the status indicator evaluates your currently active features against the configured [Feature Size Target](../portfolios/edit.html#feature-size-target).
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No Feature Size Target is configured, *or* more than `(100% − target percentile) + 10%` of active features exceed the historical size at the target percentile. |
+| 🟡 Observe | More than `100% − target percentile` of active features exceed the threshold, but within the 10 percentage point buffer. |
+| 🟢 Sustain | The proportion of oversized active features is within the expected range. |
+
+{: .note}
+If no active features or no historical size data exist yet, the status defaults to **Sustain**.
 
 # Cycle Time Scatterplot
 
