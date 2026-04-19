@@ -19,6 +19,8 @@ export type WidgetPlacement = {
 	readonly ownerFilter?: "portfolio-only" | "team-only";
 };
 
+export type TrendPolicy = "snapshot-compare" | "previous-period" | "none";
+
 const categories: readonly CategoryDefinition[] = [
 	{
 		key: "flow-overview",
@@ -69,34 +71,28 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		},
 		{ widgetKey: "totalWorkItemAge", size: "small" },
 		{ widgetKey: "predictabilityScore", size: "small" },
-		{ widgetKey: "startedVsFinished", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
+		{ widgetKey: "totalThroughput", size: "small" },
+		{ widgetKey: "totalArrivals", size: "small" },
+		{
+			widgetKey: "featureSizePercentiles",
+			size: "small",
+			ownerFilter: "portfolio-only",
+		},
 	],
 	"cycle-time": [
-		{ widgetKey: "percentiles", size: "small" },
-		{ widgetKey: "totalWorkItemAge", size: "small" },
 		{ widgetKey: "cycleScatter", size: "large" },
 		{ widgetKey: "aging", size: "large" },
-		{ widgetKey: "cycleTimePbc", size: "large" },
 	],
 	throughput: [
-		{ widgetKey: "startedVsFinished", size: "small" },
-		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "throughput", size: "large" },
 		{ widgetKey: "stacked", size: "large" },
-		{ widgetKey: "throughputPbc", size: "large" },
 	],
 	"wip-aging": [
-		{ widgetKey: "wipOverview", size: "small" },
-		{ widgetKey: "totalWorkItemAge", size: "small" },
-		{ widgetKey: "aging", size: "large" },
 		{ widgetKey: "wipOverTime", size: "large" },
 		{ widgetKey: "totalWorkItemAgeOverTime", size: "large" },
-		{ widgetKey: "wipPbc", size: "large" },
-		{ widgetKey: "totalWorkItemAgePbc", size: "large" },
 	],
 	predictability: [
-		{ widgetKey: "cycleScatter", size: "large" },
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
 		{ widgetKey: "arrivals", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
@@ -111,16 +107,39 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		},
 	],
 	portfolio: [
-		{
-			widgetKey: "featuresWorkedOnOverview",
-			size: "small",
-			ownerFilter: "team-only",
-		},
-		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "workDistribution", size: "large" },
 		{ widgetKey: "featureSize", size: "large", ownerFilter: "portfolio-only" },
 		{ widgetKey: "estimationVsCycleTime", size: "large" },
 	],
+};
+
+const trendPolicies: Record<string, TrendPolicy> = {
+	wipOverview: "snapshot-compare",
+	featuresWorkedOnOverview: "snapshot-compare",
+	totalWorkItemAge: "snapshot-compare",
+	predictabilityScore: "previous-period",
+	predictabilityScoreDetails: "none",
+	totalThroughput: "previous-period",
+	totalArrivals: "previous-period",
+	percentiles: "previous-period",
+	featureSizePercentiles: "previous-period",
+	cycleScatter: "none",
+	throughput: "none",
+	arrivals: "none",
+	wipOverTime: "none",
+	totalWorkItemAgeOverTime: "none",
+	workDistribution: "none",
+	featureSize: "none",
+	aging: "none",
+	blockedOverview: "none",
+	throughputPbc: "none",
+	arrivalsPbc: "none",
+	wipPbc: "none",
+	totalWorkItemAgePbc: "none",
+	cycleTimePbc: "none",
+	featureSizePbc: "none",
+	stacked: "none",
+	estimationVsCycleTime: "none",
 };
 
 const DEFAULT_CATEGORY: CategoryKey = "flow-overview";
@@ -147,4 +166,8 @@ export function getWidgetsForCategory(
 		}
 		return true;
 	});
+}
+
+export function getTrendPolicy(widgetKey: string): TrendPolicy {
+	return trendPolicies[widgetKey] ?? "none";
 }

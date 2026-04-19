@@ -773,7 +773,6 @@ describe("BaseMetricsView component", () => {
 			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
 			expect(screen.getByTestId("wip-overview-count")).toHaveTextContent("2");
 			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
-			expect(screen.getByTestId("started-vs-finished")).toBeInTheDocument();
 			expect(
 				screen.getByTestId("total-work-item-age-widget"),
 			).toBeInTheDocument();
@@ -872,7 +871,7 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
-	it("renders Total Work Item Age widget and chart correctly", async () => {
+	it("renders Total Work Item Age Over Time run chart correctly in wip-aging category", async () => {
 		// totalWorkItemAgeOverTime is in wip-aging category
 		localStorage.setItem(
 			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
@@ -891,18 +890,7 @@ describe("BaseMetricsView component", () => {
 
 		// Wait for components to render
 		await waitFor(() => {
-			// Check Total Work Item Age Widget is rendered (in wip-aging)
-			expect(
-				screen.getByTestId("total-work-item-age-widget"),
-			).toBeInTheDocument();
-			expect(screen.getByTestId("widget-entity-id")).toHaveTextContent(
-				String(mockProject.id),
-			);
-			expect(screen.getByTestId("widget-has-service")).toHaveTextContent(
-				"has-service",
-			);
-
-			// Check Total Work Item Age Run Chart is rendered
+			// Check Total Work Item Age Run Chart is rendered (in wip-aging)
 			expect(
 				screen.getByTestId(
 					"total-work-item-age-run-chart-Features Total Work Item Age Over Time",
@@ -2203,10 +2191,10 @@ describe("BaseMetricsView component", () => {
 
 		it("shows green RAG for cycle time percentiles when actual is below SLE", async () => {
 			// SLE = {85, 14}, percentiles has {85, 12} → (12-14)/14 = -14% → Green
-			// percentiles widget is in cycle-time category
+			// percentiles widget is in flow-overview category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-overview",
 			);
 
 			renderWithRouter(
@@ -2231,10 +2219,10 @@ describe("BaseMetricsView component", () => {
 
 		it("shows red RAG for cycle time percentiles when actual exceeds SLE by >15%", async () => {
 			// SLE = {85, 14}, create percentiles where 85th = 17 → (17-14)/14 = 21% → Red
-			// percentiles widget is in cycle-time category
+			// percentiles widget is in flow-overview category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"cycle-time",
+				"flow-overview",
 			);
 
 			const svc = createMockMetricsService<IWorkItem>();
@@ -2289,75 +2277,12 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it("shows red RAG for started vs finished when no WIP limit is set", async () => {
-			// mockProject.systemWIPLimit = 0 → undefined → Red
-			renderWithRouter(
-				<BaseMetricsView
-					entity={mockProject}
-					metricsService={mockMetricsService}
-					title="Features"
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
-
-			await waitFor(() => {
-				expect(
-					screen.getByTestId("widget-header-startedVsFinished"),
-				).toBeInTheDocument();
-				expect(
-					screen.getByTestId("widget-rag-startedVsFinished"),
-				).toHaveTextContent("red");
-			});
-		});
-
-		it("shows green RAG for started vs finished when values are close and WIP limit set", async () => {
-			const teamWithWip = new Team();
-			teamWithWip.name = "Team With WIP";
-			teamWithWip.id = 99;
-			teamWithWip.systemWIPLimit = 5;
-			teamWithWip.lastUpdated = new Date();
-			teamWithWip.serviceLevelExpectationProbability = 85;
-			teamWithWip.serviceLevelExpectationRange = 14;
-
-			const balancedStarted = new RunChartData(
-				generateWorkItemMapForRunChart([5, 5]),
-				2,
-				10,
-			);
-			const balancedClosed = new RunChartData(
-				generateWorkItemMapForRunChart([5, 5]),
-				2,
-				10,
-			);
-
-			const svc = createMockMetricsService<IWorkItem>();
-			svc.getStartedItems = vi.fn().mockResolvedValue(balancedStarted);
-			svc.getThroughput = vi.fn().mockResolvedValue(balancedClosed);
-
-			renderWithRouter(
-				<BaseMetricsView
-					entity={teamWithWip}
-					metricsService={svc}
-					title="Work Items"
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
-
-			await waitFor(() => {
-				expect(
-					screen.getByTestId("widget-rag-startedVsFinished"),
-				).toHaveTextContent("green");
-			});
-		});
-
 		it("shows red RAG for total work item age when no WIP limit is set", async () => {
 			// mockProject.systemWIPLimit = 0 → undefined → Red
-			// totalWorkItemAge widget is in wip-aging category
+			// totalWorkItemAge widget is in flow-overview category (default)
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"wip-aging",
+				"flow-overview",
 			);
 
 			renderWithRouter(
@@ -2746,6 +2671,12 @@ describe("BaseMetricsView component", () => {
 		});
 		it("shows green RAG for aging chart when SLE and blocked config present and items healthy", async () => {
 			// mockProject has SLE = {85, 14}. inProgressItems have workItemAge = 10, 8 (both below SLE and threshold)
+			// aging widget is in cycle-time category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"cycle-time",
+			);
+
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -2766,6 +2697,12 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("shows red RAG for aging chart when no blocked config", async () => {
+			// aging widget is in cycle-time category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"cycle-time",
+			);
+
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -3157,25 +3094,6 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it("passes viewData to started vs finished widget", async () => {
-			renderWithRouter(
-				<BaseMetricsView
-					entity={mockProject}
-					metricsService={mockMetricsService}
-					title="Features"
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
-
-			// flow-overview default category includes startedVsFinished
-			await waitFor(() => {
-				expect(
-					screen.getByTestId("widget-view-data-startedVsFinished"),
-				).toBeInTheDocument();
-			});
-		});
-
 		it("passes viewData to wip overview widget with in-progress items", async () => {
 			renderWithRouter(
 				<BaseMetricsView
@@ -3249,10 +3167,10 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("passes viewData to work item aging widget", async () => {
-			// aging is in the wip-aging category
+			// aging is in the cycle-time category
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
-				"wip-aging",
+				"cycle-time",
 			);
 
 			renderWithRouter(
