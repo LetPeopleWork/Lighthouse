@@ -465,7 +465,10 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static string DetermineIntCountDirection(int current, int previous)
         {
-            if (previous == 0) return "none";
+            if (previous == 0)
+            {
+                return current == 0 ? "flat" : "up";
+            }
             if (current > previous) return "up";
             if (current < previous) return "down";
             return "flat";
@@ -509,17 +512,16 @@ namespace Lighthouse.Backend.Services.Implementation
             DateTime currentStart, DateTime currentEnd,
             DateTime previousStart, DateTime previousEnd)
         {
-            string direction;
             var currentPct = (int)Math.Round(currentScore * 100);
             var previousPct = (int)Math.Round(previousScore * 100);
-            if (previousPct == 0) direction = "none";
-            else if (Math.Abs(currentPct - previousPct) <= 5) direction = "flat";
+            string direction;
+            if (Math.Abs(currentPct - previousPct) <= 5) direction = "flat";
             else if (currentPct > previousPct) direction = "up";
             else direction = "down";
 
             var currentLabel = $"{currentStart:yyyy-MM-dd} – {currentEnd:yyyy-MM-dd}";
             var previousLabel = $"{previousStart:yyyy-MM-dd} – {previousEnd:yyyy-MM-dd}";
-            var percentageDelta = previousPct == 0 ? null : $"{(currentPct - previousPct):+#;-#;0}pp";
+            var percentageDelta = $"{(currentPct - previousPct):+#;-#;0}pp";
 
             var comparison = new InfoWidgetComparisonDto(
                 direction, "Predictability Score", currentLabel, $"{currentPct}%",

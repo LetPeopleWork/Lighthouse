@@ -46,7 +46,7 @@ describe("ProjectMetricsService", () => {
 		});
 	});
 
-	describe("getStartedItems", () => {
+	describe("getArrivals", () => {
 		it("should call the correct API endpoint and return RunChartData", async () => {
 			const workItems = generateWorkItemMapForRunChart([2, 3, 4]);
 
@@ -60,15 +60,11 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce(mockResponse);
 
 			// Act
-			const result = await service.getStartedItems(
-				projectId,
-				startDate,
-				endDate,
-			);
+			const result = await service.getArrivals(projectId, startDate, endDate);
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/portfolios/${projectId}/metrics/started?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/arrivals?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
 			expect(result.workItemsPerUnitOfTime).toEqual(workItems);

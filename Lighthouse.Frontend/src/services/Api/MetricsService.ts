@@ -29,12 +29,6 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 	): Promise<RunChartData>;
 
-	getStartedItems(
-		id: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<RunChartData>;
-
 	getWorkInProgressOverTime(
 		id: number,
 		startDate: Date,
@@ -199,25 +193,6 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RunChartData>(
 				`/${this.api}/${id}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}`,
-			);
-
-			return new RunChartData(
-				response.data.workItemsPerUnitOfTime,
-				response.data.history,
-				response.data.total,
-				response.data.blackoutDayIndices,
-			);
-		});
-	}
-
-	async getStartedItems(
-		id: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<RunChartData> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<RunChartData>(
-				`/${this.api}/${id}/metrics/started?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return new RunChartData(

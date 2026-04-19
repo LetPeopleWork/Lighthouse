@@ -4,9 +4,10 @@ import type { IFeatureSizePercentilesInfo } from "../../../models/Metrics/InfoWi
 import FeatureSizePercentilesWidget from "./FeatureSizePercentilesWidget";
 
 vi.mock("../../../services/TerminologyContext", () => ({
-    useTerminology: () => ({
-        getTerm: (key: string) => key === "WORK_ITEM" ? "work item" : "work items",
-    }),
+	useTerminology: () => ({
+		getTerm: (key: string) =>
+			key === "WORK_ITEM" ? "work item" : "work items",
+	}),
 }));
 
 describe("FeatureSizePercentilesWidget", () => {

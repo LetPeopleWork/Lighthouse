@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Team testTeam;
         private TeamMetricsService subject;
         private List<WorkItem> workItems;
+        private List<Feature> features;
 
         private static readonly DateTime Day1 = new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime Day5 = new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc);
@@ -59,10 +60,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 blackoutPeriodRepositoryMock.Object);
 
             workItems = new List<WorkItem>();
+            features = new List<Feature>();
             workItemRepositoryMock
                 .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> pred) =>
                     workItems.Where(pred.Compile()).AsQueryable());
+            featureRepositoryMock
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> pred) =>
+                    features.FirstOrDefault(pred));
         }
 
         [TearDown]
@@ -245,14 +251,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetThroughputInfoForTeam_NoPreviousPeriodData_ReturnsNone()
+        public void GetThroughputInfoForTeam_NoPreviousPeriodData_ReturnsUp()
         {
             // Current period has data, previous has none
             AddDoneItem(closedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
-            Assert.That(result.Comparison.Direction, Is.EqualTo("none"));
+            Assert.That(result.Comparison.Direction, Is.EqualTo("up"));
         }
 
         [Test]
@@ -305,13 +311,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetArrivalsInfoForTeam_NoPreviousPeriodData_ReturnsNone()
+        public void GetArrivalsInfoForTeam_NoPreviousPeriodData_ReturnsUp()
         {
             AddDoingItem(startedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetArrivalsInfoForTeam(testTeam, Day5, Day14);
 
-            Assert.That(result.Comparison.Direction, Is.EqualTo("none"));
+            Assert.That(result.Comparison.Direction, Is.EqualTo("up"));
+        }
+
+        [Test]
+        public void GetWipOverviewInfoForTeam_NoPreviousSnapshot_ReturnsUp()
+        {
+            AddDoingItem(startedDate: Day10);
+
+            var result = subject.GetWipOverviewInfoForTeam(testTeam, Day5, Day14);
+
+            Assert.That(result.Comparison.Direction, Is.EqualTo("up"));
+        }
+
+        [Test]
+        public void GetFeaturesWorkedOnInfoForTeam_NoPreviousSnapshot_ReturnsUp()
+        {
+            AddFeature("FEATURE-1");
+            AddDoingItem(startedDate: Day10, parentReferenceId: "FEATURE-1");
+
+            var result = subject.GetFeaturesWorkedOnInfoForTeam(testTeam, Day5, Day14);
+
+            Assert.That(result.Comparison.Direction, Is.EqualTo("up"));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAgeInfoForTeam_NoPreviousSnapshot_ReturnsUp()
+        {
+            AddDoingItem(startedDate: Day10);
+
+            var result = subject.GetTotalWorkItemAgeInfoForTeam(testTeam, Day5, Day14);
+
+            Assert.That(result.Comparison.Direction, Is.EqualTo("up"));
         }
 
         [Test]
@@ -329,7 +366,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // ── helpers ──────────────────────────────────────────────────────────
 
-        private void AddDoingItem(DateTime? startedDate = null)
+        private void AddDoingItem(DateTime? startedDate = null, string? parentReferenceId = null)
         {
             var item = new WorkItem
             {
@@ -337,6 +374,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 TeamId = testTeam.Id,
                 StartedDate = startedDate ?? Day1,
+                ParentReferenceId = parentReferenceId,
             };
             workItems.Add(item);
         }
@@ -352,6 +390,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = closedDate ?? DateTime.UtcNow,
             };
             workItems.Add(item);
+        }
+
+        private void AddFeature(string referenceId)
+        {
+            features.Add(new Feature
+            {
+                Id = features.Count + 1,
+                ReferenceId = referenceId,
+                Name = referenceId,
+                StateCategory = StateCategories.Doing,
+                Type = string.Empty,
+                State = string.Empty,
+                Url = string.Empty,
+                Order = string.Empty,
+            });
         }
     }
 }

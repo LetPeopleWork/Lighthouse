@@ -38,7 +38,6 @@ export interface MetricsData<T> {
 	percentileValues: IPercentileValue[];
 	sizePercentileValues: IPercentileValue[];
 	allFeaturesForSizeChart: IFeature[];
-	startedItems: RunChartData | null;
 	predictabilityData: IForecastPredictabilityScore | null;
 	throughputPbcData: ProcessBehaviourChartData | null;
 	wipPbcData: ProcessBehaviourChartData | null;
@@ -110,7 +109,6 @@ export function useMetricsData<
 	const [allFeaturesForSizeChart, setAllFeaturesForSizeChart] = useState<
 		IFeature[]
 	>([]);
-	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 	const [predictabilityData, setPredictabilityData] =
 		useState<IForecastPredictabilityScore | null>(null);
 	const [throughputPbcData, setThroughputPbcData] =
@@ -184,15 +182,6 @@ export function useMetricsData<
 			.then(setThroughputData)
 			.catch((error) => console.error("Error getting throughput:", error));
 	}, [entity, metricsService, startDate, endDate]);
-
-	useEffect(() => {
-		metricsService
-			.getStartedItems(entity.id, startDate, endDate)
-			.then(setStartedItems)
-			.catch((error) =>
-				console.error(`Error getting started ${workItemsTerm}:`, error),
-			);
-	}, [entity, metricsService, startDate, endDate, workItemsTerm]);
 
 	useEffect(() => {
 		const fetch = async () => {
@@ -393,7 +382,6 @@ export function useMetricsData<
 		percentileValues,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
-		startedItems,
 		predictabilityData,
 		throughputPbcData,
 		wipPbcData,

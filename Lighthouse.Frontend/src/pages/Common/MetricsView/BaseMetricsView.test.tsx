@@ -393,12 +393,14 @@ vi.mock("./WidgetShell", () => ({
 		header,
 		info,
 		viewData,
+		trend,
 	}: {
 		widgetKey: string;
 		children: ReactNode;
 		header?: { ragStatus: string; tipText: string };
 		info?: { description: string; learnMoreUrl: string };
 		viewData?: { title: string; items: unknown[] };
+		trend?: { direction: string; metricLabel: string };
 	}) => (
 		<div data-testid={`widget-shell-${widgetKey}`}>
 			{header && (
@@ -407,6 +409,16 @@ vi.mock("./WidgetShell", () => ({
 						{header.ragStatus}
 					</span>
 					<span data-testid={`widget-tip-${widgetKey}`}>{header.tipText}</span>
+				</div>
+			)}
+			{trend && trend.direction !== "none" && (
+				<div data-testid={`widget-trend-${widgetKey}`}>
+					<span data-testid={`widget-trend-direction-${widgetKey}`}>
+						{trend.direction}
+					</span>
+					<span data-testid={`widget-trend-label-${widgetKey}`}>
+						{trend.metricLabel}
+					</span>
 				</div>
 			)}
 			{info && (
@@ -553,7 +565,7 @@ describe("BaseMetricsView component", () => {
 	>() {
 		return {
 			getThroughput: vi.fn().mockResolvedValue(mockItemsCompletedData),
-			getStartedItems: vi.fn().mockResolvedValue(mockStartedItemsData),
+			getArrivals: vi.fn().mockResolvedValue(mockStartedItemsData),
 			getWorkInProgressOverTime: vi
 				.fn()
 				.mockResolvedValue(mockItemsInProgressData),
@@ -601,7 +613,6 @@ describe("BaseMetricsView component", () => {
 			getTotalWorkItemAgePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getCycleTimePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getFeatureSizePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
-			getArrivals: vi.fn().mockResolvedValue(mockStartedItemsData),
 			getArrivalsPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getThroughputInfo: vi.fn().mockResolvedValue({
 				total: 0,
@@ -770,11 +781,6 @@ describe("BaseMetricsView component", () => {
 			expect(
 				projectMetricsService.getCycleTimePercentiles,
 			).toHaveBeenCalledWith(
-				mockProject.id,
-				expect.any(Date),
-				expect.any(Date),
-			);
-			expect(projectMetricsService.getStartedItems).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
@@ -971,7 +977,7 @@ describe("BaseMetricsView component", () => {
 			expect(mockMetricsService.getCycleTimePercentiles).toHaveBeenCalledTimes(
 				1,
 			);
-			expect(mockMetricsService.getStartedItems).toHaveBeenCalledTimes(1);
+			expect(mockMetricsService.getArrivals).toHaveBeenCalledTimes(1);
 			expect(
 				mockMetricsService.getMultiItemForecastPredictabilityScore,
 			).toHaveBeenCalledTimes(1);
@@ -1013,7 +1019,7 @@ describe("BaseMetricsView component", () => {
 			expect(mockMetricsService.getCycleTimePercentiles).toHaveBeenCalledTimes(
 				1,
 			);
-			expect(mockMetricsService.getStartedItems).toHaveBeenCalledTimes(1);
+			expect(mockMetricsService.getArrivals).toHaveBeenCalledTimes(1);
 			expect(
 				mockMetricsService.getMultiItemForecastPredictabilityScore,
 			).toHaveBeenCalledTimes(1);
@@ -1089,7 +1095,6 @@ describe("BaseMetricsView component", () => {
 	it("handles API errors gracefully", async () => {
 		const errorMetricsService: IMetricsService<IWorkItem> = {
 			getThroughput: vi.fn().mockRejectedValue(new Error("API error")),
-			getStartedItems: vi.fn().mockRejectedValue(new Error("API error")),
 			getWorkInProgressOverTime: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
@@ -1151,7 +1156,7 @@ describe("BaseMetricsView component", () => {
 				expect.any(Error),
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				"Error getting started Work Items:",
+				"Error fetching arrivals data:",
 				expect.any(Error),
 			);
 		});
@@ -1200,6 +1205,171 @@ describe("BaseMetricsView component", () => {
 			);
 			expect(screen.getByTestId("features-worked-on-wip")).toHaveTextContent(
 				"3",
+			);
+		});
+	});
+
+	it("renders flow overview trend chrome for team overview widgets", async () => {
+		const team = new Team();
+		team.name = "Trend Team";
+		team.id = 99;
+		team.featureWip = 3;
+		team.systemWIPLimit = 6;
+		team.lastUpdated = new Date();
+		team.serviceLevelExpectationProbability = 80;
+		team.serviceLevelExpectationRange = 10;
+
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue(mockInProgressItems),
+			getWipOverviewInfo: vi.fn().mockResolvedValue({
+				count: 2,
+				comparison: { direction: "up", metricLabel: "WIP" },
+			}),
+			getFeaturesWorkedOnInfo: vi.fn().mockResolvedValue({
+				count: 2,
+				comparison: {
+					direction: "flat",
+					metricLabel: "Features Being Worked On",
+				},
+			}),
+			getTotalWorkItemAgeInfo: vi.fn().mockResolvedValue({
+				totalAge: 18,
+				comparison: {
+					direction: "down",
+					metricLabel: "Total Work Item Age",
+				},
+			}),
+			getPredictabilityScoreInfo: vi.fn().mockResolvedValue({
+				score: 0.53,
+				comparison: {
+					direction: "up",
+					metricLabel: "Predictability Score",
+				},
+			}),
+			getThroughputInfo: vi.fn().mockResolvedValue({
+				total: 8,
+				dailyAverage: 0.8,
+				comparison: { direction: "up", metricLabel: "Total Throughput" },
+			}),
+			getArrivalsInfo: vi.fn().mockResolvedValue({
+				total: 10,
+				dailyAverage: 1,
+				comparison: { direction: "down", metricLabel: "Total Arrivals" },
+			}),
+		};
+
+		localStorage.setItem(
+			`lighthouse:metrics:team:${team.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={team}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				featuresInProgress={mockInProgressItems}
+				featureWip={3}
+				hasBlockedConfig={true}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-trend-direction-wipOverview"),
+			).toHaveTextContent("up");
+			expect(
+				screen.getByTestId("widget-trend-direction-featuresWorkedOnOverview"),
+			).toHaveTextContent("flat");
+			expect(
+				screen.getByTestId("widget-trend-direction-totalWorkItemAge"),
+			).toHaveTextContent("down");
+			expect(
+				screen.getByTestId("widget-trend-direction-predictabilityScore"),
+			).toHaveTextContent("up");
+			expect(
+				screen.getByTestId("widget-trend-direction-totalThroughput"),
+			).toHaveTextContent("up");
+			expect(
+				screen.getByTestId("widget-trend-direction-totalArrivals"),
+			).toHaveTextContent("down");
+		});
+	});
+
+	it("renders predictability score trend for portfolio flow overview", async () => {
+		const project = new Portfolio();
+		project.name = "Trend Project";
+		project.id = 100;
+		project.lastUpdated = new Date();
+		project.systemWIPLimit = 6;
+		project.serviceLevelExpectationProbability = 85;
+		project.serviceLevelExpectationRange = 14;
+
+		const projectMetricsService = {
+			...createMockMetricsService<IFeature>(),
+			getPredictabilityScoreInfo: vi.fn().mockResolvedValue({
+				score: 0.53,
+				comparison: {
+					direction: "up",
+					metricLabel: "Predictability Score",
+				},
+			}),
+		};
+
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${project.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={project}
+				metricsService={projectMetricsService}
+				title="Features"
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-trend-direction-predictabilityScore"),
+			).toHaveTextContent("up");
+		});
+	});
+
+	it("renders overview rag chips for total throughput and arrivals", async () => {
+		const team = new Team();
+		team.name = "Rag Team";
+		team.id = 101;
+		team.featureWip = 3;
+		team.systemWIPLimit = 6;
+		team.lastUpdated = new Date();
+		team.serviceLevelExpectationProbability = 80;
+		team.serviceLevelExpectationRange = 10;
+
+		localStorage.setItem(
+			`lighthouse:metrics:team:${team.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={team}
+				metricsService={createMockMetricsService<IWorkItem>()}
+				title="Work Items"
+				hasBlockedConfig={true}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-rag-totalThroughput"),
+			).toHaveTextContent("red");
+			expect(screen.getByTestId("widget-rag-totalArrivals")).toHaveTextContent(
+				"red",
 			);
 		});
 	});
@@ -1505,7 +1675,6 @@ describe("BaseMetricsView component", () => {
 			// This test verifies that the existing error handling test includes predictability data
 			const errorMetricsService: IMetricsService<IWorkItem> = {
 				getThroughput: vi.fn().mockRejectedValue(new Error("API error")),
-				getStartedItems: vi.fn().mockRejectedValue(new Error("API error")),
 				getWorkInProgressOverTime: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),

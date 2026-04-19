@@ -55,6 +55,7 @@ import {
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
+	computeStartedVsClosedRag,
 	computeThroughputRag,
 	computeTotalWorkItemAgeOverTimeRag,
 	computeTotalWorkItemAgeRag,
@@ -307,6 +308,12 @@ function buildWidgetFooters(
 		featureSizePbc: inputs.featureSizePbcData
 			? computePbcRag(inputs.featureSizePbcData)
 			: undefined,
+		totalThroughput: computeStartedVsClosedRag(
+			inputs.startedTotal,
+			inputs.closedTotal,
+			inputs.systemWipLimit,
+			inputs.terms,
+		),
 		arrivals: computeArrivalsRunChartRag(
 			inputs.arrivalsValues,
 			inputs.arrivalsBlackoutDayIndices,
@@ -315,9 +322,21 @@ function buildWidgetFooters(
 			inputs.systemWipLimit,
 			inputs.terms,
 		),
+		totalArrivals: computeStartedVsClosedRag(
+			inputs.startedTotal,
+			inputs.closedTotal,
+			inputs.systemWipLimit,
+			inputs.terms,
+		),
 		arrivalsPbc: inputs.arrivalsPbcData
 			? computePbcRag(inputs.arrivalsPbcData)
 			: undefined,
+		featureSizePercentiles: computeFeatureSizeRag(
+			inputs.featureSizeTarget,
+			inputs.sizePercentileValues,
+			inputs.featureSizes,
+			inputs.terms,
+		),
 	};
 }
 
@@ -327,7 +346,6 @@ type ViewDataInputs = {
 	readonly blockedItems: IWorkItem[];
 	readonly featuresInProgress: IWorkItem[] | undefined;
 	readonly cycleTimeData: IWorkItem[];
-	readonly startedItems: RunChartData | null;
 	readonly throughputData: RunChartData | null;
 	readonly wipOverTimeData: RunChartData | null;
 	readonly allFeaturesForSizeChart: IFeature[];
@@ -375,9 +393,9 @@ function buildViewData(
 
 	const startedVsFinishedItems = (() => {
 		const items: IWorkItem[] = [];
-		if (inputs.startedItems) {
+		if (inputs.arrivalsData) {
 			const startedWorkItems = extractWorkItems(
-				inputs.startedItems.workItemsPerUnitOfTime,
+				inputs.arrivalsData.workItemsPerUnitOfTime,
 			);
 			const notClosedStartedItems = startedWorkItems.filter(
 				(item) => item.closedDate === null,
@@ -549,7 +567,6 @@ function buildWidgetNodes(ctx: {
 	percentileValues: IPercentileValue[];
 	serviceLevelExpectation: IPercentileValue | null;
 	cycleTimeData: IWorkItem[];
-	startedItems: RunChartData | null;
 	throughputData: RunChartData | null;
 	wipOverTimeData: RunChartData | null;
 	allFeaturesForSizeChart: IFeature[];
@@ -668,7 +685,7 @@ function buildWidgetNodes(ctx: {
 			/>
 		) : null,
 		stacked:
-			ctx.throughputData && ctx.startedItems ? (
+			ctx.throughputData && ctx.arrivalsData ? (
 				<StackedAreaChart
 					title="Simplified Cumulative Flow Diagram"
 					startDate={ctx.startDate}
@@ -676,7 +693,7 @@ function buildWidgetNodes(ctx: {
 						{
 							index: 1,
 							title: "Doing",
-							area: ctx.startedItems,
+							area: ctx.arrivalsData,
 							color: appColors.primary.light,
 							startOffset: ctx.wipOverTimeData?.getValueOnDay(0) ?? 0,
 						},
@@ -828,7 +845,6 @@ export const BaseMetricsView = <
 		percentileValues,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
-		startedItems,
 		predictabilityData,
 		throughputPbcData,
 		wipPbcData,
@@ -917,7 +933,6 @@ export const BaseMetricsView = <
 		percentileValues,
 		serviceLevelExpectation,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
-		startedItems,
 		throughputData,
 		wipOverTimeData,
 		allFeaturesForSizeChart,
@@ -957,7 +972,7 @@ export const BaseMetricsView = <
 		predictabilityScore: predictabilityData?.predictabilityScore ?? null,
 		sle: serviceLevelExpectation,
 		percentileValues,
-		startedTotal: startedItems?.total ?? 0,
+		startedTotal: arrivalsData?.total ?? 0,
 		closedTotal: throughputData?.total ?? 0,
 		totalWorkItemAge,
 		currentWip: inProgressItems.length,
@@ -1035,7 +1050,6 @@ export const BaseMetricsView = <
 		blockedItems,
 		featuresInProgress,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
-		startedItems,
 		throughputData,
 		wipOverTimeData,
 		allFeaturesForSizeChart,

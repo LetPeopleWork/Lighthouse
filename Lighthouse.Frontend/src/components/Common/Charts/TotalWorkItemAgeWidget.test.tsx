@@ -26,7 +26,6 @@ describe("TotalWorkItemAgeWidget", () => {
 			return Promise.resolve(totalAge);
 		}),
 		getThroughput: vi.fn(),
-		getStartedItems: vi.fn(),
 		getWorkInProgressOverTime: vi.fn(),
 		getInProgressItems: vi.fn(),
 		getCycleTimeData: vi.fn(),

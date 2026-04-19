@@ -139,7 +139,6 @@ export const createMockFeatureService = (): IFeatureService => {
 export const createMockTeamMetricsService = (): ITeamMetricsService => {
 	return {
 		getThroughput: vi.fn(),
-		getStartedItems: vi.fn(),
 		getWorkInProgressOverTime: vi.fn(),
 		getFeaturesInProgress: vi.fn(),
 		getInProgressItems: vi.fn(),
@@ -168,7 +167,6 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 export const createMockProjectMetricsService = (): IProjectMetricsService => {
 	return {
 		getThroughput: vi.fn().mockResolvedValue({ data: [], total: 0 }),
-		getStartedItems: vi.fn().mockResolvedValue({ data: [], total: 0 }),
 		getWorkInProgressOverTime: vi
 			.fn()
 			.mockResolvedValue({ data: [], total: 0 }),

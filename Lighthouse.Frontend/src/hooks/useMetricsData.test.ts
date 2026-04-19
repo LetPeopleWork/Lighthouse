@@ -43,7 +43,6 @@ vi.mock("../services/TerminologyContext", () => ({
 function createMockTeamMetricsService(): ITeamMetricsService {
 	return {
 		getThroughput: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
-		getStartedItems: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
 		getWorkInProgressOverTime: vi
 			.fn()
 			.mockResolvedValue(new RunChartData({}, 30, 0)),
@@ -177,7 +176,7 @@ describe("useMetricsData", () => {
 				);
 			});
 
-			expect(service.getStartedItems).toHaveBeenCalledWith(
+			expect(service.getArrivals).toHaveBeenCalledWith(
 				entity.id,
 				startDate,
 				endDate,

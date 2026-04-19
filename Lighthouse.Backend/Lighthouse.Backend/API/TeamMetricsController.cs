@@ -42,22 +42,6 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        [HttpGet("started")]
-        public ActionResult<RunChartData> GetStartedItems(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
-        {
-            if (startDate.Date > endDate.Date)
-            {
-                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
-            }
-
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-            {
-                var data = teamMetricsService.GetStartedItemsForTeam(team, startDate, endDate);
-                data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
-            });
-        }
-
         [HttpGet("arrivals")]
         public ActionResult<RunChartData> GetArrivals(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

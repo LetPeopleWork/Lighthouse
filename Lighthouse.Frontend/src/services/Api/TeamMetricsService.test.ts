@@ -48,31 +48,27 @@ describe("TeamMetricsService", () => {
 		);
 	});
 
-	it("should get started items for a team", async () => {
+	it("should get arrivals for a team", async () => {
 		const workItems = generateWorkItemMapForRunChart([3, 4, 5, 6, 7]);
 
-		const mockStartedData = {
+		const mockArrivalsData = {
 			workItemsPerUnitOfTime: workItems,
 			history: 5,
 			total: 25,
 		};
 
-		mockedAxios.get.mockResolvedValueOnce({ data: mockStartedData });
+		mockedAxios.get.mockResolvedValueOnce({ data: mockArrivalsData });
 
 		const startDate = new Date("2023-01-01");
 		const endDate = new Date("2023-01-31");
-		const result = await teamMetricsService.getStartedItems(
-			1,
-			startDate,
-			endDate,
-		);
+		const result = await teamMetricsService.getArrivals(1, startDate, endDate);
 
 		expect(result).toBeInstanceOf(RunChartData);
 		expect(result.workItemsPerUnitOfTime).toEqual(workItems);
 		expect(result.history).toBe(5);
 		expect(result.total).toBe(25);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/teams/1/metrics/started?startDate=2023-01-01&endDate=2023-01-31",
+			"/teams/1/metrics/arrivals?startDate=2023-01-01&endDate=2023-01-31",
 		);
 	});
 

@@ -116,61 +116,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetStartedItems_TeamIdDoesNotExist_ReturnsNotFound()
-        {
-            var subject = CreateSubject();
-
-            var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
-
-                var notFoundResult = response.Result as NotFoundResult;
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            }
-        }
-
-        [Test]
-        public void GetStartedItems_StartDateAfterEndDate_ReturnsBadRequest()
-        {
-            var subject = CreateSubject();
-
-            var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now.AddDays(-1));
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
-
-                var badRequestResult = response.Result as BadRequestObjectResult;
-                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            }
-        }
-
-        [Test]
-        public void GetStartedItems_TeamExists_GetsStartedItemsFromTeamMetricsService()
-        {
-            var team = new Team { Id = 1 };
-            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
-
-            var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
-            teamMetricsServiceMock.Setup(service => service.GetStartedItemsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
-
-            var subject = CreateSubject();
-
-            var response = subject.GetStartedItems(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-
-                var result = response.Result as OkObjectResult;
-                Assert.That(result.StatusCode, Is.EqualTo(200));
-                Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
-            }
-        }
-
-        [Test]
         public void GetArrivals_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
