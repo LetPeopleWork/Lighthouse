@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private static readonly DateTime Day5 = new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime Day10 = new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime Day14 = new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc);
-        private static readonly DateTime Day15 = new DateTime(2026, 4, 15, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime Day19 = new DateTime(2026, 4, 19, 0, 0, 0, DateTimeKind.Utc);
 
         [SetUp]
@@ -89,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetWipSnapshotForTeam_ItemClosedBeforeEndDate_NotReturned()
         {
             // Started Apr 1, closed Apr 14 → NOT in progress on Apr 19
-            var item = AddDoneItem(startedDate: Day1, closedDate: Day14);
+            AddDoneItem(startedDate: Day1, closedDate: Day14);
 
             var result = subject.GetWipSnapshotForTeam(testTeam, Day19);
 
@@ -100,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetWipSnapshotForTeam_ItemClosedOnEndDate_NotReturned()
         {
             // WasItemProgressOnDay: closedDate must be AFTER the day → closed on endDate means NOT included
-            var item = AddDoneItem(startedDate: Day1, closedDate: Day19);
+            AddDoneItem(startedDate: Day1, closedDate: Day19);
 
             var result = subject.GetWipSnapshotForTeam(testTeam, Day19);
 
@@ -111,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetWipSnapshotForTeam_ItemNotYetStartedOnEndDate_NotReturned()
         {
             // Started Apr 19, closed later → was NOT started on Apr 5
-            var item = AddDoneItem(startedDate: Day19, closedDate: Day19);
+            AddDoneItem(startedDate: Day19, closedDate: Day19);
 
             var result = subject.GetWipSnapshotForTeam(testTeam, Day5);
 
@@ -166,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetTotalWorkItemAge(testTeam, Day19);
 
-            Assert.That(result, Is.EqualTo(0));
+            Assert.That(result, Is.Zero);
         }
 
         [Test]
@@ -187,7 +186,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var result = subject.GetTotalWorkItemAge(testTeam, Day19);
 
-            Assert.That(result, Is.EqualTo(0));
+            Assert.That(result, Is.Zero);
         }
 
         // ── GetThroughputInfoForTeam ──────────────────────────────────────────
@@ -197,12 +196,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Current period: Apr 5-14 (10 days) → 4 items closed
             // Previous period: Mar 26-Apr 4 (10 days) → 2 items closed
-            AddDoneItem(closedDate: new DateTime(2026, 4, 5));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 8));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 10));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 14));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 28));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 2));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 8, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 28, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 2, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
@@ -218,11 +217,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Current period: Apr 5-14 → 1 item
             // Previous period: Mar 26-Apr 4 → 4 items
-            AddDoneItem(closedDate: new DateTime(2026, 4, 10));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 26));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 28));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 1));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 4));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 26, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 28, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 4, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
@@ -233,12 +232,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetThroughputInfoForTeam_CurrentEqualsAtDisplayPrecision_ReturnsFlat()
         {
             // Both periods: 3 items → totals equal → flat
-            AddDoneItem(closedDate: new DateTime(2026, 4, 5));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 8));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 14));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 26));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 30));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 4));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 8, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 26, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 30, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 4, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
@@ -249,7 +248,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetThroughputInfoForTeam_NoPreviousPeriodData_ReturnsNone()
         {
             // Current period has data, previous has none
-            AddDoneItem(closedDate: new DateTime(2026, 4, 10));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
@@ -260,11 +259,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetThroughputInfoForTeam_IncludesDailyAverage()
         {
             // 4 items in 10 days → 0.4/day
-            AddDoneItem(closedDate: new DateTime(2026, 4, 5));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 8));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 10));
-            AddDoneItem(closedDate: new DateTime(2026, 4, 14));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 28)); // previous period
+            AddDoneItem(closedDate: new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 8, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 28, 0, 0, 0, DateTimeKind.Utc)); // previous period
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
@@ -274,8 +273,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetThroughputInfoForTeam_IncludesDateRangeLabels()
         {
-            AddDoneItem(closedDate: new DateTime(2026, 4, 10));
-            AddDoneItem(closedDate: new DateTime(2026, 3, 28));
+            AddDoneItem(closedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
+            AddDoneItem(closedDate: new DateTime(2026, 3, 28, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetThroughputInfoForTeam(testTeam, Day5, Day14);
 
@@ -295,10 +294,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Current period: Apr 5-14 → 3 arrivals
             // Previous period: Mar 26-Apr 4 → 1 arrival
-            AddStartedItem(startedDate: new DateTime(2026, 4, 5));
-            AddStartedItem(startedDate: new DateTime(2026, 4, 9));
-            AddStartedItem(startedDate: new DateTime(2026, 4, 12));
-            AddStartedItem(startedDate: new DateTime(2026, 3, 30));
+            AddDoingItem(startedDate: new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc));
+            AddDoingItem(startedDate: new DateTime(2026, 4, 9, 0, 0, 0, DateTimeKind.Utc));
+            AddDoingItem(startedDate: new DateTime(2026, 4, 12, 0, 0, 0, DateTimeKind.Utc));
+            AddDoingItem(startedDate: new DateTime(2026, 3, 30, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetArrivalsInfoForTeam(testTeam, Day5, Day14);
 
@@ -308,7 +307,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetArrivalsInfoForTeam_NoPreviousPeriodData_ReturnsNone()
         {
-            AddStartedItem(startedDate: new DateTime(2026, 4, 10));
+            AddDoingItem(startedDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
             var result = subject.GetArrivalsInfoForTeam(testTeam, Day5, Day14);
 
@@ -319,9 +318,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetArrivalsInfoForTeam_IncludesDailyAverage()
         {
             // 2 arrivals in 10 days → 0.2/day
-            AddStartedItem(startedDate: new DateTime(2026, 4, 5));
-            AddStartedItem(startedDate: new DateTime(2026, 4, 14));
-            AddStartedItem(startedDate: new DateTime(2026, 3, 28)); // previous period
+            AddDoingItem(startedDate: new DateTime(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc));
+            AddDoingItem(startedDate: new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc));
+            AddDoingItem(startedDate: new DateTime(2026, 3, 28, 0, 0, 0, DateTimeKind.Utc)); // previous period
 
             var result = subject.GetArrivalsInfoForTeam(testTeam, Day5, Day14);
 
@@ -330,7 +329,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // ── helpers ──────────────────────────────────────────────────────────
 
-        private WorkItem AddDoingItem(DateTime? startedDate = null)
+        private void AddDoingItem(DateTime? startedDate = null)
         {
             var item = new WorkItem
             {
@@ -340,10 +339,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StartedDate = startedDate ?? Day1,
             };
             workItems.Add(item);
-            return item;
         }
 
-        private WorkItem AddDoneItem(DateTime? startedDate = null, DateTime? closedDate = null)
+        private void AddDoneItem(DateTime? startedDate = null, DateTime? closedDate = null)
         {
             var item = new WorkItem
             {
@@ -354,20 +352,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = closedDate ?? DateTime.UtcNow,
             };
             workItems.Add(item);
-            return item;
-        }
-
-        private WorkItem AddStartedItem(DateTime? startedDate = null)
-        {
-            var item = new WorkItem
-            {
-                Id = workItems.Count + 1,
-                StateCategory = StateCategories.Doing,
-                TeamId = testTeam.Id,
-                StartedDate = startedDate ?? Day1,
-            };
-            workItems.Add(item);
-            return item;
         }
     }
 }

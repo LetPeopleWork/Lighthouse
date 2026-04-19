@@ -55,10 +55,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 "2026-03-22 – 2026-04-04", "6 / 10 / 18",
                 null, detailRows);
 
-            Assert.That(subject.DetailRows, Has.Length.EqualTo(3));
-            Assert.That(subject.DetailRows![0].Label, Is.EqualTo("50th percentile"));
-            Assert.That(subject.DetailRows![1].CurrentValue, Is.EqualTo("8 days"));
-            Assert.That(subject.DetailRows![2].PreviousValue, Is.EqualTo("18 days"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.DetailRows, Has.Length.EqualTo(3));
+                Assert.That(subject.DetailRows![0].Label, Is.EqualTo("50th percentile"));
+                Assert.That(subject.DetailRows![1].CurrentValue, Is.EqualTo("8 days"));
+                Assert.That(subject.DetailRows![2].PreviousValue, Is.EqualTo("18 days"));
+            }
         }
     }
 
