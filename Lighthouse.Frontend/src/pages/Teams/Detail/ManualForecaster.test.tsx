@@ -280,11 +280,26 @@ describe("ManualForecaster component", () => {
 			expect(itemsTextField).toHaveValue(10);
 		});
 
+		it("should render empty remaining-items input when value is null", () => {
+			render(<ManualForecaster {...defaultProps} remainingItems={null} />);
+			const itemsTextField = screen.getByLabelText(
+				"Number of Work Items",
+			) as HTMLInputElement;
+			expect(itemsTextField.value).toBe("");
+		});
+
 		it("should call onRemainingItemsChange when items input changes", () => {
 			render(<ManualForecaster {...defaultProps} />);
 			const itemsTextField = screen.getByLabelText("Number of Work Items");
 			fireEvent.change(itemsTextField, { target: { value: "15" } });
 			expect(mockOnRemainingItemsChange).toHaveBeenCalledWith(15);
+		});
+
+		it("should call onRemainingItemsChange with null when items input is cleared", () => {
+			render(<ManualForecaster {...defaultProps} />);
+			const itemsTextField = screen.getByLabelText("Number of Work Items");
+			fireEvent.change(itemsTextField, { target: { value: "" } });
+			expect(mockOnRemainingItemsChange).toHaveBeenCalledWith(null);
 		});
 	});
 
@@ -296,17 +311,17 @@ describe("ManualForecaster component", () => {
 			).toBeInTheDocument();
 		});
 
-		it("should not display clear button for remaining items when value is 0", () => {
-			render(<ManualForecaster {...defaultProps} remainingItems={0} />);
+		it("should not display clear button for remaining items when value is null", () => {
+			render(<ManualForecaster {...defaultProps} remainingItems={null} />);
 			expect(
 				screen.queryByLabelText("Clear remaining items"),
 			).not.toBeInTheDocument();
 		});
 
-		it("should call onRemainingItemsChange with 0 when clear button clicked", () => {
+		it("should call onRemainingItemsChange with null when clear button clicked", () => {
 			render(<ManualForecaster {...defaultProps} remainingItems={10} />);
 			fireEvent.click(screen.getByLabelText("Clear remaining items"));
-			expect(mockOnRemainingItemsChange).toHaveBeenCalledWith(0);
+			expect(mockOnRemainingItemsChange).toHaveBeenCalledWith(null);
 		});
 
 		it("should display clear button for date picker when date is set", () => {

@@ -78,11 +78,11 @@ vi.mock("./ManualForecaster", () => ({
 		onModeChange,
 		onFeatureSelectionChange,
 	}: {
-		remainingItems: number;
+		remainingItems: number | null;
 		targetDate: unknown;
 		forecastInputCandidates: IForecastInputCandidates | null;
 		manualForecastResult: unknown;
-		onRemainingItemsChange: (value: number) => void;
+		onRemainingItemsChange: (value: number | null) => void;
 		onTargetDateChange: (date: unknown) => void;
 		mode: string;
 		selectedFeatures: IFeatureCandidate[];
@@ -90,7 +90,9 @@ vi.mock("./ManualForecaster", () => ({
 		onFeatureSelectionChange: (features: IFeatureCandidate[]) => void;
 	}) => (
 		<div data-testid="manual-forecaster">
-			<span data-testid="remaining-items-value">{remainingItems}</span>
+			<span data-testid="remaining-items-value">
+				{remainingItems ?? "null"}
+			</span>
 			<span data-testid="target-date-value">
 				{targetDate ? "has-date" : "null"}
 			</span>
@@ -114,6 +116,13 @@ vi.mock("./ManualForecaster", () => ({
 				onClick={() => onRemainingItemsChange(0)}
 			>
 				Set Zero Remaining
+			</button>
+			<button
+				type="button"
+				data-testid="simulate-null-remaining"
+				onClick={() => onRemainingItemsChange(null)}
+			>
+				Clear Remaining Items
 			</button>
 			<button
 				type="button"
@@ -329,13 +338,13 @@ describe("TeamForecastView component", () => {
 	});
 
 	describe("ManualForecaster auto-run behavior", () => {
-		it("should initialize with remainingItems=10 and targetDate=null", async () => {
+		it("should initialize with remainingItems=null and targetDate=null", async () => {
 			await act(async () => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
 			expect(screen.getByTestId("remaining-items-value")).toHaveTextContent(
-				"10",
+				"null",
 			);
 			expect(screen.getByTestId("target-date-value")).toHaveTextContent("null");
 		});
@@ -390,7 +399,7 @@ describe("TeamForecastView component", () => {
 
 		it("should run forecast after user changes target date (debounced)", async () => {
 			mockForecastService.runManualForecast.mockResolvedValueOnce({
-				remainingItems: 10,
+				remainingItems: 0,
 				targetDate: new Date(),
 				whenForecasts: [],
 				howManyForecasts: [],
@@ -413,9 +422,30 @@ describe("TeamForecastView component", () => {
 
 				expect(mockForecastService.runManualForecast).toHaveBeenCalledWith(
 					mockTeam.id,
-					10,
+					undefined,
 					expect.any(Object),
 				);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should NOT run forecast when remainingItems is cleared and targetDate is not set", async () => {
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("simulate-null-remaining"));
+				});
+
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runManualForecast).not.toHaveBeenCalled();
 			} finally {
 				vi.useRealTimers();
 			}
@@ -945,9 +975,9 @@ describe("TeamForecastView component", () => {
 				fireEvent.click(screen.getByTestId("simulate-switch-to-manual"));
 			});
 
-			// Manual remaining-items state must remain 10 (initial), not 13 (feature aggregate)
+			// Manual remaining-items state must remain null (initial), not 13 (feature aggregate)
 			expect(screen.getByTestId("remaining-items-value")).toHaveTextContent(
-				"10",
+				"null",
 			);
 		});
 	});

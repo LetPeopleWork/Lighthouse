@@ -147,6 +147,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.Likelihood, Is.Zero);
+
+                forecastServiceMock.Verify(x => x.When(It.IsAny<Team>(), It.IsAny<int>()), Times.Never);
             }
         }
 
@@ -221,6 +223,34 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public async Task RunManualForecast_NoRemainingItemsAndNoTargetDate_ReturnsEmptyForecast()
+        {
+            var expectedTeam = new Team();
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var subject = CreateSubject();
+
+            var result = await subject.RunManualForecastAsync(12, new ForecastController.ManualForecastInputDto());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                var manualForecast = okResult.Value as ManualForecastDto;
+
+                Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(0));
+                Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
+                Assert.That(manualForecast.Likelihood, Is.Zero);
+
+                forecastServiceMock.Verify(x => x.When(It.IsAny<Team>(), It.IsAny<int>()), Times.Never);
+                forecastServiceMock.Verify(x => x.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()), Times.Never);
             }
         }
 

@@ -66,13 +66,13 @@ namespace Lighthouse.Backend.API
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
-                var manualForecast = new ManualForecastDto(input.RemainingItems, input.TargetDate);
+                var manualForecast = new ManualForecastDto(input.RemainingItems ?? 0, input.TargetDate);
 
                 var timeToTargetDate = input.TargetDate.HasValue ? (input.TargetDate.Value - DateTime.Today).Days : 0;
 
-                if (input.RemainingItems > 0)
+                if (input.RemainingItems is > 0)
                 {
-                    var whenForecast = await forecastService.When(team, input.RemainingItems);
+                    var whenForecast = await forecastService.When(team, input.RemainingItems.Value);
 
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
 
@@ -147,8 +147,7 @@ namespace Lighthouse.Backend.API
 
         public class ManualForecastInputDto
         {
-            [JsonRequired]
-            public int RemainingItems { get; set; }
+            public int? RemainingItems { get; set; }
 
             public DateTime? TargetDate { get; set; }
         }

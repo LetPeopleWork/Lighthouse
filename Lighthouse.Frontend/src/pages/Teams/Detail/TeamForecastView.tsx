@@ -32,7 +32,7 @@ interface TeamForecastViewProps {
 }
 
 const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
-	const [remainingItems, setRemainingItems] = useState<number>(10);
+	const [remainingItems, setRemainingItems] = useState<number | null>(null);
 	const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(null);
 	const [manualForecastResult, setManualForecastResult] =
 		useState<ManualForecast | null>(null);
@@ -89,8 +89,13 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	}, [team?.id, teamMetricsService]);
 
 	const runForecast = useCallback(
-		async (items: number, date: dayjs.Dayjs | null) => {
+		async (items: number | null, date: dayjs.Dayjs | null) => {
 			if (!team?.id) {
+				return;
+			}
+
+			if ((items === null || items === 0) && !date) {
+				setManualForecastResult(null);
 				return;
 			}
 
@@ -104,7 +109,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			try {
 				const result = await forecastService.runManualForecast(
 					team.id,
-					items,
+					items ?? undefined,
 					date?.toDate() ?? null,
 				);
 
@@ -138,7 +143,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		return () => clearTimeout(timer);
 	}, [effectiveRemainingItems, targetDate, runForecast]);
 
-	const handleRemainingItemsChange = useCallback((value: number) => {
+	const handleRemainingItemsChange = useCallback((value: number | null) => {
 		hasInteractedRef.current = true;
 		setRemainingItems(value);
 	}, []);

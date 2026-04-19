@@ -127,6 +127,43 @@ describe("ForecastService", () => {
 		);
 	});
 
+	it("should omit remainingItems when it is not set", async () => {
+		const teamId = 4;
+		const targetDate = new Date("2023-12-24");
+
+		const mockResponse: IManualForecast = new ManualForecast(
+			0,
+			targetDate,
+			[],
+			[new HowManyForecast(0.7, 6)],
+			0,
+		);
+
+		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
+
+		const result = await forecastService.runManualForecast(
+			teamId,
+			undefined,
+			targetDate,
+		);
+
+		expect(result).toEqual(
+			new ManualForecast(
+				0,
+				new Date("2023-12-24T00:00:00Z"),
+				[],
+				[new HowManyForecast(0.7, 6)],
+				0,
+			),
+		);
+		expect(mockedAxios.post).toHaveBeenCalledWith(
+			`/forecast/manual/${teamId}`,
+			{
+				targetDate,
+			},
+		);
+	});
+
 	describe("runItemPrediction", () => {
 		it("should run an item prediction for a team with work item types", async () => {
 			const teamId = 1;

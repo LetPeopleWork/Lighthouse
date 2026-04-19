@@ -13,7 +13,7 @@ import { BaseApiService } from "./BaseApiService";
 export interface IForecastService {
 	runManualForecast(
 		teamId: number,
-		remainingItems: number,
+		remainingItems: number | undefined,
 		targetDate: Date | null,
 	): Promise<ManualForecast>;
 
@@ -40,16 +40,24 @@ export class ForecastService
 {
 	async runManualForecast(
 		teamId: number,
-		remainingItems: number,
+		remainingItems: number | undefined,
 		targetDate: Date | null,
 	): Promise<ManualForecast> {
 		return this.withErrorHandling(async () => {
+			const requestBody: {
+				targetDate: Date | null;
+				remainingItems?: number;
+			} = {
+				targetDate: targetDate,
+			};
+
+			if (remainingItems !== undefined) {
+				requestBody.remainingItems = remainingItems;
+			}
+
 			const response = await this.apiService.post<IManualForecast>(
 				`/forecast/manual/${teamId}`,
-				{
-					remainingItems: remainingItems,
-					targetDate: targetDate,
-				},
+				requestBody,
 			);
 			return this.deserializeManualForecast(response.data);
 		});

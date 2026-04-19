@@ -66,11 +66,11 @@ function getEndOfMonth(): dayjs.Dayjs {
 }
 
 interface ManualForecasterProps {
-	remainingItems: number;
+	remainingItems: number | null;
 	targetDate: dayjs.Dayjs | null;
 	manualForecastResult: ManualForecast | null;
 	forecastInputCandidates: IForecastInputCandidates | null;
-	onRemainingItemsChange: (value: number) => void;
+	onRemainingItemsChange: (value: number | null) => void;
 	onTargetDateChange: (date: dayjs.Dayjs | null) => void;
 	mode?: "manual" | "features";
 	selectedFeatures?: IFeatureCandidate[];
@@ -150,8 +150,19 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 							label={`Number of ${workItemsTerm}`}
 							type="number"
 							fullWidth
-							value={remainingItems}
-							onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
+							value={remainingItems ?? ""}
+							onChange={(e) => {
+								const rawValue = e.target.value;
+								if (rawValue === "") {
+									onRemainingItemsChange(null);
+									return;
+								}
+
+								const parsedValue = Number(rawValue);
+								onRemainingItemsChange(
+									Number.isNaN(parsedValue) ? null : parsedValue,
+								);
+							}}
 							error={showZeroHint}
 							helperText={
 								showZeroHint
@@ -160,11 +171,11 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 							}
 							slotProps={{
 								input: {
-									endAdornment: remainingItems > 0 && (
+									endAdornment: remainingItems !== null && (
 										<InputAdornment position="end">
 											<IconButton
 												aria-label="Clear remaining items"
-												onClick={() => onRemainingItemsChange(0)}
+												onClick={() => onRemainingItemsChange(null)}
 												edge="end"
 												size="small"
 											>
