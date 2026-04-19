@@ -162,6 +162,70 @@ describe("TeamMetricsService", () => {
 		);
 	});
 
+	it("should get throughput info for a team", async () => {
+		const mockInfo = {
+			total: 4,
+			dailyAverage: 0.4,
+			comparison: {
+				direction: "up",
+				metricLabel: "Total Throughput",
+				currentLabel: "2026-04-05 – 2026-04-14",
+				currentValue: "4",
+				previousLabel: "2026-03-26 – 2026-04-04",
+				previousValue: "2",
+				percentageDelta: "+100.0%",
+			},
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockInfo });
+
+		const startDate = new Date("2026-04-05");
+		const endDate = new Date("2026-04-14");
+		const result = await teamMetricsService.getThroughputInfo(
+			1,
+			startDate,
+			endDate,
+		);
+
+		expect(result.total).toBe(4);
+		expect(result.comparison.direction).toBe("up");
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/1/metrics/throughputInfo?startDate=2026-04-05&endDate=2026-04-14",
+		);
+	});
+
+	it("should get arrivals info for a team", async () => {
+		const mockInfo = {
+			total: 3,
+			dailyAverage: 0.3,
+			comparison: {
+				direction: "down",
+				metricLabel: "Total Arrivals",
+				currentLabel: "2026-04-05 – 2026-04-14",
+				currentValue: "3",
+				previousLabel: "2026-03-26 – 2026-04-04",
+				previousValue: "5",
+				percentageDelta: "-40.0%",
+			},
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockInfo });
+
+		const startDate = new Date("2026-04-05");
+		const endDate = new Date("2026-04-14");
+		const result = await teamMetricsService.getArrivalsInfo(
+			1,
+			startDate,
+			endDate,
+		);
+
+		expect(result.total).toBe(3);
+		expect(result.comparison.direction).toBe("down");
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/1/metrics/arrivalsInfo?startDate=2026-04-05&endDate=2026-04-14",
+		);
+	});
+
 	const createMockWorkItem = (name: string): IWorkItem => ({
 		id: Math.floor(Math.random() * 1000),
 		referenceId: Math.floor(Math.random() * 1000).toString(),

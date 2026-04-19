@@ -36,6 +36,12 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<WorkItem> GetCurrentWipForTeam(Team team);
 
+        IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate);
+
+        ThroughputInfoDto GetThroughputInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        ArrivalsInfoDto GetArrivalsInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
         ForecastInputCandidatesDto GetForecastInputCandidates(Team team);
         
         IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
@@ -45,6 +51,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate);
 
         int GetTotalWorkItemAge(Team team);
+
+        int GetTotalWorkItemAge(Team team, DateTime endDate);
 
         Task UpdateTeamMetrics(Team team);
     }

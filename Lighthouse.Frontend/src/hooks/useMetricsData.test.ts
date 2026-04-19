@@ -64,6 +64,16 @@ function createMockTeamMetricsService(): IMetricsService<IWorkItem> {
 			.mockResolvedValue({ status: "NotConfigured" }),
 		getArrivals: vi.fn().mockResolvedValue(new RunChartData({}, 30, 0)),
 		getArrivalsPbc: vi.fn().mockResolvedValue(null),
+		getThroughputInfo: vi.fn().mockResolvedValue({
+			total: 0,
+			dailyAverage: 0,
+			comparison: { direction: "none", metricLabel: "Total Throughput" },
+		}),
+		getArrivalsInfo: vi.fn().mockResolvedValue({
+			total: 0,
+			dailyAverage: 0,
+			comparison: { direction: "none", metricLabel: "Total Arrivals" },
+		}),
 	};
 }
 

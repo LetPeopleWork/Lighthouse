@@ -155,6 +155,8 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getArrivals: vi.fn(),
 		getArrivalsPbc: vi.fn(),
 		getForecastInputCandidates: vi.fn(),
+		getThroughputInfo: vi.fn(),
+		getArrivalsInfo: vi.fn(),
 	};
 };
 
@@ -181,6 +183,8 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getFeatureSizeEstimation: vi.fn(),
 		getArrivals: vi.fn(),
 		getArrivalsPbc: vi.fn(),
+		getThroughputInfo: vi.fn(),
+		getArrivalsInfo: vi.fn(),
 	};
 };
 

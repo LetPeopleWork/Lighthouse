@@ -5,6 +5,10 @@ import type { IForecastPredictabilityScore } from "../models/Forecasts/ForecastP
 import type { IFeatureOwner } from "../models/IFeatureOwner";
 import type { IEstimationVsCycleTimeResponse } from "../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../models/Metrics/FeatureSizeEstimationData";
+import type {
+	IArrivalsInfo,
+	IThroughputInfo,
+} from "../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
@@ -41,6 +45,8 @@ export interface MetricsData<T> {
 	totalWorkItemAge: number | null;
 	arrivalsData: RunChartData | null;
 	arrivalsPbcData: ProcessBehaviourChartData | null;
+	throughputInfo: IThroughputInfo | null;
+	arrivalsInfo: IArrivalsInfo | null;
 }
 
 function isProjectMetricsService(
@@ -111,7 +117,10 @@ export function useMetricsData<
 	const [arrivalsData, setArrivalsData] = useState<RunChartData | null>(null);
 	const [arrivalsPbcData, setArrivalsPbcData] =
 		useState<ProcessBehaviourChartData | null>(null);
-
+	const [throughputInfo, setThroughputInfo] = useState<IThroughputInfo | null>(
+		null,
+	);
+	const [arrivalsInfo, setArrivalsInfo] = useState<IArrivalsInfo | null>(null);
 	useEffect(() => {
 		blackoutPeriodService
 			.getAll()
@@ -255,6 +264,22 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate]);
 
 	useEffect(() => {
+		metricsService
+			.getThroughputInfo(entity.id, startDate, endDate)
+			.then(setThroughputInfo)
+			.catch((error) =>
+				console.error("Error fetching throughput info:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
+		metricsService
+			.getArrivalsInfo(entity.id, startDate, endDate)
+			.then(setArrivalsInfo)
+			.catch((error) => console.error("Error fetching arrivals info:", error));
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
 		const fetch = async () => {
 			const [
 				throughputPbc,
@@ -303,5 +328,7 @@ export function useMetricsData<
 		totalWorkItemAge,
 		arrivalsData,
 		arrivalsPbcData,
+		throughputInfo,
+		arrivalsInfo,
 	};
 }

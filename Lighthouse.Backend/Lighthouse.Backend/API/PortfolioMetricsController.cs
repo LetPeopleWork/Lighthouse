@@ -167,6 +167,30 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolioMetricsService.GetTotalWorkItemAge);
         }
 
+        [HttpGet("throughputInfo")]
+        public ActionResult<ThroughputInfoDto> GetThroughputInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetThroughputInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
+        [HttpGet("arrivalsInfo")]
+        public ActionResult<ArrivalsInfoDto> GetArrivalsInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetArrivalsInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
         [HttpGet("throughput/pbc")]
         public ActionResult<ProcessBehaviourChart> GetThroughputProcessBehaviourChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

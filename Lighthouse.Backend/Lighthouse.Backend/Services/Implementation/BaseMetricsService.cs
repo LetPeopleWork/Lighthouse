@@ -13,6 +13,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();
 
+        protected record InfoMetric(int Value);
+
         protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput)
         {
             var numberOfDays = 30;
@@ -302,7 +304,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var currentDate = startDate.AddDays(index);
                 var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i));
 
-                var totalAge = itemsInProgressOnDay.Sum(item => (int)((currentDate.Date - item.StartedDate?.Date)?.TotalDays ?? 0) + 1);
+                var totalAge = itemsInProgressOnDay.Sum(item => (int)((currentDate.Date - (item.StartedDate ?? item.CreatedDate)?.Date)?.TotalDays ?? 0) + 1);
                 
                 values[index] = totalAge;
                 workItemIdsPerDay[index] = itemsInProgressOnDay.Select(i => i.Id).ToArray();
@@ -354,12 +356,20 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static bool WasItemProgressOnDay(DateTime day, WorkItemBase item)
         {
-            if (!item.StartedDate.HasValue || (!item.ClosedDate.HasValue && item.StateCategory == StateCategories.Done))
+            var startedDate = item.StartedDate ?? item.CreatedDate;
+
+            // Item not started --> Can't be in progress
+            if (!startedDate.HasValue)
             {
                 return false;
             }
 
-            var wasStartedOnOrAfterDay = item.StartedDate.Value.Date <= day.Date;
+            if (!item.ClosedDate.HasValue && item.StateCategory == StateCategories.Done)
+            {
+                return false;
+            }
+
+            var wasStartedOnOrAfterDay = startedDate.Value.Date <= day.Date;
             var wasClosedOnOrAfterDay = !item.ClosedDate.HasValue || item.ClosedDate.Value.Date > day.Date;
 
             return wasStartedOnOrAfterDay && wasClosedOnOrAfterDay;
@@ -393,6 +403,80 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 MetricsCache.Remove(entry);
             }
+        }
+
+        protected static ThroughputInfoDto BuildThroughputInfoDto(
+            int currentTotal,
+            int previousTotal,
+            int periodDays,
+            DateTime currentStart,
+            DateTime currentEnd,
+            DateTime previousStart,
+            DateTime previousEnd)
+        {
+            var direction = DetermineIntCountDirection(currentTotal, previousTotal);
+            var dailyAverage = Math.Round((double)currentTotal / periodDays, 1);
+
+            var currentLabel = $"{currentStart:yyyy-MM-dd} – {currentEnd:yyyy-MM-dd}";
+            var previousLabel = $"{previousStart:yyyy-MM-dd} – {previousEnd:yyyy-MM-dd}";
+            var percentageDelta = ComputePercentageDelta(currentTotal, previousTotal);
+
+            var comparison = new InfoWidgetComparisonDto(
+                direction,
+                "Total Throughput",
+                currentLabel,
+                currentTotal.ToString(),
+                previousLabel,
+                previousTotal.ToString(),
+                percentageDelta,
+                null);
+
+            return new ThroughputInfoDto(currentTotal, dailyAverage, comparison);
+        }
+
+        protected static ArrivalsInfoDto BuildArrivalsInfoDto(
+            int currentTotal,
+            int previousTotal,
+            int periodDays,
+            DateTime currentStart,
+            DateTime currentEnd,
+            DateTime previousStart,
+            DateTime previousEnd)
+        {
+            var direction = DetermineIntCountDirection(currentTotal, previousTotal);
+            var dailyAverage = Math.Round((double)currentTotal / periodDays, 1);
+
+            var currentLabel = $"{currentStart:yyyy-MM-dd} – {currentEnd:yyyy-MM-dd}";
+            var previousLabel = $"{previousStart:yyyy-MM-dd} – {previousEnd:yyyy-MM-dd}";
+            var percentageDelta = ComputePercentageDelta(currentTotal, previousTotal);
+
+            var comparison = new InfoWidgetComparisonDto(
+                direction,
+                "Total Arrivals",
+                currentLabel,
+                currentTotal.ToString(),
+                previousLabel,
+                previousTotal.ToString(),
+                percentageDelta,
+                null);
+
+            return new ArrivalsInfoDto(currentTotal, dailyAverage, comparison);
+        }
+
+        private static string DetermineIntCountDirection(int current, int previous)
+        {
+            if (previous == 0) return "none";
+            if (current > previous) return "up";
+            if (current < previous) return "down";
+            return "flat";
+        }
+
+        private static string? ComputePercentageDelta(int current, int previous)
+        {
+            if (previous == 0) return null;
+            var delta = (double)(current - previous) / previous * 100;
+            var sign = delta >= 0 ? "+" : "";
+            return $"{sign}{delta:F1}%";
         }
 
         protected static EstimationVsCycleTimeResponse BuildEstimationVsCycleTimeResponse(

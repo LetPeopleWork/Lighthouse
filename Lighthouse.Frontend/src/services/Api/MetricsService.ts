@@ -6,6 +6,10 @@ import {
 } from "../../models/Forecasts/ForecastPredictabilityScore";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
+import type {
+	IArrivalsInfo,
+	IThroughputInfo,
+} from "../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
@@ -90,6 +94,18 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ProcessBehaviourChartData>;
+
+	getThroughputInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IThroughputInfo>;
+
+	getArrivalsInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IArrivalsInfo>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -365,6 +381,32 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				`/${this.api}/${id}/metrics/arrivals/pbc?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
+			return response.data;
+		});
+	}
+
+	async getThroughputInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IThroughputInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IThroughputInfo>(
+				`/${this.api}/${id}/metrics/throughputInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getArrivalsInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IArrivalsInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IArrivalsInfo>(
+				`/${this.api}/${id}/metrics/arrivalsInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
 			return response.data;
 		});
 	}

@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IForecastService> forecastServiceMock;
 
         private PortfolioMetricsService subject;
-        private Portfolio project;
+        private Portfolio portfolio;
         private List<Feature> features;
 
         [SetUp]
@@ -47,6 +47,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             SetupTestData();
+        }        
+        
+        [TearDown]
+        public void TearDown()
+        {
+            subject.InvalidatePortfolioMetrics(portfolio);
         }
 
         [Test]
@@ -61,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             // Act
-            var result = subject.GetThroughputForPortfolio(project, startDate, endDate);
+            var result = subject.GetThroughputForPortfolio(portfolio, startDate, endDate);
 
             // Assert
             using (Assert.EnterMultipleScope())
@@ -84,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             // Act
-            var result = subject.GetFeaturesInProgressOverTimeForPortfolio(project, startDate, endDate);
+            var result = subject.GetFeaturesInProgressOverTimeForPortfolio(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -103,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
-            var throughput = subject.GetStartedItemsForPortfolio(project, startDate, endDate);
+            var throughput = subject.GetStartedItemsForPortfolio(portfolio, startDate, endDate);
 
             Assert.That(throughput.Total, Is.EqualTo(2));
         }
@@ -112,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetInProgressFeaturesForProject_ReturnsActiveFeatures()
         {
             // Act
-            var result = subject.GetInProgressFeaturesForPortfolio(project).ToList();
+            var result = subject.GetInProgressFeaturesForPortfolio(portfolio).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -128,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
-            var result = subject.GetCycleTimePercentilesForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -147,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2077, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2077, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
-            var result = subject.GetCycleTimePercentilesForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -169,7 +175,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature1.AddOrUpdateWorkForTeam(team, 3, 5);
             feature2.AddOrUpdateWorkForTeam(team, 3, 15);
 
-            var result = subject.GetSizePercentilesForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetSizePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -188,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2077, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2077, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
-            var result = subject.GetSizePercentilesForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetSizePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -203,7 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
-            var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -224,7 +230,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             closedFeatures.First().ClosedDate = DateTime.Now;
 
-            var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -245,7 +251,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             closedFeatures.First().ClosedDate = DateTime.Now.AddDays(-1);
 
-            var result = subject.GetCycleTimeDataForPortfolio(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -259,7 +265,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void InvalidateProjectMetrics_DoesNotThrow()
         {
-            Assert.DoesNotThrow(() => subject.InvalidatePortfolioMetrics(project));
+            Assert.DoesNotThrow(() => subject.InvalidatePortfolioMetrics(portfolio));
         }
 
         [Test]
@@ -277,7 +283,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 30)).Returns(howManyForecast);
 
-            var score = subject.GetMultiItemForecastPredictabilityScoreForPortfolio(project, startDate, endDate);
+            var score = subject.GetMultiItemForecastPredictabilityScoreForPortfolio(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -299,7 +305,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 1,
                 StateCategory = StateCategories.ToDo,
             };
-            feature1.Portfolios.Add(project);
+            feature1.Portfolios.Add(portfolio);
             features.Add(feature1);
 
             var feature2 = new Feature
@@ -307,10 +313,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 2,
                 StateCategory = StateCategories.Done,
             };
-            feature2.Portfolios.Add(project);
+            feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
 
-            var totalAge = subject.GetTotalWorkItemAge(project);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -329,7 +335,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             feature.Portfolios.Add(otherProject);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(project);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -344,10 +350,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-5),
             };
-            feature.Portfolios.Add(project);
+            feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(project);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -362,7 +368,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-10),
             };
-            feature1.Portfolios.Add(project);
+            feature1.Portfolios.Add(portfolio);
             features.Add(feature1);
 
             var feature2 = new Feature
@@ -371,7 +377,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-5),
             };
-            feature2.Portfolios.Add(project);
+            feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
 
             var feature3 = new Feature
@@ -380,10 +386,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2),
             };
-            feature3.Portfolios.Add(project);
+            feature3.Portfolios.Add(portfolio);
             features.Add(feature3);
 
-            var totalAge = subject.GetTotalWorkItemAge(project);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio);
 
             // 11 + 6 + 3 = 20
             Assert.That(totalAge, Is.EqualTo(20));
@@ -399,7 +405,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-7),
             };
-            feature1.Portfolios.Add(project);
+            feature1.Portfolios.Add(portfolio);
             features.Add(feature1);
 
             var feature2 = new Feature
@@ -409,7 +415,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StartedDate = DateTime.UtcNow.AddDays(-15),
                 ClosedDate = DateTime.UtcNow.AddDays(-3),
             };
-            feature2.Portfolios.Add(project);
+            feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
 
             var feature3 = new Feature
@@ -417,10 +423,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 3,
                 StateCategory = StateCategories.ToDo,
             };
-            feature3.Portfolios.Add(project);
+            feature3.Portfolios.Add(portfolio);
             features.Add(feature3);
 
-            var totalAge = subject.GetTotalWorkItemAge(project);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio);
 
             Assert.That(totalAge, Is.EqualTo(8));
         }
@@ -436,10 +442,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StartedDate = null,
                 CreatedDate = DateTime.UtcNow.AddDays(-9),
             };
-            feature.Portfolios.Add(project);
+            feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(project);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio);
 
             Assert.That(totalAge, Is.EqualTo(10));
         }
@@ -452,7 +458,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -476,13 +482,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features[features.Count - 1].Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(portfolio);
 
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -501,7 +507,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -524,13 +530,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = new DateTime(2022, 12, 15, 0, 0, 0, DateTimeKind.Utc),
                 StateCategory = StateCategories.Done,
             });
-            features[features.Count - 1].Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(portfolio);
 
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -551,7 +557,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features[features.Count - 1].Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(portfolio);
 
             features.Add(new Feature
             {
@@ -561,13 +567,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features[features.Count - 1].Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(portfolio);
 
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -591,7 +597,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features[features.Count - 1].Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(portfolio);
 
             features.Add(new Feature
             {
@@ -601,13 +607,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features[features.Count - 1].Portfolios.Add(project);
+            features[features.Count - 1].Portfolios.Add(portfolio);
 
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -627,7 +633,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -655,7 +661,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
             // Act
-            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+            var result = subject.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -669,10 +675,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetThroughputProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetThroughputProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -685,13 +691,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetThroughputProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
             var displayEnd = DateTime.UtcNow.Date;
 
-            var result = subject.GetThroughputProcessBehaviourChart(project, displayStart, displayEnd);
+            var result = subject.GetThroughputProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
             using (Assert.EnterMultipleScope())
             {
@@ -704,10 +710,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetThroughputProcessBehaviourChart_ValidBaseline_BaselineConfiguredIsTrue()
         {
-            project.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
-            project.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
+            portfolio.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
+            portfolio.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
 
-            var result = subject.GetThroughputProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
+            var result = subject.GetThroughputProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
 
             Assert.That(result.BaselineConfigured, Is.True);
         }
@@ -715,10 +721,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetWipProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetWipProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetWipProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -731,13 +737,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetWipProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
             var displayEnd = DateTime.UtcNow.Date;
 
-            var result = subject.GetWipProcessBehaviourChart(project, displayStart, displayEnd);
+            var result = subject.GetWipProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
             using (Assert.EnterMultipleScope())
             {
@@ -750,10 +756,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -766,13 +772,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetTotalWorkItemAgeProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
             var displayEnd = DateTime.UtcNow.Date;
 
-            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(project, displayStart, displayEnd);
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
             using (Assert.EnterMultipleScope())
             {
@@ -785,10 +791,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetCycleTimeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetCycleTimeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -801,8 +807,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimeProcessBehaviourChart_BaselineDatesNotSet_LongRange_ReturnsReadyWithImplicitBaseline()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
             var displayEnd = DateTime.UtcNow.Date;
@@ -817,10 +823,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = displayStart.AddDays(5),
                 StateCategory = StateCategories.Done,
             };
-            feature.Portfolios.Add(project);
+            feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var result = subject.GetCycleTimeProcessBehaviourChart(project, displayStart, displayEnd);
+            var result = subject.GetCycleTimeProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
             using (Assert.EnterMultipleScope())
             {
@@ -833,10 +839,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetFeatureSizeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -849,8 +855,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeProcessBehaviourChart_NoFeaturesWithNonZeroSize_ReturnsInsufficientData()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             // Default test features have Size == 0 (no FeatureWork assigned)
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
@@ -865,10 +871,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = displayStart.AddDays(5),
                 StateCategory = StateCategories.Done,
             };
-            feature.Portfolios.Add(project);
+            feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var result = subject.GetFeatureSizeProcessBehaviourChart(project, displayStart, displayEnd);
+            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
             using (Assert.EnterMultipleScope())
             {
@@ -880,8 +886,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeProcessBehaviourChart_BaselineDatesNotSet_LongRange_WithFeaturesWithSize_ReturnsReady()
         {
-            project.ProcessBehaviourChartBaselineStartDate = null;
-            project.ProcessBehaviourChartBaselineEndDate = null;
+            portfolio.ProcessBehaviourChartBaselineStartDate = null;
+            portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
             var displayEnd = DateTime.UtcNow.Date;
@@ -897,10 +903,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Done,
             };
             feature.AddOrUpdateWorkForTeam(team, 2, 10);
-            feature.Portfolios.Add(project);
+            feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var result = subject.GetFeatureSizeProcessBehaviourChart(project, displayStart, displayEnd);
+            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
             using (Assert.EnterMultipleScope())
             {
@@ -915,8 +921,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeProcessBehaviourChart_ValidBaseline_BaselineConfiguredIsTrue()
         {
-            project.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
-            project.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
+            portfolio.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
+            portfolio.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
 
             var team = new Team();
             var baselineFeature = new Feature
@@ -924,15 +930,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 98,
                 Name = "Baseline Feature",
                 ReferenceId = "FB",
-                StartedDate = project.ProcessBehaviourChartBaselineStartDate,
-                ClosedDate = project.ProcessBehaviourChartBaselineStartDate.Value.AddDays(5),
+                StartedDate = portfolio.ProcessBehaviourChartBaselineStartDate,
+                ClosedDate = portfolio.ProcessBehaviourChartBaselineStartDate.Value.AddDays(5),
                 StateCategory = StateCategories.Done,
             };
             baselineFeature.AddOrUpdateWorkForTeam(team, 3, 8);
-            baselineFeature.Portfolios.Add(project);
+            baselineFeature.Portfolios.Add(portfolio);
             features.Add(baselineFeature);
 
-            var result = subject.GetFeatureSizeProcessBehaviourChart(project, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
+            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
 
             Assert.That(result.BaselineConfigured, Is.True);
         }
@@ -942,9 +948,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeEstimationData_NoEstimationFieldConfigured_ReturnsNotConfigured()
         {
-            project.EstimationAdditionalFieldDefinitionId = null;
+            portfolio.EstimationAdditionalFieldDefinitionId = null;
 
-            var result = subject.GetFeatureSizeEstimationData(project, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -956,10 +962,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeEstimationData_EstimationConfiguredButNoFeatures_ReturnsNoData()
         {
-            project.EstimationAdditionalFieldDefinitionId = 42;
+            portfolio.EstimationAdditionalFieldDefinitionId = 42;
             features.Clear();
 
-            var result = subject.GetFeatureSizeEstimationData(project, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
@@ -972,8 +978,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_NumericEstimates_ReturnsMappedFeatureEstimations()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
-            project.UseNonNumericEstimation = false;
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -985,7 +991,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Feature 3 is Doing with an estimate
             features[2].AdditionalFieldValues[fieldId] = "3";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1000,7 +1006,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_IncludesAllStates_NotJustClosedFeatures()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1013,7 +1019,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ReferenceId = "F10",
                 StateCategory = StateCategories.ToDo,
             };
-            todoFeature.Portfolios.Add(project);
+            todoFeature.Portfolios.Add(portfolio);
             todoFeature.AdditionalFieldValues[fieldId] = "2";
             features.Add(todoFeature);
 
@@ -1024,7 +1030,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Doing feature with estimate
             features[2].AdditionalFieldValues[fieldId] = "8";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1040,9 +1046,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_NonNumericMode_ReturnsOrdinalValues()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
-            project.UseNonNumericEstimation = true;
-            project.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.UseNonNumericEstimation = true;
+            portfolio.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1052,7 +1058,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             features[2].AdditionalFieldValues[fieldId] = "XL";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1074,8 +1080,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_InvalidAndMissingEstimates_ExcludedFromResults()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
-            project.UseNonNumericEstimation = false;
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1090,7 +1096,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             // Feature 3 (Doing): no estimate at all (missing key)
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1104,8 +1110,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_PassesEstimationUnit()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
-            project.EstimationUnit = "Story Points";
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.EstimationUnit = "Story Points";
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1113,7 +1119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             features[0].ClosedDate = startDate.AddDays(3);
             features[0].AdditionalFieldValues[fieldId] = "5";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             Assert.That(result.EstimationUnit, Is.EqualTo("Story Points"));
         }
@@ -1122,8 +1128,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_AllInvalidEstimates_ReturnsNoData()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
-            project.UseNonNumericEstimation = false;
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1133,7 +1139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             features[2].AdditionalFieldValues[fieldId] = "xyz";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1146,7 +1152,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_DecimalEstimates_PreservesDecimals()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1154,7 +1160,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             features[0].ClosedDate = startDate.AddDays(3);
             features[0].AdditionalFieldValues[fieldId] = "3.5";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             Assert.That(result.FeatureEstimations[0].EstimationNumericValue, Is.EqualTo(3.5));
         }
@@ -1163,7 +1169,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_PerFeatureMapping_EachFeatureHasOwnEstimation()
         {
             const int fieldId = 42;
-            project.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1175,7 +1181,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             features[1].ClosedDate = startDate.AddDays(7);
             features[1].AdditionalFieldValues[fieldId] = "5";
 
-            var result = subject.GetFeatureSizeEstimationData(project, startDate, endDate);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, startDate, endDate);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1190,7 +1196,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private void SetupTestData()
         {
-            project = new Portfolio
+            portfolio = new Portfolio
             {
                 Id = 1,
                 Name = "Test Project"
@@ -1231,7 +1237,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 }
             };
 
-            features.ForEach(f => f.Portfolios.Add(project));
+            features.ForEach(f => f.Portfolios.Add(portfolio));
         }
     }
 }

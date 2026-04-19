@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio);
 
+        IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio, DateTime asOfDate);
+
         IEnumerable<PercentileValue> GetCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         IEnumerable<Feature> GetCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
@@ -43,6 +45,12 @@ namespace Lighthouse.Backend.Services.Interfaces
         FeatureSizeEstimationResponse GetFeatureSizeEstimationData(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         int GetTotalWorkItemAge(Portfolio portfolio);
+
+        int GetTotalWorkItemAge(Portfolio portfolio, DateTime endDate);
+
+        ThroughputInfoDto GetThroughputInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
+        ArrivalsInfoDto GetArrivalsInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         void InvalidatePortfolioMetrics(Portfolio portfolio);
     }

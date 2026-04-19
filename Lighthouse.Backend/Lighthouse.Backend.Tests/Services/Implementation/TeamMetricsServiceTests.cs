@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
                 .Returns(new RefreshSettings { Interval = 1 });
-            
+
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetCurrentWipForTeam_NoWorkItemsInDoing_ReturnsEmpty()
         {
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
 
             var featuresInProgress = subject.GetCurrentWipForTeam(testTeam).ToList();
 
@@ -255,7 +255,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(+1);
 
             // In Range
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-5);
 
             // Before
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-11);
@@ -269,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetCurrentThroughputForTeam_ItemClosedAfterHistory_DoesNotIncludeInThroughput()
         {
             testTeam.ThroughputHistory = 10;
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-2);
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(11);
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
@@ -446,12 +446,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCurrentThroughputForTeam_CachesValue()
         {
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
             Assert.That(throughput.Total, Is.EqualTo(1));
 
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
             throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             Assert.That(throughput.Total, Is.EqualTo(1));
@@ -460,12 +460,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCurrentThroughputForTeam_InvalidateCache()
         {
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
             Assert.That(throughput.Total, Is.EqualTo(1));
 
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
             subject.InvalidateTeamMetrics(testTeam);
 
             throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
@@ -522,7 +522,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var endDate = DateTime.UtcNow;
 
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-11);
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
@@ -535,7 +535,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = DateTime.UtcNow.AddDays(-10);
             var endDate = DateTime.UtcNow;
 
-            AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            AddWorkItem(StateCategories.Doing, 2, string.Empty);
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
@@ -821,7 +821,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetTotalWorkItemAge_NoWorkItemsInDoing_ReturnsZero()
         {
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
-            AddWorkItem(StateCategories.Done, 1, string.Empty);
+
+            // Item was closed yesterday
+            var closedItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            closedItem.ClosedDate = DateTime.UtcNow.AddDays(-1);
 
             var totalAge = subject.GetTotalWorkItemAge(testTeam);
 
@@ -890,6 +893,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var workItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
             workItem.StartedDate = null;
             workItem.CreatedDate = DateTime.UtcNow.AddDays(-7);
+            workItem.ClosedDate = null;
 
             var totalAge = subject.GetTotalWorkItemAge(testTeam);
 
@@ -1656,9 +1660,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = stateCategory,
                 TeamId = teamId,
                 ParentReferenceId = parentReference,
-                ClosedDate = DateTime.UtcNow,
                 Type = "User Story",
             };
+
+            if (stateCategory == StateCategories.Done)
+            {
+                workItem.ClosedDate = DateTime.UtcNow.AddDays(1);
+            }
+
+            if (stateCategory != StateCategories.ToDo)
+            {
+                workItem.StartedDate = DateTime.UtcNow.AddDays(-5);
+            }
 
             workItems.Add(workItem);
 
@@ -1919,7 +1932,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var result = subject.GetEstimationVsCycleTimeData(testTeam, startDate, endDate);
 
             var expectedCategories = new[] { "XS", "S", "M", "L", "XL" };
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(EstimationVsCycleTimeStatus.Ready));

@@ -357,4 +357,66 @@ describe("ProjectMetricsService", () => {
 			expect(result.dataPoints[0].yValue).toBe(5);
 		});
 	});
+
+	describe("getThroughputInfo", () => {
+		it("should call the correct API endpoint and return throughput info", async () => {
+			const mockInfo = {
+				total: 7,
+				dailyAverage: 0.7,
+				comparison: {
+					direction: "up",
+					metricLabel: "Total Throughput",
+					currentLabel: "2023-01-01 – 2023-01-31",
+					currentValue: "7",
+					previousLabel: "2022-12-01 – 2022-12-31",
+					previousValue: "4",
+					percentageDelta: "+75.0%",
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getThroughputInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/throughputInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.total).toBe(7);
+			expect(result.comparison.direction).toBe("up");
+		});
+	});
+
+	describe("getArrivalsInfo", () => {
+		it("should call the correct API endpoint and return arrivals info", async () => {
+			const mockInfo = {
+				total: 3,
+				dailyAverage: 0.3,
+				comparison: {
+					direction: "none",
+					metricLabel: "Total Arrivals",
+					currentLabel: "2023-01-01 – 2023-01-31",
+					currentValue: "3",
+					previousLabel: "2022-12-01 – 2022-12-31",
+					previousValue: "0",
+					percentageDelta: null,
+				},
+			};
+			mockGet.mockResolvedValueOnce({ data: mockInfo });
+
+			const result = await service.getArrivalsInfo(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			expect(mockGet).toHaveBeenCalledWith(
+				`/portfolios/${projectId}/metrics/arrivalsInfo?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result.total).toBe(3);
+			expect(result.comparison.direction).toBe("none");
+		});
+	});
 });

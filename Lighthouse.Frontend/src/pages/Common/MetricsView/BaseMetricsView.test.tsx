@@ -622,6 +622,16 @@ describe("BaseMetricsView component", () => {
 			getFeatureSizePbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
 			getArrivals: vi.fn().mockResolvedValue(mockStartedItemsData),
 			getArrivalsPbc: vi.fn().mockResolvedValue(baselineMissingPbcData),
+			getThroughputInfo: vi.fn().mockResolvedValue({
+				total: 0,
+				dailyAverage: 0,
+				comparison: { direction: "none", metricLabel: "Total Throughput" },
+			}),
+			getArrivalsInfo: vi.fn().mockResolvedValue({
+				total: 0,
+				dailyAverage: 0,
+				comparison: { direction: "none", metricLabel: "Total Arrivals" },
+			}),
 			getFeatureSizeEstimation: vi.fn().mockResolvedValue({
 				status: "NotConfigured",
 				estimationUnit: null,
@@ -1075,6 +1085,8 @@ describe("BaseMetricsView component", () => {
 				.mockRejectedValue(new Error("API error")),
 			getArrivals: vi.fn().mockRejectedValue(new Error("API error")),
 			getArrivalsPbc: vi.fn().mockRejectedValue(new Error("API error")),
+			getThroughputInfo: vi.fn().mockRejectedValue(new Error("API error")),
+			getArrivalsInfo: vi.fn().mockRejectedValue(new Error("API error")),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1481,6 +1493,8 @@ describe("BaseMetricsView component", () => {
 					.mockRejectedValue(new Error("API error")),
 				getArrivals: vi.fn().mockRejectedValue(new Error("API error")),
 				getArrivalsPbc: vi.fn().mockRejectedValue(new Error("API error")),
+				getThroughputInfo: vi.fn().mockRejectedValue(new Error("API error")),
+				getArrivalsInfo: vi.fn().mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi

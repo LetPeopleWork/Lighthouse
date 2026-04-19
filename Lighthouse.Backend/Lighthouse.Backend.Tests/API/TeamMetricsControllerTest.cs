@@ -1182,6 +1182,96 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        // ── ThroughputInfo ──────────────────────────────────────────────────────
+
+        [Test]
+        public void GetThroughputInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughputInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetThroughputInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughputInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetThroughputInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new ThroughputInfoDto(5, 0.5, new InfoWidgetComparisonDto("up", "Total Throughput", "curr", "5", "prev", "3", "+66.7%", null));
+            teamMetricsServiceMock.Setup(s => s.GetThroughputInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughputInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── ArrivalsInfo ────────────────────────────────────────────────────────
+
+        [Test]
+        public void GetArrivalsInfo_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivalsInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetArrivalsInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivalsInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetArrivalsInfo_TeamExists_ReturnsInfoFromService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new ArrivalsInfoDto(3, 0.3, new InfoWidgetComparisonDto("down", "Total Arrivals", "curr", "3", "prev", "5", "-40.0%", null));
+            teamMetricsServiceMock.Setup(s => s.GetArrivalsInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetArrivalsInfo(team.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
         private TeamMetricsController CreateSubject()
         {
             return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);

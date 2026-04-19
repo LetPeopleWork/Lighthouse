@@ -856,5 +856,77 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Value, Is.EqualTo(expectedResponse));
             }
         }
+
+        // ── ThroughputInfo ──────────────────────────────────────────────────────
+
+        [Test]
+        public void GetThroughputInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetThroughputInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetThroughputInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetThroughputInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetThroughputInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new ThroughputInfoDto(7, 0.7, new InfoWidgetComparisonDto("up", "Total Throughput", "curr", "7", "prev", "4", "+75.0%", null));
+            projectMetricsService.Setup(s => s.GetThroughputInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetThroughputInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
+
+        // ── ArrivalsInfo ────────────────────────────────────────────────────────
+
+        [Test]
+        public void GetArrivalsInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetArrivalsInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetArrivalsInfo_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetArrivalsInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetArrivalsInfo_PortfolioExists_ReturnsInfoFromService()
+        {
+            var startDate = DateTime.Now.AddDays(-10);
+            var endDate = DateTime.Now;
+            var expectedInfo = new ArrivalsInfoDto(2, 0.2, new InfoWidgetComparisonDto("flat", "Total Arrivals", "curr", "2", "prev", "2", "+0.0%", null));
+            projectMetricsService.Setup(s => s.GetArrivalsInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
+
+            var response = subject.GetArrivalsInfo(project.Id, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result!.Value, Is.EqualTo(expectedInfo));
+            }
+        }
     }
 }

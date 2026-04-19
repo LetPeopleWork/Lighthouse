@@ -207,18 +207,23 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio)
         {
-            logger.LogDebug("Getting In Progress Features for Portfolio {PortfolioName}", portfolio.Name);
+            return GetInProgressFeaturesForPortfolio(portfolio, DateTime.UtcNow.Date);
+        }
+        
+        public IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio, DateTime endDate)
+        {
+            logger.LogDebug("Getting WIP snapshot for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, endDate.Date);
 
-            return GetFromCacheIfExists<IEnumerable<Feature>, Portfolio>(portfolio, inProgressFeaturesMetricIdentifier, () =>
+            return GetFromCacheIfExists(portfolio, $"WipSnapshot_{endDate:yyyy-MM-dd}", () =>
             {
                 var features = featureRepository.GetAllByPredicate(f =>
                     f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    f.StateCategory == StateCategories.Doing)
+                    (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
                     .ToList();
 
-                logger.LogDebug("Found {FeatureCount} In Progress Features for Portfolio {PortfolioName}", features.Count, portfolio.Name);
-                return features;
-            }, logger);
+                return GenerateWorkInProgressByDay(endDate, endDate, features)[0].OfType<Feature>();
+            }
+            , logger);
         }
 
         public IEnumerable<PercentileValue> GetCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -319,17 +324,56 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public int GetTotalWorkItemAge(Portfolio portfolio)
         {
-            logger.LogDebug("Getting Total Work Item Age for Portfolio {PortfolioName}", portfolio.Name);
+            return GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+        }
 
-            var inProgressFeatures = featureRepository.GetAllByPredicate(f =>
-                f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                f.StateCategory == StateCategories.Doing);
+        public int GetTotalWorkItemAge(Portfolio portfolio, DateTime endDate)
+        {
+            logger.LogDebug("Getting Total Work Item Age snapshot for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, endDate.Date);
 
-            var totalAge = inProgressFeatures.Sum(feature => feature.WorkItemAge);
+            var totalWorkItemAge = GetFromCacheIfExists(portfolio, $"TotalWorkItemAge_{endDate:yyyy-MM-dd}", () =>
+             {
+                 var features = featureRepository.GetAllByPredicate(f =>
+                     f.Portfolios.Any(p => p.Id == portfolio.Id) &&
+                     (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done));
 
-            logger.LogDebug("Total Work Item Age for Portfolio {PortfolioName}: {TotalAge} days", portfolio.Name, totalAge);
+                 var (values, _) = GenerateTotalWorkItemAgeByDay(endDate, endDate, features);
+                 return new InfoMetric(values[0]);
+             }, logger);
 
-            return totalAge;
+            return totalWorkItemAge.Value;
+        }
+
+        public ThroughputInfoDto GetThroughputInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Throughput Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"ThroughputInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+             {
+                 var currentThroughput = GetThroughputForPortfolio(portfolio, startDate, endDate);
+                 var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                 var previousEnd = startDate.AddDays(-1);
+                 var previousStart = startDate.AddDays(-periodDays);
+                 var previousThroughput = GetThroughputForPortfolio(portfolio, previousStart, previousEnd);
+
+                 return BuildThroughputInfoDto(currentThroughput.Total, previousThroughput.Total, periodDays, startDate, endDate, previousStart, previousEnd);
+             }, logger);
+        }
+
+        public ArrivalsInfoDto GetArrivalsInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Arrivals Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"ArrivalsInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+             {
+                 var currentArrivals = GetArrivalsForPortfolio(portfolio, startDate, endDate);
+                 var periodDays = (endDate.Date - startDate.Date).Days + 1;
+                 var previousEnd = startDate.AddDays(-1);
+                 var previousStart = startDate.AddDays(-periodDays);
+                 var previousArrivals = GetArrivalsForPortfolio(portfolio, previousStart, previousEnd);
+
+                 return BuildArrivalsInfoDto(currentArrivals.Total, previousArrivals.Total, periodDays, startDate, endDate, previousStart, previousEnd);
+             }, logger);
         }
 
         public void InvalidatePortfolioMetrics(Portfolio portfolio)
