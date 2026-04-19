@@ -4,21 +4,21 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v26.4.19.8
+# Lighthouse v26.4.19.10
 
 ## Metrics Improvements
 We've worked on the feedback we got from the UX overhaul, and refined our Metrics further. Following changes were made in this release.
 
 ### Simplified Metrics Categories
 The available categories in the Metrics section have been consolidated from six categories to four:
-| Before | After |
-|---|---|
-| Flow Overview | **Flow Overview** (unchanged) |
-| Cycle Time | Merged into **Flow Metrics** |
-| Throughput | Merged into **Flow Metrics** |
-| WIP & Aging | Merged into **Flow Metrics** |
-| Predictability | **Predictability** (unchanged) |
-| Portfolio & Features | **Portfolio & Features** (unchanged) |
+| Before | After |  
+|---|---|  
+| Flow Overview | **Flow Overview** (unchanged) |  
+| Cycle Time | Merged into **Flow Metrics** |  
+| Throughput | Merged into **Flow Metrics** |  
+| WIP & Aging | Merged into **Flow Metrics** |  
+| Predictability | **Predictability** (unchanged) |  
+| Portfolio & Features | **Portfolio & Features** (unchanged) |  
 
 Each chart is now appearing exactly in one category. While the *Flow Overview* will show you the status at a quick glance, the *Flow Metrics* will allow you to dive deeper and get into details.
 
@@ -93,7 +93,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Sascha Lucius](https://www.linkedin.com/in/sascha-lucius/)
 - [Chandan Bala](https://www.linkedin.com/in/chandan-bala-7251b9242/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.7.1...v26.4.19.8)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.7.1...v26.4.19.10)
 
 # Lighthouse v26.4.7.1
 
