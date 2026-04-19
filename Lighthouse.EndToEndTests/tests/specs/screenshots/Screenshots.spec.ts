@@ -355,12 +355,10 @@ testWithData(
 		);
 
 		const metricCategoriesMap = new Map<MetricsCategories, number>([
-			[MetricsCategories.FlowOverview, 7],
-			[MetricsCategories.CycleTime, 5],
-			[MetricsCategories.Throughput, 5],
-			[MetricsCategories.WipAging, 7],
-			[MetricsCategories.Predictability, 6],
-			[MetricsCategories.PortfolioAndFeatures, 4],
+			[MetricsCategories.FlowOverview, 8],
+			[MetricsCategories.FlowMetrics, 6],
+			[MetricsCategories.Predictability, 7],
+			[MetricsCategories.PortfolioAndFeatures, 1],
 		]);
 
 		for (const [
