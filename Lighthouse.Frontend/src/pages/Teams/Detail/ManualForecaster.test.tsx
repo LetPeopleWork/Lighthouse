@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import dayjs from "dayjs";
 import type React from "react";
 import type {
@@ -472,7 +473,7 @@ describe("ManualForecaster component", () => {
 			).not.toBeInTheDocument();
 		});
 
-		it("should render feature search input in Features mode", () => {
+		it("should render an autocomplete for selecting features", () => {
 			render(
 				<ManualForecaster
 					{...defaultProps}
@@ -480,38 +481,10 @@ describe("ManualForecaster component", () => {
 					forecastInputCandidates={candidatesWithFeatures}
 				/>,
 			);
-			expect(screen.getByLabelText(/search features/i)).toBeInTheDocument();
+			expect(screen.getByRole("combobox")).toBeInTheDocument();
 		});
 
-		it("should render selectable feature chips from forecastInputCandidates.features", () => {
-			render(
-				<ManualForecaster
-					{...defaultProps}
-					mode="features"
-					forecastInputCandidates={candidatesWithFeatures}
-				/>,
-			);
-			expect(screen.getByText("Feature Alpha")).toBeInTheDocument();
-			expect(screen.getByText("Feature Beta")).toBeInTheDocument();
-			expect(screen.getByText("Feature Gamma")).toBeInTheDocument();
-		});
-
-		it("should filter visible features based on search text", () => {
-			render(
-				<ManualForecaster
-					{...defaultProps}
-					mode="features"
-					forecastInputCandidates={candidatesWithFeatures}
-				/>,
-			);
-			const searchInput = screen.getByLabelText(/search features/i);
-			fireEvent.change(searchInput, { target: { value: "Alpha" } });
-			expect(screen.getByText("Feature Alpha")).toBeInTheDocument();
-			expect(screen.queryByText("Feature Beta")).not.toBeInTheDocument();
-			expect(screen.queryByText("Feature Gamma")).not.toBeInTheDocument();
-		});
-
-		it("should call onFeatureSelectionChange when a feature chip is clicked", () => {
+		it("should show unselected features as options in the autocomplete", async () => {
 			render(
 				<ManualForecaster
 					{...defaultProps}
@@ -520,10 +493,90 @@ describe("ManualForecaster component", () => {
 					forecastInputCandidates={candidatesWithFeatures}
 				/>,
 			);
-			fireEvent.click(screen.getByText("Feature Alpha"));
+			await userEvent.click(screen.getByRole("combobox"));
+			await waitFor(() => {
+				expect(
+					screen.getByRole("option", { name: "Feature Alpha" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("option", { name: "Feature Beta" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("option", { name: "Feature Gamma" }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("should filter autocomplete options based on typed text", async () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={[]}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			await userEvent.type(screen.getByRole("combobox"), "Alpha");
+			await waitFor(() => {
+				expect(
+					screen.getByRole("option", { name: "Feature Alpha" }),
+				).toBeInTheDocument();
+				expect(
+					screen.queryByRole("option", { name: "Feature Beta" }),
+				).not.toBeInTheDocument();
+				expect(
+					screen.queryByRole("option", { name: "Feature Gamma" }),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("should call onFeatureSelectionChange when a feature is selected from the autocomplete", async () => {
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={[]}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			await userEvent.click(screen.getByRole("combobox"));
+			await waitFor(() => {
+				expect(
+					screen.getByRole("option", { name: "Feature Alpha" }),
+				).toBeInTheDocument();
+			});
+			await userEvent.click(
+				screen.getByRole("option", { name: "Feature Alpha" }),
+			);
 			expect(mockOnFeatureSelectionChange).toHaveBeenCalledWith([
 				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
 			]);
+		});
+
+		it("should not show already-selected features as options in the autocomplete", async () => {
+			const alreadySelected: IFeatureCandidate[] = [
+				{ id: 1, name: "Feature Alpha", remainingWork: 5 },
+			];
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					mode="features"
+					selectedFeatures={alreadySelected}
+					forecastInputCandidates={candidatesWithFeatures}
+				/>,
+			);
+			await userEvent.click(screen.getByRole("combobox"));
+			await waitFor(() => {
+				expect(
+					screen.queryByRole("option", { name: "Feature Alpha" }),
+				).not.toBeInTheDocument();
+				expect(
+					screen.getByRole("option", { name: "Feature Beta" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("option", { name: "Feature Gamma" }),
+				).toBeInTheDocument();
+			});
 		});
 
 		it("should show selected features as chips with a remove button", () => {
@@ -608,7 +661,7 @@ describe("ManualForecaster component", () => {
 			expect(screen.getByText(/no features available/i)).toBeInTheDocument();
 		});
 
-		it("should show the manual numeric input in Manual mode, not the feature search", () => {
+		it("should show the manual numeric input in Manual mode, not the feature autocomplete", () => {
 			render(
 				<ManualForecaster
 					{...defaultProps}
@@ -617,9 +670,7 @@ describe("ManualForecaster component", () => {
 				/>,
 			);
 			expect(screen.getByLabelText("Number of Work Items")).toBeInTheDocument();
-			expect(
-				screen.queryByLabelText(/search features/i),
-			).not.toBeInTheDocument();
+			expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 		});
 	});
 });

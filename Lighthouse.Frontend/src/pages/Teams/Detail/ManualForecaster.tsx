@@ -1,5 +1,6 @@
-import { Close, Search } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import {
+	Autocomplete,
 	Chip,
 	IconButton,
 	InputAdornment,
@@ -92,7 +93,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
-	const [featureSearchQuery, setFeatureSearchQuery] = useState("");
+	const [featureInputValue, setFeatureInputValue] = useState("");
 
 	const featureAggregate = selectedFeatures.reduce(
 		(sum, f) => sum + f.remainingWork,
@@ -101,8 +102,8 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	const showZeroHint =
 		mode === "manual" ? remainingItems === 0 : featureAggregate === 0;
 
-	const filteredFeatures = (forecastInputCandidates?.features ?? []).filter(
-		(f) => f.name.toLowerCase().includes(featureSearchQuery.toLowerCase()),
+	const availableFeatures = (forecastInputCandidates?.features ?? []).filter(
+		(f) => !selectedFeatures.some((s) => s.id === f.id),
 	);
 
 	const handleFeatureClick = (feature: IFeatureCandidate) => {
@@ -205,50 +206,37 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 
 				{mode === "features" && (
 					<>
-						<TextField
-							label="Search Features"
-							fullWidth
-							size="small"
-							value={featureSearchQuery}
-							onChange={(e) => setFeatureSearchQuery(e.target.value)}
-							slotProps={{
-								input: {
-									startAdornment: (
-										<InputAdornment position="start">
-											<Search fontSize="small" />
-										</InputAdornment>
-									),
-								},
-							}}
-						/>
-
 						{(forecastInputCandidates?.features ?? []).length === 0 ? (
 							<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
 								No features available
 							</Typography>
 						) : (
-							<Stack
-								direction="row"
-								spacing={1}
-								sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}
-							>
-								{filteredFeatures.map((feature) => {
-									const isSelected = selectedFeatures.some(
-										(f) => f.id === feature.id,
-									);
-									return (
-										!isSelected && (
-											<Chip
-												key={feature.id}
-												label={feature.name}
-												size="small"
-												onClick={() => handleFeatureClick(feature)}
-												variant="outlined"
-											/>
-										)
-									);
-								})}
-							</Stack>
+							<Autocomplete
+								options={availableFeatures}
+								getOptionLabel={(option) => option.name}
+								value={null}
+								inputValue={featureInputValue}
+								onInputChange={(_, newValue, reason) => {
+									if (reason !== "reset") setFeatureInputValue(newValue);
+								}}
+								onChange={(_, selectedOption) => {
+									if (selectedOption) {
+										handleFeatureClick(selectedOption);
+										setFeatureInputValue("");
+									}
+								}}
+								noOptionsText="No more features to add"
+								disableCloseOnSelect={false}
+								blurOnSelect={true}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										label="Add Feature"
+										size="small"
+										fullWidth
+									/>
+								)}
+							/>
 						)}
 
 						{selectedFeatures.length > 0 && (
