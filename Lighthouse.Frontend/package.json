@@ -38,7 +38,7 @@
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
 		"react-markdown": "^10.1.0",
-		"react-router-dom": "^7.14.0",
+		"react-router-dom": "^7.14.1",
 		"reflect-metadata": "^0.2.2",
 		"remark-gfm": "^4.0.1"
 	},
