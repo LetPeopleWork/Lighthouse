@@ -45,7 +45,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: ./Lighthouse.Frontend
 
       - name: Download SBOM artifacts
