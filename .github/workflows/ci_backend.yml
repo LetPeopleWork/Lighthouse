@@ -42,7 +42,7 @@ jobs:
         python Scripts/generate_license.py private_key.pem Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+2 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
 
     - name: Cache NuGet packages
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/Lighthouse.Backend/**/*.csproj') }}
