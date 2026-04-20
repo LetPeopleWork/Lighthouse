@@ -40,7 +40,7 @@ jobs:
 
       - name: Install pnpm dependencies
         working-directory: ./Lighthouse.Frontend
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Restore .NET dependencies
         working-directory: ./Lighthouse.Backend
