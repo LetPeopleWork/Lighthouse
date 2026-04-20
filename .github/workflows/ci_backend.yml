@@ -7,6 +7,10 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: backend-integration-tests
+  cancel-in-progress: false
+
 jobs:
   backend:
     if: inputs.backend == 'true'
