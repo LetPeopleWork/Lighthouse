@@ -87,6 +87,7 @@
   	  <PrivateAssets>all</PrivateAssets>
   	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   	</PackageReference>
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.6" />
 	  <None Update="certs\LighthouseCert.pfx">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
