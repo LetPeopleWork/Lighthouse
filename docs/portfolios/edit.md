@@ -137,7 +137,14 @@ If the field is empty or 0 for a feature, it will fall back to the default/histo
 
 ## State Override
 Sometimes we may have child items already, but we are in the process of still refining. So instead of using the 3 child items that are already there, we may still want to use the estimate (which may say 12 for a feature) for some time.
-In order to achieve this, you can define which states should ignore the real child items. For those states, the real number will **always** be ignored, and the estimate or default size will be used.
+In order to achieve this, you can define which states should ignore the real child items. For those states, the estimate or default size will be used **unless the actual child item count exceeds it**.
+
+Concretely, Lighthouse applies the following logic for features in a state override:
+
+- If the actual child item count is **greater than** the default/estimated size, the actual count is used. This prevents larger-than-expected epics from being underestimated.
+- If the actual child item count is **less than or equal to** the default/estimated size, the real child items are ignored and the estimate or default size is used instead.
+
+**Example:** Your default feature size is 7. A feature in "Analysis in Progress" already has 11 child stories. Because 11 > 7, Lighthouse uses 11 — not 7 — to ensure the forecast reflects the real scope discovered so far.
 
 ## Visual Indication
 In the [Portfolio Detail](./detail.html) and [Team Detail](../teams/detail.html) pages you will see a visual indication for every item that is using the default/estimated size.
