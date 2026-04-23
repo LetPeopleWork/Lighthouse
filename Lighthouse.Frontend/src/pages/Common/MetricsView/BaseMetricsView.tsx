@@ -7,6 +7,7 @@ import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTi
 import EstimationVsCycleTimeChart from "../../../components/Common/Charts/EstimationVsCycleTimeChart";
 import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/FeatureSizeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
+import LoadBalanceMatrixChart from "../../../components/Common/Charts/LoadBalanceMatrixChart";
 import ProcessBehaviourChart, {
 	ProcessBehaviourChartType,
 } from "../../../components/Common/Charts/ProcessBehaviourChart";
@@ -42,6 +43,10 @@ import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
 import FeatureSizePercentilesWidget from "./FeatureSizePercentilesWidget";
 import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
+import {
+	deriveLoadBalanceMatrixData,
+	type LoadBalanceMatrixData,
+} from "./loadBalanceMatrix";
 import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget";
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
 import {
@@ -52,6 +57,7 @@ import {
 	computeEstimationVsCycleTimeRag,
 	computeFeatureSizeRag,
 	computeFeaturesWorkedOnRag,
+	computeLoadBalanceMatrixRag,
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
@@ -198,6 +204,9 @@ type RagInputs = {
 	readonly arrivalsPbcData: ProcessBehaviourChartData | null;
 	readonly arrivalsValues: ReadonlyArray<number>;
 	readonly arrivalsBlackoutDayIndices: ReadonlyArray<number>;
+	readonly loadBalanceBaselineAvailable: boolean;
+	readonly loadBalanceAverageWip: number | null;
+	readonly loadBalanceAverageTotalWorkItemAge: number | null;
 	readonly terms: RagTerms;
 };
 
@@ -335,6 +344,14 @@ function buildWidgetFooters(
 			inputs.featureSizeTarget,
 			inputs.sizePercentileValues,
 			inputs.featureSizes,
+			inputs.terms,
+		),
+		loadBalanceMatrix: computeLoadBalanceMatrixRag(
+			inputs.loadBalanceBaselineAvailable,
+			inputs.currentWip,
+			inputs.totalWorkItemAge ?? 0,
+			inputs.loadBalanceAverageWip,
+			inputs.loadBalanceAverageTotalWorkItemAge,
 			inputs.terms,
 		),
 	};
@@ -592,6 +609,7 @@ function buildWidgetNodes(ctx: {
 	throughputInfo: IThroughputInfo | null;
 	arrivalsInfo: IArrivalsInfo | null;
 	featureSizePercentilesInfo: IFeatureSizePercentilesInfo | null;
+	loadBalanceData: LoadBalanceMatrixData;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -668,6 +686,7 @@ function buildWidgetNodes(ctx: {
 				doingStates={ctx.doingStates}
 			/>
 		),
+		loadBalanceMatrix: <LoadBalanceMatrixChart data={ctx.loadBalanceData} />,
 		wipOverTime: ctx.wipOverTimeData ? (
 			<LineRunChart
 				title={`${ctx.title} In Progress Over Time`}
@@ -917,6 +936,24 @@ export const BaseMetricsView = <
 
 	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
 
+	const loadBalanceData = useMemo(
+		() =>
+			deriveLoadBalanceMatrixData({
+				endDate,
+				currentWip: inProgressItems.length,
+				currentTotalWorkItemAge: totalWorkItemAge,
+				wipPbcData,
+				totalWorkItemAgePbcData,
+			}),
+		[
+			endDate,
+			inProgressItems.length,
+			totalWorkItemAge,
+			wipPbcData,
+			totalWorkItemAgePbcData,
+		],
+	);
+
 	const widgetNodes = buildWidgetNodes({
 		entity,
 		title,
@@ -958,6 +995,7 @@ export const BaseMetricsView = <
 		throughputInfo,
 		arrivalsInfo,
 		featureSizePercentilesInfo,
+		loadBalanceData,
 	});
 
 	const widgetFooters = buildWidgetFooters({
@@ -1042,6 +1080,9 @@ export const BaseMetricsView = <
 				)
 			: [],
 		arrivalsBlackoutDayIndices: arrivalsData?.blackoutDayIndices ?? [],
+		loadBalanceBaselineAvailable: loadBalanceData.baselineAvailable,
+		loadBalanceAverageWip: loadBalanceData.averageWip,
+		loadBalanceAverageTotalWorkItemAge: loadBalanceData.averageTotalWorkItemAge,
 	});
 
 	const widgetViewData = buildViewData({

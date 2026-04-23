@@ -69,6 +69,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	"flow-metrics": [
 		{ widgetKey: "cycleScatter", size: "large" },
 		{ widgetKey: "aging", size: "large" },
+		{ widgetKey: "loadBalanceMatrix", size: "large" },
 		{ widgetKey: "throughput", size: "large" },
 		{ widgetKey: "stacked", size: "large" },
 		{ widgetKey: "wipOverTime", size: "large" },
@@ -110,6 +111,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	arrivals: "none",
 	wipOverTime: "none",
 	totalWorkItemAgeOverTime: "none",
+	loadBalanceMatrix: "none",
 	workDistribution: "none",
 	featureSize: "none",
 	aging: "none",

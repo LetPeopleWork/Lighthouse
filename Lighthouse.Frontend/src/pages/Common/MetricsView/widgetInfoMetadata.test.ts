@@ -21,6 +21,7 @@ describe("widgetInfoMetadata", () => {
 			"cycleScatter",
 			"workDistribution",
 			"aging",
+			"loadBalanceMatrix",
 			"wipOverTime",
 			"totalWorkItemAgeOverTime",
 			"stacked",

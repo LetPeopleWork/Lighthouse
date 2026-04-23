@@ -696,6 +696,45 @@ export function computeEstimationVsCycleTimeRag(
 	};
 }
 
+export function computeLoadBalanceMatrixRag(
+	baselineAvailable: boolean,
+	currentWip: number,
+	currentTotalWorkItemAge: number,
+	averageWip: number | null,
+	averageTotalWorkItemAge: number | null,
+	terms: RagTerms,
+): RagResult {
+	if (
+		!baselineAvailable ||
+		averageWip === null ||
+		averageTotalWorkItemAge === null
+	) {
+		return {
+			ragStatus: "red",
+			tipText: "Configure a baseline period to enable load balance analysis.",
+		};
+	}
+
+	if (currentTotalWorkItemAge > averageTotalWorkItemAge) {
+		return {
+			ragStatus: "red",
+			tipText: `${terms.workItemAge} is above baseline (${currentTotalWorkItemAge.toFixed(0)} > ${averageTotalWorkItemAge.toFixed(0)}). Close ongoing work before starting new items.`,
+		};
+	}
+
+	if (currentWip > averageWip) {
+		return {
+			ragStatus: "green",
+			tipText: `${terms.wip} is above baseline (${currentWip.toFixed(0)} > ${averageWip.toFixed(0)}) while ${terms.workItemAge} is at or below baseline (${currentTotalWorkItemAge.toFixed(0)} <= ${averageTotalWorkItemAge.toFixed(0)}).`,
+		};
+	}
+
+	return {
+		ragStatus: "amber",
+		tipText: `${terms.wip} is at or below baseline (${currentWip.toFixed(0)} <= ${averageWip.toFixed(0)}) while ${terms.workItemAge} is at or below baseline. Consider starting more work.`,
+	};
+}
+
 export function computeArrivalsRunChartRag(
 	arrivalsValues: ReadonlyArray<number>,
 	blackoutDayIndices: ReadonlyArray<number>,

@@ -53,6 +53,7 @@ export const MetricsWidgetNames = {
 	CycleTimePercentiles: "Cycle Time Percentiles",
 	CycleTimeScatterplot: "Cycle Time Scatterplot",
 	WorkItemAgingChart: "Work Item Aging Chart",
+	LoadBalanceMatrix: "Load Balance Matrix",
 	CycleTimeProcessBehaviourChart: "Cycle Time Process Behaviour Chart",
 	ThroughputRunChart: "Throughput Run Chart",
 	SimplifiedCumulativeFlowDiagram: "Simplified Cumulative Flow Diagram",
@@ -89,6 +90,7 @@ export class MetricsPage {
 		[MetricsCategories.FlowMetrics]: [
 			["Cycle Time Scatterplot", "cycleScatter"],
 			["Work Item Aging Chart", "aging"],
+			["Load Balance Matrix", "loadBalanceMatrix"],
 			["Throughput Run Chart", "throughput"],
 			["Simplified Cumulative Flow Diagram", "stacked"],
 			["Work Items In Progress Over Time", "wipOverTime"],

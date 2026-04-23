@@ -204,6 +204,7 @@ describe("categoryMetadata", () => {
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"cycleScatter",
 				"aging",
+				"loadBalanceMatrix",
 				"throughput",
 				"stacked",
 				"wipOverTime",
@@ -290,6 +291,7 @@ describe("categoryMetadata", () => {
 				"throughput",
 				"arrivals",
 				"totalWorkItemAgeOverTime",
+				"loadBalanceMatrix",
 				"workDistribution",
 				"featureSize",
 				"aging",

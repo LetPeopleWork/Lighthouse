@@ -135,6 +135,18 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No SLE or blocked indicators are configured, or too many items exceed SLE and at least one item is blocked.",
 		},
 	},
+	loadBalanceMatrix: {
+		description:
+			"Matrix of current load and five-day projection using WIP and total work item age against baseline averages.",
+		learnMoreUrl: `${DOCS_BASE}#load-balance-matrix`,
+		statusGuidance: {
+			sustain:
+				"Today point is above baseline WIP while total work item age is at or below baseline.",
+			observe:
+				"Today point is at or below baseline WIP while total work item age is at or below baseline. Consider starting more work.",
+			act: "Baseline is missing, or today point is above baseline total work item age. Close ongoing work before starting new things.",
+		},
+	},
 	wipOverTime: {
 		description:
 			"Historical trend of items in progress over the selected date range.",

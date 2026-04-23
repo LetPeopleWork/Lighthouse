@@ -7,6 +7,7 @@ import {
 	computeEstimationVsCycleTimeRag,
 	computeFeatureSizeRag,
 	computeFeaturesWorkedOnRag,
+	computeLoadBalanceMatrixRag,
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
@@ -889,6 +890,40 @@ describe("ragRules", () => {
 			};
 			const result = computePbcRag(data);
 			expect(result.ragStatus).toBe("red");
+		});
+	});
+
+	describe("computeLoadBalanceMatrixRag", () => {
+		it("returns red with baseline setup guidance when baseline is missing", () => {
+			const result = computeLoadBalanceMatrixRag(
+				false,
+				6,
+				42,
+				null,
+				null,
+				terms,
+			);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("baseline");
+		});
+
+		it("returns green when WIP is above baseline and total age is at or below baseline", () => {
+			const result = computeLoadBalanceMatrixRag(true, 8, 40, 5, 40, terms);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("returns amber when WIP is at or below baseline and total age is at or below baseline", () => {
+			const result = computeLoadBalanceMatrixRag(true, 4, 40, 5, 40, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Consider starting more work");
+		});
+
+		it("returns red when total age is above baseline regardless of WIP", () => {
+			const result = computeLoadBalanceMatrixRag(true, 9, 41, 5, 40, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain(
+				"Close ongoing work before starting new items",
+			);
 		});
 	});
 

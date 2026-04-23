@@ -247,6 +247,17 @@ vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/LoadBalanceMatrixChart", () => ({
+	default: ({ data }: { data: { points: Array<{ date: Date }> } }) => (
+		<div data-testid="load-balance-matrix-chart">
+			<div data-testid="load-balance-point-count">{data.points.length}</div>
+			<div data-testid="load-balance-today-date">
+				{data.points[0]?.date?.toISOString() ?? "none"}
+			</div>
+		</div>
+	),
+}));
+
 vi.mock("../../../components/Common/Charts/WorkDistributionChart", () => ({
 	default: ({
 		workItems,
@@ -939,6 +950,113 @@ describe("BaseMetricsView component", () => {
 				),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("age-chart-data-count")).toHaveTextContent("2");
+		});
+	});
+
+	it("renders load balance matrix in flow-metrics with baseline-missing red RAG guidance", async () => {
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+			"flow-metrics",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={mockProject}
+				metricsService={mockMetricsService}
+				title="Features"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-shell-loadBalanceMatrix"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("load-balance-matrix-chart"),
+			).toBeInTheDocument();
+			expect(screen.getByTestId("load-balance-point-count")).toHaveTextContent(
+				"6",
+			);
+			expect(
+				screen.getByTestId("widget-rag-loadBalanceMatrix"),
+			).toHaveTextContent("red");
+			expect(
+				screen.getByTestId("widget-tip-loadBalanceMatrix"),
+			).toHaveTextContent("baseline");
+		});
+	});
+
+	it("renders load balance matrix for team owner in flow-metrics", async () => {
+		localStorage.setItem(
+			`lighthouse:metrics:team:${mockTeam.id}:category`,
+			"flow-metrics",
+		);
+
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+		};
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={mockTeam}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-shell-loadBalanceMatrix"),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("uses selected end date as load balance matrix today point", async () => {
+		localStorage.setItem(
+			`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+			"flow-metrics",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={mockProject}
+				metricsService={mockMetricsService}
+				title="Features"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("load-balance-today-date")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		const previousEnd = new Date(
+			screen.getByTestId("end-date").textContent ?? "",
+		);
+		const expectedEnd = new Date(previousEnd);
+		expectedEnd.setDate(expectedEnd.getDate() - 30);
+
+		fireEvent.click(screen.getByTestId("change-end-date"));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("load-balance-today-date")).toHaveTextContent(
+				expectedEnd.toISOString(),
+			);
+			expect(mockMetricsService.getInProgressItems).toHaveBeenCalledWith(
+				mockProject.id,
+				expectedEnd,
+			);
+			expect(mockMetricsService.getTotalWorkItemAge).toHaveBeenCalledWith(
+				mockProject.id,
+				expectedEnd,
+			);
 		});
 	});
 

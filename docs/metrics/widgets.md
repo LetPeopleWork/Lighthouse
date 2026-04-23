@@ -38,7 +38,7 @@ Widgets are organized into four dashboard categories. Each category groups relat
 | Category | Question it answers | Widgets |
 |---|---|---|
 | **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
-| **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
+| **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Load Balance Matrix, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
 | **Predictability** | Can we trust our forecasts? | Predictability Score Details, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
 | **Portfolio & Features** | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
 
@@ -194,6 +194,35 @@ Jira note: Lighthouse identifies blocked items using the blocked tags or blocked
 | 🔴 Act | No SLE is configured, *or* no blocked indicators are configured, *or* the percentage of items exceeding the SLE is greater than the allowed percentage (100% − SLE percentile) *and* at least one item is also blocked. |
 | 🟡 Observe | Some items exceed the SLE or at least one item is blocked, but not both conditions together. |
 | 🟢 Sustain | All in-progress items are within the SLE and no items are blocked. |
+
+# Load Balance Matrix
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | WIP, Total Work Item Age |
+| **Affected by Filtering** | Yes |
+
+The Load Balance Matrix visualizes current load and short-term inventory risk in a single view:
+
+- X-axis: Total Work Item Age
+- Y-axis: Work in Progress (WIP)
+- Divider lines: baseline averages from WIP PBC and Total Work Item Age PBC
+- Points: one selected end-date snapshot plus 5 projected days
+
+The first point always represents the currently selected **end date** in the date range selector. The five projected points assume WIP remains constant and Total Work Item Age increases by the current WIP each day.
+
+{: .note}
+If no valid baseline is configured for either WIP PBC or Total Work Item Age PBC, the widget still renders the projection points but cannot classify quadrants. In that case, the status remains red until a baseline is configured.
+
+This interpretation intentionally favors a slightly higher-than-average WIP while keeping Total Work Item Age below average. The goal is to keep flow from running dry while staying conservative on inventory age.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | Baseline is missing, *or* today's Total Work Item Age is above the baseline average. Close ongoing work before starting new things. |
+| 🟡 Observe | Today's WIP is at or below the baseline average while today's Total Work Item Age is at or below baseline. Consider starting more work. |
+| 🟢 Sustain | Today's WIP is above the baseline average while today's Total Work Item Age is at or below baseline. |
 
 # Work Distribution
 
