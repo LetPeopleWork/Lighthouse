@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             _ = CreateTeam();
             _ = CreateTeam();
-            
+
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
 
@@ -234,14 +234,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(portfolio.Features, Has.Count.EqualTo(2));
-                
+
                 Assert.That(portfolio.Teams.ToList(), Has.Count.EqualTo(2));
 
-                foreach (var feature in portfolio.Features)   
+                foreach (var feature in portfolio.Features)
                 {
                     Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                    Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);   
-                    
+                    Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
+
                     Assert.That(feature.Teams.ToList(), Has.Count.EqualTo(2));
                 }
             }
@@ -939,6 +939,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock.Verify(x => x.Add(It.IsAny<WorkItem>()), Times.Never);
             workItemRepositoryMock.Verify(x => x.Update(It.IsAny<WorkItem>()), Times.Never);
             workItemRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ActualWorkExceedsDefault_UsesActualWork()
+        {
+            var team = CreateTeam();
+            var project = CreatePortfolio();
+
+            project.DefaultAmountOfWorkItemsPerFeature = 7;
+            project.OverrideRealChildCountStates.Add("Analysis in Progress");
+
+            // Feature has 11 child stories (total) - default is only 7
+            // Since 11 > 7, we expect 11 to be used, not 7
+            var feature = new Feature(team, 11) { ReferenceId = "12", State = "Analysis in Progress" };
+            SetupWorkForFeature(feature, 11, 11, team);
+
+            workTrackingConnectorMock
+                .Setup(x => x.GetFeaturesForProject(project))
+                .Returns(Task.FromResult(new List<Feature> { feature }));
+
+            var subject = CreateSubject();
+            await subject.UpdateFeaturesForPortfolio(project);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(1));
+
+                var actualFeature = project.Features.Single();
+                Assert.That(actualFeature.IsUsingDefaultFeatureSize, Is.False);
+                Assert.That(actualFeature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(11));
+            }
         }
 
         private void SetupWorkForFeature(Feature feature, int doneItems, int toDoItems)

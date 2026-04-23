@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             defaultWorkItemsBasedOnPercentile.Remove(portfolio.Id);
 
             RefreshRemainingWork(portfolio);
-            
+
             ExtrapolateNotBrokenDownFeatures(portfolio);
 
             await featureRepository.Save();
@@ -133,7 +133,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             foreach (var feature in portfolio.GetFeaturesToOverrideWithDefaultSize())
             {
-                feature.ClearFeatureWork();
+                var actualTotal = feature.FeatureWork.Sum(x => x.TotalWorkItems);
+                var defaultSize = GetDefaultRemainingWork(portfolio);
+
+                if (actualTotal < defaultSize)
+                {
+                    feature.ClearFeatureWork();
+                }
             }
 
             logger.LogInformation("Extrapolating Not Broken Down Features for Portfolio {PortfolioName}", portfolio.Name);
@@ -154,7 +160,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
             var involvedTeams = portfolio.Teams.ToList();
-            
+
             var owningTeams = involvedTeams.Count > 0
                 ? involvedTeams
                 : teamRepository.GetAll().ToList();
