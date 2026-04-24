@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/database-management")]
+    [Route("api/v1/database-management")]
+    [Route("api/latest/database-management")]
     [ApiController]
     public class DatabaseManagementController(IDatabaseManagementService databaseManagementService) : ControllerBase
     {

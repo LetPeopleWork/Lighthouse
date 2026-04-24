@@ -9,9 +9,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
     {
         private static readonly HashSet<string> BlockedModeAllowedPaths =
         [
-            "/api/auth",
-            "/api/license",
-            "/api/version",
+            "/api/latest/auth",
+            "/api/latest/license",
+            "/api/latest/version",
         ];
 
         private readonly IAuthModeResolver authModeResolver;

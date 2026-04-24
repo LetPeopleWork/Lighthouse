@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/blackout-periods")]
+    [Route("api/v1/blackout-periods")]
+    [Route("api/latest/blackout-periods")]
     [ApiController]
     public class BlackoutPeriodsController(IBlackoutPeriodService blackoutPeriodService) : ControllerBase
     {

@@ -29,7 +29,7 @@ export class AuthService extends BaseApiService implements IAuthService {
 	}
 
 	getLoginUrl(): string {
-		const baseUrl = this.apiService.defaults.baseURL ?? "/api";
+		const baseUrl = this.apiService.defaults.baseURL ?? "/api/latest";
 		return `${baseUrl}/auth/login`;
 	}
 

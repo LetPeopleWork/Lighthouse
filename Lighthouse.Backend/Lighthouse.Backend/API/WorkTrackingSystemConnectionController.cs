@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
+    [Route("api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
+    [Route("api/latest/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [ApiController]
     public class WorkTrackingSystemConnectionController(
         IRepository<WorkTrackingSystemConnection> repository,

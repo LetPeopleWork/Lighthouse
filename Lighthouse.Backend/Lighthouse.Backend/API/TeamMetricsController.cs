@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/teams/{teamId:int}/metrics")]
+    [Route("api/v1/teams/{teamId:int}/metrics")]
+    [Route("api/latest/teams/{teamId:int}/metrics")]
     [ApiController]
     public class TeamMetricsController : ControllerBase
     {

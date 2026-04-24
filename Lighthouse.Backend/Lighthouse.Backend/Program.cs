@@ -193,7 +193,6 @@ namespace Lighthouse.Backend
                 }
             });
 
-
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

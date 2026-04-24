@@ -9,12 +9,14 @@ export class BaseApiService {
 	protected apiService: AxiosInstance;
 
 	constructor() {
-		this.apiService = axios.create({ baseURL: getBackendUrl() });
+		this.apiService = axios.create({
+			baseURL: `${getBackendUrl()}/latest`,
+		});
 
 		// Once the backend URL is definitively known, update the base URL
 		getBackendReadyPromise().then(() => {
 			if (this.apiService?.defaults) {
-				this.apiService.defaults.baseURL = getBackendUrl();
+				this.apiService.defaults.baseURL = `${getBackendUrl()}/latest`;
 			}
 		});
 	}

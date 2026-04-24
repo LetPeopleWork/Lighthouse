@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/portfolios/{portfolioId:int}")]
+    [Route("api/v1/portfolios/{portfolioId:int}")]
+    [Route("api/latest/portfolios/{portfolioId:int}")]
     [ApiController]
     public class PortfolioController(
         IRepository<Portfolio> portfolioRepository,

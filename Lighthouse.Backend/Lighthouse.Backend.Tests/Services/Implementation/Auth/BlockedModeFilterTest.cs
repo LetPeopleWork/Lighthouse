@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_AuthDisabled_AllowsRequest()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Disabled });
-            var context = CreateContext("/api/teams");
+            var context = CreateContext("/api/latest/teams");
 
             var nextCalled = false;
             await subject.OnActionExecutionAsync(context, () =>
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_AuthEnabled_AllowsRequest()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Enabled });
-            var context = CreateContext("/api/teams");
+            var context = CreateContext("/api/latest/teams");
 
             var nextCalled = false;
             await subject.OnActionExecutionAsync(context, () =>
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Blocked_AllowsAuthEndpoints()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
-            var context = CreateContext("/api/auth/mode");
+            var context = CreateContext("/api/latest/auth/mode");
 
             var nextCalled = false;
             await subject.OnActionExecutionAsync(context, () =>
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Blocked_AllowsLicenseEndpoints()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
-            var context = CreateContext("/api/license/import");
+            var context = CreateContext("/api/latest/license/import");
 
             var nextCalled = false;
             await subject.OnActionExecutionAsync(context, () =>
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Blocked_AllowsVersionEndpoints()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
-            var context = CreateContext("/api/version/current");
+            var context = CreateContext("/api/latest/version/current");
 
             var nextCalled = false;
             await subject.OnActionExecutionAsync(context, () =>
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Blocked_DeniesTeamEndpoints()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
-            var context = CreateContext("/api/teams");
+            var context = CreateContext("/api/latest/teams");
 
             await subject.OnActionExecutionAsync(context, () =>
             {
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Blocked_DeniesPortfolioEndpoints()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
-            var context = CreateContext("/api/portfolios/1");
+            var context = CreateContext("/api/latest/portfolios/1");
 
             await subject.OnActionExecutionAsync(context, () =>
             {
@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Blocked_DeniesSettingsEndpoints()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
-            var context = CreateContext("/api/appsettings/FeatureRefresh");
+            var context = CreateContext("/api/latest/appsettings/FeatureRefresh");
 
             await subject.OnActionExecutionAsync(context, () =>
             {
@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task OnActionExecutionAsync_Misconfigured_AllowsRequest()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Misconfigured });
-            var context = CreateContext("/api/teams");
+            var context = CreateContext("/api/latest/teams");
 
             var nextCalled = false;
             await subject.OnActionExecutionAsync(context, () =>

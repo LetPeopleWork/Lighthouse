@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupPortfolios(1);
 
             var projectSetting = new PortfolioSettingDto();
-            var response = await Client.PostAsJsonAsync("/api/portfolios", projectSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/portfolios", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupPortfolios(0);
 
             var projectSetting = new PortfolioSettingDto();
-            var response = await Client.PostAsJsonAsync("/api/portfolios", projectSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/portfolios", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task UpdateAllProjects_AsNonPremiumUser_Returns403()
         {
-            var response = await Client.PostAsync("/api/portfolios/refresh-all", null);
+            var response = await Client.PostAsync("/api/latest/portfolios/refresh-all", null);
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
         }
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupPortfolios(2);
 
             var projectSetting = new PortfolioSettingDto();
-            var response = await Client.PutAsJsonAsync("/api/portfolios/123", projectSetting);
+            var response = await Client.PutAsJsonAsync("/api/latest/portfolios/123", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupPortfolios(1);
 
             var projectSetting = new PortfolioSettingDto();
-            var response = await Client.PutAsJsonAsync("/api/portfolios/123", projectSetting);
+            var response = await Client.PutAsJsonAsync("/api/latest/portfolios/123", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupPortfolios(2);
 
-            var response = await Client.PostAsync("/api/portfolios/123/refresh", null);
+            var response = await Client.PostAsync("/api/latest/portfolios/123/refresh", null);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             await SetupPortfolios(1);
 
-            var response = await Client.PostAsync("/api/portfolios/123/refresh", null);
+            var response = await Client.PostAsync("/api/latest/portfolios/123/refresh", null);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupPortfolios(2);
 
             var projectSetting = new PortfolioSettingDto();
-            var response = await Client.PostAsJsonAsync("/api/portfolios/validate", projectSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/portfolios/validate", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupPortfolios(1);
 
             var projectSetting = new PortfolioSettingDto();
-            var response = await Client.PostAsJsonAsync("/api/portfolios/validate", projectSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/portfolios/validate", projectSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");

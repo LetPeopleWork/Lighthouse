@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/portfolios/{portfolioId:int}/delivery-rules")]
+    [Route("api/v1/portfolios/{portfolioId:int}/delivery-rules")]
+    [Route("api/latest/portfolios/{portfolioId:int}/delivery-rules")]
     [ApiController]
     public class DeliveryRulesController(
         IRepository<Portfolio> portfolioRepository,

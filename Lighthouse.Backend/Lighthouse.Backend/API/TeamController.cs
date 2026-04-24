@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/teams/{teamId:int}")]
+    [Route("api/v1/teams/{teamId:int}")]
+    [Route("api/latest/teams/{teamId:int}")]
     [ApiController]
     public class TeamController(
         IRepository<Team> teamRepository,

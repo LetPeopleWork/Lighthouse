@@ -49,7 +49,9 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	private apiService: AxiosInstance;
 
 	constructor() {
-		this.apiService = axios.create({ baseURL: getBackendUrl() });
+		this.apiService = axios.create({
+			baseURL: `${getBackendUrl()}/latest`,
+		});
 
 		// Self-initialise once the backend URL is known
 		this.connectionPromise = this.connect();
@@ -59,7 +61,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		await getBackendReadyPromise();
 
 		const baseUrl = getBackendUrl();
-		this.apiService = axios.create({ baseURL: baseUrl });
+		this.apiService = axios.create({ baseURL: `${baseUrl}/latest` });
 
 		if (this.isConnected) return;
 

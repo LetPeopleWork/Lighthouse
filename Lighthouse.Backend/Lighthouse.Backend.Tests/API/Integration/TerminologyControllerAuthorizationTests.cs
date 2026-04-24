@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             
             var terminology = new List<TerminologyEntry> { terminologyEntry };
             
-            var response = await Client.PutAsJsonAsync("/api/terminology", terminology);
+            var response = await Client.PutAsJsonAsync("/api/latest/terminology", terminology);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");

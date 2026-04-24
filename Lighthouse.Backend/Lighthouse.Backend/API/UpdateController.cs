@@ -4,7 +4,8 @@ using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
+    [Route("api/latest/[controller]")]
     [ApiController]
     public class UpdateController(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses)
         : ControllerBase

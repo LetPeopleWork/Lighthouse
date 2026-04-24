@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetAll_AsNonPremiumUser_DoesNotReturn403()
         {
-            var response = await Client.GetAsync("/api/blackout-periods");
+            var response = await Client.GetAsync("/api/latest/blackout-periods");
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Description = "Test"
             };
 
-            var response = await Client.PostAsJsonAsync("/api/blackout-periods", dto);
+            var response = await Client.PostAsJsonAsync("/api/latest/blackout-periods", dto);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Description = "Test"
             };
 
-            var response = await Client.PutAsJsonAsync("/api/blackout-periods/1", dto);
+            var response = await Client.PutAsJsonAsync("/api/latest/blackout-periods/1", dto);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task Delete_AsNonPremiumUser_Returns403()
         {
-            var response = await Client.DeleteAsync("/api/blackout-periods/1");
+            var response = await Client.DeleteAsync("/api/latest/blackout-periods/1");
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");

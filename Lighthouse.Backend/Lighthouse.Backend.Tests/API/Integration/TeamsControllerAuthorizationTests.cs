@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var teamSetting = new TeamSettingDto();
 
-            var response = await Client.PostAsJsonAsync("/api/teams", teamSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/teams", teamSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var teamSetting = new TeamSettingDto();
 
-            var response = await Client.PostAsJsonAsync("/api/teams", teamSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/teams", teamSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task UpdateAllProjects_AsNonPremiumUser_Returns403()
         {
-            var response = await Client.PostAsync("/api/teams/update-all", null);
+            var response = await Client.PostAsync("/api/latest/teams/update-all", null);
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
         }
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupTeams(4);
             var teamSetting = new TeamSettingDto();
 
-            var response = await Client.PutAsJsonAsync("/api/teams/123", teamSetting);
+            var response = await Client.PutAsJsonAsync("/api/latest/teams/123", teamSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupTeams(3);
             var teamSetting = new TeamSettingDto();
 
-            var response = await Client.PutAsJsonAsync("/api/teams/123", teamSetting);
+            var response = await Client.PutAsJsonAsync("/api/latest/teams/123", teamSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public async Task UpdateTeamData_AsNonPremiumUser_Returns403()
         {
             await SetupTeams(4);
-            var response = await Client.PostAsync("/api/teams/123", null);
+            var response = await Client.PostAsync("/api/latest/teams/123", null);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public async Task UpdateTeamData_AsNonPremiumUser_BelowTeamLimit_DoesNotReturn403()
         {
             await SetupTeams(3);
-            var response = await Client.PostAsync("/api/teams/123", null);
+            var response = await Client.PostAsync("/api/latest/teams/123", null);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupTeams(4);
             var teamSetting = new TeamSettingDto();
 
-            var response = await Client.PostAsJsonAsync("/api/teams/validate", teamSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/teams/validate", teamSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await SetupTeams(3);
             var teamSetting = new TeamSettingDto();
 
-            var response = await Client.PostAsJsonAsync("/api/teams/validate", teamSetting);
+            var response = await Client.PostAsJsonAsync("/api/latest/teams/validate", teamSetting);
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");

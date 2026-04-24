@@ -9,6 +9,8 @@ This section will give you a brief overview over how to set up Lighthouse with c
 
 Lighthouse currently works with [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [CSV](./worktrackingsystems/csv.html), and [Linear](./worktrackingsystems/linear.html). Check out the dedicated subpages for details on how to configure it Lighthouse for the respective systems.
 
+For external automation clients and integrations, use the [API Versioning](./api-versioning.html) contract as the source of truth.
+
 - TOC
 {:toc}
 

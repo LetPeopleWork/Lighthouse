@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", content);
+            var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", content);
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await Client.PostAsync($"/api/deliveries/portfolio/{portfolioId}", content);
+            var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolioId}", content);
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var content = new StringContent(invalidJson, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", content);
+            var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", content);
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", content);
+            var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", content);
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", content);
+            var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", content);
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -153,13 +153,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act - Create Delivery
-            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", content);
+            var createResponse = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", content);
             createResponse.EnsureSuccessStatusCode();
             
             Assert.That(createResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
             
             // Act - Get Created Delivery
-            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             var getResponseContent = await getResponse.Content.ReadAsStringAsync();
             var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(getResponseContent,
@@ -175,11 +175,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(createdDelivery, Is.Not.Null);
 
             // Act - Delete Delivery
-            var deleteResponse = await Client.DeleteAsync($"/api/deliveries/{createdDelivery.Id}");
+            var deleteResponse = await Client.DeleteAsync($"/api/latest/deliveries/{createdDelivery.Id}");
             deleteResponse.EnsureSuccessStatusCode();
 
             // Act - Try to Get Deleted Delivery
-            getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             getResponseContent = await getResponse.Content.ReadAsStringAsync();
             deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(getResponseContent,
@@ -218,11 +218,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var createJson = JsonSerializer.Serialize(createRequest);
             var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
-            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", createContent);
+            var createResponse = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", createContent);
             createResponse.EnsureSuccessStatusCode();
 
             // Get created delivery ID
-            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
                 await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
@@ -239,13 +239,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var updateJson = JsonSerializer.Serialize(updateRequest);
             var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
-            var updateResponse = await Client.PutAsync($"/api/deliveries/{createdDelivery.Id}", updateContent);
+            var updateResponse = await Client.PutAsync($"/api/latest/deliveries/{createdDelivery.Id}", updateContent);
 
             // Assert - update should succeed
             Assert.That(updateResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
             // Verify persisted state
-            var verifyResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             verifyResponse.EnsureSuccessStatusCode();
             var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
                 await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
@@ -276,11 +276,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var createJson = JsonSerializer.Serialize(createRequest);
             var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
-            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", createContent);
+            var createResponse = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", createContent);
             createResponse.EnsureSuccessStatusCode();
 
             // Get created delivery ID
-            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
                 await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
@@ -297,13 +297,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var updateJson = JsonSerializer.Serialize(updateRequest);
             var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
-            var updateResponse = await Client.PutAsync($"/api/deliveries/{createdDelivery.Id}", updateContent);
+            var updateResponse = await Client.PutAsync($"/api/latest/deliveries/{createdDelivery.Id}", updateContent);
 
             // Assert
             Assert.That(updateResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
             // Verify persisted state
-            var verifyResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             verifyResponse.EnsureSuccessStatusCode();
             var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
                 await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(updatedDelivery.Name, Is.EqualTo("Release 1 Renamed"));
-                Assert.That(updatedDelivery.Features, Is.EquivalentTo(new[] { features[0].Id, features[1].Id }));
+                Assert.That(updatedDelivery.Features, Is.EquivalentTo([features[0].Id, features[1].Id]));
             }
         }
 
@@ -333,10 +333,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var createJson = JsonSerializer.Serialize(createRequest);
             var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
-            var createResponse = await Client.PostAsync($"/api/deliveries/portfolio/{portfolio.Id}", createContent);
+            var createResponse = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", createContent);
             createResponse.EnsureSuccessStatusCode();
 
-            var getResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
                 await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
             var deliveryId = deliveries!.Single().Id;
@@ -349,7 +349,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 FeatureIds = [features[0].Id, features[1].Id],
                 SelectionMode = DeliverySelectionMode.Manual
             };
-            var update1Response = await Client.PutAsync($"/api/deliveries/{deliveryId}",
+            var update1Response = await Client.PutAsync($"/api/latest/deliveries/{deliveryId}",
                 new StringContent(JsonSerializer.Serialize(update1), Encoding.UTF8, "application/json"));
             Assert.That(update1Response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
@@ -361,13 +361,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 FeatureIds = [features[1].Id, features[2].Id],
                 SelectionMode = DeliverySelectionMode.Manual
             };
-            var update2Response = await Client.PutAsync($"/api/deliveries/{deliveryId}",
+            var update2Response = await Client.PutAsync($"/api/latest/deliveries/{deliveryId}",
                 new StringContent(JsonSerializer.Serialize(update2), Encoding.UTF8, "application/json"));
 
             // Assert
             Assert.That(update2Response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
-            var verifyResponse = await Client.GetAsync($"/api/deliveries/portfolio/{portfolio.Id}");
+            var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
                 await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
 

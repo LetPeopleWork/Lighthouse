@@ -10,7 +10,8 @@ using Microsoft.VisualStudio.Services.Common;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
+    [Route("api/latest/[controller]")]
     [ApiController]
     public class ForecastController(
         IForecastUpdater forecastUpdater,
