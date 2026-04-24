@@ -204,12 +204,12 @@ describe("categoryMetadata", () => {
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"cycleScatter",
 				"aging",
-				"loadBalanceMatrix",
 				"throughput",
-				"stacked",
 				"wipOverTime",
 				"totalWorkItemAgeOverTime",
 				"arrivals",
+				"stacked",
+				"loadBalanceMatrix",
 			]);
 		});
 
