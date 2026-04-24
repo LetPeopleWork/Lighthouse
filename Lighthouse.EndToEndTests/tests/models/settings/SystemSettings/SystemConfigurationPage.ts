@@ -31,7 +31,7 @@ export class SystemConfigurationPage {
 
 		const featureToggleRequest = this.page.waitForResponse(
 			(response) =>
-				response.url().includes("/api/optionalfeatures") &&
+				response.url().includes("/api/latest/optionalfeatures") &&
 				response.status() === 200,
 		);
 

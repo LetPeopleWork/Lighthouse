@@ -31,24 +31,24 @@ export type ModelIdentifier = {
 };
 
 async function clearConfiguration(request: APIRequestContext): Promise<void> {
-	const portfoliosResponse = await request.get("/api/Portfolios");
+	const portfoliosResponse = await request.get("/api/latest/portfolios");
 	const portfolios = await portfoliosResponse.json();
 	for (const portfolio of portfolios) {
-		await request.delete(`/api/portfolios/${portfolio.id}`);
+		await request.delete(`/api/latest/portfolios/${portfolio.id}`);
 	}
 
-	const teamsResponse = await request.get("/api/Teams");
+	const teamsResponse = await request.get("/api/latest/teams");
 	const teams = await teamsResponse.json();
 	for (const team of teams) {
-		await request.delete(`/api/teams/${team.id}`);
+		await request.delete(`/api/latest/teams/${team.id}`);
 	}
 
 	const connectionsResponse = await request.get(
-		"/api/WorkTrackingSystemConnections",
+		"/api/latest/worktrackingsystemconnections",
 	);
 	const connections = await connectionsResponse.json();
 	for (const connection of connections) {
-		await request.delete(`/api/worktrackingsystemconnections/${connection.id}`);
+		await request.delete(`/api/latest/worktrackingsystemconnections/${connection.id}`);
 	}
 }
 
@@ -210,7 +210,7 @@ async function updateTeamData(
 	const deadline = Date.now() + TIMEOUT_MS;
 
 	while (true) {
-		const response = await request.get(`/api/update/status`);
+		const response = await request.get(`/api/latest/update/status`);
 		if (!response.ok()) {
 			throw new Error(`Failed to fetch update status: ${response.status}`);
 		}

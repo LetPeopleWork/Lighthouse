@@ -116,7 +116,7 @@ async function createWorkTrackingSystemConnection(
 		additionalFieldDefinitions: AdditionalFieldDefinitions[];
 	},
 ): Promise<{ id: number; name: string }> {
-	const response = await api.post("/api/WorkTrackingSystemConnections", {
+	const response = await api.post("/api/latest/worktrackingsystemconnections", {
 		data: {
 			id: 0,
 			name: workTrackingSystemConnectionData.name,
@@ -145,7 +145,7 @@ export async function deleteWorkTrackingSystemConnectionByName(
 	api: APIRequestContext,
 	workTrackingSystemConnectionName: string,
 ) {
-	const response = await api.get("/api/WorkTrackingSystemConnections");
+	const response = await api.get("/api/latest/worktrackingsystemconnections");
 	const workTrackingSystems = await response.json();
 
 	const systemToDelete = workTrackingSystems.find(

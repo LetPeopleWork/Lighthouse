@@ -8,7 +8,7 @@ export async function createPortfolio(
 	workItemTypes: string[],
 	states: { toDo: string[]; doing: string[]; done: string[] },
 ): Promise<{ id: number; name: string }> {
-	const response = await api.post("/api/portfolios", {
+	const response = await api.post("/api/latest/portfolios", {
 		data: {
 			id: 0,
 			name: portfolioName,
@@ -43,5 +43,5 @@ export async function updatePortfolio(
 	api: APIRequestContext,
 	portfolioId: number,
 ) {
-	await api.post(`/api/portfolios/refresh/${portfolioId}`);
+	await api.post(`/api/latest/portfolios/refresh/${portfolioId}`);
 }

@@ -11,7 +11,7 @@ export async function createTeam(
 	const sixWeeksAgo = new Date(Date.now() - 6 * 7 * 24 * 60 * 60 * 1000);
 	const fourWeeksAgo = new Date(Date.now() - 4 * 7 * 24 * 60 * 60 * 1000);
 
-	const response = await api.post("/api/Teams", {
+	const response = await api.post("/api/latest/Teams", {
 		data: {
 			id: 0,
 			name: name,
@@ -41,5 +41,5 @@ export async function createTeam(
 }
 
 export async function updateTeam(api: APIRequestContext, teamId: number) {
-	await api.post(`/api/Teams/${teamId}`);
+	await api.post(`/api/latest/teams/${teamId}`);
 }
