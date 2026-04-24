@@ -37,7 +37,7 @@ runs:
     - name: Setup pnpm
       uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
       with:
-        version: 10
+        version: 10.33.2
         run_install: false
 
     - name: Use Node.js
