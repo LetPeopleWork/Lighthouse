@@ -204,6 +204,8 @@ Jira note: Lighthouse identifies blocked items using the blocked tags or blocked
 
 The Load Balance Matrix visualizes current load and short-term inventory risk in a single view:
 
+![Load-Balance Matrix](../assets/features/metrics/loadBalanceMatrix.png)
+
 - X-axis: Total Work Item Age
 - Y-axis: Work in Progress (WIP)
 - Divider lines: baseline averages from WIP PBC and Total Work Item Age PBC

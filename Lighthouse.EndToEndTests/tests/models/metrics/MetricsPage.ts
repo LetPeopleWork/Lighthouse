@@ -90,15 +90,15 @@ export class MetricsPage {
 		[MetricsCategories.FlowMetrics]: [
 			["Cycle Time Scatterplot", "cycleScatter"],
 			["Work Item Aging Chart", "aging"],
-			["Load Balance Matrix", "loadBalanceMatrix"],
 			["Throughput Run Chart", "throughput"],
-			["Simplified Cumulative Flow Diagram", "stacked"],
 			["Work Items In Progress Over Time", "wipOverTime"],
 			["Total Work Item Age Over Time", "totalWorkItemAgeOverTime"],
+			["Arrivals Run Chart", "arrivals"],
+			["Simplified Cumulative Flow Diagram", "stacked"],
+			["Load Balance Matrix", "loadBalanceMatrix"],
 		],
 		[MetricsCategories.Predictability]: [
 			["Predictability Score Details", "predictabilityScoreDetails"],
-			["Arrivals Run Chart", "arrivals"],
 			["Throughput Process Behaviour Chart", "throughputPbc"],
 			["Arrivals Process Behaviour Chart", "arrivalsPbc"],
 			["Work In Progress Process Behaviour Chart", "wipPbc"],
