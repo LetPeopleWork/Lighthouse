@@ -211,10 +211,10 @@ The Load Balance Matrix visualizes current load and short-term inventory risk in
 
 The first point always represents the currently selected **end date** in the date range selector. The five projected points assume WIP remains constant and Total Work Item Age increases by the current WIP each day.
 
-{: .note}
-If no valid baseline is configured for either WIP PBC or Total Work Item Age PBC, the widget still renders the projection points but cannot classify quadrants. In that case, the status remains red until a baseline is configured.
-
 This interpretation intentionally favors a slightly higher-than-average WIP while keeping Total Work Item Age below average. The goal is to keep flow from running dry while staying conservative on inventory age.
+
+{: .note}
+You can find more details on this approach in our blog posts: [Exploring Alternatives to WIP Limits using Total Work Item Age](https://blog.letpeople.work/p/limit-work-in-progress-without-work-in-progress-limits-08325db60a0b) and [Limit Work in Progress without Work In Progress Limits - A Case Study](https://blog.letpeople.work/p/limit-work-in-progress-without-work-in-progress-limits-33ee889f661d)
 
 ## Status Indicator
 
