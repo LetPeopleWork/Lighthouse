@@ -601,7 +601,6 @@ packages:
   '@mui/lab@7.0.0':
     resolution: {integrity: sha512-MezN09Gnl4zrouyZJ3JS3Gg83pnQm5XULyojYCGONK+nUy6hhR/irz7y/nEGXm6wH239fX8zBmUXxDLZf0VJJA==}
     engines: {node: '>=14.0.0'}
-    deprecated: Version 7.0.0 was accidentally released
     peerDependencies:
       '@emotion/react': ^11.5.0
       '@emotion/styled': ^11.3.0
@@ -1115,7 +1114,6 @@ packages:
 
   '@types/date-fns@2.6.3':
     resolution: {integrity: sha512-Ke1lw2Ni1t/wMUoLtKFmSNCLozcTBd6vmMqFP4hRzXn6qzkNt97bPAX0x5Y/c15DP43kKvwW1ycStD5+43jVQA==}
-    deprecated: This is a stub types definition. date-fns provides its own type definitions, so you do not need this installed.
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
