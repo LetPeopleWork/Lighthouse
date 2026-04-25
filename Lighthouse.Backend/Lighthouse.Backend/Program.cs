@@ -42,6 +42,7 @@ using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Standalone;
+using Lighthouse.Backend.API.Swagger;
 
 namespace Lighthouse.Backend
 {
@@ -284,7 +285,10 @@ namespace Lighthouse.Backend
 
             // Add Swagger services
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.DocumentFilter<LatestRouteFilter>();
+            });
 
             // Add SignalR
             builder.Services.AddSignalR()
