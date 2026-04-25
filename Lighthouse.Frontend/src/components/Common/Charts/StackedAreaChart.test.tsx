@@ -5,6 +5,15 @@ import { RunChartData } from "../../../models/Metrics/RunChartData";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
 
+const lineChartMock = vi.hoisted(() =>
+	vi.fn(({ children }) => (
+		<svg data-testid="mock-line-chart">
+			<title>Test</title>
+			{children}
+		</svg>
+	)),
+);
+
 // Mock the Material-UI theme
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
@@ -13,6 +22,10 @@ vi.mock("@mui/material", async () => {
 		useTheme: () => testTheme,
 	};
 });
+
+vi.mock("@mui/x-charts/LineChart", () => ({
+	LineChart: lineChartMock,
+}));
 
 import StackedAreaChart, { type AreaChartItem } from "./StackedAreaChart";
 
@@ -141,5 +154,21 @@ describe("StackedAreaChart component", () => {
 		// Check chart is rendered with sorted areas
 		const chartElement = document.querySelector("svg");
 		expect(chartElement).toBeInTheDocument();
+	});
+
+	it("uses increased x-axis height for stable date tick rendering", () => {
+		const areas = createTestAreas();
+		const startDate = new Date(2023, 0, 1);
+
+		render(<StackedAreaChart areas={areas} startDate={startDate} />);
+
+		const callProps = lineChartMock.mock.calls[
+			lineChartMock.mock.calls.length - 1
+		]?.[0] as { xAxis?: Array<Record<string, unknown>> } | undefined;
+		expect(callProps).toBeTruthy();
+
+		const xAxis = callProps?.xAxis?.[0];
+		expect(xAxis?.label).toBe("Date");
+		expect(xAxis?.height).toBe(56);
 	});
 });

@@ -142,6 +142,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 							scaleType: "point",
 							data: chartData,
 							label: "Date",
+							height: 56,
 							valueFormatter: (value: number) => {
 								return new Date(value).toLocaleDateString();
 							},

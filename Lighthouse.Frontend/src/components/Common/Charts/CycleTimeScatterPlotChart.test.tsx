@@ -1,3 +1,4 @@
+import * as MuiCharts from "@mui/x-charts";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -290,5 +291,48 @@ describe("CycleTimeScatterPlotChart component", () => {
 		);
 		// Should not be the same as the blocked/error color
 		expect(colorMap.Bug).not.toBe(errorColor);
+	});
+
+	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
+		render(
+			<CycleTimeScatterPlotChart
+				percentileValues={mockPercentileValues}
+				cycleTimeDataPoints={mockWorkItems}
+			/>,
+		);
+
+		const chartsContainerMock = MuiCharts.ChartsContainer as unknown as {
+			mock: { calls: Array<[Record<string, unknown>]> };
+		};
+		const xAxisMock = MuiCharts.ChartsXAxis as unknown as {
+			mock: { calls: Array<[Record<string, unknown>]> };
+		};
+		const yAxisMock = MuiCharts.ChartsYAxis as unknown as {
+			mock: { calls: Array<[Record<string, unknown>]> };
+		};
+
+		const containerProps =
+			chartsContainerMock.mock.calls[
+				chartsContainerMock.mock.calls.length - 1
+			]?.[0];
+		expect(containerProps).toBeTruthy();
+
+		const xAxisConfig = (
+			containerProps?.xAxis as Array<Record<string, unknown>>
+		)?.[0];
+		expect(xAxisConfig?.id).toBe("timeAxis");
+		expect(xAxisConfig?.height).toBe(56);
+
+		expect(
+			xAxisMock.mock.calls.some(
+				([props]) => (props as { axisId?: string })?.axisId === "timeAxis",
+			),
+		).toBe(true);
+
+		expect(
+			yAxisMock.mock.calls.some(
+				([props]) => (props as { axisId?: string })?.axisId === "cycleTimeAxis",
+			),
+		).toBe(true);
 	});
 });

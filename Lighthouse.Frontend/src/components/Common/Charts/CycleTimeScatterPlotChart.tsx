@@ -284,6 +284,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								id: "timeAxis",
 								scaleType: "time",
 								label: "Date",
+								height: 56,
 								min: fixedXAxisDomain?.[0],
 								max: fixedXAxisDomain?.[1],
 								valueFormatter: dateValueFormatter,
@@ -375,8 +376,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							/>
 						)}
 
-						<ChartsXAxis />
-						<ChartsYAxis />
+						<ChartsXAxis axisId="timeAxis" />
+						<ChartsYAxis axisId="cycleTimeAxis" />
 						<TimeBlackoutOverlay
 							blackoutPeriods={blackoutPeriods}
 							axisId="timeAxis"

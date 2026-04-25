@@ -286,6 +286,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									scaleType: "linear",
 									data: doingStates.map((_, index) => index),
 									label: "State",
+									height: 56,
 									min: -0.5,
 									max: doingStates.length - 0.5,
 									tickNumber: doingStates.length,
@@ -385,8 +386,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									}}
 								/>
 							))}
-							<ChartsXAxis />
-							<ChartsYAxis />
+							<ChartsXAxis axisId="stateAxis" />
+							<ChartsYAxis axisId="ageAxis" />
 							<ScatterPlot
 								slots={{
 									marker: (props) =>

@@ -1,3 +1,4 @@
+import * as MuiCharts from "@mui/x-charts";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -642,5 +643,50 @@ describe("WorkItemAgingChart component", () => {
 			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
+	});
+
+	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
+		render(
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		const chartsContainerMock = MuiCharts.ChartsContainer as unknown as {
+			mock: { calls: Array<[Record<string, unknown>]> };
+		};
+		const xAxisMock = MuiCharts.ChartsXAxis as unknown as {
+			mock: { calls: Array<[Record<string, unknown>]> };
+		};
+		const yAxisMock = MuiCharts.ChartsYAxis as unknown as {
+			mock: { calls: Array<[Record<string, unknown>]> };
+		};
+
+		const containerProps =
+			chartsContainerMock.mock.calls[
+				chartsContainerMock.mock.calls.length - 1
+			]?.[0];
+		expect(containerProps).toBeTruthy();
+
+		const xAxisConfig = (
+			containerProps?.xAxis as Array<Record<string, unknown>>
+		)?.[0];
+		expect(xAxisConfig?.id).toBe("stateAxis");
+		expect(xAxisConfig?.height).toBe(56);
+
+		expect(
+			xAxisMock.mock.calls.some(
+				([props]) => (props as { axisId?: string })?.axisId === "stateAxis",
+			),
+		).toBe(true);
+
+		expect(
+			yAxisMock.mock.calls.some(
+				([props]) => (props as { axisId?: string })?.axisId === "ageAxis",
+			),
+		).toBe(true);
 	});
 });
