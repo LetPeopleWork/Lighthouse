@@ -167,7 +167,7 @@ test.describe("@Auth E2E", () => {
 	testWithAuth(
 		"should show misconfigured page when auth configuration is invalid",
 		async ({ loginPage }) => {
-			await loginPage.page.route("**/api/latest/auth/mode", async (route) => {
+			await loginPage.page.route("**/api/*/auth/mode", async (route) => {
 				await route.fulfill({
 					status: 200,
 					contentType: "application/json",
