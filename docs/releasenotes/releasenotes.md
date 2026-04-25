@@ -4,6 +4,43 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Load Balance Matrix
+This release introduces the Load Balance Matrix (LB-Matrix):
+
+![Load Balance Matrix](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/loadBalanceMatrix.png)
+
+It is based on our blog post [Limit Work in Progress without Work In Progress Limits](https://blog.letpeople.work/p/limit-work-in-progress-without-work-in-progress-limits-08325db60a0b) and can be used to control your WIP.
+
+It is available under *Flow Metrics* in your Team and Portfolio Metrics section and comes with a fully implemented RAG system to help you better control WIP with concrete proposals.
+
+## Default Size Tweak
+If we use *Override States* for the default size of features, we used the default size no matter what. However, there may be cases where we started to break down a Feature into work items, and the count is already exceeding the default size. This meant, we use a lower value for our forecasts although we already knew that it will be most likely more work.
+
+The new behaviour is, that in such a case, we're taking the actual work item cound instead of the default size. This will lead to more realistic forecasts.
+
+*This Feature was proposed through our new [Product Idea Board](https://ideas.letpeople.work)*
+
+## REST API Versioning
+The REST API is now available with specific versions, to make sure you have more stable endpoints if you are using a script or other client that works against the Lighthouse REST API.
+
+You can reach the API right now through */api/v1/* and we will introduce new versions whenever there is a breaking api change.
+
+## Bugfixes and Improvements
+- Issue with showing Dates and States in Cycle Time Scatterplot, Work Item Aging Chart, and Simplified CFD are now fixed
+- Updated various third-party Libraries
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.19.10...vNext)
+
+
 # Lighthouse v26.4.19.10
 
 ## Metrics Improvements
