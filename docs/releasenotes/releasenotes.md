@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.4.25.4
 
 ## Load Balance Matrix
 This release introduces the Load Balance Matrix (LB-Matrix):
@@ -38,7 +38,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 - [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.19.10...vNext)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.19.10...v26.4.25.4)
 
 
 # Lighthouse v26.4.19.10
