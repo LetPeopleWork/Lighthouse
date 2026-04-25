@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,51 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnection_ConnectionExists_ReturnsConnection()
+        {
+            var existingConnection = new WorkTrackingSystemConnection
+            {
+                Id = 12,
+                Name = "ADO",
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+            };
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemConnection(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult?.StatusCode, Is.EqualTo(200));
+
+                Assert.That(okResult?.Value, Is.InstanceOf<WorkTrackingSystemConnectionDto>());
+                var dto = okResult?.Value as WorkTrackingSystemConnectionDto;
+                Assert.That(dto?.Id, Is.EqualTo(12));
+                Assert.That(dto?.Name, Is.EqualTo("ADO"));
+            }
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnection_ConnectionDoesNotExist_ReturnsNotFound()
+        {
+            repositoryMock.Setup(x => x.GetById(12)).Returns((WorkTrackingSystemConnection?)null);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemConnection(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+                var notFoundResult = result.Result as NotFoundResult;
+                Assert.That(notFoundResult?.StatusCode, Is.EqualTo(404));
+            }
         }
 
         [Test]

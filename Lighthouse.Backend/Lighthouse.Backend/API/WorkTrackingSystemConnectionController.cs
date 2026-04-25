@@ -17,6 +17,13 @@ namespace Lighthouse.Backend.API
         ILicenseService licenseService)
         : ControllerBase
     {
+        [HttpGet]
+        public ActionResult<WorkTrackingSystemConnectionDto> GetWorkTrackingSystemConnection(int workTrackingSystemConnectionId)
+        {
+            return this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, connection =>
+                new WorkTrackingSystemConnectionDto(connection));
+        }
+
         [HttpPut]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(
             int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
