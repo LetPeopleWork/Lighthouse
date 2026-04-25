@@ -125,7 +125,7 @@ jobs:
           echo "Uploading license file..."
           curl --insecure -X POST \
             -F "file=@license.json" \
-            http://localhost:5000/api/license/import
+            http://localhost:5000/api/latest/license/import
           echo "License uploaded successfully!"
 
       - name: Run Playwright tests
