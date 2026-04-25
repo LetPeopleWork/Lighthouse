@@ -137,7 +137,7 @@ export async function deleteWorkTrackingSystemConnection(
 	workTrackingSystemConnectionId: number,
 ) {
 	await api.delete(
-		`/api/WorkTrackingSystemConnections/${workTrackingSystemConnectionId}`,
+		`/api/latest/WorkTrackingSystemConnections/${workTrackingSystemConnectionId}`,
 	);
 }
 
