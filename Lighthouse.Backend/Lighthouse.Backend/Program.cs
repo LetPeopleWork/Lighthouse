@@ -399,11 +399,36 @@ namespace Lighthouse.Backend
                 return;
             }
 
+            const string cliTokenScheme = "LighthouseCliToken";
+            const string smartScheme = "LighthouseSmartAuth";
+
             builder.Services.AddAuthentication(options =>
             {
-                options.DefaultScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme;
+                // Use a forwarding policy scheme as the default so both cookie-based
+                // browser sessions and CLI bearer tokens authenticate correctly.
+                options.DefaultScheme = smartScheme;
+                options.DefaultChallengeScheme = smartScheme;
+                options.DefaultSignInScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignOutScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
             })
+            .AddPolicyScheme(smartScheme, "Lighthouse Smart Auth", policyOptions =>
+            {
+                // Route Bearer-token requests to the CLI token handler; everything
+                // else (browser sessions, anonymous) goes to the cookie scheme.
+                policyOptions.ForwardDefaultSelector = ctx =>
+                {
+                    var auth = ctx.Request.Headers.Authorization.ToString();
+                    return auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        ? cliTokenScheme
+                        : Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
+                };
+                // Challenges (unauthenticated requests) always flow through the cookie
+                // scheme, which in turn handles the API-vs-browser split.
+                policyOptions.ForwardChallenge = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
+                policyOptions.ForwardForbid = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, CliTokenAuthenticationHandler>(
+                cliTokenScheme, _ => { })
             .AddCookie(options =>
             {
                 options.Cookie.HttpOnly = true;
@@ -462,6 +487,9 @@ namespace Lighthouse.Backend
 
         private static void RegisterServices(WebApplicationBuilder builder)
         {
+            // CLI auth session service (in-memory, auth-mode-independent)
+            builder.Services.AddSingleton<ICliAuthSessionService, CliAuthSessionService>();
+
             // Repos
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Portfolio>, PortfolioRepository>();

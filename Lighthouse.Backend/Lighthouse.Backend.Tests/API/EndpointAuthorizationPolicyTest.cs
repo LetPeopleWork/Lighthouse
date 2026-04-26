@@ -10,6 +10,7 @@ namespace Lighthouse.Backend.Tests.API
         private static readonly HashSet<Type> AllowedAnonymousControllers =
         [
             typeof(AuthController),
+            typeof(CliAuthController),
             typeof(VersionController),
         ];
 
