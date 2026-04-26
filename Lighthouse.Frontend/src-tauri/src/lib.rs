@@ -60,12 +60,16 @@ fn is_pid_alive(pid: u32) -> bool {
     #[cfg(windows)]
     {
         unsafe {
+            // SYNCHRONIZE is a standard access right located in the Foundation module
             let handle = windows_sys::Win32::System::Threading::OpenProcess(
-                windows_sys::Win32::System::Threading::SYNCHRONIZE,
-                0,
+                windows_sys::Win32::Foundation::SYNCHRONIZE,
+                0, // FALSE
                 pid,
             );
-            if handle == 0 {
+
+            if handle.is_null() {
+                // If the handle is null, the process likely doesn't exist
+                // or we don't have permissions to see it.
                 false
             } else {
                 windows_sys::Win32::Foundation::CloseHandle(handle);
