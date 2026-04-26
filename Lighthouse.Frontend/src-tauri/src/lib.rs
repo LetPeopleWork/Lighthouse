@@ -59,7 +59,6 @@ fn is_pid_alive(pid: u32) -> bool {
 
     #[cfg(windows)]
     {
-        use std::os::windows::io::FromRawHandle;
         unsafe {
             let handle = windows_sys::Win32::System::Threading::OpenProcess(
                 windows_sys::Win32::System::Threading::SYNCHRONIZE,
