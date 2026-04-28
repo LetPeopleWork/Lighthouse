@@ -1,5 +1,6 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
+import KeyIcon from "@mui/icons-material/Key";
 import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import StorageIcon from "@mui/icons-material/Storage";
 import TabContext from "@mui/lab/TabContext";
@@ -15,6 +16,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
@@ -42,6 +44,8 @@ const Settings: React.FC = () => {
 			system: "20",
 			database: "30",
 			"database-management": "30",
+			"api-keys": "40",
+			apikeys: "40",
 			logs: "99",
 			systeminfo: "99",
 			"system-info": "99",
@@ -59,6 +63,7 @@ const Settings: React.FC = () => {
 			"20": "configuration",
 			"25": "demo-data",
 			"30": "database",
+			"40": "api-keys",
 			"99": "system-info",
 		};
 
@@ -94,6 +99,14 @@ const Settings: React.FC = () => {
 			panelTestId: "database-panel",
 			icon: <StorageIcon />,
 			component: <DatabaseManagementSettings />,
+		},
+		{
+			value: "40",
+			label: "API Keys",
+			testId: "api-keys-tab",
+			panelTestId: "api-keys-panel",
+			icon: <KeyIcon />,
+			component: <ApiKeysSettings />,
 		},
 		{
 			value: "99",

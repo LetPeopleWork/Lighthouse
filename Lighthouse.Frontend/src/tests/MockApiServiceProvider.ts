@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import type { IApiKeyService } from "../services/Api/ApiKeyService";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IBlackoutPeriodService } from "../services/Api/BlackoutPeriodService";
 import type { IDeliveryService } from "../services/Api/DeliveryService";
@@ -24,6 +25,7 @@ export const createMockApiServiceContext = (
 ): IApiServiceContext => {
 	return {
 		authService: null as unknown as IApiServiceContext["authService"],
+		apiKeyService: null as unknown as IApiServiceContext["apiKeyService"],
 		forecastService: null as unknown as IApiServiceContext["forecastService"],
 		logService: null as unknown as IApiServiceContext["logService"],
 		portfolioService: null as unknown as IApiServiceContext["portfolioService"],
@@ -276,5 +278,13 @@ export const createMockBlackoutPeriodService = (): IBlackoutPeriodService => {
 		create: vi.fn(),
 		update: vi.fn(),
 		delete: vi.fn(),
+	};
+};
+
+export const createMockApiKeyService = (): IApiKeyService => {
+	return {
+		getApiKeys: vi.fn().mockResolvedValue([]),
+		createApiKey: vi.fn(),
+		deleteApiKey: vi.fn(),
 	};
 };

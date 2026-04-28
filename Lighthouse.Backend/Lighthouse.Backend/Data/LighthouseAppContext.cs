@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
@@ -40,6 +41,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<RefreshLog> RefreshLogs { get; set; } = null!;
 
+        public DbSet<ApiKey> ApiKeys { get; set; } = null!;
+        
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database
