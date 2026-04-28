@@ -296,6 +296,68 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 		});
 	});
 
+	it("dialog stays open showing the key after creation (not closed immediately)", async () => {
+		const { Wrapper, mockApiKeyService } = buildWrapper();
+		mockApiKeyService.createApiKey = vi.fn().mockResolvedValue({
+			id: 1,
+			name: "my-key",
+			description: "",
+			createdByUser: "alice",
+			createdAt: "2026-01-01T00:00:00Z",
+			plainTextKey: "lh_staysopen",
+		});
+
+		await openDialog(Wrapper);
+
+		fireEvent.change(screen.getByTestId("api-key-name-input"), {
+			target: { value: "my-key" },
+		});
+		fireEvent.click(screen.getByTestId("create-api-key-submit-button"));
+
+		// Key reveal panel must be visible
+		await waitFor(() => {
+			expect(screen.getByTestId("created-api-key-value")).toBeInTheDocument();
+		});
+
+		// Done button must be present (dialog still open)
+		expect(screen.getByTestId("api-key-done-button")).toBeInTheDocument();
+
+		// Create form must no longer be visible
+		expect(screen.queryByTestId("api-key-name-input")).not.toBeInTheDocument();
+	});
+
+	it("dialog closes only after clicking Done", async () => {
+		const { Wrapper, mockApiKeyService } = buildWrapper();
+		mockApiKeyService.createApiKey = vi.fn().mockResolvedValue({
+			id: 1,
+			name: "my-key",
+			description: "",
+			createdByUser: "alice",
+			createdAt: "2026-01-01T00:00:00Z",
+			plainTextKey: "lh_closeonlydone",
+		});
+
+		await openDialog(Wrapper);
+
+		fireEvent.change(screen.getByTestId("api-key-name-input"), {
+			target: { value: "my-key" },
+		});
+		fireEvent.click(screen.getByTestId("create-api-key-submit-button"));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("api-key-done-button")).toBeInTheDocument();
+		});
+
+		// Clicking Done closes the dialog
+		fireEvent.click(screen.getByTestId("api-key-done-button"));
+
+		await waitFor(() => {
+			expect(
+				screen.queryByTestId("created-api-key-value"),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	it("calls createApiKey with name and description", async () => {
 		const { Wrapper, mockApiKeyService } = buildWrapper();
 		mockApiKeyService.createApiKey = vi.fn().mockResolvedValue({

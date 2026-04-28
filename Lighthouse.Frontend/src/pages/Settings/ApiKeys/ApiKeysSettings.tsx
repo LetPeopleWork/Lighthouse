@@ -57,7 +57,7 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 				description: description.trim() || undefined,
 			});
 			setCreatedKey(result.plainTextKey);
-			onCreated();
+			onCreated(); // refreshes the key list in the parent; does NOT close the dialog
 		} catch {
 			setError("Failed to create API key. Please try again.");
 		} finally {
@@ -327,7 +327,8 @@ const ApiKeysSettings: React.FC = () => {
 				open={createDialogOpen}
 				onClose={() => setCreateDialogOpen(false)}
 				onCreated={() => {
-					setCreateDialogOpen(false);
+					// Only refresh the list; the dialog stays open to show the plaintext key.
+					// It closes only when the user clicks Done (which calls onClose).
 					fetchKeys();
 				}}
 			/>
