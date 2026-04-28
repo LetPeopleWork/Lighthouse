@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Implementation.Auth;
-using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
@@ -37,7 +36,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = await subject.CreateApiKeyAsync("my-key", "desc", "alice");
 
-            Assert.That(result.PlainTextKey.Length, Is.GreaterThanOrEqualTo(32));
+            Assert.That(result.PlainTextKey, Has.Length.GreaterThanOrEqualTo(32));
         }
 
         [Test]
@@ -132,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             var result = subject.GetAllApiKeys().ToList();
 
-            Assert.That(result.Count, Is.EqualTo(2));
+            Assert.That(result, Has.Count.EqualTo(2));
         }
 
         [Test]
