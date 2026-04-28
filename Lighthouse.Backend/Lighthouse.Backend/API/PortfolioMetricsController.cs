@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.API
 {
     [Route("api/v1/portfolios/{portfolioId:int}/metrics")]
     [Route("api/latest/portfolios/{portfolioId:int}/metrics")]
-    [Route("api/v1/projects/{portfolioId:int}/metrics")] // Backward Compatibility
-    [Route("api/latest/projects/{portfolioId:int}/metrics")] // Backward Compatibility
     [ApiController]
     public class PortfolioMetricsController(
         IRepository<Portfolio> portfolioRepository,
