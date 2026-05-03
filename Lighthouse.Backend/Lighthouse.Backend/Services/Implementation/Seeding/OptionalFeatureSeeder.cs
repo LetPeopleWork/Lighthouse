@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             }
         }
 
-        private List<OptionalFeature> GetOptionalFeatures()
+        private static List<OptionalFeature> GetOptionalFeatures()
         {
             // Add new features here as needed. For now, we have no new features to add.
             return new List<OptionalFeature>();
