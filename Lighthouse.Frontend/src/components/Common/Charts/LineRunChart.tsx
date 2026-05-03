@@ -139,6 +139,9 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 										{
 											data: xLabels,
 											scaleType: "point",
+											tickLabelInterval: (_, index) =>
+												index % Math.max(1, Math.ceil(xLabels.length / 10)) ===
+												0,
 										},
 									]}
 									series={[

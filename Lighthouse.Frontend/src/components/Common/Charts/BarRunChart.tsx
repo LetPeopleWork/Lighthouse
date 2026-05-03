@@ -94,6 +94,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 									{
 										scaleType: "band",
 										dataKey: "day",
+										tickLabelInterval: (_, index) =>
+											index % Math.max(1, Math.ceil(data.length / 10)) === 0,
 									},
 								]}
 								series={[

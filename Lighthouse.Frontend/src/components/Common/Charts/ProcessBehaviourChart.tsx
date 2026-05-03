@@ -479,7 +479,20 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 								]}
 								sx={{ flex: 1, minHeight: 0, height: "100%" }}
 							>
-								<ChartsXAxis axisId="xAxis" />
+								<ChartsXAxis
+									axisId="xAxis"
+									tickLabelInterval={
+										useEqualSpacing
+											? (_, index) =>
+													index %
+														Math.max(
+															1,
+															Math.ceil(chartData.xValues.length / 10),
+														) ===
+													0
+											: undefined
+									}
+								/>
 								<ChartsYAxis axisId="yAxis" />
 								<PbcBlackoutOverlay
 									dataPoints={data.dataPoints}

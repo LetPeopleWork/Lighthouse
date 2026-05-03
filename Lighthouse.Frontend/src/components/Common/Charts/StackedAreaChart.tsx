@@ -139,12 +139,12 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 				<LineChart
 					xAxis={[
 						{
-							scaleType: "point",
+							scaleType: "time",
 							data: chartData,
 							label: "Date",
 							height: 56,
-							valueFormatter: (value: number) => {
-								return new Date(value).toLocaleDateString();
+							valueFormatter: (value: Date) => {
+								return value.toLocaleDateString();
 							},
 						},
 					]}
