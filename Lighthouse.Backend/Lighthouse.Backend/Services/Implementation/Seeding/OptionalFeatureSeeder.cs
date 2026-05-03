@@ -13,7 +13,10 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             logger.LogInformation("Seeding OptionalFeatures");
 
             await RemoveDeprecatedFeatures();
-            await AddOrUpdateCurrentFeatures();
+
+            var features = GetOptionalFeatures();
+
+            await AddOrUpdateCurrentFeatures(features);
 
             await context.SaveChangesAsync();
 
@@ -41,12 +44,14 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             }
         }
 
-        private async Task AddOrUpdateCurrentFeatures()
+        private List<OptionalFeature> GetOptionalFeatures()
         {
-            var features = new OptionalFeature[]
-            {
-            };
+            // Add new features here as needed. For now, we have no new features to add.
+            return new List<OptionalFeature>();
+        }
 
+        private async Task AddOrUpdateCurrentFeatures(List<OptionalFeature> features)
+        {
             foreach (var feature in features)
             {
                 var existing = await context.OptionalFeatures
