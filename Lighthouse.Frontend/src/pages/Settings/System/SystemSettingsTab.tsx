@@ -91,68 +91,70 @@ const SystemSettingsTab: React.FC = () => {
 				/>
 			</InputGroup>
 
-			<InputGroup title="Optional Features" initiallyExpanded={true}>
-				<TableContainer>
-					<Table data-testid="optional-features-table">
-						<TableHead>
-							<TableRow>
-								<TableCell>Name</TableCell>
-								<TableCell>Description</TableCell>
-								<TableCell>Enabled</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{optionalFeatures.map((feature) => (
-								<LicenseTooltip
-									key={feature.id}
-									canUseFeature={
-										!feature.isPremium ||
-										(licenseStatus?.canUsePremiumFeatures ?? false)
-									}
-									premiumExtraInfo=""
-									defaultTooltip=""
-								>
-									<TableRow
+			{optionalFeatures.length > 0 && (
+				<InputGroup title="Optional Features" initiallyExpanded={true}>
+					<TableContainer>
+						<Table data-testid="optional-features-table">
+							<TableHead>
+								<TableRow>
+									<TableCell>Name</TableCell>
+									<TableCell>Description</TableCell>
+									<TableCell>Enabled</TableCell>
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{optionalFeatures.map((feature) => (
+									<LicenseTooltip
 										key={feature.id}
-										data-testid={`feature-row-${feature.key}`}
+										canUseFeature={
+											!feature.isPremium ||
+											(licenseStatus?.canUsePremiumFeatures ?? false)
+										}
+										premiumExtraInfo=""
+										defaultTooltip=""
 									>
-										<TableCell>
-											<Box sx={{ display: "flex", alignItems: "center" }}>
-												{feature.name}
-												{feature.isPreview && (
-													<Tooltip title="This feature is in preview and may change or be removed in future versions">
-														<Chip
-															icon={<BiotechIcon />}
-															label="Preview"
-															size="small"
-															color="warning"
-															sx={{ ml: 1 }}
-															data-testid={`${feature.key}-preview-indicator`}
-														/>
-													</Tooltip>
-												)}
-											</Box>
-										</TableCell>
-										<TableCell>{feature.description}</TableCell>
-										<TableCell>
-											<Switch
-												checked={feature.enabled}
-												data-testid={`${feature.key}-toggle`}
-												disabled={
-													feature.isPremium &&
-													!(licenseStatus?.canUsePremiumFeatures ?? false)
-												}
-												onChange={() => onToggleOptionalFeature(feature)}
-												color="primary"
-											/>
-										</TableCell>
-									</TableRow>
-								</LicenseTooltip>
-							))}
-						</TableBody>
-					</Table>
-				</TableContainer>
-			</InputGroup>
+										<TableRow
+											key={feature.id}
+											data-testid={`feature-row-${feature.key}`}
+										>
+											<TableCell>
+												<Box sx={{ display: "flex", alignItems: "center" }}>
+													{feature.name}
+													{feature.isPreview && (
+														<Tooltip title="This feature is in preview and may change or be removed in future versions">
+															<Chip
+																icon={<BiotechIcon />}
+																label="Preview"
+																size="small"
+																color="warning"
+																sx={{ ml: 1 }}
+																data-testid={`${feature.key}-preview-indicator`}
+															/>
+														</Tooltip>
+													)}
+												</Box>
+											</TableCell>
+											<TableCell>{feature.description}</TableCell>
+											<TableCell>
+												<Switch
+													checked={feature.enabled}
+													data-testid={`${feature.key}-toggle`}
+													disabled={
+														feature.isPremium &&
+														!(licenseStatus?.canUsePremiumFeatures ?? false)
+													}
+													onChange={() => onToggleOptionalFeature(feature)}
+													color="primary"
+												/>
+											</TableCell>
+										</TableRow>
+									</LicenseTooltip>
+								))}
+							</TableBody>
+						</Table>
+					</TableContainer>
+				</InputGroup>
+			)}
 
 			<InputGroup title="Terminology Configuration" initiallyExpanded={true}>
 				<TerminologyConfiguration />

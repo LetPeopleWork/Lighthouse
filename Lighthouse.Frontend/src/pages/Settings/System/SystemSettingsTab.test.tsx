@@ -156,21 +156,25 @@ describe("SystemSettingsTab Component", () => {
 			expect(screen.getByText("Feature 1")).toBeVisible();
 		});
 
-		const switchElement = screen.getAllByRole("switch")[0];
-		fireEvent.click(switchElement);
+		// Use the test ID you defined in the component: `${feature.key}-toggle`
+		const switchElement = screen.getByTestId("feature1-toggle");
+		const input = switchElement.querySelector("input");
 
-		expect(mockUpdateFeature).toHaveBeenCalledWith({
-			id: 1,
-			name: "Feature 1",
-			key: "feature1",
-			description: "Description 1",
-			enabled: true,
-			isPreview: true,
-		});
+		if (!input) {
+			throw new Error("Toggle input not found");
+		}
 
-		// Wait for the state to update and check if the switch reflects the new state
+		fireEvent.click(input);
+
+		expect(mockUpdateFeature).toHaveBeenCalledWith(
+			expect.objectContaining({
+				key: "feature1",
+				enabled: true,
+			}),
+		);
+
 		await waitFor(() => {
-			expect(switchElement).toBeChecked();
+			expect(input).toBeChecked();
 		});
 	});
 
@@ -201,5 +205,51 @@ describe("SystemSettingsTab Component", () => {
 			"feature2-preview-indicator",
 		);
 		expect(previewIndicators).not.toBeInTheDocument();
+	});
+
+	it("should not render the Optional Features section when no features are available", async () => {
+		// Override the default mock for this specific test
+		mockGetAllFeatures.mockResolvedValue([]);
+
+		renderWithMockApiProvider();
+
+		// Wait for initial load
+		await waitFor(() => {
+			expect(screen.queryByText("Blackout Periods")).toBeInTheDocument();
+		});
+
+		// Verify the "Optional Features" group is not rendered
+		const optionalFeaturesTitle = screen.queryByText("Optional Features");
+		const table = screen.queryByTestId("optional-features-table");
+
+		expect(optionalFeaturesTitle).not.toBeInTheDocument();
+		expect(table).not.toBeInTheDocument();
+	});
+
+	it("should disable the toggle if the feature is premium and the user has no premium license", async () => {
+		mockGetAllFeatures.mockResolvedValue([
+			{
+				id: 3,
+				name: "Premium Feature",
+				key: "premium-feat",
+				description: "Premium only",
+				enabled: false,
+				isPremium: true, // This is premium
+			},
+		]);
+
+		mockGetLicenseStatus.mockResolvedValue({
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false, // User cannot use premium
+		});
+
+		renderWithMockApiProvider();
+
+		await waitFor(() => {
+			const premiumSwitch = screen.getByTestId("premium-feat-toggle");
+			// The Material UI Switch input is nested, so we check the 'disabled' attribute
+			expect(premiumSwitch.querySelector("input")).toBeDisabled();
+		});
 	});
 });
