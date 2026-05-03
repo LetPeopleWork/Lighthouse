@@ -19,6 +19,8 @@ Authentication is a **Premium** feature. A valid Premium license is required to 
 
 By default, Lighthouse is accessible to anyone who can reach the URL. Enabling authentication adds an authorization layer in front of the application — every request is checked for a valid session, and unauthenticated users are redirected to the sign-in screen.
 
+Once authentication is enabled, you can also issue API keys for non-browser clients such as the Lighthouse CLI and Lighthouse MCP servers. Create those keys from [System Settings > API Keys](../settings/apikeys.html), and see [AI and Automation](../aiintegration.html) for end-to-end usage examples.
+
 ### Authentication Flow
 
 When authentication is enabled, users interact with the following screens depending on their state:

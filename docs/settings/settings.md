@@ -24,5 +24,8 @@ Load sample scenarios to explore Lighthouse features or for training purposes. V
 ### [Database Management](databasemanagement.html)
 Backup, Restore, and Clear your database.
 
+### [API Keys](apikeys.html)
+Create and manage API keys for the Lighthouse CLI, MCP servers, and other automation clients. This is especially relevant when you follow the [AI and Automation](../aiintegration.html) setup and your Lighthouse instance requires authentication.
+
 ### [System Info](systeminfo.html)
 Access detailed information about your system as well as logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.

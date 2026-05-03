@@ -1,1145 +1,280 @@
 ---
-title: AI Integration
+title: AI and Automation
 layout: home
 nav_order: 40
 ---
 
-If you're using AI clients like Claude or Copilot, you can configure Lighthouse as a resource for those clients to get data from. This comprehensive guide will help you successfully configure and use the Lighthouse MCP server with your preferred AI client.
+Lighthouse can be used directly from scripts, terminals, coding agents, and MCP-enabled AI clients. The `lighthouse-clients` packages give you a supported way to automate Lighthouse data access and expose Lighthouse capabilities to LLMs without having to build custom glue code first.
 
-{: .recommendation}
-**Help Us Improve Your Experience!** 🚀  
-AI integration is rapidly evolving, and we want to ensure Lighthouse stays at the forefront. We'd love to hear from you:
-- **Share your client configurations** - Found a setup that works great? Help others!
-- **Suggest new prompts** - Have ideas for expert prompts that would be valuable?
-- **Report what's working (or not)** - Your real-world experiences help us prioritize improvements
-- **Request new AI client support** - Using a client we don't cover yet?
-
-**Join our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)** to share your experiences, get help, and connect with other users exploring AI-powered project management!
+{: .important}
+This area is evolving quickly. If you find a client setup that works well, or a gap in the examples below, please let us know in our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
 - TOC
 {:toc}
 
-{: .important}
-Be aware that this topic is very fast moving. We're trying to keep the docs up to date, but things may change. If you discover something outdated, please let us know via Slack.
+## Choose the Right Option
 
-{: .recommendation}
-This feature is still in preview and freely available. It's planned that this will become a premium-only feature once it's out of preview.
+Lighthouse currently offers three main automation entry points:
 
-# Model Context Protocol
+| Option | Best for | Package |
+| --- | --- | --- |
+| CLI | Shell scripts, CI jobs, coding agents with terminal access, quick ad-hoc inspection | [@letpeoplework/lighthouse-cli](https://www.npmjs.com/package/@letpeoplework/lighthouse-cli) |
+| MCP stdio | Local AI clients such as VS Code / GitHub Copilot, Claude Code, or other tools that can start a local process | [@letpeoplework/lighthouse-mcp-stdio](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-stdio) |
+| MCP HTTP | Shared or hosted AI setups, container deployments, remote development environments, and web-based clients that need a network endpoint | [@letpeoplework/lighthouse-mcp-http](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-http) |
 
-The [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) is a standard that defines how applications can provide context to Large Language Models (LLMs). This allows to *extend* the knowledge of this LLM to include context from other applications, like Lighthouse. The use of this standardized protocol means that the feature can be implemented generically in Lighthouse, and if your LLM supports MCP already (you can check [here](https://modelcontextprotocol.io/clients)), you can use it.
+If your AI client can run terminal commands, the CLI is often the fastest way to automate Lighthouse. If your AI client supports MCP, use either the local stdio server or the shared HTTP server depending on your deployment model.
 
-Lighthouse can act as an *MCP Server*, meaning that you can tell your LLM to run forecasts for a team, analyze flow metrics, and access comprehensive documentation. All from the comfort of your LLMs chat! Pretty cool stuff, isn't it?
+## Packages and Downloads
 
-## What Can You Do With Lighthouse MCP?
+The current Lighthouse automation packages are published on npm:
 
-The Lighthouse MCP server enables your AI assistant to:
+- [@letpeoplework/lighthouse-cli](https://www.npmjs.com/package/@letpeoplework/lighthouse-cli)
+- [@letpeoplework/lighthouse-mcp-stdio](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-stdio)
+- [@letpeoplework/lighthouse-mcp-http](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-http)
 
-- **Team Analytics**: Get team information, run forecasts, and analyze flow metrics
-- **Feature Tracking**: Get detailed feature information and delivery forecasts
-- **Expert Guidance**: Access specialized prompts for agile coaching and flow analysis
-- **Documentation**: Read comprehensive Lighthouse documentation for context
+Lighthouse also ships two ready-to-download assets from the latest `lighthouse-clients` release:
 
-## Supported Use Cases
+- [lighthouse-mcp-stdio.mcpb](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-mcp-stdio.mcpb) for one-click MCP bundle installation in clients that support the [MCPB format](https://github.com/modelcontextprotocol/mcpb)
+- [lighthouse-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip) for installing the Lighthouse agent skill directly as a reusable Lighthouse-specific guidance pack
 
-### Team-Focused Analysis
-- "How many items can my team complete by the end of the month?"
-- "When will we finish the remaining 15 items in our backlog?"
-- "Analyze our team's flow metrics for the last 30 days"
-- "What aging items need attention and why?"
+Think of these as two different deliverables:
 
-### Portfolio-Level Insights  
-- "When will Portfolio Alpha be completed?"
-- "Which teams are working on Portfolio Beta?"
-- "What features are planned for the next release?"
+- `lighthouse-mcp-stdio.mcpb` is a packaged MCP server setup for clients that support MCPB
+- `lighthouse-skill.zip` is a packaged Lighthouse skill for clients that support importing custom skills, prompt bundles, or agent capabilities
 
-### Flow Coaching & Improvement
-- "Analyze our cycle time trends and suggest improvements"
-- "Help me prepare a data-driven retrospective"
-- "Generate forecasting insights for our planning meeting"
-- "Interpret our flow metrics using actionable agile principles"
+## Authentication and API Keys
 
-# Enable MCP Feature
-The MCP Feature is not enabled by default. In order to do so, go to the Settings and enable the *MCP Server*.
+If your Lighthouse instance runs without authentication, the examples on this page usually work with just the target URL.
+
+If authentication is enabled, non-browser clients should use an API key. Create and manage those keys from [System Settings > API Keys](./settings/apikeys.html). The full authentication setup is described in [Authentication](./Installation/authentication.html).
 
 {: .note}
-You need to restart Lighthouse for the change to take effect.
+API keys are intended for CLI usage, MCP servers, scripts, and other non-browser automation paths. Browser sign-in still uses the normal Lighthouse authentication flow.
 
-![MCP Feature](./assets/settings/optionalfeatures.png)
+Most client packages expect the key in the `LIGHTHOUSE_API_KEY` environment variable, or let you provide it during the CLI connection flow.
 
-# Connect to Lighthouse MCP Server
+## CLI for Scripting and Automation
 
-Once the MCP Server is enabled and you restarted Lighthouse, you can add it as MCP Server to your LLM. How to do this varies by LLM, so it's best to check the configuration of your tool.
+Use the CLI when you want a terminal-first workflow, a scriptable JSON interface, or a straightforward way for coding agents to access Lighthouse data.
 
-Lighthouse uses *Server Side Events (SSE)* as technology, so you don't need to install anything extra on your machine, just point to the place where Lighthouse is running.
+### Install
+
+```bash
+npm install -g @letpeoplework/lighthouse-cli
+```
+
+You can also install it globally with pnpm:
+
+```bash
+pnpm add -g @letpeoplework/lighthouse-cli
+```
+
+If you prefer release installers instead of npm tooling, use the latest published installer assets.
+
+Linux and macOS:
+
+```bash
+curl -fsSL https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/install.sh | bash
+```
+
+Windows:
+
+```powershell
+irm https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/install.ps1 | iex
+```
 
 {: .note}
-The default Lighthouse MCP server runs on the same port as your main Lighthouse application. If Lighthouse is running on `http://localhost:8080`, then the MCP server is available at the same URL.
+The installer route is useful when you want the CLI available directly as `lh` without relying on `npx` or a local package install inside a project.
 
-## Popular Client Configurations
+### Connect to a Server
 
-The following sections provide step-by-step configuration examples for popular MCP clients. Choose the section that matches your preferred AI assistant.
-
-### Claude Desktop
-
-Claude Desktop supports MCP via HTTP transport and is one of the most popular clients for MCP integration.
-
-**Step 1**: Open Claude Desktop Settings
-- Click on the Claude menu in your system's menu bar (macOS) or application menu (Windows)
-- Select "Settings..."
-
-**Step 2**: Access Developer Settings  
-- Navigate to the "Developer" tab in the left sidebar
-- Click the "Edit Config" button to open the configuration file
-
-**Step 3**: Add Lighthouse Configuration
-Replace or add to the configuration file:
-
-```json
-{
-  "mcpServers": {
-    "lighthouse": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "http://localhost:8080"
-      ]
-    }
-  }
-}
+```bash
+lh connection connect --mode server --url https://lighthouse.example.com
 ```
 
-**Step 4**: Restart Claude Desktop
-Completely quit and restart Claude Desktop. You should see an MCP server indicator in the bottom-right corner of the chat input.
+If the target Lighthouse instance requires authentication, either pass the key during connect or inject it through the environment.
 
-### VS Code Copilot
-
-VS Code Copilot supports MCP Servers via HTTP transport with excellent integration into your development workflow.
-
-**Step 1**: Open VS Code Settings
-- Press `Ctrl+,` (Windows/Linux) or `Cmd+,` (macOS) to open settings
-- Switch to JSON view by clicking the "Open Settings (JSON)" icon
-
-**Step 2**: Add MCP Configuration
-Add the following to your VS Code settings:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "lighthouse-mcp": {
-        "type": "http",
-        "url": "http://localhost:8080"
-      }
-    }
-  }
-}
+```bash
+lh connection connect --mode server --url https://lighthouse.example.com --api-key <key>
 ```
 
-**Step 3**: Restart VS Code
-Reload your VS Code window or restart the application for the changes to take effect.
-
-### Continue (VS Code Extension)
-
-Continue is an open-source AI code assistant with full MCP support.
-
-**Step 1**: Install Continue Extension
-- Open VS Code and go to the Extensions view (`Ctrl+Shift+X`)
-- Search for "Continue" and install the extension
-
-**Step 2**: Configure MCP Server
-- Open the Continue configuration file (`.continue/config.json` in your workspace)
-- Add the Lighthouse MCP server:
-
-```json
-{
-  "mcpServers": {
-    "lighthouse": {
-      "transport": {
-        "type": "http",
-        "url": "http://localhost:8080"
-      }
-    }
-  }
-}
+```bash
+LIGHTHOUSE_API_KEY=<key> lh connection connect --mode server --url https://lighthouse.example.com
 ```
 
-### GitHub Copilot Coding Agent
+For the local standalone desktop app, you can skip the URL and let the CLI discover Lighthouse automatically.
 
-GitHub Copilot supports MCP for enhanced context and capabilities.
+```bash
+lh connection connect --mode standalone
+```
 
-**Step 1**: Configure via MCP Settings
-In your repository, create or update `.mcp/config.json`:
+### Script Example
+
+The CLI supports machine-readable output through `--json`, which makes it a good fit for shell pipelines and CI.
+
+```bash
+LIGHTHOUSE_API_KEY=<key> \
+lh metrics team --id 1 --metrics throughput,cycleTime --json
+```
+
+Another common automation pattern is to list teams, pick an ID, and run a forecast.
+
+```bash
+LIGHTHOUSE_API_KEY=<key> lh team list --json
+LIGHTHOUSE_API_KEY=<key> lh forecast manual --team-id 1 --remaining 12 --json
+```
+
+## MCP for AI Clients
+
+MCP lets AI tools call Lighthouse functionality as tools instead of relying on pasted screenshots or manually copied metrics. Lighthouse supports both a local stdio MCP server and a shared HTTP MCP server.
+
+### MCP stdio for Local Clients
+
+Use `@letpeoplework/lighthouse-mcp-stdio` when your AI client can launch a local process on the same machine.
+
+You can start it directly with `npx`:
+
+```bash
+npx -y @letpeoplework/lighthouse-mcp-stdio
+```
+
+### VS Code / GitHub Copilot Example
+
+Add the server to `.vscode/mcp.json` or your user MCP configuration:
 
 ```json
 {
   "servers": {
     "lighthouse": {
-      "url": "http://localhost:8080",
-      "description": "Lighthouse portfolio management and forecasting tools"
-    }
-  }
-}
-```
-
-### Other HTTP-Based Clients
-
-For any MCP client that supports HTTP/SSE transport, use these general guidelines:
-
-**Transport Type**: HTTP or SSE  
-**URL**: `http://localhost:8080` (replace with your Lighthouse instance URL)  
-**Authentication**: None required for local instances  
-
-## Remote Server Configuration
-
-If you're running Lighthouse on a remote server, adjust the configuration accordingly:
-
-```json
-{
-  "mcpServers": {
-    "lighthouse": {
+      "type": "stdio",
       "command": "npx",
-      "args": [
-        "mcp-remote", 
-        "https://your-lighthouse-instance.com"
-      ]
-    }
-  }
-}
-```
-
-{: .warning}
-**Security Consideration**: When connecting to remote Lighthouse instances, ensure they are properly secured with HTTPS and appropriate authentication mechanisms.
-
-## Configuration Verification
-
-After configuring your MCP client:
-
-1. **Check Connection**: Look for MCP server indicators in your client (usually a tool icon or status indicator)
-2. **Test Tools**: Try asking your AI assistant to "list all teams" or "get portfolio information"
-3. **Review Logs**: Check your client's developer console or logs for any connection errors
-4. **Verify Resources**: Ask your AI to access Lighthouse documentation to confirm resource loading
-
-# Available MCP Features
-
-The Model Context Protocol supports different types of actions: *Tools* for executing actions, *Prompts* for predefined expert guidance, and *Resources* for accessing documentation.
-
-Lighthouse implements a comprehensive set of capabilities across all three categories, making it one of the most feature-complete MCP servers available.
-
-## Tools
-
-Tools allow your AI assistant to execute specific actions and retrieve data from Lighthouse. All tools return structured JSON data that your AI can interpret and explain in natural language.
-
-### Team Management Tools
-
-**GetAllTeams**
-- **Purpose**: Retrieves a list of all teams configured in Lighthouse
-- **Usage**: "Show me all teams" or "List available teams"
-- **Returns**: Team ID, name, and basic metadata
-- **Example Response**:
-```json
-[
-  {"Id": 1, "Name": "Alpha Team"},
-  {"Id": 2, "Name": "Beta Team"}
-]
-```
-
-**GetTeamByName**
-- **Purpose**: Gets detailed information about a specific team
-- **Parameters**: `teamName` (string) - Name or partial name of the team
-- **Usage**: "Get details about the Alpha team"
-- **Returns**: Complete team configuration including work tracking connections and settings
-- **Example**: `GetTeamByName("Alpha")` returns full team configuration
-
-**GetFlowMetricsForTeam**
-- **Purpose**: Retrieves comprehensive flow metrics for a team within a date range
-- **Parameters**: 
-  - `teamName` (string) - Name of the team
-  - `startDate` (DateTime, optional) - Start date (defaults to 30 days ago)
-  - `endDate` (DateTime, optional) - End date (defaults to today)
-- **Usage**: "Analyze Alpha team's metrics for the last quarter"
-- **Returns**: Cycle time percentiles, throughput data, WIP metrics, and individual cycle times
-- **Business Value**: Enables flow analysis, bottleneck identification, and predictability assessment
-
-### Team Forecasting Tools
-
-**RunWhenForecast**
-- **Purpose**: Generates probabilistic forecasts for when a team will complete a given number of items
-- **Parameters**: 
-  - `teamName` (string) - Name of the team
-  - `remainingItems` (int) - Number of items to forecast
-- **Usage**: "When will Alpha team finish 25 remaining items?"
-- **Returns**: Monte Carlo simulation results with 50th, 70th, 85th, and 95th percentile forecasts
-- **Business Value**: Data-driven planning and realistic deadline setting
-
-**RunHowManyForecast**
-- **Purpose**: Forecasts how many items a team can complete by a specific date
-- **Parameters**: 
-  - `teamName` (string) - Name of the team
-  - `untilWhen` (DateTime) - Target completion date
-- **Usage**: "How many items can Beta team complete by end of quarter?"
-- **Returns**: Probabilistic item count forecasts with confidence intervals
-- **Business Value**: Capacity planning and scope management
-
-### Portfolio Management Tools
-
-**GetAllPortfolios**
-- **Purpose**: Lists all portfolios with summary information
-- **Usage**: "Show me all active portfolios"
-- **Business Value**: Portfolio visibility and portfolio discovery
-
-**GetPortfolioByName**
-- **Purpose**: Retrieves detailed information about a specific portfolio
-- **Parameters**: `portfolioName` (string) - Name or partial name of the portfolio
-- **Usage**: "Get details about Portfolio Apollo"
-- **Returns**: Complete portfolio configuration, team assignments, feature counts, and settings
-- **Example**: `GetPortfolioByName("Apollo")` returns comprehensive portfolio data
-
-**GetPortfolioFeatures**
-- **Purpose**: Lists all features within a specific portfolio
-- **Parameters**: `portfolioName` (string) - Name of the portfolio
-- **Usage**: "What features are in Portfolio Apollo?"
-- **Returns**: Feature names, states, owners, work item counts, and progress status
-- **Business Value**: Feature portfolio visibility and progress tracking
-
-**GetPortfolioTeams**
-- **Purpose**: Shows which teams are involved in a specific portfolio
-- **Parameters**: `portfolioName` (string) - Name of the portfolio
-- **Usage**: "Which teams are working on Project Apollo?"
-- **Returns**: Team names, IDs, and their relationship to the portfolio (including owning team)
-- **Business Value**: Resource allocation visibility and team coordination
-
-- **Parameters**: `portfolioName` (string) - Name of the portfolio
-- **Business Value**: Risk management and stakeholder communication
-
-**RunPortfolioWhenForecast**
-- **Purpose**: Forecasts when an entire portfolio will be completed
-- **Parameters**: `portfolioName` (string) - Name of the portfolio
-- **Usage**: "When will Portfolio Apollo be completed?"
-- **Returns**: Portfolio-level completion forecasts based on critical path analysis
-- **Business Value**: Executive reporting and portfolio portfolio planning
-
-**GetPortfolioFlowMetrics**
-- **Purpose**: Analyzes flow metrics at the portfolio level across multiple teams
-- **Parameters**: 
-  - `portfolioName` (string) - Name of the portfolio
-  - `startDate` (DateTime, optional) - Analysis start date
-  - `endDate` (DateTime, optional) - Analysis end date
-- **Usage**: "Analyze Portfolio Apollo's flow metrics for Q3"
-- **Returns**: Aggregated cycle times, throughput, WIP, and multi-team flow analysis
-- **Business Value**: Portfolio health assessment and flow optimization
-
-### Feature Management Tools
-
-**GetFeatureDetails**
-- **Purpose**: Retrieves comprehensive information about a specific feature
-- **Parameters**: `featureName` (string) - Name of the feature
-- **Usage**: "Get details about the User Authentication feature"
-- **Returns**: Feature state, work breakdown, team assignments, size estimates, and blocking status
-- **Business Value**: Feature-level visibility and detailed planning
-
-**GetFeatureWhenForecast**
-- **Purpose**: Forecasts when a specific feature will be completed
-- **Parameters**: `featureName` (string) - Name of the feature
-- **Usage**: "When will the Payment Integration feature be done?"
-- **Returns**: Feature-specific completion forecasts with 50/70/85/95 percentile confidence intervals
-- **Business Value**: Feature-level planning and dependency management
-
-## Expert Prompts
-
-Lighthouse provides specialized prompts designed by agile coaching experts following "Actionable Agile Metrics for Predictability" and ProKanban.org principles.
-
-### Flow Analysis Prompts
-
-**AnalyzeTeamMetrics**
-- **Purpose**: Provides expert analysis of team flow using the three core metrics
-- **Parameters**: 
-  - `teamName` (string) - Team to analyze
-  - `dateRange` (string, optional) - Period to analyze
-- **Expert Context**: Pro Kanban trainer perspective focusing on throughput, cycle time, and WIP
-- **Usage**: Ask your AI to analyze team metrics using proven flow principles
-- **Value**: Professional-grade flow analysis without needing coaching expertise
-
-**AnalyzeTeamAging**
-- **Purpose**: Identifies aging work items and flow problems using actionable agile metrics
-- **Parameters**: 
-  - `teamName` (string) - Team to analyze
-  - `agingThresholdDays` (int) - Days to consider items as aging (default: 10)
-- **Expert Context**: Focuses on flow problems and predictability issues
-- **Usage**: "Analyze aging items for Alpha team"
-- **Value**: Proactive identification of flow bottlenecks and systemic issues
-
-**GenerateForecastingInsights**
-- **Purpose**: Provides probabilistic forecasting guidance using Monte Carlo principles
-- **Parameters**: 
-  - `teamName` (string) - Team to forecast for
-  - `forecastTarget` (string) - Number of items or target date
-  - `forecastType` (string) - "when" or "howmany"
-- **Expert Context**: Based on proven forecasting methodologies and historical data analysis
-- **Usage**: "Generate forecasting insights for Beta team with 30 items"
-- **Value**: Data-driven forecasting with expert interpretation
-
-**AnalyzePortfolioCompletion**
-- **Purpose**: Analyzes portfolio completion using portfolio flow metrics
-- **Parameters**: `portfolioName` (string) - Portfolio to analyze
-- **Expert Context**: Portfolio-level flow analysis considering team interdependencies
-- **Usage**: "Analyze Portfolio Apollo completion dynamics"
-- **Value**: Executive-level insights on portfolio delivery probability
-
-**GenerateDataDrivenInsights**
-- **Purpose**: Facilitates data-driven retrospectives using actionable agile metrics
-- **Parameters**: 
-  - `teamName` (string) - Team for retrospective
-  - `timePeriod` (string) - Analysis period (e.g., "last 30 days")
-- **Expert Context**: ProKanban.org retrospective approach focusing on learning and improvement
-- **Usage**: "Generate retrospective insights for Alpha team"
-- **Value**: Structured, data-driven team improvement sessions
-
-## Resources
-
-Resources provide your AI assistant with direct access to Lighthouse documentation, enabling contextual responses about configuration, usage, and best practices.
-
-### Available Documentation Resources
-
-**Lighthouse Documentation**
-- **Content**: Main documentation homepage with overview and getting started information
-- **URI**: `/docs/index.html`
-- **Usage**: Provides foundational knowledge about Lighthouse capabilities
-
-**Core Concepts**
-- **Content**: Teams, portfolios, forecasting methodology, and flow metrics explanation
-- **URI**: `/docs/concepts/concepts.html`
-- **Usage**: Helps AI understand Lighthouse's fundamental concepts
-
-**Team Management**
-- **Content**: How to set up, configure, and manage teams in Lighthouse
-- **URI**: `/docs/teams/teams.html`
-- **Usage**: Provides guidance on team setup and configuration
-
-**Portfolio Management**
-- **URI**: `/docs/portfolios/portfolios.html`
-- **Usage**: Comprehensive portfolio management guidance
-
-**Metrics & Analytics**
-- **Content**: Understanding flow metrics, dashboard configuration, and interpretation
-- **URI**: `/docs/metrics/metrics.html`
-- **Usage**: Deep dive into metrics analysis and dashboard usage
-
-**AI Integration Guide**
-- **Content**: This current documentation on MCP integration and usage
-- **URI**: `/docs/aiintegration.html`
-- **Usage**: Self-referential guide for MCP setup and troubleshooting
-
-**Forecasting Methodology**
-- **Content**: Detailed explanation of Monte Carlo simulations and statistical methods
-- **URI**: `/docs/concepts/howlighthouseforecasts.html`
-- **Usage**: Technical deep dive into Lighthouse's forecasting approach
-
-### Resource Benefits
-
-1. **Contextual Responses**: Your AI can reference official documentation when answering questions
-2. **Accurate Information**: Ensures responses are based on current, authoritative sources
-3. **Comprehensive Coverage**: Access to all aspects of Lighthouse functionality
-4. **Self-Service Support**: Reduces need for manual documentation lookup
-5. **Consistent Guidance**: Standardized responses based on official documentation
-
-## Tool Integration Patterns
-
-### Workflow Examples
-
-**Team Health Check**:
-1. `GetTeamByName("Alpha")` - Get team overview
-2. `GetFlowMetricsForTeam("Alpha", startDate, endDate)` - Analyze metrics
-3. `AnalyzeTeamMetrics("Alpha")` - Expert interpretation
-4. `AnalyzeTeamAging("Alpha")` - Identify problem areas
-
-**Portfolio Status Review**:
-1. `GetPortfolioByName("Apollo")` - Portfolio overview
-2. `GetPortfolioFeatures("Apollo")` - Feature inventory
-4. `RunPortfolioWhenForecast("Apollo")` - Completion forecast
-
-**Sprint Planning Session**:
-1. `GetFlowMetricsForTeam("Beta")` - Historical performance
-2. `RunHowManyForecast("Beta", sprintEndDate)` - Capacity forecast
-3. `GenerateForecastingInsights("Beta", "capacity")` - Expert guidance
-
-**Executive Reporting**:
-1. `GetAllPortfolios()` - Portfolio overview
-3. `AnalyzePortfolioCompletion(portfolioName)` - Expert analysis per portfolio
-
-These tools, prompts, and resources work together to provide comprehensive portfolio management intelligence through your AI assistant, combining real-time data with expert knowledge for informed decision-making.
-
-# Troubleshooting Guide
-
-This section covers common issues when setting up and using the Lighthouse MCP server, along with their solutions.
-
-## Connection Issues
-
-### MCP Server Not Showing Up in Client
-
-**Symptoms**: No MCP server indicator appears in your AI client after configuration.
-
-**Possible Causes & Solutions**:
-
-1. **Lighthouse MCP Feature Not Enabled**
-   - Go to Lighthouse Settings > Optional Features
-   - Enable "MCP Server" feature
-   - Restart Lighthouse application
-   - Verify the feature is active in the UI
-
-2. **Client Configuration Errors**
-   - Verify JSON syntax in your client configuration file
-   - Ensure URLs match your Lighthouse instance (check port numbers)
-   - For local instances, use `http://localhost:8080` (replace 8080 with your port)
-   - For remote instances, ensure HTTPS is used
-
-3. **Client Restart Required**
-   - Completely quit and restart your AI client application
-   - Some clients require full restart to reload MCP configurations
-   - Check client-specific restart procedures
-
-4. **Network Connectivity**
-   - Verify Lighthouse is running and accessible via browser
-   - Check firewall settings allow connections on Lighthouse port
-   - For remote instances, verify network connectivity
-
-### Tools Not Loading or Showing as Unavailable
-
-**Symptoms**: MCP connection shows but tools don't appear or return errors.
-
-**Possible Causes & Solutions**:
-
-1. **Lighthouse Data Not Loaded**
-   - Ensure you have at least one team configured in Lighthouse
-   - Verify work tracking system connections are active
-   - Check that data synchronization has completed
-
-2. **Permission Issues**
-   - Verify Lighthouse is running with appropriate permissions
-   - For remote instances, check authentication requirements
-   - Ensure MCP server has access to Lighthouse database
-
-3. **Version Compatibility**
-   - Verify you're running a compatible version of Lighthouse
-   - MCP support requires Lighthouse version 1.5.0 or later
-   - Check client MCP protocol version compatibility
-
-### Authentication and Security Issues
-
-**Symptoms**: Connection refused, unauthorized access, or certificate errors.
-
-**Solutions**:
-
-1. **Local Instance Security**
-   - Local Lighthouse instances typically don't require authentication
-   - Ensure firewall allows localhost connections
-   - Verify antivirus software isn't blocking connections
-
-2. **Remote Instance Authentication**
-   - Contact your Lighthouse administrator for authentication details
-   - Use HTTPS URLs for remote instances
-   - Verify SSL certificates are valid and trusted
-
-3. **Corporate Network Issues**
-   - Check proxy settings in your AI client
-   - Verify corporate firewall allows MCP connections
-   - Contact IT department if persistent connection issues occur
-
-## Configuration Problems
-
-### JSON Configuration Errors
-
-**Common Syntax Issues**:
-
-```json
-// ❌ WRONG - Missing comma
-{
-  "mcpServers": {
-    "lighthouse": {
-      "command": "npx",
-      "args": ["mcp-remote", "http://localhost:8080"]
-    }
-    "another-server": {...}
-  }
-}
-
-// ✅ CORRECT - Proper comma placement
-{
-  "mcpServers": {
-    "lighthouse": {
-      "command": "npx",
-      "args": ["mcp-remote", "http://localhost:8080"]
-    },
-    "another-server": {...}
-  }
-}
-```
-
-**Validation Steps**:
-1. Use JSON validator tools to check syntax
-2. Copy exact examples from this documentation
-3. Pay attention to comma placement and bracket matching
-4. Use JSON formatting tools for readability
-
-### Path and URL Configuration
-
-**Common URL Mistakes**:
-
-```json
-// ❌ WRONG Examples
-"http://localhost"           // Missing port
-"https://localhost:8080"     // Wrong protocol for local
-"http://myserver"            // Missing port for remote
-"lighthouse.local:8080"      // Missing protocol
-
-// ✅ CORRECT Examples  
-"http://localhost:8080"      // Local with port
-"https://lighthouse.company.com"  // Remote with HTTPS
-"http://192.168.1.100:8080" // Local network with port
-```
-
-**Port Detection**:
-- Check Lighthouse startup logs for port information
-- Default port is usually 8080, but may vary
-- Verify port in browser address bar when accessing Lighthouse
-
-## Runtime Errors
-
-### Tool Execution Failures
-
-**Symptoms**: Tools appear but return error messages when executed.
-
-**Diagnostic Steps**:
-
-1. **Check Tool Parameters**
-   - Verify team/portfolio names exist in Lighthouse
-   - Use exact names or check for typos
-   - Team and portfolio names are case-insensitive but must match
-
-2. **Data Availability**
-   - Ensure teams have been synchronized with work tracking systems
-   - Verify portfolios have features and teams assigned
-   - Check that forecasting data is available (may take time after setup)
-
-3. **Common Error Messages**:
-   - "No team found with name X" - Check team name spelling
-   - "No forecast data available" - Wait for data synchronization or check team configuration
-   - "Portfolio has no features" - Verify portfolio setup and feature assignment
-
-### Performance Issues
-
-**Symptoms**: Slow response times or timeouts.
-
-**Solutions**:
-
-1. **Large Dataset Optimization**
-   - Use date ranges for metric queries to limit data volume
-   - Request specific teams/portfolios rather than all data
-   - Consider increasing client timeout settings
-
-2. **System Resources**
-   - Verify Lighthouse server has adequate memory and CPU
-   - Check for other resource-intensive processes
-   - Monitor database performance if using external database
-
-## Client-Specific Issues
-
-### Claude Desktop Issues
-
-**Common Problems**:
-- Configuration file not found: Use "Edit Config" button in Developer settings
-- Server starts but no tools appear: Restart Claude Desktop completely
-- "npx" command not found: Install Node.js and verify PATH
-
-**Configuration File Locations**:
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-### VS Code Copilot Issues
-
-**Common Problems**:
-- MCP settings not recognized: Ensure VS Code version supports MCP
-- Configuration ignored: Restart VS Code window or reload application
-- Tools don't appear in chat: Check developer console for errors
-
-### Continue Extension Issues
-
-**Common Problems**:
-- Extension not loading MCP config: Check `.continue/config.json` syntax
-- Connection refused: Verify Lighthouse URL accessibility
-- Tools timeout: Adjust timeout settings in Continue configuration
-
-## Diagnostic Commands
-
-### Verify Lighthouse MCP Endpoint
-
-Test if the MCP endpoint is accessible:
-
-```bash
-# Check if Lighthouse is running
-curl http://localhost:8080/health
-
-# Test MCP endpoint availability
-curl http://localhost:8080/mcp/health
-```
-
-### Check MCP Client Logs
-
-Most MCP clients provide diagnostic logs:
-
-- **Claude Desktop**: Check Console application (macOS) or Event Viewer (Windows)
-- **VS Code**: Open Developer Console (Help > Toggle Developer Tools)
-- **Continue**: Check VS Code Output panel, select "Continue" channel
-
-### Network Connectivity Tests
-
-```bash
-# Test basic connectivity
-ping localhost
-
-# Test port accessibility
-telnet localhost 8080
-
-# Test HTTPS connectivity (for remote instances)
-curl -I https://your-lighthouse-instance.com
-```
-
-## Getting Additional Help
-
-If you've tried the troubleshooting steps above and still encounter issues:
-
-### Community Support
-
-1. **Slack Community**: Join our [Slack workspace](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A) for community support
-2. **Documentation**: Check the full [Lighthouse documentation](https://docs.lighthouse.letpeople.work)
-3. **GitHub Issues**: Search existing issues or create new ones at [GitHub Repository](https://github.com/LetPeopleWork/Lighthouse)
-
-### Information to Include in Support Requests
-
-When asking for help, please provide:
-
-1. **Environment Details**:
-   - Lighthouse version
-   - Operating system
-   - MCP client and version
-   - Network setup (local/remote)
-
-2. **Configuration**:
-   - Sanitized MCP configuration (remove sensitive URLs)
-   - Lighthouse optional features settings
-   - Error messages or logs
-
-3. **Steps to Reproduce**:
-   - Exact steps you followed
-   - Expected vs. actual behavior
-   - Screenshots if helpful
-
-4. **Diagnostic Information**:
-   - Results from diagnostic commands above
-   - Client error logs
-   - Lighthouse application logs
-
-### Professional Support
-
-For enterprise users or complex setups, consider:
-
-- **Professional Services**: Contact [LetPeopleWork](https://letpeople.work) for consulting
-- **Enterprise Support**: Dedicated support packages available
-- **Custom Integration**: Assistance with complex MCP configurations
-
-Remember: The Lighthouse MCP integration is actively developed, and the community is very helpful in resolving issues quickly.
-
-# Real-World Usage Scenarios
-
-This section demonstrates practical applications of the Lighthouse MCP integration across different roles and use cases.
-
-## Agile Coach / Scrum Master Scenarios
-
-### Sprint Planning Enhancement
-**Scenario**: Using historical data for realistic sprint planning
-
-**Conversation Example**:
-```
-User: "Help me plan the next sprint for Alpha team. We have 25 items in our backlog."
-
-AI Response: [Calls GetFlowMetricsForTeam and RunHowManyForecast]
-"Based on Alpha team's historical performance over the last 30 days, here's what I found:
-
-- Average cycle time: 3.2 days (50th percentile)
-- Throughput: 8-12 items per 2-week sprint
-- Current WIP: 6 items
-
-For sprint planning, I recommend:
-- Plan for 8-10 items (conservative estimate)
-- Reserve 2-3 items as stretch goals
-- Focus on completing current WIP before starting new work
-
-The data shows Alpha team has consistent throughput when WIP stays below 8 items."
-```
-
-### Team Retrospective Facilitation
-**Scenario**: Data-driven retrospective discussions
-
-**Conversation Example**:
-```
-User: "I'm facilitating a retrospective for Beta team. What should we focus on?"
-
-AI Response: [Calls AnalyzeTeamMetrics and AnalyzeTeamAging]
-"Based on Beta team's metrics from the last 30 days, here are key discussion points:
-
-🔍 **Flow Analysis**:
-- Cycle time increased 40% compared to previous month
-- 3 items are aging beyond 14 days
-- Throughput dropped from 10 to 6 items/sprint
-
-📊 **Suggested Retrospective Topics**:
-1. What caused the cycle time increase?
-2. How can we address the aging items?
-3. Are there new blockers we haven't identified?
-4. Has our WIP limit become ineffective?
-
-💡 **Data-Driven Questions**:
-- 'What happened around day 15 when our flow slowed?'
-- 'Are the aging items related to external dependencies?'
-- 'Has our definition of done changed?'"
-```
-
-## Product Manager Scenarios
-
-### Feature Delivery Planning
-**Scenario**: Planning feature rollout and managing stakeholder expectations
-
-**Conversation Example**:
-```
-User: "When will the User Authentication feature be ready? I need to update stakeholders."
-
-AI Response: [Calls GetFeatureWhenForecast]
-"Based on current progress and team velocity:
-
-📅 **Delivery Forecast**:
-- 50% confidence: 12 days (March 15)
-- 70% confidence: 18 days (March 21) 
-- 85% confidence: 25 days (March 28)
-
-🎯 **Recommendation**: 
-Tell stakeholders to expect delivery by March 21st for a realistic timeline with good confidence. Use March 28th for any external dependencies or announcements.
-
-📊 **Current Status**:
-- 8 of 15 work items completed
-- Alpha team working at normal velocity
-- No current blockers identified"
-```
-
-### Portfolio-Level Planning
-**Scenario**: Managing multiple portfolios and resource allocation
-
-**Conversation Example**:
-```
-User: "I need an executive summary of all our portfolios for the board meeting."
-
-"Here's your portfolio status for the board:
-
-🚦 **Portfolio Health Summary**:
-
-**Portfolio Apollo** ✅ Healthy
-- Q2 launch: 85% confidence 
-- 3 teams, 12 features remaining
-
-**Portfolio Beta** ⚠️ At Risk  
-- Q2 deadline: 45% confidence
-- Critical path: Payment integration
-- Recommend scope reduction or timeline adjustment
-
-**Portfolio Gamma** ✅ Ahead of Schedule
-- Q3 target: 95% confidence
-- Could be delivered Q2 with current velocity
-
-🎯 **Board Recommendations**:
-1. Celebrate Gamma early delivery
-2. Address Beta portfolio risks immediately
-3. Consider resource reallocation if needed"
-```
-
-## Engineering Manager Scenarios
-
-### Team Performance Analysis
-**Scenario**: Understanding team dynamics and bottlenecks
-
-**Conversation Example**:
-```
-User: "My team seems to be struggling lately. Can you help me understand what's happening?"
-
-AI Response: [Calls GetFlowMetricsForTeam and AnalyzeTeamAging]
-"Let me analyze your team's recent performance data:
-
-📈 **Performance Trends**:
-- Throughput declined 30% over last month
-- Cycle time variance increased significantly
-- 5 items aging beyond normal patterns
-
-🔍 **Potential Issues Identified**:
-1. **Increased WIP**: Currently 12 items in progress (up from usual 8)
-2. **Aging Pattern**: Items stall in 'In Review' status
-3. **Variation**: Wide spread in completion times suggests inconsistent work size
-
-💡 **Suggested Actions**:
-- Implement WIP limits on review column
-- Investigate review process bottlenecks
-- Consider breaking down larger work items
-- Schedule team discussion on work sizing practices"
-```
-
-### Resource Planning
-**Scenario**: Cross-team coordination and resource allocation
-
-**Conversation Example**:
-```
-User: "We're planning to move John from Alpha team to Beta team. What impact will this have?"
-
-AI Response: [Calls GetFlowMetricsForTeam for both teams]
-"Here's the potential impact analysis:
-
-⚖️ **Alpha Team Impact**:
-- Current velocity: 10 items/sprint with 5 members
-- Portfolioed velocity after change: 8 items/sprint
-- Risk: May affect Q2 deliverables if no backfill
-
-💪 **Beta Team Impact**:
-- Current velocity: 6 items/sprint with 4 members  
-- Portfolioed velocity with John: 8-9 items/sprint
-- Benefit: Could improve their Q2 delivery confidence
-
-🎯 **Recommendations**:
-1. Plan the transition after Alpha completes current sprint
-2. Have John start with Beta team's smaller items first
-3. Monitor both teams for 2-3 sprints post-transition
-4. Consider temporary overlap period for knowledge transfer"
-```
-
-## Executive / Leadership Scenarios
-
-### Strategic Planning Sessions
-**Scenario**: Making data-driven portfolio decisions
-
-**Conversation Example**:
-```
-User: "We're considering adding a new major feature to Portfolio Apollo. How will this affect our roadmap?"
-
-"Let me analyze the current trajectory and potential impact:
-
-📊 **Current Apollo Status**:
-- Baseline completion: July 15 (70% confidence)
-
-⚠️ **Impact of Major Feature Addition**:
-- Estimated delay: 3-4 weeks
-- New completion: August 10-15 (70% confidence)
-
-💰 **Strategic Implications**:
-- Pushes GA into Q4, affecting revenue portfolioions
-- May impact competitor response timing
-- Could require additional team resources
-
-🎯 **Executive Options**:
-1. **Proceed**: Accept Q4 delivery with enhanced feature set
-2. **Scope Reduction**: Remove lower-priority features to maintain timeline
-3. **Resource Addition**: Add dedicated team to maintain timeline
-4. **Phase Approach**: Deliver base version Q3, enhance version Q4"
-```
-
-### Board Reporting
-**Scenario**: Regular executive reporting with predictive insights
-
-**Conversation Example**:
-```
-User: "I need the monthly portfolio report for the board. Focus on delivery confidence and risks."
-
-AI Response: [Comprehensive analysis across all portfolios]
-"**Monthly Portfolio Report - March 2024**
-
-🎯 **Delivery Confidence Summary**:
-- 3 of 5 portfolios tracking to planned timelines (85%+ confidence)
-- 1 portfolio at moderate risk (60% confidence)  
-- 1 portfolio requiring immediate attention (30% confidence)
-
-📊 **Key Metrics**:
-- Overall portfolio velocity: Stable month-over-month
-- Cross-portfolio dependencies: 2 critical paths identified
-- Resource utilization: 85% (healthy level)
-
-⚠️ **Executive Attention Required**:
-2. **Team Capacity**: Delta team approaching burnout indicators
-3. **Dependencies**: External API availability affecting 2 portfolios
-
-🚀 **Positive Indicators**:
-- Portfolio Gamma ahead of schedule (could accelerate market entry)
-- Team Alpha showing improved predictability
-- Technical debt reduction initiative showing ROI"
-```
-
-## Demo Video Walkthrough
-
-A comprehensive video demonstration is available showing real-world usage scenarios. The video covers:
-
-### Video Contents (15 minutes total)
-
-**Part 1: Setup and Configuration (3 minutes)**
-- Enabling MCP in Lighthouse settings
-- Configuring Claude Desktop connection
-- Verifying tool availability
-
-**Part 2: Team Analysis Deep Dive (5 minutes)**
-- Analyzing team metrics with expert prompts
-- Interpreting cycle time trends
-- Identifying flow bottlenecks
-- Using forecasting for sprint planning
-
-**Part 3: Portfolio Management Workflows (4 minutes)**
-- Multi-portfolio portfolio analysis
-- Feature delivery forecasting
-- Cross-team coordination insights
-
-**Part 4: Executive Reporting (3 minutes)**
-- Generating board-ready summaries
-- Predictive insights for strategic planning
-- Risk identification and mitigation planning
-
-### Video Access
-
-{: .note}
-**Demo Video Coming Soon**: A comprehensive 15-minute video demonstration will be created showing real-world MCP usage scenarios. The video will be available at the Lighthouse documentation site once recording is complete. In the meantime, you can request a live demonstration through our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
-
-**Recording Planned**: The demo video is scheduled for creation and will include:
-- Step-by-step configuration walkthroughs
-- Live demonstrations of each tool and prompt
-- Real data analysis scenarios
-- Troubleshooting common issues
-- Best practices for different use cases
-
-The video will be linked here once available and will be promoted through the Lighthouse community channels.
-
-### Key Demonstration Points
-
-The video specifically demonstrates:
-
-1. **Natural Language Interface**: How to ask complex questions without knowing exact tool names
-2. **Data Interpretation**: How AI transforms raw metrics into actionable insights
-3. **Expert Guidance Integration**: How prompts provide professional-grade analysis
-4. **Workflow Efficiency**: Completing complex analyses in minutes instead of hours
-5. **Decision Support**: Using forecasts for confident planning and risk management
-
-### Interactive Examples
-
-You can follow along with the video using the sample data provided in Lighthouse's demo mode. This allows hands-on practice with:
-
-- Sample teams with realistic historical data
-- Multiple portfolios in various states
-- Features with different completion statuses
-- Realistic flow metrics and forecasting scenarios
-
-The demo environment provides a safe space to experiment with MCP integration before connecting to your production Lighthouse instance.
-
-# Configuration Reference
-
-This section provides complete configuration examples for all supported MCP clients and advanced configuration scenarios.
-
-## Complete Client Configurations
-
-### Claude Desktop (Complete Example)
-
-**File Location**: 
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "globalShortcut": "Ctrl+Shift+K",
-  "mcpServers": {
-    "lighthouse": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "http://localhost:8080"
-      ],
+      "args": ["-y", "@letpeoplework/lighthouse-mcp-stdio"],
       "env": {
-        "NODE_ENV": "production"
+        "LIGHTHOUSE_URL": "https://lighthouse.example.com",
+        "LIGHTHOUSE_API_KEY": "replace-me"
       }
     }
   }
 }
 ```
 
-### VS Code Copilot (Complete Example)
+If you are using the local Lighthouse standalone app, you can usually omit `LIGHTHOUSE_URL` and let the package discover the running instance.
 
-**File**: VS Code Settings JSON (`settings.json`)
+### MCPB Bundle
 
-```json
-{
-  "mcp": {
-    "servers": {
-      "lighthouse-mcp": {
-        "type": "http",
-        "url": "http://localhost:8080",
-        "timeout": 30000,
-        "retries": 3
-      }
-    }
-  },
-  "github.copilot.enable": {
-    "*": true,
-    "plaintext": false,
-    "markdown": true
-  }
-}
+If your client supports `.mcpb` bundles, the quickest setup is the latest [lighthouse-mcp-stdio.mcpb](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-mcp-stdio.mcpb). Download the file, open it in your MCP-capable client, and provide the Lighthouse URL and optional API key when prompted.
+
+### MCP HTTP for Shared Setups
+
+Use `@letpeoplework/lighthouse-mcp-http` when you want one hosted MCP endpoint that multiple users or clients can share.
+
+Run it locally with `npx`:
+
+```bash
+LIGHTHOUSE_URL=https://lighthouse.example.com \
+LIGHTHOUSE_API_KEY=replace-me \
+HOST=127.0.0.1 \
+PORT=3333 \
+npx -y @letpeoplework/lighthouse-mcp-http
 ```
 
-### Continue Extension (Complete Example)
+This exposes:
 
-**File**: `.continue/config.json` in your workspace
+- `GET /health` for health checks
+- `POST /mcp` for MCP requests
+
+Client configuration then points to the MCP endpoint:
 
 ```json
 {
-  "models": [
-    {
-      "title": "Claude 3.5 Sonnet",
-      "provider": "anthropic",
-      "model": "claude-3-5-sonnet-20241022",
-      "apiKey": "your-api-key"
-    }
-  ],
-  "mcpServers": {
+  "servers": {
     "lighthouse": {
-      "transport": {
-        "type": "http",
-        "url": "http://localhost:8080"
-      },
-      "capabilities": {
-        "tools": true,
-        "prompts": true,
-        "resources": true
-      }
-    }
-  },
-  "allowAnonymousTelemetry": false
-}
-```
-
-### Cursor IDE (Complete Example)
-
-**File**: Cursor Settings
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "lighthouse": {
-        "command": "npx",
-        "args": [
-          "-y",
-          "mcp-remote",
-          "http://localhost:8080"
-        ]
-      }
+      "type": "http",
+      "url": "http://127.0.0.1:3333/mcp"
     }
   }
 }
 ```
+
+## Run MCP HTTP in Docker
+
+For containerized or remote setups, use the published Docker image:
+
+```bash
+docker run --rm \
+  -p 3000:3000 \
+  -e HOST=0.0.0.0 \
+  -e PORT=3000 \
+  -e LIGHTHOUSE_URL=https://lighthouse.example.com \
+  -e LIGHTHOUSE_API_KEY=replace-me \
+  ghcr.io/letpeoplework/lighthouse-clients/mcp-http:latest
+```
+
+Point your client to `http://<host>:3000/mcp` once the container is running.
+
+{: .recommendation}
+Use MCP stdio for personal local setups and MCP HTTP for shared or hosted setups. If your workflow is mostly shell-based, prefer the CLI.
+
+## Lighthouse Agent Skill
+
+The Lighthouse skill is its own deliverable, separate from the CLI and separate from the MCP server packages. It gives an LLM a ready-made kickstart for using Lighthouse effectively: when to use MCP tools, when to fall back to the CLI, how to connect to Lighthouse, and how to interpret Lighthouse flow metrics and forecasts.
+
+You can install or inspect it here:
+
+- [Agent Skills directory](https://agentskills.io/home)
+- [Latest Lighthouse skill download](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip)
+
+### What the Skill Does
+
+The skill does not replace the CLI or MCP. Instead, it teaches the LLM how to use those deliverables well.
+
+Typical benefits include:
+
+- Choosing the right access path: MCP tools first, CLI as fallback
+- Guiding the model toward Lighthouse-specific commands and prompts
+- Explaining how to authenticate with API keys when needed
+- Improving the quality of flow-metrics and forecasting interpretation
+
+### How to Use It
+
+1. Import the [lighthouse-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip) into a client that supports custom skills or prompt bundles.
+2. Give the client access to Lighthouse through either the CLI or an MCP server.
+3. Ask the model to use Lighthouse for a concrete task such as team metrics, forecasting, or portfolio analysis.
+
+### Recommended Combinations
+
+The skill works best together with one of the actual access mechanisms:
+
+- **Skill + MCP stdio**: best for local VS Code / GitHub Copilot or Claude-style setups where the model can call Lighthouse tools directly
+- **Skill + MCP HTTP**: best for shared or hosted AI environments where multiple clients connect to one MCP endpoint
+- **Skill + CLI**: best for terminal-capable coding agents, shell workflows, and environments where MCP is not available
+
+In short, the skill improves the model's Lighthouse behavior, while the CLI and MCP packages provide the real connectivity.
+
+### Example Usage Pattern
+
+One practical setup is:
+
+1. Install the Lighthouse skill in the AI client.
+2. Connect Lighthouse through MCP or the CLI.
+3. Start with a task like: "Use Lighthouse to analyze the last 30 days of throughput and cycle time for team 1, then explain the delivery risks."
+
+This is especially useful if your client supports importing custom skills or prompt bundles and you want the model to begin with Lighthouse-specific guidance instead of a blank prompt.
+
+## Example Prompts and Workflows
+
+Once connected through CLI or MCP, common workflows look like this:
+
+- "List all Lighthouse teams and show me their IDs."
+- "Run a forecast for team 1 with 12 remaining items."
+- "Get throughput and cycle time for the last 30 days and summarize the risks."
+- "Show portfolio metrics as raw JSON so I can use them in a script."
+
+For a shell-first workflow, the CLI is often enough. For natural-language, tool-driven conversations inside an AI client, prefer MCP.
+
+## Related Documentation
+
+- [System Settings > API Keys](./settings/apikeys.html)
+- [Authentication](./Installation/authentication.html)
+- [Configuration](./settings/configuration.html)
+- [System Settings](./settings/settings.html)
