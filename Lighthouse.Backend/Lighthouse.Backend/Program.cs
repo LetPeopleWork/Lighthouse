@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
-using Lighthouse.Backend.MCP;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
@@ -79,11 +78,8 @@ namespace Lighthouse.Backend
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
-                var mcpFeature = TryGetOptionalFeature(builder);
-                ConfigureOptionalServices(builder, mcpFeature);
-
                 var app = builder.Build();
-                ConfigureApp(app, mcpFeature);
+                ConfigureApp(app);
 
                 if (isStandalone)
                 {
@@ -124,39 +120,7 @@ namespace Lighthouse.Backend
             }
         }
 
-
-        private static OptionalFeature? TryGetOptionalFeature(WebApplicationBuilder builder)
-        {
-            try
-            {
-                var serviceProvider = builder.Services.BuildServiceProvider();
-                using var scope = serviceProvider.CreateScope();
-
-                // Only configure MCP server if user has premium license
-                var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
-
-                if (!licenseService.CanUsePremiumFeatures())
-                {
-                    return null;
-                }
-
-                // Check if database is accessible
-                var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                if (dbContext.Database.CanConnect())
-                {
-                    var optionalFeatureRepository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
-                    return optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Could not retrieve MCP feature setting. MCP server will not be configured.");
-            }
-
-            return null;
-        }
-
-        private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
+        private static void ConfigureApp(WebApplication app)
         {
             if (app.Environment.IsDevelopment())
             {
@@ -222,43 +186,6 @@ namespace Lighthouse.Backend
                 spa.Options.SourcePath = "wwwroot";
                 spa.Options.DefaultPage = "/index.html";
             });
-
-            if (mcpFeature?.Enabled ?? false)
-            {
-                app.MapMcp();
-            }
-        }
-
-        private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
-        {
-            ConfigureMcpServer(builder, mcpFeature);
-        }
-
-        private static void ConfigureMcpServer(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
-        {
-            if (mcpFeature?.Enabled ?? false)
-            {
-                builder.Services.AddMcpServer()
-                    .WithHttpTransport()
-                    .WithTools<LighthouseTeamTools>()
-                    .WithTools<LighthouseProjectTools>()
-                    .WithTools<LighthouseFeatureTools>()
-                    .WithPrompts<LighthousePrompts>()
-                    .WithReadResourceHandler(async (request, cancellationToken) =>
-                    {
-                        var serviceProvider = builder.Services.BuildServiceProvider();
-                        using var serviceScope = serviceProvider.CreateScope();
-                        var resources = serviceScope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                        return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
-                    })
-                    .WithListResourcesHandler(async (_, _) =>
-                    {
-                        var serviceProvider = builder.Services.BuildServiceProvider();
-                        using var serviceScope = serviceProvider.CreateScope();
-                        var resources = serviceScope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                        return await resources.ListDocumentationResources();
-                    });
-            }
         }
 
         private static void ConfigureServices(WebApplicationBuilder builder)
@@ -533,9 +460,6 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();
             builder.Services.AddScoped<ILinearWorkTrackingConnector, LinearWorkTrackingConnector>();
             builder.Services.AddScoped<CsvWorkTrackingConnector>();
-
-            // MCP Resources
-            builder.Services.AddScoped<LighthouseResources>();
 
             // Seeding Services - Register in order they should run
             builder.Services.AddScoped<ISeeder, AppSettingSeeder>();

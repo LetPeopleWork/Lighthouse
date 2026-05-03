@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 OptionalFeatureKeys.LighthouseChartKey,
                 OptionalFeatureKeys.CycleTimeScatterPlotKey,
                 OptionalFeatureKeys.LinearIntegrationKey,
+                OptionalFeatureKeys.McpServerKey,
             };
 
             var toRemove = await context.OptionalFeatures
@@ -42,18 +43,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
 
         private async Task AddOrUpdateCurrentFeatures()
         {
-            var features = new[]
+            var features = new OptionalFeature[]
             {
-                new OptionalFeature
-                {
-                    Id = 2,
-                    Key = OptionalFeatureKeys.McpServerKey,
-                    Name = "MCP Server",
-                    Description = "Enables MCP Server to integrate with AI Agents (requires restart). [Premium Only]",
-                    Enabled = false,
-                    IsPremium =  true,
-                    IsPreview = false
-                }
             };
 
             foreach (var feature in features)

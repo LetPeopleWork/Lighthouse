@@ -9,56 +9,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
     public class OptionalFeatureSeederTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
         [Test]
-        [TestCase(OptionalFeatureKeys.McpServerKey, "MCP Server", false)]
-        public async Task SeedAsync_AddsCurrentFeatures_WhenDatabaseIsEmpty(string key, string expectedName, bool expectedIsPreview)
-        {
-            var subject = CreateSubject();
-
-            await subject.Seed();
-
-            var feature = DatabaseContext.OptionalFeatures.Single(f => f.Key == key);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(feature.Name, Is.EqualTo(expectedName));
-                Assert.That(feature.IsPreview, Is.EqualTo(expectedIsPreview));
-                Assert.That(feature.Enabled, Is.False);
-            }
-        }
-
-        [Test]
-        public async Task SeedAsync_DoesNotDuplicate_WhenFeaturesAlreadyExist()
-        {
-            // Arrange
-            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
-            {
-                Id = 2,
-                Key = OptionalFeatureKeys.McpServerKey,
-                Name = "MCP Server",
-                Description = "Custom description",
-                Enabled = true, // User enabled it
-                IsPremium = true,
-                IsPreview = false
-            });
-            await DatabaseContext.SaveChangesAsync();
-
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var features = DatabaseContext.OptionalFeatures
-                .Where(f => f.Key == OptionalFeatureKeys.McpServerKey)
-                .ToList();
-
-            Assert.That(features, Has.Count.EqualTo(1));
-            Assert.That(features[0].Enabled, Is.True); // User's setting preserved
-        }
-
-        [Test]
         [TestCase(OptionalFeatureKeys.LighthouseChartKey)]
         [TestCase(OptionalFeatureKeys.CycleTimeScatterPlotKey)]
         [TestCase(OptionalFeatureKeys.LinearIntegrationKey)]
+        [TestCase(OptionalFeatureKeys.McpServerKey)]
         public async Task SeedAsync_RemovesDeprecatedFeatures(string deprecatedKey)
         {
             // Arrange
@@ -86,61 +40,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        public async Task SeedAsync_UpdatesIsPreviewFlag_WhenFeatureExists()
-        {
-            // Arrange
-            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
-            {
-                Id = 3,
-                Key = OptionalFeatureKeys.McpServerKey,
-                Name = "Linear Integration",
-                Description = "Enables Experimental Support for Linear.app",
-                Enabled = false,
-                IsPreview = true // Old value
-            });
-            await DatabaseContext.SaveChangesAsync();
-
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var feature = DatabaseContext.OptionalFeatures
-                .Single(f => f.Key == OptionalFeatureKeys.McpServerKey);
-
-            Assert.That(feature.IsPreview, Is.False); // Updated to true
-        }
-        
-        [Test]
-        public async Task SeedAsync_UpdatesIsPremiumFlag_WhenFeatureExists()
-        {
-            // Arrange
-            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
-            {
-                Id = 2,
-                Key = OptionalFeatureKeys.McpServerKey,
-                Name = "MCP Server",
-                Description = "Custom description",
-                Enabled = true,
-                IsPremium = false, // Old Value
-                IsPreview = false,
-            });
-            await DatabaseContext.SaveChangesAsync();
-
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var feature = DatabaseContext.OptionalFeatures
-                .Single(f => f.Key == OptionalFeatureKeys.McpServerKey);
-
-            Assert.That(feature.IsPremium, Is.True); // Updated to true
-        }
-
-        [Test]
         public async Task SeedAsync_CanBeCalledMultipleTimes_WithoutErrors()
         {
             var subject = CreateSubject();
@@ -152,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             // Assert
             var features = DatabaseContext.OptionalFeatures.ToList();
-            Assert.That(features, Has.Count.EqualTo(1));
+            Assert.That(features, Has.Count.EqualTo(0));
         }
 
         [Test]
