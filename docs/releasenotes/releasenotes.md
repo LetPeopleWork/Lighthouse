@@ -4,6 +4,38 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.5.3.5
+
+## Support for new Lighthouse Clients
+This release introduces a new set of external Lighthouse clients for automation and AI-assisted workflows.
+
+You can now use Lighthouse through:
+
+- a dedicated **CLI** for terminal workflows, scripts, and CI
+- a local **MCP stdio server** for tools such as VS Code / GitHub Copilot and similar local MCP clients
+- a shared **MCP HTTP server** for hosted or team-wide AI integrations
+
+To support these non-browser clients, Lighthouse now also supports **API Keys** for authenticated CLI and MCP usage.
+
+For setup details, examples, and download options, see the live documentation:
+
+- [AI and Automation](https://docs.lighthouse.letpeople.work/aiintegration.html)
+- [API Keys](https://docs.lighthouse.letpeople.work/settings/apikeys.html)
+- [Authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html)
+
+## Bugfixes and Improvements
+- For various charts, the dates in the x-axis were unreadable for larger time horizons. This should be fixed now.
+- Adjusted the RAG calculation for the Feature Sizes in the portfolio to give more clear signals
+- Updated various third-party Libraries
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.4.25.4...v26.5.3.5)
+
+
 # Lighthouse v26.4.25.4
 
 ## Load Balance Matrix
