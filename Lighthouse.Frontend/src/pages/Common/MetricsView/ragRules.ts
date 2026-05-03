@@ -580,59 +580,39 @@ export function computeWorkDistributionRag(
 }
 
 export function computeFeatureSizeRag(
-	featureSizeTarget: { percentile: number; value: number } | null,
 	sizePercentileValues: ReadonlyArray<{ percentile: number; value: number }>,
 	activeItemSizes: ReadonlyArray<number>,
 	terms: RagTerms,
 ): RagResult {
-	if (!featureSizeTarget) {
-		return {
-			ragStatus: "red",
-			tipText: `Define a ${terms.feature} Size Target in settings.`,
-		};
-	}
-
-	if (activeItemSizes.length === 0 || sizePercentileValues.length === 0) {
+	if (activeItemSizes.length === 0) {
 		return {
 			ragStatus: "green",
 			tipText: `No active ${terms.features} to evaluate.`,
 		};
 	}
 
-	// Find the computed size at the target percentile (e.g. 85th = 7 child items)
-	const targetPercentileSize = sizePercentileValues.find(
-		(p) => p.percentile === featureSizeTarget.percentile,
-	);
+	const p85 = sizePercentileValues.find((p) => p.percentile === 85)?.value;
+	const p70 = sizePercentileValues.find((p) => p.percentile === 70)?.value;
 
-	if (!targetPercentileSize) {
-		return {
-			ragStatus: "green",
-			tipText: `No historical size data at the ${featureSizeTarget.percentile}th percentile yet.`,
-		};
-	}
-
-	// How many active features exceed the historical threshold?
-	const aboveCount = activeItemSizes.filter(
-		(s) => s > targetPercentileSize.value,
-	).length;
-	const abovePercent = (aboveCount / activeItemSizes.length) * 100;
-	const allowedAbove = 100 - featureSizeTarget.percentile; // e.g. 15% for 85th
-
-	if (abovePercent > allowedAbove + 10) {
+	if (p85 !== undefined && activeItemSizes.some((s) => s > p85)) {
+		const count = activeItemSizes.filter((s) => s > p85).length;
 		return {
 			ragStatus: "red",
-			tipText: `${abovePercent.toFixed(1)}% of active ${terms.features} exceed the ${featureSizeTarget.percentile}th percentile size of ${targetPercentileSize.value} items (expected: ${allowedAbove}%). Break down large ${terms.features}.`,
+			tipText: `${count} ${terms.feature}(s) exceed the 85th percentile size of ${p85} items. These are bigger than most other ${terms.features} and still in progress — look to split or close as soon as possible.`,
 		};
 	}
-	if (abovePercent > allowedAbove) {
+
+	if (p70 !== undefined && activeItemSizes.some((s) => s > p70)) {
+		const count = activeItemSizes.filter((s) => s > p70).length;
 		return {
 			ragStatus: "amber",
-			tipText: `${abovePercent.toFixed(1)}% of active ${terms.features} exceed the ${featureSizeTarget.percentile}th percentile size of ${targetPercentileSize.value} items (expected: ${allowedAbove}%). Monitor closely.`,
+			tipText: `${count} ${terms.feature}(s) exceed the 70th percentile size of ${p70} items. They are approaching the upper limit — if they grow further, try to split and deliver in smaller slices.`,
 		};
 	}
+
 	return {
 		ragStatus: "green",
-		tipText: `${abovePercent.toFixed(1)}% of active ${terms.features} exceed the ${featureSizeTarget.percentile}th percentile size of ${targetPercentileSize.value} items, within the expected ${allowedAbove}%.`,
+		tipText: `All active ${terms.features} are within the expected size range.`,
 	};
 }
 

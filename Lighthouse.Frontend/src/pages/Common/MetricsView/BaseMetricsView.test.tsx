@@ -3218,8 +3218,8 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it("shows red RAG for feature size when no target is set", async () => {
-			// featureSizeTarget = null → Red
+		it("shows green RAG for feature size when no percentile data is available", async () => {
+			// sizePercentileValues is empty by default → no thresholds → green
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -3235,7 +3235,7 @@ describe("BaseMetricsView component", () => {
 					screen.getByTestId("widget-header-featureSize"),
 				).toBeInTheDocument();
 				expect(screen.getByTestId("widget-rag-featureSize")).toHaveTextContent(
-					"red",
+					"green",
 				);
 			});
 		});

@@ -188,7 +188,6 @@ type RagInputs = {
 	readonly unlinkedCount: number;
 	readonly workDistTotalCount: number;
 	readonly distributionRate: number;
-	readonly featureSizeTarget: IPercentileValue | null;
 	readonly sizePercentileValues: IPercentileValue[];
 	readonly featureSizes: ReadonlyArray<number>;
 	readonly estimationStatus: string;
@@ -294,7 +293,6 @@ function buildWidgetFooters(
 			inputs.terms,
 		),
 		featureSize: computeFeatureSizeRag(
-			inputs.featureSizeTarget,
 			inputs.sizePercentileValues,
 			inputs.featureSizes,
 			inputs.terms,
@@ -341,7 +339,6 @@ function buildWidgetFooters(
 			? computePbcRag(inputs.arrivalsPbcData)
 			: undefined,
 		featureSizePercentiles: computeFeatureSizeRag(
-			inputs.featureSizeTarget,
 			inputs.sizePercentileValues,
 			inputs.featureSizes,
 			inputs.terms,
@@ -873,7 +870,6 @@ export const BaseMetricsView = <
 		estimationVsCycleTimeData,
 		featureSizeEstimationData,
 		serviceLevelExpectation,
-		featureSizeTarget,
 		totalWorkItemAge,
 		arrivalsData,
 		arrivalsPbcData,
@@ -1059,7 +1055,6 @@ export const BaseMetricsView = <
 				.map((item) => item.parentWorkItemReference)
 				.filter(Boolean),
 		).size,
-		featureSizeTarget,
 		sizePercentileValues,
 		estimationStatus: estimationVsCycleTimeData?.status ?? "NotConfigured",
 		estimationDataPoints: (estimationVsCycleTimeData?.dataPoints ?? []).map(

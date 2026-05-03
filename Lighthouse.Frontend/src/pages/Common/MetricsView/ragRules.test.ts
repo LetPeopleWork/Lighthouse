@@ -639,103 +639,89 @@ describe("ragRules", () => {
 	});
 
 	describe("computeFeatureSizeRag", () => {
-		it("returns red when no feature size target is set", () => {
-			const result = computeFeatureSizeRag(null, [], [], terms);
-			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("Feature Size Target");
-		});
+		const p70 = 5;
+		const p85 = 10;
+		const percentiles = [
+			{ percentile: 70, value: p70 },
+			{ percentile: 85, value: p85 },
+		];
 
 		it("returns green when no active items to evaluate", () => {
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const result = computeFeatureSizeRag(target, percentiles, [], terms);
+			const result = computeFeatureSizeRag(percentiles, [], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns green when no percentile data available", () => {
-			const target = { percentile: 85, value: 90 };
-			const result = computeFeatureSizeRag(target, [], [3, 5, 7], terms);
+		it("returns green when sizePercentileValues is empty", () => {
+			const result = computeFeatureSizeRag([], [3, 8, 12], terms);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns green when no matching percentile found", () => {
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 70, value: 5 }];
+		it("returns green when neither 70th nor 85th percentile is in the array", () => {
 			const result = computeFeatureSizeRag(
-				target,
-				percentiles,
-				[3, 5, 7],
+				[{ percentile: 50, value: 4 }],
+				[3, 8, 12],
 				terms,
 			);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns green when violations are within the allowed percentage", () => {
-			// 85th percentile size = 7. Allowed above = 15%.
-			// 1 of 10 above 7 = 10% → within 15% → green
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [1, 2, 3, 4, 5, 6, 7, 7, 7, 9];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+		it("returns green when only 70th percentile is present and all sizes are within it", () => {
+			const result = computeFeatureSizeRag(
+				[{ percentile: 70, value: p70 }],
+				[1, 2, 3],
+				terms,
+			);
 			expect(result.ragStatus).toBe("green");
 		});
 
-		it("returns green when no items exceed the threshold", () => {
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [1, 2, 3, 4, 5];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
-			expect(result.ragStatus).toBe("green");
-		});
-
-		it("returns amber when violations exceed allowed percentage but within red threshold", () => {
-			// 85th percentile size = 7. Allowed above = 15%, red at > 25%.
-			// 2 of 10 above 7 = 20% → between 15% and 25% → amber
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [1, 2, 3, 4, 5, 6, 7, 7, 8, 9];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
-			expect(result.ragStatus).toBe("amber");
-		});
-
-		it("returns red when violations exceed the red threshold", () => {
-			// 85th percentile size = 7. Allowed above = 15%, red at 25%.
-			// 3 of 10 above 7 = 30% → > 25% → red
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+		it("returns red when any item exceeds the 85th percentile value", () => {
+			const result = computeFeatureSizeRag(percentiles, [3, 5, 11], terms);
 			expect(result.ragStatus).toBe("red");
 		});
 
-		it("returns green when violations are exactly at allowed percentage", () => {
-			// 85th percentile size = 7. Allowed = 15%.
-			// 15 of 100 above 7 = 15% → exactly at limit → green
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [...new Array(85).fill(5), ...new Array(15).fill(10)];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
-			expect(result.ragStatus).toBe("green");
+		it("returns red when multiple items exceed the 85th percentile value", () => {
+			const result = computeFeatureSizeRag(percentiles, [11, 12, 15], terms);
+			expect(result.ragStatus).toBe("red");
 		});
 
-		it("returns amber when violations are exactly at the red threshold", () => {
-			// 85th percentile size = 7. Allowed = 15%, red at > 25%.
-			// 25 of 100 above 7 = 25% → not > 25% → amber
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [...new Array(75).fill(5), ...new Array(25).fill(10)];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
+		it("returns amber when an item exceeds 70th but not 85th", () => {
+			const result = computeFeatureSizeRag(percentiles, [2, 4, 7], terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
-		it("includes the threshold size and percentages in the tip text", () => {
-			const target = { percentile: 85, value: 90 };
-			const percentiles = [{ percentile: 85, value: 7 }];
-			const sizes = [...new Array(75).fill(5), ...new Array(25).fill(10)];
-			const result = computeFeatureSizeRag(target, percentiles, sizes, terms);
-			expect(result.tipText).toContain("85th percentile");
-			expect(result.tipText).toContain("7");
-			expect(result.tipText).toContain("15%"); // allowedAbove
+		it("returns amber when exactly at 70th boundary (equal)", () => {
+			// p70 = 5, using size = 6 (> 5)
+			const result = computeFeatureSizeRag(percentiles, [1, 6], terms);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns green when all sizes are within the 70th percentile value", () => {
+			const result = computeFeatureSizeRag(percentiles, [1, 3, 5], terms);
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("prioritises red over amber when some items exceed 85th and others exceed only 70th", () => {
+			const result = computeFeatureSizeRag(percentiles, [7, 11], terms);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("returns red when only 85th percentile is present and item exceeds it", () => {
+			const result = computeFeatureSizeRag(
+				[{ percentile: 85, value: p85 }],
+				[11],
+				terms,
+			);
+			expect(result.ragStatus).toBe("red");
+		});
+
+		it("includes the 85th percentile value in red tip text", () => {
+			const result = computeFeatureSizeRag(percentiles, [11], terms);
+			expect(result.tipText).toContain(String(p85));
+		});
+
+		it("includes the 70th percentile value in amber tip text", () => {
+			const result = computeFeatureSizeRag(percentiles, [7], terms);
+			expect(result.tipText).toContain(String(p70));
 		});
 	});
 

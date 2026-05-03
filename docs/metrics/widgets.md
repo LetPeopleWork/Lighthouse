@@ -542,18 +542,18 @@ The trend indicator compares the selected date range against the immediately pre
 This widget is only available for Portfolios.
 
 {: .note}
-The displayed percentiles summarize historical feature sizes, but the status indicator evaluates your currently active features against the configured [Feature Size Target](../portfolios/edit.html#feature-size-target).
+The displayed percentiles summarize historical feature sizes, but the status indicator evaluates your currently active features against the 85th and 70th percentile thresholds derived from those same historical sizes.
 
 ## Status Indicator
 
 | Status | Condition |
 |---|---|
-| 🔴 Act | No Feature Size Target is configured, *or* more than `(100% − target percentile) + 10%` of active features exceed the historical size at the target percentile. |
-| 🟡 Observe | More than `100% − target percentile` of active features exceed the threshold, but within the 10 percentage point buffer. |
-| 🟢 Sustain | The proportion of oversized active features is within the expected range. |
+| 🔴 Act | At least one active (To Do or In Progress) feature has more child items than the 85th percentile size of completed features. |
+| 🟡 Observe | No feature exceeds the 85th percentile, but at least one active feature has more child items than the 70th percentile size — it may grow further. |
+| 🟢 Sustain | All active features are at or below the 70th percentile size, or no historical size data is available yet. |
 
 {: .note}
-If no active features or no historical size data exist yet, the status defaults to **Sustain**.
+If no active features exist, the status defaults to **Sustain**.
 
 # Cycle Time Scatterplot
 
@@ -765,13 +765,13 @@ Click on any bubble to see detailed information about the feature(s) it represen
 
 ## Status Indicator
 
-The Feature Size chart compares active (in-progress) features against a configured **Feature Size Target** percentile, derived from historical feature sizes.
+The Feature Size chart evaluates every active (To Do and In Progress) feature against the **85th and 70th percentile sizes** derived from historically completed features in the selected date range.
 
 | Status | Condition |
 |---|---|
-| 🔴 Act | No Feature Size Target is configured, *or* more than `(100% − target percentile) + 10%` of active features exceed the historical size at the target percentile. |
-| 🟡 Observe | More than `100% − target percentile` of active features exceed the threshold, but within the 10 percentage point buffer. |
-| 🟢 Sustain | The proportion of oversized active features is within the expected range. |
+| 🔴 Act | At least one active (To Do or In Progress) feature has more child items than the 85th percentile size of completed features. |
+| 🟡 Observe | No feature exceeds the 85th percentile, but at least one active feature has more child items than the 70th percentile size — it may grow further. |
+| 🟢 Sustain | All active features are at or below the 70th percentile size, or no historical size data is available yet. |
 
 {: .note}
-If no active features or no historical size data exist yet, the status defaults to **Sustain**.
+If no active features exist, the status defaults to **Sustain**.

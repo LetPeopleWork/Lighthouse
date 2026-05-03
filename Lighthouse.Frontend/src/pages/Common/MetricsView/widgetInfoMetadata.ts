@@ -199,10 +199,10 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 		learnMoreUrl: `${DOCS_BASE}#feature-size`,
 		statusGuidance: {
 			sustain:
-				"Active features above the configured percentile size threshold stay within the expected percentage.",
+				"All active features are within the expected size range. No action needed.",
 			observe:
-				"Active features above the percentile size threshold are slightly above the expected percentage.",
-			act: "No Feature Size Target is configured, or active features above the threshold exceed the expected percentage by more than 10 points.",
+				"One or more active features exceed the 70th percentile size. Consider splitting to deliver in smaller slices.",
+			act: "At least one active feature exceeds the 85th percentile size. Look to split or close it as soon as possible.",
 		},
 	},
 	throughputPbc: {
@@ -312,10 +312,10 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 		learnMoreUrl: `${DOCS_BASE}#feature-size`,
 		statusGuidance: {
 			sustain:
-				"Feature sizes are stable or shrinking compared to the previous period.",
+				"All active features are within the expected size range. No action needed.",
 			observe:
-				"Feature sizes show a slight increase compared to the previous period.",
-			act: "Feature sizes have significantly increased compared to the previous period.",
+				"One or more active features exceed the 70th percentile size. Consider splitting to deliver in smaller slices.",
+			act: "At least one active feature exceeds the 85th percentile size. Look to split or close it as soon as possible.",
 		},
 	},
 };
