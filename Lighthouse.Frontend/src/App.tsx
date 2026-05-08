@@ -103,9 +103,8 @@ const App: React.FC = () => {
 	}, [isTauri]);
 
 	// --- 2. Auth Guard ---
-	const { shell, loginUrl, misconfigurationMessage, logout } = useAuthGuard(
-		apiServices.authService,
-	);
+	const { shell, loginUrl, misconfigurationMessage, logout, currentUser } =
+		useAuthGuard(apiServices.authService);
 
 	// Re-bootstrap auth state after a blocked-mode license import
 	const handleBlockedLicenseImported = () => {
@@ -168,6 +167,7 @@ const App: React.FC = () => {
 							<CssBaseline />
 							<Header
 								isAuthenticated={shell === "authenticated"}
+								currentUserDisplayName={currentUser?.displayName}
 								onLogout={logout}
 							/>
 							<Box

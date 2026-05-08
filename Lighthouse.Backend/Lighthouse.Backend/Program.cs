@@ -491,6 +491,7 @@ namespace Lighthouse.Backend
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));
             builder.Services.AddSingleton<IAuthConfigurationValidator, AuthConfigurationValidator>();
             builder.Services.AddScoped<IAuthModeResolver, AuthModeResolver>();
+            builder.Services.AddScoped<ICurrentUserProfileService, CurrentUserProfileService>();
 
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();

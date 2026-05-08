@@ -262,5 +262,69 @@ namespace Lighthouse.Backend.Tests.API
             var session = (result.Value as AuthSessionStatus)!;
             Assert.That(session.Email, Is.EqualTo("user@example.com"));
         }
+
+        [Test]
+        public async Task GetCurrentUserProfile_AuthenticatedWithStableSubject_ReturnsProfile()
+        {
+            var claims = new[]
+            {
+                new Claim("sub", "auth0|user-123"),
+                new Claim("name", "Profile User"),
+                new Claim(ClaimTypes.Email, "profile.user@example.com"),
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthentication");
+            var user = new ClaimsPrincipal(identity);
+            var subject = CreateSubjectWithUser(user);
+
+            var now = DateTime.UtcNow;
+            var currentUserProfileServiceMock = new Mock<ICurrentUserProfileService>();
+            currentUserProfileServiceMock
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile
+                {
+                    Subject = "auth0|user-123",
+                    DisplayName = "Profile User",
+                    Email = "profile.user@example.com",
+                    CreatedAt = now,
+                    LastSeenAt = now,
+                });
+
+            var result = await subject.GetCurrentUserProfile(currentUserProfileServiceMock.Object, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ObjectResult>());
+                var objectResult = (ObjectResult)result;
+                Assert.That(objectResult.StatusCode, Is.EqualTo(200));
+
+                var profile = objectResult.Value as CurrentUserProfileStatus;
+                Assert.That(profile, Is.Not.Null);
+                Assert.That(profile!.Subject, Is.EqualTo("auth0|user-123"));
+                Assert.That(profile.DisplayName, Is.EqualTo("Profile User"));
+                Assert.That(profile.Email, Is.EqualTo("profile.user@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetCurrentUserProfile_AuthenticatedWithoutStableSubject_ReturnsForbid()
+        {
+            var claims = new[]
+            {
+                new Claim("name", "User Without Subject"),
+                new Claim(ClaimTypes.Email, "no-subject@example.com"),
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthentication");
+            var user = new ClaimsPrincipal(identity);
+            var subject = CreateSubjectWithUser(user);
+
+            var currentUserProfileServiceMock = new Mock<ICurrentUserProfileService>();
+            currentUserProfileServiceMock
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(user, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((UserProfile?)null);
+
+            var result = await subject.GetCurrentUserProfile(currentUserProfileServiceMock.Object, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
     }
 }

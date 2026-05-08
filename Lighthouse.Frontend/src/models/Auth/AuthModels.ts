@@ -15,3 +15,9 @@ export interface AuthSessionStatus {
 	displayName?: string;
 	email?: string;
 }
+
+export interface CurrentUserProfileStatus {
+	subject: string;
+	displayName?: string;
+	email?: string;
+}

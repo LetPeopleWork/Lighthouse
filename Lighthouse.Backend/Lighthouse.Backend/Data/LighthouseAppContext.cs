@@ -42,6 +42,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<RefreshLog> RefreshLogs { get; set; } = null!;
 
         public DbSet<ApiKey> ApiKeys { get; set; } = null!;
+
+        public DbSet<UserProfile> UserProfiles { get; set; } = null!;
         
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
@@ -55,6 +57,18 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
             modelBuilder.Entity<OptionalFeature>().HasKey(a => a.Key);
             modelBuilder.Entity<LicenseInformation>().HasKey(li => li.Id);
+
+            modelBuilder.Entity<UserProfile>()
+                .HasIndex(up => up.Subject)
+                .IsUnique();
+
+            modelBuilder.Entity<UserProfile>()
+                .Property(up => up.Subject)
+                .IsRequired();
+
+            modelBuilder.Entity<UserProfile>()
+                .Property(up => up.SubjectClaimType)
+                .IsRequired();
 
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()

@@ -2,6 +2,7 @@ import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	AuthSessionStatus,
+	CurrentUserProfileStatus,
 	RuntimeAuthStatus,
 } from "../../models/Auth/AuthModels";
 import { AuthMode } from "../../models/Auth/AuthModels";
@@ -99,6 +100,24 @@ describe("AuthService", () => {
 			expect(result.isAuthenticated).toBe(false);
 			expect(result.displayName).toBeUndefined();
 			expect(result.email).toBeUndefined();
+		});
+	});
+
+	describe("getCurrentUserProfile", () => {
+		it("should return current user profile", async () => {
+			const mockResponse: CurrentUserProfileStatus = {
+				subject: "auth0|story-user",
+				displayName: "Story User",
+				email: "story.user@example.com",
+			};
+			mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+			const result = await authService.getCurrentUserProfile();
+
+			expect(result.subject).toEqual("auth0|story-user");
+			expect(result.displayName).toEqual("Story User");
+			expect(result.email).toEqual("story.user@example.com");
+			expect(mockedAxios.get).toHaveBeenCalledWith("/auth/me");
 		});
 	});
 

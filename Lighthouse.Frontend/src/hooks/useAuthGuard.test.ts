@@ -9,6 +9,10 @@ const createMockAuthService = (
 ): IAuthService => ({
 	getRuntimeAuthStatus: vi.fn().mockResolvedValue({ mode: AuthMode.Disabled }),
 	getSession: vi.fn().mockResolvedValue({ isAuthenticated: false }),
+	getCurrentUserProfile: vi.fn().mockResolvedValue({
+		subject: "auth0|default-user",
+		displayName: "Default User",
+	}),
 	getLoginUrl: vi.fn().mockReturnValue("/api/auth/login"),
 	logout: vi.fn().mockResolvedValue(undefined),
 	...overrides,
@@ -83,6 +87,11 @@ describe("useAuthGuard", () => {
 				displayName: "Test User",
 				email: "test@example.com",
 			}),
+			getCurrentUserProfile: vi.fn().mockResolvedValue({
+				subject: "auth0|test-user",
+				displayName: "Test User",
+				email: "test@example.com",
+			}),
 		});
 
 		const { result } = renderHook(() => useAuthGuard(mockService));
@@ -90,6 +99,29 @@ describe("useAuthGuard", () => {
 		await waitFor(() => {
 			expect(result.current.shell).toBe("authenticated");
 			expect(result.current.session?.displayName).toBe("Test User");
+			expect(result.current.currentUser?.subject).toBe("auth0|test-user");
+		});
+	});
+
+	it("should remain authenticated when current user profile request fails", async () => {
+		const mockService = createMockAuthService({
+			getRuntimeAuthStatus: vi
+				.fn()
+				.mockResolvedValue({ mode: AuthMode.Enabled }),
+			getSession: vi.fn().mockResolvedValue({
+				isAuthenticated: true,
+				displayName: "Session User",
+			}),
+			getCurrentUserProfile: vi
+				.fn()
+				.mockRejectedValue(new Error("Profile endpoint failed")),
+		});
+
+		const { result } = renderHook(() => useAuthGuard(mockService));
+
+		await waitFor(() => {
+			expect(result.current.shell).toBe("authenticated");
+			expect(result.current.currentUser).toBeUndefined();
 		});
 	});
 

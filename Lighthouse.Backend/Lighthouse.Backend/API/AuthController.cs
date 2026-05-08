@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
         private readonly IAuthModeResolver authModeResolver;
@@ -23,6 +22,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("mode")]
+        [AllowAnonymous]
         [ProducesResponseType<RuntimeAuthStatus>(StatusCodes.Status200OK)]
         public IActionResult GetRuntimeAuthStatus()
         {
@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("login")]
+        [AllowAnonymous]
         public IActionResult Login()
         {
             var status = authModeResolver.Resolve();
@@ -46,6 +47,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("logout")]
+        [AllowAnonymous]
         public IActionResult Logout()
         {
             var status = authModeResolver.Resolve();
@@ -62,6 +64,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("session")]
+        [AllowAnonymous]
         [ProducesResponseType<AuthSessionStatus>(StatusCodes.Status200OK)]
         public IActionResult GetSession()
         {
@@ -79,6 +82,29 @@ namespace Lighthouse.Backend.API
             };
 
             return Ok(sessionStatus);
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        [ProducesResponseType<CurrentUserProfileStatus>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetCurrentUserProfile(
+            [FromServices] ICurrentUserProfileService currentUserProfileService,
+            CancellationToken cancellationToken)
+        {
+            var userProfile = await currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
+
+            if (userProfile is null)
+            {
+                return Forbid();
+            }
+
+            return Ok(new CurrentUserProfileStatus
+            {
+                Subject = userProfile.Subject,
+                DisplayName = userProfile.DisplayName,
+                Email = userProfile.Email,
+            });
         }
     }
 }

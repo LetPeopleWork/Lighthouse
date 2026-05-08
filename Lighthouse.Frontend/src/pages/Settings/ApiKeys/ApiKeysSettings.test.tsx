@@ -21,6 +21,7 @@ const buildWrapper = (
 	const mockAuthService = {
 		getRuntimeAuthStatus: vi.fn().mockResolvedValue({ mode: AuthMode.Enabled }),
 		getSession: vi.fn(),
+		getCurrentUserProfile: vi.fn(),
 		getLoginUrl: vi.fn(),
 		logout: vi.fn(),
 		...authServiceOverrides,

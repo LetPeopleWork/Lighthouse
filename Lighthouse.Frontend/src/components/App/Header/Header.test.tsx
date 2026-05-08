@@ -46,6 +46,7 @@ describe("Header component", () => {
 
 	const renderHeader = (props?: {
 		isAuthenticated?: boolean;
+		currentUserDisplayName?: string;
 		onLogout?: () => void;
 	}) => {
 		const mockApiContext = createMockApiServiceContext({
@@ -127,6 +128,30 @@ describe("Header component", () => {
 			"aria-label",
 			"Sign Out",
 		);
+	});
+
+	it("should render signed-in user indicator when authenticated user display name is provided", () => {
+		renderHeader({
+			isAuthenticated: true,
+			onLogout: vi.fn(),
+			currentUserDisplayName: "Story User",
+		});
+
+		expect(screen.getByTestId("current-user-display")).toBeInTheDocument();
+		expect(screen.getByTestId("current-user-display")).toHaveTextContent(
+			"Story User",
+		);
+	});
+
+	it("should not render signed-in user indicator when display name is not provided", () => {
+		renderHeader({
+			isAuthenticated: true,
+			onLogout: vi.fn(),
+		});
+
+		expect(
+			screen.queryByTestId("current-user-display"),
+		).not.toBeInTheDocument();
 	});
 
 	it("should call onLogout when logout button is clicked", async () => {

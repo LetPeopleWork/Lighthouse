@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	AuthMode,
 	type AuthSessionStatus,
+	type CurrentUserProfileStatus,
 	type RuntimeAuthStatus,
 } from "../models/Auth/AuthModels";
 import type { IAuthService } from "../services/Api/AuthService";
@@ -20,6 +21,7 @@ export interface AuthGuardState {
 	loginUrl: string;
 	misconfigurationMessage?: string;
 	session?: AuthSessionStatus;
+	currentUser?: CurrentUserProfileStatus;
 	runtimeStatus?: RuntimeAuthStatus;
 	logout: () => Promise<void>;
 }
@@ -30,6 +32,7 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 	const [shell, setShell] = useState<AuthShell>("loading");
 	const [runtimeStatus, setRuntimeStatus] = useState<RuntimeAuthStatus>();
 	const [session, setSession] = useState<AuthSessionStatus>();
+	const [currentUser, setCurrentUser] = useState<CurrentUserProfileStatus>();
 	const [misconfigurationMessage, setMisconfigurationMessage] =
 		useState<string>();
 	const wasAuthenticated = useRef(false);
@@ -46,6 +49,13 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 			setSession(sessionStatus);
 
 			if (sessionStatus.isAuthenticated) {
+				try {
+					const profile = await authService.getCurrentUserProfile();
+					setCurrentUser(profile);
+				} catch {
+					setCurrentUser(undefined);
+				}
+
 				wasAuthenticated.current = true;
 				setShell(
 					resolvedMode.current === AuthMode.Blocked
@@ -53,15 +63,18 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 						: "authenticated",
 				);
 			} else if (wasAuthenticated.current) {
+				setCurrentUser(undefined);
 				setShell("session-expired");
 				if (sessionCheckTimer.current) {
 					clearInterval(sessionCheckTimer.current);
 					sessionCheckTimer.current = undefined;
 				}
 			} else {
+				setCurrentUser(undefined);
 				setShell("login");
 			}
 		} catch {
+			setCurrentUser(undefined);
 			if (wasAuthenticated.current) {
 				setShell("session-expired");
 			} else {
@@ -145,6 +158,7 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 		loginUrl,
 		misconfigurationMessage,
 		session,
+		currentUser,
 		runtimeStatus,
 		logout,
 	};

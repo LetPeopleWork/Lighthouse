@@ -12,6 +12,7 @@ import ListItem from "@mui/material/ListItem";
 import { useTheme } from "@mui/material/styles";
 import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useState } from "react";
@@ -25,10 +26,15 @@ import UpdateAllButton from "./UpdateAllButton";
 
 interface HeaderProps {
 	isAuthenticated?: boolean;
+	currentUserDisplayName?: string;
 	onLogout?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isAuthenticated, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({
+	isAuthenticated,
+	currentUserDisplayName,
+	onLogout,
+}) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [mobileOpen, setMobileOpen] = useState(false);
@@ -69,6 +75,11 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onLogout }) => {
 			</ListItem>
 			{isAuthenticated && onLogout && (
 				<ListItem>
+					{currentUserDisplayName && (
+						<Typography data-testid="current-user-display" sx={{ mr: 1 }}>
+							{currentUserDisplayName}
+						</Typography>
+					)}
 					<Tooltip title="Sign Out" arrow>
 						<IconButton
 							size="large"
@@ -159,6 +170,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onLogout }) => {
 								icon={HelpIcon}
 								tooltip="Documentation"
 							/>
+							{isAuthenticated && currentUserDisplayName && (
+								<Typography
+									data-testid="current-user-display"
+									sx={{ mr: 1, color: theme.palette.text.secondary }}
+								>
+									{currentUserDisplayName}
+								</Typography>
+							)}
 							{isAuthenticated && onLogout && (
 								<Tooltip title="Sign Out" arrow>
 									<IconButton

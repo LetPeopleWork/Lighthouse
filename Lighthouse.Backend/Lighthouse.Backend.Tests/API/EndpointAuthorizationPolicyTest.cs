@@ -14,13 +14,58 @@ namespace Lighthouse.Backend.Tests.API
         ];
 
         [Test]
-        public void AllowAnonymousControllers_HaveAttribute()
+        public void ExpectedAnonymousEndpoints_HaveAllowAnonymousAttribute()
         {
-            foreach (var controllerType in AllowedAnonymousControllers)
+            var expectations = new Dictionary<Type, string[]?>
+    {
+        // Entire controller must be anonymous
+        { typeof(VersionController), null },
+
+        // Only these actions must be anonymous
+        {
+            typeof(AuthController),
+            new[]
             {
-                var attribute = controllerType.GetCustomAttribute<AllowAnonymousAttribute>();
-                Assert.That(attribute, Is.Not.Null,
-                    $"{controllerType.Name} must have [AllowAnonymous] to remain accessible without authentication.");
+                nameof(AuthController.GetRuntimeAuthStatus),
+                nameof(AuthController.Login),
+                nameof(AuthController.Logout),
+                nameof(AuthController.GetSession),
+            }
+        }
+    };
+
+            foreach (var (controllerType, anonymousActions) in expectations)
+            {
+                // Entire controller anonymous
+                if (anonymousActions is null)
+                {
+                    var controllerAttribute =
+                        controllerType.GetCustomAttribute<AllowAnonymousAttribute>();
+
+                    Assert.That(
+                        controllerAttribute,
+                        Is.Not.Null,
+                        $"{controllerType.Name} must have [AllowAnonymous].");
+
+                    continue;
+                }
+
+                // Specific actions anonymous
+                foreach (var actionName in anonymousActions)
+                {
+                    var method = controllerType.GetMethod(actionName);
+
+                    Assert.That(method, Is.Not.Null,
+                        $"{controllerType.Name}.{actionName} was not found.");
+
+                    var attribute =
+                        method!.GetCustomAttribute<AllowAnonymousAttribute>();
+
+                    Assert.That(
+                        attribute,
+                        Is.Not.Null,
+                        $"{controllerType.Name}.{actionName} must have [AllowAnonymous].");
+                }
             }
         }
 
