@@ -31,10 +31,12 @@ namespace Lighthouse.Backend.API
             var teamDtos = new List<TeamDto>();
 
             var allTeams = teamRepository.GetAll().ToList();
+            var readableTeamIds = this.GetReadableTeamIds(allTeams.Select(t => t.Id));
+            var readableTeamIdSet = readableTeamIds.ToHashSet();
             var allPortfolios = portfolioRepository.GetAll().ToList();
             var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
-            foreach (var team in allTeams)
+            foreach (var team in allTeams.Where(team => readableTeamIdSet.Contains(team.Id)))
             {
                 var teamDto = team.CreateTeamDto(allPortfolios);
                 var throughputSettings = team.GetThroughputSettings();
@@ -50,6 +52,11 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(RequirePremium = true)]
         public ActionResult UpdateAllTeams()
         {
+            if (!this.CanExecuteSystemRbacAction())
+            {
+                return Forbid();
+            }
+
             var teams = teamRepository.GetAll();
 
             foreach (var team in teams)
@@ -62,8 +69,13 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckTeamConstraint = true, TeamLimitOverride = 2)]
-        public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting)
+        public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting, CancellationToken cancellationToken = default)
         {
+            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
+            {
+                return Forbid();
+            }
+
             var baselineValidation = BaselineValidationService.Validate(
                 teamSetting.ProcessBehaviourChartBaselineStartDate,
                 teamSetting.ProcessBehaviourChartBaselineEndDate,
@@ -111,8 +123,13 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckTeamConstraint = true)]
-        public async Task<ActionResult<object>> ValidateTeamSettings(TeamSettingDto teamSettingDto)
+        public async Task<ActionResult<object>> ValidateTeamSettings(TeamSettingDto teamSettingDto, CancellationToken cancellationToken = default)
         {
+            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
+            {
+                return Forbid();
+            }
+
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);
             if (workTrackingSystem == null)
             {

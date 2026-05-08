@@ -1,5 +1,6 @@
 import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import {
+	Alert,
 	CircularProgress,
 	Container,
 	IconButton,
@@ -75,6 +76,7 @@ const TeamDetail: React.FC = () => {
 	};
 
 	const [team, setTeam] = useState<Team>();
+	const [hasNoAccess, setHasNoAccess] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
 	const [activeView, setActiveView] = useState<TeamViewType>(
@@ -90,10 +92,20 @@ const TeamDetail: React.FC = () => {
 		useContext(ApiServiceContext);
 
 	const fetchTeam = useCallback(async () => {
-		const teamData = await teamService.getTeam(teamId);
+		setHasNoAccess(false);
 
-		if (teamData) {
-			setTeam(teamData);
+		try {
+			const teamData = await teamService.getTeam(teamId);
+
+			if (teamData) {
+				setTeam(teamData);
+			} else {
+				setTeam(undefined);
+				setHasNoAccess(true);
+			}
+		} catch {
+			setTeam(undefined);
+			setHasNoAccess(true);
 		}
 
 		setIsLoading(false);
@@ -212,6 +224,17 @@ const TeamDetail: React.FC = () => {
 		<SnackbarErrorHandler>
 			<LoadingAnimation hasError={false} isLoading={isLoading}>
 				<Container maxWidth={false}>
+					{hasNoAccess && (
+						<Alert
+							severity="info"
+							sx={{ mb: 2 }}
+							data-testid="team-no-access-alert"
+						>
+							This team is unavailable or you no longer have access. Contact a
+							System Admin if you need access restored.
+						</Alert>
+					)}
+
 					{team && (
 						<Grid container spacing={3}>
 							<Grid size={{ xs: 12 }}>

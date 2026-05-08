@@ -30,6 +30,11 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(CheckPortfolioConstraint = true)]
         public ActionResult UpdateFeaturesForPortfolio(int portfolioId)
         {
+            if (!this.CanWritePortfolio(portfolioId))
+            {
+                return Forbid();
+            }
+
             portfolioUpdater.TriggerUpdate(portfolioId);
 
             return Ok();
@@ -38,6 +43,11 @@ namespace Lighthouse.Backend.API
         [HttpDelete]
         public async Task<IActionResult> DeletePortfolio(int portfolioId)
         {
+            if (!this.CanWritePortfolio(portfolioId))
+            {
+                return Forbid();
+            }
+
             portfolioRepository.Remove(portfolioId);
             await portfolioRepository.Save();
 

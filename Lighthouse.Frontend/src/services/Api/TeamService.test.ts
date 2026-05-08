@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type ITeam, Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
 import { createMockTeamSettings } from "../../tests/TestDataProvider";
+import { ApiError } from "./ApiError";
 import { TeamService } from "./TeamService";
 
 vi.mock("axios");
@@ -82,6 +83,15 @@ describe("TeamService", () => {
 
 		expect(team).toBeNull();
 		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/999");
+	});
+
+	it("should return null when the API returns 404 for team details", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new ApiError(404, "Not Found"));
+
+		const team = await teamService.getTeam(1234);
+
+		expect(team).toBeNull();
+		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1234");
 	});
 
 	it("should delete a team", async () => {

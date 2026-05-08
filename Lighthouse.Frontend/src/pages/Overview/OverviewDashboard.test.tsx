@@ -13,6 +13,7 @@ import { TerminologyProvider } from "../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockPortfolioService,
+	createMockRbacService,
 	createMockTeamService,
 	createMockTerminologyService,
 	createMockUpdateSubscriptionService,
@@ -54,45 +55,61 @@ const renderWithProviders = (
 	overrides: Partial<IApiServiceContext> = {},
 	{
 		connections = mockConnections,
+		portfolios: portfolioOverrides,
 		teams: teamOverrides,
 	}: {
 		connections?: WorkTrackingSystemConnection[];
+		portfolios?: { id: number; name: string }[];
 		teams?: { id: number; name: string }[];
 	} = {},
 ) => {
 	const mockPortfolioService = createMockPortfolioService();
 	const mockTeamService = createMockTeamService();
+	const mockRbacService = createMockRbacService();
 	const mockTerminologyService = createMockTerminologyService();
 	const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
 	const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 
 	// Mock data for portfolios and teams
-	const mockPortfolios = [
-		{
-			id: 1,
-			name: "Test Project 1",
-			tags: [],
-			features: [],
-			involvedTeams: [],
-			lastUpdated: new Date(),
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			remainingFeatures: 0,
-		},
-		{
-			id: 2,
-			name: "Test Project 2",
-			tags: [],
-			features: [],
-			involvedTeams: [],
-			lastUpdated: new Date(),
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			remainingFeatures: 0,
-		},
-	];
+	const mockPortfolios = portfolioOverrides
+		? portfolioOverrides.map((p) => ({
+				id: p.id,
+				name: p.name,
+				tags: [],
+				features: [],
+				involvedTeams: [],
+				lastUpdated: new Date(),
+				serviceLevelExpectationProbability: 0,
+				serviceLevelExpectationRange: 0,
+				systemWIPLimit: 0,
+				remainingFeatures: 0,
+			}))
+		: [
+				{
+					id: 1,
+					name: "Test Project 1",
+					tags: [],
+					features: [],
+					involvedTeams: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+					remainingFeatures: 0,
+				},
+				{
+					id: 2,
+					name: "Test Project 2",
+					tags: [],
+					features: [],
+					involvedTeams: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+					remainingFeatures: 0,
+				},
+			];
 
 	const mockTeams = teamOverrides
 		? teamOverrides.map((t) => ({
@@ -207,6 +224,13 @@ const renderWithProviders = (
 	mockWorkTrackingSystemService.getWorkTrackingSystems = vi
 		.fn()
 		.mockResolvedValue([]);
+	mockRbacService.getStatus = vi.fn().mockResolvedValue({
+		enabled: false,
+		premiumGateSatisfied: true,
+		hasSystemAdmin: true,
+		hasEmergencyAdminConfigured: false,
+		readyForEnablement: true,
+	});
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -218,6 +242,7 @@ const renderWithProviders = (
 	const mockApiServiceContext = createMockApiServiceContext({
 		portfolioService: mockPortfolioService,
 		teamService: mockTeamService,
+		rbacService: mockRbacService,
 		terminologyService: mockTerminologyService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
 		workTrackingSystemService: mockWorkTrackingSystemService,
@@ -329,5 +354,26 @@ describe("OverviewDashboard", () => {
 			name: "Add Portfolio",
 		});
 		expect(addPortfolioButton).toBeDisabled();
+	});
+
+	it("shows RBAC no-access guidance when enabled and no teams or portfolios are visible", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getStatus = vi.fn().mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ teams: [], portfolios: [] },
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+		});
 	});
 });

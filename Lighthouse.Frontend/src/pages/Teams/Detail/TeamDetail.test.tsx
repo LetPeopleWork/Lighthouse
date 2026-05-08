@@ -377,6 +377,35 @@ describe("TeamDetail component", () => {
 		});
 	});
 
+	it("shows no-access guidance when team details are unavailable", async () => {
+		const mockTeamService = createMockTeamService();
+		const mockUpdateSubscriptionService = createMockUpdateSubscriptionService();
+
+		mockTeamService.getTeam = vi.fn().mockResolvedValue(null);
+		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.getUpdateStatus = vi
+			.fn()
+			.mockResolvedValue(null);
+
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			updateSubscriptionService: mockUpdateSubscriptionService,
+		});
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("team-no-access-alert")).toBeInTheDocument();
+		});
+	});
+
 	describe("settings tab update deferral", () => {
 		beforeEach(() => {
 			// Start every test in this group on the settings tab

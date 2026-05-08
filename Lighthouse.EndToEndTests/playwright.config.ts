@@ -11,6 +11,12 @@ export class TestConfig {
 	static readonly AUTH_TEST_USER_USERNAME: string = "test@user.com";
 	static readonly AUTH_TEST_USER_PASSWORD: string = "Test123!!?lsdkaflaskdf";
 
+	static readonly AUTHZ_TEST_SYSTEMADMIN_USERNAME : string = "systemadmin@user.com";
+	static readonly AUTHZ_TEST_PORTFOLIOADMIN_USERNAME: string = "portfolioadmin@user.com";
+	static readonly AUTHZ_TEST_PORTFOLIOREADER_USERNAME: string = "portfolioreader@user.com";
+	static readonly AUTHZ_TEST_TEAMADMIN_USERNAME: string = "teamadmin@user.com";
+	static readonly AUTHZ_TEST_TEAMREADER_USERNAME: string = "teamreader@user.com";
+
 	private static getEnvVariable(name: string, defaultValue: string): string {
 		const value = process.env[name];
 

@@ -1,5 +1,6 @@
 import type { IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IPortfolioSettings } from "../../models/Portfolio/PortfolioSettings";
+import { ApiError } from "./ApiError";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IPortfolioService {
@@ -33,12 +34,20 @@ export class PortfolioService
 	}
 
 	async getPortfolio(id: number): Promise<Portfolio | null> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IPortfolio>(
-				`/portfolios/${id}`,
-			);
-			return BaseApiService.deserializePortfolio(response.data);
-		});
+		try {
+			return await this.withErrorHandling(async () => {
+				const response = await this.apiService.get<IPortfolio>(
+					`/portfolios/${id}`,
+				);
+				return BaseApiService.deserializePortfolio(response.data);
+			});
+		} catch (error) {
+			if (error instanceof ApiError && error.code === 404) {
+				return null;
+			}
+
+			throw error;
+		}
 	}
 
 	async deletePortfolio(id: number): Promise<void> {

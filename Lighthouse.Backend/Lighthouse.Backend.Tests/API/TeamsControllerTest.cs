@@ -4,12 +4,16 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -471,6 +475,64 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(results.Single().HasThroughputBlackoutOverlap, Is.False);
         }
 
+        [Test]
+        public void GetTeams_WhenRbacIsEnabled_FiltersToReadableTeams()
+        {
+            var firstTeam = CreateTeam(1, "Visible Team");
+            var secondTeam = CreateTeam(2, "Hidden Team");
+
+            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([firstTeam.Id]);
+
+            var subject = CreateSubject([firstTeam, secondTeam]);
+            subject.ControllerContext = BuildControllerContext(
+                HttpMethods.Get,
+                rbacAdministrationServiceMock.Object,
+                "auth0|limited-user");
+
+            var results = subject.GetTeams().ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(results, Has.Count.EqualTo(1));
+                Assert.That(results[0].Id, Is.EqualTo(firstTeam.Id));
+                Assert.That(results[0].Name, Is.EqualTo(firstTeam.Name));
+            }
+        }
+
+        [Test]
+        public async Task CreateTeam_WhenRbacIsEnabledAndUserCannotManage_ReturnsForbid()
+        {
+            var teamSettings = new TeamSettingDto
+            {
+                Name = "Blocked Team",
+                WorkTrackingSystemConnectionId = 1,
+            };
+
+            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            rbacAdministrationServiceMock
+                .Setup(x => x.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubject();
+            subject.ControllerContext = BuildControllerContext(
+                HttpMethods.Post,
+                rbacAdministrationServiceMock.Object,
+                "auth0|viewer");
+
+            var result = await subject.CreateTeam(teamSettings);
+
+            Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        }
+
         private static Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };
@@ -515,6 +577,29 @@ namespace Lighthouse.Backend.Tests.API
 
             return new TeamsController(
                 teamRepositoryMock.Object, portfolioRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object, blackoutPeriodRepositoryMock.Object);
+        }
+
+        private static ControllerContext BuildControllerContext(
+            string requestMethod,
+            IRbacAdministrationService rbacAdministrationService,
+            string subject)
+        {
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton(rbacAdministrationService)
+                .BuildServiceProvider();
+
+            var httpContext = new DefaultHttpContext
+            {
+                RequestServices = serviceProvider,
+                User = new ClaimsPrincipal(
+                    new ClaimsIdentity([new Claim("sub", subject)], "TestAuth")),
+            };
+            httpContext.Request.Method = requestMethod;
+
+            return new ControllerContext
+            {
+                HttpContext = httpContext,
+            };
         }
     }
 }

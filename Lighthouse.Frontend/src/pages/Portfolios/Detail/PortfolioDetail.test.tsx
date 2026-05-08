@@ -219,6 +219,18 @@ describe("PortfolioDetail component", () => {
 		});
 	});
 
+	it("shows no-access guidance when portfolio details are unavailable", async () => {
+		mockGetPortfolio.mockResolvedValueOnce(null);
+
+		renderWithMockApiProvider();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("portfolio-no-access-alert"),
+			).toBeInTheDocument();
+		});
+	});
+
 	it("should subscribe to feature and forecast updates on mount", async () => {
 		renderWithMockApiProvider();
 

@@ -43,6 +43,11 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(CheckTeamConstraint = true)]
         public ActionResult UpdateTeamData(int teamId)
         {
+            if (!this.CanWriteTeam(teamId))
+            {
+                return Forbid();
+            }
+
             var team = teamRepository.GetById(teamId);
 
             if (team == null)
@@ -58,6 +63,11 @@ namespace Lighthouse.Backend.API
         [HttpDelete]
         public async Task<IActionResult> DeleteTeam(int teamId)
         {
+            if (!this.CanWriteTeam(teamId))
+            {
+                return Forbid();
+            }
+
             var team = teamRepository.GetById(teamId);
             var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];
 

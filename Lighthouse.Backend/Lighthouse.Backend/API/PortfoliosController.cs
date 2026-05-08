@@ -26,9 +26,11 @@ namespace Lighthouse.Backend.API
         {
             var portfolioDtos = new List<PortfolioDto>();
 
-            var allPortfolios = portfolioRepository.GetAll();
+            var allPortfolios = portfolioRepository.GetAll().ToList();
+            var readablePortfolioIds = this.GetReadablePortfolioIds(allPortfolios.Select(p => p.Id));
+            var readablePortfolioIdSet = readablePortfolioIds.ToHashSet();
 
-            foreach (var portfolio in allPortfolios)
+            foreach (var portfolio in allPortfolios.Where(portfolio => readablePortfolioIdSet.Contains(portfolio.Id)))
             {
                 var portfolioDto = new PortfolioDto(portfolio);
                 portfolioDtos.Add(portfolioDto);
@@ -41,6 +43,11 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(RequirePremium = true)]
         public ActionResult UpdateAllPortfolios()
         {
+            if (!this.CanExecuteSystemRbacAction())
+            {
+                return Forbid();
+            }
+
             var portfolios = portfolioRepository.GetAll();
 
             foreach (var portfolio in portfolios)
@@ -53,8 +60,13 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckPortfolioConstraint = true, PortfolioLimitOverride = 0)]
-        public async Task<ActionResult<PortfolioSettingDto>> CreatePortfolio(PortfolioSettingDto portfolioSetting)
+        public async Task<ActionResult<PortfolioSettingDto>> CreatePortfolio(PortfolioSettingDto portfolioSetting, CancellationToken cancellationToken = default)
         {
+            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
+            {
+                return Forbid();
+            }
+
             var baselineValidation = BaselineValidationService.Validate(
                 portfolioSetting.ProcessBehaviourChartBaselineStartDate,
                 portfolioSetting.ProcessBehaviourChartBaselineEndDate,
@@ -85,8 +97,13 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
-        public async Task<ActionResult<object>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto)
+        public async Task<ActionResult<object>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto, CancellationToken cancellationToken = default)
         {
+            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
+            {
+                return Forbid();
+            }
+
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(portfolioSettingDto.WorkTrackingSystemConnectionId);
             if (workTrackingSystem == null)
             {

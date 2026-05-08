@@ -4,11 +4,15 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -292,6 +296,66 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
+        [Test]
+        public void GetPortfolios_WhenRbacIsEnabled_FiltersToReadablePortfolios()
+        {
+            var firstPortfolio = new Portfolio { Id = 12, Name = "Visible" };
+            var secondPortfolio = new Portfolio { Id = 42, Name = "Hidden" };
+
+            portfolioRepoMock.Setup(x => x.GetAll()).Returns([firstPortfolio, secondPortfolio]);
+
+            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([firstPortfolio.Id]);
+
+            var subject = CreateSubject();
+            subject.ControllerContext = BuildControllerContext(
+                HttpMethods.Get,
+                rbacAdministrationServiceMock.Object,
+                "auth0|limited-user");
+
+            var result = subject.GetPortfolios().ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result[0].Id, Is.EqualTo(firstPortfolio.Id));
+                Assert.That(result[0].Name, Is.EqualTo(firstPortfolio.Name));
+            }
+        }
+
+        [Test]
+        public async Task CreatePortfolio_WhenRbacIsEnabledAndUserCannotManage_ReturnsForbid()
+        {
+            var newPortfolioSetting = new PortfolioSettingDto
+            {
+                Name = "Blocked Portfolio",
+                WorkTrackingSystemConnectionId = 101,
+            };
+
+            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            rbacAdministrationServiceMock
+                .Setup(x => x.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubject();
+            subject.ControllerContext = BuildControllerContext(
+                HttpMethods.Post,
+                rbacAdministrationServiceMock.Object,
+                "auth0|viewer");
+
+            var result = await subject.CreatePortfolio(newPortfolioSetting);
+
+            Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        }
+
         private PortfoliosController CreateSubject()
         {
             return new PortfoliosController(
@@ -310,6 +374,29 @@ namespace Lighthouse.Backend.Tests.API
                 new Portfolio { Id = 12, Name = "Foo" },
                 new Portfolio { Id = 42, Name = "Bar" }
             ];
+        }
+
+        private static ControllerContext BuildControllerContext(
+            string requestMethod,
+            IRbacAdministrationService rbacAdministrationService,
+            string subject)
+        {
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton(rbacAdministrationService)
+                .BuildServiceProvider();
+
+            var httpContext = new DefaultHttpContext
+            {
+                RequestServices = serviceProvider,
+                User = new ClaimsPrincipal(
+                    new ClaimsIdentity([new Claim("sub", subject)], "TestAuth")),
+            };
+            httpContext.Request.Method = requestMethod;
+
+            return new ControllerContext
+            {
+                HttpContext = httpContext,
+            };
         }
     }
 }

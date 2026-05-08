@@ -1,5 +1,6 @@
 import type { ITeam, Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
+import { ApiError } from "./ApiError";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ITeamService {
@@ -26,10 +27,18 @@ export class TeamService extends BaseApiService implements ITeamService {
 	}
 
 	async getTeam(id: number): Promise<Team | null> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<ITeam>(`/teams/${id}`);
-			return BaseApiService.deserializeTeam(response.data);
-		});
+		try {
+			return await this.withErrorHandling(async () => {
+				const response = await this.apiService.get<ITeam>(`/teams/${id}`);
+				return BaseApiService.deserializeTeam(response.data);
+			});
+		} catch (error) {
+			if (error instanceof ApiError && error.code === 404) {
+				return null;
+			}
+
+			throw error;
+		}
 	}
 
 	async deleteTeam(id: number): Promise<void> {

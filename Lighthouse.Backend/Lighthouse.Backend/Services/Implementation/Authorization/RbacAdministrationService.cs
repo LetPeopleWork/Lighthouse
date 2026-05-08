@@ -33,6 +33,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             };
         }
 
+        public Task<bool> IsRbacEnforcedAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(configuration.Value.Enabled);
+        }
+
         public async Task<IReadOnlyList<RbacUserSummary>> GetUsersAsync(CancellationToken cancellationToken = default)
         {
             var systemAdminIds = await context.UserPermissions
@@ -54,6 +59,212 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ToListAsync(cancellationToken);
 
             return users;
+        }
+
+        public async Task<IReadOnlyList<int>> GetReadableTeamIdsAsync(
+            ClaimsPrincipal principal,
+            IEnumerable<int> teamIds,
+            CancellationToken cancellationToken = default)
+        {
+            var distinctTeamIds = teamIds.Distinct().ToArray();
+
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return distinctTeamIds;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return [];
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return distinctTeamIds;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return [];
+            }
+
+            var readableTeamIds = await context.UserPermissions
+                .Where(p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Team
+                    && p.ScopeId.HasValue
+                    && distinctTeamIds.Contains(p.ScopeId.Value)
+                    && (p.Role == UserRole.TeamAdmin || p.Role == UserRole.Viewer))
+                .Select(p => p.ScopeId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            return readableTeamIds;
+        }
+
+        public async Task<IReadOnlyList<int>> GetReadablePortfolioIdsAsync(
+            ClaimsPrincipal principal,
+            IEnumerable<int> portfolioIds,
+            CancellationToken cancellationToken = default)
+        {
+            var distinctPortfolioIds = portfolioIds.Distinct().ToArray();
+
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return distinctPortfolioIds;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return [];
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return distinctPortfolioIds;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return [];
+            }
+
+            var readablePortfolioIds = await context.UserPermissions
+                .Where(p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Portfolio
+                    && p.ScopeId.HasValue
+                    && distinctPortfolioIds.Contains(p.ScopeId.Value)
+                    && (p.Role == UserRole.PortfolioAdmin || p.Role == UserRole.Viewer))
+                .Select(p => p.ScopeId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            return readablePortfolioIds;
+        }
+
+        public async Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Team
+                    && p.ScopeId == teamId
+                    && (p.Role == UserRole.TeamAdmin || p.Role == UserRole.Viewer),
+                cancellationToken);
+        }
+
+        public async Task<bool> CanWriteTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Team
+                    && p.ScopeId == teamId
+                    && p.Role == UserRole.TeamAdmin,
+                cancellationToken);
+        }
+
+        public async Task<bool> CanReadPortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Portfolio
+                    && p.ScopeId == portfolioId
+                    && (p.Role == UserRole.PortfolioAdmin || p.Role == UserRole.Viewer),
+                cancellationToken);
+        }
+
+        public async Task<bool> CanWritePortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Portfolio
+                    && p.ScopeId == portfolioId
+                    && p.Role == UserRole.PortfolioAdmin,
+                cancellationToken);
         }
 
         public async Task<RbacOperationResult> BootstrapCurrentUserAsSystemAdminAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -174,6 +385,16 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return context.UserPermissions.AnyAsync(
                 p => p.ScopeType == PermissionScopeType.System && p.Role == UserRole.SystemAdmin,
                 cancellationToken);
+        }
+
+        private async Task<bool> IsEnforcementGateSatisfiedAsync(CancellationToken cancellationToken)
+        {
+            if (!licenseService.CanUsePremiumFeatures())
+            {
+                return false;
+            }
+
+            return await HasSystemAdminAsync(cancellationToken);
         }
     }
 }

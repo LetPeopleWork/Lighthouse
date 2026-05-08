@@ -1,5 +1,6 @@
 import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import {
+	Alert,
 	CircularProgress,
 	Container,
 	IconButton,
@@ -45,6 +46,7 @@ const PortfolioDetail: React.FC = () => {
 	let subscribedToUpdates = false;
 
 	const [portfolio, setPortfolio] = useState<Portfolio>();
+	const [hasNoAccess, setHasNoAccess] = useState(false);
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isPortfolioUpdating, setIsPortfolioUpdating] =
@@ -95,13 +97,28 @@ const PortfolioDetail: React.FC = () => {
 			return teamSettings;
 		};
 
-		const portfolioData = await portfolioService.getPortfolio(portfolioId);
-		const settings = await portfolioService.getPortfolioSettings(portfolioId);
-		const involvedTeamData = await fetchInvolvedTeams(portfolioData);
+		setHasNoAccess(false);
 
-		if (portfolioData && settings) {
-			setPortfolio(portfolioData);
-			setInvolvedTeams(involvedTeamData);
+		try {
+			const portfolioData = await portfolioService.getPortfolio(portfolioId);
+			if (!portfolioData) {
+				setPortfolio(undefined);
+				setInvolvedTeams([]);
+				setHasNoAccess(true);
+			} else {
+				const settings =
+					await portfolioService.getPortfolioSettings(portfolioId);
+				const involvedTeamData = await fetchInvolvedTeams(portfolioData);
+
+				if (settings) {
+					setPortfolio(portfolioData);
+					setInvolvedTeams(involvedTeamData);
+				}
+			}
+		} catch {
+			setPortfolio(undefined);
+			setInvolvedTeams([]);
+			setHasNoAccess(true);
 		}
 
 		setIsLoading(false);
@@ -261,6 +278,17 @@ const PortfolioDetail: React.FC = () => {
 		<SnackbarErrorHandler>
 			<LoadingAnimation hasError={false} isLoading={isLoading}>
 				<Container maxWidth={false}>
+					{hasNoAccess && (
+						<Alert
+							severity="info"
+							sx={{ mb: 2 }}
+							data-testid="portfolio-no-access-alert"
+						>
+							This portfolio is unavailable or you no longer have access.
+							Contact a System Admin if you need access restored.
+						</Alert>
+					)}
+
 					{portfolio && (
 						<Grid container spacing={3}>
 							<Grid size={{ xs: 12 }}>

@@ -2,6 +2,7 @@ import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { createMockProjectSettings } from "../../tests/TestDataProvider";
+import { ApiError } from "./ApiError";
 import { PortfolioService } from "./PortfolioService";
 
 vi.mock("axios");
@@ -48,6 +49,15 @@ describe("PortfolioService", () => {
 
 		expect(mockResponse).toEqual(project);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/1");
+	});
+
+	it("should return null when the API returns 404 for portfolio details", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new ApiError(404, "Not Found"));
+
+		const portfolio = await portfolioService.getPortfolio(999);
+
+		expect(portfolio).toBeNull();
+		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/999");
 	});
 
 	it("should delete a project by id", async () => {

@@ -41,6 +41,7 @@ const OverviewDashboard: React.FC = () => {
 	const [connections, setConnections] = useState<
 		IWorkTrackingSystemConnection[]
 	>([]);
+	const [isRbacEnabled, setIsRbacEnabled] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
@@ -71,8 +72,12 @@ const OverviewDashboard: React.FC = () => {
 	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
 
-	const { portfolioService, teamService, workTrackingSystemService } =
-		useContext(ApiServiceContext);
+	const {
+		portfolioService,
+		teamService,
+		workTrackingSystemService,
+		rbacService,
+	} = useContext(ApiServiceContext);
 	const {
 		canCreatePortfolio,
 		canCreateTeam,
@@ -86,20 +91,23 @@ const OverviewDashboard: React.FC = () => {
 	const fetchData = useCallback(async () => {
 		try {
 			setIsLoading(true);
-			const [portfolioData, teamData, connectionData] = await Promise.all([
-				portfolioService.getPortfolios(),
-				teamService.getTeams(),
-				workTrackingSystemService.getConfiguredWorkTrackingSystems(),
-			]);
+			const [portfolioData, teamData, connectionData, rbacStatus] =
+				await Promise.all([
+					portfolioService.getPortfolios(),
+					teamService.getTeams(),
+					workTrackingSystemService.getConfiguredWorkTrackingSystems(),
+					rbacService.getStatus().catch(() => null),
+				]);
 			setPortfolios(portfolioData);
 			setTeams(teamData);
 			setConnections(connectionData);
+			setIsRbacEnabled(rbacStatus?.enabled === true);
 			setIsLoading(false);
 		} catch (error) {
 			console.error("Error fetching overview data:", error);
 			setHasError(true);
 		}
-	}, [portfolioService, teamService, workTrackingSystemService]);
+	}, [portfolioService, teamService, workTrackingSystemService, rbacService]);
 
 	useEffect(() => {
 		fetchData();
@@ -301,6 +309,8 @@ const OverviewDashboard: React.FC = () => {
 	);
 
 	const hasPortfolios = portfolios.length > 0;
+	const showRbacNoAccessAlert =
+		isRbacEnabled && portfolios.length === 0 && teams.length === 0;
 
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
@@ -309,6 +319,17 @@ const OverviewDashboard: React.FC = () => {
 					filterText={filterText}
 					onFilterTextChange={handleFilterChange}
 				/>
+
+				{showRbacNoAccessAlert && (
+					<Alert
+						severity="info"
+						sx={{ mt: 2 }}
+						data-testid="rbac-no-access-alert"
+					>
+						You currently do not have access to any teams or portfolios. Contact
+						a System Admin to request access.
+					</Alert>
+				)}
 
 				{/* Onboarding stepper — visible when setup is incomplete */}
 				<Box sx={{ mt: 2 }}>
