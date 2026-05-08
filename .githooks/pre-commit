@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Check if gitleaks is installed
+if ! command -v gitleaks &>/dev/null; then
+  echo "⚠️  gitleaks not found. Install it:"
+  echo "    Linux/macOS: brew install gitleaks  OR  https://github.com/gitleaks/gitleaks/releases"
+  echo "    Windows:     scoop install gitleaks  OR  winget install gitleaks"
+  echo ""
+  echo "    Skipping secret scan (install gitleaks to enforce this check)."
+  exit 0
+fi
+
+echo "🔍 Scanning staged files for secrets..."
+
+if ! gitleaks protect --staged --redact --no-banner; then
+  echo ""
+  echo "❌ Potential secrets detected in staged files."
+  echo "   Review the findings above and remove secrets before committing."
+  echo "   If this is a false positive, add it to .gitleaks.toml under [allowlist]."
+  exit 1
+fi
+
+echo "✅ No secrets detected."
