@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(profile, Is.Null);
-                Assert.That(context.UserProfiles.Count(), Is.EqualTo(0));
+                Assert.That(context.UserProfiles.Count(), Is.Zero);
             }
         }
 
