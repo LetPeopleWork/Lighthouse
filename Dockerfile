@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER app
 WORKDIR /app
 EXPOSE 80 443
@@ -21,14 +21,13 @@ RUN dotnet build "Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.cspr
 	-c "$BUILD_CONFIGURATION" \
 	-o /app/build/
 
-FROM node:25-alpine AS node-builder
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
-RUN npm install -g corepack --force \
-	&& corepack enable \
-	&& corepack prepare pnpm@latest --activate \
-	&& pnpm install --frozen-lockfile --ignore-scripts \
-	&& pnpm run build-docker
+RUN corepack enable \
+    && corepack prepare pnpm@10.12.1 --activate \
+    && pnpm install --frozen-lockfile --ignore-scripts \
+    && pnpm run build-docker
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
