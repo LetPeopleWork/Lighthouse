@@ -12,6 +12,7 @@ import type {
 } from "../services/Api/MetricsService";
 import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureService";
 import type { IPortfolioService } from "../services/Api/PortfolioService";
+import type { IRbacService } from "../services/Api/RbacService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
 import type { ISystemInfoService } from "../services/Api/SystemInfoService";
@@ -48,6 +49,7 @@ export const createMockApiServiceContext = (
 		terminologyService:
 			null as unknown as IApiServiceContext["terminologyService"],
 		licensingService: null as unknown as IApiServiceContext["licensingService"],
+		rbacService: null as unknown as IApiServiceContext["rbacService"],
 		demoDataService: null as unknown as IApiServiceContext["demoDataService"],
 		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
@@ -249,6 +251,16 @@ export const createMockLicensingService = (): ILicensingService => {
 		getLicenseStatus: vi.fn(),
 		importLicense: vi.fn(),
 		clearLicense: vi.fn(),
+	};
+};
+
+export const createMockRbacService = (): IRbacService => {
+	return {
+		getStatus: vi.fn(),
+		getUsers: vi.fn(),
+		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
+		grantSystemAdmin: vi.fn(),
+		revokeSystemAdmin: vi.fn(),
 	};
 };
 

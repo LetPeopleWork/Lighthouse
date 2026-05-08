@@ -13,6 +13,9 @@ vi.mock("./DemoData/DemoDataSettings", () => ({
 vi.mock("./System/SystemSettingsTab", () => ({
 	default: () => <div>System Settings</div>,
 }));
+vi.mock("./Rbac/RbacSettings", () => ({
+	default: () => <div>RBAC Settings</div>,
+}));
 vi.mock("./DatabaseManagement/DatabaseManagementSettings", () => ({
 	default: () => <div>Database Management Settings</div>,
 }));
@@ -81,6 +84,21 @@ describe("Settings Component", () => {
 	it("should switch to Database tab via query parameter", () => {
 		renderWithRouter(["/settings?tab=database"]);
 		expect(screen.getByTestId("database-panel")).toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
+	});
+
+	it("should switch to RBAC tab via query parameter", () => {
+		renderWithRouter(["/settings?tab=rbac"]);
+
+		expect(screen.getByTestId("rbac-panel")).toBeVisible();
+		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
+	});
+
+	it("should switch to RBAC tab when clicked", () => {
+		renderWithRouter();
+		fireEvent.click(screen.getByTestId("rbac-tab"));
+
+		expect(screen.getByTestId("rbac-panel")).toBeVisible();
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 });

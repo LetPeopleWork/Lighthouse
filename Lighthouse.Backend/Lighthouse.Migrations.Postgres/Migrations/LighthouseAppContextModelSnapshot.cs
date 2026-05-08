@@ -171,6 +171,40 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("UserProfiles");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.UserPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("GrantedByUserProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ScopeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ScopeType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserProfileId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId", "Role", "ScopeType", "ScopeId")
+                        .IsUnique();
+
+                    b.ToTable("UserPermissions");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.BlackoutPeriod", b =>
                 {
                     b.Property<int>("Id")
@@ -976,6 +1010,15 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired();
 
                     b.Navigation("WorkTrackingSystemConnection");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.UserPermission", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Auth.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>

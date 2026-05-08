@@ -36,7 +36,9 @@ using System.Reflection;
 using System.Text;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
@@ -489,9 +491,11 @@ namespace Lighthouse.Backend
 
             // Authentication
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));
+            builder.Services.Configure<AuthorizationConfiguration>(builder.Configuration.GetSection("Authorization"));
             builder.Services.AddSingleton<IAuthConfigurationValidator, AuthConfigurationValidator>();
             builder.Services.AddScoped<IAuthModeResolver, AuthModeResolver>();
             builder.Services.AddScoped<ICurrentUserProfileService, CurrentUserProfileService>();
+            builder.Services.AddScoped<IRbacAdministrationService, RbacAdministrationService>();
 
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();

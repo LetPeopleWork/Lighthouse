@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
@@ -44,6 +45,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<ApiKey> ApiKeys { get; set; } = null!;
 
         public DbSet<UserProfile> UserProfiles { get; set; } = null!;
+
+        public DbSet<UserPermission> UserPermissions { get; set; } = null!;
         
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
@@ -69,6 +72,16 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<UserProfile>()
                 .Property(up => up.SubjectClaimType)
                 .IsRequired();
+
+            modelBuilder.Entity<UserPermission>()
+                .HasIndex(p => new { p.UserProfileId, p.Role, p.ScopeType, p.ScopeId })
+                .IsUnique();
+
+            modelBuilder.Entity<UserPermission>()
+                .HasOne<UserProfile>()
+                .WithMany()
+                .HasForeignKey(p => p.UserProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()

@@ -30,6 +30,7 @@ import {
 } from "./OptionalFeatureService";
 import { type IPortfolioService, PortfolioService } from "./PortfolioService";
 import { ProjectMetricsService } from "./ProjectMetricsService";
+import { type IRbacService, RbacService } from "./RbacService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
 	type ISuggestionService,
@@ -70,6 +71,7 @@ export interface IApiServiceContext {
 	featureService: IFeatureService;
 	terminologyService: ITerminologyService;
 	licensingService: ILicensingService;
+	rbacService: IRbacService;
 	demoDataService: IDemoDataService;
 	deliveryService: IDeliveryService;
 	wizardService: IWizardService;
@@ -96,6 +98,7 @@ const defaultServices: IApiServiceContext = {
 	featureService: new FeatureService(),
 	terminologyService: new TerminologyService(),
 	licensingService: new LicensingService(),
+	rbacService: new RbacService(),
 	demoDataService: new DemoDataService(),
 	deliveryService: new DeliveryService(),
 	wizardService: new WizardService(),

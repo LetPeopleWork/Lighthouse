@@ -1,6 +1,7 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import KeyIcon from "@mui/icons-material/Key";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import StorageIcon from "@mui/icons-material/Storage";
 import TabContext from "@mui/lab/TabContext";
@@ -19,6 +20,7 @@ import { useLocation } from "react-router-dom";
 import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
+import RbacSettings from "./Rbac/RbacSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
 import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
 
@@ -42,6 +44,8 @@ const Settings: React.FC = () => {
 			"demo-data": "25",
 			configuration: "20",
 			system: "20",
+			rbac: "50",
+			authorization: "50",
 			database: "30",
 			"database-management": "30",
 			"api-keys": "40",
@@ -64,6 +68,7 @@ const Settings: React.FC = () => {
 			"25": "demo-data",
 			"30": "database",
 			"40": "api-keys",
+			"50": "rbac",
 			"99": "system-info",
 		};
 
@@ -107,6 +112,14 @@ const Settings: React.FC = () => {
 			panelTestId: "api-keys-panel",
 			icon: <KeyIcon />,
 			component: <ApiKeysSettings />,
+		},
+		{
+			value: "50",
+			label: "RBAC",
+			testId: "rbac-tab",
+			panelTestId: "rbac-panel",
+			icon: <ManageAccountsIcon />,
+			component: <RbacSettings />,
 		},
 		{
 			value: "99",
