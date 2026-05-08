@@ -7,6 +7,8 @@ services:
     command: start-dev --import-realm
     environment:
       KC_HOSTNAME: localhost
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HOSTNAME_PORT: 38080
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
