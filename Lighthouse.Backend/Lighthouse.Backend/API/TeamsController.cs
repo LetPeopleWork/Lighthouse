@@ -1,9 +1,12 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -22,7 +25,8 @@ namespace Lighthouse.Backend.API
         ITeamUpdater teamUpdateService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         ILicenseService licenseService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet]
@@ -31,7 +35,10 @@ namespace Lighthouse.Backend.API
             var teamDtos = new List<TeamDto>();
 
             var allTeams = teamRepository.GetAll().ToList();
-            var readableTeamIds = this.GetReadableTeamIds(allTeams.Select(t => t.Id));
+            var readableTeamIds = rbacAdministrationService
+                .GetReadableTeamIdsAsync(User, allTeams.Select(t => t.Id), HttpContext?.RequestAborted ?? default)
+                .GetAwaiter()
+                .GetResult();
             var readableTeamIdSet = readableTeamIds.ToHashSet();
             var allPortfolios = portfolioRepository.GetAll().ToList();
             var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
@@ -50,13 +57,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("update-all")]
         [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public ActionResult UpdateAllTeams()
         {
-            if (!this.CanExecuteSystemRbacAction())
-            {
-                return Forbid();
-            }
-
             var teams = teamRepository.GetAll();
 
             foreach (var team in teams)
@@ -69,13 +72,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckTeamConstraint = true, TeamLimitOverride = 2)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting, CancellationToken cancellationToken = default)
         {
-            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
-            {
-                return Forbid();
-            }
-
             var baselineValidation = BaselineValidationService.Validate(
                 teamSetting.ProcessBehaviourChartBaselineStartDate,
                 teamSetting.ProcessBehaviourChartBaselineEndDate,
@@ -123,13 +122,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckTeamConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<object>> ValidateTeamSettings(TeamSettingDto teamSettingDto, CancellationToken cancellationToken = default)
         {
-            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
-            {
-                return Forbid();
-            }
-
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);
             if (workTrackingSystem == null)
             {

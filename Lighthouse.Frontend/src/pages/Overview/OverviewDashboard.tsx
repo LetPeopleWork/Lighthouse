@@ -26,6 +26,7 @@ import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import OnboardingStepper from "../../components/Common/OnboardingStepper/OnboardingStepper";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
+import type { UserAuthorizationSummary } from "../../models/Authorization/RbacModels";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { Team } from "../../models/Team/Team";
@@ -41,7 +42,12 @@ const OverviewDashboard: React.FC = () => {
 	const [connections, setConnections] = useState<
 		IWorkTrackingSystemConnection[]
 	>([]);
-	const [isRbacEnabled, setIsRbacEnabled] = useState(false);
+	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
+		isRbacEnabled: false,
+		isSystemAdmin: true,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+	});
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
@@ -91,17 +97,23 @@ const OverviewDashboard: React.FC = () => {
 	const fetchData = useCallback(async () => {
 		try {
 			setIsLoading(true);
-			const [portfolioData, teamData, connectionData, rbacStatus] =
+			const permissiveSummary: UserAuthorizationSummary = {
+				isRbacEnabled: false,
+				isSystemAdmin: true,
+				canCreateTeam: true,
+				canCreatePortfolio: true,
+			};
+			const [portfolioData, teamData, connectionData, authSummaryData] =
 				await Promise.all([
 					portfolioService.getPortfolios(),
 					teamService.getTeams(),
 					workTrackingSystemService.getConfiguredWorkTrackingSystems(),
-					rbacService.getStatus().catch(() => null),
+					rbacService.getAuthorizationSummary().catch(() => permissiveSummary),
 				]);
 			setPortfolios(portfolioData);
 			setTeams(teamData);
 			setConnections(connectionData);
-			setIsRbacEnabled(rbacStatus?.enabled === true);
+			setAuthSummary(authSummaryData);
 			setIsLoading(false);
 		} catch (error) {
 			console.error("Error fetching overview data:", error);
@@ -310,7 +322,7 @@ const OverviewDashboard: React.FC = () => {
 
 	const hasPortfolios = portfolios.length > 0;
 	const showRbacNoAccessAlert =
-		isRbacEnabled && portfolios.length === 0 && teams.length === 0;
+		authSummary.isRbacEnabled && portfolios.length === 0 && teams.length === 0;
 
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
@@ -338,8 +350,10 @@ const OverviewDashboard: React.FC = () => {
 						connectionTerm={connectionTerm}
 						hasTeams={hasTeams}
 						hasPortfolios={hasPortfolios}
-						canCreateTeam={canCreateTeam}
-						canCreatePortfolio={canCreatePortfolio}
+						canCreateTeam={canCreateTeam && authSummary.canCreateTeam}
+						canCreatePortfolio={
+							canCreatePortfolio && authSummary.canCreatePortfolio
+						}
 						teamTerm={teamTerm}
 						portfolioTerm={portfolioTerm}
 					/>
@@ -363,58 +377,66 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ fontWeight: 600 }}
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
-						<ActionButton
-							buttonText={`Add ${connectionTerm}`}
-							startIcon={<AddIcon />}
-							onClickHandler={handleAddConnection}
-							buttonVariant="contained"
-						/>
-						<Tooltip
-							title={
-								hasConnections
-									? ""
-									: `Create a ${connectionTerm} before adding a ${teamTerm}`
-							}
-						>
-							<span>
-								<LicenseTooltip
-									canUseFeature={canCreateTeam}
-									defaultTooltip=""
-									premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
-								>
-									<span>
-										<ActionButton
-											buttonText={`Add ${teamTerm}`}
-											startIcon={<AddIcon />}
-											onClickHandler={handleAddTeam}
-											buttonVariant="contained"
-											disabled={!canCreateTeam || !hasConnections}
-										/>
-									</span>
-								</LicenseTooltip>
-							</span>
-						</Tooltip>
-						<Tooltip
-							title={hasTeams ? "" : "Create a team before adding a portfolio"}
-						>
-							<span>
-								<LicenseTooltip
-									canUseFeature={canCreatePortfolio}
-									defaultTooltip=""
-									premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
-								>
-									<span>
-										<ActionButton
-											buttonText={`Add ${portfolioTerm}`}
-											startIcon={<AddIcon />}
-											onClickHandler={handleAddPortfolio}
-											buttonVariant="contained"
-											disabled={!canCreatePortfolio || !hasTeams}
-										/>
-									</span>
-								</LicenseTooltip>
-							</span>
-						</Tooltip>
+						{authSummary.isSystemAdmin && (
+							<ActionButton
+								buttonText={`Add ${connectionTerm}`}
+								startIcon={<AddIcon />}
+								onClickHandler={handleAddConnection}
+								buttonVariant="contained"
+							/>
+						)}
+						{authSummary.canCreateTeam && (
+							<Tooltip
+								title={
+									hasConnections
+										? ""
+										: `Create a ${connectionTerm} before adding a ${teamTerm}`
+								}
+							>
+								<span>
+									<LicenseTooltip
+										canUseFeature={canCreateTeam}
+										defaultTooltip=""
+										premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
+									>
+										<span>
+											<ActionButton
+												buttonText={`Add ${teamTerm}`}
+												startIcon={<AddIcon />}
+												onClickHandler={handleAddTeam}
+												buttonVariant="contained"
+												disabled={!canCreateTeam || !hasConnections}
+											/>
+										</span>
+									</LicenseTooltip>
+								</span>
+							</Tooltip>
+						)}
+						{authSummary.canCreatePortfolio && (
+							<Tooltip
+								title={
+									hasTeams ? "" : "Create a team before adding a portfolio"
+								}
+							>
+								<span>
+									<LicenseTooltip
+										canUseFeature={canCreatePortfolio}
+										defaultTooltip=""
+										premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
+									>
+										<span>
+											<ActionButton
+												buttonText={`Add ${portfolioTerm}`}
+												startIcon={<AddIcon />}
+												onClickHandler={handleAddPortfolio}
+												buttonVariant="contained"
+												disabled={!canCreatePortfolio || !hasTeams}
+											/>
+										</span>
+									</LicenseTooltip>
+								</span>
+							</Tooltip>
+						)}
 					</Box>
 				</Box>
 

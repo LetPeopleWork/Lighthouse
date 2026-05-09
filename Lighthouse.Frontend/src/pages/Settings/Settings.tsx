@@ -15,8 +15,10 @@ import Tab from "@mui/material/Tab";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import type { UserAuthorizationSummary } from "../../models/Authorization/RbacModels";
+import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
@@ -27,6 +29,13 @@ import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
 const Settings: React.FC = () => {
 	const [value, setValue] = useState("20");
 	const [mounted, setMounted] = useState(false);
+	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
+		isRbacEnabled: false,
+		isSystemAdmin: true,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+	});
+	const { rbacService } = useContext(ApiServiceContext);
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const location = useLocation();
@@ -80,6 +89,23 @@ const Settings: React.FC = () => {
 		}
 	};
 
+	useEffect(() => {
+		let cancelled = false;
+		rbacService
+			.getAuthorizationSummary()
+			.then((summary) => {
+				if (!cancelled) setAuthSummary(summary);
+			})
+			.catch(() => {
+				// Permissive fallback: show all tabs if auth summary is unavailable
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [rbacService]);
+
+	const systemAdminTabValues = new Set(["20", "25", "30", "50"]);
+
 	const tabConfig = [
 		{
 			value: "20",
@@ -130,6 +156,10 @@ const Settings: React.FC = () => {
 			component: <SystemInfoSettings />,
 		},
 	];
+
+	const visibleTabs = tabConfig.filter(
+		(tab) => !systemAdminTabValues.has(tab.value) || authSummary.isSystemAdmin,
+	);
 
 	return (
 		<Container maxWidth={false}>
@@ -188,7 +218,7 @@ const Settings: React.FC = () => {
 									},
 								}}
 							>
-								{tabConfig.map((tab) => (
+								{visibleTabs.map((tab) => (
 									<Tab
 										key={tab.value}
 										label={tab.label}
@@ -208,7 +238,7 @@ const Settings: React.FC = () => {
 							</TabList>
 						</Box>
 
-						{tabConfig.map((tab) => (
+						{visibleTabs.map((tab) => (
 							<TabPanel
 								key={tab.value}
 								value={tab.value}

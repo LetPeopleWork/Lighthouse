@@ -29,6 +29,18 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<bool> CanWritePortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default);
 
+        Task<bool> CanCreateTeamAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
+
+        Task<bool> CanCreatePortfolioAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
+
+        Task<bool> CanSatisfyRequirementAsync(
+            ClaimsPrincipal principal,
+            RbacGuardRequirement requirement,
+            int? scopeId = null,
+            CancellationToken cancellationToken = default);
+
+        Task<UserAuthorizationSummary> GetAuthorizationSummaryAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
+
         Task<RbacOperationResult> BootstrapCurrentUserAsSystemAdminAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
 
         Task<RbacOperationResult> GrantSystemAdminAsync(int userProfileId, CancellationToken cancellationToken = default);

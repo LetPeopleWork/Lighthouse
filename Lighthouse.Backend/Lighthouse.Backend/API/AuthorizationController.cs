@@ -19,6 +19,14 @@ namespace Lighthouse.Backend.API
             return Ok(status);
         }
 
+        [HttpGet("my-summary")]
+        [ProducesResponseType<UserAuthorizationSummary>(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAuthorizationSummary(CancellationToken cancellationToken)
+        {
+            var summary = await rbacAdministrationService.GetAuthorizationSummaryAsync(User, cancellationToken);
+            return Ok(summary);
+        }
+
         [HttpPost("bootstrap/system-admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

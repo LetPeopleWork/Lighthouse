@@ -1,6 +1,8 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -187,6 +189,18 @@ namespace Lighthouse.Backend.Tests.API
             var result = await subject.Delete(999);
 
             Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
+        }
+
+        [Test]
+        public void Create_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(BlackoutPeriodsController).GetMethod(nameof(BlackoutPeriodsController.Create));
+            var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
     }
 }

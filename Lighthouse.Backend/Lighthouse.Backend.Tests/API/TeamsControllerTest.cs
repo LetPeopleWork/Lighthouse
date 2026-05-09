@@ -1,17 +1,17 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Security.Claims;
 
@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
         public void Setup()
@@ -40,6 +41,10 @@ namespace Lighthouse.Backend.Tests.API
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
         }
 
         [Test]
@@ -481,19 +486,11 @@ namespace Lighthouse.Backend.Tests.API
             var firstTeam = CreateTeam(1, "Visible Team");
             var secondTeam = CreateTeam(2, "Hidden Team");
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([firstTeam.Id]);
 
             var subject = CreateSubject([firstTeam, secondTeam]);
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Get,
-                rbacAdministrationServiceMock.Object,
-                "auth0|limited-user");
 
             var results = subject.GetTeams().ToList();
 
@@ -506,31 +503,29 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task CreateTeam_WhenRbacIsEnabledAndUserCannotManage_ReturnsForbid()
+        public void CreateTeam_HasSystemAdminRbacGuardAttribute()
         {
-            var teamSettings = new TeamSettingDto
-            {
-                Name = "Blocked Team",
-                WorkTrackingSystemConnectionId = 1,
-            };
+            var method = typeof(TeamsController).GetMethod(nameof(TeamsController.CreateTeam));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
-            rbacAdministrationServiceMock
-                .Setup(x => x.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+        }
 
-            var subject = CreateSubject();
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Post,
-                rbacAdministrationServiceMock.Object,
-                "auth0|viewer");
+        [Test]
+        public void UpdateAllTeams_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(TeamsController).GetMethod(nameof(TeamsController.UpdateAllTeams));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var result = await subject.CreateTeam(teamSettings);
-
-            Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
 
         private static Team CreateTeam(int id, string name)
@@ -576,30 +571,14 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamsController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object, blackoutPeriodRepositoryMock.Object);
-        }
-
-        private static ControllerContext BuildControllerContext(
-            string requestMethod,
-            IRbacAdministrationService rbacAdministrationService,
-            string subject)
-        {
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(rbacAdministrationService)
-                .BuildServiceProvider();
-
-            var httpContext = new DefaultHttpContext
-            {
-                RequestServices = serviceProvider,
-                User = new ClaimsPrincipal(
-                    new ClaimsIdentity([new Claim("sub", subject)], "TestAuth")),
-            };
-            httpContext.Request.Method = requestMethod;
-
-            return new ControllerContext
-            {
-                HttpContext = httpContext,
-            };
+                teamRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                workTrackingSystemConnectionRepositoryMock.Object,
+                teamUpdateServiceMock.Object,
+                workTrackingConnectorFactoryMock.Object,
+                licenseServiceMock.Object,
+                blackoutPeriodRepositoryMock.Object,
+                rbacAdministrationServiceMock.Object);
         }
     }
 }

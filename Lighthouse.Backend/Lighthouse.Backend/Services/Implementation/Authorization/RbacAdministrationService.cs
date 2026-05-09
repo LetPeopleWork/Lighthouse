@@ -267,6 +267,116 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 cancellationToken);
         }
 
+        public async Task<bool> CanCreateTeamAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Team
+                    && p.Role == UserRole.TeamAdmin,
+                cancellationToken);
+        }
+
+        public async Task<bool> CanCreatePortfolioAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Portfolio
+                    && p.Role == UserRole.PortfolioAdmin,
+                cancellationToken);
+        }
+
+        public async Task<bool> CanSatisfyRequirementAsync(
+            ClaimsPrincipal principal,
+            RbacGuardRequirement requirement,
+            int? scopeId = null,
+            CancellationToken cancellationToken = default)
+        {
+            return requirement switch
+            {
+                RbacGuardRequirement.SystemAdmin => !await IsRbacEnforcedAsync(cancellationToken)
+                    || await CanManageRbacAsync(principal, cancellationToken),
+                RbacGuardRequirement.TeamRead => scopeId.HasValue
+                    && await CanReadTeamAsync(principal, scopeId.Value, cancellationToken),
+                RbacGuardRequirement.TeamWrite => scopeId.HasValue
+                    && await CanWriteTeamAsync(principal, scopeId.Value, cancellationToken),
+                RbacGuardRequirement.PortfolioRead => scopeId.HasValue
+                    && await CanReadPortfolioAsync(principal, scopeId.Value, cancellationToken),
+                RbacGuardRequirement.PortfolioWrite => scopeId.HasValue
+                    && await CanWritePortfolioAsync(principal, scopeId.Value, cancellationToken),
+                _ => false,
+            };
+        }
+
+        public async Task<UserAuthorizationSummary> GetAuthorizationSummaryAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+        {
+            var isRbacEnabled = await IsRbacEnforcedAsync(cancellationToken);
+
+            if (!isRbacEnabled)
+            {
+                return new UserAuthorizationSummary
+                {
+                    IsRbacEnabled = false,
+                    IsSystemAdmin = true,
+                    CanCreateTeam = true,
+                    CanCreatePortfolio = true,
+                };
+            }
+
+            var isSystemAdmin = await CanManageRbacAsync(principal, cancellationToken);
+            var canCreateTeam = isSystemAdmin || await CanCreateTeamAsync(principal, cancellationToken);
+            var canCreatePortfolio = isSystemAdmin || await CanCreatePortfolioAsync(principal, cancellationToken);
+
+            return new UserAuthorizationSummary
+            {
+                IsRbacEnabled = true,
+                IsSystemAdmin = isSystemAdmin,
+                CanCreateTeam = canCreateTeam,
+                CanCreatePortfolio = canCreatePortfolio,
+            };
+        }
+
         public async Task<RbacOperationResult> BootstrapCurrentUserAsSystemAdminAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
         {
             if (await HasSystemAdminAsync(cancellationToken))

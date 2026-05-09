@@ -1,7 +1,9 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -24,6 +26,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpGet]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
         public ActionResult<TeamDto> GetTeam(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
@@ -41,13 +44,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckTeamConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public ActionResult UpdateTeamData(int teamId)
         {
-            if (!this.CanWriteTeam(teamId))
-            {
-                return Forbid();
-            }
-
             var team = teamRepository.GetById(teamId);
 
             if (team == null)
@@ -61,13 +60,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public async Task<IActionResult> DeleteTeam(int teamId)
         {
-            if (!this.CanWriteTeam(teamId))
-            {
-                return Forbid();
-            }
-
             var team = teamRepository.GetById(teamId);
             var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];
 
@@ -93,6 +88,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPut]
         [LicenseGuard(CheckTeamConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public async Task<ActionResult<TeamSettingDto>> UpdateTeam(int teamId, TeamSettingDto teamSetting)
         {
             var baselineValidation = BaselineValidationService.Validate(
@@ -130,6 +126,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("settings")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
         public ActionResult<TeamSettingDto> GetTeamSettings(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => new TeamSettingDto(team));

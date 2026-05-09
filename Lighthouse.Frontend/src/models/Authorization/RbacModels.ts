@@ -13,3 +13,10 @@ export interface RbacUser {
 	email?: string;
 	isSystemAdmin: boolean;
 }
+
+export interface UserAuthorizationSummary {
+	isRbacEnabled: boolean;
+	isSystemAdmin: boolean;
+	canCreateTeam: boolean;
+	canCreatePortfolio: boolean;
+}

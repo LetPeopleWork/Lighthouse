@@ -1,7 +1,9 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -21,6 +23,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpGet]
+        [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public ActionResult<PortfolioDto> Get(int portfolioId)
         {
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio => new PortfolioDto(portfolio));
@@ -28,26 +31,18 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("refresh")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public ActionResult UpdateFeaturesForPortfolio(int portfolioId)
         {
-            if (!this.CanWritePortfolio(portfolioId))
-            {
-                return Forbid();
-            }
-
             portfolioUpdater.TriggerUpdate(portfolioId);
 
             return Ok();
         }
 
         [HttpDelete]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public async Task<IActionResult> DeletePortfolio(int portfolioId)
         {
-            if (!this.CanWritePortfolio(portfolioId))
-            {
-                return Forbid();
-            }
-
             portfolioRepository.Remove(portfolioId);
             await portfolioRepository.Save();
 
@@ -58,6 +53,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPut]
         [LicenseGuard(CheckPortfolioConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public async Task<ActionResult<PortfolioSettingDto>> UpdatePortfolio(int portfolioId, PortfolioSettingDto portfolioSetting)
         {
             var baselineValidation = BaselineValidationService.Validate(
@@ -89,6 +85,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("settings")]
+        [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public ActionResult<PortfolioSettingDto> GetPortfolioSettings(int portfolioId)
         {
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio =>

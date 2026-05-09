@@ -1,6 +1,8 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -17,6 +19,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpGet("schema")]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         [ProducesResponseType<DeliveryRuleSchema>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetSchema(int portfolioId)
@@ -33,6 +36,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         [ProducesResponseType<List<FeatureDto>>(StatusCodes.Status200OK)]
         [ProducesResponseType<List<FeatureDto>>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

@@ -274,6 +274,284 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             Assert.That(canWrite, Is.False);
         }
 
+        [Test]
+        public async Task CanCreateTeamAsync_WhenRbacDisabled_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|user-no-grants"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile { Id = 1, Subject = "auth0|user-no-grants", SubjectClaimType = "sub" });
+
+            var subject = CreateSubject(context, emergencySubjects: [], enabled: false);
+
+            var result = await subject.CanCreateTeamAsync(principal, CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanCreateTeamAsync_WhenUserHasTeamAdminOnAnyTeam_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|team-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanCreateTeamAsync(principal, CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanCreateTeamAsync_WhenUserHasNoTeamAdminAssignment_ReturnsFalse()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|viewer", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|viewer"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanCreateTeamAsync(principal, CancellationToken.None);
+
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanCreatePortfolioAsync_WhenRbacDisabled_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|user-no-grants"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile { Id = 1, Subject = "auth0|user-no-grants", SubjectClaimType = "sub" });
+
+            var subject = CreateSubject(context, emergencySubjects: [], enabled: false);
+
+            var result = await subject.CanCreatePortfolioAsync(principal, CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanCreatePortfolioAsync_WhenUserHasPortfolioAdminOnAnyPortfolio_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|portfolio-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 5 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|portfolio-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanCreatePortfolioAsync(principal, CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanCreatePortfolioAsync_WhenUserHasNoPortfolioAdminAssignment_ReturnsFalse()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|viewer", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Portfolio, ScopeId = 5 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|viewer"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanCreatePortfolioAsync(principal, CancellationToken.None);
+
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanSatisfyRequirementAsync_SystemAdmin_WhenRbacDisabled_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|user"));
+            var subject = CreateSubject(context, emergencySubjects: [], enabled: false);
+
+            var result = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.SystemAdmin,
+                null,
+                CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanSatisfyRequirementAsync_TeamRead_WhenUserHasViewerRole_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|viewer", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 44 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|viewer"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.TeamRead,
+                44,
+                CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanSatisfyRequirementAsync_PortfolioWrite_WithoutScopeId_ReturnsFalse()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|portfolio-admin"));
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.PortfolioWrite,
+                null,
+                CancellationToken.None);
+
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task GetAuthorizationSummaryAsync_SystemAdmin_HasFullSystemCapabilities()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|system-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 1));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary.IsSystemAdmin, Is.True);
+                Assert.That(summary.CanCreateTeam, Is.True);
+                Assert.That(summary.CanCreatePortfolio, Is.True);
+                Assert.That(summary.IsRbacEnabled, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task GetAuthorizationSummaryAsync_TeamAdmin_CanCreateTeamButNotPortfolio()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|team-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary.IsSystemAdmin, Is.False);
+                Assert.That(summary.CanCreateTeam, Is.True);
+                Assert.That(summary.CanCreatePortfolio, Is.False);
+                Assert.That(summary.IsRbacEnabled, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task GetAuthorizationSummaryAsync_WhenRbacDisabled_AllCapabilitiesTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|any-user"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile { Id = 1, Subject = "auth0|any-user", SubjectClaimType = "sub" });
+
+            var subject = CreateSubject(context, emergencySubjects: [], enabled: false);
+
+            var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary.IsSystemAdmin, Is.True);
+                Assert.That(summary.CanCreateTeam, Is.True);
+                Assert.That(summary.CanCreatePortfolio, Is.True);
+                Assert.That(summary.IsRbacEnabled, Is.False);
+            }
+        }
+
         private RbacAdministrationService CreateSubject(
             LighthouseAppContext context,
             IReadOnlyList<string> emergencySubjects,

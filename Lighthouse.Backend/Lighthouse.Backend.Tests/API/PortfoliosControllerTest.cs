@@ -1,16 +1,16 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Security.Claims;
 
@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
         public void Setup()
@@ -35,6 +36,10 @@ namespace Lighthouse.Backend.Tests.API
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
         }
 
         [Test]
@@ -304,19 +309,11 @@ namespace Lighthouse.Backend.Tests.API
 
             portfolioRepoMock.Setup(x => x.GetAll()).Returns([firstPortfolio, secondPortfolio]);
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([firstPortfolio.Id]);
 
             var subject = CreateSubject();
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Get,
-                rbacAdministrationServiceMock.Object,
-                "auth0|limited-user");
 
             var result = subject.GetPortfolios().ToList();
 
@@ -329,31 +326,29 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task CreatePortfolio_WhenRbacIsEnabledAndUserCannotManage_ReturnsForbid()
+        public void CreatePortfolio_HasSystemAdminRbacGuardAttribute()
         {
-            var newPortfolioSetting = new PortfolioSettingDto
-            {
-                Name = "Blocked Portfolio",
-                WorkTrackingSystemConnectionId = 101,
-            };
+            var method = typeof(PortfoliosController).GetMethod(nameof(PortfoliosController.CreatePortfolio));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.IsRbacEnforcedAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
-            rbacAdministrationServiceMock
-                .Setup(x => x.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+        }
 
-            var subject = CreateSubject();
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Post,
-                rbacAdministrationServiceMock.Object,
-                "auth0|viewer");
+        [Test]
+        public void UpdateAllPortfolios_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(PortfoliosController).GetMethod(nameof(PortfoliosController.UpdateAllPortfolios));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var result = await subject.CreatePortfolio(newPortfolioSetting);
-
-            Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
 
         private PortfoliosController CreateSubject()
@@ -363,7 +358,8 @@ namespace Lighthouse.Backend.Tests.API
                 teamRepoMock.Object,
                 portfolioUpdaterMock.Object,
                 workTrackingConnectorFactoryMock.Object,
-                workTrackingSystemConnectionRepoMock.Object
+                workTrackingSystemConnectionRepoMock.Object,
+                rbacAdministrationServiceMock.Object
             );
         }
 
@@ -376,27 +372,5 @@ namespace Lighthouse.Backend.Tests.API
             ];
         }
 
-        private static ControllerContext BuildControllerContext(
-            string requestMethod,
-            IRbacAdministrationService rbacAdministrationService,
-            string subject)
-        {
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(rbacAdministrationService)
-                .BuildServiceProvider();
-
-            var httpContext = new DefaultHttpContext
-            {
-                RequestServices = serviceProvider,
-                User = new ClaimsPrincipal(
-                    new ClaimsIdentity([new Claim("sub", subject)], "TestAuth")),
-            };
-            httpContext.Request.Method = requestMethod;
-
-            return new ControllerContext
-            {
-                HttpContext = httpContext,
-            };
-        }
     }
 }

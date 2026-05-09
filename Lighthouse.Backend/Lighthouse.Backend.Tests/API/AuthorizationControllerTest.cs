@@ -100,6 +100,38 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task GetAuthorizationSummary_ReturnsOkWithSummary()
+        {
+            var expectedSummary = new UserAuthorizationSummary
+            {
+                IsSystemAdmin = true,
+                CanCreateTeam = true,
+                CanCreatePortfolio = true,
+                IsRbacEnabled = true,
+            };
+
+            rbacAdministrationService
+                .Setup(s => s.GetAuthorizationSummaryAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedSummary);
+
+            var subject = CreateSubjectWithUser("auth0|system-admin");
+
+            var result = await subject.GetAuthorizationSummary(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = (OkObjectResult)result;
+                var summary = okResult.Value as UserAuthorizationSummary;
+                Assert.That(summary, Is.Not.Null);
+                Assert.That(summary!.IsSystemAdmin, Is.True);
+                Assert.That(summary.CanCreateTeam, Is.True);
+                Assert.That(summary.CanCreatePortfolio, Is.True);
+                Assert.That(summary.IsRbacEnabled, Is.True);
+            }
+        }
+
         private AuthorizationController CreateSubjectWithUser(string subjectClaim)
         {
             var identity = new ClaimsIdentity([new Claim("sub", subjectClaim)], "TestAuth");

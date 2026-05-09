@@ -7,6 +7,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
+	createMockRbacService,
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
@@ -524,6 +525,110 @@ describe("TeamDetail component", () => {
 					callsAfterDeferred + 1,
 				);
 			});
+		});
+	});
+});
+
+describe("TeamDetail - RBAC Settings Tab Visibility", () => {
+	const mockTeamService = createMockTeamService();
+	(mockTeamService.getTeam as ReturnType<typeof vi.fn>).mockResolvedValue({
+		id: 1,
+		name: "Test Team",
+		features: [],
+		tags: [],
+		projects: [],
+		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
+		remainingFeatures: 0,
+		featureWip: 1,
+		useFixedDatesForThroughput: false,
+		throughputStartDate: new Date(),
+		throughputEndDate: new Date(),
+	});
+
+	const renderTeamDetail = (
+		rbacOverrides?: Partial<ReturnType<typeof createMockRbacService>>,
+	) => {
+		const mockRbacService = createMockRbacService();
+		if (rbacOverrides) {
+			Object.assign(mockRbacService, rbacOverrides);
+		}
+		const mockUpdateSubscription = createMockUpdateSubscriptionService();
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			rbacService: mockRbacService,
+			updateSubscriptionService: mockUpdateSubscription,
+		});
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+	};
+
+	it("should show Settings tab when RBAC is disabled", async () => {
+		renderTeamDetail({
+			getAuthorizationSummary: vi.fn().mockResolvedValue({
+				isRbacEnabled: false,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+			}),
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+	});
+
+	it("should show Settings tab when user is system admin", async () => {
+		renderTeamDetail({
+			getAuthorizationSummary: vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: true,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+			}),
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+	});
+
+	it("should show Settings tab when user can create team", async () => {
+		renderTeamDetail({
+			getAuthorizationSummary: vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: true,
+				canCreatePortfolio: false,
+			}),
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+	});
+
+	it("should hide Settings tab when RBAC is enabled and user cannot manage teams", async () => {
+		renderTeamDetail({
+			getAuthorizationSummary: vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+			}),
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.queryByRole("tab", { name: "Settings" }),
+			).not.toBeInTheDocument();
 		});
 	});
 });

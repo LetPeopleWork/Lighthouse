@@ -25,6 +25,7 @@ import {
 	createMockLicensingService,
 	createMockOptionalFeatureService,
 	createMockPortfolioService,
+	createMockRbacService,
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
@@ -413,6 +414,97 @@ describe("PortfolioDetail component", () => {
 			await waitFor(() => {
 				expect(mockGetPortfolio).toHaveBeenCalledTimes(callsAfterDeferred + 1);
 			});
+		});
+	});
+});
+
+describe("PortfolioDetail - RBAC Tab Visibility", () => {
+	const renderWithRbac = (
+		isRbacEnabled: boolean,
+		canCreatePortfolio: boolean,
+		isSystemAdmin: boolean,
+	) => {
+		const mockPortfolioSvc = createMockPortfolioService();
+		const portfolio = new Portfolio();
+		portfolio.id = 1;
+		portfolio.name = "Test Portfolio";
+		portfolio.features = [];
+		(
+			mockPortfolioSvc.getPortfolio as ReturnType<typeof vi.fn>
+		).mockResolvedValue(portfolio);
+		(
+			mockPortfolioSvc.getPortfolioSettings as ReturnType<typeof vi.fn>
+		).mockResolvedValue({ id: 1, name: "Test Portfolio" });
+
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled,
+			isSystemAdmin,
+			canCreateTeam: false,
+			canCreatePortfolio,
+		});
+
+		const mockContext = createMockApiServiceContext({
+			portfolioService: mockPortfolioSvc,
+			teamService: createMockTeamService(),
+			rbacService: mockRbacService,
+			updateSubscriptionService: createMockUpdateSubscriptionService(),
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockContext}>
+				<MemoryRouter initialEntries={["/portfolios/1"]}>
+					<Routes>
+						<Route path="/portfolios/:id" element={<PortfolioDetail />} />
+					</Routes>
+				</MemoryRouter>
+			</ApiServiceContext.Provider>,
+		);
+	};
+
+	it("should show Deliveries and Settings tabs when RBAC is disabled", async () => {
+		renderWithRbac(false, false, false);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("tab", { name: "Deliveries" }),
+			).toBeInTheDocument();
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+	});
+
+	it("should show Deliveries and Settings tabs when user is system admin", async () => {
+		renderWithRbac(true, false, true);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("tab", { name: "Deliveries" }),
+			).toBeInTheDocument();
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+	});
+
+	it("should show Deliveries and Settings tabs when user can create portfolio", async () => {
+		renderWithRbac(true, true, false);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("tab", { name: "Deliveries" }),
+			).toBeInTheDocument();
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+	});
+
+	it("should hide Deliveries and Settings tabs when RBAC is enabled and user cannot manage portfolios", async () => {
+		renderWithRbac(true, false, false);
+
+		await waitFor(() => {
+			expect(
+				screen.queryByRole("tab", { name: "Deliveries" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("tab", { name: "Settings" }),
+			).not.toBeInTheDocument();
 		});
 	});
 });

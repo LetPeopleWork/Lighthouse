@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	RbacStatus,
 	RbacUser,
+	UserAuthorizationSummary,
 } from "../../models/Authorization/RbacModels";
 import { RbacService } from "./RbacService";
 
@@ -92,5 +93,21 @@ describe("RbacService", () => {
 		expect(mockedAxios.delete).toHaveBeenCalledWith(
 			"/authorization/system-admins/7",
 		);
+	});
+
+	it("should fetch authorization summary for current user", async () => {
+		const mockSummary: UserAuthorizationSummary = {
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: false,
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockSummary });
+
+		const result = await subject.getAuthorizationSummary();
+
+		expect(result).toEqual(mockSummary);
+		expect(mockedAxios.get).toHaveBeenCalledWith("/authorization/my-summary");
 	});
 });

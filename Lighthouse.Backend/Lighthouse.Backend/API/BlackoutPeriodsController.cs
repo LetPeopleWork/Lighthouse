@@ -1,5 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +24,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<IActionResult> Create([FromBody] BlackoutPeriodDto dto)
         {
             try
@@ -37,6 +40,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPut("{id:int}")]
         [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<IActionResult> Update(int id, [FromBody] BlackoutPeriodDto dto)
         {
             try
@@ -56,6 +60,7 @@ namespace Lighthouse.Backend.API
 
         [HttpDelete("{id:int}")]
         [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<IActionResult> Delete(int id)
         {
             try

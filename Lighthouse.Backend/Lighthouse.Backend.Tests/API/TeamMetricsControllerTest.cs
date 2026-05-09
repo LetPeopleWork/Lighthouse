@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +26,19 @@ namespace Lighthouse.Backend.Tests.API
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+        }
+
+        [Test]
+        public void Controller_HasTeamReadRbacGuardAttribute()
+        {
+            var attribute = typeof(TeamMetricsController)
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamRead));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
         }
 
         [Test]

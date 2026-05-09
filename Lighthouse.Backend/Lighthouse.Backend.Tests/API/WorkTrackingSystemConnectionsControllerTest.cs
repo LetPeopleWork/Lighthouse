@@ -2,9 +2,11 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -421,6 +423,30 @@ namespace Lighthouse.Backend.Tests.API
         {
             return new WorkTrackingSystemConnectionsController(
                 workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object);
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnections_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(WorkTrackingSystemConnectionsController).GetMethod(nameof(WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections));
+            var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+        }
+
+        [Test]
+        public void CreateNewWorkTrackingSystemConnection_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(WorkTrackingSystemConnectionsController).GetMethod(nameof(WorkTrackingSystemConnectionsController.CreateNewWorkTrackingSystemConnectionAsync));
+            var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
 
         private static void AddAdditionalFieldDefinitionToDto(WorkTrackingSystemConnectionDto connectionDto,

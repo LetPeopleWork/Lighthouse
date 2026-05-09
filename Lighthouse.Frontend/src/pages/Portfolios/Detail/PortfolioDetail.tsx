@@ -23,6 +23,7 @@ import SystemWipQuickSetting from "../../../components/Common/QuickSettings/Syst
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import type { UserAuthorizationSummary } from "../../../models/Authorization/RbacModels";
 import type {
 	IPortfolio,
 	Portfolio,
@@ -75,7 +76,33 @@ const PortfolioDetail: React.FC = () => {
 		teamService,
 		updateSubscriptionService,
 		workTrackingSystemService,
+		rbacService,
 	} = useContext(ApiServiceContext);
+
+	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
+		isRbacEnabled: false,
+		isSystemAdmin: true,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+	});
+
+	useEffect(() => {
+		let cancelled = false;
+		rbacService
+			.getAuthorizationSummary()
+			.then((summary) => {
+				if (!cancelled) setAuthSummary(summary);
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [rbacService]);
+
+	const showDeliveriesAndSettingsTabs =
+		!authSummary.isRbacEnabled ||
+		authSummary.isSystemAdmin ||
+		authSummary.canCreatePortfolio;
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -345,9 +372,13 @@ const PortfolioDetail: React.FC = () => {
 											aria-label="portfolio view tabs"
 										>
 											<Tab label={featuresTerm} value="features" />
-											<Tab label={deliveriesTerm} value="deliveries" />
+											{showDeliveriesAndSettingsTabs && (
+												<Tab label={deliveriesTerm} value="deliveries" />
+											)}
 											<Tab label="Metrics" value="metrics" />
-											<Tab label="Settings" value="settings" />
+											{showDeliveriesAndSettingsTabs && (
+												<Tab label="Settings" value="settings" />
+											)}
 										</Tabs>
 									}
 									rightContent={

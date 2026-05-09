@@ -45,6 +45,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     .ToList();
         }
 
+        public int? GetPortfolioId(int deliveryId)
+        {
+            return Context.Deliveries
+                .Where(d => d.Id == deliveryId)
+                .Select(d => (int?)d.PortfolioId)
+                .FirstOrDefault();
+        }
+
         private IQueryable<Delivery> GetAllDeliveriesWithIncludes()
         {
             return Context.Deliveries

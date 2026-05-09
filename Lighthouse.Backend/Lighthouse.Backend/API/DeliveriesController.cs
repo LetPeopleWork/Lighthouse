@@ -1,8 +1,11 @@
 using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +19,12 @@ namespace Lighthouse.Backend.API
         IDeliveryRepository deliveryRepository,
         IRepository<Portfolio> portfolioRepository,
         ILicenseService licenseService,
-        IDeliveryRuleService deliveryRuleService)
+        IDeliveryRuleService deliveryRuleService,
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         [ProducesResponseType<IEnumerable<DeliveryWithLikelihoodDto>>(StatusCodes.Status200OK)]
         public IActionResult GetByPortfolio(int portfolioId)
         {
@@ -29,6 +34,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("portfolio/{portfolioId:int}")]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public async Task<IActionResult> CreateDelivery(
             int portfolioId,
             [FromBody] UpdateDeliveryRequest request)
@@ -107,6 +113,15 @@ namespace Lighthouse.Backend.API
                 return NotFound($"Delivery with ID {deliveryId} not found");
             }
 
+            if (!await rbacAdministrationService.CanSatisfyRequirementAsync(
+                    User,
+                    RbacGuardRequirement.PortfolioWrite,
+                    existingDelivery.PortfolioId,
+                    HttpContext?.RequestAborted ?? default))
+            {
+                return Forbid();
+            }
+
             if (request.SelectionMode == DeliverySelectionMode.RuleBased)
             {
                 var errorStatus = CheckRuleBasedDeliveryPrerequisites(request);
@@ -148,6 +163,16 @@ namespace Lighthouse.Backend.API
         [HttpDelete("{deliveryId:int}")]
         public async Task<IActionResult> DeleteDelivery(int deliveryId)
         {
+            var portfolioId = deliveryRepository.GetPortfolioId(deliveryId);
+            if (portfolioId.HasValue && !await rbacAdministrationService.CanSatisfyRequirementAsync(
+                    User,
+                    RbacGuardRequirement.PortfolioWrite,
+                    portfolioId.Value,
+                    HttpContext?.RequestAborted ?? default))
+            {
+                return Forbid();
+            }
+
             deliveryRepository.Remove(deliveryId);
             await deliveryRepository.Save();
 

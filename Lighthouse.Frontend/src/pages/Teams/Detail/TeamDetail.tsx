@@ -25,6 +25,7 @@ import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickS
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import type { UserAuthorizationSummary } from "../../../models/Authorization/RbacModels";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -88,8 +89,37 @@ const TeamDetail: React.FC = () => {
 	const activeViewRef = useRef(activeView);
 	activeViewRef.current = activeView;
 
-	const { teamService, updateSubscriptionService, workTrackingSystemService } =
-		useContext(ApiServiceContext);
+	const {
+		teamService,
+		updateSubscriptionService,
+		workTrackingSystemService,
+		rbacService,
+	} = useContext(ApiServiceContext);
+
+	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
+		isRbacEnabled: false,
+		isSystemAdmin: true,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+	});
+
+	useEffect(() => {
+		let cancelled = false;
+		rbacService
+			.getAuthorizationSummary()
+			.then((summary) => {
+				if (!cancelled) setAuthSummary(summary);
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [rbacService]);
+
+	const showSettingsTab =
+		!authSummary.isRbacEnabled ||
+		authSummary.isSystemAdmin ||
+		authSummary.canCreateTeam;
 
 	const fetchTeam = useCallback(async () => {
 		setHasNoAccess(false);
@@ -329,7 +359,9 @@ const TeamDetail: React.FC = () => {
 											/>
 											<Tab label="Forecasts" value="forecasts" />
 											<Tab label="Metrics" value="metrics" />
-											<Tab label="Settings" value="settings" />
+											{showSettingsTab && (
+												<Tab label="Settings" value="settings" />
+											)}
 										</Tabs>
 									}
 									rightContent={

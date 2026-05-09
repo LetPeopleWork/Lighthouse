@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -6,6 +7,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/database-management")]
     [Route("api/latest/database-management")]
     [ApiController]
+    [RbacGuard]
     public class DatabaseManagementController(IDatabaseManagementService databaseManagementService) : ControllerBase
     {
         private readonly IDatabaseManagementService databaseManagementService = databaseManagementService ?? throw new ArgumentNullException(nameof(databaseManagementService));

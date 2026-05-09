@@ -1,4 +1,6 @@
 ﻿using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +33,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("{id}")]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<OptionalFeature>> UpdateOptionalFeature(int id, [FromBody] OptionalFeature updatedFeature)
         {
             return await this.GetEntityByIdAnExecuteAction(repository, id, async feature =>

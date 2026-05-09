@@ -1,11 +1,14 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -15,6 +18,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDeliveryRepository> deliveryRepository;
         private Mock<IRepository<Portfolio>> portfolioRepository;
         private Mock<ILicenseService> licenseService;
+        private Mock<IRbacAdministrationService> rbacAdministrationService;
         private DeliveriesController subject;
 
         [SetUp]
@@ -23,14 +27,23 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRepository = new Mock<IDeliveryRepository>();
             portfolioRepository = new Mock<IRepository<Portfolio>>();
             licenseService = new Mock<ILicenseService>();
+            rbacAdministrationService = new Mock<IRbacAdministrationService>();
 
             deliveryRepository.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
+            rbacAdministrationService
+                .Setup(x => x.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    It.IsAny<RbacGuardRequirement>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             subject = new DeliveriesController(
                 deliveryRepository.Object,
                 portfolioRepository.Object,
                 licenseService.Object,
-                Mock.Of<IDeliveryRuleService>());
+                Mock.Of<IDeliveryRuleService>(),
+                rbacAdministrationService.Object);
         }
 
         [Test]

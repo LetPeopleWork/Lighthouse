@@ -1,9 +1,11 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +40,19 @@ namespace Lighthouse.Backend.Tests.API
             
             portfolioRepository.Setup(x => x.GetById(1)).Returns(project);
             portfolioRepository.Setup(x => x.GetById(999)).Returns((Portfolio)null);
+        }
+
+        [Test]
+        public void Controller_HasPortfolioReadRbacGuardAttribute()
+        {
+            var attribute = typeof(PortfolioMetricsController)
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
         }
 
         [Test]

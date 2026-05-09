@@ -15,6 +15,7 @@ describe("RbacSettings", () => {
 		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
 		grantSystemAdmin: vi.fn(),
 		revokeSystemAdmin: vi.fn(),
+		getAuthorizationSummary: vi.fn(),
 	};
 
 	const mockLicensingService = createMockLicensingService();

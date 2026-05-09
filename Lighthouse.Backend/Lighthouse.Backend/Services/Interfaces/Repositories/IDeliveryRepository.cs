@@ -10,5 +10,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         Delivery? GetByIdForUpdate(int id);
 
         List<Feature> GetFeaturesByIds(IEnumerable<int> featureIds);
+
+        int? GetPortfolioId(int deliveryId);
     }
 }

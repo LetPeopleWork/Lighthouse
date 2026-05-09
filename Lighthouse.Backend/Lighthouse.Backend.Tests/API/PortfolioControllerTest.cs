@@ -1,15 +1,13 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -313,25 +311,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolio_WhenRbacDeniesReadAccess_ReturnsNotFound()
+        public void GetPortfolio_HasPortfolioReadRbacGuardAttribute()
         {
-            var portfolio = new Portfolio { Id = 42, Name = "Protected" };
-            portfolioRepoMock.Setup(x => x.GetById(42)).Returns(portfolio);
+            var method = typeof(PortfolioController).GetMethod(nameof(PortfolioController.Get));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.CanReadPortfolioAsync(It.IsAny<ClaimsPrincipal>(), 42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-
-            var subject = CreateSubject();
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Get,
-                rbacAdministrationServiceMock.Object,
-                "auth0|viewer");
-
-            var result = subject.Get(42);
-
-            Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
         }
 
         [Test]
@@ -391,27 +381,5 @@ namespace Lighthouse.Backend.Tests.API
             ];
         }
 
-        private static ControllerContext BuildControllerContext(
-            string requestMethod,
-            IRbacAdministrationService rbacAdministrationService,
-            string subject)
-        {
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(rbacAdministrationService)
-                .BuildServiceProvider();
-
-            var httpContext = new DefaultHttpContext
-            {
-                RequestServices = serviceProvider,
-                User = new ClaimsPrincipal(
-                    new ClaimsIdentity([new Claim("sub", subject)], "TestAuth")),
-            };
-            httpContext.Request.Method = requestMethod;
-
-            return new ControllerContext
-            {
-                HttpContext = httpContext,
-            };
-        }
     }
 }

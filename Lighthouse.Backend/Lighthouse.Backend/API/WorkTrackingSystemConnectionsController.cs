@@ -2,7 +2,9 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -47,6 +49,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public ActionResult<IEnumerable<WorkTrackingSystemConnectionDto>> GetWorkTrackingSystemConnections()
         {
             var existingConnections = repository.GetAll();
@@ -56,6 +59,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> CreateNewWorkTrackingSystemConnectionAsync([FromBody] WorkTrackingSystemConnectionDto newConnection)
         {
             newConnection.Id = 0;
@@ -85,6 +89,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("validate")]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<object>> ValidateConnection(WorkTrackingSystemConnectionDto connectionDto)
         {
             PatchWorkTrackingSystemConnectionSecretsIfNeeded(connectionDto);

@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -27,6 +29,34 @@ namespace Lighthouse.Backend.Tests.API
 
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
+        }
+
+        [Test]
+        public void UpdateForecastsForTeamPortfolios_HasTeamWriteRbacGuardAttribute()
+        {
+            var method = typeof(ForecastController).GetMethod(nameof(ForecastController.UpdateForecastsForTeamPortfolios));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+        }
+
+        [Test]
+        public void RunManualForecastAsync_HasTeamWriteRbacGuardAttribute()
+        {
+            var method = typeof(ForecastController).GetMethod(nameof(ForecastController.RunManualForecastAsync));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("id"));
         }
 
         [Test]

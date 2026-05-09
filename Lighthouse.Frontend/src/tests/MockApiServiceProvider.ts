@@ -49,7 +49,7 @@ export const createMockApiServiceContext = (
 		terminologyService:
 			null as unknown as IApiServiceContext["terminologyService"],
 		licensingService: null as unknown as IApiServiceContext["licensingService"],
-		rbacService: null as unknown as IApiServiceContext["rbacService"],
+		rbacService: createMockRbacService(),
 		demoDataService: null as unknown as IApiServiceContext["demoDataService"],
 		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
@@ -258,6 +258,12 @@ export const createMockRbacService = (): IRbacService => {
 	return {
 		getStatus: vi.fn(),
 		getUsers: vi.fn(),
+		getAuthorizationSummary: vi.fn().mockResolvedValue({
+			isRbacEnabled: false,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		}),
 		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
 		grantSystemAdmin: vi.fn(),
 		revokeSystemAdmin: vi.fn(),

@@ -1,15 +1,13 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -546,48 +544,31 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeam_WhenRbacDeniesReadAccess_ReturnsNotFound()
+        public void GetTeam_HasTeamReadRbacGuardAttribute()
         {
-            var team = CreateTeam(1, "Protected Team");
-            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            var method = typeof(TeamController).GetMethod(nameof(TeamController.GetTeam));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.CanReadTeamAsync(It.IsAny<ClaimsPrincipal>(), team.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-
-            var subject = CreateSubject([team]);
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Get,
-                rbacAdministrationServiceMock.Object,
-                "auth0|viewer");
-
-            var result = subject.GetTeam(team.Id);
-
-            Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamRead));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
         }
 
         [Test]
-        public void UpdateTeamData_WhenRbacDeniesWriteAccess_ReturnsForbid()
+        public void UpdateTeamData_HasTeamWriteRbacGuardAttribute()
         {
-            const int teamId = 12;
-            var team = CreateTeam(teamId, "Protected Team");
-            teamRepositoryMock.Setup(x => x.GetById(teamId)).Returns(team);
+            var method = typeof(TeamController).GetMethod(nameof(TeamController.UpdateTeamData));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
 
-            var rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
-            rbacAdministrationServiceMock
-                .Setup(x => x.CanWriteTeamAsync(It.IsAny<ClaimsPrincipal>(), teamId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-
-            var subject = CreateSubject([team]);
-            subject.ControllerContext = BuildControllerContext(
-                HttpMethods.Post,
-                rbacAdministrationServiceMock.Object,
-                "auth0|viewer");
-
-            var result = subject.UpdateTeamData(teamId);
-
-            Assert.That(result, Is.InstanceOf<ForbidResult>());
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
         }
 
         [Test]
@@ -660,29 +641,6 @@ namespace Lighthouse.Backend.Tests.API
 
             return new TeamController(
                 teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object, refreshLogServiceMock.Object);
-        }
-
-        private static ControllerContext BuildControllerContext(
-            string requestMethod,
-            IRbacAdministrationService rbacAdministrationService,
-            string subject)
-        {
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(rbacAdministrationService)
-                .BuildServiceProvider();
-
-            var httpContext = new DefaultHttpContext
-            {
-                RequestServices = serviceProvider,
-                User = new ClaimsPrincipal(
-                    new ClaimsIdentity([new Claim("sub", subject)], "TestAuth")),
-            };
-            httpContext.Request.Method = requestMethod;
-
-            return new ControllerContext
-            {
-                HttpContext = httpContext,
-            };
         }
     }
 }

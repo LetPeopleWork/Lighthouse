@@ -1,7 +1,9 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +13,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/teams/{teamId:int}/metrics")]
     [Route("api/latest/teams/{teamId:int}/metrics")]
     [ApiController]
+    [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
     public class TeamMetricsController : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";

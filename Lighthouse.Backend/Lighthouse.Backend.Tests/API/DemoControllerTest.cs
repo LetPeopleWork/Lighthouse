@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DemoData;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -155,6 +157,18 @@ namespace Lighthouse.Backend.Tests.API
         private DemoController CreateSubject()
         {
             return new DemoController(demoDataServiceMock.Object, teamRepoMock.Object, teamUpdaterMock.Object, projectRepoMock.Object, projectUpdaterMock.Object);
+        }
+
+        [Test]
+        public void Controller_HasSystemAdminRbacGuardAttribute()
+        {
+            var attribute = typeof(DemoController)
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
     }
 }

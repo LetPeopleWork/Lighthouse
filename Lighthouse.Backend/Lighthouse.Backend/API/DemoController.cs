@@ -1,5 +1,6 @@
 ﻿﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DemoData;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -11,6 +12,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    [RbacGuard]
     public class DemoController : ControllerBase
     {
         private readonly IDemoDataService demoDataService;

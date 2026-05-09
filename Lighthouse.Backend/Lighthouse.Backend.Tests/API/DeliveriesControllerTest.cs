@@ -1,13 +1,17 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.DeliveryRules;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -19,6 +23,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ILicenseService> licenseServiceMock;
 
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
         public void Setup()
@@ -27,6 +32,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
 
             deliveryRuleServiceMock.Setup(x =>
                     x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
@@ -35,6 +41,13 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
 
             portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Portfolio());
+            rbacAdministrationServiceMock
+                .Setup(x => x.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    It.IsAny<RbacGuardRequirement>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
         }
 
         [Test]
@@ -225,8 +238,8 @@ namespace Lighthouse.Backend.Tests.API
             const int deliveryId = 1;
             var existingDelivery = GetTestDelivery();
 
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId))
-                .Returns(existingDelivery);
+            deliveryRepositoryMock.Setup(x => x.GetPortfolioId(deliveryId))
+                .Returns(existingDelivery.PortfolioId);
 
             var controller = CreateSubject();
 
@@ -245,7 +258,36 @@ namespace Lighthouse.Backend.Tests.API
                 deliveryRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 licenseServiceMock.Object,
-                deliveryRuleServiceMock.Object);
+                deliveryRuleServiceMock.Object,
+                rbacAdministrationServiceMock.Object);
+        }
+
+        [Test]
+        public void GetByPortfolio_HasPortfolioWriteRbacGuardAttribute()
+        {
+            var method = typeof(DeliveriesController).GetMethod(nameof(DeliveriesController.GetByPortfolio));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+        }
+
+        [Test]
+        public void CreateDelivery_HasPortfolioWriteRbacGuardAttribute()
+        {
+            var method = typeof(DeliveriesController).GetMethod(nameof(DeliveriesController.CreateDelivery));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
         }
 
         private static List<Feature> GetTestFeatures(List<int> ids)

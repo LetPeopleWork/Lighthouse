@@ -1,9 +1,12 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +21,8 @@ namespace Lighthouse.Backend.API
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
-        IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
+        IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet]
@@ -27,7 +31,10 @@ namespace Lighthouse.Backend.API
             var portfolioDtos = new List<PortfolioDto>();
 
             var allPortfolios = portfolioRepository.GetAll().ToList();
-            var readablePortfolioIds = this.GetReadablePortfolioIds(allPortfolios.Select(p => p.Id));
+            var readablePortfolioIds = rbacAdministrationService
+                .GetReadablePortfolioIdsAsync(User, allPortfolios.Select(p => p.Id), HttpContext?.RequestAborted ?? default)
+                .GetAwaiter()
+                .GetResult();
             var readablePortfolioIdSet = readablePortfolioIds.ToHashSet();
 
             foreach (var portfolio in allPortfolios.Where(portfolio => readablePortfolioIdSet.Contains(portfolio.Id)))
@@ -41,13 +48,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("refresh-all")]
         [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public ActionResult UpdateAllPortfolios()
         {
-            if (!this.CanExecuteSystemRbacAction())
-            {
-                return Forbid();
-            }
-
             var portfolios = portfolioRepository.GetAll();
 
             foreach (var portfolio in portfolios)
@@ -60,13 +63,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckPortfolioConstraint = true, PortfolioLimitOverride = 0)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<PortfolioSettingDto>> CreatePortfolio(PortfolioSettingDto portfolioSetting, CancellationToken cancellationToken = default)
         {
-            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
-            {
-                return Forbid();
-            }
-
             var baselineValidation = BaselineValidationService.Validate(
                 portfolioSetting.ProcessBehaviourChartBaselineStartDate,
                 portfolioSetting.ProcessBehaviourChartBaselineEndDate,
@@ -97,13 +96,9 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<object>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto, CancellationToken cancellationToken = default)
         {
-            if (!await this.CanExecuteSystemRbacActionAsync(cancellationToken))
-            {
-                return Forbid();
-            }
-
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(portfolioSettingDto.WorkTrackingSystemConnectionId);
             if (workTrackingSystem == null)
             {

@@ -358,12 +358,11 @@ describe("OverviewDashboard", () => {
 
 	it("shows RBAC no-access guidance when enabled and no teams or portfolios are visible", async () => {
 		const mockRbacService = createMockRbacService();
-		mockRbacService.getStatus = vi.fn().mockResolvedValue({
-			enabled: true,
-			premiumGateSatisfied: true,
-			hasSystemAdmin: true,
-			hasEmergencyAdminConfigured: false,
-			readyForEnablement: true,
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
 		});
 
 		renderWithProviders(
@@ -374,6 +373,101 @@ describe("OverviewDashboard", () => {
 
 		await waitFor(() => {
 			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+		});
+	});
+
+	it("hides Add Connection button when user is not system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.queryByText("Add Work Tracking System"),
+			).not.toBeInTheDocument();
+		});
+	});
+
+	it("shows Add Connection button when user is system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
+		});
+	});
+
+	it("hides Add Team button when RBAC is enabled and canCreateTeam is false", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		await waitFor(() => {
+			expect(screen.queryByText("Add Team")).not.toBeInTheDocument();
+		});
+	});
+
+	it("hides Add Portfolio button when RBAC is enabled and canCreatePortfolio is false", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: false,
+		});
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		await waitFor(() => {
+			expect(screen.queryByText("Add Portfolio")).not.toBeInTheDocument();
+		});
+	});
+
+	it("shows all action buttons when RBAC is disabled", async () => {
+		const mockRbacService = createMockRbacService();
+		// Default permissive summary (RBAC off) - all actions allowed
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: false,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
+			expect(screen.getByText("Add Team")).toBeInTheDocument();
+			expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		});
 	});
 });

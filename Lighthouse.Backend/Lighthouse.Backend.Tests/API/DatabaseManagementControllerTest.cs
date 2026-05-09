@@ -1,4 +1,6 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -273,6 +275,18 @@ namespace Lighthouse.Backend.Tests.API
             var result = subject.GetOperationStatus("unknown");
 
             Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void Controller_HasSystemAdminRbacGuardAttribute()
+        {
+            var attribute = typeof(DatabaseManagementController)
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
     }
 }

@@ -1,7 +1,9 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -144,6 +146,34 @@ namespace Lighthouse.Backend.Tests.API
                 Type = "Feature",
                 State = "In Progress"
             };
+        }
+
+        [Test]
+        public void GetSchema_HasPortfolioWriteRbacGuardAttribute()
+        {
+            var method = typeof(DeliveryRulesController).GetMethod(nameof(DeliveryRulesController.GetSchema));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+        }
+
+        [Test]
+        public void Validate_HasPortfolioWriteRbacGuardAttribute()
+        {
+            var method = typeof(DeliveryRulesController).GetMethod(nameof(DeliveryRulesController.Validate));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
         }
     }
 }

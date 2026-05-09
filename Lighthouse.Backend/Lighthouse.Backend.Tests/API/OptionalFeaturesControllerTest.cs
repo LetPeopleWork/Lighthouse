@@ -1,5 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -144,6 +146,18 @@ namespace Lighthouse.Backend.Tests.API
         private OptionalFeaturesController CreateSubject()
         {
             return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object);
+        }
+
+        [Test]
+        public void UpdateOptionalFeature_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(OptionalFeaturesController).GetMethod(nameof(OptionalFeaturesController.UpdateOptionalFeature));
+            var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
     }
 }
