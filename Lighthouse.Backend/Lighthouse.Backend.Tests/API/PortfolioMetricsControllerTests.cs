@@ -31,13 +31,13 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
             subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
-            
+
             project = new Portfolio
             {
                 Id = 1,
                 Name = "Test Project"
             };
-            
+
             portfolioRepository.Setup(x => x.GetById(1)).Returns(project);
             portfolioRepository.Setup(x => x.GetById(999)).Returns((Portfolio)null);
         }
@@ -50,9 +50,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            }
         }
 
         [Test]
@@ -61,7 +64,7 @@ namespace Lighthouse.Backend.Tests.API
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
             var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 0, 0, 1, 0, 0, 0, 0, 0, 0]));
-            
+
             projectMetricsService.Setup(x => x.GetThroughputForPortfolio(project, startDate, endDate))
                 .Returns(expectedResult);
 
@@ -258,7 +261,7 @@ namespace Lighthouse.Backend.Tests.API
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc);
             var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 2, 1, 1]));
-            
+
             projectMetricsService.Setup(x => x.GetFeaturesInProgressOverTimeForPortfolio(project, startDate, endDate))
                 .Returns(expectedResult);
 
@@ -289,7 +292,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-                
+
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
 
@@ -310,7 +313,7 @@ namespace Lighthouse.Backend.Tests.API
                 new PercentileValue(85, 5),
                 new PercentileValue(95, 6)
             };
-            
+
             projectMetricsService.Setup(x => x.GetCycleTimePercentilesForPortfolio(project, startDate, endDate))
                 .Returns(percentiles);
 
@@ -322,7 +325,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var okResult = result.Result as OkObjectResult;
                 var returnedPercentiles = okResult?.Value as IEnumerable<PercentileValue>;
-                
+
                 Assert.That(returnedPercentiles?.Count(), Is.EqualTo(4));
             }
         }

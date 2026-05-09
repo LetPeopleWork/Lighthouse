@@ -271,9 +271,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            }
         }
 
         [Test]
@@ -285,9 +288,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            }
         }
 
         private static List<Feature> GetTestFeatures(List<int> ids)
@@ -648,7 +654,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
-            
+
             Delivery? savedDelivery = null;
             deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
                 .Callback<Delivery>(d => savedDelivery = d);
@@ -690,12 +696,12 @@ namespace Lighthouse.Backend.Tests.API
                 Id = portfolioId,
                 Features = { new Feature { Id = 12 } }
             };
-            
+
             portfolioRepositoryMock.Setup(x => x.GetById(portfolioId)).Returns(portfolio);
             deliveryRuleServiceMock.Setup(x =>
                     x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns(portfolio.Features);
-            
+
             Delivery? savedDelivery = null;
             deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
                 .Callback<Delivery>(d => savedDelivery = d);
@@ -710,12 +716,12 @@ namespace Lighthouse.Backend.Tests.API
                 // Assert
                 Assert.That(result, Is.TypeOf<OkResult>());
                 Assert.That(savedDelivery, Is.Not.Null);
-                
+
                 Assert.That(savedDelivery.Features, Has.Count.EqualTo(1));
                 Assert.That(savedDelivery.Features.Single().Id, Is.EqualTo(12));
             }
         }
-        
+
         [Test]
         public async Task CreateDelivery_RuleBasedWithValidRules_FeatureDoesNotMatchRules_SetsFeaturesCorrectly()
         {
@@ -737,12 +743,12 @@ namespace Lighthouse.Backend.Tests.API
                 Id = portfolioId,
                 Features = { new Feature { Id = 12 } }
             };
-            
+
             portfolioRepositoryMock.Setup(x => x.GetById(portfolioId)).Returns(portfolio);
             deliveryRuleServiceMock.Setup(x =>
                     x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns([]);
-            
+
             Delivery? savedDelivery = null;
             deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
                 .Callback<Delivery>(d => savedDelivery = d);
@@ -757,7 +763,7 @@ namespace Lighthouse.Backend.Tests.API
                 // Assert
                 Assert.That(result, Is.TypeOf<OkResult>());
                 Assert.That(savedDelivery, Is.Not.Null);
-                
+
                 Assert.That(savedDelivery.Features, Has.Count.EqualTo(0));
             }
         }
@@ -781,7 +787,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
-            
+
             Delivery? savedDelivery = null;
             deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>()))
                 .Callback<Delivery>(d => savedDelivery = d);

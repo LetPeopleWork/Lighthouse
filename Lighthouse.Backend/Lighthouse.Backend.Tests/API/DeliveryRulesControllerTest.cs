@@ -157,9 +157,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            }
         }
 
         [Test]
@@ -171,9 +174,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            }
         }
     }
 }

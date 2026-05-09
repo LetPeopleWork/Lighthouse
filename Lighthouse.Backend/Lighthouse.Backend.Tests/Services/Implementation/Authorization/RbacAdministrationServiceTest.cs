@@ -225,7 +225,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 [44, 45],
                 CancellationToken.None);
 
-            Assert.That(readableIds, Is.EqualTo(new[] { 44 }));
+            Assert.That(readableIds, Is.EqualTo([44]));
         }
 
         [Test]

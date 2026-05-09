@@ -552,9 +552,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamRead));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamRead));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+            }
         }
 
         [Test]
@@ -566,9 +569,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+            }
         }
 
         [Test]

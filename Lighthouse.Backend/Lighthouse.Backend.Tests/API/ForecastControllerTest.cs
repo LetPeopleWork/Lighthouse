@@ -40,9 +40,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("teamId"));
+            }
         }
 
         [Test]
@@ -54,9 +57,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("id"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("id"));
+            }
         }
 
         [Test]
@@ -155,7 +161,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var expectedTeam = new Team();
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
-            
+
             var forecast = new HowManyForecast();
 
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(forecast);
@@ -333,11 +339,11 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(prediction.Likelihood, Is.Zero);
 
                 var forecasts = prediction.HowManyForecasts;
-                Assert.That(forecasts, Has.Count.EqualTo(4));                
+                Assert.That(forecasts, Has.Count.EqualTo(4));
                 Assert.That(forecasts[0].Value, Is.GreaterThan(forecasts[1].Value));
                 Assert.That(forecasts[1].Value, Is.GreaterThan(forecasts[2].Value));
                 Assert.That(forecasts[2].Value, Is.GreaterThan(forecasts[3].Value));
-                
+
                 Assert.That(forecasts[0].Probability, Is.EqualTo(95));
                 Assert.That(forecasts[1].Probability, Is.EqualTo(85));
                 Assert.That(forecasts[2].Probability, Is.EqualTo(70));

@@ -319,9 +319,12 @@ namespace Lighthouse.Backend.Tests.API
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
-            Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+            }
         }
 
         [Test]

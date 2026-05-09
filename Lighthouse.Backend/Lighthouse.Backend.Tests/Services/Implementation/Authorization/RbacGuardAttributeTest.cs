@@ -140,7 +140,10 @@ public class RbacGuardAttributeTest
 
         await attribute.OnAuthorizationAsync(context);
 
-        Assert.That(context.Result, Is.InstanceOf<StatusCodeResult>());
-        Assert.That(((StatusCodeResult)context.Result!).StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(context.Result, Is.InstanceOf<StatusCodeResult>());
+            Assert.That(((StatusCodeResult)context.Result!).StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
+        }
     }
 }
