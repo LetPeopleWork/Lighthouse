@@ -443,6 +443,7 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 			isSystemAdmin,
 			canCreateTeam: false,
 			canCreatePortfolio,
+			adminPortfolioIds: canCreatePortfolio ? [1] : [],
 		});
 		if (rbacOverrides) {
 			Object.assign(mockRbacService, rbacOverrides);
@@ -491,7 +492,7 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 		});
 	});
 
-	it("should show Deliveries and Settings tabs when user can create portfolio", async () => {
+	it("should show Deliveries and Settings tabs when user is admin of this portfolio", async () => {
 		renderWithRbac(true, true, false);
 
 		await waitFor(() => {

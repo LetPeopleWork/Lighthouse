@@ -28,6 +28,7 @@ const RbacSettings: React.FC = () => {
 	const [error, setError] = useState<string>();
 	const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
 	const [groupValueInput, setGroupValueInput] = useState("");
+	const [userSearchText, setUserSearchText] = useState("");
 
 	const load = useCallback(async () => {
 		setError(undefined);
@@ -117,9 +118,16 @@ const RbacSettings: React.FC = () => {
 		}
 	};
 
-	const visibleUsers = showUnassignedOnly
-		? users.filter((user) => user.isUnassigned)
-		: users;
+	const visibleUsers = users
+		.filter((user) => !showUnassignedOnly || user.isUnassigned)
+		.filter((user) => {
+			if (!userSearchText.trim()) return true;
+			const search = userSearchText.toLowerCase();
+			return (
+				(user.displayName ?? "").toLowerCase().includes(search) ||
+				(user.email ?? "").toLowerCase().includes(search)
+			);
+		});
 
 	return (
 		<Box>
@@ -168,19 +176,36 @@ const RbacSettings: React.FC = () => {
 			)}
 
 			<Typography variant="h6" sx={{ mb: 1 }}>
-				User Access
+				System Admins
 			</Typography>
 
-			<FormControlLabel
-				label="Show unassigned users only"
-				control={
-					<Checkbox
-						checked={showUnassignedOnly}
-						onChange={(_event, checked) => setShowUnassignedOnly(checked)}
-					/>
-				}
-				sx={{ mb: 1 }}
-			/>
+			<Box
+				sx={{
+					display: "flex",
+					gap: 2,
+					mb: 1,
+					flexWrap: "wrap",
+					alignItems: "center",
+				}}
+			>
+				<TextField
+					label="Search by name or email"
+					size="small"
+					value={userSearchText}
+					onChange={(event) => setUserSearchText(event.target.value)}
+					data-testid="rbac-user-search"
+					sx={{ minWidth: 220 }}
+				/>
+				<FormControlLabel
+					label="Show unassigned users only"
+					control={
+						<Checkbox
+							checked={showUnassignedOnly}
+							onChange={(_event, checked) => setShowUnassignedOnly(checked)}
+						/>
+					}
+				/>
+			</Box>
 
 			<Table size="small" data-testid="rbac-users-table">
 				<TableHead>

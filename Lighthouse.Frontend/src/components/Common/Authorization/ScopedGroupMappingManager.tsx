@@ -56,6 +56,12 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 	const [groupValueInput, setGroupValueInput] = useState("");
 	const [roleInput, setRoleInput] = useState<ScopedRbacRole>(allowedRoles[0]);
 	const [localError, setLocalError] = useState<string>();
+	const [searchText, setSearchText] = useState("");
+
+	const filteredMappings = mappings.filter((mapping) => {
+		if (!searchText.trim()) return true;
+		return mapping.groupValue.toLowerCase().includes(searchText.toLowerCase());
+	});
 
 	const handleCreate = async () => {
 		setLocalError(undefined);
@@ -116,6 +122,17 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 					</Button>
 				</Box>
 
+				<Box>
+					<TextField
+						label="Search groups"
+						size="small"
+						value={searchText}
+						onChange={(event) => setSearchText(event.target.value)}
+						data-testid="scoped-groups-search"
+						sx={{ minWidth: 220 }}
+					/>
+				</Box>
+
 				{loading ? (
 					<Box
 						sx={{
@@ -138,7 +155,7 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{mappings.map((mapping) => (
+							{filteredMappings.map((mapping) => (
 								<TableRow
 									key={mapping.id}
 									data-testid={`scoped-group-row-${mapping.id}`}

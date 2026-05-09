@@ -11,7 +11,8 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         LighthouseAppContext context,
         ILogger<CurrentUserProfileService> logger) : ICurrentUserProfileService
     {
-        public async Task<UserProfile?> GetOrCreateFromPrincipalAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+        public async Task<UserProfile?> GetOrCreateFromPrincipalAsync(
+    ClaimsPrincipal principal, CancellationToken cancellationToken = default)
         {
             var stableSubject = ResolveStableSubject(principal);
             if (stableSubject is null)
@@ -34,17 +35,29 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                     CreatedAt = DateTime.UtcNow,
                     LastSeenAt = DateTime.UtcNow,
                 };
-
                 context.UserProfiles.Add(createdProfile);
                 await context.SaveChangesAsync(cancellationToken);
                 return createdProfile;
             }
 
-            existingProfile.DisplayName = ResolveDisplayName(principal);
-            existingProfile.Email = ResolveEmail(principal);
-            existingProfile.LastSeenAt = DateTime.UtcNow;
+            // Bypass the change tracker entirely — only UPDATE this one row
+            var displayName = ResolveDisplayName(principal);
+            var email = ResolveEmail(principal);
+            var now = DateTime.UtcNow;
 
-            await context.SaveChangesAsync(cancellationToken);
+            await context.UserProfiles
+                .Where(p => p.Id == existingProfile.Id)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(p => p.DisplayName, displayName)
+                    .SetProperty(p => p.Email, email)
+                    .SetProperty(p => p.LastSeenAt, now),
+                    cancellationToken);
+
+            // Keep the in-memory object consistent with what we just wrote
+            existingProfile.DisplayName = displayName;
+            existingProfile.Email = email;
+            existingProfile.LastSeenAt = now;
+
             return existingProfile;
         }
 

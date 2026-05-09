@@ -355,6 +355,26 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             var canCreatePortfolio = isSystemAdmin || await CanCreatePortfolioAsync(principal, cancellationToken);
             var systemAdminDisplayNames = await GetSystemAdminDisplayNamesAsync(cancellationToken);
 
+            var adminTeamIds = new List<int>();
+            var adminPortfolioIds = new List<int>();
+
+            if (!isSystemAdmin)
+            {
+                var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+                if (currentUser is not null)
+                {
+                    var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+                    adminTeamIds.AddRange(
+                        effectivePermissions
+                            .Where(e => e.Key.ScopeType == PermissionScopeType.Team && e.Key.ScopeId.HasValue && e.Value == UserRole.TeamAdmin)
+                            .Select(e => e.Key.ScopeId!.Value));
+                    adminPortfolioIds.AddRange(
+                        effectivePermissions
+                            .Where(e => e.Key.ScopeType == PermissionScopeType.Portfolio && e.Key.ScopeId.HasValue && e.Value == UserRole.PortfolioAdmin)
+                            .Select(e => e.Key.ScopeId!.Value));
+                }
+            }
+
             return new UserAuthorizationSummary
             {
                 IsRbacEnabled = true,
@@ -362,6 +382,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 CanCreateTeam = canCreateTeam,
                 CanCreatePortfolio = canCreatePortfolio,
                 SystemAdminDisplayNames = systemAdminDisplayNames,
+                AdminTeamIds = adminTeamIds,
+                AdminPortfolioIds = adminPortfolioIds,
             };
         }
 

@@ -9,8 +9,10 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useState } from "react";
 import type {
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
@@ -57,6 +59,17 @@ const ScopedMembershipManager: React.FC<ScopedMembershipManagerProps> = ({
 	onAssignRole,
 	onRemoveRole,
 }) => {
+	const [searchText, setSearchText] = useState("");
+
+	const filteredMembers = members.filter((member) => {
+		if (!searchText.trim()) return true;
+		const search = searchText.toLowerCase();
+		return (
+			getMemberName(member).toLowerCase().includes(search) ||
+			(member.email ?? "").toLowerCase().includes(search)
+		);
+	});
+
 	return (
 		<Paper variant="outlined" sx={{ p: 2 }}>
 			<Stack spacing={2}>
@@ -65,6 +78,17 @@ const ScopedMembershipManager: React.FC<ScopedMembershipManagerProps> = ({
 				</Typography>
 
 				{error && <Alert severity="error">{error}</Alert>}
+
+				<Box>
+					<TextField
+						label="Search by name or email"
+						size="small"
+						value={searchText}
+						onChange={(event) => setSearchText(event.target.value)}
+						data-testid="scoped-members-search"
+						sx={{ minWidth: 220 }}
+					/>
+				</Box>
 
 				{loading ? (
 					<Box
@@ -89,7 +113,7 @@ const ScopedMembershipManager: React.FC<ScopedMembershipManagerProps> = ({
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{members.map((member) => (
+							{filteredMembers.map((member) => (
 								<TableRow
 									key={member.userProfileId}
 									data-testid={`scoped-member-row-${member.userProfileId}`}

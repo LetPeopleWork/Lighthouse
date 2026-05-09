@@ -26,7 +26,7 @@ import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import OnboardingStepper from "../../components/Common/OnboardingStepper/OnboardingStepper";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
-import type { UserAuthorizationSummary } from "../../models/Authorization/RbacModels";
+import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { Team } from "../../models/Team/Team";
@@ -42,12 +42,7 @@ const OverviewDashboard: React.FC = () => {
 	const [connections, setConnections] = useState<
 		IWorkTrackingSystemConnection[]
 	>([]);
-	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
-		isRbacEnabled: false,
-		isSystemAdmin: true,
-		canCreateTeam: true,
-		canCreatePortfolio: true,
-	});
+	const rbac = useRbac();
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
@@ -78,12 +73,8 @@ const OverviewDashboard: React.FC = () => {
 	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
 
-	const {
-		portfolioService,
-		teamService,
-		workTrackingSystemService,
-		rbacService,
-	} = useContext(ApiServiceContext);
+	const { portfolioService, teamService, workTrackingSystemService } =
+		useContext(ApiServiceContext);
 	const {
 		canCreatePortfolio,
 		canCreateTeam,
@@ -97,12 +88,6 @@ const OverviewDashboard: React.FC = () => {
 	const fetchData = useCallback(async () => {
 		try {
 			setIsLoading(true);
-			const permissiveSummary: UserAuthorizationSummary = {
-				isRbacEnabled: false,
-				isSystemAdmin: true,
-				canCreateTeam: true,
-				canCreatePortfolio: true,
-			};
 			const portfoliosPromise = portfolioService
 				.getPortfolios()
 				.catch((error: unknown) => {
@@ -129,23 +114,20 @@ const OverviewDashboard: React.FC = () => {
 
 					throw error;
 				});
-			const [portfolioData, teamData, connectionData, authSummaryData] =
-				await Promise.all([
-					portfoliosPromise,
-					teamsPromise,
-					configuredConnectionsPromise,
-					rbacService.getAuthorizationSummary().catch(() => permissiveSummary),
-				]);
+			const [portfolioData, teamData, connectionData] = await Promise.all([
+				portfoliosPromise,
+				teamsPromise,
+				configuredConnectionsPromise,
+			]);
 			setPortfolios(portfolioData);
 			setTeams(teamData);
 			setConnections(connectionData);
-			setAuthSummary(authSummaryData);
 			setIsLoading(false);
 		} catch (error) {
 			console.error("Error fetching overview data:", error);
 			setHasError(true);
 		}
-	}, [portfolioService, teamService, workTrackingSystemService, rbacService]);
+	}, [portfolioService, teamService, workTrackingSystemService]);
 
 	useEffect(() => {
 		fetchData();
@@ -348,11 +330,11 @@ const OverviewDashboard: React.FC = () => {
 
 	const hasPortfolios = portfolios.length > 0;
 	const showRbacNoAccessAlert =
-		authSummary.isRbacEnabled && portfolios.length === 0 && teams.length === 0;
+		rbac.isRbacEnabled && portfolios.length === 0 && teams.length === 0;
 	const noAccessGuidance =
-		authSummary.systemAdminDisplayNames &&
-		authSummary.systemAdminDisplayNames.length > 0
-			? `You currently do not have access to any teams or portfolios. Contact ${authSummary.systemAdminDisplayNames.join(", ")} to request access.`
+		rbac.summary.systemAdminDisplayNames &&
+		rbac.summary.systemAdminDisplayNames.length > 0
+			? `You currently do not have access to any teams or portfolios. Contact ${rbac.summary.systemAdminDisplayNames.join(", ")} to request access.`
 			: "You currently do not have access to any teams or portfolios. Contact a System Admin to request access.";
 
 	return (
@@ -380,10 +362,8 @@ const OverviewDashboard: React.FC = () => {
 						connectionTerm={connectionTerm}
 						hasTeams={hasTeams}
 						hasPortfolios={hasPortfolios}
-						canCreateTeam={canCreateTeam && authSummary.canCreateTeam}
-						canCreatePortfolio={
-							canCreatePortfolio && authSummary.canCreatePortfolio
-						}
+						canCreateTeam={canCreateTeam && rbac.canCreateTeam}
+						canCreatePortfolio={canCreatePortfolio && rbac.canCreatePortfolio}
 						teamTerm={teamTerm}
 						portfolioTerm={portfolioTerm}
 					/>
@@ -407,7 +387,7 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ fontWeight: 600 }}
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
-						{authSummary.isSystemAdmin && (
+						{rbac.isSystemAdmin && (
 							<ActionButton
 								buttonText={`Add ${connectionTerm}`}
 								startIcon={<AddIcon />}
@@ -415,7 +395,7 @@ const OverviewDashboard: React.FC = () => {
 								buttonVariant="contained"
 							/>
 						)}
-						{authSummary.canCreateTeam && (
+						{rbac.canCreateTeam && (
 							<Tooltip
 								title={
 									hasConnections
@@ -442,7 +422,7 @@ const OverviewDashboard: React.FC = () => {
 								</span>
 							</Tooltip>
 						)}
-						{authSummary.canCreatePortfolio && (
+						{rbac.canCreatePortfolio && (
 							<Tooltip
 								title={
 									hasTeams ? "" : "Create a team before adding a portfolio"

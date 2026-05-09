@@ -27,11 +27,11 @@ import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickS
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useRbac } from "../../../hooks/useRbac";
 import type {
 	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
-	UserAuthorizationSummary,
 } from "../../../models/Authorization/RbacModels";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -122,35 +122,10 @@ const TeamDetail: React.FC = () => {
 		rbacService,
 	} = useContext(ApiServiceContext);
 
-	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
-		isRbacEnabled: false,
-		isSystemAdmin: true,
-		canCreateTeam: true,
-		canCreatePortfolio: true,
-	});
+	const rbac = useRbac();
 
-	useEffect(() => {
-		let cancelled = false;
-		rbacService
-			.getAuthorizationSummary()
-			.then((summary) => {
-				if (!cancelled) setAuthSummary(summary);
-			})
-			.catch(() => {});
-		return () => {
-			cancelled = true;
-		};
-	}, [rbacService]);
-
-	const showSettingsTab =
-		!authSummary.isRbacEnabled ||
-		authSummary.isSystemAdmin ||
-		authSummary.canCreateTeam;
-
-	const showAccessTab =
-		!authSummary.isRbacEnabled ||
-		authSummary.isSystemAdmin ||
-		authSummary.canCreateTeam;
+	const showSettingsTab = !team || rbac.isTeamAdmin(team.id);
+	const showAccessTab = !team || rbac.isTeamAdmin(team.id);
 
 	const loadTeamMembers = useCallback(
 		async (targetTeamId: number) => {

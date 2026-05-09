@@ -602,13 +602,14 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 		});
 	});
 
-	it("should show Settings tab when user can create team", async () => {
+	it("should show Settings tab when user is admin of this team", async () => {
 		renderTeamDetail({
 			getAuthorizationSummary: vi.fn().mockResolvedValue({
 				isRbacEnabled: true,
 				isSystemAdmin: false,
-				canCreateTeam: true,
+				canCreateTeam: false,
 				canCreatePortfolio: false,
+				adminTeamIds: [1],
 			}),
 		});
 

@@ -23,6 +23,10 @@ export interface UserAuthorizationSummary {
 	canCreateTeam: boolean;
 	canCreatePortfolio: boolean;
 	systemAdminDisplayNames?: string[];
+	/** Team IDs where the current user has admin (write) rights. Empty when RBAC is disabled or user is System Admin. */
+	adminTeamIds?: number[];
+	/** Portfolio IDs where the current user has admin (write) rights. Empty when RBAC is disabled or user is System Admin. */
+	adminPortfolioIds?: number[];
 }
 
 export type ScopedRbacRole = "Viewer" | "TeamAdmin" | "PortfolioAdmin";

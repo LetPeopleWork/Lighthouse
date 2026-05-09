@@ -25,11 +25,11 @@ import SystemWipQuickSetting from "../../../components/Common/QuickSettings/Syst
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useRbac } from "../../../hooks/useRbac";
 import type {
 	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
-	UserAuthorizationSummary,
 } from "../../../models/Authorization/RbacModels";
 import type {
 	IPortfolio,
@@ -104,35 +104,11 @@ const PortfolioDetail: React.FC = () => {
 		rbacService,
 	} = useContext(ApiServiceContext);
 
-	const [authSummary, setAuthSummary] = useState<UserAuthorizationSummary>({
-		isRbacEnabled: false,
-		isSystemAdmin: true,
-		canCreateTeam: true,
-		canCreatePortfolio: true,
-	});
-
-	useEffect(() => {
-		let cancelled = false;
-		rbacService
-			.getAuthorizationSummary()
-			.then((summary) => {
-				if (!cancelled) setAuthSummary(summary);
-			})
-			.catch(() => {});
-		return () => {
-			cancelled = true;
-		};
-	}, [rbacService]);
+	const rbac = useRbac();
 
 	const showDeliveriesAndSettingsTabs =
-		!authSummary.isRbacEnabled ||
-		authSummary.isSystemAdmin ||
-		authSummary.canCreatePortfolio;
-
-	const showAccessTab =
-		!authSummary.isRbacEnabled ||
-		authSummary.isSystemAdmin ||
-		authSummary.canCreatePortfolio;
+		!portfolio || rbac.isPortfolioAdmin(portfolio.id);
+	const showAccessTab = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 
 	const loadPortfolioMembers = useCallback(
 		async (targetPortfolioId: number) => {
