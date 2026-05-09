@@ -552,6 +552,134 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             }
         }
 
+        [Test]
+        public async Task CanManageTeamMembershipAsync_WhenTeamAdminForDifferentTeam_ReturnsFalse()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|team-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 44 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var canManage = await subject.CanManageTeamMembershipAsync(principal, 45, CancellationToken.None);
+
+            Assert.That(canManage, Is.False);
+        }
+
+        [Test]
+        public async Task CanManagePortfolioMembershipAsync_WhenPortfolioAdminForScope_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|portfolio-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 9 });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|portfolio-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var canManage = await subject.CanManagePortfolioMembershipAsync(principal, 9, CancellationToken.None);
+
+            Assert.That(canManage, Is.True);
+        }
+
+        [Test]
+        public async Task SetTeamMemberRoleAsync_WhenRoleInvalidForScope_ReturnsFailure()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile { Id = 7, Subject = "auth0|target", SubjectClaimType = "sub" });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.SetTeamMemberRoleAsync(7, 12, UserRole.PortfolioAdmin, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Succeeded, Is.False);
+                Assert.That(result.ErrorCode, Is.EqualTo(RbacOperationErrorCodes.InvalidRoleForScope));
+            }
+        }
+
+        [Test]
+        public async Task SetPortfolioMemberRoleAsync_WhenExistingViewerPresent_ReplacesWithPortfolioAdmin()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile { Id = 7, Subject = "auth0|target", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 7,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 12,
+                Role = UserRole.Viewer,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.SetPortfolioMemberRoleAsync(7, 12, UserRole.PortfolioAdmin, CancellationToken.None);
+
+            var scopePermissions = await context.UserPermissions
+                .Where(x => x.UserProfileId == 7 && x.ScopeType == PermissionScopeType.Portfolio && x.ScopeId == 12)
+                .ToListAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(scopePermissions, Has.Count.EqualTo(1));
+                Assert.That(scopePermissions[0].Role, Is.EqualTo(UserRole.PortfolioAdmin));
+            }
+        }
+
+        [Test]
+        public async Task RemoveTeamMemberAsync_RemovesScopedMembershipRows()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile { Id = 8, Subject = "auth0|target", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 8,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 21,
+                Role = UserRole.Viewer,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.RemoveTeamMemberAsync(8, 21, CancellationToken.None);
+
+            var remaining = await context.UserPermissions
+                .Where(x => x.UserProfileId == 8 && x.ScopeType == PermissionScopeType.Team && x.ScopeId == 21)
+                .CountAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(remaining, Is.EqualTo(0));
+            }
+        }
+
         private RbacAdministrationService CreateSubject(
             LighthouseAppContext context,
             IReadOnlyList<string> emergencySubjects,

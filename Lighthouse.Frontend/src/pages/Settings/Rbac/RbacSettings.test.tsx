@@ -16,6 +16,12 @@ describe("RbacSettings", () => {
 		grantSystemAdmin: vi.fn(),
 		revokeSystemAdmin: vi.fn(),
 		getAuthorizationSummary: vi.fn(),
+		getTeamMembers: vi.fn(),
+		upsertTeamMember: vi.fn(),
+		removeTeamMember: vi.fn(),
+		getPortfolioMembers: vi.fn(),
+		upsertPortfolioMember: vi.fn(),
+		removePortfolioMember: vi.fn(),
 	};
 
 	const mockLicensingService = createMockLicensingService();

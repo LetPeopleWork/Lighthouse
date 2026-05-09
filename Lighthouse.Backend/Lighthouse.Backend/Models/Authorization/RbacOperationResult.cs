@@ -27,5 +27,7 @@ namespace Lighthouse.Backend.Models.Authorization
         public const string UserNotFound = "UserNotFound";
 
         public const string LastSystemAdmin = "LastSystemAdmin";
+
+        public const string InvalidRoleForScope = "InvalidRoleForScope";
     }
 }

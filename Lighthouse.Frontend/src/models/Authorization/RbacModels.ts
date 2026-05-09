@@ -20,3 +20,13 @@ export interface UserAuthorizationSummary {
 	canCreateTeam: boolean;
 	canCreatePortfolio: boolean;
 }
+
+export type ScopedRbacRole = "Viewer" | "TeamAdmin" | "PortfolioAdmin";
+
+export interface RbacScopedMemberSummary {
+	userProfileId: number;
+	subject: string;
+	displayName?: string;
+	email?: string;
+	role?: ScopedRbacRole | null;
+}

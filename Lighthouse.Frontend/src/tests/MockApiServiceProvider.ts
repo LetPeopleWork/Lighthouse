@@ -267,6 +267,12 @@ export const createMockRbacService = (): IRbacService => {
 		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
 		grantSystemAdmin: vi.fn(),
 		revokeSystemAdmin: vi.fn(),
+		getTeamMembers: vi.fn().mockResolvedValue([]),
+		upsertTeamMember: vi.fn(),
+		removeTeamMember: vi.fn(),
+		getPortfolioMembers: vi.fn().mockResolvedValue([]),
+		upsertPortfolioMember: vi.fn(),
+		removePortfolioMember: vi.fn(),
 	};
 };
 

@@ -490,6 +490,238 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 cancellationToken);
         }
 
+        public async Task<bool> CanManageTeamMembershipAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
+        {
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Team
+                    && p.ScopeId == teamId
+                    && p.Role == UserRole.TeamAdmin,
+                cancellationToken);
+        }
+
+        public async Task<bool> CanManagePortfolioMembershipAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
+        {
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return true;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return false;
+            }
+
+            return await context.UserPermissions.AnyAsync(
+                p => p.UserProfileId == currentUser.Id
+                    && p.ScopeType == PermissionScopeType.Portfolio
+                    && p.ScopeId == portfolioId
+                    && p.Role == UserRole.PortfolioAdmin,
+                cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<RbacScopedMemberSummary>> GetTeamMembersAsync(int teamId, CancellationToken cancellationToken = default)
+        {
+            var roleLookup = await context.UserPermissions
+                .Where(p => p.ScopeType == PermissionScopeType.Team
+                    && p.ScopeId == teamId
+                    && (p.Role == UserRole.TeamAdmin || p.Role == UserRole.Viewer))
+                .ToListAsync(cancellationToken);
+
+            var roleByUser = roleLookup
+                .GroupBy(x => x.UserProfileId)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Any(p => p.Role == UserRole.TeamAdmin) ? UserRole.TeamAdmin : UserRole.Viewer);
+
+            var users = await context.UserProfiles
+                .OrderBy(x => x.DisplayName)
+                .ThenBy(x => x.Email)
+                .Select(x => new RbacScopedMemberSummary
+                {
+                    UserProfileId = x.Id,
+                    Subject = x.Subject,
+                    DisplayName = x.DisplayName,
+                    Email = x.Email,
+                    Role = roleByUser.ContainsKey(x.Id) ? roleByUser[x.Id] : null,
+                })
+                .ToListAsync(cancellationToken);
+
+            return users;
+        }
+
+        public async Task<IReadOnlyList<RbacScopedMemberSummary>> GetPortfolioMembersAsync(int portfolioId, CancellationToken cancellationToken = default)
+        {
+            var roleLookup = await context.UserPermissions
+                .Where(p => p.ScopeType == PermissionScopeType.Portfolio
+                    && p.ScopeId == portfolioId
+                    && (p.Role == UserRole.PortfolioAdmin || p.Role == UserRole.Viewer))
+                .ToListAsync(cancellationToken);
+
+            var roleByUser = roleLookup
+                .GroupBy(x => x.UserProfileId)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Any(p => p.Role == UserRole.PortfolioAdmin) ? UserRole.PortfolioAdmin : UserRole.Viewer);
+
+            var users = await context.UserProfiles
+                .OrderBy(x => x.DisplayName)
+                .ThenBy(x => x.Email)
+                .Select(x => new RbacScopedMemberSummary
+                {
+                    UserProfileId = x.Id,
+                    Subject = x.Subject,
+                    DisplayName = x.DisplayName,
+                    Email = x.Email,
+                    Role = roleByUser.ContainsKey(x.Id) ? roleByUser[x.Id] : null,
+                })
+                .ToListAsync(cancellationToken);
+
+            return users;
+        }
+
+        public async Task<RbacOperationResult> SetTeamMemberRoleAsync(int userProfileId, int teamId, UserRole role, CancellationToken cancellationToken = default)
+        {
+            if (role != UserRole.TeamAdmin && role != UserRole.Viewer)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.InvalidRoleForScope,
+                    "Role is invalid for team scope.");
+            }
+
+            var userExists = await context.UserProfiles.AnyAsync(x => x.Id == userProfileId, cancellationToken);
+            if (!userExists)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.UserNotFound,
+                    "User profile was not found.");
+            }
+
+            var currentPermissions = await context.UserPermissions
+                .Where(x => x.UserProfileId == userProfileId
+                    && x.ScopeType == PermissionScopeType.Team
+                    && x.ScopeId == teamId
+                    && (x.Role == UserRole.TeamAdmin || x.Role == UserRole.Viewer))
+                .ToListAsync(cancellationToken);
+
+            var permissionsToRemove = currentPermissions.Where(x => x.Role != role).ToList();
+            if (permissionsToRemove.Count > 0)
+            {
+                context.UserPermissions.RemoveRange(permissionsToRemove);
+            }
+
+            if (!currentPermissions.Any(x => x.Role == role))
+            {
+                context.UserPermissions.Add(new UserPermission
+                {
+                    UserProfileId = userProfileId,
+                    ScopeType = PermissionScopeType.Team,
+                    ScopeId = teamId,
+                    Role = role,
+                    GrantedAt = DateTime.UtcNow,
+                });
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+            return RbacOperationResult.Success();
+        }
+
+        public async Task<RbacOperationResult> SetPortfolioMemberRoleAsync(int userProfileId, int portfolioId, UserRole role, CancellationToken cancellationToken = default)
+        {
+            if (role != UserRole.PortfolioAdmin && role != UserRole.Viewer)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.InvalidRoleForScope,
+                    "Role is invalid for portfolio scope.");
+            }
+
+            var userExists = await context.UserProfiles.AnyAsync(x => x.Id == userProfileId, cancellationToken);
+            if (!userExists)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.UserNotFound,
+                    "User profile was not found.");
+            }
+
+            var currentPermissions = await context.UserPermissions
+                .Where(x => x.UserProfileId == userProfileId
+                    && x.ScopeType == PermissionScopeType.Portfolio
+                    && x.ScopeId == portfolioId
+                    && (x.Role == UserRole.PortfolioAdmin || x.Role == UserRole.Viewer))
+                .ToListAsync(cancellationToken);
+
+            var permissionsToRemove = currentPermissions.Where(x => x.Role != role).ToList();
+            if (permissionsToRemove.Count > 0)
+            {
+                context.UserPermissions.RemoveRange(permissionsToRemove);
+            }
+
+            if (!currentPermissions.Any(x => x.Role == role))
+            {
+                context.UserPermissions.Add(new UserPermission
+                {
+                    UserProfileId = userProfileId,
+                    ScopeType = PermissionScopeType.Portfolio,
+                    ScopeId = portfolioId,
+                    Role = role,
+                    GrantedAt = DateTime.UtcNow,
+                });
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+            return RbacOperationResult.Success();
+        }
+
+        public async Task<RbacOperationResult> RemoveTeamMemberAsync(int userProfileId, int teamId, CancellationToken cancellationToken = default)
+        {
+            var memberships = await context.UserPermissions
+                .Where(x => x.UserProfileId == userProfileId
+                    && x.ScopeType == PermissionScopeType.Team
+                    && x.ScopeId == teamId
+                    && (x.Role == UserRole.TeamAdmin || x.Role == UserRole.Viewer))
+                .ToListAsync(cancellationToken);
+
+            if (memberships.Count == 0)
+            {
+                return RbacOperationResult.Success();
+            }
+
+            context.UserPermissions.RemoveRange(memberships);
+            await context.SaveChangesAsync(cancellationToken);
+            return RbacOperationResult.Success();
+        }
+
+        public async Task<RbacOperationResult> RemovePortfolioMemberAsync(int userProfileId, int portfolioId, CancellationToken cancellationToken = default)
+        {
+            var memberships = await context.UserPermissions
+                .Where(x => x.UserProfileId == userProfileId
+                    && x.ScopeType == PermissionScopeType.Portfolio
+                    && x.ScopeId == portfolioId
+                    && (x.Role == UserRole.PortfolioAdmin || x.Role == UserRole.Viewer))
+                .ToListAsync(cancellationToken);
+
+            if (memberships.Count == 0)
+            {
+                return RbacOperationResult.Success();
+            }
+
+            context.UserPermissions.RemoveRange(memberships);
+            await context.SaveChangesAsync(cancellationToken);
+            return RbacOperationResult.Success();
+        }
+
         private Task<bool> HasSystemAdminAsync(CancellationToken cancellationToken)
         {
             return context.UserPermissions.AnyAsync(

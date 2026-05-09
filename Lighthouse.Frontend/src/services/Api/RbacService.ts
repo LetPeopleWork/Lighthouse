@@ -1,6 +1,8 @@
 import type {
+	RbacScopedMemberSummary,
 	RbacStatus,
 	RbacUser,
+	ScopedRbacRole,
 	UserAuthorizationSummary,
 } from "../../models/Authorization/RbacModels";
 import { BaseApiService } from "./BaseApiService";
@@ -12,6 +14,23 @@ export interface IRbacService {
 	bootstrapCurrentUserAsSystemAdmin(): Promise<void>;
 	grantSystemAdmin(userId: number): Promise<void>;
 	revokeSystemAdmin(userId: number): Promise<void>;
+	getTeamMembers(teamId: number): Promise<RbacScopedMemberSummary[]>;
+	upsertTeamMember(
+		teamId: number,
+		userProfileId: number,
+		role: ScopedRbacRole,
+	): Promise<void>;
+	removeTeamMember(teamId: number, userProfileId: number): Promise<void>;
+	getPortfolioMembers(portfolioId: number): Promise<RbacScopedMemberSummary[]>;
+	upsertPortfolioMember(
+		portfolioId: number,
+		userProfileId: number,
+		role: ScopedRbacRole,
+	): Promise<void>;
+	removePortfolioMember(
+		portfolioId: number,
+		userProfileId: number,
+	): Promise<void>;
 }
 
 export class RbacService extends BaseApiService implements IRbacService {
@@ -57,6 +76,69 @@ export class RbacService extends BaseApiService implements IRbacService {
 	revokeSystemAdmin(userId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/authorization/system-admins/${userId}`);
+		});
+	}
+
+	getTeamMembers(teamId: number): Promise<RbacScopedMemberSummary[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RbacScopedMemberSummary[]>(
+				`/authorization/teams/${teamId}/members`,
+			);
+			return response.data;
+		});
+	}
+
+	upsertTeamMember(
+		teamId: number,
+		userProfileId: number,
+		role: ScopedRbacRole,
+	): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.put(
+				`/authorization/teams/${teamId}/members/${userProfileId}`,
+				{ role },
+			);
+		});
+	}
+
+	removeTeamMember(teamId: number, userProfileId: number): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(
+				`/authorization/teams/${teamId}/members/${userProfileId}`,
+			);
+		});
+	}
+
+	getPortfolioMembers(portfolioId: number): Promise<RbacScopedMemberSummary[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RbacScopedMemberSummary[]>(
+				`/authorization/portfolios/${portfolioId}/members`,
+			);
+			return response.data;
+		});
+	}
+
+	upsertPortfolioMember(
+		portfolioId: number,
+		userProfileId: number,
+		role: ScopedRbacRole,
+	): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.put(
+				`/authorization/portfolios/${portfolioId}/members/${userProfileId}`,
+				{ role },
+			);
+		});
+	}
+
+	removePortfolioMember(
+		portfolioId: number,
+		userProfileId: number,
+	): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(
+				`/authorization/portfolios/${portfolioId}/members/${userProfileId}`,
+			);
 		});
 	}
 }

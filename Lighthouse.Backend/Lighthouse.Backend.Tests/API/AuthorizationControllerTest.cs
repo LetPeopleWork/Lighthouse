@@ -132,6 +132,76 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task GetTeamMembers_WhenCallerCannotManageTeam_ReturnsForbid()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageTeamMembershipAsync(It.IsAny<ClaimsPrincipal>(), 12, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubjectWithUser("auth0|viewer");
+
+            var result = await subject.GetTeamMembers(12, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
+
+        [Test]
+        public async Task UpsertTeamMember_WhenRoleInvalidForScope_ReturnsBadRequest()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageTeamMembershipAsync(It.IsAny<ClaimsPrincipal>(), 12, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.SetTeamMemberRoleAsync(7, 12, UserRole.PortfolioAdmin, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Failure(RbacOperationErrorCodes.InvalidRoleForScope, "Role is invalid for team scope."));
+
+            var subject = CreateSubjectWithUser("auth0|team-admin");
+
+            var result = await subject.UpsertTeamMember(
+                12,
+                7,
+                new ScopedMemberRoleRequest { Role = "PortfolioAdmin" },
+                CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public async Task GetPortfolioMembers_WhenCallerCanManagePortfolio_ReturnsOkWithMembers()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManagePortfolioMembershipAsync(It.IsAny<ClaimsPrincipal>(), 9, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.GetPortfolioMembersAsync(9, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new RbacScopedMemberSummary
+                    {
+                        UserProfileId = 22,
+                        Subject = "auth0|member",
+                        DisplayName = "Member",
+                        Role = UserRole.Viewer,
+                    }
+                ]);
+
+            var subject = CreateSubjectWithUser("auth0|portfolio-admin");
+
+            var result = await subject.GetPortfolioMembers(9, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = (OkObjectResult)result;
+                var members = okResult.Value as IReadOnlyList<RbacScopedMemberSummary>;
+                Assert.That(members, Is.Not.Null);
+                Assert.That(members!.Count, Is.EqualTo(1));
+                Assert.That(members[0].UserProfileId, Is.EqualTo(22));
+            }
+        }
+
         private AuthorizationController CreateSubjectWithUser(string subjectClaim)
         {
             var identity = new ClaimsIdentity([new Claim("sub", subjectClaim)], "TestAuth");

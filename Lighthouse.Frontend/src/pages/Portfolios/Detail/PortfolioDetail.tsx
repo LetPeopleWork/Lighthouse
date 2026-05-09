@@ -13,6 +13,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -23,7 +24,11 @@ import SystemWipQuickSetting from "../../../components/Common/QuickSettings/Syst
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import type { UserAuthorizationSummary } from "../../../models/Authorization/RbacModels";
+import type {
+	RbacScopedMemberSummary,
+	ScopedRbacRole,
+	UserAuthorizationSummary,
+} from "../../../models/Authorization/RbacModels";
 import type {
 	IPortfolio,
 	Portfolio,
@@ -37,7 +42,12 @@ import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import PortfolioForecastView from "./PortfolioForecastView";
 import PortfolioMetricsView from "./PortfolioMetricsView";
 
-type PortfolioViewType = "features" | "metrics" | "deliveries" | "settings";
+type PortfolioViewType =
+	| "features"
+	| "metrics"
+	| "deliveries"
+	| "settings"
+	| "access";
 
 const PortfolioDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -57,6 +67,7 @@ const PortfolioDetail: React.FC = () => {
 		if (tabParam === "metrics") return "metrics";
 		if (tabParam === "deliveries") return "deliveries";
 		if (tabParam === "settings") return "settings";
+		if (tabParam === "access") return "access";
 		return "features";
 	};
 
@@ -64,6 +75,11 @@ const PortfolioDetail: React.FC = () => {
 		getInitialActiveView(tab),
 	);
 	const [pendingPortfolioRefresh, setPendingPortfolioRefresh] = useState(false);
+	const [portfolioMembers, setPortfolioMembers] = useState<
+		RbacScopedMemberSummary[]
+	>([]);
+	const [portfolioMembersLoading, setPortfolioMembersLoading] = useState(false);
+	const [portfolioMembersError, setPortfolioMembersError] = useState<string>();
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -103,6 +119,66 @@ const PortfolioDetail: React.FC = () => {
 		!authSummary.isRbacEnabled ||
 		authSummary.isSystemAdmin ||
 		authSummary.canCreatePortfolio;
+
+	const showAccessTab =
+		!authSummary.isRbacEnabled ||
+		authSummary.isSystemAdmin ||
+		authSummary.canCreatePortfolio;
+
+	const loadPortfolioMembers = useCallback(
+		async (targetPortfolioId: number) => {
+			setPortfolioMembersError(undefined);
+			setPortfolioMembersLoading(true);
+			try {
+				const members =
+					await rbacService.getPortfolioMembers(targetPortfolioId);
+				setPortfolioMembers(members);
+			} catch {
+				setPortfolioMembersError("Failed to load portfolio members.");
+			} finally {
+				setPortfolioMembersLoading(false);
+			}
+		},
+		[rbacService],
+	);
+
+	const handleAssignPortfolioRole = useCallback(
+		async (userProfileId: number, role: ScopedRbacRole) => {
+			if (!portfolio) {
+				return;
+			}
+
+			setPortfolioMembersError(undefined);
+			try {
+				await rbacService.upsertPortfolioMember(
+					portfolio.id,
+					userProfileId,
+					role,
+				);
+				await loadPortfolioMembers(portfolio.id);
+			} catch {
+				setPortfolioMembersError("Failed to update portfolio member role.");
+			}
+		},
+		[rbacService, portfolio, loadPortfolioMembers],
+	);
+
+	const handleRemovePortfolioMember = useCallback(
+		async (userProfileId: number) => {
+			if (!portfolio) {
+				return;
+			}
+
+			setPortfolioMembersError(undefined);
+			try {
+				await rbacService.removePortfolioMember(portfolio.id, userProfileId);
+				await loadPortfolioMembers(portfolio.id);
+			} catch {
+				setPortfolioMembersError("Failed to remove portfolio member.");
+			}
+		},
+		[rbacService, portfolio, loadPortfolioMembers],
+	);
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -301,6 +377,12 @@ const PortfolioDetail: React.FC = () => {
 		}
 	}, [activeView, pendingPortfolioRefresh, fetchPortfolio]);
 
+	useEffect(() => {
+		if (activeView === "access" && portfolio) {
+			void loadPortfolioMembers(portfolio.id);
+		}
+	}, [activeView, portfolio, loadPortfolioMembers]);
+
 	return (
 		<SnackbarErrorHandler>
 			<LoadingAnimation hasError={false} isLoading={isLoading}>
@@ -379,6 +461,7 @@ const PortfolioDetail: React.FC = () => {
 											{showDeliveriesAndSettingsTabs && (
 												<Tab label="Settings" value="settings" />
 											)}
+											{showAccessTab && <Tab label="Access" value="access" />}
 										</Tabs>
 									}
 									rightContent={
@@ -437,6 +520,18 @@ const PortfolioDetail: React.FC = () => {
 										validateProjectSettings={(settings) =>
 											portfolioService.validatePortfolioSettings(settings)
 										}
+									/>
+								)}
+
+								{activeView === "access" && portfolio && (
+									<ScopedMembershipManager
+										title="Portfolio Access"
+										members={portfolioMembers}
+										allowedRoles={["PortfolioAdmin", "Viewer"]}
+										loading={portfolioMembersLoading}
+										error={portfolioMembersError}
+										onAssignRole={handleAssignPortfolioRole}
+										onRemoveRole={handleRemovePortfolioMember}
 									/>
 								)}
 							</Grid>

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+	RbacScopedMemberSummary,
 	RbacStatus,
 	RbacUser,
 	UserAuthorizationSummary,
@@ -109,5 +110,89 @@ describe("RbacService", () => {
 
 		expect(result).toEqual(mockSummary);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/authorization/my-summary");
+	});
+
+	it("should fetch team members", async () => {
+		const mockMembers: RbacScopedMemberSummary[] = [
+			{
+				userProfileId: 1,
+				subject: "auth0|team-admin",
+				displayName: "Team Admin",
+				email: "team-admin@example.com",
+				role: "TeamAdmin",
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockMembers });
+
+		const result = await subject.getTeamMembers(12);
+
+		expect(result).toEqual(mockMembers);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/teams/12/members",
+		);
+	});
+
+	it("should upsert team member role", async () => {
+		mockedAxios.put.mockResolvedValueOnce({ data: {} });
+
+		await subject.upsertTeamMember(12, 7, "Viewer");
+
+		expect(mockedAxios.put).toHaveBeenCalledWith(
+			"/authorization/teams/12/members/7",
+			{ role: "Viewer" },
+		);
+	});
+
+	it("should remove team member", async () => {
+		mockedAxios.delete.mockResolvedValueOnce({ data: {} });
+
+		await subject.removeTeamMember(12, 7);
+
+		expect(mockedAxios.delete).toHaveBeenCalledWith(
+			"/authorization/teams/12/members/7",
+		);
+	});
+
+	it("should fetch portfolio members", async () => {
+		const mockMembers: RbacScopedMemberSummary[] = [
+			{
+				userProfileId: 2,
+				subject: "auth0|portfolio-admin",
+				displayName: "Portfolio Admin",
+				email: "portfolio-admin@example.com",
+				role: "PortfolioAdmin",
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockMembers });
+
+		const result = await subject.getPortfolioMembers(9);
+
+		expect(result).toEqual(mockMembers);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/portfolios/9/members",
+		);
+	});
+
+	it("should upsert portfolio member role", async () => {
+		mockedAxios.put.mockResolvedValueOnce({ data: {} });
+
+		await subject.upsertPortfolioMember(9, 11, "PortfolioAdmin");
+
+		expect(mockedAxios.put).toHaveBeenCalledWith(
+			"/authorization/portfolios/9/members/11",
+			{ role: "PortfolioAdmin" },
+		);
+	});
+
+	it("should remove portfolio member", async () => {
+		mockedAxios.delete.mockResolvedValueOnce({ data: {} });
+
+		await subject.removePortfolioMember(9, 11);
+
+		expect(mockedAxios.delete).toHaveBeenCalledWith(
+			"/authorization/portfolios/9/members/11",
+		);
 	});
 });

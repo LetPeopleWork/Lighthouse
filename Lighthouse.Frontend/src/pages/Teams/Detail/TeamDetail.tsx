@@ -14,6 +14,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -25,7 +26,11 @@ import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickS
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import type { UserAuthorizationSummary } from "../../../models/Authorization/RbacModels";
+import type {
+	RbacScopedMemberSummary,
+	ScopedRbacRole,
+	UserAuthorizationSummary,
+} from "../../../models/Authorization/RbacModels";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -35,7 +40,12 @@ import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
 
-type TeamViewType = "features" | "forecasts" | "metrics" | "settings";
+type TeamViewType =
+	| "features"
+	| "forecasts"
+	| "metrics"
+	| "settings"
+	| "access";
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -68,6 +78,10 @@ const TeamDetail: React.FC = () => {
 			return "settings";
 		}
 
+		if (tabParam === "access") {
+			return "access";
+		}
+
 		// If features tab is requested but team has no features, redirect to forecasts
 		if (tabParam === "features" && teamData?.features.length === 0) {
 			return "forecasts";
@@ -84,6 +98,9 @@ const TeamDetail: React.FC = () => {
 		getInitialView(tab, undefined),
 	);
 	const [pendingTeamRefresh, setPendingTeamRefresh] = useState(false);
+	const [teamMembers, setTeamMembers] = useState<RbacScopedMemberSummary[]>([]);
+	const [teamMembersLoading, setTeamMembersLoading] = useState(false);
+	const [teamMembersError, setTeamMembersError] = useState<string>();
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -120,6 +137,61 @@ const TeamDetail: React.FC = () => {
 		!authSummary.isRbacEnabled ||
 		authSummary.isSystemAdmin ||
 		authSummary.canCreateTeam;
+
+	const showAccessTab =
+		!authSummary.isRbacEnabled ||
+		authSummary.isSystemAdmin ||
+		authSummary.canCreateTeam;
+
+	const loadTeamMembers = useCallback(
+		async (targetTeamId: number) => {
+			setTeamMembersError(undefined);
+			setTeamMembersLoading(true);
+			try {
+				const members = await rbacService.getTeamMembers(targetTeamId);
+				setTeamMembers(members);
+			} catch {
+				setTeamMembersError("Failed to load team members.");
+			} finally {
+				setTeamMembersLoading(false);
+			}
+		},
+		[rbacService],
+	);
+
+	const handleAssignTeamRole = useCallback(
+		async (userProfileId: number, role: ScopedRbacRole) => {
+			if (!team) {
+				return;
+			}
+
+			setTeamMembersError(undefined);
+			try {
+				await rbacService.upsertTeamMember(team.id, userProfileId, role);
+				await loadTeamMembers(team.id);
+			} catch {
+				setTeamMembersError("Failed to update team member role.");
+			}
+		},
+		[rbacService, team, loadTeamMembers],
+	);
+
+	const handleRemoveTeamMember = useCallback(
+		async (userProfileId: number) => {
+			if (!team) {
+				return;
+			}
+
+			setTeamMembersError(undefined);
+			try {
+				await rbacService.removeTeamMember(team.id, userProfileId);
+				await loadTeamMembers(team.id);
+			} catch {
+				setTeamMembersError("Failed to remove team member.");
+			}
+		},
+		[rbacService, team, loadTeamMembers],
+	);
 
 	const fetchTeam = useCallback(async () => {
 		setHasNoAccess(false);
@@ -242,6 +314,12 @@ const TeamDetail: React.FC = () => {
 		}
 	}, [activeView, pendingTeamRefresh, fetchTeam]);
 
+	useEffect(() => {
+		if (activeView === "access" && team) {
+			void loadTeamMembers(team.id);
+		}
+	}, [activeView, team, loadTeamMembers]);
+
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
 		newView: TeamViewType,
@@ -362,6 +440,7 @@ const TeamDetail: React.FC = () => {
 											{showSettingsTab && (
 												<Tab label="Settings" value="settings" />
 											)}
+											{showAccessTab && <Tab label="Access" value="access" />}
 										</Tabs>
 									}
 									rightContent={
@@ -417,6 +496,18 @@ const TeamDetail: React.FC = () => {
 										}
 										disableSave={!canUpdateTeamData}
 										saveTooltip={`Free users can only update team settings for up to ${maxTeamsWithoutPremium} teams`}
+									/>
+								)}
+
+								{activeView === "access" && team && (
+									<ScopedMembershipManager
+										title="Team Access"
+										members={teamMembers}
+										allowedRoles={["TeamAdmin", "Viewer"]}
+										loading={teamMembersLoading}
+										error={teamMembersError}
+										onAssignRole={handleAssignTeamRole}
+										onRemoveRole={handleRemoveTeamMember}
 									/>
 								)}
 							</Grid>

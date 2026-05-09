@@ -423,6 +423,7 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 		isRbacEnabled: boolean,
 		canCreatePortfolio: boolean,
 		isSystemAdmin: boolean,
+		rbacOverrides?: Partial<ReturnType<typeof createMockRbacService>>,
 	) => {
 		const mockPortfolioSvc = createMockPortfolioService();
 		const portfolio = new Portfolio();
@@ -443,6 +444,9 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 			canCreateTeam: false,
 			canCreatePortfolio,
 		});
+		if (rbacOverrides) {
+			Object.assign(mockRbacService, rbacOverrides);
+		}
 
 		const mockContext = createMockApiServiceContext({
 			portfolioService: mockPortfolioSvc,
@@ -456,10 +460,13 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 				<MemoryRouter initialEntries={["/portfolios/1"]}>
 					<Routes>
 						<Route path="/portfolios/:id" element={<PortfolioDetail />} />
+						<Route path="/portfolios/:id/:tab" element={<PortfolioDetail />} />
 					</Routes>
 				</MemoryRouter>
 			</ApiServiceContext.Provider>,
 		);
+
+		return { mockRbacService };
 	};
 
 	it("should show Deliveries and Settings tabs when RBAC is disabled", async () => {
@@ -506,5 +513,32 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 				screen.queryByRole("tab", { name: "Settings" }),
 			).not.toBeInTheDocument();
 		});
+	});
+
+	it("loads and renders portfolio membership manager on access tab", async () => {
+		const getPortfolioMembers = vi.fn().mockResolvedValue([
+			{
+				userProfileId: 23,
+				subject: "auth0|member",
+				displayName: "Member",
+				email: "member@example.com",
+				role: "Viewer",
+			},
+		]);
+
+		renderWithRbac(true, true, false, { getPortfolioMembers });
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Access" })).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("tab", { name: "Access" }));
+
+		await waitFor(() => {
+			expect(screen.getByText("Portfolio Access")).toBeInTheDocument();
+			expect(screen.getByTestId("scoped-member-row-23")).toBeInTheDocument();
+		});
+
+		expect(getPortfolioMembers).toHaveBeenCalledWith(1);
 	});
 });

@@ -568,6 +568,8 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 				</ApiServiceContext.Provider>
 			</BrowserRouter>,
 		);
+
+		return { mockRbacService };
 	};
 
 	it("should show Settings tab when RBAC is disabled", async () => {
@@ -630,5 +632,35 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 				screen.queryByRole("tab", { name: "Settings" }),
 			).not.toBeInTheDocument();
 		});
+	});
+
+	it("loads and renders team membership manager on access tab", async () => {
+		mockParams = { id: "1", tab: "access" };
+		const getTeamMembers = vi.fn().mockResolvedValue([
+			{
+				userProfileId: 17,
+				subject: "auth0|member",
+				displayName: "Member",
+				email: "member@example.com",
+				role: "Viewer",
+			},
+		]);
+
+		renderTeamDetail({
+			getAuthorizationSummary: vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: true,
+				canCreatePortfolio: false,
+			}),
+			getTeamMembers,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("Team Access")).toBeInTheDocument();
+			expect(screen.getByTestId("scoped-member-row-17")).toBeInTheDocument();
+		});
+
+		expect(getTeamMembers).toHaveBeenCalledWith(1);
 	});
 });
