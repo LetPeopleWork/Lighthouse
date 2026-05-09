@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeam_TeamExists_ReturnsTeam()
+        public async Task GetTeam_TeamExists_ReturnsTeam()
         {
             var team = CreateTeam(1, "Numero Uno");
 
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team], [portfolio1, portfolio2]);
 
-            var result = subject.GetTeam(1);
+            var result = await subject.GetTeam(1);
 
             using (Assert.EnterMultipleScope())
             {
@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeam_WhenSomeLinkedPortfoliosAreUnreadable_FiltersPortfoliosAndFeatures()
+        public async Task GetTeam_WhenSomeLinkedPortfoliosAreUnreadable_FiltersPortfoliosAndFeatures()
         {
             var team = CreateTeam(1, "Numero Uno");
             var visiblePortfolio = CreatePortfolio(42, "Visible Portfolio");
@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team], [visiblePortfolio, hiddenPortfolio]);
 
-            var result = subject.GetTeam(1);
+            var result = await subject.GetTeam(1);
 
             using (Assert.EnterMultipleScope())
             {
@@ -154,11 +154,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeam_TeamDoesNotExist_ReturnsNotFound()
+        public async Task GetTeam_TeamDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var result = subject.GetTeam(1);
+            var result = await subject.GetTeam(1);
 
             using (Assert.EnterMultipleScope())
             {
@@ -539,7 +539,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeam_WithBlackoutOverlap_SetsHasThroughputBlackoutOverlapTrue()
+        public async Task GetTeam_WithBlackoutOverlap_SetsHasThroughputBlackoutOverlapTrue()
         {
             var team = CreateTeam(1, "Team 1");
             team.ThroughputHistory = 30;
@@ -553,7 +553,7 @@ namespace Lighthouse.Backend.Tests.API
             ]);
 
             var subject = CreateSubject([team]);
-            var result = subject.GetTeam(1);
+            var result = await subject.GetTeam(1);
 
             var okResult = result.Result as OkObjectResult;
             var dto = okResult!.Value as TeamDto;
@@ -561,7 +561,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeam_WithoutBlackoutOverlap_SetsHasThroughputBlackoutOverlapFalse()
+        public async Task GetTeam_WithoutBlackoutOverlap_SetsHasThroughputBlackoutOverlapFalse()
         {
             var team = CreateTeam(1, "Team 1");
             team.ThroughputHistory = 30;
@@ -572,7 +572,7 @@ namespace Lighthouse.Backend.Tests.API
             ]);
 
             var subject = CreateSubject([team]);
-            var result = subject.GetTeam(1);
+            var result = await subject.GetTeam(1);
 
             var okResult = result.Result as OkObjectResult;
             var dto = okResult!.Value as TeamDto;

@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
         /// <summary>
         /// Deletes an API key by ID if owned by the given subject. Returns false if not found or not owned by the subject.
         /// </summary>
-        bool DeleteApiKey(int id, string ownerSubject);
+        Task<bool> DeleteApiKey(int id, string ownerSubject);
 
         /// <summary>
         /// Validates a plaintext API key and returns owner resolution details for authentication.

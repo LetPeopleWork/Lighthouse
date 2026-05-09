@@ -48,13 +48,13 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_SingleTeam_NoPortfolios()
+        public async Task GetTeams_SingleTeam_NoPortfolios()
         {
             var team = CreateTeam(1, "Numero Uno");
 
             var subject = CreateSubject([team]);
 
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             var result = results.Single();
             using (Assert.EnterMultipleScope())
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_SingleTeam_SinglePortfolio_SingleFeature()
+        public async Task GetTeams_SingleTeam_SinglePortfolio_SingleFeature()
         {
             var team = CreateTeam(1, "Numero Uno");
             var portfolio = CreatePortfolio(42, "My Portfolio");
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team], [portfolio]);
 
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             var result = results.Single();
             using (Assert.EnterMultipleScope())
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_SingleTeam_SinglePortfolio_MultipleFeatures()
+        public async Task GetTeams_SingleTeam_SinglePortfolio_MultipleFeatures()
         {
             var team = CreateTeam(1, "Numero Uno");
             var portfolio = CreatePortfolio(42, "My Portfolio");
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team], [portfolio]);
 
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             var result = results.Single();
             using (Assert.EnterMultipleScope())
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_SingleTeam_MultiplePortfolios_MultipleFeatures()
+        public async Task GetTeams_SingleTeam_MultiplePortfolios_MultipleFeatures()
         {
             var team = CreateTeam(1, "Numero Uno");
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team], [portfolio1, portfolio2]);
 
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             var result = results.Single();
             using (Assert.EnterMultipleScope())
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_WhenLinkedPortfoliosAreUnreadable_FiltersPortfoliosAndFeatures()
+        public async Task GetTeams_WhenLinkedPortfoliosAreUnreadable_FiltersPortfoliosAndFeatures()
         {
             var team = CreateTeam(1, "Numero Uno");
             var visiblePortfolio = CreatePortfolio(42, "Visible Portfolio");
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team], [visiblePortfolio, hiddenPortfolio]);
 
-            var result = subject.GetTeams().Single();
+            var result = (await subject.GetTeams()).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_MultipleTeams_MultiplePortfolios_MultipleFeatures()
+        public async Task GetTeams_MultipleTeams_MultiplePortfolios_MultipleFeatures()
         {
             var team1 = CreateTeam(1, "Numero Uno");
             var portfolio1 = CreatePortfolio(42, "My Portfolio");
@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([team1, team2], [portfolio1, portfolio2]);
 
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             var team1Results = results[0];
             var team2Results = results[^1];
@@ -471,7 +471,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTeams_WithBlackoutOverlap_SetsHasThroughputBlackoutOverlapTrue()
+        public async Task GetTeams_WithBlackoutOverlap_SetsHasThroughputBlackoutOverlapTrue()
         {
             var team = CreateTeam(1, "Team 1");
             team.ThroughputHistory = 30;
@@ -484,13 +484,13 @@ namespace Lighthouse.Backend.Tests.API
             ]);
 
             var subject = CreateSubject([team]);
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             Assert.That(results.Single().HasThroughputBlackoutOverlap, Is.True);
         }
 
         [Test]
-        public void GetTeams_WithoutBlackoutOverlap_SetsHasThroughputBlackoutOverlapFalse()
+        public async Task GetTeams_WithoutBlackoutOverlap_SetsHasThroughputBlackoutOverlapFalse()
         {
             var team = CreateTeam(1, "Team 1");
             team.ThroughputHistory = 30;
@@ -500,13 +500,13 @@ namespace Lighthouse.Backend.Tests.API
             ]);
 
             var subject = CreateSubject([team]);
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             Assert.That(results.Single().HasThroughputBlackoutOverlap, Is.False);
         }
 
         [Test]
-        public void GetTeams_WhenRbacIsEnabled_FiltersToReadableTeams()
+        public async Task GetTeams_WhenRbacIsEnabled_FiltersToReadableTeams()
         {
             var firstTeam = CreateTeam(1, "Visible Team");
             var secondTeam = CreateTeam(2, "Hidden Team");
@@ -517,7 +517,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject([firstTeam, secondTeam]);
 
-            var results = subject.GetTeams().ToList();
+            var results = (await subject.GetTeams()).ToList();
 
             using (Assert.EnterMultipleScope())
             {

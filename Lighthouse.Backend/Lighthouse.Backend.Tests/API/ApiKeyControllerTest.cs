@@ -126,45 +126,45 @@ namespace Lighthouse.Backend.Tests.API
         // --- Delete ---
 
         [Test]
-        public void DeleteApiKey_ExistingId_ReturnsNoContent()
+        public async Task DeleteApiKey_ExistingId_ReturnsNoContent()
         {
-            apiKeyServiceMock.Setup(x => x.DeleteApiKey(5, "alice-subject")).Returns(true);
+            apiKeyServiceMock.Setup(x => x.DeleteApiKey(5, "alice-subject")).ReturnsAsync(true);
 
             var subject = CreateSubjectWithUser("alice", "alice-subject");
-            var result = subject.DeleteApiKey(5);
+            var result = await subject.DeleteApiKey(5);
 
             Assert.That(result, Is.InstanceOf<NoContentResult>());
         }
 
         [Test]
-        public void DeleteApiKey_NonExistentId_ReturnsNotFound()
+        public async Task DeleteApiKey_NonExistentId_ReturnsNotFound()
         {
-            apiKeyServiceMock.Setup(x => x.DeleteApiKey(99, "alice-subject")).Returns(false);
+            apiKeyServiceMock.Setup(x => x.DeleteApiKey(99, "alice-subject")).ReturnsAsync(false);
 
             var subject = CreateSubjectWithUser("alice", "alice-subject");
-            var result = subject.DeleteApiKey(99);
+            var result = await subject.DeleteApiKey(99);
 
             Assert.That(result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
-        public void DeleteApiKey_CallsServiceWithCurrentUser()
+        public async Task DeleteApiKey_CallsServiceWithCurrentUser()
         {
-            apiKeyServiceMock.Setup(x => x.DeleteApiKey(7, "alice-subject")).Returns(true);
+            apiKeyServiceMock.Setup(x => x.DeleteApiKey(7, "alice-subject")).ReturnsAsync(true);
 
             var subject = CreateSubjectWithUser("alice", "alice-subject");
 
-            subject.DeleteApiKey(7);
+            await subject.DeleteApiKey(7);
 
             apiKeyServiceMock.Verify(x => x.DeleteApiKey(7, "alice-subject"), Times.Once);
         }
 
         [Test]
-        public void DeleteApiKey_MissingStableSubject_ReturnsForbid()
+        public async Task DeleteApiKey_MissingStableSubject_ReturnsForbid()
         {
             var subject = CreateSubjectWithUser("alice", null);
 
-            var result = subject.DeleteApiKey(1);
+            var result = await subject.DeleteApiKey(1);
 
             Assert.That(result, Is.InstanceOf<ForbidResult>());
         }

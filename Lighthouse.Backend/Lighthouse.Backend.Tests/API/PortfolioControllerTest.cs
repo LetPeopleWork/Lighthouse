@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolio_ReturnsSpecificPortfolio()
+        public async Task GetPortfolio_ReturnsSpecificPortfolio()
         {
             var testPortfolios = GetTestPortfolios();
             var testPortfolio = testPortfolios[^1];
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = subject.Get(42);
+            var result = await subject.Get(42);
 
             using (Assert.EnterMultipleScope())
             {
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolio_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeams()
+        public async Task GetPortfolio_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeams()
         {
             var visibleTeam = new Team { Id = 1, Name = "Visible Team" };
             var hiddenTeam = new Team { Id = 2, Name = "Hidden Team" };
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = subject.Get(42);
+            var result = await subject.Get(42);
 
             using (Assert.EnterMultipleScope())
             {
@@ -88,11 +88,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolio_PortfolioNotFound_ReturnsNotFound()
+        public async Task GetPortfolio_PortfolioNotFound_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var result = subject.Get(1337);
+            var result = await subject.Get(1337);
 
             using (Assert.EnterMultipleScope())
             {
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolioSettings_PortfolioExists_ReturnsSettings()
+        public async Task GetPortfolioSettings_PortfolioExists_ReturnsSettings()
         {
             var portfolio = new Portfolio
             {
@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = subject.GetPortfolioSettings(12);
+            var result = await subject.GetPortfolioSettings(12);
 
             using (Assert.EnterMultipleScope())
             {
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolioSettings_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeamsAndOwningTeam()
+        public async Task GetPortfolioSettings_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeamsAndOwningTeam()
         {
             var visibleTeam = new Team { Id = 1, Name = "Visible Team" };
             var hiddenTeam = new Team { Id = 2, Name = "Hidden Team" };
@@ -202,7 +202,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync([visibleTeam.Id]);
 
             var subject = CreateSubject();
-            var result = subject.GetPortfolioSettings(42);
+            var result = await subject.GetPortfolioSettings(42);
 
             using (Assert.EnterMultipleScope())
             {
@@ -216,11 +216,11 @@ namespace Lighthouse.Backend.Tests.API
 
 
         [Test]
-        public void GetPortfolioSettings_PortfoliootFound_ReturnsNotFoundResult()
+        public async Task GetPortfolioSettings_PortfolioNotFound_ReturnsNotFoundResult()
         {
             var subject = CreateSubject();
 
-            var result = subject.GetPortfolioSettings(1);
+            var result = await subject.GetPortfolioSettings(1);
 
             using (Assert.EnterMultipleScope())
             {

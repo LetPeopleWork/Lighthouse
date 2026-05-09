@@ -43,14 +43,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolios_ReturnsAllPortfoliosFromRepository()
+        public async Task GetPortfolios_ReturnsAllPortfoliosFromRepository()
         {
             var testPortfolios = GetTestPortfolios();
             portfolioRepoMock.Setup(x => x.GetAll()).Returns(testPortfolios);
 
             var subject = CreateSubject();
 
-            var result = subject.GetPortfolios().ToList();
+            var result = (await subject.GetPortfolios()).ToList();
 
             Assert.That(result, Has.Count.EqualTo(testPortfolios.Count));
         }
@@ -302,7 +302,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolios_WhenRbacIsEnabled_FiltersToReadablePortfolios()
+        public async Task GetPortfolios_WhenRbacIsEnabled_FiltersToReadablePortfolios()
         {
             var firstPortfolio = new Portfolio { Id = 12, Name = "Visible" };
             var secondPortfolio = new Portfolio { Id = 42, Name = "Hidden" };
@@ -315,7 +315,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = subject.GetPortfolios().ToList();
+            var result = (await subject.GetPortfolios()).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -326,7 +326,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPortfolios_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeams()
+        public async Task GetPortfolios_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeams()
         {
             var visibleTeam = new Team { Id = 1, Name = "Visible Team" };
             var hiddenTeam = new Team { Id = 2, Name = "Hidden Team" };
@@ -340,7 +340,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync([visibleTeam.Id]);
 
             var subject = CreateSubject();
-            var result = subject.GetPortfolios().Single();
+            var result = (await subject.GetPortfolios()).Single();
 
             Assert.That(result.InvolvedTeams.Select(t => t.Id), Is.EqualTo(new[] { visibleTeam.Id }));
         }

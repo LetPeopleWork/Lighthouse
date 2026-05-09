@@ -29,33 +29,33 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("ids")]
-        public ActionResult<List<FeatureDto>> GetFeatureDetailsById([FromQuery] List<int> featureIds)
+        public async Task<ActionResult<List<FeatureDto>>> GetFeatureDetailsById([FromQuery] List<int> featureIds)
         {
             if (featureIds.Count == 0)
             {
                 return BadRequest();
             }
 
-            var featureDetails = GetFeaturesByPredicate(f => featureIds.Contains(f.Id));
+            var featureDetails = await GetFeaturesByPredicate(f => featureIds.Contains(f.Id));
 
             return Ok(featureDetails);
         }
 
         [HttpGet("references")]
-        public ActionResult<List<FeatureDto>> GetFeatureDetailsByReference([FromQuery] List<string> featureReferences)
+        public async Task<ActionResult<List<FeatureDto>>> GetFeatureDetailsByReference([FromQuery] List<string> featureReferences)
         {
             if (featureReferences.Count == 0)
             {
                 return BadRequest();
             }
 
-            var featureDetails = GetFeaturesByPredicate(f => featureReferences.Contains(f.ReferenceId));
+            var featureDetails = await GetFeaturesByPredicate(f => featureReferences.Contains(f.ReferenceId));
 
             return Ok(featureDetails);
         }
 
         [HttpGet("{featureId:int}/workitems")]
-        public ActionResult<List<WorkItemDto>> GetFeatureWorkItems(int featureId)
+        public async Task<ActionResult<List<WorkItemDto>>> GetFeatureWorkItems(int featureId)
         {
             var feature = featureRepository.GetById(featureId);
             if (feature is null)
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            var readablePortfolioIdSet = GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
+            var readablePortfolioIdSet = await GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
             if (feature.Portfolios.Count > 0 && !feature.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
             {
                 return NotFound();
@@ -76,10 +76,10 @@ namespace Lighthouse.Backend.API
             return Ok(items);
         }
 
-        private List<FeatureDto> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)
+        private async Task<List<FeatureDto>> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)
         {
             var features = featureRepository.GetAllByPredicate(predicate).OrderBy(f => f, new FeatureComparer()).ToList();
-            var readablePortfolioIdSet = GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
+            var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
@@ -87,15 +87,14 @@ namespace Lighthouse.Backend.API
                 .ToList();
         }
 
-        private HashSet<int> GetReadablePortfolioIds(IEnumerable<int> portfolioIds)
+        private async Task<HashSet<int>> GetReadablePortfolioIds(IEnumerable<int> portfolioIds)
         {
             var requestedPortfolioIds = portfolioIds.Distinct().ToArray();
-            return rbacAdministrationService
+            var readablePortfolioIds = await rbacAdministrationService
                 .GetReadablePortfolioIdsAsync(User, requestedPortfolioIds, HttpContext?.RequestAborted ?? default)
-                .GetAwaiter()
-                .GetResult() is { } readablePortfolioIds
-                    ? readablePortfolioIds.ToHashSet()
-                    : requestedPortfolioIds.ToHashSet();
+                .ConfigureAwait(false);
+
+            return readablePortfolioIds is { } ? readablePortfolioIds.ToHashSet() : requestedPortfolioIds.ToHashSet();
         }
     }
 }

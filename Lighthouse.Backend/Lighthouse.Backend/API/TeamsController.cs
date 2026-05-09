@@ -30,22 +30,20 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpGet]
-        public IEnumerable<TeamDto> GetTeams()
+        public async Task<IEnumerable<TeamDto>> GetTeams()
         {
             var teamDtos = new List<TeamDto>();
 
             var allTeams = teamRepository.GetAll().ToList();
             var teamIds = allTeams.Select(t => t.Id).ToArray();
-            var readableTeamIds = rbacAdministrationService
+            var readableTeamIds = await rbacAdministrationService
                 .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
             var allPortfolios = portfolioRepository.GetAll().ToList();
             var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
-            var readablePortfolioIdSet = rbacAdministrationService
+            var readablePortfolioIdSet = await rbacAdministrationService
                 .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
             var effectiveReadableTeamIds = readableTeamIds ?? teamIds;
             var readableTeamIdSet = effectiveReadableTeamIds.ToHashSet();
             var effectiveReadablePortfolioIds = readablePortfolioIdSet ?? portfolioIds;

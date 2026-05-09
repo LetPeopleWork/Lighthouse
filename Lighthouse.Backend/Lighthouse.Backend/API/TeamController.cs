@@ -29,16 +29,15 @@ namespace Lighthouse.Backend.API
     {
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
-        public ActionResult<TeamDto> GetTeam(int teamId)
+        public async Task<ActionResult<TeamDto>> GetTeam(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
             {
                 var allPortfolios = projectRepository.GetAll().ToList();
                 var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
-                var readablePortfolioIds = rbacAdministrationService
+                var readablePortfolioIds = await rbacAdministrationService
                     .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
                 var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds)
                     .ToHashSet();
 

@@ -26,15 +26,14 @@ namespace Lighthouse.Backend.API
     {
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
-        public ActionResult<PortfolioDto> Get(int portfolioId)
+        public async Task<ActionResult<PortfolioDto>> Get(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio =>
+            return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
                 var teamIds = portfolio.Teams.Select(t => t.Id).ToArray();
-                var readableTeamIds = rbacAdministrationService
+                var readableTeamIds = await rbacAdministrationService
                     .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
                 var readableTeamIdSet = (readableTeamIds ?? teamIds)
                     .ToHashSet();
 
@@ -99,9 +98,9 @@ namespace Lighthouse.Backend.API
 
         [HttpGet("settings")]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
-        public ActionResult<PortfolioSettingDto> GetPortfolioSettings(int portfolioId)
+        public async Task<ActionResult<PortfolioSettingDto>> GetPortfolioSettings(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio =>
+            return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
                 var relatedTeamIds = portfolio.Teams.Select(t => t.Id);
                 if (portfolio.OwningTeam is not null)
@@ -111,10 +110,9 @@ namespace Lighthouse.Backend.API
 
                 var relatedTeamIdArray = relatedTeamIds.Distinct().ToArray();
 
-                var readableTeamIds = rbacAdministrationService
+                var readableTeamIds = await rbacAdministrationService
                     .GetReadableTeamIdsAsync(User, relatedTeamIdArray, HttpContext?.RequestAborted ?? default)
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
                 var readableTeamIdSet = (readableTeamIds ?? relatedTeamIdArray)
                     .ToHashSet();
 

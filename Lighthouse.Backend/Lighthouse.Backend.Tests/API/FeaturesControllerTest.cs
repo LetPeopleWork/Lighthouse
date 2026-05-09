@@ -60,11 +60,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetParentFeatures_FeatureReferenceNotFound_ReturnsEmptyList()
+        public async Task GetParentFeatures_FeatureReferenceNotFound_ReturnsEmptyList()
         {
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsByReference(["1886"]);
+            var response = await subject.GetFeatureDetailsByReference(["1886"]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -80,14 +80,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetParentFeatures_FeatureReferenceFound_ReturnsFeatureDto()
+        public async Task GetParentFeatures_FeatureReferenceFound_ReturnsFeatureDto()
         {
             var feature = CreateFeatureByReferenceId("1886");
             parentFeatures.Add(feature);
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsByReference(["1886"]);
+            var response = await subject.GetFeatureDetailsByReference(["1886"]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetParentFeatures_FeatureReferenceFoundWithMultipleIds_ReturnsAllMatchingFeatures()
+        public async Task GetParentFeatures_FeatureReferenceFoundWithMultipleIds_ReturnsAllMatchingFeatures()
         {
             var feature1 = CreateFeatureByReferenceId("1886");
             var feature2 = CreateFeatureByReferenceId("1887");
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsByReference(["1886", "1887"]);
+            var response = await subject.GetFeatureDetailsByReference(["1886", "1887"]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetParentFeatures_FeaturesFound_ReturnsInCorrectOrder()
+        public async Task GetParentFeatures_FeaturesFound_ReturnsInCorrectOrder()
         {
             var feature1 = CreateFeatureByReferenceId("1886");
             feature1.Order = "12";
@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsByReference(["1886", "1887"]);
+            var response = await subject.GetFeatureDetailsByReference(["1886", "1887"]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -162,21 +162,21 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureDetails_NoParameter_ReturnsBadRequest()
+        public async Task GetFeatureDetails_NoParameter_ReturnsBadRequest()
         {
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsById(new List<int>());
+            var response = await subject.GetFeatureDetailsById(new List<int>());
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestResult>());
         }
 
         [Test]
-        public void GetFeatureDetails_SingleId_DoesNotExist_ReturnsEmptyList()
+        public async Task GetFeatureDetails_SingleId_DoesNotExist_ReturnsEmptyList()
         {
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsById(new List<int> { 1886 });
+            var response = await subject.GetFeatureDetailsById(new List<int> { 1886 });
 
 
             var okResult = response.Result as OkObjectResult;
@@ -186,14 +186,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureDetails_SingleId_Exists_ReturnsFeatureDto()
+        public async Task GetFeatureDetails_SingleId_Exists_ReturnsFeatureDto()
         {
             var feature = CreateFeatureById(1886);
             features.Add(feature);
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsById(new List<int> { 1886 });
+            var response = await subject.GetFeatureDetailsById(new List<int> { 1886 });
 
             using (Assert.EnterMultipleScope())
             {
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureDetails_SingleId_WithUnreadableLinkedPortfolios_SkipsFeature()
+        public async Task GetFeatureDetails_SingleId_WithUnreadableLinkedPortfolios_SkipsFeature()
         {
             var visiblePortfolio = new Portfolio { Id = 1, Name = "Visible" };
             var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsById(new List<int> { 1886, 1887 });
+            var response = await subject.GetFeatureDetailsById(new List<int> { 1886, 1887 });
 
             var okResult = response.Result as OkObjectResult;
             var result = okResult!.Value as List<FeatureDto>;
@@ -237,7 +237,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureDetails_SingleId_FiltersUnreadableProjectReferences()
+        public async Task GetFeatureDetails_SingleId_FiltersUnreadableProjectReferences()
         {
             var visiblePortfolio = new Portfolio { Id = 1, Name = "Visible" };
             var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
@@ -252,7 +252,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync([visiblePortfolio.Id]);
 
             var subject = CreateSubject();
-            var response = subject.GetFeatureDetailsById(new List<int> { 1886 });
+            var response = await subject.GetFeatureDetailsById(new List<int> { 1886 });
 
             var okResult = response.Result as OkObjectResult;
             var result = okResult!.Value as List<FeatureDto>;
@@ -261,7 +261,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureDetails_MultipleIds_AllExists_ReturnsFeatureDtos()
+        public async Task GetFeatureDetails_MultipleIds_AllExists_ReturnsFeatureDtos()
         {
             var feature1 = CreateFeatureById(18);
             features.Add(feature1);
@@ -270,7 +270,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsById(new List<int> { 18, 86 });
+            var response = await subject.GetFeatureDetailsById(new List<int> { 18, 86 });
 
             using (Assert.EnterMultipleScope())
             {
@@ -288,14 +288,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureDetails_MultipleIds_SomeExist_ReturnsExistingFeatureDtos_SkipsMissing()
+        public async Task GetFeatureDetails_MultipleIds_SomeExist_ReturnsExistingFeatureDtos_SkipsMissing()
         {
             var feature = CreateFeatureById(1886);
             features.Add(feature);
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureDetailsById(new List<int> { 1886, 1896 });
+            var response = await subject.GetFeatureDetailsById(new List<int> { 1886, 1896 });
 
             using (Assert.EnterMultipleScope())
             {
@@ -310,11 +310,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureWorkItems_FeatureDoesNotExist_ReturnsNotFound()
+        public async Task GetFeatureWorkItems_FeatureDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureWorkItems(99);
+            var response = await subject.GetFeatureWorkItems(99);
 
             using (Assert.EnterMultipleScope())
             {
@@ -325,7 +325,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureWorkItems_FeatureExists_ReturnsChildWorkItems()
+        public async Task GetFeatureWorkItems_FeatureExists_ReturnsChildWorkItems()
         {
             var feature = CreateFeatureById(1886);
             feature.ReferenceId = "FTR-1886";
@@ -339,7 +339,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetFeatureWorkItems(1886);
+            var response = await subject.GetFeatureWorkItems(1886);
 
             using (Assert.EnterMultipleScope())
             {
@@ -355,7 +355,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetFeatureWorkItems_WhenFeatureHasNoReadablePortfolio_ReturnsNotFound()
+        public async Task GetFeatureWorkItems_WhenFeatureHasNoReadablePortfolio_ReturnsNotFound()
         {
             var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
             var feature = CreateFeatureById(1886);
@@ -368,7 +368,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync(Array.Empty<int>());
 
             var subject = CreateSubject();
-            var response = subject.GetFeatureWorkItems(1886);
+            var response = await subject.GetFeatureWorkItems(1886);
 
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }

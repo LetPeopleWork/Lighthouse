@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 });
         }
 
-        public bool DeleteApiKey(int id, string ownerSubject)
+        public async Task<bool> DeleteApiKey(int id, string ownerSubject)
         {
             if (!repository.Exists(id))
             {
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             }
 
             repository.Remove(id);
-            repository.Save().GetAwaiter().GetResult();
+            await repository.Save();
             return true;
         }
 

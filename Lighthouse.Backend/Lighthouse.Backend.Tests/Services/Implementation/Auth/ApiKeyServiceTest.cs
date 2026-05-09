@@ -167,56 +167,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         // --- DeleteApiKey ---
 
         [Test]
-        public void DeleteApiKey_ExistingIdOwnedByCurrentUser_ReturnsTrue()
+        public async Task DeleteApiKey_ExistingIdOwnedByCurrentUser_ReturnsTrue()
         {
             repositoryMock.Setup(r => r.Exists(7)).Returns(true);
             repositoryMock.Setup(r => r.GetById(7)).Returns(new ApiKey { Id = 7, CreatedByUser = "alice", OwnerSubject = "alice-subject" });
             repositoryMock.Setup(r => r.Remove(7));
             repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
 
-            var result = subject.DeleteApiKey(7, "alice-subject");
+            var result = await subject.DeleteApiKey(7, "alice-subject");
 
             Assert.That(result, Is.True);
         }
 
         [Test]
-        public void DeleteApiKey_NonExistentId_ReturnsFalse()
+        public async Task DeleteApiKey_NonExistentId_ReturnsFalse()
         {
             repositoryMock.Setup(r => r.Exists(99)).Returns(false);
 
-            var result = subject.DeleteApiKey(99, "alice-subject");
+            var result = await subject.DeleteApiKey(99, "alice-subject");
 
             Assert.That(result, Is.False);
         }
 
         [Test]
-        public void DeleteApiKey_ExistingIdOwnedByDifferentUser_ReturnsFalse()
+        public async Task DeleteApiKey_ExistingIdOwnedByDifferentUser_ReturnsFalse()
         {
             repositoryMock.Setup(r => r.Exists(99)).Returns(true);
             repositoryMock.Setup(r => r.GetById(99)).Returns(new ApiKey { Id = 99, CreatedByUser = "bob", OwnerSubject = "bob-subject" });
 
-            var result = subject.DeleteApiKey(99, "alice-subject");
+            var result = await subject.DeleteApiKey(99, "alice-subject");
 
             Assert.That(result, Is.False);
         }
 
         [Test]
-        public void DeleteApiKey_NonExistentId_DoesNotCallRemove()
+        public async Task DeleteApiKey_NonExistentId_DoesNotCallRemove()
         {
             repositoryMock.Setup(r => r.Exists(99)).Returns(false);
 
-            subject.DeleteApiKey(99, "alice-subject");
+            await subject.DeleteApiKey(99, "alice-subject");
 
             repositoryMock.Verify(r => r.Remove(It.IsAny<int>()), Times.Never);
         }
 
         [Test]
-        public void DeleteApiKey_DifferentOwner_DoesNotCallRemove()
+        public async Task DeleteApiKey_DifferentOwner_DoesNotCallRemove()
         {
             repositoryMock.Setup(r => r.Exists(99)).Returns(true);
             repositoryMock.Setup(r => r.GetById(99)).Returns(new ApiKey { Id = 99, CreatedByUser = "bob", OwnerSubject = "bob-subject" });
 
-            subject.DeleteApiKey(99, "alice-subject");
+            await subject.DeleteApiKey(99, "alice-subject");
 
             repositoryMock.Verify(r => r.Remove(It.IsAny<int>()), Times.Never);
         }

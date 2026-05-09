@@ -31,11 +31,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("workitemtypes/teams")]
-        public ActionResult<List<string>> GetWorkItemTypesForTeams()
+        public async Task<ActionResult<List<string>>> GetWorkItemTypesForTeams()
         {
             logger.LogDebug("Getting Work Item Type Suggestions for Teams");
 
-            var teams = GetReadableTeams();
+            var teams = await GetReadableTeams().ConfigureAwait(false);
 
             var workItemTypes = teams
                 .SelectMany(x => x.WorkItemTypes)
@@ -45,11 +45,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("workitemtypes/projects")]
-        public ActionResult<List<string>> GetWorkItemTypesForProjects()
+        public async Task<ActionResult<List<string>>> GetWorkItemTypesForProjects()
         {
             logger.LogDebug("Getting Work Item Type Suggestions for Projects");
 
-            var projects = GetReadablePortfolios();
+            var projects = await GetReadablePortfolios().ConfigureAwait(false);
 
             var workItemTypes = projects
                 .SelectMany(x => x.WorkItemTypes)
@@ -59,11 +59,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("states/teams")]
-        public ActionResult<StatesCollectionDto> GetStatesForTeams()
+        public async Task<ActionResult<StatesCollectionDto>> GetStatesForTeams()
         {
             logger.LogDebug("Getting States Suggestions for Teams");
 
-            var teams = GetReadableTeams();
+            var teams = await GetReadableTeams().ConfigureAwait(false);
 
             var statesCollection = new StatesCollectionDto
             {
@@ -76,11 +76,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("states/projects")]
-        public ActionResult<StatesCollectionDto> GetStatesForProjects()
+        public async Task<ActionResult<StatesCollectionDto>> GetStatesForProjects()
         {
             logger.LogDebug("Getting States Suggestions for Projects");
 
-            var projects = GetReadablePortfolios();
+            var projects = await GetReadablePortfolios().ConfigureAwait(false);
 
             var statesCollection = new StatesCollectionDto
             {
@@ -92,28 +92,27 @@ namespace Lighthouse.Backend.API
             return Ok(statesCollection);
         }
 
-        private IEnumerable<Team> GetReadableTeams()
+        private async Task<IEnumerable<Team>> GetReadableTeams()
         {
             var teams = teamRepository.GetAll().ToList();
             var teamIds = teams.Select(t => t.Id).ToArray();
-            var readableTeamIds = rbacAdministrationService
+            var readableTeamIds = await rbacAdministrationService
                 .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
+
             var readableTeamIdSet = (readableTeamIds ?? teamIds)
                 .ToHashSet();
 
             return teams.Where(t => readableTeamIdSet.Contains(t.Id));
         }
 
-        private IEnumerable<Portfolio> GetReadablePortfolios()
+        private async Task<IEnumerable<Portfolio>> GetReadablePortfolios()
         {
             var portfolios = portfolioRepository.GetAll().ToList();
             var portfolioIds = portfolios.Select(p => p.Id).ToArray();
-            var readablePortfolioIds = rbacAdministrationService
+            var readablePortfolioIds = await rbacAdministrationService
                 .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
             var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds)
                 .ToHashSet();
 

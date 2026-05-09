@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.API
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult DeleteApiKey(int id)
+        public async Task<IActionResult> DeleteApiKey(int id)
         {
             var stableSubject = GetStableSubject();
             if (string.IsNullOrWhiteSpace(stableSubject))
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.API
                 return Forbid();
             }
 
-            var deleted = apiKeyService.DeleteApiKey(id, stableSubject);
+            var deleted = await apiKeyService.DeleteApiKey(id, stableSubject);
             if (!deleted)
             {
                 return NotFound();

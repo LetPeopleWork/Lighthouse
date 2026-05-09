@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkItemTypesForTeams_ReturnsAllWorkItemTypes()
+        public async Task GetWorkItemTypesForTeams_ReturnsAllWorkItemTypes()
         {
             var teamType1 = "User Story";
             var teamType2 = "Bug";
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetWorkItemTypesForTeams();
+            var response = await suggestionsController.GetWorkItemTypesForTeams();
 
             using (Assert.EnterMultipleScope())
             {
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkItemTypesForTeams_DoesNotIncludeItemsTwice_ReturnsAllWorkItemTypes()
+        public async Task GetWorkItemTypesForTeams_DoesNotIncludeItemsTwice_ReturnsAllWorkItemTypes()
         {
             var teamType1 = "User Story";
             var teamType2 = "Bug";
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetWorkItemTypesForTeams();
+            var response = await suggestionsController.GetWorkItemTypesForTeams();
 
             using (Assert.EnterMultipleScope())
             {
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkItemTypesForTeams_FiltersUnreadableTeams()
+        public async Task GetWorkItemTypesForTeams_FiltersUnreadableTeams()
         {
             var visibleTeam = CreateTeam();
             visibleTeam.Id = 1;
@@ -132,14 +132,14 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync([visibleTeam.Id]);
 
             var subject = CreateSubject();
-            var response = subject.GetWorkItemTypesForTeams();
+            var response = await subject.GetWorkItemTypesForTeams();
 
             var itemTypes = (List<string>)((OkObjectResult)response.Result!).Value!;
             Assert.That(itemTypes, Is.EqualTo(["Story"]));
         }
 
         [Test]
-        public void GetWorkItemTypesForProjects_ReturnsAllWorkItemTypes()
+        public async Task GetWorkItemTypesForProjects_ReturnsAllWorkItemTypes()
         {
             var projectType1 = "Epic";
             var projectType2 = "Feature";
@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetWorkItemTypesForProjects();
+            var response = await suggestionsController.GetWorkItemTypesForProjects();
 
             using (Assert.EnterMultipleScope())
             {
@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkItemTypesForProjects_DoesNotIncludeItemsTwice_ReturnsAllWorkItemTypes()
+        public async Task GetWorkItemTypesForProjects_DoesNotIncludeItemsTwice_ReturnsAllWorkItemTypes()
         {
             var projectType1 = "Epic";
             var projectType2 = "Feature";
@@ -181,7 +181,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetWorkItemTypesForProjects();
+            var response = await suggestionsController.GetWorkItemTypesForProjects();
 
             using (Assert.EnterMultipleScope())
             {
@@ -196,7 +196,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetStatesForTeams_ReturnsStates()
+        public async Task GetStatesForTeams_ReturnsStates()
         {
             var toDoStates = new List<string> { "New", "Planned" };
             var doingStates = new List<string> { "Active", "Resolved" };
@@ -214,7 +214,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetStatesForTeams();
+            var response = await suggestionsController.GetStatesForTeams();
 
             using (Assert.EnterMultipleScope())
             {
@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetStatesForTeams_SkipsDuplicates()
+        public async Task GetStatesForTeams_SkipsDuplicates()
         {
             var toDoStates = new List<string> { "New", "Planned" };
             var doingStates = new List<string> { "Active", "Resolved" };
@@ -258,7 +258,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetStatesForTeams();
+            var response = await suggestionsController.GetStatesForTeams();
 
             using (Assert.EnterMultipleScope())
             {
@@ -273,7 +273,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetStatesForProjects_ReturnsStates()
+        public async Task GetStatesForProjects_ReturnsStates()
         {
             var toDoStates = new List<string> { "New", "Planned" };
             var doingStates = new List<string> { "Active", "Resolved" };
@@ -291,7 +291,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetStatesForProjects();
+            var response = await suggestionsController.GetStatesForProjects();
 
             using (Assert.EnterMultipleScope())
             {
@@ -306,7 +306,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetStatesForProjects_SkipsDuplicates()
+        public async Task GetStatesForProjects_SkipsDuplicates()
         {
             var toDoStates = new List<string> { "New", "Planned" };
             var doingStates = new List<string> { "Active", "Resolved" };
@@ -335,7 +335,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var suggestionsController = CreateSubject();
 
-            var response = suggestionsController.GetStatesForProjects();
+            var response = await suggestionsController.GetStatesForProjects();
 
             using (Assert.EnterMultipleScope())
             {
@@ -350,7 +350,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetStatesForProjects_FiltersUnreadableProjects()
+        public async Task GetStatesForProjects_FiltersUnreadableProjects()
         {
             var visibleProject = CreateProject();
             visibleProject.Id = 1;
@@ -367,7 +367,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync([visibleProject.Id]);
 
             var subject = CreateSubject();
-            var response = subject.GetStatesForProjects();
+            var response = await subject.GetStatesForProjects();
             var states = (StatesCollectionDto)((OkObjectResult)response.Result!).Value!;
 
             Assert.That(states.ToDoStates, Is.EqualTo(["Visible"]));
