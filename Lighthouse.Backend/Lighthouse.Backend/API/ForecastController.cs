@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpPost("update/{id:int}")]
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public ActionResult UpdateForecastForProject(int id)
         {
             forecastUpdater.TriggerUpdate(id);
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("itemprediction/{id:int}")]
-        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "id")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "id")]
         public ActionResult<ManualForecastDto> RunItemCreationPrediction(int id, [FromBody] ItemCreationPredictionInputDto input)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
@@ -67,7 +68,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("manual/{id:int}")]
-        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "id")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "id")]
         public async Task<ActionResult<ManualForecastDto>> RunManualForecastAsync(int id, [FromBody] ManualForecastInputDto input)
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
@@ -103,7 +104,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("backtest/{teamId:int}")]
-        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
         public ActionResult<BacktestResultDto> RunBacktest(int teamId, [FromBody] BacktestInputDto input)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);

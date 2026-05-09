@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void RunManualForecastAsync_HasTeamWriteRbacGuardAttribute()
+        public void RunManualForecastAsync_HasTeamReadRbacGuardAttribute()
         {
             var method = typeof(ForecastController).GetMethod(nameof(ForecastController.RunManualForecastAsync));
             var attribute = method?
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(attribute, Is.Not.Null);
-                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamWrite));
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.TeamRead));
                 Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("id"));
             }
         }
