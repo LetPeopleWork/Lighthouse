@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { WorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../services/Api/ApiError";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
@@ -363,6 +364,7 @@ describe("OverviewDashboard", () => {
 			isSystemAdmin: false,
 			canCreateTeam: false,
 			canCreatePortfolio: false,
+			systemAdminDisplayNames: ["Admin User"],
 		});
 
 		renderWithProviders(
@@ -373,6 +375,7 @@ describe("OverviewDashboard", () => {
 
 		await waitFor(() => {
 			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+			expect(screen.getByText(/Admin User/)).toBeInTheDocument();
 		});
 	});
 
@@ -392,6 +395,33 @@ describe("OverviewDashboard", () => {
 		await waitFor(() => {
 			expect(
 				screen.queryByText("Add Work Tracking System"),
+			).not.toBeInTheDocument();
+		});
+	});
+
+	it("does not fail overview when connection settings are forbidden for non-system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
+		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems = vi
+			.fn()
+			.mockRejectedValue(new ApiError(403, "Forbidden"));
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+			workTrackingSystemService: mockWorkTrackingSystemService,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			expect(
+				screen.queryByText("Error loading data. Please try again later."),
 			).not.toBeInTheDocument();
 		});
 	});

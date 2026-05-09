@@ -1,7 +1,9 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -21,6 +23,7 @@ const RbacSettings: React.FC = () => {
 	const [status, setStatus] = useState<RbacStatus>();
 	const [users, setUsers] = useState<RbacUser[]>([]);
 	const [error, setError] = useState<string>();
+	const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
 
 	const load = useCallback(async () => {
 		setError(undefined);
@@ -70,6 +73,10 @@ const RbacSettings: React.FC = () => {
 		}
 	};
 
+	const visibleUsers = showUnassignedOnly
+		? users.filter((user) => user.isUnassigned)
+		: users;
+
 	return (
 		<Box>
 			{error && <Alert severity="error">{error}</Alert>}
@@ -90,6 +97,10 @@ const RbacSettings: React.FC = () => {
 				<Chip
 					label={`Ready: ${status?.readyForEnablement ? "Yes" : "No"}`}
 					data-testid="rbac-status-ready"
+				/>
+				<Chip
+					label={`Unassigned users: ${status?.unassignedUserCount ?? 0}`}
+					data-testid="rbac-status-unassigned-count"
 				/>
 			</Box>
 
@@ -112,6 +123,17 @@ const RbacSettings: React.FC = () => {
 				User Access
 			</Typography>
 
+			<FormControlLabel
+				label="Show unassigned users only"
+				control={
+					<Checkbox
+						checked={showUnassignedOnly}
+						onChange={(_event, checked) => setShowUnassignedOnly(checked)}
+					/>
+				}
+				sx={{ mb: 1 }}
+			/>
+
 			<Table size="small" data-testid="rbac-users-table">
 				<TableHead>
 					<TableRow>
@@ -119,16 +141,18 @@ const RbacSettings: React.FC = () => {
 						<TableCell>Email</TableCell>
 						<TableCell>Subject</TableCell>
 						<TableCell>System Admin</TableCell>
+						<TableCell>Unassigned</TableCell>
 						<TableCell align="right">Actions</TableCell>
 					</TableRow>
 				</TableHead>
 				<TableBody>
-					{users.map((user) => (
+					{visibleUsers.map((user) => (
 						<TableRow key={user.id} data-testid={`rbac-user-row-${user.id}`}>
 							<TableCell>{user.displayName || "(Unnamed user)"}</TableCell>
 							<TableCell>{user.email || "-"}</TableCell>
 							<TableCell>{user.subject}</TableCell>
 							<TableCell>{user.isSystemAdmin ? "Yes" : "No"}</TableCell>
+							<TableCell>{user.isUnassigned ? "Yes" : "No"}</TableCell>
 							<TableCell align="right">
 								{user.isSystemAdmin ? (
 									<Button

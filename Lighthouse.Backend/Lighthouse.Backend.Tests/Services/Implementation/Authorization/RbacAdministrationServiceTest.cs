@@ -121,6 +121,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Subject = "auth0|existing-admin",
                 SubjectClaimType = "sub",
             });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 100,
+                Subject = "auth0|unassigned-user",
+                SubjectClaimType = "sub",
+            });
             context.UserPermissions.Add(new UserPermission
             {
                 UserProfileId = 99,
@@ -140,6 +146,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Assert.That(status.HasSystemAdmin, Is.True);
                 Assert.That(status.HasEmergencyAdminConfigured, Is.True);
                 Assert.That(status.ReadyForEnablement, Is.True);
+                Assert.That(status.UnassignedUserCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task GetUsersAsync_UserWithoutPermissions_IsMarkedAsUnassigned()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 1,
+                Subject = "auth0|admin",
+                SubjectClaimType = "sub",
+                DisplayName = "Admin User",
+            });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 2,
+                Subject = "auth0|unassigned",
+                SubjectClaimType = "sub",
+                DisplayName = "Unassigned User",
+            });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 1,
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var users = await subject.GetUsersAsync(CancellationToken.None);
+            var adminUser = users.Single(x => x.Id == 1);
+            var unassignedUser = users.Single(x => x.Id == 2);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(adminUser.IsSystemAdmin, Is.True);
+                Assert.That(adminUser.IsUnassigned, Is.False);
+                Assert.That(unassignedUser.IsSystemAdmin, Is.False);
+                Assert.That(unassignedUser.IsUnassigned, Is.True);
             }
         }
 
@@ -504,7 +553,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
 
-            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub", DisplayName = "System Admin User" });
             context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|team-admin", SubjectClaimType = "sub" });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
@@ -525,6 +574,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Assert.That(summary.CanCreateTeam, Is.True);
                 Assert.That(summary.CanCreatePortfolio, Is.False);
                 Assert.That(summary.IsRbacEnabled, Is.True);
+                Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(new[] { "System Admin User" }));
             }
         }
 
@@ -676,7 +726,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Succeeded, Is.True);
-                Assert.That(remaining, Is.EqualTo(0));
+                Assert.That(remaining, Is.Zero);
             }
         }
 

@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             var hasSystemAdmin = await HasSystemAdminAsync(cancellationToken);
             var premiumGateSatisfied = licenseService.CanUsePremiumFeatures();
             var config = configuration.Value;
+            var unassignedUserCount = await GetUnassignedUserCountAsync(cancellationToken);
 
             return new RbacStatus
             {
@@ -30,6 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 HasSystemAdmin = hasSystemAdmin,
                 HasEmergencyAdminConfigured = config.EmergencySystemAdminSubjects.Count > 0,
                 ReadyForEnablement = premiumGateSatisfied && hasSystemAdmin,
+                UnassignedUserCount = unassignedUserCount,
             };
         }
 
@@ -45,6 +47,14 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .Select(p => p.UserProfileId)
                 .ToListAsync(cancellationToken);
 
+            var usersWithAnyAssignment = await context.UserPermissions
+                .Select(p => p.UserProfileId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var systemAdminIdSet = systemAdminIds.ToHashSet();
+            var assignedUserIdSet = usersWithAnyAssignment.ToHashSet();
+
             var users = await context.UserProfiles
                 .OrderBy(p => p.DisplayName)
                 .ThenBy(p => p.Email)
@@ -54,7 +64,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     Subject = p.Subject,
                     DisplayName = p.DisplayName,
                     Email = p.Email,
-                    IsSystemAdmin = systemAdminIds.Contains(p.Id),
+                    IsSystemAdmin = systemAdminIdSet.Contains(p.Id),
+                    IsUnassigned = !assignedUserIdSet.Contains(p.Id),
                 })
                 .ToListAsync(cancellationToken);
 
@@ -361,12 +372,14 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     IsSystemAdmin = true,
                     CanCreateTeam = true,
                     CanCreatePortfolio = true,
+                    SystemAdminDisplayNames = [],
                 };
             }
 
             var isSystemAdmin = await CanManageRbacAsync(principal, cancellationToken);
             var canCreateTeam = isSystemAdmin || await CanCreateTeamAsync(principal, cancellationToken);
             var canCreatePortfolio = isSystemAdmin || await CanCreatePortfolioAsync(principal, cancellationToken);
+            var systemAdminDisplayNames = await GetSystemAdminDisplayNamesAsync(cancellationToken);
 
             return new UserAuthorizationSummary
             {
@@ -374,6 +387,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 IsSystemAdmin = isSystemAdmin,
                 CanCreateTeam = canCreateTeam,
                 CanCreatePortfolio = canCreatePortfolio,
+                SystemAdminDisplayNames = systemAdminDisplayNames,
             };
         }
 
@@ -727,6 +741,32 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return context.UserPermissions.AnyAsync(
                 p => p.ScopeType == PermissionScopeType.System && p.Role == UserRole.SystemAdmin,
                 cancellationToken);
+        }
+
+        private Task<int> GetUnassignedUserCountAsync(CancellationToken cancellationToken)
+        {
+            return context.UserProfiles
+                .CountAsync(
+                    profile => !context.UserPermissions.Any(permission => permission.UserProfileId == profile.Id),
+                    cancellationToken);
+        }
+
+        private async Task<IReadOnlyList<string>> GetSystemAdminDisplayNamesAsync(CancellationToken cancellationToken)
+        {
+            var identityRows = await context.UserPermissions
+                .Where(permission => permission.ScopeType == PermissionScopeType.System && permission.Role == UserRole.SystemAdmin)
+                .Join(
+                    context.UserProfiles,
+                    permission => permission.UserProfileId,
+                    profile => profile.Id,
+                    (_, profile) => new { profile.DisplayName })
+                .ToListAsync(cancellationToken);
+
+            return identityRows
+                .Select(x => string.IsNullOrWhiteSpace(x.DisplayName) ? "System Admin" : x.DisplayName)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToList();
         }
 
         private async Task<bool> IsEnforcementGateSatisfiedAsync(CancellationToken cancellationToken)

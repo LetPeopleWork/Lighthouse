@@ -197,7 +197,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = (OkObjectResult)result;
                 var members = okResult.Value as IReadOnlyList<RbacScopedMemberSummary>;
                 Assert.That(members, Is.Not.Null);
-                Assert.That(members!.Count, Is.EqualTo(1));
+                Assert.That(members!, Has.Count.EqualTo(1));
                 Assert.That(members[0].UserProfileId, Is.EqualTo(22));
             }
         }

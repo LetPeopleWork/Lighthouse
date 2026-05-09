@@ -11,5 +11,7 @@ namespace Lighthouse.Backend.Models.Authorization
         public string? Email { get; init; }
 
         public bool IsSystemAdmin { get; init; }
+
+        public bool IsUnassigned { get; init; }
     }
 }

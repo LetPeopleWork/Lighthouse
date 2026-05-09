@@ -9,5 +9,7 @@ namespace Lighthouse.Backend.Models.Authorization
         public bool CanCreateTeam { get; init; }
 
         public bool CanCreatePortfolio { get; init; }
+
+        public IReadOnlyList<string> SystemAdminDisplayNames { get; init; } = [];
     }
 }

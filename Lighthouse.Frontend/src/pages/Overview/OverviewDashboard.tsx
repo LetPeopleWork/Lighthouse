@@ -103,11 +103,21 @@ const OverviewDashboard: React.FC = () => {
 				canCreateTeam: true,
 				canCreatePortfolio: true,
 			};
+			const configuredConnectionsPromise = workTrackingSystemService
+				.getConfiguredWorkTrackingSystems()
+				.catch((error: unknown) => {
+					if (error instanceof ApiError && error.code === 403) {
+						// Non-system-admin users cannot access connection settings.
+						return [];
+					}
+
+					throw error;
+				});
 			const [portfolioData, teamData, connectionData, authSummaryData] =
 				await Promise.all([
 					portfolioService.getPortfolios(),
 					teamService.getTeams(),
-					workTrackingSystemService.getConfiguredWorkTrackingSystems(),
+					configuredConnectionsPromise,
 					rbacService.getAuthorizationSummary().catch(() => permissiveSummary),
 				]);
 			setPortfolios(portfolioData);
@@ -323,6 +333,11 @@ const OverviewDashboard: React.FC = () => {
 	const hasPortfolios = portfolios.length > 0;
 	const showRbacNoAccessAlert =
 		authSummary.isRbacEnabled && portfolios.length === 0 && teams.length === 0;
+	const noAccessGuidance =
+		authSummary.systemAdminDisplayNames &&
+		authSummary.systemAdminDisplayNames.length > 0
+			? `You currently do not have access to any teams or portfolios. Contact ${authSummary.systemAdminDisplayNames.join(", ")} to request access.`
+			: "You currently do not have access to any teams or portfolios. Contact a System Admin to request access.";
 
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
@@ -338,8 +353,7 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ mt: 2 }}
 						data-testid="rbac-no-access-alert"
 					>
-						You currently do not have access to any teams or portfolios. Contact
-						a System Admin to request access.
+						{noAccessGuidance}
 					</Alert>
 				)}
 

@@ -123,6 +123,7 @@ describe("Settings Component", () => {
 			isSystemAdmin: false,
 			canCreateTeam: false,
 			canCreatePortfolio: false,
+			systemAdminDisplayNames: ["Admin User"],
 		});
 
 		renderWithRouter(["/settings"], { rbacService: mockRbacService });
@@ -134,6 +135,27 @@ describe("Settings Component", () => {
 			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
 			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
+		});
+	});
+
+	it("should default to API Keys panel when current tab is hidden for non-system admins", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			systemAdminDisplayNames: ["Admin User"],
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+			expect(screen.getByTestId("api-keys-panel")).toBeVisible();
+			expect(
+				screen.queryByTestId("configuration-panel"),
+			).not.toBeInTheDocument();
 		});
 	});
 

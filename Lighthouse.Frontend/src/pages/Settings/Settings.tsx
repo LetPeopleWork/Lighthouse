@@ -161,6 +161,19 @@ const Settings: React.FC = () => {
 		(tab) => !systemAdminTabValues.has(tab.value) || authSummary.isSystemAdmin,
 	);
 
+	useEffect(() => {
+		if (visibleTabs.length === 0) {
+			return;
+		}
+
+		const hasSelectedVisibleTab = visibleTabs.some(
+			(tab) => tab.value === value,
+		);
+		if (!hasSelectedVisibleTab) {
+			setValue(visibleTabs[0].value);
+		}
+	}, [value, visibleTabs]);
+
 	return (
 		<Container maxWidth={false}>
 			<Box sx={{ mb: 4, mt: 2 }}>

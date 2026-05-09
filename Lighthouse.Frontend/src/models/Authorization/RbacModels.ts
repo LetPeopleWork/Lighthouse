@@ -4,6 +4,7 @@ export interface RbacStatus {
 	hasSystemAdmin: boolean;
 	hasEmergencyAdminConfigured: boolean;
 	readyForEnablement: boolean;
+	unassignedUserCount?: number;
 }
 
 export interface RbacUser {
@@ -12,6 +13,7 @@ export interface RbacUser {
 	displayName?: string;
 	email?: string;
 	isSystemAdmin: boolean;
+	isUnassigned?: boolean;
 }
 
 export interface UserAuthorizationSummary {
@@ -19,6 +21,7 @@ export interface UserAuthorizationSummary {
 	isSystemAdmin: boolean;
 	canCreateTeam: boolean;
 	canCreatePortfolio: boolean;
+	systemAdminDisplayNames?: string[];
 }
 
 export type ScopedRbacRole = "Viewer" | "TeamAdmin" | "PortfolioAdmin";

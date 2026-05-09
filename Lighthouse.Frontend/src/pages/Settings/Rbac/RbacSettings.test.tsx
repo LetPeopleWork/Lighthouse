@@ -57,6 +57,7 @@ describe("RbacSettings", () => {
 			hasSystemAdmin: false,
 			hasEmergencyAdminConfigured: true,
 			readyForEnablement: false,
+			unassignedUserCount: 1,
 		});
 
 		mockRbacService.getUsers.mockResolvedValue([
@@ -66,6 +67,7 @@ describe("RbacSettings", () => {
 				displayName: "Admin User",
 				email: "admin@example.com",
 				isSystemAdmin: true,
+				isUnassigned: false,
 			},
 			{
 				id: 2,
@@ -73,6 +75,7 @@ describe("RbacSettings", () => {
 				displayName: "Viewer User",
 				email: "viewer@example.com",
 				isSystemAdmin: false,
+				isUnassigned: true,
 			},
 		]);
 
@@ -96,6 +99,34 @@ describe("RbacSettings", () => {
 			expect(
 				screen.getByTestId("rbac-status-emergency-admin"),
 			).toHaveTextContent("Configured");
+			expect(
+				screen.getByTestId("rbac-status-unassigned-count"),
+			).toHaveTextContent("1");
+		});
+	});
+
+	it("should allow filtering to unassigned users only", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+			unassignedUserCount: 1,
+		});
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-user-row-1")).toBeInTheDocument();
+			expect(screen.getByTestId("rbac-user-row-2")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByLabelText("Show unassigned users only"));
+
+		await waitFor(() => {
+			expect(screen.queryByTestId("rbac-user-row-1")).not.toBeInTheDocument();
+			expect(screen.getByTestId("rbac-user-row-2")).toBeInTheDocument();
 		});
 	});
 
