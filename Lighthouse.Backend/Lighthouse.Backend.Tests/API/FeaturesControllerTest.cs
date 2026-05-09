@@ -1,7 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -234,7 +233,7 @@ namespace Lighthouse.Backend.Tests.API
             var okResult = response.Result as OkObjectResult;
             var result = okResult!.Value as List<FeatureDto>;
 
-            Assert.That(result!.Select(x => x.Id), Is.EqualTo(new[] { 1886 }));
+            Assert.That(result!.Select(x => x.Id), Is.EqualTo([1886]));
         }
 
         [Test]

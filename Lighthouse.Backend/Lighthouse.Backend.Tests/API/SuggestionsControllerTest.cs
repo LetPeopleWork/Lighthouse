@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API
             var response = subject.GetWorkItemTypesForTeams();
 
             var itemTypes = (List<string>)((OkObjectResult)response.Result!).Value!;
-            Assert.That(itemTypes, Is.EqualTo(new[] { "Story" }));
+            Assert.That(itemTypes, Is.EqualTo(["Story"]));
         }
 
         [Test]
@@ -370,7 +370,7 @@ namespace Lighthouse.Backend.Tests.API
             var response = subject.GetStatesForProjects();
             var states = (StatesCollectionDto)((OkObjectResult)response.Result!).Value!;
 
-            Assert.That(states.ToDoStates, Is.EqualTo(new[] { "Visible" }));
+            Assert.That(states.ToDoStates, Is.EqualTo(["Visible"]));
         }
 
         private Portfolio CreateProject()

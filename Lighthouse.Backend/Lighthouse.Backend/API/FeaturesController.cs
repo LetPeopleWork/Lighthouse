@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.API
             }
 
             var readablePortfolioIdSet = GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
-            if (feature.Portfolios.Any() && !feature.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
+            if (feature.Portfolios.Count > 0 && !feature.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
             {
                 return NotFound();
             }
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.API
             var readablePortfolioIdSet = GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
 
             return features
-                .Where(f => !f.Portfolios.Any() || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
+                .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
                 .Select(f => new FeatureDto(f, readablePortfolioIdSet))
                 .ToList();
         }
