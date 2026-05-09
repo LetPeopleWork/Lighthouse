@@ -103,6 +103,22 @@ const OverviewDashboard: React.FC = () => {
 				canCreateTeam: true,
 				canCreatePortfolio: true,
 			};
+			const portfoliosPromise = portfolioService
+				.getPortfolios()
+				.catch((error: unknown) => {
+					if (error instanceof ApiError && error.code === 403) {
+						return [];
+					}
+
+					throw error;
+				});
+			const teamsPromise = teamService.getTeams().catch((error: unknown) => {
+				if (error instanceof ApiError && error.code === 403) {
+					return [];
+				}
+
+				throw error;
+			});
 			const configuredConnectionsPromise = workTrackingSystemService
 				.getConfiguredWorkTrackingSystems()
 				.catch((error: unknown) => {
@@ -115,8 +131,8 @@ const OverviewDashboard: React.FC = () => {
 				});
 			const [portfolioData, teamData, connectionData, authSummaryData] =
 				await Promise.all([
-					portfolioService.getPortfolios(),
-					teamService.getTeams(),
+					portfoliosPromise,
+					teamsPromise,
 					configuredConnectionsPromise,
 					rbacService.getAuthorizationSummary().catch(() => permissiveSummary),
 				]);

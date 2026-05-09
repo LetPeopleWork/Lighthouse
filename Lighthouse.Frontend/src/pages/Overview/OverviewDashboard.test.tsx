@@ -426,6 +426,41 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
+	it("does not fail overview when team and portfolio reads are forbidden", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			systemAdminDisplayNames: ["Admin User"],
+		});
+
+		const mockPortfolioService = createMockPortfolioService();
+		mockPortfolioService.getPortfolios = vi
+			.fn()
+			.mockRejectedValue(new ApiError(403, "Forbidden"));
+
+		const mockTeamService = createMockTeamService();
+		mockTeamService.getTeams = vi
+			.fn()
+			.mockRejectedValue(new ApiError(403, "Forbidden"));
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+			portfolioService: mockPortfolioService,
+			teamService: mockTeamService,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+			expect(screen.getByText(/Admin User/)).toBeInTheDocument();
+			expect(
+				screen.queryByText("Error loading data. Please try again later."),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	it("shows Add Connection button when user is system admin", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
