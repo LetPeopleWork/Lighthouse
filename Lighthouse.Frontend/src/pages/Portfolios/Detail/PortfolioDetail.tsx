@@ -128,11 +128,7 @@ const PortfolioDetail: React.FC = () => {
 
 		try {
 			const portfolioData = await portfolioService.getPortfolio(portfolioId);
-			if (!portfolioData) {
-				setPortfolio(undefined);
-				setInvolvedTeams([]);
-				setHasNoAccess(true);
-			} else {
+			if (portfolioData) {
 				const settings =
 					await portfolioService.getPortfolioSettings(portfolioId);
 				const involvedTeamData = await fetchInvolvedTeams(portfolioData);
@@ -141,6 +137,10 @@ const PortfolioDetail: React.FC = () => {
 					setPortfolio(portfolioData);
 					setInvolvedTeams(involvedTeamData);
 				}
+			} else {
+				setPortfolio(undefined);
+				setInvolvedTeams([]);
+				setHasNoAccess(true);
 			}
 		} catch {
 			setPortfolio(undefined);
