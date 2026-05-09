@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,16 +18,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         private Mock<ILogger<LighthouseAppContext>> appContextLogger;
         private Mock<ILogger<CurrentUserProfileService>> serviceLogger;
 
+        private SqliteConnection connection;
+
         [SetUp]
         public void SetUp()
         {
-            options = new DbContextOptionsBuilder<LighthouseAppContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-
             cryptoService = new Mock<ICryptoService>();
             appContextLogger = new Mock<ILogger<LighthouseAppContext>>();
             serviceLogger = new Mock<ILogger<CurrentUserProfileService>>();
+
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            context.Database.EnsureCreated();
+
+            // store connection so it stays open for the test lifetime
+            this.connection = connection;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            connection?.Dispose();
         }
 
         [Test]
