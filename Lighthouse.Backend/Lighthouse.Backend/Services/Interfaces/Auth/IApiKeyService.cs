@@ -7,17 +7,22 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
         /// <summary>
         /// Creates a new API key. Returns the result including the plaintext key (shown only once).
         /// </summary>
-        Task<ApiKeyCreationResult> CreateApiKeyAsync(string name, string description, string createdByUser);
+        Task<ApiKeyCreationResult> CreateApiKeyAsync(string name, string description, string createdByUser, string ownerSubject);
 
         /// <summary>
-        /// Returns metadata for all API keys. Never includes the plaintext key or hash.
+        /// Returns metadata for API keys owned by the given subject. Never includes the plaintext key or hash.
         /// </summary>
-        IEnumerable<ApiKeyInfo> GetAllApiKeys();
+        IEnumerable<ApiKeyInfo> GetApiKeysByOwnerSubject(string ownerSubject);
 
         /// <summary>
-        /// Deletes an API key by ID. Returns false if not found.
+        /// Deletes an API key by ID if owned by the given subject. Returns false if not found or not owned by the subject.
         /// </summary>
-        bool DeleteApiKey(int id);
+        bool DeleteApiKey(int id, string ownerSubject);
+
+        /// <summary>
+        /// Validates a plaintext API key and returns owner resolution details for authentication.
+        /// </summary>
+        Task<ApiKeyValidationResult> ValidateApiKeyWithOwnerAsync(string plainTextKey);
 
         /// <summary>
         /// Validates a plaintext API key. Returns true if valid, and updates LastUsedAt.

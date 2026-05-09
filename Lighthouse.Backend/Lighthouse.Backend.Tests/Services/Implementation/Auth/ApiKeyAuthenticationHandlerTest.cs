@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Models.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -59,8 +60,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task HandleAuthenticateAsync_InvalidApiKey_ReturnsFail()
         {
             httpContext.Request.Headers["X-Api-Key"] = "invalid-key";
-            apiKeyServiceMock.Setup(x => x.ValidateApiKeyAsync("invalid-key"))
-                .ReturnsAsync(false);
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("invalid-key"))
+                .ReturnsAsync(new ApiKeyValidationResult { IsValid = false });
 
             var handler = await CreateAndInitializeHandler();
 
@@ -73,8 +74,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task HandleAuthenticateAsync_ValidApiKey_ReturnsSuccess()
         {
             httpContext.Request.Headers["X-Api-Key"] = "valid-key";
-            apiKeyServiceMock.Setup(x => x.ValidateApiKeyAsync("valid-key"))
-                .ReturnsAsync(true);
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("valid-key"))
+                .ReturnsAsync(new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Unlinked,
+                });
 
             var handler = await CreateAndInitializeHandler();
 
@@ -87,8 +92,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task HandleAuthenticateAsync_ValidApiKey_PrincipalHasApiKeyAuthMethodClaim()
         {
             httpContext.Request.Headers["X-Api-Key"] = "valid-key";
-            apiKeyServiceMock.Setup(x => x.ValidateApiKeyAsync("valid-key"))
-                .ReturnsAsync(true);
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("valid-key"))
+                .ReturnsAsync(new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Unlinked,
+                });
 
             var handler = await CreateAndInitializeHandler();
 
@@ -102,14 +111,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task HandleAuthenticateAsync_ValidApiKey_PrincipalHasApiKeyUserName()
         {
             httpContext.Request.Headers["X-Api-Key"] = "valid-key";
-            apiKeyServiceMock.Setup(x => x.ValidateApiKeyAsync("valid-key"))
-                .ReturnsAsync(true);
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("valid-key"))
+                .ReturnsAsync(new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Unlinked,
+                });
 
             var handler = await CreateAndInitializeHandler();
 
             var result = await handler.AuthenticateAsync();
 
             Assert.That(result.Principal?.Identity?.Name, Is.EqualTo("api-key-user"));
+        }
+
+        [Test]
+        public async Task HandleAuthenticateAsync_ResolvedOwner_AddsStableSubjectClaim()
+        {
+            httpContext.Request.Headers["X-Api-Key"] = "valid-key";
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("valid-key"))
+                .ReturnsAsync(new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Resolved,
+                    OwnerSubject = "owner-subject",
+                    OwnerDisplayName = "Owner User",
+                });
+
+            var handler = await CreateAndInitializeHandler();
+
+            var result = await handler.AuthenticateAsync();
+
+            var subjectClaim = result.Principal?.FindFirst("sub")?.Value;
+            Assert.That(subjectClaim, Is.EqualTo("owner-subject"));
+        }
+
+        [Test]
+        public async Task HandleAuthenticateAsync_UnlinkedOwner_DoesNotAddStableSubjectClaim()
+        {
+            httpContext.Request.Headers["X-Api-Key"] = "valid-key";
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("valid-key"))
+                .ReturnsAsync(new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Unlinked,
+                });
+
+            var handler = await CreateAndInitializeHandler();
+
+            var result = await handler.AuthenticateAsync();
+
+            var subjectClaim = result.Principal?.FindFirst("sub");
+            Assert.That(subjectClaim, Is.Null);
         }
 
         [Test]
@@ -126,13 +179,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task HandleAuthenticateAsync_ValidKey_CallsValidateOnService()
         {
             httpContext.Request.Headers["X-Api-Key"] = "some-key";
-            apiKeyServiceMock.Setup(x => x.ValidateApiKeyAsync("some-key"))
-                .ReturnsAsync(true);
+            apiKeyServiceMock.Setup(x => x.ValidateApiKeyWithOwnerAsync("some-key"))
+                .ReturnsAsync(new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Unlinked,
+                });
 
             var handler = await CreateAndInitializeHandler();
             await handler.AuthenticateAsync();
 
-            apiKeyServiceMock.Verify(x => x.ValidateApiKeyAsync("some-key"), Times.Once);
+            apiKeyServiceMock.Verify(x => x.ValidateApiKeyWithOwnerAsync("some-key"), Times.Once);
         }
 
         private async Task<ApiKeyAuthenticationHandler> CreateAndInitializeHandler()

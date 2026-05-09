@@ -417,7 +417,6 @@ namespace Lighthouse.Backend
         {
             // Repos
             builder.Services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
-            builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Portfolio>, PortfolioRepository>();
             builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
@@ -430,6 +429,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<BlackoutPeriod>, BlackoutPeriodRepository>();
             builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
             builder.Services.AddScoped<IRepository<RefreshLog>, RefreshLogRepository>();
+            builder.Services.AddScoped<IRepository<UserProfile>, UserProfileRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
@@ -439,6 +439,7 @@ namespace Lighthouse.Backend
 
             // Services
             builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
+            builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
@@ -468,6 +469,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISeeder, OptionalFeatureSeeder>();
             builder.Services.AddScoped<ISeeder, TerminologySeeder>();
             builder.Services.AddScoped<ISeeder, RefreshLogSeeder>();
+            builder.Services.AddScoped<ISeeder, ApiKeyOwnerReconciliationSeeder>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();

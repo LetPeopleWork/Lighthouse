@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
     public class AuthModeResolverTest
     {
         private Mock<IOptions<AuthenticationConfiguration>> configMock;
+        private Mock<IOptions<AuthorizationConfiguration>> authorizationConfigMock;
         private Mock<IAuthConfigurationValidator> validatorMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IPlatformService> platformServiceMock;
@@ -22,6 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void SetUp()
         {
             configMock = new Mock<IOptions<AuthenticationConfiguration>>();
+            authorizationConfigMock = new Mock<IOptions<AuthorizationConfiguration>>();
             validatorMock = new Mock<IAuthConfigurationValidator>();
             licenseServiceMock = new Mock<ILicenseService>();
             platformServiceMock = new Mock<IPlatformService>();
@@ -32,6 +34,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_AuthDisabled_ReturnsDisabledMode()
         {
             SetupConfig(enabled: false);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: true);
 
             var subject = CreateSubject();
@@ -50,6 +53,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_AuthEnabled_ValidConfig_PremiumValid_ReturnsEnabledMode()
         {
             SetupConfig(enabled: true);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: true);
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
 
@@ -69,6 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_AuthEnabled_ValidConfig_PremiumInvalid_ReturnsBlockedMode()
         {
             SetupConfig(enabled: true);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: true);
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
@@ -87,6 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_AuthEnabled_InvalidConfig_ReturnsMisconfiguredMode()
         {
             SetupConfig(enabled: true);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: false, errorReason: "Authority is required");
 
             var subject = CreateSubject();
@@ -104,6 +110,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_Standalone_AuthEnabled_ReturnsDisabledMode()
         {
             SetupConfig(enabled: true);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: true);
             platformServiceMock.Setup(p => p.IsStandalone).Returns(true);
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
@@ -119,6 +126,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_Standalone_AuthDisabled_ReturnsDisabledMode()
         {
             SetupConfig(enabled: false);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: true);
             platformServiceMock.Setup(p => p.IsStandalone).Returns(true);
 
@@ -133,6 +141,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_AuthEnabled_InvalidConfig_DoesNotCheckLicense()
         {
             SetupConfig(enabled: true);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: false, errorReason: "ClientId is required");
 
             var subject = CreateSubject();
@@ -146,6 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public void Resolve_AuthDisabled_DoesNotCheckLicense()
         {
             SetupConfig(enabled: false);
+            SetupAuthorizationConfig(enabled: false);
             SetupValidation(isValid: true);
 
             var subject = CreateSubject();
@@ -156,21 +166,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         }
 
         [Test]
-        public void Resolve_AuthDisabled_DoesNotValidateConfig()
+        public void Resolve_AuthDisabled_ValidatesCombinedConfig()
         {
             SetupConfig(enabled: false);
+            SetupAuthorizationConfig(enabled: false);
+            SetupValidation(isValid: true);
 
             var subject = CreateSubject();
 
             subject.Resolve();
 
-            validatorMock.Verify(v => v.Validate(It.IsAny<AuthenticationConfiguration>()), Times.Never);
+            validatorMock.Verify(
+                v => v.Validate(It.IsAny<AuthenticationConfiguration>(), It.IsAny<AuthorizationConfiguration>()),
+                Times.Once);
+        }
+
+        [Test]
+        public void Resolve_AuthorizationEnabledAndAuthenticationDisabled_ReturnsMisconfiguredMode()
+        {
+            SetupConfig(enabled: false);
+            SetupAuthorizationConfig(enabled: true);
+            SetupValidation(isValid: false, errorReason: "Authorization cannot be enabled when authentication is disabled.");
+
+            var subject = CreateSubject();
+
+            var result = subject.Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Mode, Is.EqualTo(AuthMode.Misconfigured));
+                Assert.That(result.MisconfigurationMessage, Does.Contain("Authorization"));
+            }
         }
 
         private AuthModeResolver CreateSubject()
         {
             return new AuthModeResolver(
                 configMock.Object,
+                authorizationConfigMock.Object,
                 validatorMock.Object,
                 licenseServiceMock.Object,
                 platformServiceMock.Object,
@@ -189,13 +222,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             configMock.Setup(c => c.Value).Returns(config);
         }
 
+        private void SetupAuthorizationConfig(bool enabled)
+        {
+            var config = new AuthorizationConfiguration
+            {
+                Enabled = enabled,
+            };
+
+            authorizationConfigMock.Setup(c => c.Value).Returns(config);
+        }
+
         private void SetupValidation(bool isValid, string? errorReason = null)
         {
             var result = isValid
                 ? AuthConfigurationValidationResult.Valid()
                 : AuthConfigurationValidationResult.Invalid(errorReason!);
 
-            validatorMock.Setup(v => v.Validate(It.IsAny<AuthenticationConfiguration>())).Returns(result);
+            validatorMock
+                .Setup(v => v.Validate(It.IsAny<AuthenticationConfiguration>(), It.IsAny<AuthorizationConfiguration>()))
+                .Returns(result);
         }
     }
 }

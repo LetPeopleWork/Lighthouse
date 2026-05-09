@@ -8,20 +8,23 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 {
     public class AuthModeResolver : IAuthModeResolver
     {
-        private readonly IOptions<AuthenticationConfiguration> configuration;
+        private readonly IOptions<AuthenticationConfiguration> authenticationConfiguration;
+        private readonly IOptions<AuthorizationConfiguration> authorizationConfiguration;
         private readonly IAuthConfigurationValidator validator;
         private readonly ILicenseService licenseService;
         private readonly IPlatformService platformService;
         private readonly ILogger<AuthModeResolver> logger;
 
         public AuthModeResolver(
-            IOptions<AuthenticationConfiguration> configuration,
+            IOptions<AuthenticationConfiguration> authenticationConfiguration,
+            IOptions<AuthorizationConfiguration> authorizationConfiguration,
             IAuthConfigurationValidator validator,
             ILicenseService licenseService,
             IPlatformService platformService,
             ILogger<AuthModeResolver> logger)
         {
-            this.configuration = configuration;
+            this.authenticationConfiguration = authenticationConfiguration;
+            this.authorizationConfiguration = authorizationConfiguration;
             this.validator = validator;
             this.licenseService = licenseService;
             this.platformService = platformService;
@@ -30,9 +33,24 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 
         public RuntimeAuthStatus Resolve()
         {
-            var config = configuration.Value;
+            var authConfig = authenticationConfiguration.Value;
+            var authzConfig = authorizationConfiguration.Value;
 
-            if (!config.Enabled)
+            var validationResult = validator.Validate(authConfig, authzConfig);
+            if (!validationResult.IsValid)
+            {
+                logger.LogError(
+                    "Authentication/authorization configuration is invalid: {Reason}. The instance will enter misconfigured mode",
+                    validationResult.ErrorReason);
+
+                return new RuntimeAuthStatus
+                {
+                    Mode = AuthMode.Misconfigured,
+                    MisconfigurationMessage = validationResult.ErrorReason,
+                };
+            }
+
+            if (!authConfig.Enabled)
             {
                 logger.LogDebug("Authentication is disabled by configuration");
                 return new RuntimeAuthStatus { Mode = AuthMode.Disabled };
@@ -42,17 +60,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             {
                 logger.LogWarning("Authentication is enabled in configuration but the current runtime is a standalone/Tauri variant. Auth is not supported for standalone variants and will be disabled");
                 return new RuntimeAuthStatus { Mode = AuthMode.Disabled };
-            }
-
-            var validationResult = validator.Validate(config);
-            if (!validationResult.IsValid)
-            {
-                logger.LogError("Authentication configuration is invalid: {Reason}. The instance will enter misconfigured mode and login will not be available", validationResult.ErrorReason);
-                return new RuntimeAuthStatus
-                {
-                    Mode = AuthMode.Misconfigured,
-                    MisconfigurationMessage = validationResult.ErrorReason,
-                };
             }
 
             if (!licenseService.CanUsePremiumFeatures())

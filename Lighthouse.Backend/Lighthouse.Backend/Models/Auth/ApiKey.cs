@@ -16,6 +16,10 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string CreatedByUser { get; set; } = string.Empty;
 
+        public int? OwnerUserProfileId { get; set; }
+
+        public string? OwnerSubject { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? LastUsedAt { get; set; }

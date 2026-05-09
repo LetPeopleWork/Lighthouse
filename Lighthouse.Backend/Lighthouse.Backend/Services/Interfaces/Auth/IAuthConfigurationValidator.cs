@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
 {
     public interface IAuthConfigurationValidator
     {
-        AuthConfigurationValidationResult Validate(AuthenticationConfiguration configuration);
+        AuthConfigurationValidationResult Validate(
+            AuthenticationConfiguration authenticationConfiguration,
+            AuthorizationConfiguration authorizationConfiguration);
     }
 }

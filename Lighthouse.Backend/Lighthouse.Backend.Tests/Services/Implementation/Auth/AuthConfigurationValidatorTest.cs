@@ -11,8 +11,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: false);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -22,10 +23,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: false, authority: "");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_AuthorizationEnabled_AuthenticationDisabled_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var authConfig = CreateConfig(enabled: false);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: true);
+
+            var result = validator.Validate(authConfig, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authorization"));
+            }
         }
 
         [Test]
@@ -33,8 +51,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -44,8 +63,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, authority: "");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -60,8 +80,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, clientId: "");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -76,8 +97,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, authority: "   ");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -92,8 +114,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, clientId: "   ");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -108,8 +131,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, authority: "not-a-url");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -124,8 +148,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, authority: "http://idp.example.com");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -140,8 +165,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, authority: "https://idp.example.com");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -151,8 +177,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, scopes: []);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -167,8 +194,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             var validator = CreateSubject();
             var config = CreateConfig(enabled: true, scopes: ["profile", "email"]);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
 
-            var result = validator.Validate(config);
+            var result = validator.Validate(config, authorizationConfig);
 
             using (Assert.EnterMultipleScope())
             {
@@ -199,6 +227,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 ClientSecret = clientSecret,
                 CallbackPath = callbackPath ?? "/api/auth/callback",
                 Scopes = scopes ?? ["openid", "profile", "email"],
+            };
+        }
+
+        private static AuthorizationConfiguration CreateAuthorizationConfig(bool enabled)
+        {
+            return new AuthorizationConfiguration
+            {
+                Enabled = enabled,
             };
         }
     }

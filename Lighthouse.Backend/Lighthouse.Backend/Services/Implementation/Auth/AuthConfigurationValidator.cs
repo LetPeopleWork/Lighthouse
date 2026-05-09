@@ -5,39 +5,46 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 {
     public class AuthConfigurationValidator : IAuthConfigurationValidator
     {
-        public AuthConfigurationValidationResult Validate(AuthenticationConfiguration configuration)
+        public AuthConfigurationValidationResult Validate(
+            AuthenticationConfiguration authenticationConfiguration,
+            AuthorizationConfiguration authorizationConfiguration)
         {
-            if (!configuration.Enabled)
+            if (authorizationConfiguration.Enabled && !authenticationConfiguration.Enabled)
+            {
+                return AuthConfigurationValidationResult.Invalid("Authorization cannot be enabled when authentication is disabled.");
+            }
+
+            if (!authenticationConfiguration.Enabled)
             {
                 return AuthConfigurationValidationResult.Valid();
             }
 
-            if (string.IsNullOrWhiteSpace(configuration.Authority))
+            if (string.IsNullOrWhiteSpace(authenticationConfiguration.Authority))
             {
                 return AuthConfigurationValidationResult.Invalid("Authority is required when authentication is enabled.");
             }
 
-            if (!Uri.TryCreate(configuration.Authority, UriKind.Absolute, out var authorityUri))
+            if (!Uri.TryCreate(authenticationConfiguration.Authority, UriKind.Absolute, out var authorityUri))
             {
                 return AuthConfigurationValidationResult.Invalid("Authority must be a valid absolute URL.");
             }
 
-            if (configuration.RequireHttpsMetadata && !string.Equals(authorityUri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            if (authenticationConfiguration.RequireHttpsMetadata && !string.Equals(authorityUri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
             {
                 return AuthConfigurationValidationResult.Invalid("Authority must use HTTPS.");
             }
 
-            if (string.IsNullOrWhiteSpace(configuration.ClientId))
+            if (string.IsNullOrWhiteSpace(authenticationConfiguration.ClientId))
             {
                 return AuthConfigurationValidationResult.Invalid("ClientId is required when authentication is enabled.");
             }
 
-            if (configuration.Scopes.Count == 0)
+            if (authenticationConfiguration.Scopes.Count == 0)
             {
                 return AuthConfigurationValidationResult.Invalid("Scopes must not be empty when authentication is enabled.");
             }
 
-            if (!configuration.Scopes.Contains("openid", StringComparer.OrdinalIgnoreCase))
+            if (!authenticationConfiguration.Scopes.Contains("openid", StringComparer.OrdinalIgnoreCase))
             {
                 return AuthConfigurationValidationResult.Invalid("Scopes must include 'openid' for OIDC authentication.");
             }

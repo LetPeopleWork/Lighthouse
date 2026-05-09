@@ -33,10 +33,10 @@ namespace Lighthouse.Backend.Tests.API
                 PlainTextKey = "lh_plaintext_key"
             };
 
-            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync("my-key", "desc", "alice"))
+            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject"))
                 .ReturnsAsync(creationResult);
 
-            var subject = CreateSubjectWithUser("alice");
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
             var request = new CreateApiKeyRequest { Name = "my-key", Description = "desc" };
 
             var result = await subject.CreateApiKey(request) as ObjectResult;
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task CreateApiKey_EmptyName_ReturnsBadRequest()
         {
-            var subject = CreateSubjectWithUser("alice");
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
             var request = new CreateApiKeyRequest { Name = "", Description = "desc" };
 
             var result = await subject.CreateApiKey(request);
@@ -64,13 +64,23 @@ namespace Lighthouse.Backend.Tests.API
         public async Task CreateApiKey_CallsServiceWithCurrentUser()
         {
             var creationResult = new ApiKeyCreationResult { Name = "k", PlainTextKey = "x" };
-            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync(It.IsAny<string>(), It.IsAny<string>(), "bob"))
+            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync(It.IsAny<string>(), It.IsAny<string>(), "bob", "bob-subject"))
                 .ReturnsAsync(creationResult);
 
-            var subject = CreateSubjectWithUser("bob");
+            var subject = CreateSubjectWithUser("bob", "bob-subject");
             await subject.CreateApiKey(new CreateApiKeyRequest { Name = "k", Description = "" });
 
-            apiKeyServiceMock.Verify(x => x.CreateApiKeyAsync("k", "", "bob"), Times.Once);
+            apiKeyServiceMock.Verify(x => x.CreateApiKeyAsync("k", "", "bob", "bob-subject"), Times.Once);
+        }
+
+        [Test]
+        public async Task CreateApiKey_MissingStableSubject_ReturnsForbid()
+        {
+            var subject = CreateSubjectWithUser("bob", null);
+
+            var result = await subject.CreateApiKey(new CreateApiKeyRequest { Name = "k", Description = "" });
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
         }
 
         // --- List ---
@@ -83,12 +93,34 @@ namespace Lighthouse.Backend.Tests.API
                 new ApiKeyInfo { Id = 1, Name = "key1" },
                 new ApiKeyInfo { Id = 2, Name = "key2" },
             };
-            apiKeyServiceMock.Setup(x => x.GetAllApiKeys()).Returns(keys);
+            apiKeyServiceMock.Setup(x => x.GetApiKeysByOwnerSubject("alice-subject")).Returns(keys);
 
-            var subject = CreateSubjectWithUser("alice");
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
             var result = subject.GetApiKeys() as OkObjectResult;
 
             Assert.That(result?.Value, Is.SameAs(keys));
+        }
+
+        [Test]
+        public void GetApiKeys_CallsServiceWithCurrentUser()
+        {
+            apiKeyServiceMock.Setup(x => x.GetApiKeysByOwnerSubject("alice-subject")).Returns([]);
+
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
+
+            subject.GetApiKeys();
+
+            apiKeyServiceMock.Verify(x => x.GetApiKeysByOwnerSubject("alice-subject"), Times.Once);
+        }
+
+        [Test]
+        public void GetApiKeys_MissingStableSubject_ReturnsForbid()
+        {
+            var subject = CreateSubjectWithUser("alice", null);
+
+            var result = subject.GetApiKeys();
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
         }
 
         // --- Delete ---
@@ -96,9 +128,9 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void DeleteApiKey_ExistingId_ReturnsNoContent()
         {
-            apiKeyServiceMock.Setup(x => x.DeleteApiKey(5)).Returns(true);
+            apiKeyServiceMock.Setup(x => x.DeleteApiKey(5, "alice-subject")).Returns(true);
 
-            var subject = CreateSubjectWithUser("alice");
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
             var result = subject.DeleteApiKey(5);
 
             Assert.That(result, Is.InstanceOf<NoContentResult>());
@@ -107,19 +139,50 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void DeleteApiKey_NonExistentId_ReturnsNotFound()
         {
-            apiKeyServiceMock.Setup(x => x.DeleteApiKey(99)).Returns(false);
+            apiKeyServiceMock.Setup(x => x.DeleteApiKey(99, "alice-subject")).Returns(false);
 
-            var subject = CreateSubjectWithUser("alice");
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
             var result = subject.DeleteApiKey(99);
 
             Assert.That(result, Is.InstanceOf<NotFoundResult>());
         }
 
+        [Test]
+        public void DeleteApiKey_CallsServiceWithCurrentUser()
+        {
+            apiKeyServiceMock.Setup(x => x.DeleteApiKey(7, "alice-subject")).Returns(true);
+
+            var subject = CreateSubjectWithUser("alice", "alice-subject");
+
+            subject.DeleteApiKey(7);
+
+            apiKeyServiceMock.Verify(x => x.DeleteApiKey(7, "alice-subject"), Times.Once);
+        }
+
+        [Test]
+        public void DeleteApiKey_MissingStableSubject_ReturnsForbid()
+        {
+            var subject = CreateSubjectWithUser("alice", null);
+
+            var result = subject.DeleteApiKey(1);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
+
         // --- Helpers ---
 
-        private ApiKeyController CreateSubjectWithUser(string userName)
+        private ApiKeyController CreateSubjectWithUser(string userName, string? subject)
         {
-            var claims = new[] { new Claim(ClaimTypes.Name, userName) };
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, userName),
+            };
+
+            if (!string.IsNullOrWhiteSpace(subject))
+            {
+                claims.Add(new Claim("sub", subject));
+            }
+
             var identity = new ClaimsIdentity(claims, "Test");
             var principal = new ClaimsPrincipal(identity);
 

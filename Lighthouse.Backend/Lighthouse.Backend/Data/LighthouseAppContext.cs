@@ -75,6 +75,15 @@ namespace Lighthouse.Backend.Data
                 .Property(up => up.SubjectClaimType)
                 .IsRequired();
 
+            modelBuilder.Entity<ApiKey>()
+                .HasOne<UserProfile>()
+                .WithMany()
+                .HasForeignKey(key => key.OwnerUserProfileId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ApiKey>()
+                .HasIndex(key => key.OwnerSubject);
+
             modelBuilder.Entity<UserPermission>()
                 .HasIndex(p => new { p.UserProfileId, p.Role, p.ScopeType, p.ScopeId })
                 .IsUnique();

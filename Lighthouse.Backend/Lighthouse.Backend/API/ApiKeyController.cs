@@ -25,8 +25,14 @@ namespace Lighthouse.Backend.API
                 return BadRequest("API key name is required.");
             }
 
+            var stableSubject = GetStableSubject();
+            if (string.IsNullOrWhiteSpace(stableSubject))
+            {
+                return Forbid();
+            }
+
             var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
-            var result = await apiKeyService.CreateApiKeyAsync(request.Name, request.Description ?? string.Empty, userName);
+            var result = await apiKeyService.CreateApiKeyAsync(request.Name, request.Description ?? string.Empty, userName, stableSubject);
 
             return StatusCode(StatusCodes.Status201Created, result);
         }
@@ -38,7 +44,13 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType<IEnumerable<ApiKeyInfo>>(StatusCodes.Status200OK)]
         public IActionResult GetApiKeys()
         {
-            var keys = apiKeyService.GetAllApiKeys();
+            var stableSubject = GetStableSubject();
+            if (string.IsNullOrWhiteSpace(stableSubject))
+            {
+                return Forbid();
+            }
+
+            var keys = apiKeyService.GetApiKeysByOwnerSubject(stableSubject);
             return Ok(keys);
         }
 
@@ -50,13 +62,25 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult DeleteApiKey(int id)
         {
-            var deleted = apiKeyService.DeleteApiKey(id);
+            var stableSubject = GetStableSubject();
+            if (string.IsNullOrWhiteSpace(stableSubject))
+            {
+                return Forbid();
+            }
+
+            var deleted = apiKeyService.DeleteApiKey(id, stableSubject);
             if (!deleted)
             {
                 return NotFound();
             }
 
             return NoContent();
+        }
+
+        private string? GetStableSubject()
+        {
+            return User.FindFirst("sub")?.Value
+                ?? User.FindFirst("oid")?.Value;
         }
     }
 }

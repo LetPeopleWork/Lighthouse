@@ -116,11 +116,21 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("OwnerSubject")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("OwnerUserProfileId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Salt")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerSubject");
+
+                    b.HasIndex("OwnerUserProfileId");
 
                     b.ToTable("ApiKeys");
                 });
@@ -993,6 +1003,14 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("WorkTrackingSystemConnection");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Auth.ApiKey", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Auth.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserProfileId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.UserPermission", b =>
