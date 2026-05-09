@@ -574,7 +574,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Assert.That(summary.CanCreateTeam, Is.True);
                 Assert.That(summary.CanCreatePortfolio, Is.False);
                 Assert.That(summary.IsRbacEnabled, Is.True);
-                Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(new[] { "System Admin User" }));
+                Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(["System Admin User"]));
             }
         }
 
