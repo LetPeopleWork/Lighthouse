@@ -31,15 +31,23 @@ namespace Lighthouse.Backend.API
             var portfolioDtos = new List<PortfolioDto>();
 
             var allPortfolios = portfolioRepository.GetAll().ToList();
+            var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
             var readablePortfolioIds = rbacAdministrationService
-                .GetReadablePortfolioIdsAsync(User, allPortfolios.Select(p => p.Id), HttpContext?.RequestAborted ?? default)
+                .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
                 .GetAwaiter()
                 .GetResult();
-            var readablePortfolioIdSet = readablePortfolioIds.ToHashSet();
+            var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds).ToHashSet();
+            var teamIds = allPortfolios.SelectMany(p => p.Teams).Select(t => t.Id).Distinct().ToArray();
+            var readableTeamIdSet = rbacAdministrationService
+                .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
+                .GetAwaiter()
+                .GetResult();
+            var effectiveReadableTeamIds = (readableTeamIdSet ?? teamIds)
+                .ToHashSet();
 
             foreach (var portfolio in allPortfolios.Where(portfolio => readablePortfolioIdSet.Contains(portfolio.Id)))
             {
-                var portfolioDto = new PortfolioDto(portfolio);
+                var portfolioDto = new PortfolioDto(portfolio, effectiveReadableTeamIds);
                 portfolioDtos.Add(portfolioDto);
             }
 

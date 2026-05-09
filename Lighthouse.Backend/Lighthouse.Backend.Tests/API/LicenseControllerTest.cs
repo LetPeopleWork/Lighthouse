@@ -1,7 +1,10 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -20,6 +23,43 @@ namespace Lighthouse.Backend.Tests.API
         {
             licenseServiceMock = new Mock<ILicenseService>();
             subject = new LicenseController(licenseServiceMock.Object);
+        }
+
+        [Test]
+        public void LicenseController_HasAuthorizeAttribute()
+        {
+            var attribute = typeof(LicenseController)
+                .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+                .Cast<AuthorizeAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+        }
+
+        [Test]
+        public void ImportLicense_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(LicenseController).GetMethod(nameof(LicenseController.ImportLicense));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+        }
+
+        [Test]
+        public void ClearLicense_HasSystemAdminRbacGuardAttribute()
+        {
+            var method = typeof(LicenseController).GetMethod(nameof(LicenseController.ClearLicense));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
 
         [Test]

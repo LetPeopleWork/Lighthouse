@@ -326,6 +326,26 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetPortfolios_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeams()
+        {
+            var visibleTeam = new Team { Id = 1, Name = "Visible Team" };
+            var hiddenTeam = new Team { Id = 2, Name = "Hidden Team" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio" };
+            portfolio.Features.Add(new Feature(visibleTeam, 3));
+            portfolio.Features.Add(new Feature(hiddenTeam, 5));
+
+            portfolioRepoMock.Setup(x => x.GetAll()).Returns([portfolio]);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visibleTeam.Id]);
+
+            var subject = CreateSubject();
+            var result = subject.GetPortfolios().Single();
+
+            Assert.That(result.InvolvedTeams.Select(t => t.Id), Is.EqualTo(new[] { visibleTeam.Id }));
+        }
+
+        [Test]
         public void CreatePortfolio_HasSystemAdminRbacGuardAttribute()
         {
             var method = typeof(PortfoliosController).GetMethod(nameof(PortfoliosController.CreatePortfolio));

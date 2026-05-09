@@ -1,5 +1,8 @@
 ﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -7,6 +10,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    [Authorize]
     public class LicenseController : ControllerBase
     {
         private readonly ILicenseService licenseService;
@@ -29,6 +33,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("import")]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<IActionResult> ImportLicense(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -62,6 +67,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<IActionResult> ClearLicense()
         {
             try

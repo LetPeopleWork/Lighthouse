@@ -1,10 +1,13 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -12,6 +15,7 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> projectRepositoryMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         private List<Team> teams;
         private List<Portfolio> projects;
@@ -21,12 +25,30 @@ namespace Lighthouse.Backend.Tests.API
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
             projectRepositoryMock = new Mock<IRepository<Portfolio>>();
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
 
             teams = new List<Team>();
             projects = new List<Portfolio>();
 
             teamRepositoryMock.Setup(repo => repo.GetAll()).Returns(teams);
             projectRepositoryMock.Setup(repo => repo.GetAll()).Returns(projects);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
+        }
+
+        [Test]
+        public void SuggestionsController_HasAuthorizeAttribute()
+        {
+            var attribute = typeof(SuggestionsController)
+                .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+                .Cast<AuthorizeAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
         }
 
         [Test]
@@ -90,6 +112,30 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(itemTypes, Has.Member(teamType2));
                 Assert.That(itemTypes, Has.Member(teamType3));
             };
+        }
+
+        [Test]
+        public void GetWorkItemTypesForTeams_FiltersUnreadableTeams()
+        {
+            var visibleTeam = CreateTeam();
+            visibleTeam.Id = 1;
+            visibleTeam.WorkItemTypes.Clear();
+            visibleTeam.WorkItemTypes.Add("Story");
+
+            var hiddenTeam = CreateTeam();
+            hiddenTeam.Id = 2;
+            hiddenTeam.WorkItemTypes.Clear();
+            hiddenTeam.WorkItemTypes.Add("Secret Type");
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visibleTeam.Id]);
+
+            var subject = CreateSubject();
+            var response = subject.GetWorkItemTypesForTeams();
+
+            var itemTypes = (List<string>)((OkObjectResult)response.Result!).Value!;
+            Assert.That(itemTypes, Is.EqualTo(new[] { "Story" }));
         }
 
         [Test]
@@ -303,6 +349,30 @@ namespace Lighthouse.Backend.Tests.API
             };
         }
 
+        [Test]
+        public void GetStatesForProjects_FiltersUnreadableProjects()
+        {
+            var visibleProject = CreateProject();
+            visibleProject.Id = 1;
+            visibleProject.ToDoStates.Clear();
+            visibleProject.ToDoStates.Add("Visible");
+
+            var hiddenProject = CreateProject();
+            hiddenProject.Id = 2;
+            hiddenProject.ToDoStates.Clear();
+            hiddenProject.ToDoStates.Add("Hidden");
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visibleProject.Id]);
+
+            var subject = CreateSubject();
+            var response = subject.GetStatesForProjects();
+            var states = (StatesCollectionDto)((OkObjectResult)response.Result!).Value!;
+
+            Assert.That(states.ToDoStates, Is.EqualTo(new[] { "Visible" }));
+        }
+
         private Portfolio CreateProject()
         {
             var project = new Portfolio
@@ -334,7 +404,8 @@ namespace Lighthouse.Backend.Tests.API
             return new SuggestionsController(
                 Mock.Of<ILogger<SuggestionsController>>(),
                 teamRepositoryMock.Object,
-                projectRepositoryMock.Object);
+                projectRepositoryMock.Object,
+                rbacAdministrationServiceMock.Object);
         }
     }
 }

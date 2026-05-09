@@ -1,6 +1,8 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +12,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    [RbacGuard(RbacGuardRequirement.SystemAdmin)]
     public class WizardsController(
         IJiraWorkTrackingConnector jiraWorkTrackingConnector,
         IAzureDevOpsWorkTrackingConnector azureDevOpsWorkTrackingConnector,

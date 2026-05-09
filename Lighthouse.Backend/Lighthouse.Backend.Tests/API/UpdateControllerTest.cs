@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 
@@ -14,6 +15,17 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
+        }
+
+        [Test]
+        public void UpdateController_HasAuthorizeAttribute()
+        {
+            var attribute = typeof(UpdateController)
+                .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+                .Cast<AuthorizeAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
         }
 
         [Test]

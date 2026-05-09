@@ -139,6 +139,31 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetTeams_WhenLinkedPortfoliosAreUnreadable_FiltersPortfoliosAndFeatures()
+        {
+            var team = CreateTeam(1, "Numero Uno");
+            var visiblePortfolio = CreatePortfolio(42, "Visible Portfolio");
+            var hiddenPortfolio = CreatePortfolio(13, "Hidden Portfolio");
+
+            CreateFeature(visiblePortfolio, team, 12);
+            CreateFeature(hiddenPortfolio, team, 5);
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visiblePortfolio.Id]);
+
+            var subject = CreateSubject([team], [visiblePortfolio, hiddenPortfolio]);
+
+            var result = subject.GetTeams().Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Portfolios.Select(p => p.Id), Is.EqualTo(new[] { visiblePortfolio.Id }));
+                Assert.That(result.Features, Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
         public void GetTeams_MultipleTeams_MultiplePortfolios_MultipleFeatures()
         {
             var team1 = CreateTeam(1, "Numero Uno");

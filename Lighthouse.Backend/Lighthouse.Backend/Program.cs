@@ -310,6 +310,12 @@ namespace Lighthouse.Backend
         {
             if (!authConfig.Enabled)
             {
+                builder.Services.AddAuthorizationBuilder();
+                builder.Services
+                    .AddAuthentication(DisabledAuthenticationHandler.SchemeName)
+                    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, DisabledAuthenticationHandler>(
+                        DisabledAuthenticationHandler.SchemeName,
+                        _ => { });
                 return;
             }
 

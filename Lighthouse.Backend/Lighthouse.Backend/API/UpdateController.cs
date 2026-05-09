@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 
@@ -7,6 +8,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    [Authorize]
     public class UpdateController(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses)
         : ControllerBase
     {

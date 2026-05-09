@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +20,26 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
-        IRefreshLogService refreshLogService)
+        IRefreshLogService refreshLogService,
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public ActionResult<PortfolioDto> Get(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio => new PortfolioDto(portfolio));
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio =>
+            {
+                var teamIds = portfolio.Teams.Select(t => t.Id).ToArray();
+                var readableTeamIds = rbacAdministrationService
+                    .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
+                    .GetAwaiter()
+                    .GetResult();
+                var readableTeamIdSet = (readableTeamIds ?? teamIds)
+                    .ToHashSet();
+
+                return new PortfolioDto(portfolio, readableTeamIdSet);
+            });
         }
 
         [HttpPost("refresh")]
@@ -90,7 +103,22 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, portfolio =>
             {
-                var portfolioSettingDto = new PortfolioSettingDto(portfolio);
+                var relatedTeamIds = portfolio.Teams.Select(t => t.Id);
+                if (portfolio.OwningTeam is not null)
+                {
+                    relatedTeamIds = relatedTeamIds.Append(portfolio.OwningTeam.Id);
+                }
+
+                var relatedTeamIdArray = relatedTeamIds.Distinct().ToArray();
+
+                var readableTeamIds = rbacAdministrationService
+                    .GetReadableTeamIdsAsync(User, relatedTeamIdArray, HttpContext?.RequestAborted ?? default)
+                    .GetAwaiter()
+                    .GetResult();
+                var readableTeamIdSet = (readableTeamIds ?? relatedTeamIdArray)
+                    .ToHashSet();
+
+                var portfolioSettingDto = new PortfolioSettingDto(portfolio, readableTeamIdSet);
                 return portfolioSettingDto;
             });
         }

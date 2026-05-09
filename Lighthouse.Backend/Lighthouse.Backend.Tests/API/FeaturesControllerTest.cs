@@ -1,10 +1,14 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Linq.Expressions;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -18,12 +22,14 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
         public void Setup()
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
 
             features.Clear();
             parentFeatures.Clear();
@@ -37,6 +43,21 @@ namespace Lighthouse.Backend.Tests.API
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
+        }
+
+        [Test]
+        public void FeaturesController_HasAuthorizeAttribute()
+        {
+            var attribute = typeof(FeaturesController)
+                .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+                .Cast<AuthorizeAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
         }
 
         [Test]
@@ -188,6 +209,59 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetFeatureDetails_SingleId_WithUnreadableLinkedPortfolios_SkipsFeature()
+        {
+            var visiblePortfolio = new Portfolio { Id = 1, Name = "Visible" };
+            var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
+
+            var visibleFeature = CreateFeatureById(1886);
+            visibleFeature.Portfolios.Add(visiblePortfolio);
+
+            var hiddenFeature = CreateFeatureById(1887);
+            hiddenFeature.Portfolios.Add(hiddenPortfolio);
+
+            features.Add(visibleFeature);
+            features.Add(hiddenFeature);
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visiblePortfolio.Id]);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetFeatureDetailsById(new List<int> { 1886, 1887 });
+
+            var okResult = response.Result as OkObjectResult;
+            var result = okResult!.Value as List<FeatureDto>;
+
+            Assert.That(result!.Select(x => x.Id), Is.EqualTo(new[] { 1886 }));
+        }
+
+        [Test]
+        public void GetFeatureDetails_SingleId_FiltersUnreadableProjectReferences()
+        {
+            var visiblePortfolio = new Portfolio { Id = 1, Name = "Visible" };
+            var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
+
+            var feature = CreateFeatureById(1886);
+            feature.Portfolios.Add(visiblePortfolio);
+            feature.Portfolios.Add(hiddenPortfolio);
+            features.Add(feature);
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visiblePortfolio.Id]);
+
+            var subject = CreateSubject();
+            var response = subject.GetFeatureDetailsById(new List<int> { 1886 });
+
+            var okResult = response.Result as OkObjectResult;
+            var result = okResult!.Value as List<FeatureDto>;
+
+            Assert.That(result![0].Projects.Select(x => x.Id), Is.EqualTo(new[] { visiblePortfolio.Id }));
+        }
+
+        [Test]
         public void GetFeatureDetails_MultipleIds_AllExists_ReturnsFeatureDtos()
         {
             var feature1 = CreateFeatureById(18);
@@ -281,6 +355,25 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void GetFeatureWorkItems_WhenFeatureHasNoReadablePortfolio_ReturnsNotFound()
+        {
+            var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
+            var feature = CreateFeatureById(1886);
+            feature.ReferenceId = "FTR-1886";
+            feature.Portfolios.Add(hiddenPortfolio);
+            features.Add(feature);
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<int>());
+
+            var subject = CreateSubject();
+            var response = subject.GetFeatureWorkItems(1886);
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
         private Feature CreateFeatureByReferenceId(string referenceId)
         {
             var feature = new Feature
@@ -323,7 +416,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private FeaturesController CreateSubject()
         {
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object);
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, rbacAdministrationServiceMock.Object);
         }
     }
 }

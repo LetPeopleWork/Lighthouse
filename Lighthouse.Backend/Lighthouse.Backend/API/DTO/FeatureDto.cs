@@ -4,7 +4,7 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureDto : WorkItemDto
     {
-        public FeatureDto(Feature feature) : base(feature)
+        public FeatureDto(Feature feature, ISet<int>? readablePortfolioIds = null) : base(feature)
         {            
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
@@ -26,6 +26,11 @@ namespace Lighthouse.Backend.API.DTO
 
             foreach (var project in feature.Portfolios)
             {
+                if (readablePortfolioIds is not null && !readablePortfolioIds.Contains(project.Id))
+                {
+                    continue;
+                }
+
                 Projects.Add(new EntityReferenceDto(project.Id, project.Name));
             }
         }

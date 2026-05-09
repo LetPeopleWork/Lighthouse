@@ -8,9 +8,9 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public PortfolioDto(Portfolio portfolio) : base(portfolio)
+        public PortfolioDto(Portfolio portfolio, ISet<int>? readableTeamIds = null) : base(portfolio)
         {
-            InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos());
+            InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos(readableTeamIds));
 
             foreach (var feature in portfolio.Features.OrderBy(f => f, new FeatureComparer()))
             {

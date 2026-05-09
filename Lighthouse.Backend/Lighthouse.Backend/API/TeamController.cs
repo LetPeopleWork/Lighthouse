@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,8 @@ namespace Lighthouse.Backend.API
         ITeamUpdater teamUpdateService,
         IPortfolioUpdater portfolioUpdater,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
-        IRefreshLogService refreshLogService)
+        IRefreshLogService refreshLogService,
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet]
@@ -32,8 +34,15 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
                 var allPortfolios = projectRepository.GetAll().ToList();
+                var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
+                var readablePortfolioIds = rbacAdministrationService
+                    .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
+                    .GetAwaiter()
+                    .GetResult();
+                var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds)
+                    .ToHashSet();
 
-                var teamDto = team.CreateTeamDto(allPortfolios);
+                var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdSet);
                 var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                 var throughputSettings = team.GetThroughputSettings();
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -16,6 +17,17 @@ namespace Lighthouse.Backend.Tests.API
         {
             systemInfoServiceMock = new Mock<ISystemInfoService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
+        }
+
+        [Test]
+        public void SystemInfoController_HasAuthorizeAttribute()
+        {
+            var attribute = typeof(SystemInfoController)
+                .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+                .Cast<AuthorizeAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
         }
 
         [Test]

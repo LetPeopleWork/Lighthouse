@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.API.DTO
         {            
         }
 
-        public PortfolioSettingDto(Portfolio portfolio) : base(portfolio)
+        public PortfolioSettingDto(Portfolio portfolio, ISet<int>? readableTeamIds = null) : base(portfolio)
         {
             UsePercentileToCalculateDefaultAmountOfWorkItems = portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems;
             DefaultAmountOfWorkItemsPerFeature = portfolio.DefaultAmountOfWorkItemsPerFeature;
@@ -18,9 +18,10 @@ namespace Lighthouse.Backend.API.DTO
             OverrideRealChildCountStates = portfolio.OverrideRealChildCountStates;
             DoneItemsCutoffDays = portfolio.DoneItemsCutoffDays;
 
-            InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos());
+            InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos(readableTeamIds));
 
-            if (portfolio.OwningTeam != null)
+            if (portfolio.OwningTeam != null
+                && (readableTeamIds is null || readableTeamIds.Contains(portfolio.OwningTeam.Id)))
             {
                 var owningTeam = portfolio.OwningTeam;
                 OwningTeam = new EntityReferenceDto(owningTeam.Id, owningTeam.Name);

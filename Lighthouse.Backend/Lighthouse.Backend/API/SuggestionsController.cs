@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -8,17 +10,24 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    [Authorize]
     public class SuggestionsController : ControllerBase
     {
         private readonly ILogger<SuggestionsController> logger;
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
+        private readonly IRbacAdministrationService rbacAdministrationService;
 
-        public SuggestionsController(ILogger<SuggestionsController> logger, IRepository<Team> teamRepository, IRepository<Portfolio> portfolioRepository)
+        public SuggestionsController(
+            ILogger<SuggestionsController> logger,
+            IRepository<Team> teamRepository,
+            IRepository<Portfolio> portfolioRepository,
+            IRbacAdministrationService rbacAdministrationService)
         {
             this.logger = logger;
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
+            this.rbacAdministrationService = rbacAdministrationService;
         }
 
         [HttpGet("workitemtypes/teams")]
@@ -26,7 +35,7 @@ namespace Lighthouse.Backend.API
         {
             logger.LogDebug("Getting Work Item Type Suggestions for Teams");
 
-            var teams = teamRepository.GetAll();
+            var teams = GetReadableTeams();
 
             var workItemTypes = teams
                 .SelectMany(x => x.WorkItemTypes)
@@ -40,7 +49,7 @@ namespace Lighthouse.Backend.API
         {
             logger.LogDebug("Getting Work Item Type Suggestions for Projects");
 
-            var projects = portfolioRepository.GetAll();
+            var projects = GetReadablePortfolios();
 
             var workItemTypes = projects
                 .SelectMany(x => x.WorkItemTypes)
@@ -54,7 +63,7 @@ namespace Lighthouse.Backend.API
         {
             logger.LogDebug("Getting States Suggestions for Teams");
 
-            var teams = teamRepository.GetAll();
+            var teams = GetReadableTeams();
 
             var statesCollection = new StatesCollectionDto
             {
@@ -71,7 +80,7 @@ namespace Lighthouse.Backend.API
         {
             logger.LogDebug("Getting States Suggestions for Projects");
 
-            var projects = portfolioRepository.GetAll();
+            var projects = GetReadablePortfolios();
 
             var statesCollection = new StatesCollectionDto
             {
@@ -81,6 +90,34 @@ namespace Lighthouse.Backend.API
             };
 
             return Ok(statesCollection);
+        }
+
+        private IEnumerable<Team> GetReadableTeams()
+        {
+            var teams = teamRepository.GetAll().ToList();
+            var teamIds = teams.Select(t => t.Id).ToArray();
+            var readableTeamIds = rbacAdministrationService
+                .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
+                .GetAwaiter()
+                .GetResult();
+            var readableTeamIdSet = (readableTeamIds ?? teamIds)
+                .ToHashSet();
+
+            return teams.Where(t => readableTeamIdSet.Contains(t.Id));
+        }
+
+        private IEnumerable<Portfolio> GetReadablePortfolios()
+        {
+            var portfolios = portfolioRepository.GetAll().ToList();
+            var portfolioIds = portfolios.Select(p => p.Id).ToArray();
+            var readablePortfolioIds = rbacAdministrationService
+                .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
+                .GetAwaiter()
+                .GetResult();
+            var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds)
+                .ToHashSet();
+
+            return portfolios.Where(p => readablePortfolioIdSet.Contains(p.Id));
         }
     }
 }

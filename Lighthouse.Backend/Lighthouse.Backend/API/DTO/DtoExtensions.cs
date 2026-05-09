@@ -31,10 +31,15 @@ namespace Lighthouse.Backend.API.DTO
             return forecastDtos;
         }
 
-        public static IEnumerable<EntityReferenceDto> CreateInvolvedTeamDtos(this Portfolio portfolio)
+        public static IEnumerable<EntityReferenceDto> CreateInvolvedTeamDtos(this Portfolio portfolio, ISet<int>? readableTeamIds = null)
         {
             foreach (var team in portfolio.Teams)
             {
+                if (readableTeamIds is not null && !readableTeamIds.Contains(team.Id))
+                {
+                    continue;
+                }
+
                 yield return new EntityReferenceDto(team.Id, team.Name);
             }
         }

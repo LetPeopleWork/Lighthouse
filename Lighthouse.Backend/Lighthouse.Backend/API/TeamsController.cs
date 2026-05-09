@@ -35,17 +35,27 @@ namespace Lighthouse.Backend.API
             var teamDtos = new List<TeamDto>();
 
             var allTeams = teamRepository.GetAll().ToList();
+            var teamIds = allTeams.Select(t => t.Id).ToArray();
             var readableTeamIds = rbacAdministrationService
-                .GetReadableTeamIdsAsync(User, allTeams.Select(t => t.Id), HttpContext?.RequestAborted ?? default)
+                .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
                 .GetAwaiter()
                 .GetResult();
-            var readableTeamIdSet = readableTeamIds.ToHashSet();
             var allPortfolios = portfolioRepository.GetAll().ToList();
+            var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
+            var readablePortfolioIdSet = rbacAdministrationService
+                .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
+                .GetAwaiter()
+                .GetResult();
+            var effectiveReadableTeamIds = readableTeamIds ?? teamIds;
+            var readableTeamIdSet = effectiveReadableTeamIds.ToHashSet();
+            var effectiveReadablePortfolioIds = readablePortfolioIdSet ?? portfolioIds;
+            var readablePortfolioIdsSet = effectiveReadablePortfolioIds
+                .ToHashSet();
             var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
             foreach (var team in allTeams.Where(team => readableTeamIdSet.Contains(team.Id)))
             {
-                var teamDto = team.CreateTeamDto(allPortfolios);
+                var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdsSet);
                 var throughputSettings = team.GetThroughputSettings();
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
 

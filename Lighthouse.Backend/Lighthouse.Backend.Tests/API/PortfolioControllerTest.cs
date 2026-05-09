@@ -4,10 +4,12 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -15,6 +17,7 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Portfolio>> portfolioRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
@@ -24,8 +27,12 @@ namespace Lighthouse.Backend.Tests.API
         {
             portfolioRepoMock = new Mock<IRepository<Portfolio>>();
             teamRepoMock = new Mock<IRepository<Team>>();
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
         }
 
         [Test]
@@ -50,6 +57,33 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(portfolioDto.Id, Is.EqualTo(testPortfolio.Id));
                 Assert.That(portfolioDto.Name, Is.EqualTo(testPortfolio.Name));
+            }
+        }
+
+        [Test]
+        public void GetPortfolio_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeams()
+        {
+            var visibleTeam = new Team { Id = 1, Name = "Visible Team" };
+            var hiddenTeam = new Team { Id = 2, Name = "Hidden Team" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio" };
+            portfolio.Features.Add(new Feature(visibleTeam, 3));
+            portfolio.Features.Add(new Feature(hiddenTeam, 5));
+
+            portfolioRepoMock.Setup(x => x.GetById(42)).Returns(portfolio);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visibleTeam.Id]);
+
+            var subject = CreateSubject();
+
+            var result = subject.Get(42);
+
+            using (Assert.EnterMultipleScope())
+            {
+                var okResult = result.Result as OkObjectResult;
+                var portfolioDto = okResult!.Value as PortfolioDto;
+
+                Assert.That(portfolioDto!.InvolvedTeams.Select(t => t.Id), Is.EqualTo(new[] { visibleTeam.Id }));
             }
         }
 
@@ -150,6 +184,33 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(portfolioSettingDto.DataRetrievalValue, Is.EqualTo(portfolio.DataRetrievalValue));
                 Assert.That(portfolioSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(portfolio.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(portfolioSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(portfolio.WorkTrackingSystemConnectionId));
+            }
+        }
+
+        [Test]
+        public void GetPortfolioSettings_WhenSomeLinkedTeamsAreUnreadable_FiltersInvolvedTeamsAndOwningTeam()
+        {
+            var visibleTeam = new Team { Id = 1, Name = "Visible Team" };
+            var hiddenTeam = new Team { Id = 2, Name = "Hidden Team" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeam = hiddenTeam, OwningTeamId = hiddenTeam.Id };
+            portfolio.Features.Add(new Feature(visibleTeam, 3));
+            portfolio.Features.Add(new Feature(hiddenTeam, 5));
+
+            portfolioRepoMock.Setup(x => x.GetById(42)).Returns(portfolio);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visibleTeam.Id]);
+
+            var subject = CreateSubject();
+            var result = subject.GetPortfolioSettings(42);
+
+            using (Assert.EnterMultipleScope())
+            {
+                var okResult = result.Result as OkObjectResult;
+                var dto = okResult!.Value as PortfolioSettingDto;
+
+                Assert.That(dto!.InvolvedTeams.Select(t => t.Id), Is.EqualTo(new[] { visibleTeam.Id }));
+                Assert.That(dto.OwningTeam, Is.Null);
             }
         }
 
@@ -371,7 +432,8 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioRepoMock.Object,
                 teamRepoMock.Object,
                 portfolioUpdaterMock.Object,
-                refreshLogServiceMock.Object
+                refreshLogServiceMock.Object,
+                rbacAdministrationServiceMock.Object
             );
         }
 
