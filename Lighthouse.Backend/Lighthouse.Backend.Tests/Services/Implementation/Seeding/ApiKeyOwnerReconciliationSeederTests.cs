@@ -72,8 +72,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             var subject = CreateSubject();
             await subject.Seed();
 
-            Assert.That(apiKey.OwnerSubject, Is.EqualTo("alice-subject"));
-            Assert.That(apiKey.OwnerUserProfileId, Is.EqualTo(5));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(apiKey.OwnerSubject, Is.EqualTo("alice-subject"));
+                Assert.That(apiKey.OwnerUserProfileId, Is.EqualTo(5));
+            }
         }
 
         [Test]
@@ -88,8 +91,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             var subject = CreateSubject();
             await subject.Seed();
 
-            Assert.That(apiKey.OwnerSubject, Is.EqualTo("bob-subject"));
-            Assert.That(apiKey.OwnerUserProfileId, Is.EqualTo(7));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(apiKey.OwnerSubject, Is.EqualTo("bob-subject"));
+                Assert.That(apiKey.OwnerUserProfileId, Is.EqualTo(7));
+            }
         }
 
         [Test]
@@ -105,8 +111,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             var subject = CreateSubject();
             await subject.Seed();
 
-            Assert.That(apiKey.OwnerSubject, Is.Null);
-            Assert.That(apiKey.OwnerUserProfileId, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(apiKey.OwnerSubject, Is.Null);
+                Assert.That(apiKey.OwnerUserProfileId, Is.Null);
+            }
         }
 
         [Test]
@@ -121,8 +130,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             var subject = CreateSubject();
             await subject.Seed();
 
-            Assert.That(apiKey.OwnerSubject, Is.Null);
-            Assert.That(apiKey.OwnerUserProfileId, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(apiKey.OwnerSubject, Is.Null);
+                Assert.That(apiKey.OwnerUserProfileId, Is.Null);
+            }
         }
 
         [Test]
@@ -176,8 +188,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             var subject = CreateSubject();
             await subject.Seed();
 
-            Assert.That(linkedKey.OwnerSubject, Is.EqualTo("existing-subject"), "Already-linked key must not be overwritten");
-            Assert.That(unlinkedKey.OwnerSubject, Is.EqualTo("alice-subject"), "Unlinked key must be reconciled");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(linkedKey.OwnerSubject, Is.EqualTo("existing-subject"), "Already-linked key must not be overwritten");
+                Assert.That(unlinkedKey.OwnerSubject, Is.EqualTo("alice-subject"), "Unlinked key must be reconciled");
+            }
         }
 
         private ApiKeyOwnerReconciliationSeeder CreateSubject()
