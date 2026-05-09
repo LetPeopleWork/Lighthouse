@@ -22,6 +22,9 @@ describe("RbacSettings", () => {
 		getPortfolioMembers: vi.fn(),
 		upsertPortfolioMember: vi.fn(),
 		removePortfolioMember: vi.fn(),
+		getGroupMappings: vi.fn(),
+		createGroupMapping: vi.fn(),
+		removeGroupMapping: vi.fn(),
 	};
 
 	const mockLicensingService = createMockLicensingService();
@@ -58,6 +61,7 @@ describe("RbacSettings", () => {
 			hasEmergencyAdminConfigured: true,
 			readyForEnablement: false,
 			unassignedUserCount: 1,
+			groupClaimName: "groups",
 		});
 
 		mockRbacService.getUsers.mockResolvedValue([
@@ -84,6 +88,17 @@ describe("RbacSettings", () => {
 		);
 		mockRbacService.grantSystemAdmin.mockResolvedValue(undefined);
 		mockRbacService.revokeSystemAdmin.mockResolvedValue(undefined);
+		mockRbacService.getGroupMappings.mockResolvedValue([
+			{
+				id: 1,
+				groupValue: "lighthouse-system-admins",
+				role: "SystemAdmin",
+				scopeType: "System",
+				scopeId: null,
+			},
+		]);
+		mockRbacService.createGroupMapping.mockResolvedValue(undefined);
+		mockRbacService.removeGroupMapping.mockResolvedValue(undefined);
 	});
 
 	it("should render RBAC status cards", async () => {
@@ -102,6 +117,9 @@ describe("RbacSettings", () => {
 			expect(
 				screen.getByTestId("rbac-status-unassigned-count"),
 			).toHaveTextContent("1");
+			expect(screen.getByTestId("rbac-status-group-claim")).toHaveTextContent(
+				"groups",
+			);
 		});
 	});
 
@@ -150,6 +168,7 @@ describe("RbacSettings", () => {
 			hasSystemAdmin: true,
 			hasEmergencyAdminConfigured: false,
 			readyForEnablement: true,
+			groupClaimName: "groups",
 		});
 
 		renderSubject();
@@ -165,6 +184,65 @@ describe("RbacSettings", () => {
 		await waitFor(() => {
 			expect(mockRbacService.revokeSystemAdmin).toHaveBeenCalledWith(1);
 			expect(mockRbacService.grantSystemAdmin).toHaveBeenCalledWith(2);
+		});
+	});
+
+	it("should create group mapping", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+			groupClaimName: "groups",
+		});
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("rbac-create-group-mapping"),
+			).toBeInTheDocument();
+		});
+
+		fireEvent.change(screen.getByLabelText("Group value"), {
+			target: { value: "portfolio-9-admins" },
+		});
+
+		fireEvent.click(screen.getByTestId("rbac-create-group-mapping"));
+
+		await waitFor(() => {
+			expect(mockRbacService.createGroupMapping).toHaveBeenCalledWith({
+				groupValue: "portfolio-9-admins",
+				role: "SystemAdmin",
+				scopeType: "System",
+				scopeId: null,
+			});
+		});
+	});
+
+	it("should remove group mapping", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+			groupClaimName: "groups",
+		});
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("rbac-remove-group-mapping-1"),
+			).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByTestId("rbac-remove-group-mapping-1"));
+
+		await waitFor(() => {
+			expect(mockRbacService.removeGroupMapping).toHaveBeenCalledWith(1);
 		});
 	});
 });

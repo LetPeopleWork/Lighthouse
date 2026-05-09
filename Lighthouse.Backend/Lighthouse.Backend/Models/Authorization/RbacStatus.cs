@@ -13,5 +13,7 @@ namespace Lighthouse.Backend.Models.Authorization
         public bool ReadyForEnablement { get; init; }
 
         public int UnassignedUserCount { get; init; }
+
+        public string? GroupClaimName { get; init; }
     }
 }

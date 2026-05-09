@@ -202,6 +202,74 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task GetGroupMappings_WhenCallerCannotManageRbac_ReturnsForbid()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubjectWithUser("auth0|viewer");
+
+            var result = await subject.GetGroupMappings(CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
+
+        [Test]
+        public async Task CreateGroupMapping_WhenRequestIsValid_ReturnsNoContent()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.CreateGroupMappingAsync(
+                    "team-12-viewers",
+                    UserRole.Viewer,
+                    PermissionScopeType.Team,
+                    12,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Success());
+
+            var subject = CreateSubjectWithUser("auth0|system-admin");
+
+            var result = await subject.CreateGroupMapping(
+                new RbacGroupMappingRequest
+                {
+                    GroupValue = "team-12-viewers",
+                    Role = "Viewer",
+                    ScopeType = "Team",
+                    ScopeId = 12,
+                },
+                CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<NoContentResult>());
+        }
+
+        [Test]
+        public async Task RemoveGroupMapping_WhenMappingDoesNotExist_ReturnsNotFound()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.RemoveGroupMappingAsync(13, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Failure(RbacOperationErrorCodes.GroupMappingNotFound, "Group mapping was not found."));
+
+            var subject = CreateSubjectWithUser("auth0|system-admin");
+
+            var result = await subject.RemoveGroupMapping(13, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
+                var notFound = (NotFoundObjectResult)result;
+                Assert.That(notFound.Value, Is.EqualTo("Group mapping was not found."));
+            }
+        }
+
         private AuthorizationController CreateSubjectWithUser(string subjectClaim)
         {
             var identity = new ClaimsIdentity([new Claim("sub", subjectClaim)], "TestAuth");

@@ -14,6 +14,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import ScopedGroupMappingManager from "../../../components/Common/Authorization/ScopedGroupMappingManager";
 import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
@@ -27,6 +28,7 @@ import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandle
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
+	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
 	UserAuthorizationSummary,
@@ -101,6 +103,13 @@ const TeamDetail: React.FC = () => {
 	const [teamMembers, setTeamMembers] = useState<RbacScopedMemberSummary[]>([]);
 	const [teamMembersLoading, setTeamMembersLoading] = useState(false);
 	const [teamMembersError, setTeamMembersError] = useState<string>();
+	const [teamGroupMappings, setTeamGroupMappings] = useState<
+		RbacGroupMapping[]
+	>([]);
+	const [teamGroupMappingsLoading, setTeamGroupMappingsLoading] =
+		useState(false);
+	const [teamGroupMappingsError, setTeamGroupMappingsError] =
+		useState<string>();
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -191,6 +200,66 @@ const TeamDetail: React.FC = () => {
 			}
 		},
 		[rbacService, team, loadTeamMembers],
+	);
+
+	const loadTeamGroupMappings = useCallback(
+		async (targetTeamId: number) => {
+			setTeamGroupMappingsError(undefined);
+			setTeamGroupMappingsLoading(true);
+			try {
+				const mappings = await rbacService.getGroupMappings();
+				setTeamGroupMappings(
+					mappings.filter(
+						(mapping) =>
+							mapping.scopeType === "Team" && mapping.scopeId === targetTeamId,
+					),
+				);
+			} catch {
+				setTeamGroupMappingsError("Failed to load team access groups.");
+			} finally {
+				setTeamGroupMappingsLoading(false);
+			}
+		},
+		[rbacService],
+	);
+
+	const handleCreateTeamGroupMapping = useCallback(
+		async (groupValue: string, role: ScopedRbacRole) => {
+			if (!team) {
+				return;
+			}
+
+			setTeamGroupMappingsError(undefined);
+			try {
+				await rbacService.createGroupMapping({
+					groupValue,
+					role,
+					scopeType: "Team",
+					scopeId: team.id,
+				});
+				await loadTeamGroupMappings(team.id);
+			} catch {
+				setTeamGroupMappingsError("Failed to create team access group.");
+			}
+		},
+		[rbacService, team, loadTeamGroupMappings],
+	);
+
+	const handleRemoveTeamGroupMapping = useCallback(
+		async (mappingId: number) => {
+			if (!team) {
+				return;
+			}
+
+			setTeamGroupMappingsError(undefined);
+			try {
+				await rbacService.removeGroupMapping(mappingId);
+				await loadTeamGroupMappings(team.id);
+			} catch {
+				setTeamGroupMappingsError("Failed to remove team access group.");
+			}
+		},
+		[rbacService, team, loadTeamGroupMappings],
 	);
 
 	const fetchTeam = useCallback(async () => {
@@ -317,8 +386,9 @@ const TeamDetail: React.FC = () => {
 	useEffect(() => {
 		if (activeView === "access" && team) {
 			void loadTeamMembers(team.id);
+			void loadTeamGroupMappings(team.id);
 		}
-	}, [activeView, team, loadTeamMembers]);
+	}, [activeView, team, loadTeamMembers, loadTeamGroupMappings]);
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
@@ -500,15 +570,26 @@ const TeamDetail: React.FC = () => {
 								)}
 
 								{activeView === "access" && team && (
-									<ScopedMembershipManager
-										title="Team Access"
-										members={teamMembers}
-										allowedRoles={["TeamAdmin", "Viewer"]}
-										loading={teamMembersLoading}
-										error={teamMembersError}
-										onAssignRole={handleAssignTeamRole}
-										onRemoveRole={handleRemoveTeamMember}
-									/>
+									<Stack spacing={2}>
+										<ScopedMembershipManager
+											title="Team Access"
+											members={teamMembers}
+											allowedRoles={["TeamAdmin", "Viewer"]}
+											loading={teamMembersLoading}
+											error={teamMembersError}
+											onAssignRole={handleAssignTeamRole}
+											onRemoveRole={handleRemoveTeamMember}
+										/>
+										<ScopedGroupMappingManager
+											title="Team Group Access"
+											mappings={teamGroupMappings}
+											allowedRoles={["TeamAdmin", "Viewer"]}
+											loading={teamGroupMappingsLoading}
+											error={teamGroupMappingsError}
+											onCreateMapping={handleCreateTeamGroupMapping}
+											onRemoveMapping={handleRemoveTeamGroupMapping}
+										/>
+									</Stack>
 								)}
 							</Grid>
 						</Grid>

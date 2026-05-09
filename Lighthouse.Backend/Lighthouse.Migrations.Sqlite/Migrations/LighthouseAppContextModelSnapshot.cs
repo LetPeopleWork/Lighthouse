@@ -159,6 +159,33 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("UserProfiles");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.RbacGroupMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GroupValue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ScopeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ScopeType")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupValue", "Role", "ScopeType", "ScopeId")
+                        .IsUnique();
+
+                    b.ToTable("RbacGroupMappings");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.UserPermission", b =>
                 {
                     b.Property<int>("Id")

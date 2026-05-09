@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	RbacStatus,
 	RbacUser,
@@ -193,6 +194,58 @@ describe("RbacService", () => {
 
 		expect(mockedAxios.delete).toHaveBeenCalledWith(
 			"/authorization/portfolios/9/members/11",
+		);
+	});
+
+	it("should fetch RBAC group mappings", async () => {
+		const mockMappings: RbacGroupMapping[] = [
+			{
+				id: 1,
+				groupValue: "team-12-viewers",
+				role: "Viewer",
+				scopeType: "Team",
+				scopeId: 12,
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockMappings });
+
+		const result = await subject.getGroupMappings();
+
+		expect(result).toEqual(mockMappings);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/group-mappings",
+		);
+	});
+
+	it("should create RBAC group mapping", async () => {
+		mockedAxios.post.mockResolvedValueOnce({ data: {} });
+
+		await subject.createGroupMapping({
+			groupValue: "portfolio-9-admins",
+			role: "PortfolioAdmin",
+			scopeType: "Portfolio",
+			scopeId: 9,
+		});
+
+		expect(mockedAxios.post).toHaveBeenCalledWith(
+			"/authorization/group-mappings",
+			{
+				groupValue: "portfolio-9-admins",
+				role: "PortfolioAdmin",
+				scopeType: "Portfolio",
+				scopeId: 9,
+			},
+		);
+	});
+
+	it("should remove RBAC group mapping", async () => {
+		mockedAxios.delete.mockResolvedValueOnce({ data: {} });
+
+		await subject.removeGroupMapping(4);
+
+		expect(mockedAxios.delete).toHaveBeenCalledWith(
+			"/authorization/group-mappings/4",
 		);
 	});
 });

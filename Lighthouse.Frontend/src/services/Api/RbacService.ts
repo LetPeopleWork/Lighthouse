@@ -1,4 +1,6 @@
 import type {
+	CreateRbacGroupMappingRequest,
+	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	RbacStatus,
 	RbacUser,
@@ -31,6 +33,9 @@ export interface IRbacService {
 		portfolioId: number,
 		userProfileId: number,
 	): Promise<void>;
+	getGroupMappings(): Promise<RbacGroupMapping[]>;
+	createGroupMapping(request: CreateRbacGroupMappingRequest): Promise<void>;
+	removeGroupMapping(mappingId: number): Promise<void>;
 }
 
 export class RbacService extends BaseApiService implements IRbacService {
@@ -138,6 +143,29 @@ export class RbacService extends BaseApiService implements IRbacService {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(
 				`/authorization/portfolios/${portfolioId}/members/${userProfileId}`,
+			);
+		});
+	}
+
+	getGroupMappings(): Promise<RbacGroupMapping[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RbacGroupMapping[]>(
+				"/authorization/group-mappings",
+			);
+			return response.data;
+		});
+	}
+
+	createGroupMapping(request: CreateRbacGroupMappingRequest): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.post("/authorization/group-mappings", request);
+		});
+	}
+
+	removeGroupMapping(mappingId: number): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(
+				`/authorization/group-mappings/${mappingId}`,
 			);
 		});
 	}

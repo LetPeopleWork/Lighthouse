@@ -5,6 +5,7 @@ export interface RbacStatus {
 	hasEmergencyAdminConfigured: boolean;
 	readyForEnablement: boolean;
 	unassignedUserCount?: number;
+	groupClaimName?: string | null;
 }
 
 export interface RbacUser {
@@ -32,4 +33,23 @@ export interface RbacScopedMemberSummary {
 	displayName?: string;
 	email?: string;
 	role?: ScopedRbacRole | null;
+}
+
+export type GroupMappingScopeType = "System" | "Team" | "Portfolio";
+
+export type GroupMappingRole = "SystemAdmin" | ScopedRbacRole;
+
+export interface RbacGroupMapping {
+	id: number;
+	groupValue: string;
+	role: GroupMappingRole;
+	scopeType: GroupMappingScopeType;
+	scopeId?: number | null;
+}
+
+export interface CreateRbacGroupMappingRequest {
+	groupValue: string;
+	role: GroupMappingRole;
+	scopeType: GroupMappingScopeType;
+	scopeId?: number | null;
 }

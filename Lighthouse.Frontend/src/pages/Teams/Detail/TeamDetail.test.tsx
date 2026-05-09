@@ -663,4 +663,57 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 
 		expect(getTeamMembers).toHaveBeenCalledWith(1);
 	});
+
+	it("creates team-scoped group mappings on access tab", async () => {
+		mockParams = { id: "1", tab: "access" };
+		const user = userEvent.setup();
+		const getGroupMappings = vi.fn().mockResolvedValue([
+			{
+				id: 77,
+				groupValue: "team-viewers",
+				role: "Viewer",
+				scopeType: "Team",
+				scopeId: 1,
+			},
+			{
+				id: 78,
+				groupValue: "other-team-admins",
+				role: "TeamAdmin",
+				scopeType: "Team",
+				scopeId: 999,
+			},
+		]);
+		const createGroupMapping = vi.fn().mockResolvedValue(undefined);
+
+		renderTeamDetail({
+			getAuthorizationSummary: vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: true,
+				canCreatePortfolio: false,
+			}),
+			getGroupMappings,
+			createGroupMapping,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("Team Group Access")).toBeInTheDocument();
+			expect(screen.getByTestId("scoped-group-row-77")).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("scoped-group-row-78"),
+			).not.toBeInTheDocument();
+		});
+
+		await user.type(screen.getByLabelText("Group value"), "team-admins");
+		await user.click(screen.getByTestId("scoped-group-add-button"));
+
+		await waitFor(() => {
+			expect(createGroupMapping).toHaveBeenCalledWith({
+				groupValue: "team-admins",
+				role: "TeamAdmin",
+				scopeType: "Team",
+				scopeId: 1,
+			});
+		});
+	});
 });

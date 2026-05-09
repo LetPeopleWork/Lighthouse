@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Authorization
 {
@@ -32,6 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 HasEmergencyAdminConfigured = config.EmergencySystemAdminSubjects.Count > 0,
                 ReadyForEnablement = premiumGateSatisfied && hasSystemAdmin,
                 UnassignedUserCount = unassignedUserCount,
+                GroupClaimName = string.IsNullOrWhiteSpace(config.GroupClaimName) ? null : config.GroupClaimName,
             };
         }
 
@@ -100,17 +102,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            var readableTeamIds = await context.UserPermissions
-                .Where(p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Team
-                    && p.ScopeId.HasValue
-                    && distinctTeamIds.Contains(p.ScopeId.Value)
-                    && (p.Role == UserRole.TeamAdmin || p.Role == UserRole.Viewer))
-                .Select(p => p.ScopeId!.Value)
-                .Distinct()
-                .ToListAsync(cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
 
-            return readableTeamIds;
+            return distinctTeamIds
+                .Where(teamId => HasTeamReadPermission(effectivePermissions, teamId))
+                .ToList();
         }
 
         public async Task<IReadOnlyList<int>> GetReadablePortfolioIdsAsync(
@@ -141,17 +137,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            var readablePortfolioIds = await context.UserPermissions
-                .Where(p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Portfolio
-                    && p.ScopeId.HasValue
-                    && distinctPortfolioIds.Contains(p.ScopeId.Value)
-                    && (p.Role == UserRole.PortfolioAdmin || p.Role == UserRole.Viewer))
-                .Select(p => p.ScopeId!.Value)
-                .Distinct()
-                .ToListAsync(cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
 
-            return readablePortfolioIds;
+            return distinctPortfolioIds
+                .Where(portfolioId => HasPortfolioReadPermission(effectivePermissions, portfolioId))
+                .ToList();
         }
 
         public async Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
@@ -177,12 +167,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Team
-                    && p.ScopeId == teamId
-                    && (p.Role == UserRole.TeamAdmin || p.Role == UserRole.Viewer),
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            return HasTeamReadPermission(effectivePermissions, teamId);
         }
 
         public async Task<bool> CanWriteTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
@@ -208,12 +194,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Team
-                    && p.ScopeId == teamId
-                    && p.Role == UserRole.TeamAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            return HasTeamWritePermission(effectivePermissions, teamId);
         }
 
         public async Task<bool> CanReadPortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
@@ -239,12 +221,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Portfolio
-                    && p.ScopeId == portfolioId
-                    && (p.Role == UserRole.PortfolioAdmin || p.Role == UserRole.Viewer),
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            return HasPortfolioReadPermission(effectivePermissions, portfolioId);
         }
 
         public async Task<bool> CanWritePortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
@@ -270,12 +248,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Portfolio
-                    && p.ScopeId == portfolioId
-                    && p.Role == UserRole.PortfolioAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            return HasPortfolioWritePermission(effectivePermissions, portfolioId);
         }
 
         public async Task<bool> CanCreateTeamAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -301,11 +275,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Team
-                    && p.Role == UserRole.TeamAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+
+            return effectivePermissions.Any(entry =>
+                entry.Key.ScopeType == PermissionScopeType.Team
+                && entry.Value == UserRole.TeamAdmin);
         }
 
         public async Task<bool> CanCreatePortfolioAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -331,11 +305,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Portfolio
-                    && p.Role == UserRole.PortfolioAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+
+            return effectivePermissions.Any(entry =>
+                entry.Key.ScopeType == PermissionScopeType.Portfolio
+                && entry.Value == UserRole.PortfolioAdmin);
         }
 
         public async Task<bool> CanSatisfyRequirementAsync(
@@ -497,11 +471,12 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return true;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.System
-                    && p.Role == UserRole.SystemAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+
+            return effectivePermissions.TryGetValue(
+                       new PermissionScopeKey(PermissionScopeType.System, null),
+                       out var role)
+                   && role == UserRole.SystemAdmin;
         }
 
         public async Task<bool> CanManageTeamMembershipAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
@@ -517,12 +492,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Team
-                    && p.ScopeId == teamId
-                    && p.Role == UserRole.TeamAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+
+            return HasTeamWritePermission(effectivePermissions, teamId);
         }
 
         public async Task<bool> CanManagePortfolioMembershipAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
@@ -538,12 +510,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            return await context.UserPermissions.AnyAsync(
-                p => p.UserProfileId == currentUser.Id
-                    && p.ScopeType == PermissionScopeType.Portfolio
-                    && p.ScopeId == portfolioId
-                    && p.Role == UserRole.PortfolioAdmin,
-                cancellationToken);
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+
+            return HasPortfolioWritePermission(effectivePermissions, portfolioId);
         }
 
         public async Task<IReadOnlyList<RbacScopedMemberSummary>> GetTeamMembersAsync(int teamId, CancellationToken cancellationToken = default)
@@ -736,6 +705,304 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return RbacOperationResult.Success();
         }
 
+        public async Task<IReadOnlyList<RbacGroupMappingSummary>> GetGroupMappingsAsync(CancellationToken cancellationToken = default)
+        {
+            return await context.RbacGroupMappings
+                .OrderBy(x => x.GroupValue)
+                .ThenBy(x => x.ScopeType)
+                .ThenBy(x => x.ScopeId)
+                .ThenBy(x => x.Role)
+                .Select(x => new RbacGroupMappingSummary
+                {
+                    Id = x.Id,
+                    GroupValue = x.GroupValue,
+                    Role = x.Role,
+                    ScopeType = x.ScopeType,
+                    ScopeId = x.ScopeId,
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<RbacOperationResult> CreateGroupMappingAsync(
+            string groupValue,
+            UserRole role,
+            PermissionScopeType scopeType,
+            int? scopeId,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedGroupValue = groupValue.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedGroupValue))
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.InvalidScopeForRole,
+                    "Group value is required.");
+            }
+
+            if (!IsValidGroupMappingScope(role, scopeType, scopeId))
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.InvalidScopeForRole,
+                    "Role is invalid for the provided scope.");
+            }
+
+            var alreadyExists = await context.RbacGroupMappings.AnyAsync(
+                x => x.GroupValue == normalizedGroupValue
+                    && x.Role == role
+                    && x.ScopeType == scopeType
+                    && x.ScopeId == scopeId,
+                cancellationToken);
+
+            if (alreadyExists)
+            {
+                return RbacOperationResult.Success();
+            }
+
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = normalizedGroupValue,
+                Role = role,
+                ScopeType = scopeType,
+                ScopeId = scopeId,
+            });
+
+            await context.SaveChangesAsync(cancellationToken);
+
+            return RbacOperationResult.Success();
+        }
+
+        public async Task<RbacOperationResult> RemoveGroupMappingAsync(int mappingId, CancellationToken cancellationToken = default)
+        {
+            var mapping = await context.RbacGroupMappings
+                .SingleOrDefaultAsync(x => x.Id == mappingId, cancellationToken);
+
+            if (mapping is null)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.GroupMappingNotFound,
+                    "Group mapping was not found.");
+            }
+
+            context.RbacGroupMappings.Remove(mapping);
+            await context.SaveChangesAsync(cancellationToken);
+
+            return RbacOperationResult.Success();
+        }
+
+        private async Task<Dictionary<PermissionScopeKey, UserRole>> GetEffectivePermissionsAsync(
+            ClaimsPrincipal principal,
+            UserProfile currentUser,
+            CancellationToken cancellationToken)
+        {
+            var explicitPermissions = await context.UserPermissions
+                .Where(permission => permission.UserProfileId == currentUser.Id)
+                .Select(permission => new PermissionRule(permission.ScopeType, permission.ScopeId, permission.Role))
+                .ToListAsync(cancellationToken);
+
+            var virtualPermissions = await GetVirtualPermissionsAsync(principal, cancellationToken);
+
+            var virtualPermissionMap = ToHighestRoleMap(virtualPermissions);
+            var explicitPermissionMap = ToHighestRoleMap(explicitPermissions);
+
+            foreach (var explicitEntry in explicitPermissionMap)
+            {
+                virtualPermissionMap[explicitEntry.Key] = explicitEntry.Value;
+            }
+
+            return virtualPermissionMap;
+        }
+
+        private async Task<IReadOnlyList<PermissionRule>> GetVirtualPermissionsAsync(
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken)
+        {
+            var groupClaimName = configuration.Value.GroupClaimName;
+            if (string.IsNullOrWhiteSpace(groupClaimName))
+            {
+                return [];
+            }
+
+            if (!TryGetGroupValues(principal, groupClaimName, out var groupValues, out var hasUnsupportedFormat))
+            {
+                return [];
+            }
+
+            if (hasUnsupportedFormat)
+            {
+                logger.LogWarning(
+                    "RBAC group claim payload for claim '{ClaimName}' used unsupported format. Falling back to explicit grants only.",
+                    groupClaimName);
+                return [];
+            }
+
+            if (groupValues.Count == 0)
+            {
+                return [];
+            }
+
+            return await context.RbacGroupMappings
+                .Where(mapping => groupValues.Contains(mapping.GroupValue))
+                .Select(mapping => new PermissionRule(mapping.ScopeType, mapping.ScopeId, mapping.Role))
+                .ToListAsync(cancellationToken);
+        }
+
+        private static bool TryGetGroupValues(
+            ClaimsPrincipal principal,
+            string claimName,
+            out HashSet<string> groupValues,
+            out bool hasUnsupportedFormat)
+        {
+            groupValues = [];
+            hasUnsupportedFormat = false;
+
+            var claims = principal.FindAll(claimName);
+            foreach (var claim in claims)
+            {
+                var claimValue = claim.Value.Trim();
+                if (string.IsNullOrWhiteSpace(claimValue))
+                {
+                    continue;
+                }
+
+                if (claimValue.StartsWith("[", StringComparison.Ordinal))
+                {
+                    if (!TryParseJsonArrayClaim(claimValue, out var parsedValues))
+                    {
+                        hasUnsupportedFormat = true;
+                        return true;
+                    }
+
+                    foreach (var parsedValue in parsedValues)
+                    {
+                        groupValues.Add(parsedValue);
+                    }
+
+                    continue;
+                }
+
+                if (claimValue.StartsWith("{", StringComparison.Ordinal))
+                {
+                    hasUnsupportedFormat = true;
+                    return true;
+                }
+
+                groupValues.Add(claimValue);
+            }
+
+            return true;
+        }
+
+        private static bool TryParseJsonArrayClaim(string claimValue, out IReadOnlyList<string> values)
+        {
+            values = [];
+
+            try
+            {
+                using var document = JsonDocument.Parse(claimValue);
+                if (document.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    return false;
+                }
+
+                var parsedValues = new List<string>();
+                foreach (var element in document.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind != JsonValueKind.String)
+                    {
+                        return false;
+                    }
+
+                    var value = element.GetString();
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        continue;
+                    }
+
+                    parsedValues.Add(value.Trim());
+                }
+
+                values = parsedValues;
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static Dictionary<PermissionScopeKey, UserRole> ToHighestRoleMap(IEnumerable<PermissionRule> permissions)
+        {
+            var result = new Dictionary<PermissionScopeKey, UserRole>();
+
+            foreach (var permission in permissions)
+            {
+                var key = new PermissionScopeKey(permission.ScopeType, permission.ScopeId);
+                if (!result.TryGetValue(key, out var existingRole)
+                    || GetRolePriority(permission.Role) > GetRolePriority(existingRole))
+                {
+                    result[key] = permission.Role;
+                }
+            }
+
+            return result;
+        }
+
+        private static int GetRolePriority(UserRole role)
+        {
+            return role switch
+            {
+                UserRole.SystemAdmin => 4,
+                UserRole.TeamAdmin => 3,
+                UserRole.PortfolioAdmin => 3,
+                UserRole.Viewer => 2,
+                _ => 0,
+            };
+        }
+
+        private static bool HasTeamReadPermission(
+            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
+            int teamId)
+        {
+            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Team, teamId), out var role)
+                && (role == UserRole.TeamAdmin || role == UserRole.Viewer);
+        }
+
+        private static bool HasTeamWritePermission(
+            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
+            int teamId)
+        {
+            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Team, teamId), out var role)
+                && role == UserRole.TeamAdmin;
+        }
+
+        private static bool HasPortfolioReadPermission(
+            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
+            int portfolioId)
+        {
+            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Portfolio, portfolioId), out var role)
+                && (role == UserRole.PortfolioAdmin || role == UserRole.Viewer);
+        }
+
+        private static bool HasPortfolioWritePermission(
+            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
+            int portfolioId)
+        {
+            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Portfolio, portfolioId), out var role)
+                && role == UserRole.PortfolioAdmin;
+        }
+
+        private static bool IsValidGroupMappingScope(UserRole role, PermissionScopeType scopeType, int? scopeId)
+        {
+            return role switch
+            {
+                UserRole.SystemAdmin => scopeType == PermissionScopeType.System && !scopeId.HasValue,
+                UserRole.TeamAdmin => scopeType == PermissionScopeType.Team && scopeId.HasValue,
+                UserRole.PortfolioAdmin => scopeType == PermissionScopeType.Portfolio && scopeId.HasValue,
+                UserRole.Viewer => (scopeType == PermissionScopeType.Team || scopeType == PermissionScopeType.Portfolio)
+                    && scopeId.HasValue,
+                _ => false,
+            };
+        }
+
         private Task<bool> HasSystemAdminAsync(CancellationToken cancellationToken)
         {
             return context.UserPermissions.AnyAsync(
@@ -778,5 +1045,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             return await HasSystemAdminAsync(cancellationToken);
         }
+
+        private readonly record struct PermissionRule(PermissionScopeType ScopeType, int? ScopeId, UserRole Role);
+
+        private readonly record struct PermissionScopeKey(PermissionScopeType ScopeType, int? ScopeId);
     }
 }

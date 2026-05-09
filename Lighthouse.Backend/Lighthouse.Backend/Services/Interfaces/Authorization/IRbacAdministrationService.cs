@@ -64,5 +64,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
         Task<RbacOperationResult> RemoveTeamMemberAsync(int userProfileId, int teamId, CancellationToken cancellationToken = default);
 
         Task<RbacOperationResult> RemovePortfolioMemberAsync(int userProfileId, int portfolioId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<RbacGroupMappingSummary>> GetGroupMappingsAsync(CancellationToken cancellationToken = default);
+
+        Task<RbacOperationResult> CreateGroupMappingAsync(
+            string groupValue,
+            UserRole role,
+            PermissionScopeType scopeType,
+            int? scopeId,
+            CancellationToken cancellationToken = default);
+
+        Task<RbacOperationResult> RemoveGroupMappingAsync(int mappingId, CancellationToken cancellationToken = default);
     }
 }

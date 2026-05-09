@@ -29,5 +29,9 @@ namespace Lighthouse.Backend.Models.Authorization
         public const string LastSystemAdmin = "LastSystemAdmin";
 
         public const string InvalidRoleForScope = "InvalidRoleForScope";
+
+        public const string InvalidScopeForRole = "InvalidScopeForRole";
+
+        public const string GroupMappingNotFound = "GroupMappingNotFound";
     }
 }

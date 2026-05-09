@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<UserProfile> UserProfiles { get; set; } = null!;
 
         public DbSet<UserPermission> UserPermissions { get; set; } = null!;
+
+        public DbSet<RbacGroupMapping> RbacGroupMappings { get; set; } = null!;
         
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
@@ -82,6 +84,14 @@ namespace Lighthouse.Backend.Data
                 .WithMany()
                 .HasForeignKey(p => p.UserProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RbacGroupMapping>()
+                .HasIndex(m => new { m.GroupValue, m.Role, m.ScopeType, m.ScopeId })
+                .IsUnique();
+
+            modelBuilder.Entity<RbacGroupMapping>()
+                .Property(m => m.GroupValue)
+                .IsRequired();
 
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()

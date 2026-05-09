@@ -338,45 +338,45 @@
   },
   "groups" : [ {
     "id" : "0949ebfd-8c20-4956-910f-0849e8345a90",
-    "name" : "Portfolio Admins",
+    "name" : "portfolio-admins",
     "description" : "",
-    "path" : "/Portfolio Admins",
+    "path" : "/portfolio-admins",
     "subGroups" : [ ],
     "attributes" : { },
     "realmRoles" : [ ],
     "clientRoles" : { }
   }, {
     "id" : "2592eb25-8e7d-442d-9845-fb876587413e",
-    "name" : "Portfolio Readers",
+    "name" : "portfolio-readers",
     "description" : "",
-    "path" : "/Portfolio Readers",
+    "path" : "/portfolio-readers",
     "subGroups" : [ ],
     "attributes" : { },
     "realmRoles" : [ ],
     "clientRoles" : { }
   }, {
     "id" : "8932c907-2305-4670-ae5e-b19f123ebe8f",
-    "name" : "System Admins",
+    "name" : "system-admins",
     "description" : "",
-    "path" : "/System Admins",
+    "path" : "/system-admins",
     "subGroups" : [ ],
     "attributes" : { },
     "realmRoles" : [ ],
     "clientRoles" : { }
   }, {
     "id" : "8431a774-38b1-488e-9a7c-2191619f6470",
-    "name" : "Team Admins",
+    "name" : "team-admins",
     "description" : "",
-    "path" : "/Team Admins",
+    "path" : "/team-admins",
     "subGroups" : [ ],
     "attributes" : { },
     "realmRoles" : [ ],
     "clientRoles" : { }
   }, {
     "id" : "d36d9080-067d-4905-8766-3f20d582166e",
-    "name" : "Team Readers",
+    "name" : "team-readers",
     "description" : "",
-    "path" : "/Team Readers",
+    "path" : "/team-readers",
     "subGroups" : [ ],
     "attributes" : { },
     "realmRoles" : [ ],
@@ -444,7 +444,7 @@
     "requiredActions" : [ ],
     "realmRoles" : [ "default-roles-lighthouse" ],
     "notBefore" : 0,
-    "groups" : [ "/Portfolio Admins", "/Portfolio Readers" ]
+    "groups" : [ "/portfolio-admins", "/portfolio-readers" ]
   }, {
     "id" : "a14c91fe-26e8-4ecc-b861-138dbde8b48f",
     "username" : "portfolioreader@user.com",
@@ -467,7 +467,7 @@
     "requiredActions" : [ ],
     "realmRoles" : [ "default-roles-lighthouse" ],
     "notBefore" : 0,
-    "groups" : [ "/Portfolio Readers" ]
+    "groups" : [ "/portfolio-readers" ]
   }, {
     "id" : "818e31f0-2c6b-4db2-af54-14d01fd90c37",
     "username" : "systemadmin@user.com",
@@ -490,7 +490,7 @@
     "requiredActions" : [ ],
     "realmRoles" : [ "default-roles-lighthouse" ],
     "notBefore" : 0,
-    "groups" : [ "/System Admins" ]
+    "groups" : [ "/system-admins" ]
   }, {
     "id" : "66a484d9-ddd9-4bc4-b85c-050d66f21446",
     "username" : "teamadmin@user.com",
@@ -513,7 +513,7 @@
     "requiredActions" : [ ],
     "realmRoles" : [ "default-roles-lighthouse" ],
     "notBefore" : 0,
-    "groups" : [ "/Team Admins", "/Team Readers" ]
+    "groups" : [ "/team-admins", "/team-readers" ]
   }, {
     "id" : "e49479d9-ed94-49c6-90ca-37f5eab9a9f1",
     "username" : "teamreader@user.com",
@@ -536,7 +536,7 @@
     "requiredActions" : [ ],
     "realmRoles" : [ "default-roles-lighthouse" ],
     "notBefore" : 0,
-    "groups" : [ "/Team Readers" ]
+    "groups" : [ "/team-readers" ]
   }, {
     "id" : "bc58019b-61fb-4cf9-9315-976faf7238aa",
     "username" : "test@user.com",
@@ -743,6 +743,23 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
+    "protocolMappers" : [ {
+      "id" : "e02f8351-0b6f-4b54-9fc0-6737658a7f2c",
+      "name" : "groups",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-group-membership-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "full.path" : "false",
+        "introspection.token.claim" : "true",
+        "userinfo.token.claim" : "true",
+        "multivalued" : "true",
+        "id.token.claim" : "true",
+        "lightweight.claim" : "true",
+        "access.token.claim" : "true",
+        "claim.name" : "groups"
+      }
+    } ],
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "organization", "offline_access", "microprofile-jwt" ]
   }, {

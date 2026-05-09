@@ -730,15 +730,201 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             }
         }
 
+        [Test]
+        public async Task GetAuthorizationSummaryAsync_GroupMappedSystemAdmin_ReturnsSystemAdmin()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 9, Subject = "auth0|group-admin", SubjectClaimType = "sub" });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "lighthouse-system-admins",
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|group-admin"),
+                new Claim("groups", "lighthouse-system-admins"));
+
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 9));
+
+            var subject = CreateSubject(context, emergencySubjects: [], groupClaimName: "groups");
+
+            var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary.IsSystemAdmin, Is.True);
+                Assert.That(summary.CanCreateTeam, Is.True);
+                Assert.That(summary.CanCreatePortfolio, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task CanWriteTeamAsync_ExplicitViewerOverridesVirtualTeamAdmin_ReturnsFalse()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 99, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 99,
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|explicit-viewer", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 1,
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 12,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-12-admins",
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 12,
+            });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|explicit-viewer"),
+                new Claim("groups", "team-12-admins"));
+
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 1));
+
+            var subject = CreateSubject(context, emergencySubjects: [], groupClaimName: "groups");
+
+            var canRead = await subject.CanReadTeamAsync(principal, 12, CancellationToken.None);
+            var canWrite = await subject.CanWriteTeamAsync(principal, 12, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(canRead, Is.True);
+                Assert.That(canWrite, Is.False);
+            }
+        }
+
+        [Test]
+        public async Task CanReadTeamAsync_UnsupportedGroupClaimPayload_FallsBackToExplicitOnlyAndLogsWarning()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 99, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 99,
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|unsupported-claim-user", SubjectClaimType = "sub" });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-44-viewers",
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 44,
+            });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|unsupported-claim-user"),
+                new Claim("groups", "{\"name\":\"team-44-viewers\"}"));
+
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
+
+            var subject = CreateSubject(context, emergencySubjects: [], groupClaimName: "groups");
+
+            var canRead = await subject.CanReadTeamAsync(principal, 44, CancellationToken.None);
+
+            Assert.That(canRead, Is.False);
+
+            serviceLogger.Verify(
+                x => x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((value, _) => value.ToString()!.Contains("unsupported format", StringComparison.OrdinalIgnoreCase)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
+        }
+
+        [Test]
+        public async Task CreateGroupMappingAsync_WhenRoleScopeCombinationInvalid_ReturnsFailure()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.CreateGroupMappingAsync(
+                "team-admins",
+                UserRole.TeamAdmin,
+                PermissionScopeType.System,
+                null,
+                CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Succeeded, Is.False);
+                Assert.That(result.ErrorCode, Is.EqualTo(RbacOperationErrorCodes.InvalidScopeForRole));
+            }
+        }
+
+        [Test]
+        public async Task GetGroupMappingsAsync_WhenMappingsExist_ReturnsConfiguredMappings()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "portfolio-7-viewers",
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 7,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var mappings = await subject.GetGroupMappingsAsync(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mappings, Has.Count.EqualTo(1));
+                Assert.That(mappings[0].GroupValue, Is.EqualTo("portfolio-7-viewers"));
+                Assert.That(mappings[0].Role, Is.EqualTo(UserRole.Viewer));
+                Assert.That(mappings[0].ScopeType, Is.EqualTo(PermissionScopeType.Portfolio));
+                Assert.That(mappings[0].ScopeId, Is.EqualTo(7));
+            }
+        }
+
         private RbacAdministrationService CreateSubject(
             LighthouseAppContext context,
             IReadOnlyList<string> emergencySubjects,
-            bool enabled = true)
+            bool enabled = true,
+            string? groupClaimName = null)
         {
             var config = Options.Create(new AuthorizationConfiguration
             {
                 Enabled = enabled,
                 EmergencySystemAdminSubjects = emergencySubjects,
+                GroupClaimName = groupClaimName,
             });
 
             return new RbacAdministrationService(

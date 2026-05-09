@@ -270,5 +270,90 @@ namespace Lighthouse.Backend.API
 
             return BadRequest(result.Message);
         }
+
+        [HttpGet("group-mappings")]
+        [ProducesResponseType<IReadOnlyList<RbacGroupMappingSummary>>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetGroupMappings(CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManageRbacAsync(User, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            var mappings = await rbacAdministrationService.GetGroupMappingsAsync(cancellationToken);
+            return Ok(mappings);
+        }
+
+        [HttpPost("group-mappings")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> CreateGroupMapping(
+            [FromBody] RbacGroupMappingRequest request,
+            CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManageRbacAsync(User, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
+            {
+                return BadRequest("Role is invalid for group mapping.");
+            }
+
+            if (!Enum.TryParse<PermissionScopeType>(request.ScopeType, true, out var scopeType))
+            {
+                return BadRequest("Scope type is invalid for group mapping.");
+            }
+
+            var result = await rbacAdministrationService.CreateGroupMappingAsync(
+                request.GroupValue,
+                role,
+                scopeType,
+                request.ScopeId,
+                cancellationToken);
+
+            if (result.Succeeded)
+            {
+                return NoContent();
+            }
+
+            if (result.ErrorCode == RbacOperationErrorCodes.InvalidScopeForRole)
+            {
+                return BadRequest(result.Message);
+            }
+
+            return BadRequest(result.Message);
+        }
+
+        [HttpDelete("group-mappings/{mappingId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RemoveGroupMapping(int mappingId, CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManageRbacAsync(User, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            var result = await rbacAdministrationService.RemoveGroupMappingAsync(mappingId, cancellationToken);
+            if (result.Succeeded)
+            {
+                return NoContent();
+            }
+
+            if (result.ErrorCode == RbacOperationErrorCodes.GroupMappingNotFound)
+            {
+                return NotFound(result.Message);
+            }
+
+            return BadRequest(result.Message);
+        }
     }
 }

@@ -5,5 +5,7 @@ namespace Lighthouse.Backend.Models.Auth
         public bool Enabled { get; init; }
 
         public IReadOnlyList<string> EmergencySystemAdminSubjects { get; init; } = [];
+
+        public string? GroupClaimName { get; init; }
     }
 }

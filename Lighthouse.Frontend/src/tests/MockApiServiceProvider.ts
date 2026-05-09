@@ -273,6 +273,9 @@ export const createMockRbacService = (): IRbacService => {
 		getPortfolioMembers: vi.fn().mockResolvedValue([]),
 		upsertPortfolioMember: vi.fn(),
 		removePortfolioMember: vi.fn(),
+		getGroupMappings: vi.fn().mockResolvedValue([]),
+		createGroupMapping: vi.fn(),
+		removeGroupMapping: vi.fn(),
 	};
 };
 

@@ -13,6 +13,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import ScopedGroupMappingManager from "../../../components/Common/Authorization/ScopedGroupMappingManager";
 import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
@@ -25,6 +26,7 @@ import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickS
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
+	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
 	UserAuthorizationSummary,
@@ -80,6 +82,13 @@ const PortfolioDetail: React.FC = () => {
 	>([]);
 	const [portfolioMembersLoading, setPortfolioMembersLoading] = useState(false);
 	const [portfolioMembersError, setPortfolioMembersError] = useState<string>();
+	const [portfolioGroupMappings, setPortfolioGroupMappings] = useState<
+		RbacGroupMapping[]
+	>([]);
+	const [portfolioGroupMappingsLoading, setPortfolioGroupMappingsLoading] =
+		useState(false);
+	const [portfolioGroupMappingsError, setPortfolioGroupMappingsError] =
+		useState<string>();
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -178,6 +187,73 @@ const PortfolioDetail: React.FC = () => {
 			}
 		},
 		[rbacService, portfolio, loadPortfolioMembers],
+	);
+
+	const loadPortfolioGroupMappings = useCallback(
+		async (targetPortfolioId: number) => {
+			setPortfolioGroupMappingsError(undefined);
+			setPortfolioGroupMappingsLoading(true);
+			try {
+				const mappings = await rbacService.getGroupMappings();
+				setPortfolioGroupMappings(
+					mappings.filter(
+						(mapping) =>
+							mapping.scopeType === "Portfolio" &&
+							mapping.scopeId === targetPortfolioId,
+					),
+				);
+			} catch {
+				setPortfolioGroupMappingsError(
+					"Failed to load portfolio access groups.",
+				);
+			} finally {
+				setPortfolioGroupMappingsLoading(false);
+			}
+		},
+		[rbacService],
+	);
+
+	const handleCreatePortfolioGroupMapping = useCallback(
+		async (groupValue: string, role: ScopedRbacRole) => {
+			if (!portfolio) {
+				return;
+			}
+
+			setPortfolioGroupMappingsError(undefined);
+			try {
+				await rbacService.createGroupMapping({
+					groupValue,
+					role,
+					scopeType: "Portfolio",
+					scopeId: portfolio.id,
+				});
+				await loadPortfolioGroupMappings(portfolio.id);
+			} catch {
+				setPortfolioGroupMappingsError(
+					"Failed to create portfolio access group.",
+				);
+			}
+		},
+		[rbacService, portfolio, loadPortfolioGroupMappings],
+	);
+
+	const handleRemovePortfolioGroupMapping = useCallback(
+		async (mappingId: number) => {
+			if (!portfolio) {
+				return;
+			}
+
+			setPortfolioGroupMappingsError(undefined);
+			try {
+				await rbacService.removeGroupMapping(mappingId);
+				await loadPortfolioGroupMappings(portfolio.id);
+			} catch {
+				setPortfolioGroupMappingsError(
+					"Failed to remove portfolio access group.",
+				);
+			}
+		},
+		[rbacService, portfolio, loadPortfolioGroupMappings],
 	);
 
 	const { getTerm } = useTerminology();
@@ -380,8 +456,9 @@ const PortfolioDetail: React.FC = () => {
 	useEffect(() => {
 		if (activeView === "access" && portfolio) {
 			void loadPortfolioMembers(portfolio.id);
+			void loadPortfolioGroupMappings(portfolio.id);
 		}
-	}, [activeView, portfolio, loadPortfolioMembers]);
+	}, [activeView, portfolio, loadPortfolioMembers, loadPortfolioGroupMappings]);
 
 	return (
 		<SnackbarErrorHandler>
@@ -524,15 +601,26 @@ const PortfolioDetail: React.FC = () => {
 								)}
 
 								{activeView === "access" && portfolio && (
-									<ScopedMembershipManager
-										title="Portfolio Access"
-										members={portfolioMembers}
-										allowedRoles={["PortfolioAdmin", "Viewer"]}
-										loading={portfolioMembersLoading}
-										error={portfolioMembersError}
-										onAssignRole={handleAssignPortfolioRole}
-										onRemoveRole={handleRemovePortfolioMember}
-									/>
+									<Stack spacing={2}>
+										<ScopedMembershipManager
+											title="Portfolio Access"
+											members={portfolioMembers}
+											allowedRoles={["PortfolioAdmin", "Viewer"]}
+											loading={portfolioMembersLoading}
+											error={portfolioMembersError}
+											onAssignRole={handleAssignPortfolioRole}
+											onRemoveRole={handleRemovePortfolioMember}
+										/>
+										<ScopedGroupMappingManager
+											title="Portfolio Group Access"
+											mappings={portfolioGroupMappings}
+											allowedRoles={["PortfolioAdmin", "Viewer"]}
+											loading={portfolioGroupMappingsLoading}
+											error={portfolioGroupMappingsError}
+											onCreateMapping={handleCreatePortfolioGroupMapping}
+											onRemoveMapping={handleRemovePortfolioGroupMapping}
+										/>
+									</Stack>
 								)}
 							</Grid>
 						</Grid>

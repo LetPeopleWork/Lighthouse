@@ -17,6 +17,12 @@ export class TestConfig {
 	static readonly AUTHZ_TEST_TEAMADMIN_USERNAME: string = "teamadmin@user.com";
 	static readonly AUTHZ_TEST_TEAMREADER_USERNAME: string = "teamreader@user.com";
 
+	static readonly SYSTEMADMIN_GROUP_NAME: string = "system-admins";
+	static readonly PORTFOLIOADMIN_GROUP_NAME: string = "portfolio-admins";
+	static readonly PORTFOLIOREADER_GROUP_NAME: string = "portfolio-readers";
+	static readonly TEAMADMIN_GROUP_NAME: string = "team-admins";
+	static readonly TEAMREADER_GROUP_NAME: string = "team-readers";
+
 	private static getEnvVariable(name: string, defaultValue: string): string {
 		const value = process.env[name];
 
