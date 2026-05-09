@@ -863,7 +863,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     continue;
                 }
 
-                if (claimValue.StartsWith("[", StringComparison.Ordinal))
+                if (claimValue.StartsWith('['))
                 {
                     if (!TryParseJsonArrayClaim(claimValue, out var parsedValues))
                     {
@@ -879,7 +879,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     continue;
                 }
 
-                if (claimValue.StartsWith("{", StringComparison.Ordinal))
+                if (claimValue.StartsWith('{'))
                 {
                     hasUnsupportedFormat = true;
                     return true;
