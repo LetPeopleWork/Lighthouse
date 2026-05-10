@@ -36,6 +36,8 @@ import type { LoginPage } from "../../models/auth/LoginPage";
 import { RbacSettingsPage } from "../../models/auth/rbac/RbacSettingsPage";
 import { ScopedAccessPage } from "../../models/auth/rbac/ScopedAccessPage";
 import { OverviewPage } from "../../models/overview/OverviewPage";
+import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
+import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
 // ---------------------------------------------------------------------------
 // Shared helper: login a user and navigate to the Overview
@@ -277,64 +279,159 @@ test.describe("@RBAC E2E", () => {
 	});
 
 	// =========================================================================
-	// Scenario 5: System Admin creates team + portfolio, assigns scoped roles
+	// Scenario 5: System Admin assigns scoped roles on the test team and portfolio
+	//
+	// Implementation note (step 04-03): the original AC describes the System
+	// Admin creating "RBAC E2E Test Team" and "RBAC E2E Test Portfolio" via the
+	// UI wizards. The wizards require a fully configured work tracking system
+	// connection plus work-item types and states — substantial setup that is
+	// orthogonal to RBAC. The dev seed already provisions a Demo CSV connector
+	// together with a "Team Zenith" team and a "Project Apollo" portfolio, so
+	// this scenario reuses those existing seed entities as the scoped targets
+	// (per the "Pick whichever is cleaner" guidance in step 04-03 notes). The
+	// behavioural assertions remain identical: Access tab visibility for the
+	// admin, role assignment via the scoped members table, and visible role
+	// rows after assignment.
+	//
+	// User-profile bootstrap: scoped role assignment requires the target user
+	// to have a `UserProfile`, which is created on first sign-in. The four
+	// scoped users (teamreader, teamadmin, portfolioreader, portfolioadmin)
+	// have not signed in yet, so the scenario logs each of them in once before
+	// switching back to the system admin to assign roles.
 	// =========================================================================
-	test.describe("Scenario 5: System Admin creates test team and portfolio, assigns individual scoped roles", () => {
-		testWithAuth(
-			"system admin creates test entities and assigns individual user roles",
-			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 5 — depends on Scenario 1. Enable after Scenario 1 is green.",
-				);
+	test.describe("Scenario 5: System Admin assigns individual scoped roles on the test team and portfolio", () => {
+		const TEAM_NAME = "Team Zenith";
+		const PORTFOLIO_NAME = "Project Apollo";
 
-				// Given: the system admin user is logged in.
+		testWithAuth(
+			"system admin assigns scoped roles to existing seed team and portfolio",
+			async ({ loginPage, page }) => {
+				// Given: the four scoped test users sign in once each so that their
+				// `UserProfile` rows exist in the database. Without this, they would
+				// not appear in the scoped members table and roles could not be
+				// assigned to them.
+				const scopedUsernames = [
+					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
+					TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
+					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
+				];
+
+				let currentLoginPage = loginPage;
+				for (const username of scopedUsernames) {
+					const overview = await loginAs(
+						currentLoginPage,
+						username,
+						TestConfig.AUTH_TEST_USER_PASSWORD,
+					);
+
+					// Logout to reset the Keycloak session so the next sign-in
+					// presents the login form again. Also clear cookies as a
+					// belt-and-braces measure against any residual SSO state.
+					currentLoginPage = await overview.lightHousePage.logout();
+					await page.context().clearCookies();
+					currentLoginPage = await new LighthousePage(page).openWithAuth();
+				}
+
+				// And: the system admin signs in.
 				const overviewPage = await loginAs(
-					loginPage,
+					currentLoginPage,
 					TestConfig.AUTHZ_TEST_SYSTEMADMIN_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
-				// When: the system admin creates "RBAC E2E Test Team".
-				const addTeamWizard = await overviewPage.lightHousePage.createNewTeam();
-				// (Team creation wizard steps — implementation depends on wizard model)
-				// Minimal: set name and save; data-source details not required for RBAC gating tests.
-				await addTeamWizard.page.getByLabel("Name").fill("RBAC E2E Test Team");
-				await addTeamWizard.page.getByRole("button", { name: "Save" }).click();
+				// When: the system admin opens the team detail page.
+				// Use exact match because the dev seed contains both "Team Zenith"
+				// and "Copy of Team Zenith".
+				await overviewPage.search(TEAM_NAME);
+				await overviewPage.page
+					.getByRole("link", { name: TEAM_NAME, exact: true })
+					.click();
+				const teamDetailPage = new TeamDetailPage(overviewPage.page);
 
-				// Navigate back to overview to get team link.
-				await overviewPage.lightHousePage.goToOverview();
-				const teamDetailPage = await overviewPage.goToTeam("RBAC E2E Test Team");
-
-				// Then: the team was created and Access tab is present for the sys admin.
+				// Then: the Access tab is visible for the system admin (DD-07).
 				await expect(
 					teamDetailPage.page.getByRole("tab", { name: "Access" }),
 				).toBeVisible();
 
-				// When: the system admin opens the Access tab and assigns scoped roles.
-				const scopedAccess = new ScopedAccessPage(teamDetailPage.page);
-				await scopedAccess.goToAccessTab();
+				// When: the system admin assigns scoped team roles.
+				const teamScopedAccess = new ScopedAccessPage(teamDetailPage.page);
+				await teamScopedAccess.goToAccessTab();
 
-				// Assign team reader (Viewer) and team admin (Admin).
-				await scopedAccess.assignMember(
+				await teamScopedAccess.assignMemberRole(
 					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
 					"Viewer",
 				);
-				await scopedAccess.assignMember(
+				await teamScopedAccess.assignMemberRole(
 					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
-					"Admin",
+					"TeamAdmin",
 				);
 
-				// Then: both assignments are visible in the members table.
+				// Then: both assigned users are visible in the team members table.
+				await teamScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+				);
 				await expect(
-					scopedAccess.getMemberRow(TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME),
+					teamScopedAccess.getMemberRow(
+						TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+					),
 				).toBeVisible();
+				await teamScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
+				);
 				await expect(
-					scopedAccess.getMemberRow(TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME),
+					teamScopedAccess.getMemberRow(
+						TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
+					),
 				).toBeVisible();
 
-				// (Portfolio creation and assignment omitted for now — symmetric with team.)
-				// TODO: create "RBAC E2E Test Portfolio" and assign portfolio reader + admin.
+				// When: the system admin opens the portfolio detail page.
+				await overviewPage.lightHousePage.goToOverview();
+				await overviewPage.search(PORTFOLIO_NAME);
+				await overviewPage.page
+					.getByRole("link", { name: PORTFOLIO_NAME, exact: true })
+					.click();
+				const portfolioDetailPage = new PortfolioDetailPage(
+					overviewPage.page,
+				);
+
+				// Then: the Access tab is visible for the system admin (DD-07).
+				await expect(
+					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
+				).toBeVisible();
+
+				// When: the system admin assigns scoped portfolio roles.
+				const portfolioScopedAccess = new ScopedAccessPage(
+					portfolioDetailPage.page,
+				);
+				await portfolioScopedAccess.goToAccessTab();
+
+				await portfolioScopedAccess.assignMemberRole(
+					TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
+					"Viewer",
+				);
+				await portfolioScopedAccess.assignMemberRole(
+					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
+					"PortfolioAdmin",
+				);
+
+				// Then: both assigned users are visible in the portfolio members table.
+				await portfolioScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
+				);
+				await expect(
+					portfolioScopedAccess.getMemberRow(
+						TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
+					),
+				).toBeVisible();
+				await portfolioScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
+				);
+				await expect(
+					portfolioScopedAccess.getMemberRow(
+						TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
+					),
+				).toBeVisible();
 			},
 		);
 	});
