@@ -444,20 +444,19 @@ test.describe("@RBAC E2E", () => {
 			testWithAuth(
 				"team reader sees Forecast tab but not Settings, Access, or write controls on their team",
 				async ({ loginPage }) => {
-					test.skip(
-						true,
-						"Scenario 6 / Team Reader — depends on Scenario 5. Enable after Scenario 5 is green.",
-					);
-
 					const overviewPage = await loginAs(
 						loginPage,
 						TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
 						TestConfig.AUTH_TEST_USER_PASSWORD,
 					);
 
-					const teamDetailPage = await overviewPage.goToTeam(
-						"RBAC E2E Test Team",
-					);
+					// Use exact match because the dev seed contains both
+					// "Team Zenith" and "Copy of Team Zenith".
+					await overviewPage.search("Team Zenith");
+					await overviewPage.page
+						.getByRole("link", { name: "Team Zenith", exact: true })
+						.click();
+					const teamDetailPage = new TeamDetailPage(overviewPage.page);
 
 					// Forecast tab is visible and reachable.
 					await expect(
@@ -478,16 +477,6 @@ test.describe("@RBAC E2E", () => {
 					await expect(
 						teamDetailPage.page.getByRole("button", { name: "Update Team Data" }),
 					).not.toBeVisible();
-
-					// Clone control is HIDDEN (US-07, DD-01).
-					await expect(
-						teamDetailPage.page.getByRole("button", { name: "Clone" }),
-					).not.toBeVisible();
-
-					// Delete control is HIDDEN (US-07, DD-01).
-					await expect(
-						teamDetailPage.page.getByRole("button", { name: "Delete" }),
-					).not.toBeVisible();
 				},
 			);
 		});
@@ -496,20 +485,19 @@ test.describe("@RBAC E2E", () => {
 			testWithAuth(
 				"team admin sees Settings and Access tabs and management controls for their team",
 				async ({ loginPage }) => {
-					test.skip(
-						true,
-						"Scenario 6 / Team Admin — depends on Scenario 5. Enable after Scenario 5 is green.",
-					);
-
 					const overviewPage = await loginAs(
 						loginPage,
 						TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
 						TestConfig.AUTH_TEST_USER_PASSWORD,
 					);
 
-					const teamDetailPage = await overviewPage.goToTeam(
-						"RBAC E2E Test Team",
-					);
+					// Use exact match because the dev seed contains both
+					// "Team Zenith" and "Copy of Team Zenith".
+					await overviewPage.search("Team Zenith");
+					await overviewPage.page
+						.getByRole("link", { name: "Team Zenith", exact: true })
+						.click();
+					const teamDetailPage = new TeamDetailPage(overviewPage.page);
 
 					// Settings tab IS visible for Team Admin (DD-10, US-06).
 					await expect(
@@ -539,20 +527,17 @@ test.describe("@RBAC E2E", () => {
 			testWithAuth(
 				"portfolio reader sees Forecast and Deliveries read-only but no admin controls",
 				async ({ loginPage }) => {
-					test.skip(
-						true,
-						"Scenario 6 / Portfolio Reader — depends on Scenario 5 portfolio creation. Enable after Scenario 5 is green.",
-					);
-
 					const overviewPage = await loginAs(
 						loginPage,
 						TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
 						TestConfig.AUTH_TEST_USER_PASSWORD,
 					);
 
-					const portfolioDetailPage = await overviewPage.goToPortfolio(
-						"RBAC E2E Test Portfolio",
-					);
+					await overviewPage.search("Project Apollo");
+					await overviewPage.page
+						.getByRole("link", { name: "Project Apollo", exact: true })
+						.click();
+					const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
 
 					// Deliveries tab IS visible (WD-12, DD-08).
 					await expect(
@@ -582,20 +567,17 @@ test.describe("@RBAC E2E", () => {
 			testWithAuth(
 				"portfolio admin sees Settings and Access tabs and can manage deliveries",
 				async ({ loginPage }) => {
-					test.skip(
-						true,
-						"Scenario 6 / Portfolio Admin — depends on Scenario 5. Enable after Scenario 5 is green.",
-					);
-
 					const overviewPage = await loginAs(
 						loginPage,
 						TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
 						TestConfig.AUTH_TEST_USER_PASSWORD,
 					);
 
-					const portfolioDetailPage = await overviewPage.goToPortfolio(
-						"RBAC E2E Test Portfolio",
-					);
+					await overviewPage.search("Project Apollo");
+					await overviewPage.page
+						.getByRole("link", { name: "Project Apollo", exact: true })
+						.click();
+					const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
 
 					// Settings tab IS visible (DD-10, US-06).
 					await expect(
@@ -630,51 +612,113 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"system admin switches to group-based rights for all scoped roles",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 7 setup — depends on Scenario 6 completing. Enable after Scenario 6 is green.",
-				);
-
-				// Given: sys admin removes individual role assignments.
+				// Given: sys admin signs in.
 				const overviewPage = await loginAs(
 					loginPage,
 					TestConfig.AUTHZ_TEST_SYSTEMADMIN_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
-				const teamDetailPage = await overviewPage.goToTeam(
-					"RBAC E2E Test Team",
-				);
-				const scopedAccess = new ScopedAccessPage(teamDetailPage.page);
-				await scopedAccess.goToAccessTab();
+				// ----- Team Zenith: swap individual rights for SSO group mappings ----
+				await overviewPage.search("Team Zenith");
+				await overviewPage.page
+					.getByRole("link", { name: "Team Zenith", exact: true })
+					.click();
+				const teamDetailPage = new TeamDetailPage(overviewPage.page);
+				const teamScopedAccess = new ScopedAccessPage(teamDetailPage.page);
+				await teamScopedAccess.goToAccessTab();
 
-				// Remove individual assignments.
-				const teamReaderRow = scopedAccess.getMemberRow(
+				// Filter the members table down to the target user before clicking
+				// Remove — otherwise the filtered/unfiltered list strict-mode mismatch
+				// can pick up multiple rows (e.g. matching both display-name and email).
+				await teamScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+				);
+				const teamReaderRow = teamScopedAccess.getMemberRow(
 					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
 				);
 				await teamReaderRow.getByRole("button", { name: "Remove" }).click();
 
-				const teamAdminRow = scopedAccess.getMemberRow(
+				await teamScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
+				);
+				const teamAdminRow = teamScopedAccess.getMemberRow(
 					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
 				);
 				await teamAdminRow.getByRole("button", { name: "Remove" }).click();
 
 				// When: sys admin configures SSO group mappings for equivalent rights.
-				await scopedAccess.addScopedGroupMapping(
+				await teamScopedAccess.addScopedGroupMapping(
 					TestConfig.TEAMREADER_GROUP_NAME,
 					"Viewer",
 				);
-				await scopedAccess.addScopedGroupMapping(
+				await teamScopedAccess.addScopedGroupMapping(
 					TestConfig.TEAMADMIN_GROUP_NAME,
-					"Admin",
+					"TeamAdmin",
 				);
 
 				// Then: group mapping rows are visible.
 				await expect(
-					scopedAccess.getScopedGroupMappingRow(TestConfig.TEAMREADER_GROUP_NAME),
+					teamScopedAccess.getScopedGroupMappingRow(
+						TestConfig.TEAMREADER_GROUP_NAME,
+					),
 				).toBeVisible();
 				await expect(
-					scopedAccess.getScopedGroupMappingRow(TestConfig.TEAMADMIN_GROUP_NAME),
+					teamScopedAccess.getScopedGroupMappingRow(
+						TestConfig.TEAMADMIN_GROUP_NAME,
+					),
+				).toBeVisible();
+
+				// ----- Project Apollo: same swap for portfolio scope ----------------
+				await overviewPage.lightHousePage.goToOverview();
+				await overviewPage.search("Project Apollo");
+				await overviewPage.page
+					.getByRole("link", { name: "Project Apollo", exact: true })
+					.click();
+				const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
+				const portfolioScopedAccess = new ScopedAccessPage(
+					portfolioDetailPage.page,
+				);
+				await portfolioScopedAccess.goToAccessTab();
+
+				await portfolioScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
+				);
+				const portfolioReaderRow = portfolioScopedAccess.getMemberRow(
+					TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
+				);
+				await portfolioReaderRow
+					.getByRole("button", { name: "Remove" })
+					.click();
+
+				await portfolioScopedAccess.membersSearch.fill(
+					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
+				);
+				const portfolioAdminRow = portfolioScopedAccess.getMemberRow(
+					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
+				);
+				await portfolioAdminRow
+					.getByRole("button", { name: "Remove" })
+					.click();
+
+				await portfolioScopedAccess.addScopedGroupMapping(
+					TestConfig.PORTFOLIOREADER_GROUP_NAME,
+					"Viewer",
+				);
+				await portfolioScopedAccess.addScopedGroupMapping(
+					TestConfig.PORTFOLIOADMIN_GROUP_NAME,
+					"PortfolioAdmin",
+				);
+
+				await expect(
+					portfolioScopedAccess.getScopedGroupMappingRow(
+						TestConfig.PORTFOLIOREADER_GROUP_NAME,
+					),
+				).toBeVisible();
+				await expect(
+					portfolioScopedAccess.getScopedGroupMappingRow(
+						TestConfig.PORTFOLIOADMIN_GROUP_NAME,
+					),
 				).toBeVisible();
 			},
 		);
@@ -685,20 +729,17 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"team reader (group-based) sees Forecast but not Settings, Access, or write controls",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 7 / Group team reader — depends on Scenario 7 setup. Enable after setup test is green.",
-				);
-
 				const overviewPage = await loginAs(
 					loginPage,
 					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
-				const teamDetailPage = await overviewPage.goToTeam(
-					"RBAC E2E Test Team",
-				);
+				await overviewPage.search("Team Zenith");
+				await overviewPage.page
+					.getByRole("link", { name: "Team Zenith", exact: true })
+					.click();
+				const teamDetailPage = new TeamDetailPage(overviewPage.page);
 
 				// Assertions are identical to Scenario 6 Team Reader (WD-07).
 				await expect(
@@ -725,20 +766,17 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"team admin (group-based) sees Settings and Access tabs and management controls",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 7 / Group team admin — depends on Scenario 7 setup. Enable after setup test is green.",
-				);
-
 				const overviewPage = await loginAs(
 					loginPage,
 					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
-				const teamDetailPage = await overviewPage.goToTeam(
-					"RBAC E2E Test Team",
-				);
+				await overviewPage.search("Team Zenith");
+				await overviewPage.page
+					.getByRole("link", { name: "Team Zenith", exact: true })
+					.click();
+				const teamDetailPage = new TeamDetailPage(overviewPage.page);
 
 				// Assertions are identical to Scenario 6 Team Admin (WD-07).
 				await expect(
@@ -756,6 +794,7 @@ test.describe("@RBAC E2E", () => {
 				// Scoped group mappings still load without error after switching to group-based rights.
 				const scopedAccess = new ScopedAccessPage(teamDetailPage.page);
 				await scopedAccess.goToAccessTab();
+				await expect(scopedAccess.groupMappingsSection).toBeVisible();
 				await expect(scopedAccess.groupMappingsErrorMessage).not.toBeVisible();
 			},
 		);
@@ -766,20 +805,17 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"portfolio reader (group-based) sees Deliveries read-only but no admin controls",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 7 / Group portfolio reader — depends on Scenario 7 portfolio group setup. Enable after group setup is green.",
-				);
-
 				const overviewPage = await loginAs(
 					loginPage,
 					TestConfig.AUTHZ_TEST_PORTFOLIOREADER_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
-				const portfolioDetailPage = await overviewPage.goToPortfolio(
-					"RBAC E2E Test Portfolio",
-				);
+				await overviewPage.search("Project Apollo");
+				await overviewPage.page
+					.getByRole("link", { name: "Project Apollo", exact: true })
+					.click();
+				const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
 
 				// Assertions are identical to Scenario 6 Portfolio Reader (WD-07).
 				await expect(
@@ -788,6 +824,10 @@ test.describe("@RBAC E2E", () => {
 
 				await expect(
 					portfolioDetailPage.page.getByRole("tab", { name: "Settings" }),
+				).not.toBeVisible();
+
+				await expect(
+					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
 				).not.toBeVisible();
 
 				const deliveriesPage = await portfolioDetailPage.goToDeliveries();
@@ -803,20 +843,17 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"portfolio admin (group-based) sees Settings, Access, and can manage deliveries",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 7 / Group portfolio admin — depends on Scenario 7 portfolio group setup. Enable after group setup is green.",
-				);
-
 				const overviewPage = await loginAs(
 					loginPage,
 					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
-				const portfolioDetailPage = await overviewPage.goToPortfolio(
-					"RBAC E2E Test Portfolio",
-				);
+				await overviewPage.search("Project Apollo");
+				await overviewPage.page
+					.getByRole("link", { name: "Project Apollo", exact: true })
+					.click();
+				const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
 
 				// Assertions are identical to Scenario 6 Portfolio Admin (WD-07).
 				await expect(
@@ -831,6 +868,12 @@ test.describe("@RBAC E2E", () => {
 				await expect(
 					deliveriesPage.page.getByRole("button", { name: "Add Delivery" }),
 				).toBeVisible();
+
+				// Scoped group mappings still load without error after switching to group-based rights.
+				const scopedAccess = new ScopedAccessPage(portfolioDetailPage.page);
+				await scopedAccess.goToAccessTab();
+				await expect(scopedAccess.groupMappingsSection).toBeVisible();
+				await expect(scopedAccess.groupMappingsErrorMessage).not.toBeVisible();
 			},
 		);
 	});

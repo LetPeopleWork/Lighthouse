@@ -116,12 +116,41 @@ export class ScopedAccessPage {
 		groupName: string,
 		role: ScopedRoleLabel,
 	): Promise<void> {
-		await this.page.getByTestId("scoped-group-value-input").fill(groupName);
-		await this.page.getByTestId("scoped-group-role-input").click();
+		// Wait for the loading spinner from any previous reload to disappear so
+		// the form inputs are stable before we interact with them. Multiple
+		// sequential calls to this helper otherwise race against the post-create
+		// reload that ScopedGroupMappingManager kicks off, wiping the value input.
 		await this.page
-			.getByRole("option", { name: this.roleButtonLabel(role) })
+			.getByTestId("scoped-groups-loading")
+			.waitFor({ state: "detached" })
+			.catch(() => {
+				// Spinner may never have been visible — that's fine.
+			});
+
+		// MUI TextField puts data-testid on the outer FormControl div; target the
+		// inner input (same pattern as RbacSettingsPage.addSystemAdminGroupMapping).
+		const valueInput = this.page
+			.getByTestId("scoped-group-value-input")
+			.locator("input");
+		await valueInput.fill(groupName);
+
+		// Open the role select dropdown. The MUI Select renders a `combobox`
+		// element inside the outer FormControl wrapper.
+		await this.page
+			.getByTestId("scoped-group-role-input")
+			.getByRole("combobox")
 			.click();
+		await this.page
+			.getByRole("option", { name: this.roleButtonLabel(role), exact: true })
+			.click();
+
 		await this.page.getByTestId("scoped-group-add-button").click();
+
+		// Wait for the new row to appear before returning, so the next call
+		// (or assertion) sees a stable, post-reload state.
+		await this.getScopedGroupMappingRow(groupName).waitFor({
+			state: "visible",
+		});
 	}
 
 	getScopedGroupMappingRow(groupName: string): Locator {
