@@ -535,4 +535,137 @@ describe("OverviewDashboard", () => {
 			expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		});
 	});
+
+	it("hides connections section for non-system-admin viewer", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			systemAdminDisplayNames: ["Admin User"],
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ connections: [], teams: [], portfolios: [] },
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+		});
+
+		expect(
+			screen.queryByRole("heading", { name: "Work Tracking Systems" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("no-connections-alert"),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows connections section for system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(<OverviewDashboard />, {
+			rbacService: mockRbacService,
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("heading", { name: "Work Tracking Systems" }),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("shows Add Team enabled for non-system-admin with canCreateTeam regardless of connections", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: false,
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ connections: [], teams: [] },
+		);
+
+		await waitFor(() => {
+			const addTeamButton = screen.getByRole("button", { name: "Add Team" });
+			expect(addTeamButton).toBeEnabled();
+		});
+	});
+
+	it("disables Add Team for system admin with no connections", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ connections: [], teams: [] },
+		);
+
+		await waitFor(() => {
+			const addTeamButton = screen.getByRole("button", { name: "Add Team" });
+			expect(addTeamButton).toBeDisabled();
+		});
+	});
+
+	it("hides OnboardingStepper for pure viewer with no create permissions", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			systemAdminDisplayNames: ["Admin User"],
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ connections: [], teams: [], portfolios: [] },
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByTestId("onboarding-stepper")).not.toBeInTheDocument();
+	});
+
+	it("shows OnboardingStepper when canCreateTeam is true", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: false,
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ connections: [], teams: [] },
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
+		});
+	});
 });

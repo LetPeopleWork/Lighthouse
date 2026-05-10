@@ -355,19 +355,21 @@ const OverviewDashboard: React.FC = () => {
 					</Alert>
 				)}
 
-				{/* Onboarding stepper — visible when setup is incomplete */}
-				<Box sx={{ mt: 2 }}>
-					<OnboardingStepper
-						hasConnections={hasConnections}
-						connectionTerm={connectionTerm}
-						hasTeams={hasTeams}
-						hasPortfolios={hasPortfolios}
-						canCreateTeam={canCreateTeam && rbac.canCreateTeam}
-						canCreatePortfolio={canCreatePortfolio && rbac.canCreatePortfolio}
-						teamTerm={teamTerm}
-						portfolioTerm={portfolioTerm}
-					/>
-				</Box>
+				{/* Onboarding stepper — visible when setup is incomplete and user can create at least one of team/portfolio */}
+				{(rbac.canCreateTeam || rbac.canCreatePortfolio) && (
+					<Box sx={{ mt: 2 }}>
+						<OnboardingStepper
+							hasConnections={hasConnections}
+							connectionTerm={connectionTerm}
+							hasTeams={hasTeams}
+							hasPortfolios={hasPortfolios}
+							canCreateTeam={canCreateTeam && rbac.canCreateTeam}
+							canCreatePortfolio={canCreatePortfolio && rbac.canCreatePortfolio}
+							teamTerm={teamTerm}
+							portfolioTerm={portfolioTerm}
+						/>
+					</Box>
+				)}
 
 				{/* Header with Add buttons */}
 				<Box
@@ -398,9 +400,9 @@ const OverviewDashboard: React.FC = () => {
 						{rbac.canCreateTeam && (
 							<Tooltip
 								title={
-									hasConnections
-										? ""
-										: `Create a ${connectionTerm} before adding a ${teamTerm}`
+									rbac.isSystemAdmin && !hasConnections
+										? `Create a ${connectionTerm} before adding a ${teamTerm}`
+										: ""
 								}
 							>
 								<span>
@@ -415,7 +417,10 @@ const OverviewDashboard: React.FC = () => {
 												startIcon={<AddIcon />}
 												onClickHandler={handleAddTeam}
 												buttonVariant="contained"
-												disabled={!canCreateTeam || !hasConnections}
+												disabled={
+													!canCreateTeam ||
+													(rbac.isSystemAdmin && !hasConnections)
+												}
 											/>
 										</span>
 									</LicenseTooltip>
@@ -473,109 +478,111 @@ const OverviewDashboard: React.FC = () => {
 						filterText={filterText}
 					/>
 
-					{/* Connections Section — styled consistently with Portfolios/Teams */}
-					<Container maxWidth={false} sx={{ pb: 4 }}>
-						<Box
-							sx={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								gap: 2,
-								mb: 2,
-							}}
-						>
-							<Typography
-								variant="h5"
+					{/* Connections Section — styled consistently with Portfolios/Teams. Hidden for non-system-admins (WD-11). */}
+					{rbac.isSystemAdmin && (
+						<Container maxWidth={false} sx={{ pb: 4 }}>
+							<Box
 								sx={{
-									fontWeight: 600,
-									color: theme.palette.primary.main,
-									textTransform: "capitalize",
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									gap: 2,
+									mb: 2,
 								}}
 							>
-								{connectionsTerm}
-							</Typography>
-						</Box>
-
-						{connections.length === 0 && (
-							<Fade in={true} timeout={800}>
-								<Alert
-									severity="info"
-									variant="outlined"
+								<Typography
+									variant="h5"
 									sx={{
-										mb: 3,
-										borderRadius: 2,
-										boxShadow: theme.shadows[1],
+										fontWeight: 600,
+										color: theme.palette.primary.main,
+										textTransform: "capitalize",
 									}}
-									data-testid="no-connections-alert"
 								>
-									<Typography variant="body1">
-										No {connectionTerm} found.{" "}
-										<MuiLink
-											component={Link}
-											to="/settings?tab=demodata"
-											style={{
-												color: theme.palette.primary.main,
-												textDecoration: "none",
-												fontWeight: 500,
-											}}
-											sx={{
-												"&:hover": {
-													textDecoration: "underline",
-												},
-											}}
-										>
-											Load Demo Data
-										</MuiLink>{" "}
-										or{" "}
-										<MuiLink
-											href="https://docs.lighthouse.letpeople.work"
-											target="_blank"
-											rel="noopener noreferrer"
-											style={{
-												color: theme.palette.primary.main,
-												textDecoration: "none",
-												fontWeight: 500,
-											}}
-											sx={{
-												"&:hover": {
-													textDecoration: "underline",
-												},
-											}}
-										>
-											Check the documentation
-										</MuiLink>{" "}
-										for more information.
-									</Typography>
-								</Alert>
-							</Fade>
-						)}
-
-						{connections.length > 0 && filteredConnections.length === 0 && (
-							<Fade in={true} timeout={500}>
-								<Alert
-									severity="warning"
-									variant="outlined"
-									sx={{ mb: 3, borderRadius: 2, boxShadow: theme.shadows[1] }}
-								>
-									No connections found matching the filter{" "}
-									<strong>{filterText}</strong>
-								</Alert>
-							</Fade>
-						)}
-
-						{connections.length > 0 && filteredConnections.length > 0 && (
-							<Box data-testid="connections-datagrid-container">
-								<DataGridBase
-									rows={
-										filteredConnections as (IWorkTrackingSystemConnection &
-											GridValidRowModel)[]
-									}
-									columns={connectionColumns}
-									storageKey="overview-connection-table"
-								/>
+									{connectionsTerm}
+								</Typography>
 							</Box>
-						)}
-					</Container>
+
+							{connections.length === 0 && (
+								<Fade in={true} timeout={800}>
+									<Alert
+										severity="info"
+										variant="outlined"
+										sx={{
+											mb: 3,
+											borderRadius: 2,
+											boxShadow: theme.shadows[1],
+										}}
+										data-testid="no-connections-alert"
+									>
+										<Typography variant="body1">
+											No {connectionTerm} found.{" "}
+											<MuiLink
+												component={Link}
+												to="/settings?tab=demodata"
+												style={{
+													color: theme.palette.primary.main,
+													textDecoration: "none",
+													fontWeight: 500,
+												}}
+												sx={{
+													"&:hover": {
+														textDecoration: "underline",
+													},
+												}}
+											>
+												Load Demo Data
+											</MuiLink>{" "}
+											or{" "}
+											<MuiLink
+												href="https://docs.lighthouse.letpeople.work"
+												target="_blank"
+												rel="noopener noreferrer"
+												style={{
+													color: theme.palette.primary.main,
+													textDecoration: "none",
+													fontWeight: 500,
+												}}
+												sx={{
+													"&:hover": {
+														textDecoration: "underline",
+													},
+												}}
+											>
+												Check the documentation
+											</MuiLink>{" "}
+											for more information.
+										</Typography>
+									</Alert>
+								</Fade>
+							)}
+
+							{connections.length > 0 && filteredConnections.length === 0 && (
+								<Fade in={true} timeout={500}>
+									<Alert
+										severity="warning"
+										variant="outlined"
+										sx={{ mb: 3, borderRadius: 2, boxShadow: theme.shadows[1] }}
+									>
+										No connections found matching the filter{" "}
+										<strong>{filterText}</strong>
+									</Alert>
+								</Fade>
+							)}
+
+							{connections.length > 0 && filteredConnections.length > 0 && (
+								<Box data-testid="connections-datagrid-container">
+									<DataGridBase
+										rows={
+											filteredConnections as (IWorkTrackingSystemConnection &
+												GridValidRowModel)[]
+										}
+										columns={connectionColumns}
+										storageKey="overview-connection-table"
+									/>
+								</Box>
+							)}
+						</Container>
+					)}
 				</Box>
 
 				{selectedItem && (
