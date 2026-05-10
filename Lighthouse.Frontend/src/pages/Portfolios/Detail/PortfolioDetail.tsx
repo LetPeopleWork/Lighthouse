@@ -100,7 +100,9 @@ const PortfolioDetail: React.FC = () => {
 
 	const showDeliveriesAndSettingsTabs =
 		!portfolio || rbac.isPortfolioAdmin(portfolio.id);
-	const showAccessTab = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
+	const showAccessTab =
+		!portfolio || (rbac.isRbacEnabled && rbac.isPortfolioAdmin(portfolio.id));
+	const showWriteControls = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 
 	const loadPortfolioMembers = useCallback(
 		async (targetPortfolioId: number) => {
@@ -412,44 +414,46 @@ const PortfolioDetail: React.FC = () => {
 										</Stack>
 									}
 									quickSettingsContent={
-										<QuickSettingsBar>
-											<SleQuickSetting
-												probability={
-													portfolio.serviceLevelExpectationProbability
-												}
-												range={portfolio.serviceLevelExpectationRange}
-												onSave={async (probability, range) => {
-													await updatePortfolioSettings((settings) => {
-														settings.serviceLevelExpectationProbability =
-															probability;
-														settings.serviceLevelExpectationRange = range;
-													});
-												}}
-												disabled={!canUpdatePortfolioData}
-											/>
-											<SystemWipQuickSetting
-												wipLimit={portfolio.systemWIPLimit}
-												onSave={async (systemWip) => {
-													await updatePortfolioSettings((settings) => {
-														settings.systemWIPLimit = systemWip;
-													});
-												}}
-												disabled={!canUpdatePortfolioData}
-											/>
-											<PortfolioFeatureWipQuickSetting
-												teams={involvedTeams}
-												onSave={async (teamId, featureWip) => {
-													await updateTeamSettingsFromPortfolio(
-														teamId,
-														(settings) => {
-															settings.featureWIP = featureWip;
-														},
-														true,
-													);
-												}}
-												disabled={!canUpdatePortfolioData}
-											/>
-										</QuickSettingsBar>
+										showWriteControls ? (
+											<QuickSettingsBar>
+												<SleQuickSetting
+													probability={
+														portfolio.serviceLevelExpectationProbability
+													}
+													range={portfolio.serviceLevelExpectationRange}
+													onSave={async (probability, range) => {
+														await updatePortfolioSettings((settings) => {
+															settings.serviceLevelExpectationProbability =
+																probability;
+															settings.serviceLevelExpectationRange = range;
+														});
+													}}
+													disabled={!canUpdatePortfolioData}
+												/>
+												<SystemWipQuickSetting
+													wipLimit={portfolio.systemWIPLimit}
+													onSave={async (systemWip) => {
+														await updatePortfolioSettings((settings) => {
+															settings.systemWIPLimit = systemWip;
+														});
+													}}
+													disabled={!canUpdatePortfolioData}
+												/>
+												<PortfolioFeatureWipQuickSetting
+													teams={involvedTeams}
+													onSave={async (teamId, featureWip) => {
+														await updateTeamSettingsFromPortfolio(
+															teamId,
+															(settings) => {
+																settings.featureWIP = featureWip;
+															},
+															true,
+														);
+													}}
+													disabled={!canUpdatePortfolioData}
+												/>
+											</QuickSettingsBar>
+										) : undefined
 									}
 									centerContent={
 										<Tabs
@@ -469,28 +473,30 @@ const PortfolioDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<LicenseTooltip
-											canUseFeature={canUpdatePortfolioData}
-											defaultTooltip={`Refresh ${featuresTerm}`}
-											premiumExtraInfo={`Free users can only update portfolio data for up to ${maxPortfoliosWithoutPremium} portfolio.`}
-										>
-											<span>
-												<IconButton
-													aria-label={`Refresh ${featuresTerm}`}
-													onClick={onRefreshFeatures}
-													disabled={
-														!canUpdatePortfolioData || isPortfolioUpdating
-													}
-													color="primary"
-												>
-													{isPortfolioUpdating ? (
-														<CircularProgress size={24} />
-													) : (
-														<CloudSyncIcon />
-													)}
-												</IconButton>
-											</span>
-										</LicenseTooltip>
+										showWriteControls ? (
+											<LicenseTooltip
+												canUseFeature={canUpdatePortfolioData}
+												defaultTooltip={`Refresh ${featuresTerm}`}
+												premiumExtraInfo={`Free users can only update portfolio data for up to ${maxPortfoliosWithoutPremium} portfolio.`}
+											>
+												<span>
+													<IconButton
+														aria-label={`Refresh ${featuresTerm}`}
+														onClick={onRefreshFeatures}
+														disabled={
+															!canUpdatePortfolioData || isPortfolioUpdating
+														}
+														color="primary"
+													>
+														{isPortfolioUpdating ? (
+															<CircularProgress size={24} />
+														) : (
+															<CloudSyncIcon />
+														)}
+													</IconButton>
+												</span>
+											</LicenseTooltip>
+										) : undefined
 									}
 								/>
 							</Grid>

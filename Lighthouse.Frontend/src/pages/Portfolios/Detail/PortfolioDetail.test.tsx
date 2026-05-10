@@ -587,3 +587,183 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 		});
 	});
 });
+
+describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () => {
+	const renderForRbac = (summary: {
+		isRbacEnabled: boolean;
+		isSystemAdmin: boolean;
+		adminPortfolioIds?: number[];
+	}) => {
+		const portfolio = new Portfolio();
+		portfolio.id = 1;
+		portfolio.name = "Test Portfolio";
+		portfolio.features = [];
+
+		const mockPortfolioSvc = createMockPortfolioService();
+		(
+			mockPortfolioSvc.getPortfolio as ReturnType<typeof vi.fn>
+		).mockResolvedValue(portfolio);
+		(
+			mockPortfolioSvc.getPortfolioSettings as ReturnType<typeof vi.fn>
+		).mockResolvedValue({ id: 1, name: "Test Portfolio" });
+
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			...summary,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+		});
+
+		const mockContext = createMockApiServiceContext({
+			portfolioService: mockPortfolioSvc,
+			teamService: createMockTeamService(),
+			rbacService: mockRbacService,
+			updateSubscriptionService: createMockUpdateSubscriptionService(),
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockContext}>
+				<MemoryRouter initialEntries={["/portfolios/1"]}>
+					<Routes>
+						<Route path="/portfolios/:id" element={<PortfolioDetail />} />
+						<Route path="/portfolios/:id/:tab" element={<PortfolioDetail />} />
+					</Routes>
+				</MemoryRouter>
+			</ApiServiceContext.Provider>,
+		);
+	};
+
+	it("shows Settings and Access tabs for Portfolio Admin of own portfolio", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminPortfolioIds: [1],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+		expect(screen.getByRole("tab", { name: "Access" })).toBeInTheDocument();
+	});
+
+	it("hides Settings and Access tabs for Portfolio Admin of a different portfolio", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminPortfolioIds: [99],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Features" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("tab", { name: "Settings" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("hides Settings and Access tabs for Viewer of this portfolio", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminPortfolioIds: [],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Features" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("tab", { name: "Settings" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("hides Access tab when isRbacEnabled is false but keeps Settings tab (DD-10)", async () => {
+		renderForRbac({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+			adminPortfolioIds: [],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows Refresh Features button and QuickSettingsBar for Portfolio Admin of own portfolio", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminPortfolioIds: [1],
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Refresh Features" }),
+			).toBeInTheDocument();
+		});
+		expect(
+			screen.getByRole("button", { name: "System WIP Limit" }),
+		).toBeInTheDocument();
+	});
+
+	it("hides Refresh Features button and QuickSettingsBar for Viewer", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminPortfolioIds: [],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Features" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("button", { name: "Refresh Features" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "System WIP Limit" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("hides Refresh Features button and QuickSettingsBar for Portfolio Admin of a different portfolio", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminPortfolioIds: [99],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Features" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("button", { name: "Refresh Features" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "System WIP Limit" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows Refresh Features button and QuickSettingsBar when RBAC is disabled (PERMISSIVE_SUMMARY)", async () => {
+		renderForRbac({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+			adminPortfolioIds: [],
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Refresh Features" }),
+			).toBeInTheDocument();
+		});
+		expect(
+			screen.getByRole("button", { name: "System WIP Limit" }),
+		).toBeInTheDocument();
+	});
+});
