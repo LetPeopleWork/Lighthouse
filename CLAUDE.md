@@ -62,15 +62,35 @@ After every GREEN, classify and act:
 - Max 2 levels of nesting. Use early returns; never nested `if/else` chains.
 - One responsibility per function. Compose small functions over long methods.
 - Options object/record when a function takes >3 params or any optional param.
-- No code comments — names and constants do the explaining. JSDoc / XML doc on public APIs is OK.
 - Errors: return `Result<T, TError>` (record/discriminated union) or use `TryGet` pattern. Don't throw for control flow.
 - Async all the way: never `.Result`/`.Wait()`, never `async void` outside event handlers. Pass `CancellationToken` through.
 - C#: prefer `switch` expressions, type patterns, and property patterns over chained `if`s.
 
+### Comments — strong default: don't write any
+
+The code, names, and constants do the explaining. **Applies equally to production code and test code.** If a future reader needs a comment to understand a line, the line itself is the problem — fix the name, extract a helper, or use a constant.
+
+**Banned** (in production AND test files):
+
+- Decorative dividers and section banners — `// =====`, `// -----`, ASCII-art frames, `// ── helpers ──`. If a file needs visual sectioning, it's too long — split it.
+- Section labels that restate structure — `// Setup`, `// Helpers`, `// Scenario 3: ...`, `// Arrange / Act / Assert`. The describe/test/it title and the function name already do this.
+- Per-line Gherkin commentary — `// Given:`, `// When:`, `// Then:`, `// And:`. The assertion text and helper names carry the meaning. A test reading like a story is the goal; narrating the story in comments is not.
+- Restating what the next line does — `// log in as the test user` above `await loginAs(testUser)`, `// switch user` above `switchUser(...)`. This is noise.
+- Provenance / attribution — `// Added for feature X`, `// Targets mutants in report Y`, `// Per ADR-NNN`, `// Closes #123`. That metadata belongs in the commit message or PR description, never in the file (it rots the moment the code moves).
+- Commented-out code, `console.log` / `Console.WriteLine` debug breadcrumbs, `TODO` / `FIXME` / `HACK` / `XXX`. Open an issue instead.
+
+**Allowed (rare, minimal)**:
+
+- A single line explaining a non-obvious **WHY** when removing it would mislead a future reader: a hidden invariant, a workaround for a specific upstream bug with a link to that bug, surprising platform behavior the code has to compensate for.
+- JSDoc / XML doc on **public** APIs — one paragraph max, focused on the contract, not the implementation.
+
+If you find yourself wanting to write a comment, first ask: would a better name or a small helper remove the need? Almost always: yes.
+
+**Boy Scout rule for existing comments**: when you touch a file for any reason, delete any banned comments you encounter in the same change. No separate cleanup PR, no "out of scope" excuse — leaving them in place after editing nearby code is a tacit endorsement. The only exception: if removal would balloon the diff and obscure the actual change, leave a one-line note in the commit body and open a follow-up.
+
 ### Commits & Shared Contracts (`workflow.instructions.md`)
 
 - Conventional commits with scopes: `feat(payment): …`, `fix(user): …`, `refactor(order): …`, `test(payment): …`. Refactor commits separate from feature commits.
-- No commented-out code, no `Console.WriteLine`/`console.log` debug, no TODO comments (open an issue).
 - Before editing a shared contract (DTO, API payload, cross-cutting interface): grep for usages and extend the relevant test factory/builder first to bound the blast radius.
 - DRY = don't repeat *knowledge*, not code. Don't abstract structurally-similar code that represents different business concepts (e.g., `validatePaymentAmount` and `validateTransferAmount` may look identical but evolve independently).
 
