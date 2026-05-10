@@ -27,9 +27,7 @@ export class RbacSettingsPage {
 		// Click the "System Admins" tab to switch into the RBAC settings view.
 		// We click rather than navigate via URL because client-side routing on the
 		// same /settings pathname can be a no-op for page.goto.
-		await this.page
-			.getByRole("tab", { name: "System Admins" })
-			.click();
+		await this.page.getByRole("tab", { name: "System Admins" }).click();
 		await this.rbacStatusIndicator.waitFor({ state: "visible" });
 	}
 
@@ -117,10 +115,14 @@ export class RbacSettingsPage {
 	}
 
 	async removeGroupMapping(mappingId: number): Promise<void> {
-		await this.page.getByTestId(`rbac-remove-group-mapping-${mappingId}`).click();
+		await this.page
+			.getByTestId(`rbac-remove-group-mapping-${mappingId}`)
+			.click();
 	}
 
 	getGroupMappingRow(groupName: string): Locator {
-		return this.groupMappingsTable.getByRole("row").filter({ hasText: groupName });
+		return this.groupMappingsTable
+			.getByRole("row")
+			.filter({ hasText: groupName });
 	}
 }

@@ -48,7 +48,9 @@ async function clearConfiguration(request: APIRequestContext): Promise<void> {
 	);
 	const connections = await connectionsResponse.json();
 	for (const connection of connections) {
-		await request.delete(`/api/latest/worktrackingsystemconnections/${connection.id}`);
+		await request.delete(
+			`/api/latest/worktrackingsystemconnections/${connection.id}`,
+		);
 	}
 }
 
