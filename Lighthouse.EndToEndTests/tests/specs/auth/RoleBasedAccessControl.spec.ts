@@ -1,5 +1,8 @@
 /**
- * @RBAC E2E — Role-Based Access Control end-to-end acceptance tests
+ * @RBAC E2E @Auth — Role-Based Access Control end-to-end acceptance tests
+ *
+ * Tagged @Auth so CI runs these only in ci_verifyauth (which sets up Keycloak)
+ * and excludes them from ci_verifysqlite / ci_verifypostgres (no Keycloak there).
  *
  * Walking Skeleton Strategy: C (Real local)
  * All adapters are real: Playwright browser, Keycloak OIDC, .NET API, SQLite DB.
@@ -35,7 +38,7 @@ import { LighthousePage } from "../../models/app/LighthousePage";
 import type { LoginPage } from "../../models/auth/LoginPage";
 import { RbacSettingsPage } from "../../models/auth/rbac/RbacSettingsPage";
 import { ScopedAccessPage } from "../../models/auth/rbac/ScopedAccessPage";
-import { OverviewPage } from "../../models/overview/OverviewPage";
+import type { OverviewPage } from "../../models/overview/OverviewPage";
 import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
 import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
@@ -66,7 +69,7 @@ async function goToRbacSettings(
 // ===========================================================================
 // @walking-skeleton  Scenario 1: First user self-bootstraps as System Admin
 // ===========================================================================
-test.describe("@RBAC E2E", () => {
+test.describe("@RBAC E2E @Auth", () => {
 	test.describe("@walking-skeleton Scenario 1: Bootstrap first System Admin and assign SSO group", () => {
 		testWithAuth(
 			"first user self-bootstraps as System Admin and assigns SSO group",
@@ -100,7 +103,9 @@ test.describe("@RBAC E2E", () => {
 				await expect(rbac.rbacStatusIndicator).toBeVisible();
 
 				// When: the test user adds the system-admin SSO group mapping.
-				await rbac.addSystemAdminGroupMapping(TestConfig.SYSTEMADMIN_GROUP_NAME);
+				await rbac.addSystemAdminGroupMapping(
+					TestConfig.SYSTEMADMIN_GROUP_NAME,
+				);
 
 				// Then: the group mapping appears in the SSO Groups table.
 				const mappingRow = rbac.getGroupMappingRow(
@@ -134,9 +139,7 @@ test.describe("@RBAC E2E", () => {
 				// Because the test user is also configured as the Emergency Admin in
 				// appsettings (WD-02), their System Admin cell renders "Emergency Admin"
 				// and the row's Revoke / Remove buttons are hidden by design (DD-03).
-				const testUserRow = rbac.getUserRow(
-					TestConfig.AUTH_TEST_USER_USERNAME,
-				);
+				const testUserRow = rbac.getUserRow(TestConfig.AUTH_TEST_USER_USERNAME);
 				await expect(testUserRow).toBeVisible();
 				const status = await rbac.getSystemAdminStatus(
 					TestConfig.AUTH_TEST_USER_USERNAME,
@@ -170,22 +173,17 @@ test.describe("@RBAC E2E", () => {
 				);
 
 				// When: the test user navigates to System Settings.
-				const settingsPage =
-					await overviewPage.lightHousePage.goToSettings();
+				const settingsPage = await overviewPage.lightHousePage.goToSettings();
 
 				// Then: the System Admins tab (rbac-tab) is still visible
 				// (emergency admin fallback active, WD-02).
-				await expect(
-					settingsPage.page.getByTestId("rbac-tab"),
-				).toBeVisible();
+				await expect(settingsPage.page.getByTestId("rbac-tab")).toBeVisible();
 
 				// And: the test user row shows "Emergency Admin" with a lock icon (WD-02, DD-03).
 				const rbac = new RbacSettingsPage(settingsPage.page);
 				await rbac.goToAccessTab();
 				const testUserRow = rbac.getUserRow(TestConfig.AUTH_TEST_USER_USERNAME);
-				await expect(
-					testUserRow.getByText("Emergency Admin"),
-				).toBeVisible();
+				await expect(testUserRow.getByText("Emergency Admin")).toBeVisible();
 
 				// And: no Revoke button is rendered on the emergency admin row (DD-03).
 				await expect(
@@ -245,7 +243,7 @@ test.describe("@RBAC E2E", () => {
 					// Logout to reset the Keycloak session so the next sign-in
 					// presents the login form again. Also clear cookies as a
 					// belt-and-braces measure against any residual SSO state.
-					currentLoginPage = await overview.lightHousePage.logout();
+					await overview.lightHousePage.logout();
 					await page.context().clearCookies();
 					currentLoginPage = await new LighthousePage(page).openWithAuth();
 				}
@@ -308,9 +306,7 @@ test.describe("@RBAC E2E", () => {
 				await overviewPage.page
 					.getByRole("link", { name: PORTFOLIO_NAME, exact: true })
 					.click();
-				const portfolioDetailPage = new PortfolioDetailPage(
-					overviewPage.page,
-				);
+				const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
 
 				// Then: the Access tab is visible for the system admin (DD-07).
 				await expect(
@@ -374,8 +370,7 @@ test.describe("@RBAC E2E", () => {
 				);
 
 				// When: the team reader navigates to System Settings.
-				const settingsPage =
-					await overviewPage.lightHousePage.goToSettings();
+				const settingsPage = await overviewPage.lightHousePage.goToSettings();
 
 				// Then: the System Admins tab (rbac-tab — RBAC admin surface) is not visible.
 				await expect(
@@ -475,7 +470,9 @@ test.describe("@RBAC E2E", () => {
 
 					// Update Team Data write control is HIDDEN — not disabled (WD-06, DD-01).
 					await expect(
-						teamDetailPage.page.getByRole("button", { name: "Update Team Data" }),
+						teamDetailPage.page.getByRole("button", {
+							name: "Update Team Data",
+						}),
 					).not.toBeVisible();
 				},
 			);
@@ -511,14 +508,18 @@ test.describe("@RBAC E2E", () => {
 
 					// Management write controls are visible (US-07).
 					await expect(
-						teamDetailPage.page.getByRole("button", { name: "Update Team Data" }),
+						teamDetailPage.page.getByRole("button", {
+							name: "Update Team Data",
+						}),
 					).toBeVisible();
 
 					// Scoped SSO group mappings load without error (WD-08, US-08).
 					const scopedAccess = new ScopedAccessPage(teamDetailPage.page);
 					await scopedAccess.goToAccessTab();
 					await expect(scopedAccess.groupMappingsSection).toBeVisible();
-					await expect(scopedAccess.groupMappingsErrorMessage).not.toBeVisible();
+					await expect(
+						scopedAccess.groupMappingsErrorMessage,
+					).not.toBeVisible();
 				},
 			);
 		});
@@ -537,7 +538,9 @@ test.describe("@RBAC E2E", () => {
 					await overviewPage.page
 						.getByRole("link", { name: "Project Apollo", exact: true })
 						.click();
-					const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
+					const portfolioDetailPage = new PortfolioDetailPage(
+						overviewPage.page,
+					);
 
 					// Deliveries tab IS visible (WD-12, DD-08).
 					await expect(
@@ -577,7 +580,9 @@ test.describe("@RBAC E2E", () => {
 					await overviewPage.page
 						.getByRole("link", { name: "Project Apollo", exact: true })
 						.click();
-					const portfolioDetailPage = new PortfolioDetailPage(overviewPage.page);
+					const portfolioDetailPage = new PortfolioDetailPage(
+						overviewPage.page,
+					);
 
 					// Settings tab IS visible (DD-10, US-06).
 					await expect(
@@ -599,7 +604,9 @@ test.describe("@RBAC E2E", () => {
 					const scopedAccess = new ScopedAccessPage(portfolioDetailPage.page);
 					await scopedAccess.goToAccessTab();
 					await expect(scopedAccess.groupMappingsSection).toBeVisible();
-					await expect(scopedAccess.groupMappingsErrorMessage).not.toBeVisible();
+					await expect(
+						scopedAccess.groupMappingsErrorMessage,
+					).not.toBeVisible();
 				},
 			);
 		});
@@ -697,9 +704,7 @@ test.describe("@RBAC E2E", () => {
 				const portfolioAdminRow = portfolioScopedAccess.getMemberRow(
 					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
 				);
-				await portfolioAdminRow
-					.getByRole("button", { name: "Remove" })
-					.click();
+				await portfolioAdminRow.getByRole("button", { name: "Remove" }).click();
 
 				await portfolioScopedAccess.addScopedGroupMapping(
 					TestConfig.PORTFOLIOREADER_GROUP_NAME,
