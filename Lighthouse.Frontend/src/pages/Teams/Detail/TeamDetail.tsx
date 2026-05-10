@@ -117,7 +117,9 @@ const TeamDetail: React.FC = () => {
 	const rbac = useRbac();
 
 	const showSettingsTab = !team || rbac.isTeamAdmin(team.id);
-	const showAccessTab = !team || rbac.isTeamAdmin(team.id);
+	const showAccessTab =
+		!team || (rbac.isRbacEnabled && rbac.isTeamAdmin(team.id));
+	const showWriteControls = !team || rbac.isTeamAdmin(team.id);
 
 	const loadTeamMembers = useCallback(
 		async (targetTeamId: number) => {
@@ -356,6 +358,7 @@ const TeamDetail: React.FC = () => {
 										</Stack>
 									}
 									quickSettingsContent={
+										showWriteControls ? (
 										<QuickSettingsBar>
 											<ThroughputQuickSetting
 												useFixedDates={team.useFixedDatesForThroughput}
@@ -412,6 +415,7 @@ const TeamDetail: React.FC = () => {
 												disabled={!canUpdateTeamData}
 											/>
 										</QuickSettingsBar>
+										) : undefined
 									}
 									centerContent={
 										<Tabs
@@ -447,26 +451,28 @@ const TeamDetail: React.FC = () => {
 										</Tabs>
 									}
 									rightContent={
-										<LicenseTooltip
-											canUseFeature={canUpdateTeamData}
-											defaultTooltip={`Update ${teamTerm} Data`}
-											premiumExtraInfo={`Free users can only update team data for up to ${maxTeamsWithoutPremium} teams.`}
-										>
-											<span>
-												<IconButton
-													aria-label={`Update ${teamTerm} Data`}
-													onClick={onUpdateTeamData}
-													disabled={!canUpdateTeamData || isTeamUpdating}
-													color="primary"
-												>
-													{isTeamUpdating ? (
-														<CircularProgress size={24} />
-													) : (
-														<CloudSyncIcon />
-													)}
-												</IconButton>
-											</span>
-										</LicenseTooltip>
+										showWriteControls ? (
+											<LicenseTooltip
+												canUseFeature={canUpdateTeamData}
+												defaultTooltip={`Update ${teamTerm} Data`}
+												premiumExtraInfo={`Free users can only update team data for up to ${maxTeamsWithoutPremium} teams.`}
+											>
+												<span>
+													<IconButton
+														aria-label={`Update ${teamTerm} Data`}
+														onClick={onUpdateTeamData}
+														disabled={!canUpdateTeamData || isTeamUpdating}
+														color="primary"
+													>
+														{isTeamUpdating ? (
+															<CircularProgress size={24} />
+														) : (
+															<CloudSyncIcon />
+														)}
+													</IconButton>
+												</span>
+											</LicenseTooltip>
+										) : undefined
 									}
 								/>
 							</Grid>

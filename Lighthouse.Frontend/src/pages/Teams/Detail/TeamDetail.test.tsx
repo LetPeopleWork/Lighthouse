@@ -710,3 +710,193 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 		});
 	});
 });
+
+describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
+	const buildMockTeam = () => ({
+		id: 1,
+		name: "Test Team",
+		features: [],
+		tags: [],
+		projects: [],
+		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
+		remainingFeatures: 0,
+		featureWip: 1,
+		useFixedDatesForThroughput: false,
+		throughputStartDate: new Date(),
+		throughputEndDate: new Date(),
+	});
+
+	const renderForRbac = (
+		summary: {
+			isRbacEnabled: boolean;
+			isSystemAdmin: boolean;
+			adminTeamIds?: number[];
+		},
+	) => {
+		const mockTeamService = createMockTeamService();
+		(mockTeamService.getTeam as ReturnType<typeof vi.fn>).mockResolvedValue(
+			buildMockTeam(),
+		);
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			...summary,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+		});
+		const mockUpdateSubscription = createMockUpdateSubscriptionService();
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			rbacService: mockRbacService,
+			updateSubscriptionService: mockUpdateSubscription,
+		});
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+	};
+
+	beforeEach(() => {
+		mockParams = { id: "1", tab: "forecasts" };
+		mockNavigate.mockClear();
+	});
+
+	it("shows Settings and Access tabs for Team Admin of own team", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminTeamIds: [1],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+		expect(screen.getByRole("tab", { name: "Access" })).toBeInTheDocument();
+	});
+
+	it("hides Settings and Access tabs for Team Admin of a different team", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminTeamIds: [99],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("tab", { name: "Settings" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("hides Settings and Access tabs for Viewer of this team", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminTeamIds: [],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("tab", { name: "Settings" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("hides Access tab when isRbacEnabled is false but keeps Settings tab (DD-10)", async () => {
+		renderForRbac({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+			adminTeamIds: [],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows Update Team Data button and QuickSettingsBar for Team Admin of own team", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminTeamIds: [1],
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Update Team Data" }),
+			).toBeInTheDocument();
+		});
+		expect(
+			screen.getByRole("button", { name: "System WIP Limit" }),
+		).toBeInTheDocument();
+	});
+
+	it("hides Update Team Data button and QuickSettingsBar for Viewer", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminTeamIds: [],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("button", { name: "Update Team Data" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "System WIP Limit" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("hides Update Team Data button and QuickSettingsBar for Team Admin of a different team", async () => {
+		renderForRbac({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			adminTeamIds: [99],
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("button", { name: "Update Team Data" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "System WIP Limit" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows Update Team Data button and QuickSettingsBar when RBAC is disabled (PERMISSIVE_SUMMARY)", async () => {
+		renderForRbac({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+			adminTeamIds: [],
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Update Team Data" }),
+			).toBeInTheDocument();
+		});
+		expect(
+			screen.getByRole("button", { name: "System WIP Limit" }),
+		).toBeInTheDocument();
+	});
+});
