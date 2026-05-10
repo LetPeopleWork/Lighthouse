@@ -1,8 +1,16 @@
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -11,6 +19,8 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LockIcon from "@mui/icons-material/Lock";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type {
@@ -29,6 +39,9 @@ const RbacSettings: React.FC = () => {
 	const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
 	const [groupValueInput, setGroupValueInput] = useState("");
 	const [userSearchText, setUserSearchText] = useState("");
+	const [removeDialogUserId, setRemoveDialogUserId] = useState<number | null>(
+		null,
+	);
 
 	const load = useCallback(async () => {
 		setError(undefined);
@@ -118,6 +131,18 @@ const RbacSettings: React.FC = () => {
 		}
 	};
 
+	const handleConfirmRemoveUser = async () => {
+		if (removeDialogUserId === null) return;
+		const userId = removeDialogUserId;
+		setRemoveDialogUserId(null);
+		try {
+			await rbacService.deleteUser(userId);
+			await load();
+		} catch {
+			setError("Failed to remove user.");
+		}
+	};
+
 	const visibleUsers = users
 		.filter((user) => !showUnassignedOnly || user.isUnassigned)
 		.filter((user) => {
@@ -133,32 +158,43 @@ const RbacSettings: React.FC = () => {
 		<Box>
 			{error && <Alert severity="error">{error}</Alert>}
 
-			<Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
-				<Chip
-					label={`RBAC: ${status?.enabled ? "Enabled" : "Disabled"}`}
-					data-testid="rbac-status-enabled"
-				/>
-				<Chip
-					label={`Premium Gate: ${status?.premiumGateSatisfied ? "Ready" : "Blocked"}`}
-					data-testid="rbac-status-premium-gate"
-				/>
-				<Chip
-					label={`Emergency Admin: ${status?.hasEmergencyAdminConfigured ? "Configured" : "Not configured"}`}
-					data-testid="rbac-status-emergency-admin"
-				/>
-				<Chip
-					label={`Ready: ${status?.readyForEnablement ? "Yes" : "No"}`}
-					data-testid="rbac-status-ready"
-				/>
-				<Chip
-					label={`Unassigned users: ${status?.unassignedUserCount ?? 0}`}
-					data-testid="rbac-status-unassigned-count"
-				/>
-				<Chip
-					label={`Group claim: ${status?.groupClaimName || "Not configured"}`}
-					data-testid="rbac-status-group-claim"
-				/>
-			</Box>
+			<Accordion
+				defaultExpanded={false}
+				data-testid="rbac-status-enabled"
+				sx={{ mb: 2 }}
+			>
+				<AccordionSummary expandIcon={<ExpandMoreIcon />}>
+					<Typography>RBAC Status</Typography>
+				</AccordionSummary>
+				<AccordionDetails>
+					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+						<Chip
+							label={`RBAC: ${status?.enabled ? "Enabled" : "Disabled"}`}
+							data-testid="rbac-status-chip-enabled"
+						/>
+						<Chip
+							label={`Premium Gate: ${status?.premiumGateSatisfied ? "Ready" : "Blocked"}`}
+							data-testid="rbac-status-premium-gate"
+						/>
+						<Chip
+							label={`Emergency Admin: ${status?.hasEmergencyAdminConfigured ? "Configured" : "Not configured"}`}
+							data-testid="rbac-status-emergency-admin"
+						/>
+						<Chip
+							label={`Ready: ${status?.readyForEnablement ? "Yes" : "No"}`}
+							data-testid="rbac-status-ready"
+						/>
+						<Chip
+							label={`Unassigned users: ${status?.unassignedUserCount ?? 0}`}
+							data-testid="rbac-status-unassigned-count"
+						/>
+						<Chip
+							label={`Group claim: ${status?.groupClaimName || "Not configured"}`}
+							data-testid="rbac-status-group-claim"
+						/>
+					</Box>
+				</AccordionDetails>
+			</Accordion>
 
 			{status && !status.hasSystemAdmin && (
 				<Box sx={{ mb: 2 }}>
@@ -224,27 +260,54 @@ const RbacSettings: React.FC = () => {
 							<TableCell>{user.displayName || "(Unnamed user)"}</TableCell>
 							<TableCell>{user.email || "-"}</TableCell>
 							<TableCell>{user.subject}</TableCell>
-							<TableCell>{user.isSystemAdmin ? "Yes" : "No"}</TableCell>
+							<TableCell>
+								{user.isEmergencyAdmin ? (
+									<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+										<Typography variant="body2">Emergency Admin</Typography>
+										<LockIcon fontSize="small" />
+									</Box>
+								) : user.isSystemAdmin ? (
+									"Yes"
+								) : (
+									"No"
+								)}
+							</TableCell>
 							<TableCell>{user.isUnassigned ? "Yes" : "No"}</TableCell>
 							<TableCell align="right">
-								{user.isSystemAdmin ? (
-									<Button
-										size="small"
-										color="error"
-										onClick={() => handleRevokeSystemAdmin(user.id)}
-										data-testid={`rbac-revoke-system-admin-${user.id}`}
-									>
-										Revoke
-									</Button>
-								) : (
-									<Button
-										size="small"
-										onClick={() => handleGrantSystemAdmin(user.id)}
-										data-testid={`rbac-grant-system-admin-${user.id}`}
-									>
-										Grant
-									</Button>
-								)}
+								<Box
+									sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
+								>
+									{!user.isEmergencyAdmin && (
+										<>
+											{user.isSystemAdmin ? (
+												<Button
+													size="small"
+													color="error"
+													onClick={() => handleRevokeSystemAdmin(user.id)}
+													data-testid={`rbac-revoke-system-admin-${user.id}`}
+												>
+													Revoke
+												</Button>
+											) : (
+												<Button
+													size="small"
+													onClick={() => handleGrantSystemAdmin(user.id)}
+													data-testid={`rbac-grant-system-admin-${user.id}`}
+												>
+													Grant
+												</Button>
+											)}
+											<Button
+												size="small"
+												color="error"
+												onClick={() => setRemoveDialogUserId(user.id)}
+												data-testid={`rbac-remove-user-${user.id}`}
+											>
+												Remove
+											</Button>
+										</>
+									)}
+								</Box>
 							</TableCell>
 						</TableRow>
 					))}
@@ -307,6 +370,27 @@ const RbacSettings: React.FC = () => {
 					</Table>
 				</Box>
 			)}
+
+			<Dialog
+				open={removeDialogUserId !== null}
+				onClose={() => setRemoveDialogUserId(null)}
+			>
+				<DialogTitle>Remove User</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						Are you sure you want to remove this user from the system?
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setRemoveDialogUserId(null)}>Cancel</Button>
+					<Button
+						color="error"
+						onClick={handleConfirmRemoveUser}
+					>
+						Confirm
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	);
 };

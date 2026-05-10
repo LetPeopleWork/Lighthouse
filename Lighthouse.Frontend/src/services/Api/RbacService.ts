@@ -36,6 +36,7 @@ export interface IRbacService {
 	getGroupMappings(): Promise<RbacGroupMapping[]>;
 	createGroupMapping(request: CreateRbacGroupMappingRequest): Promise<void>;
 	removeGroupMapping(mappingId: number): Promise<void>;
+	deleteUser(userId: number): Promise<void>;
 }
 
 export class RbacService extends BaseApiService implements IRbacService {
@@ -167,6 +168,13 @@ export class RbacService extends BaseApiService implements IRbacService {
 			await this.apiService.delete(
 				`/authorization/group-mappings/${mappingId}`,
 			);
+		});
+	}
+
+	// TODO(02-03): wire to real API endpoint once backend is ready
+	deleteUser(userId: number): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(`/authorization/users/${userId}`);
 		});
 	}
 }

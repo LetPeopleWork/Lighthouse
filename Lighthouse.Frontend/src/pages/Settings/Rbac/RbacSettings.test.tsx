@@ -16,6 +16,7 @@ describe("RbacSettings", () => {
 		bootstrapCurrentUserAsSystemAdmin: vi.fn(),
 		grantSystemAdmin: vi.fn(),
 		revokeSystemAdmin: vi.fn(),
+		deleteUser: vi.fn(),
 		getAuthorizationSummary: vi.fn(),
 		getTeamMembers: vi.fn(),
 		upsertTeamMember: vi.fn(),
@@ -273,5 +274,137 @@ describe("RbacSettings", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("rbac-user-row-3")).toBeInTheDocument();
 		});
+	});
+
+	it("renders emergency admin row with lock icon and no Revoke button", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: true,
+			readyForEnablement: true,
+		});
+
+		mockRbacService.getUsers.mockResolvedValue([
+			{
+				id: 10,
+				subject: "auth0|emergency",
+				displayName: "Emergency Admin User",
+				email: "emergency@example.com",
+				isSystemAdmin: true,
+				isUnassigned: false,
+				isEmergencyAdmin: true,
+			},
+		]);
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-user-row-10")).toBeInTheDocument();
+		});
+
+		expect(screen.getByText("Emergency Admin")).toBeInTheDocument();
+		expect(
+			screen.queryByTestId("rbac-revoke-system-admin-10"),
+		).not.toBeInTheDocument();
+	});
+
+	it("renders collapsed RBAC Status accordion visible on page load", async () => {
+		renderSubject();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-status-enabled")).toBeInTheDocument();
+		});
+
+		// Accordion summary must be visible without expanding (collapsed by default)
+		expect(screen.getByText("RBAC Status")).toBeInTheDocument();
+	});
+
+	it("renders Remove button on non-emergency-admin rows and confirm dialog triggers deleteUser", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+		});
+
+		mockRbacService.getUsers.mockResolvedValue([
+			{
+				id: 5,
+				subject: "auth0|normaluser",
+				displayName: "Normal User",
+				email: "normal@example.com",
+				isSystemAdmin: false,
+				isUnassigned: false,
+				isEmergencyAdmin: false,
+			},
+		]);
+		mockRbacService.deleteUser.mockResolvedValue(undefined);
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("rbac-remove-user-5"),
+			).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByTestId("rbac-remove-user-5"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+		await waitFor(() => {
+			expect(mockRbacService.deleteUser).toHaveBeenCalledWith(5);
+		});
+	});
+
+	it("Cancel on Remove dialog closes without triggering deleteUser", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+		});
+
+		mockRbacService.getUsers.mockResolvedValue([
+			{
+				id: 6,
+				subject: "auth0|anotheruser",
+				displayName: "Another User",
+				email: "another@example.com",
+				isSystemAdmin: false,
+				isUnassigned: false,
+				isEmergencyAdmin: false,
+			},
+		]);
+		mockRbacService.deleteUser.mockResolvedValue(undefined);
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-remove-user-6")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByTestId("rbac-remove-user-6"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(
+				screen.queryByRole("button", { name: "Confirm" }),
+			).not.toBeInTheDocument();
+		});
+
+		expect(mockRbacService.deleteUser).not.toHaveBeenCalled();
 	});
 });
