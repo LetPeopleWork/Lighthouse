@@ -15,6 +15,7 @@ export interface RbacUser {
 	email?: string;
 	isSystemAdmin: boolean;
 	isUnassigned?: boolean;
+	isEmergencyAdmin?: boolean;
 }
 
 export interface UserAuthorizationSummary {

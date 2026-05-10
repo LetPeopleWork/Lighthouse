@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { RbacUser } from "../../../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -243,6 +244,34 @@ describe("RbacSettings", () => {
 
 		await waitFor(() => {
 			expect(mockRbacService.removeGroupMapping).toHaveBeenCalledWith(1);
+		});
+	});
+
+	it("renders user with isEmergencyAdmin flag without TypeScript compile errors", async () => {
+		const emergencyAdminUser: RbacUser = {
+			id: 3,
+			subject: "auth0|emergency",
+			displayName: "Emergency Admin User",
+			email: "emergency@example.com",
+			isSystemAdmin: false,
+			isUnassigned: false,
+			isEmergencyAdmin: true,
+		};
+
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: true,
+			readyForEnablement: true,
+		});
+
+		mockRbacService.getUsers.mockResolvedValue([emergencyAdminUser]);
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-user-row-3")).toBeInTheDocument();
 		});
 	});
 });
