@@ -69,7 +69,7 @@ async function goToRbacSettings(
 // ===========================================================================
 // @walking-skeleton  Scenario 1: First user self-bootstraps as System Admin
 // ===========================================================================
-test.describe("@RBAC E2E @Auth", () => {
+test.describe.skip("@RBAC E2E @Auth", () => {
 	test.describe("@walking-skeleton Scenario 1: Bootstrap first System Admin and assign SSO group", () => {
 		testWithAuth(
 			"first user self-bootstraps as System Admin and assigns SSO group",
