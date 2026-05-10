@@ -1,0 +1,474 @@
+schema_version: 1
+feature_id: rbac-enhancements
+updated: 2026-05-10
+
+journeys:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOURNEY 1: Onboarding — First-Time System Admin Bootstrap
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: onboarding-bootstrap
+    goal: The first authenticated user claims System Admin and makes the RBAC system ready for use
+    persona: first-time-system-admin (Alex Chen, IT lead, first Lighthouse deployment)
+
+    emotional_arc:
+      start: Uncertain — "I don't know what state the system is in or how to start"
+      middle: Focused — "I can see exactly what needs to happen next"
+      end: Confident — "RBAC is properly initialised; I can hand control to the right team admin"
+
+    design_decisions_resolved:
+      - id: Q1
+        question: How to upload license if no sys admin is configured yet?
+        decision: >
+          License upload remains accessible from the login/blocked page before RBAC is enabled.
+          The blocked page shows a distinct "Upload License" action that does NOT require authentication.
+          The system displays a specific banner: "No System Admin is configured. Log in and click
+          'Become First System Admin' in System Settings → Access to initialise RBAC."
+          This separates the license gate (pre-auth) from the RBAC bootstrap gate (post-auth).
+      - id: Q2
+        question: Emergency user — how to display in UI? Show "Emergency System Admin" instead of "Yes"?
+        decision: >
+          In the System Admin user table, the "System Admin" column shows three states:
+          "Yes" (normal admin), "Emergency Admin" (the configured emergency subject), and "No".
+          The emergency row also renders a distinct chip/badge so it is visually distinctive.
+          Emergency admin cannot be revoked via the UI — tooltip explains it must be changed in config.
+      - id: Q3
+        question: Don't show onboarding (or only for sys admins)?
+        decision: >
+          The OnboardingStepper is only shown to users who have canCreateTeam OR canCreatePortfolio.
+          Viewers see no onboarding stepper. System Admins see the full stepper.
+          Team/Portfolio Admins see a scoped stepper limited to actions within their authority.
+
+    steps:
+      - id: 1
+        name: Login — No System Admin assigned
+        action: User authenticates via OIDC; system detects no System Admin exists
+
+        ui_mockup: |
+          ┌─ System Settings → Access ──────────────────────────────────────────┐
+          │  ⚠  No System Admin is assigned yet.                                │
+          │     RBAC is inactive until at least one System Admin is set.        │
+          │                                                                      │
+          │  [  Become First System Admin  ]                                    │
+          └──────────────────────────────────────────────────────────────────────┘
+
+        shared_artifacts:
+          - name: rbac_status
+            source: GET /api/latest/authorization/status
+            displayed_as: bootstrap banner visibility
+            consumers: [RbacSettings page, Onboarding stepper gate]
+
+        emotional_state:
+          entry: Uncertain — "Is something broken? What do I do?"
+          exit: Oriented — "There is a clear action I need to take"
+
+        failure_modes:
+          - User's OIDC token has no stable subject claim → POST /bootstrap/system-admin returns 403; UI shows "Your account cannot be used for bootstrap (missing stable user identifier). Contact your IdP administrator."
+          - System Admin already exists (concurrent bootstrap) → 409 response; UI shows "Another admin has already been assigned. Reload the page."
+
+        gherkin: |
+          Scenario: First login shows bootstrap call-to-action
+            Given RBAC is active and no System Admin has been assigned
+            And Alex Chen logs in successfully via OIDC
+            When Alex navigates to System Settings → Access
+            Then a prominent banner reads "No System Admin is assigned yet"
+            And a "Become First System Admin" button is visible
+            And no user table or group mapping table is visible yet
+
+      - id: 2
+        name: Bootstrap as System Admin
+        action: User clicks "Become First System Admin"; POST /api/latest/authorization/bootstrap/system-admin
+
+        ui_mockup: |
+          ┌─ System Settings → Access ──────────────────────────────────────────┐
+          │  ✓  You are now the System Admin.                                   │
+          │                                                                      │
+          │  System Admins                                                       │
+          │  ┌──────────────┬──────────────────┬───────────────┬──────────────┐ │
+          │  │ Display Name │ Email            │ System Admin  │ Actions      │ │
+          │  ├──────────────┼──────────────────┼───────────────┼──────────────┤ │
+          │  │ Alex Chen    │ alex@example.com │ Yes           │ [Revoke]     │ │
+          │  └──────────────┴──────────────────┴───────────────┴──────────────┘ │
+          └──────────────────────────────────────────────────────────────────────┘
+
+        emotional_state:
+          entry: Focused — "I'm clicking the button"
+          exit: Relieved — "I can see myself in the table; it worked"
+
+        failure_modes:
+          - Missing stable subject → Forbid(); show actionable error
+          - Already bootstrapped (race) → Conflict(); show "reload" message
+
+        gherkin: |
+          Scenario: Successful self-bootstrap as first System Admin
+            Given Alex is authenticated and no System Admin exists
+            When Alex clicks "Become First System Admin"
+            Then Alex appears in the System Admins table with role "Yes"
+            And the bootstrap banner is no longer visible
+            And the user table and SSO group mapping section are now visible
+
+      - id: 3
+        name: Assign SSO group as System Admins
+        action: User enters SSO group value and clicks "Add Mapping"
+
+        ui_mockup: |
+          ┌─ System Admin SSO Groups ────────────────────────────────────────────┐
+          │  Group value: [ lighthouse-admins        ] [Add Mapping]            │
+          │                                                                      │
+          │  ┌────────────────────┬───────────────┬──────────┬─────────────┐   │
+          │  │ Group              │ Role          │ Scope    │ Actions     │   │
+          │  ├────────────────────┼───────────────┼──────────┼─────────────┤   │
+          │  │ lighthouse-admins  │ SystemAdmin   │ System   │ [Remove]    │   │
+          │  └────────────────────┴───────────────┴──────────┴─────────────┘   │
+          └──────────────────────────────────────────────────────────────────────┘
+
+        emotional_state:
+          entry: Confident — "Now I'll set up the group so this is automatic in future"
+          exit: Satisfied — "Future logins from my group will automatically be System Admins"
+
+        failure_modes:
+          - Empty group value → client validation; "Group value is required" inline error
+          - Invalid group claim format → API returns 400; surface as inline error
+
+        gherkin: |
+          Scenario: System Admin assigns SSO group mapping for automatic admin elevation
+            Given Alex is System Admin and the SSO group mapping section is visible
+            When Alex enters "lighthouse-admins" in the group value field and clicks Add Mapping
+            Then the group "lighthouse-admins" → SystemAdmin appears in the SSO Groups table
+            And future users in that SSO group will log in with System Admin rights
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOURNEY 2: System Admin — Managing Users and Settings
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: system-admin-manage
+    goal: System Admin grants/revokes access for users and groups across the whole system
+    persona: system-admin (Alex Chen, ongoing operations)
+
+    emotional_arc:
+      start: Purposeful — "I need to set the right access before go-live"
+      middle: In control — "I can see all users and their states; actions are obvious"
+      end: Confident — "Everyone has exactly the access they need; nothing more"
+
+    design_decisions_resolved:
+      - id: Q4
+        question: Should there be a specific right to create teams and portfolios?
+        decision: >
+          Yes. canCreateTeam and canCreatePortfolio are derived from UserAuthorizationSummary
+          and default to true for System Admins. For non-System-Admin users they default to false.
+          Team Admins and Portfolio Admins do NOT automatically get canCreateTeam/canCreatePortfolio
+          — that remains a System Admin privilege unless explicitly granted.
+          The "Add Team" / "Add Portfolio" buttons on the Overview are only shown when
+          canCreateTeam / canCreatePortfolio is true respectively.
+      - id: Q5
+        question: Remove chips from System Admins settings page?
+        decision: >
+          Yes — remove the 6 status chips from the System Admins settings page.
+          Replace with a single collapsed "RBAC Status" disclosure panel (click to expand)
+          that shows the detailed status for diagnostics. The chips add cognitive load without
+          helping day-to-day admin tasks. The most actionable state (no System Admin) is already
+          shown as the bootstrap banner.
+      - id: Q6
+        question: Remove users from system (housekeeping for users who left)?
+        decision: >
+          Yes — add a "Remove from Lighthouse" action in the user table for users who are no longer
+          in the organisation. This removes all their role assignments and their user record.
+          Guard with a confirmation dialog: "This will remove [Name] and all their role assignments.
+          This cannot be undone." Scoped admins cannot remove users system-wide — only System Admins.
+      - id: Q19
+        question: Show "Access" tab in teams/portfolios and "System Admins" in System Settings only if RBAC is enabled?
+        decision: >
+          Yes. The "Access" sub-tab in Team/Portfolio detail pages and the "System Admins" tab in
+          System Settings are only rendered when isRbacEnabled is true.
+          When RBAC is disabled, those navigation items are hidden entirely.
+
+    steps:
+      - id: 1
+        name: Overview — System Admin landing
+        action: System Admin views the overview; sees all teams, portfolios, connections
+
+        shared_artifacts:
+          - name: user_authorization_summary
+            source: GET /api/latest/authorization/my-summary
+            displayed_as: "Add Team / Add Portfolio / Add Connection button visibility; onboarding stepper presence"
+            consumers: [OverviewDashboard, OnboardingStepper, team detail Access tab, portfolio detail Access tab]
+
+        gherkin: |
+          Scenario: System Admin sees full overview with all create buttons
+            Given Alex is authenticated as System Admin and RBAC is enabled
+            When Alex navigates to the Overview page
+            Then "Add Team", "Add Portfolio", and "Add Connection" buttons are all visible
+            And the onboarding stepper is visible if setup is incomplete
+
+      - id: 2
+        name: System Settings — Access tab
+        action: System Admin reviews user table; grants or revokes System Admin; removes departed user
+
+        ui_mockup: |
+          ┌─ System Settings → Access ──────────────────────────────────────────┐
+          │  [▶ RBAC Status]  (collapsed diagnostic panel)                      │
+          │                                                                      │
+          │  System Admins                                                       │
+          │  [ Search by name or email ]  [ Show unassigned only ]              │
+          │  ┌──────────┬──────────────────┬────────────────────┬─────────────┐ │
+          │  │ Name     │ Email            │ System Admin       │ Actions     │ │
+          │  ├──────────┼──────────────────┼────────────────────┼─────────────┤ │
+          │  │ Alex Chen│ alex@example.com │ Yes                │ [Revoke]    │ │
+          │  │ Sam Lee  │ sam@example.com  │ Emergency Admin 🔒 │ (read-only) │ │
+          │  │ Jo Smith │ jo@example.com   │ No                 │ [Grant]     │ │
+          │  │ Pat Old  │ pat@old.com      │ No (unassigned)    │ [Grant][Del]│ │
+          │  └──────────┴──────────────────┴────────────────────┴─────────────┘ │
+          └──────────────────────────────────────────────────────────────────────┘
+
+        failure_modes:
+          - Revoke last System Admin → API returns 400; UI: "Cannot remove the last System Admin. Grant the role to another user first."
+          - Delete user who is team admin → API removes all their roles and the user record; confirm dialog lists their roles
+
+        gherkin: |
+          Scenario: System Admin revokes another user's System Admin role
+            Given Alex and Jo are both System Admins
+            When Alex clicks Revoke on Jo's row
+            Then Jo's System Admin column changes to "No"
+            And Jo can no longer access the Access tab in System Settings
+
+          Scenario: System Admin removes a departed user
+            Given Pat has left the organisation and appears unassigned in the user table
+            When Alex clicks Remove on Pat's row and confirms the dialog
+            Then Pat is removed from the user table
+            And all Pat's role assignments are deleted
+
+      - id: 3
+        name: System Settings — Grant Team/Portfolio admin
+        action: System Admin navigates to a team or portfolio's Access tab to assign roles
+
+        gherkin: |
+          Scenario: System Admin assigns TeamAdmin role to a user for a specific team
+            Given Alex is System Admin and "Team Alpha" exists
+            When Alex navigates to Team Alpha → Settings → Access
+            And assigns Jo Smith the "TeamAdmin" role
+            Then Jo appears in the Access tab with role "TeamAdmin"
+            And Jo can now manage Team Alpha's membership independently
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOURNEY 3: Team/Portfolio Admin — Scoped Management
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: team-admin-manage
+    goal: Team Admin manages membership and settings for their own team without System Admin involvement
+    persona: team-admin (Jordan Reyes, Engineering Lead)
+
+    emotional_arc:
+      start: Slightly anxious — "Will I accidentally change something outside my team?"
+      middle: Focused — "I can only see and act on my team's scope"
+      end: Autonomous — "I onboarded three colleagues without IT involvement"
+
+    design_decisions_resolved:
+      - id: Q9
+        question: "Update all" — specifically for teams and portfolios user has write access?
+        decision: >
+          The "Update all" / bulk-refresh action on the overview is only shown on teams and portfolios
+          where the current user has write (Admin) access. Viewers do not see the button at all.
+          Team Admins see it only on their own team(s); Portfolio Admins only on their portfolio(s).
+          System Admins see it everywhere.
+      - id: Q10
+        question: Reload data — don't show if not admin?
+        decision: >
+          The "Reload data" button in team/portfolio detail pages is hidden for Viewers.
+          It is visible only when the user has Admin rights for that entity.
+          This applies both to the detail page action and any overview-level reload controls.
+      - id: Q14
+        question: Team Admin — "Failed to load team access groups" error?
+        decision: >
+          This error occurs because the Team Admin does not have permission to read global group
+          mappings (GET /authorization/group-mappings is restricted to System Admins).
+          Resolution: the ScopedGroupMappingManager component must call the scoped endpoint
+          GET /authorization/teams/{teamId}/group-mappings rather than the global endpoint.
+          The scoped endpoint checks CanManageTeamMembership rather than CanManageRbac.
+      - id: Q16
+        question: Clone doesn't work for Portfolio and Team admin? What about delete?
+        decision: >
+          Clone and Delete actions on teams/portfolios require Admin rights for that scope.
+          Team Admins can Clone and Delete their own team(s) only.
+          Portfolio Admins can Clone and Delete their own portfolio(s) only.
+          Viewers see neither button.
+          System Admins see both buttons everywhere.
+      - id: Q17
+        question: Settings not visible for team and portfolio admin?
+        decision: >
+          The Settings sub-page within a team or portfolio is visible to Team/Portfolio Admins for
+          their own scope. It is hidden from Viewers. The navigation item "Settings" within a team
+          detail page checks isTeamAdmin(teamId) before rendering. Same pattern for portfolios.
+
+    steps:
+      - id: 1
+        name: Team detail — Admin-only controls visible
+        action: Jordan navigates to their team; sees Settings and Access tabs, Reload and Clone/Delete
+
+        ui_mockup: |
+          ┌─ Team Alpha ───────────────────────────────────────────────────────┐
+          │  [Overview] [Forecast] [Deliveries] [Settings] [Access]           │
+          │                                                                     │
+          │  [Update All]  [Clone]  [Delete]   (visible — Jordan is TeamAdmin) │
+          └─────────────────────────────────────────────────────────────────────┘
+
+        gherkin: |
+          Scenario: Team Admin sees management controls for their own team
+            Given Jordan is TeamAdmin for "Team Alpha" and RBAC is enabled
+            When Jordan navigates to Team Alpha's detail page
+            Then the Settings and Access tabs are visible
+            And the Update All, Clone, and Delete buttons are visible
+            And Jordan cannot see Settings or management buttons for "Team Beta"
+
+      - id: 2
+        name: Team Access tab — manage membership
+        action: Jordan assigns a Viewer and a TeamAdmin for Team Alpha
+
+        gherkin: |
+          Scenario: Team Admin assigns a Viewer role to a colleague
+            Given Jordan is TeamAdmin for Team Alpha
+            When Jordan opens Team Alpha → Access tab
+            And assigns Morgan Davies the "Viewer" role
+            Then Morgan appears in the Access tab with role "Viewer"
+            And Morgan can now view Team Alpha's forecasts
+
+          Scenario: Team Admin assigns group mapping for their team
+            Given Jordan is TeamAdmin for Team Alpha
+            When Jordan opens Team Alpha → Access tab → SSO Groups
+            And adds group "eng-team-alpha" mapped to "TeamAdmin"
+            Then members of "eng-team-alpha" automatically get TeamAdmin on Team Alpha at next login
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOURNEY 4: Viewer — Read-Only Access
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: viewer-read-only
+    goal: Viewer navigates Lighthouse and sees delivery forecasts without encountering errors or admin controls
+    persona: viewer (Morgan Davies, Product Manager)
+
+    emotional_arc:
+      start: Curious — "What forecasting data do my teams have?"
+      middle: Focused — "I can find the data I need without distraction from admin controls"
+      end: Informed — "I have the forecast data I need to share with stakeholders"
+
+    design_decisions_resolved:
+      - id: Q7
+        question: Hide Work Tracking Systems, Teams, Portfolios in Overview if there are none (in authz mode)?
+        decision: >
+          When RBAC is enabled and a user has no team/portfolio assignments, the Overview shows
+          the "no-access" alert (already implemented) and hides the Work Tracking Systems section.
+          When a Viewer has at least one team assigned, the Overview shows ONLY those teams/portfolios
+          and does NOT show Work Tracking Systems (that is System Admin only).
+          The three sections are conditionally rendered based on what the user can access.
+      - id: Q8
+        question: License Info — read only if not sys admin?
+        decision: >
+          The License Info section in System Settings is visible to all authenticated users in
+          read-only mode. Only System Admins see the "Upload License" button.
+          Non-System-Admin users see the license status (valid/expired/days remaining) but no actions.
+      - id: Q11
+        question: Deliveries should be visible for viewers, but not editable?
+        decision: >
+          Deliveries tab is visible to any user with Viewer rights for that team or portfolio.
+          Add/Edit/Delete delivery actions are hidden from Viewers. Only Team/Portfolio Admins and
+          System Admins can modify deliveries.
+      - id: Q12
+        question: Quick Settings for Viewers — don't show?
+        decision: >
+          Quick Settings widget/panel is hidden from Viewers. It exposes configuration actions
+          (work tracking system toggles, etc.) that require Admin rights. It is visible only to
+          System Admins, Team Admins (for their teams), and Portfolio Admins (for their portfolios).
+      - id: Q13
+        question: Create Team/Portfolio doesn't work because it thinks no work tracking systems are there — adjust logic?
+        decision: >
+          The "Add Team" / "Add Portfolio" button availability check uses two conditions:
+          (1) canCreateTeam / canCreatePortfolio (from RBAC) AND (2) hasConnections / hasTeams.
+          For non-System-Admin users, work tracking connections are not fetched (403 silently returns []).
+          Decision: connections.length === 0 treated as "connections not applicable" for non-system-admins.
+          For users without canCreateTeam, the button is hidden entirely, so the disabled state never shows.
+          This removes the confusing "create a connection first" blocker for team/portfolio admins who cannot
+          manage connections anyway.
+      - id: Q15
+        question: Log Level not visible for anyone?
+        decision: >
+          Log Level setting in System Settings is visible ONLY to System Admins.
+          It is hidden for all other roles including Team/Portfolio Admins.
+      - id: Q18
+        question: Get Work Tracking System Connections — allowed for all?
+        decision: >
+          No. GET /work-tracking-systems is restricted to System Admins only.
+          Non-System-Admin users receive 403 (already silently handled in OverviewDashboard).
+          No connections section is rendered for non-system-admins in the Overview.
+
+    steps:
+      - id: 1
+        name: Login — Viewer sees their assigned teams/portfolios
+        action: Morgan logs in; overview shows only their accessible teams; no admin controls
+
+        ui_mockup: |
+          ┌─ Overview ─────────────────────────────────────────────────────────┐
+          │                                                                     │
+          │  Portfolios                                                         │
+          │  ┌──────────────────────────────────────────────────────────────┐  │
+          │  │  Portfolio A   [View forecast →]                              │  │
+          │  └──────────────────────────────────────────────────────────────┘  │
+          │                                                                     │
+          │  Teams                                                              │
+          │  ┌──────────────────────────────────────────────────────────────┐  │
+          │  │  Team Alpha   [View forecast →]                               │  │
+          │  └──────────────────────────────────────────────────────────────┘  │
+          │                                                                     │
+          │  (No connections section; no Add buttons; no onboarding stepper)   │
+          └─────────────────────────────────────────────────────────────────────┘
+
+        gherkin: |
+          Scenario: Viewer sees only their assigned entities on the Overview
+            Given Morgan is Viewer for "Team Alpha" and "Portfolio A" and RBAC is enabled
+            When Morgan navigates to the Overview
+            Then Team Alpha and Portfolio A are visible
+            And "Team Beta" (not assigned) is not visible
+            And no "Add Team", "Add Portfolio", or "Add Connection" buttons appear
+            And no Work Tracking Systems section appears
+            And the onboarding stepper is not shown
+
+      - id: 2
+        name: Team detail — Viewer-only view
+        action: Morgan opens Team Alpha; sees Forecast and Deliveries; no Settings/Access/admin controls
+
+        gherkin: |
+          Scenario: Viewer sees forecast and deliveries but not admin controls
+            Given Morgan is Viewer for Team Alpha
+            When Morgan opens Team Alpha's detail page
+            Then the Forecast tab is visible and shows delivery data
+            And the Deliveries tab is visible in read-only mode
+            And the Settings and Access tabs are not visible
+            And no Update All, Clone, or Delete buttons appear
+            And Quick Settings is not shown
+
+      - id: 3
+        name: Viewer denied access to System Settings
+        action: Morgan navigates directly to /settings — sees limited view
+
+        gherkin: |
+          Scenario: Viewer accessing System Settings sees read-only license info only
+            Given Morgan is a Viewer with no System Admin rights
+            When Morgan navigates to System Settings
+            Then only the License Info section is visible in read-only mode
+            And the Access tab (System Admins) is not visible
+            And the Log Level setting is not visible
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: user_authorization_summary
+      must_match_across: [all journey steps that gate UI visibility]
+      failure_message: >
+        If isRbacEnabled, isSystemAdmin, canCreateTeam, adminTeamIds, adminPortfolioIds
+        differ between the frontend cache and the actual server state, users will see
+        incorrect UI (either seeing controls they should not, or missing controls they should have).
+        Mitigation: summary is fetched on login and re-fetched after any role mutation.
+    - artifact: rbac_status
+      must_match_across: [RbacSettings bootstrap banner, System Settings tab visibility, license upload gate]
+      failure_message: >
+        If hasSystemAdmin is stale, the bootstrap button may appear to a non-first-admin or be absent
+        for a legitimate first admin. Re-fetch after bootstrap action.
+
+changelog:
+  - date: 2026-05-10
+    feature: rbac-enhancements
+    change: Initial journey schema — all 4 personas, 4 journeys, 19 design decisions resolved

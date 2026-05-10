@@ -12,6 +12,10 @@ nav_enabled: true
 heading_anchors: true
 aux_links_new_tab: true
 
+exclude:
+  - feature
+  - product
+
 enable_copy_code_button: true
 
 mermaid:

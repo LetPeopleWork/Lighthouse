@@ -1,0 +1,102 @@
+schema_version: 1
+updated: 2026-05-10
+feature_context: rbac-enhancements
+
+jobs:
+  - id: job-rbac-bootstrap
+    title: Bootstrap RBAC as the first administrator
+    persona: first-time-system-admin
+    job_story: >
+      When I am the first person to configure Lighthouse with OIDC authentication enabled
+      and no System Admin has been assigned yet,
+      I want to claim the System Admin role for myself and designate my SSO group,
+      so I can take ownership of the authorization system without external help or IT escalation.
+    dimensions:
+      functional: Claim System Admin role via one-click bootstrap; assign SSO group to System Admin role so future logins are automatic
+      emotional: Move from uncertainty ("will this lock anyone out?") to confidence ("I set this up correctly")
+      social: Establish my credibility as the responsible owner of the Lighthouse instance in front of colleagues
+    forces:
+      push: No admin exists; users are blocked from uploading a license or configuring anything; must resolve before rollout
+      pull: Single in-app action grants immediate control without IT ticket or config file edit
+      anxiety: >
+        What if I bootstrap incorrectly and lock myself out?
+        What if the emergency admin falls through?
+        What if the license cannot be uploaded before a System Admin exists?
+      habit: Developers expect to edit a config file or environment variable to set the first admin
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: Blocker — without bootstrap nobody can use RBAC at all
+
+  - id: job-rbac-manage-users
+    title: Manage who can access teams and portfolios
+    persona: system-admin
+    job_story: >
+      When I need to control which colleagues can view or administer specific teams and portfolios
+      in Lighthouse,
+      I want to assign individual users or SSO groups to Viewer or Admin roles scoped to those
+      teams/portfolios,
+      so I can enforce least-privilege access without modifying any external identity provider config.
+    dimensions:
+      functional: Grant/revoke Viewer and Admin roles per team/portfolio per user or SSO group; see who is unassigned; housekeep departed users
+      emotional: Feel in control of who sees what; confident that accidental data leaks are prevented
+      social: Demonstrate responsible data stewardship to management; reassure team admins that their scope is protected
+    forces:
+      push: Colleagues from other teams can see each other's delivery forecasts when RBAC is off; confidentiality concern
+      pull: Scoped roles mean team admins self-serve their own membership without escalating to System Admin
+      anxiety: >
+        Will granting the wrong role silently give someone write access?
+        What if I forget to remove a departed employee?
+        What if group-based rights behave differently from individual rights?
+      habit: Admins manage access via the identity provider (Keycloak/AAD groups) and expect Lighthouse to trust those groups completely
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 2
+      gap: 3
+
+  - id: job-rbac-scoped-admin
+    title: Administer my own team or portfolio without system-admin help
+    persona: team-admin
+    job_story: >
+      When I am the owner of a specific team (or portfolio) in Lighthouse,
+      I want to manage which users are Viewers or Admins for my scope independently,
+      so I can onboard or remove colleagues without waiting for the System Admin.
+    dimensions:
+      functional: Assign/remove Viewer and TeamAdmin roles for my team; configure SSO group mappings for my team
+      emotional: Feel autonomous and unblocked; avoid feeling dependent on a central gatekeeper for routine changes
+      social: Be seen as a self-sufficient team lead who handles their own access governance
+    forces:
+      push: Waiting for System Admin to grant access delays onboarding; frustrates new team members
+      pull: Access management UI is in the same place as team settings — one coherent workflow
+      anxiety: >
+        Can I accidentally grant someone access to a portfolio I do not own?
+        Will errors in the access groups UI break my team configuration?
+      habit: Team leads rely on the identity provider or email the IT team to manage group membership
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+
+  - id: job-rbac-viewer-clarity
+    title: Understand what I can and cannot do in Lighthouse
+    persona: viewer
+    job_story: >
+      When I log in to Lighthouse with read-only access,
+      I want the interface to show me exactly what is visible to me and hide controls I cannot use,
+      so I can navigate confidently without seeing confusing errors or disabled buttons.
+    dimensions:
+      functional: Read-only view of delivery forecasts, team/portfolio data; hidden write controls; visible "no access" state when none assigned
+      emotional: Feel informed rather than confused; avoid the embarrassment of clicking something restricted and getting an error
+      social: Present polished forecasting data to stakeholders without accidentally exposing admin functions
+    forces:
+      push: Currently, viewers see error messages, broken "Update all" buttons, and inaccessible settings tabs — eroding trust
+      pull: Clean read-only interface that focuses on forecasting data relevant to the viewer
+      anxiety: >
+        What if I inadvertently trigger a data refresh I do not have rights to?
+        What if the system shows me partial data and I draw wrong conclusions?
+      habit: Non-admin users are used to seeing everything (RBAC disabled mode) and may be confused when certain elements disappear
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3

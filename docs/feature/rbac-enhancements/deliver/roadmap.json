@@ -1,0 +1,289 @@
+{
+  "roadmap": {
+    "project_id": "rbac-enhancements",
+    "created_at": "2026-05-10",
+    "total_steps": 18,
+    "phases": 4
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests",
+      "Lighthouse.Frontend/src",
+      "Lighthouse.EndToEndTests/tests"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "nw-solution-architect",
+    "reviewed_at": "2026-05-10"
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Bootstrap + Emergency Admin",
+      "description": "IsEmergencyAdmin backend model, frontend types, UI accordion + display, walking skeleton E2E green",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "RbacUserSummary IsEmergencyAdmin backend model",
+          "criteria": "GET /authorization/users includes isEmergencyAdmin field for each user; The emergency admin configured in appsettings.json has isEmergencyAdmin: true; All other users have isEmergencyAdmin: false; When no emergency admin is configured, all users have isEmergencyAdmin: false; GET /authorization/my-summary is unaffected — isEmergencyAdmin absent from UserAuthorizationSummary",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+          "scenario_name": "GetUsers_ReturnsUsersWithIsEmergencyAdminPopulated",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacUserSummary.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs"
+          ],
+          "implementation_notes": "Emergency admin subject is read from configuration (same key used by existing RbacStatus logic). Compare UserProfile.Subject of each returned user against the configured subject. This is a read-time annotation — no data is persisted. IsEmergencyAdmin is intentionally absent from UserAuthorizationSummary (DD-03, OQ-04 resolved)."
+        },
+        {
+          "id": "01-02",
+          "name": "RbacModels.ts add isEmergencyAdmin to RbacUser",
+          "criteria": "The RbacUser interface includes isEmergencyAdmin as an optional boolean field; Existing consumers of RbacUser compile without changes; Frontend correctly deserialises a user object with isEmergencyAdmin: true from the API",
+          "deps": ["01-01"],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx",
+          "scenario_name": "renders user with isEmergencyAdmin flag without TypeScript compile errors",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts"
+          ],
+          "implementation_notes": "Add isEmergencyAdmin?: boolean to RbacUser interface. Pure model extension — no behaviour change in this step."
+        },
+        {
+          "id": "01-03",
+          "name": "RbacSettings.tsx accordion + emergency admin display",
+          "criteria": "A collapsed 'RBAC Status' panel is visible; clicking expands to show all diagnostic fields; Emergency admin row shows 'Emergency Admin' text and lock icon instead of 'Yes'; No 'Revoke' button on the emergency admin row; Each non-current non-emergency-admin row shows a 'Remove' button; Clicking 'Remove' opens a confirmation dialog; confirming removes the user from the table",
+          "deps": ["01-02"],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx",
+          "scenario_name": "renders emergency admin row with lock icon and no Revoke button; renders collapsed RBAC Status accordion",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx"
+          ],
+          "implementation_notes": "Use MUI Accordion for status panel, collapsed by default. Branch on user.isEmergencyAdmin to render LockIcon and suppress Revoke button. Remove button must not appear on the current user's own row. The deleteUser service method is implemented in 02-03 — stub to no-op here if needed; the button must have data-testid for E2E."
+        },
+        {
+          "id": "01-04",
+          "name": "Walking skeleton E2E Scenario 1 green",
+          "criteria": "Scenario 1 passes in the Playwright E2E suite without test.skip; Bootstrap banner visible before clicking; Test user appears in System Admins table after bootstrap; Bootstrap banner disappears after bootstrap; SSO group mapping added by test user appears in the group mappings table",
+          "deps": ["01-01", "01-03"],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "first user self-bootstraps as System Admin and assigns SSO group",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts"
+          ],
+          "implementation_notes": "Scenario 1 is already written and has no test.skip. This step is an integration checkpoint: run the E2E suite and confirm it is green. If it fails, diagnose and fix the backend/frontend gap. DB must be reset so no System Admin pre-exists. No new test code expected — only verification and POM adjustments if data-testid values differ."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "System Admin User and Group Management",
+      "description": "User removal backend + frontend, scoped group mapping endpoints, Settings tab gating, viewer tab cleanup",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Backend user removal DELETE endpoint and service",
+          "criteria": "DELETE /authorization/users/{userProfileId} returns 204 when user is removed; All UserPermission records for the deleted user are removed in the same transaction; DELETE returns 404 when userProfileId does not exist; DELETE returns 403 when caller lacks CanManageRbac; After deletion the user no longer appears in GET /authorization/users",
+          "deps": ["01-04"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+          "scenario_name": "DeleteUser_ExistingUser_ReturnsNoContent_AndRemovesAllRoleAssignments",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs"
+          ],
+          "implementation_notes": "Single EF Core transaction: load UserProfile with related UserPermissions, remove all UserPermissions, remove UserProfile, SaveChangesAsync. Use [Authorize(Policy = 'CanManageRbac')] same as other write methods. Return NotFound() if userProfileId resolves to null. Tests: 204 success, 404 not found, 403 no permission."
+        },
+        {
+          "id": "02-02",
+          "name": "Backend scoped group mapping GET endpoints",
+          "criteria": "GET /authorization/teams/{teamId}/group-mappings returns 200 with scoped mappings for a Team Admin; GET /authorization/teams/{teamId}/group-mappings returns 403 for a non-Team-Admin; GET /authorization/portfolios/{portfolioId}/group-mappings returns 200 for a Portfolio Admin; GET /authorization/portfolios/{portfolioId}/group-mappings returns 403 for a non-Portfolio-Admin; Both endpoints return empty array when no mappings exist for the scope",
+          "deps": ["01-04"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+          "scenario_name": "GetTeamGroupMappings_TeamAdmin_ReturnsOkWithScopedMappings",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/AuthorizationControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs"
+          ],
+          "implementation_notes": "Service methods query RbacGroupMapping filtered by scope (teamId or portfolioId). Authorization: CanManageTeamMembership for team endpoint, CanManagePortfolioMembership for portfolio endpoint. Follow pattern of existing GET /authorization/teams/{teamId}/members. OQ-01 resolved here."
+        },
+        {
+          "id": "02-03",
+          "name": "Frontend user removal service + Remove button wire-up",
+          "criteria": "The 'Remove' button triggers a confirmation dialog when clicked; Confirming calls DELETE /authorization/users/{userProfileId} via the service; After deletion removed user disappears from table without page reload; Remove button absent on the current user's own row; Remove button absent on the emergency admin row",
+          "deps": ["01-03", "02-01"],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx",
+          "scenario_name": "Remove button confirms then removes user from table",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/RbacService.ts",
+            "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx"
+          ],
+          "implementation_notes": "deleteUser maps to DELETE /api/latest/authorization/users/{userProfileId}. Follow HTTP pattern of revokeSystemAdmin in RbacService. After delete resolves, invalidate or optimistically remove user from local state. Confirmation dialog stubbed in 01-03 — this step completes the wiring."
+        },
+        {
+          "id": "02-04",
+          "name": "Frontend scoped group mapping + ScopedGroupMappingManager fix",
+          "criteria": "Team Access tab loads group mappings without a 'Failed to load' error for a Team Admin; Portfolio Access tab loads group mappings without a 'Failed to load' error for a Portfolio Admin; ScopedGroupMappingManager no longer calls the global /authorization/group-mappings endpoint; Scoped group mappings UI shows only mappings for the current team or portfolio",
+          "deps": ["02-02"],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.test.tsx",
+          "scenario_name": "loads team group mappings via scoped endpoint without error for Team Admin",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/RbacService.ts",
+            "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.tsx"
+          ],
+          "implementation_notes": "getTeamGroupMappings calls GET /api/latest/authorization/teams/{teamId}/group-mappings. Fix: ScopedGroupMappingManager accepts a groupMappingsFetcher prop so TeamDetail passes rbacService.getTeamGroupMappings(teamId) and PortfolioDetail passes rbacService.getPortfolioGroupMappings(portfolioId). DD-02 enforced at the call site."
+        },
+        {
+          "id": "02-05",
+          "name": "Settings.tsx gate System Admins tab on isRbacEnabled",
+          "criteria": "System Admins tab not visible when isRbacEnabled is false, even for System Admins; System Admins tab visible when RBAC enabled and user is System Admin; Other settings tabs unaffected; Non-RBAC deployment shows only General, Work Tracking Systems, and System Information tabs",
+          "deps": ["01-04"],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx",
+          "scenario_name": "hides System Admins tab when isRbacEnabled is false",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/Settings.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx"
+          ],
+          "implementation_notes": "System Admins tab filter: rbac.isRbacEnabled && rbac.isSystemAdmin. Two-condition AND guard per DD-07. No changes to other tabs."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Scoped Admin Self-Service and Viewer Controls",
+      "description": "TeamDetail, PortfolioDetail, PortfolioDeliveryView, SystemSettingsTab, OverviewDashboard viewer cleanup",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "TeamDetail.tsx scoped access controls + group mapping fix",
+          "criteria": "Team Admin sees Settings and Access tabs for their own team; A Viewer sees neither Settings nor Access tabs; Access tab not rendered when isRbacEnabled is false; Clone, Delete, and Update All buttons visible only to Team Admins; Team Admin Access tab loads group mappings without 'Failed to load' error",
+          "deps": ["02-04"],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+          "scenario_name": "hides Access tab for viewers; shows Settings and Access for Team Admin; hides write controls for viewers",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx"
+          ],
+          "implementation_notes": "Access tab: rbac.isRbacEnabled && rbac.isTeamAdmin(team.id). Settings tab: rbac.isTeamAdmin(team.id) only — no isRbacEnabled guard (DD-10). Write controls (CloudSync, Clone, Delete, QuickSettingsBar) gated on isTeamAdmin. Controls hidden not disabled (DD-01). Pass rbacService.getTeamGroupMappings(team.id) as groupMappingsFetcher to ScopedGroupMappingManager."
+        },
+        {
+          "id": "03-02",
+          "name": "PortfolioDetail.tsx scoped access controls + group mapping fix",
+          "criteria": "Portfolio Admin sees Settings and Access tabs for their own portfolio; A Viewer sees neither Settings nor Access tabs; Access tab not rendered when isRbacEnabled is false; Clone, Delete, CloudSync, and QuickSettingsBar visible only to Portfolio Admins; Portfolio Admin Access tab loads group mappings without error",
+          "deps": ["02-04"],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx",
+          "scenario_name": "hides Access tab for viewers; shows Settings and Access for Portfolio Admin; hides write controls for viewers",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
+          ],
+          "implementation_notes": "Symmetric with 03-01. Existing showDeliveriesAndSettingsTabs driven by isPortfolioAdmin — do not change Deliveries tab visibility. Only Access tab needs isRbacEnabled guard added. Pass rbacService.getPortfolioGroupMappings(portfolio.id) as groupMappingsFetcher prop."
+        },
+        {
+          "id": "03-03",
+          "name": "PortfolioDeliveryView.tsx gate delivery controls",
+          "criteria": "Portfolio Admin sees 'Add Delivery', Edit, and Delete buttons in Deliveries tab; A Viewer sees Deliveries tab content but no 'Add Delivery', Edit, or Delete buttons; Hiding action buttons does not affect delivery items visibility; Change does not affect Deliveries tab visibility",
+          "deps": ["03-02"],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDeliveryView.test.tsx",
+          "scenario_name": "hides Add Delivery, Edit, and Delete buttons for viewers; shows them for Portfolio Admins",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDeliveryView.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDeliveryView.test.tsx"
+          ],
+          "implementation_notes": "PortfolioDetail passes canEdit={rbac.isPortfolioAdmin(portfolio.id)} prop to PortfolioDeliveryView. Inside, Add/Edit/Delete controls wrapped in canEdit && (...) — hidden not disabled (DD-01). Deliveries data fetched regardless of canEdit. Viewers seeing delivery forecasts is primary value (DD-08, WD-12)."
+        },
+        {
+          "id": "03-04",
+          "name": "SystemSettingsTab.tsx gate Log Level on isSystemAdmin",
+          "criteria": "Log Level section visible when user is System Admin; Log Level section not visible for non-System-Admin users including Team Admins and Viewers; All other sections in SystemSettingsTab unaffected; Log Level visible in non-RBAC deployments (PERMISSIVE_SUMMARY sets isSystemAdmin: true)",
+          "deps": ["02-05"],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx",
+          "scenario_name": "hides Log Level section for non-System-Admin users",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx"
+          ],
+          "implementation_notes": "Call useRbac() to get rbac.isSystemAdmin. Wrap Log Level section in isSystemAdmin && (...). Add data-testid='log-level-section' to the container for E2E assertion in Scenario 2a."
+        },
+        {
+          "id": "03-05",
+          "name": "OverviewDashboard.tsx viewer experience + Add Team fix",
+          "criteria": "Viewer with no assignments does not see Work Tracking Systems connections section; Non-System-Admin with canCreateTeam: true sees 'Add Team' button as enabled; System Admin with no connections sees 'Add Team' as disabled with tooltip; Viewer (canCreateTeam: false) does not see 'Add Team' button; OnboardingStepper not shown when canCreateTeam and canCreatePortfolio are both false",
+          "deps": ["02-05"],
+          "test_file": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+          "scenario_name": "hides connections section for non-System-Admin; shows enabled Add Team for canCreateTeam user",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx"
+          ],
+          "implementation_notes": "Connections section: wrap in rbac.isSystemAdmin && (...). Add Team disabled logic: disabled={!canCreateTeam || (rbac.isSystemAdmin && !hasConnections)} per DD-09. OnboardingStepper gate: show when rbac.canCreateTeam || rbac.canCreatePortfolio. Connections section hidden to prevent 403 confusing empty/error state for non-system-admins (WD-11)."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "E2E Test Enablement",
+      "description": "Enable Scenarios 2–7 in RoleBasedAccessControl.spec.ts as backend and frontend gates pass",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Enable Scenario 2 team reader restrictions",
+          "criteria": "Scenario 2a passes: System Admins tab not visible, Log Level not visible for team reader in System Settings; Scenario 2b passes: Settings and Access tabs not visible for team reader on test team; Both scenarios run without test.skip in '@RBAC E2E' suite; No regressions in Scenario 1",
+          "deps": ["03-01", "03-04", "03-05"],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "team reader cannot see System Admins tab or Log Level in System Settings; team reader cannot access team Settings or Access tabs",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts"
+          ],
+          "implementation_notes": "Scenario 2b depends on Scenario 5 having assigned the team reader (WD-D04 sequential state). Enable 2b only after Scenario 5 is green. Confirm data-testid='system-admins-tab' and data-testid='log-level-section' exist after steps 02-05 and 03-04."
+        },
+        {
+          "id": "04-02",
+          "name": "Enable Scenarios 3 and 4 admin rights and emergency fallback",
+          "criteria": "Scenario 3 passes: new System Admin sees all System Settings tabs and can revoke test user rights; Scenario 4 passes: emergency admin (test user) still sees System Admins tab with Emergency Admin row and no Revoke button; Both scenarios run without test.skip; No regressions in Scenarios 1 and 2",
+          "deps": ["01-04", "02-01", "01-03"],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "new sys admin can access all System Settings tabs and revoke test user rights; test user (emergency admin) still sees full admin access after being removed as explicit System Admin",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts"
+          ],
+          "implementation_notes": "Scenario 3 uses AUTHZ_TEST_SYSTEMADMIN_USERNAME which must exist in Keycloak test realm. Emergency admin display (isEmergencyAdmin from 01-01, UI from 01-03) must be configured with test user subject in appsettings.Development.json."
+        },
+        {
+          "id": "04-03",
+          "name": "Enable Scenario 5 admin creates entities and assigns roles",
+          "criteria": "Scenario 5 passes: system admin creates 'RBAC E2E Test Team' and 'RBAC E2E Test Portfolio'; Team reader, team admin, portfolio reader, and portfolio admin roles are assigned; Both team and portfolio Access tabs visible to System Admin after creation; Scenario 5 runs without test.skip; No regressions in Scenarios 1–4",
+          "deps": ["04-02", "03-01", "03-02"],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "system admin creates test entities and assigns individual user roles",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/auth/rbac/ScopedAccessPage.ts"
+          ],
+          "implementation_notes": "Implement TODO for portfolio creation. Verify data-testid attributes for ScopedAccessPage methods (scoped-add-member-button, scoped-member-email-input etc.) exist in React components from 03-01/03-02. Define AUTHZ_TEST_PORTFOLIOREADER_USERNAME and AUTHZ_TEST_PORTFOLIOADMIN_USERNAME in TestConfig."
+        },
+        {
+          "id": "04-04",
+          "name": "Enable Scenarios 6 and 7 access verification + group parity",
+          "criteria": "Scenarios 6a–6d pass: per-user access verification for team/portfolio reader and admin roles; Scenario 7 setup passes: system admin switches from individual to group-based rights; Scenarios 7a–7d pass with identical assertions to Scenario 6 (WD-07 group invariant); All Scenario 6/7 tests run without test.skip; No regressions in Scenarios 1–5",
+          "deps": ["04-03", "03-03"],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "team reader sees Forecast but not Settings/Access/write controls; team admin sees Settings and Access; portfolio reader sees Deliveries read-only; portfolio admin sees Settings Access and Add Delivery; group-based rights produce identical behaviour to individual rights",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/auth/rbac/ScopedAccessPage.ts"
+          ],
+          "implementation_notes": "Scenarios 6b/7b exercise GET /authorization/teams/{teamId}/group-mappings (02-02). Scenarios 6d/7d exercise GET /authorization/portfolios/{portfolioId}/group-mappings (02-02). groupMappingsErrorMessage locator in ScopedAccessPage must target the 'Failed to load' error element — ensure data-testid added to ScopedGroupMappingManager in 02-04. Keycloak test realm must have TEAMREADER_GROUP_NAME etc. groups with correct user memberships."
+        }
+      ]
+    }
+  ]
+}
