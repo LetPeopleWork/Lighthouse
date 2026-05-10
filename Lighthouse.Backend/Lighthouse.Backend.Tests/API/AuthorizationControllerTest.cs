@@ -271,6 +271,56 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task DeleteUser_ExistingUser_ReturnsNoContent_AndRemovesAllRoleAssignments()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.DeleteUserAsync(42, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Success());
+
+            var subject = CreateSubjectWithUser("auth0|system-admin");
+
+            var result = await subject.DeleteUser(42, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<NoContentResult>());
+        }
+
+        [Test]
+        public async Task DeleteUser_WhenCallerCannotManageRbac_ReturnsForbid()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubjectWithUser("auth0|viewer");
+
+            var result = await subject.DeleteUser(42, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
+
+        [Test]
+        public async Task DeleteUser_WhenUserDoesNotExist_ReturnsNotFound()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.DeleteUserAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Failure(RbacOperationErrorCodes.UserNotFound, "User profile was not found."));
+
+            var subject = CreateSubjectWithUser("auth0|system-admin");
+
+            var result = await subject.DeleteUser(99, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
+        }
+
+        [Test]
         public async Task GetUsers_ReturnsUsersWithIsEmergencyAdminPopulated()
         {
             rbacAdministrationService

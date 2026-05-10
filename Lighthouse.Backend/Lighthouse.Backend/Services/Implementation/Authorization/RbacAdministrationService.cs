@@ -483,6 +483,33 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return RbacOperationResult.Success();
         }
 
+        public async Task<RbacOperationResult> DeleteUserAsync(int userProfileId, CancellationToken cancellationToken = default)
+        {
+            var userProfile = await context.UserProfiles
+                .SingleOrDefaultAsync(p => p.Id == userProfileId, cancellationToken);
+
+            if (userProfile is null)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.UserNotFound,
+                    "User profile was not found.");
+            }
+
+            var permissions = await context.UserPermissions
+                .Where(p => p.UserProfileId == userProfileId)
+                .ToListAsync(cancellationToken);
+
+            if (permissions.Count > 0)
+            {
+                context.UserPermissions.RemoveRange(permissions);
+            }
+
+            context.UserProfiles.Remove(userProfile);
+            await context.SaveChangesAsync(cancellationToken);
+
+            return RbacOperationResult.Success();
+        }
+
         public async Task<bool> CanManageRbacAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
         {
             var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);

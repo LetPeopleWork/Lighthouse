@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<RbacOperationResult> RevokeSystemAdminAsync(int userProfileId, CancellationToken cancellationToken = default);
 
+        Task<RbacOperationResult> DeleteUserAsync(int userProfileId, CancellationToken cancellationToken = default);
+
         Task<bool> CanManageRbacAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
 
         Task<bool> CanManageTeamMembershipAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default);

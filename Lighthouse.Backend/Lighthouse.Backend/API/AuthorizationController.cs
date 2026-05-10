@@ -119,6 +119,32 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
+        [HttpDelete("users/{userProfileId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteUser(int userProfileId, CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManageRbacAsync(User, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            var result = await rbacAdministrationService.DeleteUserAsync(userProfileId, cancellationToken);
+            if (result.Succeeded)
+            {
+                return NoContent();
+            }
+
+            if (result.ErrorCode == RbacOperationErrorCodes.UserNotFound)
+            {
+                return NotFound(result.Message);
+            }
+
+            return BadRequest(result.Message);
+        }
+
         [HttpGet("teams/{teamId:int}/members")]
         [ProducesResponseType<IReadOnlyList<RbacScopedMemberSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

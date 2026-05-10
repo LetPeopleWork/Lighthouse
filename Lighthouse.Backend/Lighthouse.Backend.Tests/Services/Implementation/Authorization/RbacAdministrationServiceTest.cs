@@ -948,6 +948,97 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             }
         }
 
+        [Test]
+        public async Task DeleteUserAsync_ExistingUserWithMultiplePermissions_RemovesProfileAndAllPermissions()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 42,
+                Subject = "auth0|target-user",
+                SubjectClaimType = "sub",
+                DisplayName = "Target User",
+            });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 43,
+                Subject = "auth0|other-user",
+                SubjectClaimType = "sub",
+                DisplayName = "Other User",
+            });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 42,
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 42,
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 12,
+            });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 42,
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 7,
+            });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 43,
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 12,
+            });
+            await context.SaveChangesAsync();
+
+            // Ensure another System Admin exists so the cascade delete is not blocked by last-admin invariants downstream.
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 43,
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.DeleteUserAsync(42, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(await context.UserProfiles.AnyAsync(x => x.Id == 42), Is.False);
+                Assert.That(await context.UserPermissions.AnyAsync(x => x.UserProfileId == 42), Is.False);
+
+                // Other user's data is untouched.
+                Assert.That(await context.UserProfiles.AnyAsync(x => x.Id == 43), Is.True);
+                Assert.That(await context.UserPermissions.CountAsync(x => x.UserProfileId == 43), Is.EqualTo(2));
+            }
+        }
+
+        [Test]
+        public async Task DeleteUserAsync_NonExistentUser_ReturnsUserNotFoundFailure()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var result = await subject.DeleteUserAsync(999, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Succeeded, Is.False);
+                Assert.That(result.ErrorCode, Is.EqualTo(RbacOperationErrorCodes.UserNotFound));
+            }
+        }
+
         private RbacAdministrationService CreateSubject(
             LighthouseAppContext context,
             IReadOnlyList<string> emergencySubjects,
