@@ -101,15 +101,40 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 
-	it("should switch to RBAC tab via query parameter", () => {
-		renderWithRouter(["/settings?tab=rbac"]);
+	it("should switch to RBAC tab via query parameter", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithRouter(["/settings?tab=rbac"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-tab")).toBeInTheDocument();
+		});
+		fireEvent.click(screen.getByTestId("rbac-tab"));
 
 		expect(screen.getByTestId("rbac-panel")).toBeVisible();
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 
-	it("should switch to RBAC tab when clicked", () => {
-		renderWithRouter();
+	it("should switch to RBAC tab when clicked", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-tab")).toBeInTheDocument();
+		});
 		fireEvent.click(screen.getByTestId("rbac-tab"));
 
 		expect(screen.getByTestId("rbac-panel")).toBeVisible();
@@ -157,6 +182,25 @@ describe("Settings Component", () => {
 				screen.queryByTestId("configuration-panel"),
 			).not.toBeInTheDocument();
 		});
+	});
+
+	it("hides System Admins tab when isRbacEnabled is false", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: false,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("configuration-tab")).toBeInTheDocument();
+		});
+		expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+		expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+		expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 	});
 
 	it("should show all tabs when user is system admin", async () => {

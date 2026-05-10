@@ -135,9 +135,15 @@ const Settings: React.FC = () => {
 		},
 	];
 
-	const visibleTabs = tabConfig.filter(
-		(tab) => !systemAdminTabValues.has(tab.value) || rbac.isSystemAdmin,
-	);
+	const visibleTabs = tabConfig.filter((tab) => {
+		if (tab.value === "50") {
+			return rbac.isRbacEnabled && rbac.isSystemAdmin;
+		}
+		if (systemAdminTabValues.has(tab.value)) {
+			return rbac.isSystemAdmin;
+		}
+		return true;
+	});
 
 	useEffect(() => {
 		if (visibleTabs.length === 0) {
