@@ -999,7 +999,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Assert.That(mappings, Has.Count.EqualTo(2));
                 Assert.That(mappings.All(m => m.ScopeType == PermissionScopeType.Team), Is.True);
                 Assert.That(mappings.All(m => m.ScopeId == 1), Is.True);
-                Assert.That(mappings.Select(m => m.GroupValue), Is.EquivalentTo(new[] { "team-1-admins", "team-1-viewers" }));
+                Assert.That(mappings.Select(m => m.GroupValue), Is.EquivalentTo(["team-1-admins", "team-1-viewers"]));
             }
         }
 
@@ -1075,7 +1075,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Assert.That(mappings, Has.Count.EqualTo(2));
                 Assert.That(mappings.All(m => m.ScopeType == PermissionScopeType.Portfolio), Is.True);
                 Assert.That(mappings.All(m => m.ScopeId == 1), Is.True);
-                Assert.That(mappings.Select(m => m.GroupValue), Is.EquivalentTo(new[] { "portfolio-1-admins", "portfolio-1-viewers" }));
+                Assert.That(mappings.Select(m => m.GroupValue), Is.EquivalentTo(["portfolio-1-admins", "portfolio-1-viewers"]));
             }
         }
 

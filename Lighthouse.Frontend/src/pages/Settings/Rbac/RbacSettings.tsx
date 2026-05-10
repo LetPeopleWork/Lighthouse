@@ -281,16 +281,12 @@ const RbacSettings: React.FC = () => {
 							<TableCell>{user.email || "-"}</TableCell>
 							<TableCell>{user.subject}</TableCell>
 							<TableCell>
-								{user.isEmergencyAdmin ? (
-									<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-										<Typography variant="body2">Emergency Admin</Typography>
-										<LockIcon fontSize="small" />
-									</Box>
-								) : user.isSystemAdmin ? (
-									"Yes"
-								) : (
-									"No"
-								)}
+								const adminLabel = user.isEmergencyAdmin ? (
+								<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+									<Typography variant="body2">Emergency Admin</Typography>
+									<LockIcon fontSize="small" />
+								</Box>
+								) : user.isSystemAdmin ? ( "Yes" ) : ( "No" );
 							</TableCell>
 							<TableCell>{user.isUnassigned ? "Yes" : "No"}</TableCell>
 							<TableCell align="right">

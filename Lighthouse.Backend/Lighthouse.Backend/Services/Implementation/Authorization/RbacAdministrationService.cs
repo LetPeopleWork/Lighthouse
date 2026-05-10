@@ -18,6 +18,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         ICurrentUserProfileService currentUserProfileService,
         ILogger<RbacAdministrationService> logger) : IRbacAdministrationService
     {
+
+        private const string UserProfileString = "User profile";
+
         public async Task<RbacStatus> GetStatusAsync(CancellationToken cancellationToken = default)
         {
             var hasSystemAdmin = await HasSystemAdminAsync(cancellationToken);
@@ -440,7 +443,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             {
                 return RbacOperationResult.Failure(
                     RbacOperationErrorCodes.UserNotFound,
-                    "User profile was not found.");
+                    $"{UserProfileString} was not found.");
             }
 
             var existingPermission = await context.UserPermissions
@@ -508,7 +511,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             {
                 return RbacOperationResult.Failure(
                     RbacOperationErrorCodes.UserNotFound,
-                    "User profile was not found.");
+                    $"{UserProfileString} was not found.");
             }
 
             var permissions = await context.UserPermissions
@@ -660,7 +663,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             {
                 return RbacOperationResult.Failure(
                     RbacOperationErrorCodes.UserNotFound,
-                    "User profile was not found.");
+                    $"{UserProfileString} was not found.");
             }
 
             var currentPermissions = await context.UserPermissions
@@ -706,7 +709,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             {
                 return RbacOperationResult.Failure(
                     RbacOperationErrorCodes.UserNotFound,
-                    "User profile was not found.");
+                    $"{UserProfileString} was not found.");
             }
 
             var currentPermissions = await context.UserPermissions
