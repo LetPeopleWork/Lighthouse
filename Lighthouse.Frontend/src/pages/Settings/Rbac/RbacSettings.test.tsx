@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RbacUser } from "../../../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IAuthService } from "../../../services/Api/AuthService";
 import {
 	createMockApiServiceContext,
 	createMockLicensingService,
@@ -29,11 +30,20 @@ describe("RbacSettings", () => {
 		removeGroupMapping: vi.fn(),
 	};
 
+	const mockAuthService: IAuthService = {
+		getRuntimeAuthStatus: vi.fn(),
+		getSession: vi.fn(),
+		getCurrentUserProfile: vi.fn(),
+		getLoginUrl: vi.fn().mockReturnValue("/api/latest/auth/login"),
+		logout: vi.fn(),
+	};
+
 	const mockLicensingService = createMockLicensingService();
 
 	const renderSubject = () => {
 		const mockContext = createMockApiServiceContext({
 			rbacService: mockRbacService,
+			authService: mockAuthService,
 			licensingService: mockLicensingService,
 		});
 
@@ -101,6 +111,15 @@ describe("RbacSettings", () => {
 		]);
 		mockRbacService.createGroupMapping.mockResolvedValue(undefined);
 		mockRbacService.removeGroupMapping.mockResolvedValue(undefined);
+
+		vi.mocked(mockAuthService.getCurrentUserProfile).mockResolvedValue({
+			subject: "auth0|some-other-user",
+			displayName: "Other User",
+			email: "other@example.com",
+		});
+		vi.mocked(mockAuthService.getLoginUrl).mockReturnValue(
+			"/api/latest/auth/login",
+		);
 	});
 
 	it("should render RBAC status cards", async () => {
@@ -345,15 +364,15 @@ describe("RbacSettings", () => {
 		renderSubject();
 
 		await waitFor(() => {
-			expect(
-				screen.getByTestId("rbac-remove-user-5"),
-			).toBeInTheDocument();
+			expect(screen.getByTestId("rbac-remove-user-5")).toBeInTheDocument();
 		});
 
 		fireEvent.click(screen.getByTestId("rbac-remove-user-5"));
 
 		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Confirm" }),
+			).toBeInTheDocument();
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
@@ -394,7 +413,9 @@ describe("RbacSettings", () => {
 		fireEvent.click(screen.getByTestId("rbac-remove-user-6"));
 
 		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Cancel" }),
+			).toBeInTheDocument();
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -406,5 +427,57 @@ describe("RbacSettings", () => {
 		});
 
 		expect(mockRbacService.deleteUser).not.toHaveBeenCalled();
+	});
+
+	it("does not render Remove button on the current user's own row", async () => {
+		mockRbacService.getStatus.mockResolvedValue({
+			enabled: true,
+			premiumGateSatisfied: true,
+			hasSystemAdmin: true,
+			hasEmergencyAdminConfigured: false,
+			readyForEnablement: true,
+		});
+
+		mockRbacService.getUsers.mockResolvedValue([
+			{
+				id: 7,
+				subject: "auth0|currentuser",
+				displayName: "Current User",
+				email: "current@example.com",
+				isSystemAdmin: true,
+				isUnassigned: false,
+				isEmergencyAdmin: false,
+			},
+			{
+				id: 8,
+				subject: "auth0|otheruser",
+				displayName: "Other User",
+				email: "other@example.com",
+				isSystemAdmin: false,
+				isUnassigned: false,
+				isEmergencyAdmin: false,
+			},
+		]);
+
+		vi.mocked(mockAuthService.getCurrentUserProfile).mockResolvedValue({
+			subject: "auth0|currentuser",
+			displayName: "Current User",
+			email: "current@example.com",
+		});
+
+		renderSubject();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rbac-user-row-7")).toBeInTheDocument();
+			expect(screen.getByTestId("rbac-user-row-8")).toBeInTheDocument();
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.queryByTestId("rbac-remove-user-7"),
+			).not.toBeInTheDocument();
+		});
+
+		expect(screen.getByTestId("rbac-remove-user-8")).toBeInTheDocument();
 	});
 });

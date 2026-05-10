@@ -171,7 +171,6 @@ export class RbacService extends BaseApiService implements IRbacService {
 		});
 	}
 
-	// TODO(02-03): wire to real API endpoint once backend is ready
 	deleteUser(userId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/authorization/users/${userId}`);

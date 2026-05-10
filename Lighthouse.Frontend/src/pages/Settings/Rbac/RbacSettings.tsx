@@ -1,3 +1,5 @@
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LockIcon from "@mui/icons-material/Lock";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -19,8 +21,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import LockIcon from "@mui/icons-material/Lock";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type {
@@ -31,7 +31,7 @@ import type {
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 const RbacSettings: React.FC = () => {
-	const { rbacService } = useContext(ApiServiceContext);
+	const { rbacService, authService } = useContext(ApiServiceContext);
 	const [status, setStatus] = useState<RbacStatus>();
 	const [users, setUsers] = useState<RbacUser[]>([]);
 	const [groupMappings, setGroupMappings] = useState<RbacGroupMapping[]>([]);
@@ -42,6 +42,7 @@ const RbacSettings: React.FC = () => {
 	const [removeDialogUserId, setRemoveDialogUserId] = useState<number | null>(
 		null,
 	);
+	const [currentUserSubject, setCurrentUserSubject] = useState<string>();
 
 	const load = useCallback(async () => {
 		setError(undefined);
@@ -73,6 +74,25 @@ const RbacSettings: React.FC = () => {
 	useEffect(() => {
 		void load();
 	}, [load]);
+
+	useEffect(() => {
+		let cancelled = false;
+		authService
+			.getCurrentUserProfile()
+			.then((profile) => {
+				if (!cancelled) {
+					setCurrentUserSubject(profile.subject);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setCurrentUserSubject(undefined);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [authService]);
 
 	const handleBootstrap = async () => {
 		try {
@@ -297,14 +317,16 @@ const RbacSettings: React.FC = () => {
 													Grant
 												</Button>
 											)}
-											<Button
-												size="small"
-												color="error"
-												onClick={() => setRemoveDialogUserId(user.id)}
-												data-testid={`rbac-remove-user-${user.id}`}
-											>
-												Remove
-											</Button>
+											{user.subject !== currentUserSubject && (
+												<Button
+													size="small"
+													color="error"
+													onClick={() => setRemoveDialogUserId(user.id)}
+													data-testid={`rbac-remove-user-${user.id}`}
+												>
+													Remove
+												</Button>
+											)}
 										</>
 									)}
 								</Box>
@@ -383,10 +405,7 @@ const RbacSettings: React.FC = () => {
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={() => setRemoveDialogUserId(null)}>Cancel</Button>
-					<Button
-						color="error"
-						onClick={handleConfirmRemoveUser}
-					>
+					<Button color="error" onClick={handleConfirmRemoveUser}>
 						Confirm
 					</Button>
 				</DialogActions>
