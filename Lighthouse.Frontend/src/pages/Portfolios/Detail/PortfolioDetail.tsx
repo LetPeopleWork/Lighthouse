@@ -27,7 +27,6 @@ import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandle
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import type {
-	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
 } from "../../../models/Authorization/RbacModels";
@@ -82,13 +81,6 @@ const PortfolioDetail: React.FC = () => {
 	>([]);
 	const [portfolioMembersLoading, setPortfolioMembersLoading] = useState(false);
 	const [portfolioMembersError, setPortfolioMembersError] = useState<string>();
-	const [portfolioGroupMappings, setPortfolioGroupMappings] = useState<
-		RbacGroupMapping[]
-	>([]);
-	const [portfolioGroupMappingsLoading, setPortfolioGroupMappingsLoading] =
-		useState(false);
-	const [portfolioGroupMappingsError, setPortfolioGroupMappingsError] =
-		useState<string>();
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -165,52 +157,20 @@ const PortfolioDetail: React.FC = () => {
 		[rbacService, portfolio, loadPortfolioMembers],
 	);
 
-	const loadPortfolioGroupMappings = useCallback(
-		async (targetPortfolioId: number) => {
-			setPortfolioGroupMappingsError(undefined);
-			setPortfolioGroupMappingsLoading(true);
-			try {
-				const mappings = await rbacService.getGroupMappings();
-				setPortfolioGroupMappings(
-					mappings.filter(
-						(mapping) =>
-							mapping.scopeType === "Portfolio" &&
-							mapping.scopeId === targetPortfolioId,
-					),
-				);
-			} catch {
-				setPortfolioGroupMappingsError(
-					"Failed to load portfolio access groups.",
-				);
-			} finally {
-				setPortfolioGroupMappingsLoading(false);
-			}
-		},
-		[rbacService],
-	);
-
 	const handleCreatePortfolioGroupMapping = useCallback(
 		async (groupValue: string, role: ScopedRbacRole) => {
 			if (!portfolio) {
 				return;
 			}
 
-			setPortfolioGroupMappingsError(undefined);
-			try {
-				await rbacService.createGroupMapping({
-					groupValue,
-					role,
-					scopeType: "Portfolio",
-					scopeId: portfolio.id,
-				});
-				await loadPortfolioGroupMappings(portfolio.id);
-			} catch {
-				setPortfolioGroupMappingsError(
-					"Failed to create portfolio access group.",
-				);
-			}
+			await rbacService.createGroupMapping({
+				groupValue,
+				role,
+				scopeType: "Portfolio",
+				scopeId: portfolio.id,
+			});
 		},
-		[rbacService, portfolio, loadPortfolioGroupMappings],
+		[rbacService, portfolio],
 	);
 
 	const handleRemovePortfolioGroupMapping = useCallback(
@@ -219,17 +179,9 @@ const PortfolioDetail: React.FC = () => {
 				return;
 			}
 
-			setPortfolioGroupMappingsError(undefined);
-			try {
-				await rbacService.removeGroupMapping(mappingId);
-				await loadPortfolioGroupMappings(portfolio.id);
-			} catch {
-				setPortfolioGroupMappingsError(
-					"Failed to remove portfolio access group.",
-				);
-			}
+			await rbacService.removeGroupMapping(mappingId);
 		},
-		[rbacService, portfolio, loadPortfolioGroupMappings],
+		[rbacService, portfolio],
 	);
 
 	const { getTerm } = useTerminology();
@@ -432,9 +384,8 @@ const PortfolioDetail: React.FC = () => {
 	useEffect(() => {
 		if (activeView === "access" && portfolio) {
 			void loadPortfolioMembers(portfolio.id);
-			void loadPortfolioGroupMappings(portfolio.id);
 		}
-	}, [activeView, portfolio, loadPortfolioMembers, loadPortfolioGroupMappings]);
+	}, [activeView, portfolio, loadPortfolioMembers]);
 
 	return (
 		<SnackbarErrorHandler>
@@ -589,10 +540,10 @@ const PortfolioDetail: React.FC = () => {
 										/>
 										<ScopedGroupMappingManager
 											title="Portfolio Group Access"
-											mappings={portfolioGroupMappings}
 											allowedRoles={["PortfolioAdmin", "Viewer"]}
-											loading={portfolioGroupMappingsLoading}
-											error={portfolioGroupMappingsError}
+											groupMappingsFetcher={() =>
+												rbacService.getPortfolioGroupMappings(portfolio.id)
+											}
 											onCreateMapping={handleCreatePortfolioGroupMapping}
 											onRemoveMapping={handleRemovePortfolioGroupMapping}
 										/>

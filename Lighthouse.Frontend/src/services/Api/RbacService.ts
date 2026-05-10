@@ -34,6 +34,8 @@ export interface IRbacService {
 		userProfileId: number,
 	): Promise<void>;
 	getGroupMappings(): Promise<RbacGroupMapping[]>;
+	getTeamGroupMappings(teamId: number): Promise<RbacGroupMapping[]>;
+	getPortfolioGroupMappings(portfolioId: number): Promise<RbacGroupMapping[]>;
 	createGroupMapping(request: CreateRbacGroupMappingRequest): Promise<void>;
 	removeGroupMapping(mappingId: number): Promise<void>;
 	deleteUser(userId: number): Promise<void>;
@@ -152,6 +154,24 @@ export class RbacService extends BaseApiService implements IRbacService {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RbacGroupMapping[]>(
 				"/authorization/group-mappings",
+			);
+			return response.data;
+		});
+	}
+
+	getTeamGroupMappings(teamId: number): Promise<RbacGroupMapping[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RbacGroupMapping[]>(
+				`/authorization/teams/${teamId}/group-mappings`,
+			);
+			return response.data;
+		});
+	}
+
+	getPortfolioGroupMappings(portfolioId: number): Promise<RbacGroupMapping[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RbacGroupMapping[]>(
+				`/authorization/portfolios/${portfolioId}/group-mappings`,
 			);
 			return response.data;
 		});

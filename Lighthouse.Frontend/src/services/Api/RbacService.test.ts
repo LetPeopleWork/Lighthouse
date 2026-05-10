@@ -218,6 +218,48 @@ describe("RbacService", () => {
 		);
 	});
 
+	it("should fetch team-scoped group mappings", async () => {
+		const mockMappings: RbacGroupMapping[] = [
+			{
+				id: 21,
+				groupValue: "team-12-admins",
+				role: "TeamAdmin",
+				scopeType: "Team",
+				scopeId: 12,
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockMappings });
+
+		const result = await subject.getTeamGroupMappings(12);
+
+		expect(result).toEqual(mockMappings);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/teams/12/group-mappings",
+		);
+	});
+
+	it("should fetch portfolio-scoped group mappings", async () => {
+		const mockMappings: RbacGroupMapping[] = [
+			{
+				id: 31,
+				groupValue: "portfolio-9-admins",
+				role: "PortfolioAdmin",
+				scopeType: "Portfolio",
+				scopeId: 9,
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockMappings });
+
+		const result = await subject.getPortfolioGroupMappings(9);
+
+		expect(result).toEqual(mockMappings);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/portfolios/9/group-mappings",
+		);
+	});
+
 	it("should create RBAC group mapping", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: {} });
 

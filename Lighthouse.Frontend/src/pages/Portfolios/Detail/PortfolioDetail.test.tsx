@@ -545,7 +545,7 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 
 	it("creates portfolio-scoped group mappings on access tab", async () => {
 		const user = userEvent.setup();
-		const getGroupMappings = vi.fn().mockResolvedValue([
+		const getPortfolioGroupMappings = vi.fn().mockResolvedValue([
 			{
 				id: 31,
 				groupValue: "portfolio-viewers",
@@ -553,18 +553,11 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 				scopeType: "Portfolio",
 				scopeId: 1,
 			},
-			{
-				id: 32,
-				groupValue: "other-portfolio-admins",
-				role: "PortfolioAdmin",
-				scopeType: "Portfolio",
-				scopeId: 999,
-			},
 		]);
 		const createGroupMapping = vi.fn().mockResolvedValue(undefined);
 
 		renderWithRbac(true, true, false, {
-			getGroupMappings,
+			getPortfolioGroupMappings,
 			createGroupMapping,
 		});
 
@@ -577,10 +570,9 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 		await waitFor(() => {
 			expect(screen.getByText("Portfolio Group Access")).toBeInTheDocument();
 			expect(screen.getByTestId("scoped-group-row-31")).toBeInTheDocument();
-			expect(
-				screen.queryByTestId("scoped-group-row-32"),
-			).not.toBeInTheDocument();
 		});
+
+		expect(getPortfolioGroupMappings).toHaveBeenCalledWith(1);
 
 		await user.type(screen.getByLabelText("Group value"), "portfolio-admins");
 		await user.click(screen.getByTestId("scoped-group-add-button"));

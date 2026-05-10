@@ -29,7 +29,6 @@ import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettin
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import type {
-	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
 } from "../../../models/Authorization/RbacModels";
@@ -103,13 +102,6 @@ const TeamDetail: React.FC = () => {
 	const [teamMembers, setTeamMembers] = useState<RbacScopedMemberSummary[]>([]);
 	const [teamMembersLoading, setTeamMembersLoading] = useState(false);
 	const [teamMembersError, setTeamMembersError] = useState<string>();
-	const [teamGroupMappings, setTeamGroupMappings] = useState<
-		RbacGroupMapping[]
-	>([]);
-	const [teamGroupMappingsLoading, setTeamGroupMappingsLoading] =
-		useState(false);
-	const [teamGroupMappingsError, setTeamGroupMappingsError] =
-		useState<string>();
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -177,47 +169,20 @@ const TeamDetail: React.FC = () => {
 		[rbacService, team, loadTeamMembers],
 	);
 
-	const loadTeamGroupMappings = useCallback(
-		async (targetTeamId: number) => {
-			setTeamGroupMappingsError(undefined);
-			setTeamGroupMappingsLoading(true);
-			try {
-				const mappings = await rbacService.getGroupMappings();
-				setTeamGroupMappings(
-					mappings.filter(
-						(mapping) =>
-							mapping.scopeType === "Team" && mapping.scopeId === targetTeamId,
-					),
-				);
-			} catch {
-				setTeamGroupMappingsError("Failed to load team access groups.");
-			} finally {
-				setTeamGroupMappingsLoading(false);
-			}
-		},
-		[rbacService],
-	);
-
 	const handleCreateTeamGroupMapping = useCallback(
 		async (groupValue: string, role: ScopedRbacRole) => {
 			if (!team) {
 				return;
 			}
 
-			setTeamGroupMappingsError(undefined);
-			try {
-				await rbacService.createGroupMapping({
-					groupValue,
-					role,
-					scopeType: "Team",
-					scopeId: team.id,
-				});
-				await loadTeamGroupMappings(team.id);
-			} catch {
-				setTeamGroupMappingsError("Failed to create team access group.");
-			}
+			await rbacService.createGroupMapping({
+				groupValue,
+				role,
+				scopeType: "Team",
+				scopeId: team.id,
+			});
 		},
-		[rbacService, team, loadTeamGroupMappings],
+		[rbacService, team],
 	);
 
 	const handleRemoveTeamGroupMapping = useCallback(
@@ -226,15 +191,9 @@ const TeamDetail: React.FC = () => {
 				return;
 			}
 
-			setTeamGroupMappingsError(undefined);
-			try {
-				await rbacService.removeGroupMapping(mappingId);
-				await loadTeamGroupMappings(team.id);
-			} catch {
-				setTeamGroupMappingsError("Failed to remove team access group.");
-			}
+			await rbacService.removeGroupMapping(mappingId);
 		},
-		[rbacService, team, loadTeamGroupMappings],
+		[rbacService, team],
 	);
 
 	const fetchTeam = useCallback(async () => {
@@ -361,9 +320,8 @@ const TeamDetail: React.FC = () => {
 	useEffect(() => {
 		if (activeView === "access" && team) {
 			void loadTeamMembers(team.id);
-			void loadTeamGroupMappings(team.id);
 		}
-	}, [activeView, team, loadTeamMembers, loadTeamGroupMappings]);
+	}, [activeView, team, loadTeamMembers]);
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
@@ -557,10 +515,10 @@ const TeamDetail: React.FC = () => {
 										/>
 										<ScopedGroupMappingManager
 											title="Team Group Access"
-											mappings={teamGroupMappings}
 											allowedRoles={["TeamAdmin", "Viewer"]}
-											loading={teamGroupMappingsLoading}
-											error={teamGroupMappingsError}
+											groupMappingsFetcher={() =>
+												rbacService.getTeamGroupMappings(team.id)
+											}
 											onCreateMapping={handleCreateTeamGroupMapping}
 											onRemoveMapping={handleRemoveTeamGroupMapping}
 										/>

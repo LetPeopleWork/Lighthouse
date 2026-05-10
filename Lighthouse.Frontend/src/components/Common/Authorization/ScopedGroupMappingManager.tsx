@@ -13,19 +13,18 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type {
 	GroupMappingRole,
 	RbacGroupMapping,
 	ScopedRbacRole,
 } from "../../../models/Authorization/RbacModels";
+import { ApiError } from "../../../services/Api/ApiError";
 
 interface ScopedGroupMappingManagerProps {
 	title: string;
-	mappings: RbacGroupMapping[];
 	allowedRoles: ScopedRbacRole[];
-	loading: boolean;
-	error?: string;
+	groupMappingsFetcher: () => Promise<RbacGroupMapping[]>;
 	onCreateMapping: (groupValue: string, role: ScopedRbacRole) => Promise<void>;
 	onRemoveMapping: (mappingId: number) => Promise<void>;
 }
@@ -44,19 +43,48 @@ const getScopedRoleLabel = (role: GroupMappingRole): string => {
 	return roleLabels[role] ?? "Viewer";
 };
 
+const FORBIDDEN_MESSAGE =
+	"You don't have permission to view group mappings for this scope.";
+const GENERIC_LOAD_ERROR = "Failed to load group mappings.";
+
+const resolveLoadErrorMessage = (error: unknown): string => {
+	if (error instanceof ApiError && error.code === 403) {
+		return FORBIDDEN_MESSAGE;
+	}
+	return GENERIC_LOAD_ERROR;
+};
+
 const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 	title,
-	mappings,
 	allowedRoles,
-	loading,
-	error,
+	groupMappingsFetcher,
 	onCreateMapping,
 	onRemoveMapping,
 }) => {
+	const [mappings, setMappings] = useState<RbacGroupMapping[]>([]);
+	const [loading, setLoading] = useState<boolean>(true);
+	const [loadError, setLoadError] = useState<string>();
 	const [groupValueInput, setGroupValueInput] = useState("");
 	const [roleInput, setRoleInput] = useState<ScopedRbacRole>(allowedRoles[0]);
 	const [localError, setLocalError] = useState<string>();
 	const [searchText, setSearchText] = useState("");
+
+	const loadMappings = useCallback(async () => {
+		setLoading(true);
+		setLoadError(undefined);
+		try {
+			const data = await groupMappingsFetcher();
+			setMappings(data);
+		} catch (error) {
+			setLoadError(resolveLoadErrorMessage(error));
+		} finally {
+			setLoading(false);
+		}
+	}, [groupMappingsFetcher]);
+
+	useEffect(() => {
+		loadMappings();
+	}, [loadMappings]);
 
 	const filteredMappings = mappings.filter((mapping) => {
 		if (!searchText.trim()) return true;
@@ -74,8 +102,18 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 		try {
 			await onCreateMapping(normalizedGroupValue, roleInput);
 			setGroupValueInput("");
+			await loadMappings();
 		} catch {
 			setLocalError("Failed to create group mapping.");
+		}
+	};
+
+	const handleRemove = async (mappingId: number) => {
+		try {
+			await onRemoveMapping(mappingId);
+			await loadMappings();
+		} catch {
+			setLocalError("Failed to remove group mapping.");
 		}
 	};
 
@@ -86,7 +124,7 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 					{title}
 				</Typography>
 
-				{error && <Alert severity="error">{error}</Alert>}
+				{loadError && <Alert severity="error">{loadError}</Alert>}
 				{localError && <Alert severity="error">{localError}</Alert>}
 
 				<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -166,7 +204,7 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 										<Button
 											size="small"
 											color="error"
-											onClick={() => onRemoveMapping(mapping.id)}
+											onClick={() => handleRemove(mapping.id)}
 											data-testid={`scoped-group-remove-${mapping.id}`}
 										>
 											Remove

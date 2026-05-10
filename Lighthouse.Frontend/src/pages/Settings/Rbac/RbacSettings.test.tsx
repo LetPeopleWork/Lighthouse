@@ -26,6 +26,8 @@ describe("RbacSettings", () => {
 		upsertPortfolioMember: vi.fn(),
 		removePortfolioMember: vi.fn(),
 		getGroupMappings: vi.fn(),
+		getTeamGroupMappings: vi.fn(),
+		getPortfolioGroupMappings: vi.fn(),
 		createGroupMapping: vi.fn(),
 		removeGroupMapping: vi.fn(),
 	};
