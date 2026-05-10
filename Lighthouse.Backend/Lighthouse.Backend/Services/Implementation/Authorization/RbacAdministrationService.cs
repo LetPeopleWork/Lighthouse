@@ -56,6 +56,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             var systemAdminIdSet = systemAdminIds.ToHashSet();
             var assignedUserIdSet = usersWithAnyAssignment.ToHashSet();
+            var emergencySubjects = configuration.Value.EmergencySystemAdminSubjects;
 
             var users = await context.UserProfiles
                 .OrderBy(p => p.DisplayName)
@@ -71,7 +72,12 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 })
                 .ToListAsync(cancellationToken);
 
-            return users;
+            return users
+                .Select(u => u with
+                {
+                    IsEmergencyAdmin = emergencySubjects.Any(s => string.Equals(s, u.Subject, StringComparison.Ordinal)),
+                })
+                .ToList();
         }
 
         public async Task<IReadOnlyList<int>> GetReadableTeamIdsAsync(

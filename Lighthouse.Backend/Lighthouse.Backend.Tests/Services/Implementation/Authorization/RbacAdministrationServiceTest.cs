@@ -887,6 +887,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
+        public async Task GetUsersAsync_SetsIsEmergencyAdminBasedOnSubjectMatch()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 1,
+                Subject = "auth0|break-glass",
+                SubjectClaimType = "sub",
+                DisplayName = "Emergency Admin",
+            });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 2,
+                Subject = "auth0|regular-user",
+                SubjectClaimType = "sub",
+                DisplayName = "Regular User",
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: ["auth0|break-glass"]);
+
+            var users = await subject.GetUsersAsync(CancellationToken.None);
+            var emergencyAdmin = users.Single(x => x.Id == 1);
+            var regularUser = users.Single(x => x.Id == 2);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(emergencyAdmin.IsEmergencyAdmin, Is.True);
+                Assert.That(regularUser.IsEmergencyAdmin, Is.False);
+            }
+        }
+
+        [Test]
         public async Task GetGroupMappingsAsync_WhenMappingsExist_ReturnsConfiguredMappings()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);

@@ -13,5 +13,7 @@ namespace Lighthouse.Backend.Models.Authorization
         public bool IsSystemAdmin { get; init; }
 
         public bool IsUnassigned { get; init; }
+
+        public bool IsEmergencyAdmin { get; init; }
     }
 }

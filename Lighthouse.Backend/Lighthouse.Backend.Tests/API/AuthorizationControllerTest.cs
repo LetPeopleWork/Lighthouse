@@ -270,6 +270,48 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task GetUsers_ReturnsUsersWithIsEmergencyAdminPopulated()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.GetUsersAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new RbacUserSummary
+                    {
+                        Id = 1,
+                        Subject = "auth0|break-glass",
+                        DisplayName = "Emergency Admin",
+                        IsEmergencyAdmin = true,
+                    },
+                    new RbacUserSummary
+                    {
+                        Id = 2,
+                        Subject = "auth0|regular-user",
+                        DisplayName = "Regular User",
+                        IsEmergencyAdmin = false,
+                    },
+                ]);
+
+            var subject = CreateSubjectWithUser("auth0|break-glass");
+
+            var result = await subject.GetUsers(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = (OkObjectResult)result;
+                var users = okResult.Value as IReadOnlyList<RbacUserSummary>;
+                Assert.That(users, Is.Not.Null);
+                Assert.That(users!, Has.Count.EqualTo(2));
+                Assert.That(users[0].IsEmergencyAdmin, Is.True);
+                Assert.That(users[1].IsEmergencyAdmin, Is.False);
+            }
+        }
+
         private AuthorizationController CreateSubjectWithUser(string subjectClaim)
         {
             var identity = new ClaimsIdentity([new Claim("sub", subjectClaim)], "TestAuth");
