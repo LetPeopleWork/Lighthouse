@@ -112,89 +112,6 @@ test.describe("@RBAC E2E", () => {
 	});
 
 	// =========================================================================
-	// Scenario 2: Team reader cannot see System Settings admin tabs
-	// =========================================================================
-	test.describe("Scenario 2: Team reader is restricted to License Info only in System Settings", () => {
-		testWithAuth(
-			"team reader cannot see System Admins tab or Log Level in System Settings",
-			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 2 — depends on Scenario 1 having bootstrapped a System Admin. Enable after Scenario 1 is green.",
-				);
-
-				// Given: team reader logs in with read-only credentials.
-				const overviewPage = await loginAs(
-					loginPage,
-					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
-					TestConfig.AUTH_TEST_USER_PASSWORD,
-				);
-
-				// When: the team reader navigates to System Settings.
-				const settingsPage =
-					await overviewPage.lightHousePage.goToSettings();
-
-				// Then: the System Admins tab (RBAC admin surface) is not visible.
-				await expect(
-					settingsPage.page.getByTestId("system-admins-tab"),
-				).not.toBeVisible();
-
-				// And: the Log Level section is not visible (System Admin only, WD-15).
-				await expect(
-					settingsPage.page.getByTestId("log-level-section"),
-				).not.toBeVisible();
-
-				// And: License Info is visible in read-only mode (WD-08).
-				await expect(
-					settingsPage.page.getByTestId("system-info-tab"),
-				).toBeVisible();
-			},
-		);
-
-		testWithAuth(
-			"team reader cannot access team Settings or Access tabs",
-			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 2 — depends on Scenario 5 having assigned the team reader. Enable after Scenario 5 is green.",
-				);
-
-				// Given: team reader is assigned as Viewer for the test team.
-				const overviewPage = await loginAs(
-					loginPage,
-					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
-					TestConfig.AUTH_TEST_USER_PASSWORD,
-				);
-
-				// (Navigate to the test team — ID determined from URL after creation in Scenario 5.)
-				const teamDetailPage = await overviewPage.goToTeam(
-					"RBAC E2E Test Team",
-				);
-
-				// Then: the Settings tab is NOT visible (WD-06, DD-07).
-				await expect(
-					teamDetailPage.page.getByRole("tab", { name: "Settings" }),
-				).not.toBeVisible();
-
-				// And: the Access tab is NOT visible (RBAC enabled AND only shown to admins).
-				await expect(
-					teamDetailPage.page.getByRole("tab", { name: "Access" }),
-				).not.toBeVisible();
-
-				// And: write controls are HIDDEN — not disabled (WD-06).
-				await expect(
-					teamDetailPage.page.getByRole("button", { name: "Update Team Data" }),
-				).not.toBeVisible();
-
-				// And: Deliveries tab IS visible in read-only mode (WD-12, DD-08).
-				await expect(
-					teamDetailPage.page.getByRole("tab", { name: "Deliveries" }),
-				).not.toBeVisible(); // teams may not have a Deliveries tab; portfolios do
-			},
-		);
-	});
-
-	// =========================================================================
 	// Scenario 3: New System Admin manages rights and removes test user
 	// =========================================================================
 	test.describe("Scenario 3: New System Admin sees all tabs, revokes test user's admin role", () => {
@@ -432,6 +349,89 @@ test.describe("@RBAC E2E", () => {
 						TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
 					),
 				).toBeVisible();
+			},
+		);
+	});
+
+	// =========================================================================
+	// Scenario 2: Team reader cannot see System Settings admin tabs
+	//
+	// Step 04-01 note: this describe block is positioned AFTER Scenario 5
+	// because Scenario 2b requires the team reader to be assigned as TeamReader
+	// on "Team Zenith" — that assignment happens in Scenario 5. Playwright
+	// runs tests in spec-file order, so 2b must follow 5 to honour the
+	// sequential-state design (WD-D04).
+	// =========================================================================
+	test.describe("Scenario 2: Team reader is restricted to License Info only in System Settings", () => {
+		testWithAuth(
+			"team reader cannot see System Admins tab or Log Level in System Settings",
+			async ({ loginPage }) => {
+				// Given: team reader logs in with read-only credentials.
+				const overviewPage = await loginAs(
+					loginPage,
+					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+					TestConfig.AUTH_TEST_USER_PASSWORD,
+				);
+
+				// When: the team reader navigates to System Settings.
+				const settingsPage =
+					await overviewPage.lightHousePage.goToSettings();
+
+				// Then: the System Admins tab (rbac-tab — RBAC admin surface) is not visible.
+				await expect(
+					settingsPage.page.getByTestId("rbac-tab"),
+				).not.toBeVisible();
+
+				// And: the Log Level section is not visible (System Admin only, WD-15).
+				await expect(
+					settingsPage.page.getByTestId("log-level-section"),
+				).not.toBeVisible();
+
+				// And: License Info is visible in read-only mode (WD-08).
+				await expect(
+					settingsPage.page.getByTestId("system-info-tab"),
+				).toBeVisible();
+			},
+		);
+
+		testWithAuth(
+			"team reader cannot access team Settings or Access tabs",
+			async ({ loginPage }) => {
+				// Given: team reader is assigned as Viewer for "Team Zenith" (Scenario 5).
+				const overviewPage = await loginAs(
+					loginPage,
+					TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+					TestConfig.AUTH_TEST_USER_PASSWORD,
+				);
+
+				// Navigate to "Team Zenith" — use exact match because the dev seed
+				// also contains "Copy of Team Zenith".
+				await overviewPage.search("Team Zenith");
+				await overviewPage.page
+					.getByRole("link", { name: "Team Zenith", exact: true })
+					.click();
+				const teamDetailPage = new TeamDetailPage(overviewPage.page);
+
+				// Then: the Settings tab is NOT visible (WD-06, DD-07).
+				await expect(
+					teamDetailPage.page.getByRole("tab", { name: "Settings" }),
+				).not.toBeVisible();
+
+				// And: the Access tab is NOT visible (RBAC enabled AND only shown to admins).
+				await expect(
+					teamDetailPage.page.getByRole("tab", { name: "Access" }),
+				).not.toBeVisible();
+
+				// And: write controls are HIDDEN — not disabled (WD-06).
+				await expect(
+					teamDetailPage.page.getByRole("button", { name: "Update Team Data" }),
+				).not.toBeVisible();
+
+				// And: Deliveries tab is NOT visible — teams do not have a Deliveries
+				// tab (only portfolios do).
+				await expect(
+					teamDetailPage.page.getByRole("tab", { name: "Deliveries" }),
+				).not.toBeVisible();
 			},
 		);
 	});
