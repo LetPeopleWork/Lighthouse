@@ -949,6 +949,158 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
+        public async Task GetTeamGroupMappingsAsync_ReturnsOnlyMappingsForRequestedTeam()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "system-admins",
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-1-admins",
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 1,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-1-viewers",
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 1,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-2-admins",
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 2,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "portfolio-1-viewers",
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 1,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var mappings = await subject.GetTeamGroupMappingsAsync(1, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mappings, Has.Count.EqualTo(2));
+                Assert.That(mappings.All(m => m.ScopeType == PermissionScopeType.Team), Is.True);
+                Assert.That(mappings.All(m => m.ScopeId == 1), Is.True);
+                Assert.That(mappings.Select(m => m.GroupValue), Is.EquivalentTo(new[] { "team-1-admins", "team-1-viewers" }));
+            }
+        }
+
+        [Test]
+        public async Task GetTeamGroupMappingsAsync_WhenNoMappingsForTeam_ReturnsEmptyList()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-1-admins",
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 1,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var mappings = await subject.GetTeamGroupMappingsAsync(99, CancellationToken.None);
+
+            Assert.That(mappings, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetPortfolioGroupMappingsAsync_ReturnsOnlyMappingsForRequestedPortfolio()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "system-admins",
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-1-admins",
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 1,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "portfolio-1-admins",
+                Role = UserRole.PortfolioAdmin,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 1,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "portfolio-1-viewers",
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 1,
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "portfolio-2-admins",
+                Role = UserRole.PortfolioAdmin,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 2,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var mappings = await subject.GetPortfolioGroupMappingsAsync(1, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mappings, Has.Count.EqualTo(2));
+                Assert.That(mappings.All(m => m.ScopeType == PermissionScopeType.Portfolio), Is.True);
+                Assert.That(mappings.All(m => m.ScopeId == 1), Is.True);
+                Assert.That(mappings.Select(m => m.GroupValue), Is.EquivalentTo(new[] { "portfolio-1-admins", "portfolio-1-viewers" }));
+            }
+        }
+
+        [Test]
+        public async Task GetPortfolioGroupMappingsAsync_WhenNoMappingsForPortfolio_ReturnsEmptyList()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "portfolio-1-admins",
+                Role = UserRole.PortfolioAdmin,
+                ScopeType = PermissionScopeType.Portfolio,
+                ScopeId = 1,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var mappings = await subject.GetPortfolioGroupMappingsAsync(99, CancellationToken.None);
+
+            Assert.That(mappings, Is.Empty);
+        }
+
+        [Test]
         public async Task DeleteUserAsync_ExistingUserWithMultiplePermissions_RemovesProfileAndAllPermissions()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);

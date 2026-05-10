@@ -69,6 +69,10 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<IReadOnlyList<RbacGroupMappingSummary>> GetGroupMappingsAsync(CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<RbacGroupMappingSummary>> GetTeamGroupMappingsAsync(int teamId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<RbacGroupMappingSummary>> GetPortfolioGroupMappingsAsync(int portfolioId, CancellationToken cancellationToken = default);
+
         Task<RbacOperationResult> CreateGroupMappingAsync(
             string groupValue,
             UserRole role,

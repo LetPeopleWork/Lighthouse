@@ -356,6 +356,22 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 };
             }
 
+            // Bootstrap mode: when RBAC is enabled but no system admin has been configured yet,
+            // any authenticated user is treated as system admin so they can access the RBAC
+            // settings page and perform the initial bootstrap.
+            var hasSystemAdmin = await HasSystemAdminAsync(cancellationToken);
+            if (!hasSystemAdmin)
+            {
+                return new UserAuthorizationSummary
+                {
+                    IsRbacEnabled = true,
+                    IsSystemAdmin = true,
+                    CanCreateTeam = true,
+                    CanCreatePortfolio = true,
+                    SystemAdminDisplayNames = [],
+                };
+            }
+
             var isSystemAdmin = await CanManageRbacAsync(principal, cancellationToken);
             var canCreateTeam = isSystemAdmin || await CanCreateTeamAsync(principal, cancellationToken);
             var canCreatePortfolio = isSystemAdmin || await CanCreatePortfolioAsync(principal, cancellationToken);
@@ -766,6 +782,40 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .OrderBy(x => x.GroupValue)
                 .ThenBy(x => x.ScopeType)
                 .ThenBy(x => x.ScopeId)
+                .ThenBy(x => x.Role)
+                .Select(x => new RbacGroupMappingSummary
+                {
+                    Id = x.Id,
+                    GroupValue = x.GroupValue,
+                    Role = x.Role,
+                    ScopeType = x.ScopeType,
+                    ScopeId = x.ScopeId,
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<RbacGroupMappingSummary>> GetTeamGroupMappingsAsync(int teamId, CancellationToken cancellationToken = default)
+        {
+            return await context.RbacGroupMappings
+                .Where(x => x.ScopeType == PermissionScopeType.Team && x.ScopeId == teamId)
+                .OrderBy(x => x.GroupValue)
+                .ThenBy(x => x.Role)
+                .Select(x => new RbacGroupMappingSummary
+                {
+                    Id = x.Id,
+                    GroupValue = x.GroupValue,
+                    Role = x.Role,
+                    ScopeType = x.ScopeType,
+                    ScopeId = x.ScopeId,
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<RbacGroupMappingSummary>> GetPortfolioGroupMappingsAsync(int portfolioId, CancellationToken cancellationToken = default)
+        {
+            return await context.RbacGroupMappings
+                .Where(x => x.ScopeType == PermissionScopeType.Portfolio && x.ScopeId == portfolioId)
+                .OrderBy(x => x.GroupValue)
                 .ThenBy(x => x.Role)
                 .Select(x => new RbacGroupMappingSummary
                 {

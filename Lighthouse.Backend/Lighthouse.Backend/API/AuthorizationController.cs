@@ -312,6 +312,36 @@ namespace Lighthouse.Backend.API
             return Ok(mappings);
         }
 
+        [HttpGet("teams/{teamId:int}/group-mappings")]
+        [ProducesResponseType<IReadOnlyList<RbacGroupMappingSummary>>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetTeamGroupMappings(int teamId, CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManageTeamMembershipAsync(User, teamId, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            var mappings = await rbacAdministrationService.GetTeamGroupMappingsAsync(teamId, cancellationToken);
+            return Ok(mappings);
+        }
+
+        [HttpGet("portfolios/{portfolioId:int}/group-mappings")]
+        [ProducesResponseType<IReadOnlyList<RbacGroupMappingSummary>>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetPortfolioGroupMappings(int portfolioId, CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManagePortfolioMembershipAsync(User, portfolioId, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            var mappings = await rbacAdministrationService.GetPortfolioGroupMappingsAsync(portfolioId, cancellationToken);
+            return Ok(mappings);
+        }
+
         [HttpPost("group-mappings")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -271,6 +271,106 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task GetTeamGroupMappings_TeamAdmin_ReturnsOkWithScopedMappings()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageTeamMembershipAsync(It.IsAny<ClaimsPrincipal>(), 12, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.GetTeamGroupMappingsAsync(12, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new RbacGroupMappingSummary
+                    {
+                        Id = 1,
+                        GroupValue = "team-12-admins",
+                        Role = UserRole.TeamAdmin,
+                        ScopeType = PermissionScopeType.Team,
+                        ScopeId = 12,
+                    }
+                ]);
+
+            var subject = CreateSubjectWithUser("auth0|team-admin");
+
+            var result = await subject.GetTeamGroupMappings(12, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = (OkObjectResult)result;
+                var mappings = okResult.Value as IReadOnlyList<RbacGroupMappingSummary>;
+                Assert.That(mappings, Is.Not.Null);
+                Assert.That(mappings!, Has.Count.EqualTo(1));
+                Assert.That(mappings[0].GroupValue, Is.EqualTo("team-12-admins"));
+                Assert.That(mappings[0].ScopeId, Is.EqualTo(12));
+            }
+        }
+
+        [Test]
+        public async Task GetTeamGroupMappings_WhenCallerCannotManageTeam_ReturnsForbid()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageTeamMembershipAsync(It.IsAny<ClaimsPrincipal>(), 12, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubjectWithUser("auth0|viewer");
+
+            var result = await subject.GetTeamGroupMappings(12, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
+
+        [Test]
+        public async Task GetPortfolioGroupMappings_PortfolioAdmin_ReturnsOkWithScopedMappings()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManagePortfolioMembershipAsync(It.IsAny<ClaimsPrincipal>(), 9, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            rbacAdministrationService
+                .Setup(s => s.GetPortfolioGroupMappingsAsync(9, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new RbacGroupMappingSummary
+                    {
+                        Id = 5,
+                        GroupValue = "portfolio-9-viewers",
+                        Role = UserRole.Viewer,
+                        ScopeType = PermissionScopeType.Portfolio,
+                        ScopeId = 9,
+                    }
+                ]);
+
+            var subject = CreateSubjectWithUser("auth0|portfolio-admin");
+
+            var result = await subject.GetPortfolioGroupMappings(9, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = (OkObjectResult)result;
+                var mappings = okResult.Value as IReadOnlyList<RbacGroupMappingSummary>;
+                Assert.That(mappings, Is.Not.Null);
+                Assert.That(mappings!, Has.Count.EqualTo(1));
+                Assert.That(mappings[0].GroupValue, Is.EqualTo("portfolio-9-viewers"));
+                Assert.That(mappings[0].ScopeId, Is.EqualTo(9));
+            }
+        }
+
+        [Test]
+        public async Task GetPortfolioGroupMappings_WhenCallerCannotManagePortfolio_ReturnsForbid()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManagePortfolioMembershipAsync(It.IsAny<ClaimsPrincipal>(), 9, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubjectWithUser("auth0|viewer");
+
+            var result = await subject.GetPortfolioGroupMappings(9, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+        }
+
+        [Test]
         public async Task DeleteUser_ExistingUser_ReturnsNoContent_AndRemovesAllRoleAssignments()
         {
             rbacAdministrationService
