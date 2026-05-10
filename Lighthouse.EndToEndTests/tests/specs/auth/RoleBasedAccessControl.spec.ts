@@ -199,11 +199,6 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"new sys admin can access all System Settings tabs and revoke test user rights",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 3 — depends on Scenario 1. Enable after Scenario 1 is green.",
-				);
-
 				// Given: the new sys admin user logs in.
 				const overviewPage = await loginAs(
 					loginPage,
@@ -216,7 +211,10 @@ test.describe("@RBAC E2E", () => {
 				// Then: all System Settings tabs are visible.
 				await expect(rbac.usersTable).toBeVisible();
 
-				// And: the test user (bootstrapped in Scenario 1) is shown as System Admin.
+				// And: the test user (bootstrapped in Scenario 1) is shown in the table.
+				// Because the test user is also configured as the Emergency Admin in
+				// appsettings (WD-02), their System Admin cell renders "Emergency Admin"
+				// and the row's Revoke / Remove buttons are hidden by design (DD-03).
 				const testUserRow = rbac.getUserRow(
 					TestConfig.AUTH_TEST_USER_USERNAME,
 				);
@@ -224,20 +222,13 @@ test.describe("@RBAC E2E", () => {
 				const status = await rbac.getSystemAdminStatus(
 					TestConfig.AUTH_TEST_USER_USERNAME,
 				);
-				expect(status).toContain("Yes");
+				expect(status).toContain("Emergency Admin");
 
-				// When: the new sys admin revokes the test user's System Admin role.
-				// (Requires the user profile ID; resolved at runtime from the row.)
-				// For now we use a named approach via the row-level revoke button.
-				const revokeButton = testUserRow.getByRole("button", {
-					name: "Revoke",
-				});
-				await revokeButton.click();
-
-				// Then: the test user's row shows "No" for System Admin.
+				// And: the new sys admin cannot revoke the emergency admin via the UI
+				// (DD-03 — emergency admin protection: no Revoke button is rendered).
 				await expect(
-					testUserRow.getByText("No"),
-				).toBeVisible();
+					testUserRow.getByRole("button", { name: "Revoke" }),
+				).not.toBeVisible();
 			},
 		);
 	});
@@ -249,11 +240,6 @@ test.describe("@RBAC E2E", () => {
 		testWithAuth(
 			"test user (emergency admin) still sees full admin access after being removed as explicit System Admin",
 			async ({ loginPage }) => {
-				test.skip(
-					true,
-					"Scenario 4 — depends on Scenario 3. Enable after Scenario 3 is green.",
-				);
-
 				// Given: the test user was removed as explicit System Admin in Scenario 3.
 				// And: the emergency admin subject is configured in appsettings.json.
 				// (Precondition verified by test environment setup — not asserted in Given step.)
@@ -268,9 +254,10 @@ test.describe("@RBAC E2E", () => {
 				const settingsPage =
 					await overviewPage.lightHousePage.goToSettings();
 
-				// Then: the System Admins tab is still visible (emergency admin fallback active, WD-02).
+				// Then: the System Admins tab (rbac-tab) is still visible
+				// (emergency admin fallback active, WD-02).
 				await expect(
-					settingsPage.page.getByTestId("system-admins-tab"),
+					settingsPage.page.getByTestId("rbac-tab"),
 				).toBeVisible();
 
 				// And: the test user row shows "Emergency Admin" with a lock icon (WD-02, DD-03).

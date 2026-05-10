@@ -24,13 +24,12 @@ export class RbacSettingsPage {
 	// -------------------------------------------------------------------------
 
 	async goToAccessTab(): Promise<void> {
-		// Navigate directly to the RBAC tab via URL to avoid re-render race conditions
-		// from the useRbac() hook updating visibleTabs after initial render.
-		const currentUrl = this.page.url();
-		const settingsBase = currentUrl.includes("/settings")
-			? currentUrl.split("?")[0]
-			: new URL(this.page.url()).origin + "/settings";
-		await this.page.goto(`${settingsBase}?tab=rbac`);
+		// Click the "System Admins" tab to switch into the RBAC settings view.
+		// We click rather than navigate via URL because client-side routing on the
+		// same /settings pathname can be a no-op for page.goto.
+		await this.page
+			.getByRole("tab", { name: "System Admins" })
+			.click();
 		await this.rbacStatusIndicator.waitFor({ state: "visible" });
 	}
 
@@ -91,7 +90,8 @@ export class RbacSettingsPage {
 	/** Returns the text of the System Admin status cell for a given user row. */
 	async getSystemAdminStatus(userEmail: string): Promise<string> {
 		const row = this.getUserRow(userEmail);
-		const cell = row.getByRole("cell").nth(2);
+		// Column order: Display Name (0), Email (1), Subject (2), System Admin (3), Unassigned (4), Actions (5)
+		const cell = row.getByRole("cell").nth(3);
 		return (await cell.textContent()) ?? "";
 	}
 
