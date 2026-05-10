@@ -729,13 +729,11 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		throughputEndDate: new Date(),
 	});
 
-	const renderForRbac = (
-		summary: {
-			isRbacEnabled: boolean;
-			isSystemAdmin: boolean;
-			adminTeamIds?: number[];
-		},
-	) => {
+	const renderForRbac = (summary: {
+		isRbacEnabled: boolean;
+		isSystemAdmin: boolean;
+		adminTeamIds?: number[];
+	}) => {
 		const mockTeamService = createMockTeamService();
 		(mockTeamService.getTeam as ReturnType<typeof vi.fn>).mockResolvedValue(
 			buildMockTeam(),
@@ -787,7 +785,9 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("tab", { name: "Forecasts" }),
+			).toBeInTheDocument();
 		});
 		expect(
 			screen.queryByRole("tab", { name: "Settings" }),
@@ -805,7 +805,9 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("tab", { name: "Forecasts" }),
+			).toBeInTheDocument();
 		});
 		expect(
 			screen.queryByRole("tab", { name: "Settings" }),
@@ -855,7 +857,9 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("tab", { name: "Forecasts" }),
+			).toBeInTheDocument();
 		});
 		expect(
 			screen.queryByRole("button", { name: "Update Team Data" }),
@@ -873,7 +877,9 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByRole("tab", { name: "Forecasts" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("tab", { name: "Forecasts" }),
+			).toBeInTheDocument();
 		});
 		expect(
 			screen.queryByRole("button", { name: "Update Team Data" }),

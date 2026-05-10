@@ -359,62 +359,63 @@ const TeamDetail: React.FC = () => {
 									}
 									quickSettingsContent={
 										showWriteControls ? (
-										<QuickSettingsBar>
-											<ThroughputQuickSetting
-												useFixedDates={team.useFixedDatesForThroughput}
-												startDate={team.throughputStartDate}
-												endDate={team.throughputEndDate}
-												hasBlackoutOverlap={team.hasThroughputBlackoutOverlap}
-												onSave={async (
-													useFixedDates,
-													throughputHistory,
-													startDate,
-													endDate,
-												) => {
-													await updateTeamSettings((settings) => {
-														settings.useFixedDatesForThroughput = useFixedDates;
-														settings.throughputHistory = throughputHistory;
-														if (startDate) {
-															settings.throughputHistoryStartDate = startDate;
-														}
-														if (endDate) {
-															settings.throughputHistoryEndDate = endDate;
-														}
-													}, true);
-												}}
-												disabled={!canUpdateTeamData}
-											/>
-											<SleQuickSetting
-												probability={team.serviceLevelExpectationProbability}
-												range={team.serviceLevelExpectationRange}
-												onSave={async (probability, range) => {
-													await updateTeamSettings((settings) => {
-														settings.serviceLevelExpectationProbability =
-															probability;
-														settings.serviceLevelExpectationRange = range;
-													});
-												}}
-												disabled={!canUpdateTeamData}
-											/>
-											<SystemWipQuickSetting
-												wipLimit={team.systemWIPLimit}
-												onSave={async (systemWip) => {
-													await updateTeamSettings((settings) => {
-														settings.systemWIPLimit = systemWip;
-													});
-												}}
-												disabled={!canUpdateTeamData}
-											/>
-											<FeatureWipQuickSetting
-												featureWip={team.featureWip}
-												onSave={async (featureWip) => {
-													await updateTeamSettings((settings) => {
-														settings.featureWIP = featureWip;
-													}, true);
-												}}
-												disabled={!canUpdateTeamData}
-											/>
-										</QuickSettingsBar>
+											<QuickSettingsBar>
+												<ThroughputQuickSetting
+													useFixedDates={team.useFixedDatesForThroughput}
+													startDate={team.throughputStartDate}
+													endDate={team.throughputEndDate}
+													hasBlackoutOverlap={team.hasThroughputBlackoutOverlap}
+													onSave={async (
+														useFixedDates,
+														throughputHistory,
+														startDate,
+														endDate,
+													) => {
+														await updateTeamSettings((settings) => {
+															settings.useFixedDatesForThroughput =
+																useFixedDates;
+															settings.throughputHistory = throughputHistory;
+															if (startDate) {
+																settings.throughputHistoryStartDate = startDate;
+															}
+															if (endDate) {
+																settings.throughputHistoryEndDate = endDate;
+															}
+														}, true);
+													}}
+													disabled={!canUpdateTeamData}
+												/>
+												<SleQuickSetting
+													probability={team.serviceLevelExpectationProbability}
+													range={team.serviceLevelExpectationRange}
+													onSave={async (probability, range) => {
+														await updateTeamSettings((settings) => {
+															settings.serviceLevelExpectationProbability =
+																probability;
+															settings.serviceLevelExpectationRange = range;
+														});
+													}}
+													disabled={!canUpdateTeamData}
+												/>
+												<SystemWipQuickSetting
+													wipLimit={team.systemWIPLimit}
+													onSave={async (systemWip) => {
+														await updateTeamSettings((settings) => {
+															settings.systemWIPLimit = systemWip;
+														});
+													}}
+													disabled={!canUpdateTeamData}
+												/>
+												<FeatureWipQuickSetting
+													featureWip={team.featureWip}
+													onSave={async (featureWip) => {
+														await updateTeamSettings((settings) => {
+															settings.featureWIP = featureWip;
+														}, true);
+													}}
+													disabled={!canUpdateTeamData}
+												/>
+											</QuickSettingsBar>
 										) : undefined
 									}
 									centerContent={
