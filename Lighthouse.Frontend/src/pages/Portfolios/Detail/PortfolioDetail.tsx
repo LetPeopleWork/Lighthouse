@@ -98,11 +98,11 @@ const PortfolioDetail: React.FC = () => {
 
 	const rbac = useRbac();
 
-	const showDeliveriesAndSettingsTabs =
-		!portfolio || rbac.isPortfolioAdmin(portfolio.id);
+	const showSettingsTab = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 	const showAccessTab =
 		!portfolio || (rbac.isRbacEnabled && rbac.isPortfolioAdmin(portfolio.id));
 	const showWriteControls = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
+	const canEditDeliveries = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 
 	const loadPortfolioMembers = useCallback(
 		async (targetPortfolioId: number) => {
@@ -462,11 +462,9 @@ const PortfolioDetail: React.FC = () => {
 											aria-label="portfolio view tabs"
 										>
 											<Tab label={featuresTerm} value="features" />
-											{showDeliveriesAndSettingsTabs && (
-												<Tab label={deliveriesTerm} value="deliveries" />
-											)}
+											<Tab label={deliveriesTerm} value="deliveries" />
 											<Tab label="Metrics" value="metrics" />
-											{showDeliveriesAndSettingsTabs && (
+											{showSettingsTab && (
 												<Tab label="Settings" value="settings" />
 											)}
 											{showAccessTab && <Tab label="Access" value="access" />}
@@ -507,7 +505,10 @@ const PortfolioDetail: React.FC = () => {
 								)}
 
 								{activeView === "deliveries" && portfolio && (
-									<PortfolioDeliveryView portfolio={portfolio} />
+									<PortfolioDeliveryView
+										portfolio={portfolio}
+										canEdit={canEditDeliveries}
+									/>
 								)}
 
 								{activeView === "metrics" && portfolio && (

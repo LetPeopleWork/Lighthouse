@@ -10,10 +10,12 @@ import DeliverySection from "./Components/DeliveryGrid/DeliverySection";
 
 interface PortfolioDeliveryViewProps {
 	portfolio: Portfolio;
+	canEdit?: boolean;
 }
 
 const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 	portfolio,
+	canEdit = true,
 }) => {
 	const {
 		deliveries,
@@ -37,7 +39,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 
 	return (
 		<Box>
-			<DeliveryHeader onAddDelivery={handleAddDelivery} />
+			{canEdit && <DeliveryHeader onAddDelivery={handleAddDelivery} />}
 
 			{/* Render delivery sections instead of a grid */}
 			<Box sx={{ mt: 2 }}>
@@ -57,23 +59,26 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 							onDelete={handleDeleteDelivery}
 							onEdit={handleEditDelivery}
 							teams={portfolio.involvedTeams}
+							canEdit={canEdit}
 						/>
 					);
 				})}
 			</Box>
 
-			<DeliveryModals
-				portfolio={portfolio}
-				showCreateModal={showCreateModal}
-				selectedDelivery={selectedDelivery}
-				deliveryToDelete={deliveryToDelete}
-				deleteDialogOpen={deleteDialogOpen}
-				onCloseCreateModal={handleCloseCreateModal}
-				onCloseEditModal={handleCloseEditModal}
-				onCreateDelivery={handleCreateDelivery}
-				onUpdateDelivery={handleUpdateDelivery}
-				onDeleteConfirmation={handleDeleteConfirmation}
-			/>
+			{canEdit && (
+				<DeliveryModals
+					portfolio={portfolio}
+					showCreateModal={showCreateModal}
+					selectedDelivery={selectedDelivery}
+					deliveryToDelete={deliveryToDelete}
+					deleteDialogOpen={deleteDialogOpen}
+					onCloseCreateModal={handleCloseCreateModal}
+					onCloseEditModal={handleCloseEditModal}
+					onCreateDelivery={handleCreateDelivery}
+					onUpdateDelivery={handleUpdateDelivery}
+					onDeleteConfirmation={handleDeleteConfirmation}
+				/>
+			)}
 		</Box>
 	);
 };

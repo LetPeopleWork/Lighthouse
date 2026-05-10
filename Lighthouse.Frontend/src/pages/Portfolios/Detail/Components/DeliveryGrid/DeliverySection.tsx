@@ -48,6 +48,7 @@ interface DeliverySectionProps {
 	onDelete: (delivery: Delivery) => void;
 	onEdit: (delivery: Delivery) => void;
 	teams: IEntityReference[];
+	canEdit?: boolean;
 }
 
 const DeliverySection: React.FC<DeliverySectionProps> = ({
@@ -59,6 +60,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	onDelete,
 	onEdit,
 	teams,
+	canEdit = true,
 }) => {
 	const { featureService } = useContext(ApiServiceContext);
 
@@ -225,48 +227,52 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							pr: 8,
 						}}
 					>
-						<IconButton
-							size="small"
-							onClick={(e) => {
-								e.stopPropagation();
-								onEdit(delivery);
-							}}
-							aria-label="edit"
-							sx={{
-								position: "absolute",
-								top: "50%",
-								transform: "translateY(-50%)",
-								right: 48,
-								zIndex: 1,
-								bgcolor: "background.paper",
-								"&:hover": {
-									bgcolor: "primary.light",
-								},
-							}}
-						>
-							<EditIcon />
-						</IconButton>
-						<IconButton
-							size="small"
-							onClick={(e) => {
-								e.stopPropagation();
-								onDelete(delivery);
-							}}
-							aria-label="delete"
-							sx={{
-								position: "absolute",
-								top: "50%",
-								transform: "translateY(-50%)",
-								right: 8,
-								zIndex: 1,
-								bgcolor: "background.paper",
-								"&:hover": {
-									bgcolor: "error.light",
-								},
-							}}
-						>
-							<DeleteIcon />
-						</IconButton>
+						{canEdit && (
+							<IconButton
+								size="small"
+								onClick={(e) => {
+									e.stopPropagation();
+									onEdit(delivery);
+								}}
+								aria-label="edit"
+								sx={{
+									position: "absolute",
+									top: "50%",
+									transform: "translateY(-50%)",
+									right: 48,
+									zIndex: 1,
+									bgcolor: "background.paper",
+									"&:hover": {
+										bgcolor: "primary.light",
+									},
+								}}
+							>
+								<EditIcon />
+							</IconButton>
+						)}
+						{canEdit && (
+							<IconButton
+								size="small"
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete(delivery);
+								}}
+								aria-label="delete"
+								sx={{
+									position: "absolute",
+									top: "50%",
+									transform: "translateY(-50%)",
+									right: 8,
+									zIndex: 1,
+									bgcolor: "background.paper",
+									"&:hover": {
+										bgcolor: "error.light",
+									},
+								}}
+							>
+								<DeleteIcon />
+							</IconButton>
+						)}
 						<Box
 							sx={{
 								display: "flex",

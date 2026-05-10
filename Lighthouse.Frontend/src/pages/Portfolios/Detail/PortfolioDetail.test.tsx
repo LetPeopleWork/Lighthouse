@@ -503,17 +503,17 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 		});
 	});
 
-	it("should hide Deliveries and Settings tabs when RBAC is enabled and user cannot manage portfolios", async () => {
+	it("should show Deliveries tab but hide Settings tab when RBAC is enabled and user is a Viewer (DD-08)", async () => {
 		renderWithRbac(true, false, false);
 
 		await waitFor(() => {
 			expect(
-				screen.queryByRole("tab", { name: "Deliveries" }),
-			).not.toBeInTheDocument();
-			expect(
-				screen.queryByRole("tab", { name: "Settings" }),
-			).not.toBeInTheDocument();
+				screen.getByRole("tab", { name: "Deliveries" }),
+			).toBeInTheDocument();
 		});
+		expect(
+			screen.queryByRole("tab", { name: "Settings" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("loads and renders portfolio membership manager on access tab", async () => {
@@ -664,7 +664,7 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 		).not.toBeInTheDocument();
 	});
 
-	it("hides Settings and Access tabs for Viewer of this portfolio", async () => {
+	it("hides Settings and Access tabs for Viewer of this portfolio but shows Deliveries (DD-08)", async () => {
 		renderForRbac({
 			isRbacEnabled: true,
 			isSystemAdmin: false,
@@ -674,6 +674,7 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 		await waitFor(() => {
 			expect(screen.getByRole("tab", { name: "Features" })).toBeInTheDocument();
 		});
+		expect(screen.getByRole("tab", { name: "Deliveries" })).toBeInTheDocument();
 		expect(
 			screen.queryByRole("tab", { name: "Settings" }),
 		).not.toBeInTheDocument();
