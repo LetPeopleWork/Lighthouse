@@ -16,6 +16,12 @@ export default defineConfig({
 		coverage: {
 			reporter: ["text", "lcov"],
 		},
+		exclude: [
+			"**/node_modules/**",
+			"**/dist/**",
+			"**/.stryker-tmp/**",
+			"**/StrykerOutput/**",
+		],
 		reporters: [
 			"default",
 			["vitest-sonar-reporter", { outputFile: "sonar-report.xml" }],

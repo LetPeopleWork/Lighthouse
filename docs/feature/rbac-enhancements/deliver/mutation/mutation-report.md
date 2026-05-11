@@ -103,7 +103,9 @@ Not excluded from the report because the suite of "equivalent" mutants is small 
 
 ### 2.1 Status
 
-**INCOMPLETE — time budget exceeded due to repeated Node heap exhaustion.**
+**RESOLVED 2026-05-11 — infrastructure fix landed in follow-up.** See `## 2.4 Resolution (2026-05-11)` below. The history of failing attempts is preserved here for context.
+
+**Original status (2026-05-10): INCOMPLETE — time budget exceeded due to repeated Node heap exhaustion.**
 
 Five Stryker.JS runs were attempted with progressive downscoping:
 
@@ -134,7 +136,37 @@ These give a future contributor everything needed to retry the frontend mutation
 
 ### 2.3 Files left untested by mutation
 
-All 10 frontend files listed in the task scope. High-value subset documented above; gating-only files (`Settings.tsx`, `SystemSettingsTab.tsx`, `OverviewDashboard.tsx`, `TeamDetail.tsx`, `PortfolioDetail.tsx`, `PortfolioDeliveryView.tsx`, `DeliverySection.tsx`) are shallow conditional renders driven by the `useRbac()` hook — their behavioural surface is small enough that conventional unit tests already cover the gating decisions. The two highest-value files (`ScopedGroupMappingManager.tsx`, `RbacService.ts`) remain INCOMPLETE.
+All 10 frontend files listed in the task scope. High-value subset documented above; gating-only files (`Settings.tsx`, `SystemSettingsTab.tsx`, `OverviewDashboard.tsx`, `TeamDetail.tsx`, `PortfolioDetail.tsx`, `PortfolioDeliveryView.tsx`, `DeliverySection.tsx`) are shallow conditional renders driven by the `useRbac()` hook — their behavioural surface is small enough that conventional unit tests already cover the gating decisions. The two highest-value files (`ScopedGroupMappingManager.tsx`, `RbacService.ts`) were INCOMPLETE in this run — see § 2.4 for resolution.
+
+### 2.4 Resolution (2026-05-11)
+
+The infrastructure was fixed while delivering the follow-up feature `rbac-ui-completeness`. The OOM root cause was misdiagnosed in the 2026-05-10 attempts: the kill was **not** in the vitest worker loading the React/MUI graph, it was in Stryker's **main process** during `ProjectReader` (sandbox tree enumeration).
+
+**Actual cause**: Stryker copies the project tree into a sandbox per run. Its default-ignored list (`node_modules`, `.git`, `.stryker-tmp`, `reports/`, `*.tsbuildinfo`, `stryker.log`) does **not** include this project's `src-tauri/` directory (~25 GB of Rust build artifacts) or `publish/` (~1 GB of Vite output). Stryker exhausted heap simply walking those subtrees.
+
+**Fix** (committed in the same change-set as `rbac-ui-completeness`):
+
+1. `stryker.config.mjs`:
+   - Added `ignorePatterns: ["src-tauri", "publish", "dist", "coverage", "playwright-report", "test-results", "sonar-report.xml", "StrykerOutput"]`.
+   - Switched `testRunner` from `vitest` (`@stryker-mutator/vitest-runner`) to the built-in `command` runner: `pnpm exec vitest run --config vitest.stryker.config.ts --reporter=dot`. The vitest-runner plugin's dry-run coverage instrumentation independently OOMs even with a tight include list; the command runner sidesteps it entirely.
+   - `coverageAnalysis: "off"` (command runner only supports `all` or `off`). Trade-off: no per-test coverage filtering; runs the included tests for every mutant. With a 2-3 test-file include list the cost is bounded.
+2. `vitest.config.ts`: added `exclude: ["**/.stryker-tmp/**", "**/StrykerOutput/**", ...]` so default `pnpm test` discovery doesn't pick up stale Stryker sandboxes.
+3. `vitest.stryker.config.ts`: extended `include` to cover all current mutation targets across both features.
+
+**Verified results with the fixed infrastructure**:
+
+| File | Total mutants | Killed | Survived | Kill rate | Runtime |
+|---|---:|---:|---:|---:|---:|
+| `src/services/Api/RbacService.ts` | 56 | 53 | 3 | 94.64% | ~2 min |
+| `src/components/Common/Authorization/ScopedGroupMappingManager.tsx` | 83 | 25 | 58 | 30.12% | ~5 min |
+| `src/hooks/useRbacGate.ts` (rbac-ui-completeness target) | 9 | 9 | 0 | 100.00% | 34 s |
+
+**Verdicts**:
+- **`RbacService.ts`**: **PASS** (94.64% > 80% threshold). The 3 survivors are minor — empty string defaults and `await` removals on calls whose return values aren't asserted by the existing tests. Logged as low-priority test polish.
+- **`ScopedGroupMappingManager.tsx`**: **FAIL** (30.12% < 70% threshold). This is a real test-quality finding — the component's MUI render is exercised but the role-selection and validation branches are not asserted comprehensively. Tracked as a new follow-up: tighten `ScopedGroupMappingManager.test.tsx` to assert against the actual emitted requests (mock the scoped fetcher and assert payload, not just visible state). Estimated 1-2 hours of test work to push above 80%.
+- **`useRbacGate.ts`**: **PASS** (100%). See `docs/feature/rbac-ui-completeness/deliver/mutation/mutation-report.md` for the dedicated report.
+
+Run command: `pnpm exec stryker run stryker.config.mjs` from `Lighthouse.Frontend/`. No special `NODE_OPTIONS` required.
 
 ---
 

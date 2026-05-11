@@ -118,4 +118,18 @@ describe("useRbacGate", () => {
 
 		expect(result.current.isLoading).toBe(true);
 	});
+
+	it("systemAdmin requirement reads isSystemAdmin (not isTeamAdmin) — pins case body against switch-fallthrough mutants", async () => {
+		// PERMISSIVE_SUMMARY behaviour: when isRbacEnabled is false, every is*Admin
+		// returns true. We intentionally set isSystemAdmin to false here so the two
+		// outcomes diverge: the systemAdmin case must read isSystemAdmin (false), not
+		// fall through to isTeamAdmin which would short-circuit to true on !isRbacEnabled.
+		mockGetAuthorizationSummary.mockResolvedValue(
+			makeSummary({ isRbacEnabled: false, isSystemAdmin: false }),
+		);
+		const { result } = renderHook(() => useRbacGate({ kind: "systemAdmin" }));
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+		expect(result.current.allowed).toBe(false);
+	});
 });

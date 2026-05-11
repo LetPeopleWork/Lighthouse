@@ -79,7 +79,7 @@ We attempted a focused run against just `useRbacGate.ts` (15 LOC, 9 mutants, 7 t
 ## Issues encountered
 
 - **DES log path resolution under crafter cwd switches**: Step 01-01's crafter ran from `Lighthouse.EndToEndTests/` for part of the work; the DES stop-hook resolved `docs/...` relative to that cwd and looked for the log at the wrong path. Crafter created a symlink to bridge the two paths. Take-away: future crafters should be told to operate from the repo root, or pass absolute paths to `des-log-phase`.
-- **Stale Stryker sandboxes**: ~120 GB of `.stryker-tmp/sandbox-*` from a May 10 mutation run polluted `pnpm test` discovery. Cleaned up. Recommend adding `.stryker-tmp/**` to the project's `.gitignore` and to `vitest.config.ts` exclude list as a follow-up.
+- **Stale Stryker sandboxes**: ~120 GB of `.stryker-tmp/sandbox-*` from a May 10 mutation run polluted `pnpm test` discovery. Cleaned up. **Resolved** in this same session: `vitest.config.ts` now excludes `**/.stryker-tmp/**` and `**/StrykerOutput/**` so default test discovery never picks them up again. `.gitignore` already covered the directories.
 - **CI binding fix mid-feature**: Two out-of-band commits (`5cf1cd49`, `ce068dc3`) landed during this feature to fix the `Authorization__EmergencySystemAdminSubjects` env-var binding in `ci_verifyauth.yml` (from JSON array to indexed `__0` syntax). Not part of this feature's 7 commits; addressed a CI bug from earlier the same day.
 
 ## Migrated artifacts
@@ -97,6 +97,6 @@ Per nw-finalize convention, `docs/feature/rbac-ui-completeness/` stays. Wave mat
 - [x] Adversarial review approved
 - [x] CI workflow unchanged (frontend-only feature reuses existing `@rbac` pipeline)
 - [x] Evolution doc written
-- [ ] Mutation testing per `per-feature` strategy — **deferred**: inherits the same Stryker.JS infrastructure follow-up tracked in `rbac-enhancements`. Manual mutation analysis projects 100% kill rate on the only non-trivial new file.
+- [x] Mutation testing per `per-feature` strategy — **PASS at 100% (9/9 mutants killed)** on `useRbacGate.ts`. The Stryker.JS infrastructure was fixed in a follow-up commit during this same session — root cause was Stryker's main-process project read OOMing on the 25 GB `src-tauri/` directory, not the React/MUI module graph as previously diagnosed. Fix: `ignorePatterns` config + switch from `vitest-runner` plugin to built-in `command` runner. See `docs/feature/rbac-ui-completeness/deliver/mutation/mutation-report.md`.
 - [ ] Playwright `@rbac` E2E suite run end-to-end — **deferred to CI**: local Docker Keycloak stack was unhealthy; CI `ci_verifyauth.yml` is the verification path.
 - [ ] PR opened against main — **N/A**: feature developed directly on main with signed commits.

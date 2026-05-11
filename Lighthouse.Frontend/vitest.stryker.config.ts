@@ -19,6 +19,7 @@ export default defineConfig({
 		include: [
 			"src/services/Api/RbacService.test.ts",
 			"src/components/Common/Authorization/ScopedGroupMappingManager.test.tsx",
+			"src/hooks/useRbacGate.test.ts",
 		],
 		server: {
 			deps: {
