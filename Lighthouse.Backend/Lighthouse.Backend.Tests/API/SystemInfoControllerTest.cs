@@ -94,6 +94,38 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void GetSystemInfo_PropagatesAuthPostureFieldsFromService()
+        {
+            var expectedSystemInfo = new SystemInfo(
+                Os: "Linux 5.15.0",
+                Runtime: ".NET 10.0.0",
+                Architecture: "X64",
+                ProcessId: 12345,
+                DatabaseProvider: "sqlite",
+                DatabaseConnection: "/data/lighthouse.db",
+                LogPath: "/var/log/lighthouse",
+                IsAuthenticationEnabled: true,
+                IsAuthorizationEnabled: true,
+                EmergencyAdminSubjects: new[] { "alice@example.com", "bob@example.com" });
+
+            systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetSystemInfo();
+
+            var okResult = response.Result as OkObjectResult;
+            var actual = okResult!.Value as SystemInfo;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(actual!.IsAuthenticationEnabled, Is.True);
+                Assert.That(actual.IsAuthorizationEnabled, Is.True);
+                Assert.That(actual.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com", "bob@example.com" }));
+            }
+        }
+
         private SystemInfoController CreateSubject()
         {
             return new SystemInfoController(systemInfoServiceMock.Object, refreshLogServiceMock.Object);

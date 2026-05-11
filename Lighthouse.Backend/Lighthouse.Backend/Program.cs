@@ -43,6 +43,7 @@ using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Standalone;
+using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API.Swagger;
 
 namespace Lighthouse.Backend
@@ -645,6 +646,8 @@ namespace Lighthouse.Backend
             {
                 info.Add(Line("📝", "Logs", logFilePath));
             }
+
+            info.AddRange(AuthPostureBanner.BuildAuthPostureLines(builder.Configuration));
 
             info.Add("");
 
