@@ -339,6 +339,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     && await CanReadPortfolioAsync(principal, scopeId.Value, cancellationToken),
                 RbacGuardRequirement.PortfolioWrite => scopeId.HasValue
                     && await CanWritePortfolioAsync(principal, scopeId.Value, cancellationToken),
+                RbacGuardRequirement.CanCreateTeam => await CanCreateTeamAsync(principal, cancellationToken),
+                RbacGuardRequirement.CanCreatePortfolio => await CanCreatePortfolioAsync(principal, cancellationToken),
                 _ => false,
             };
         }
@@ -1157,5 +1159,64 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         private readonly record struct PermissionRule(PermissionScopeType ScopeType, int? ScopeId, UserRole Role);
 
         private readonly record struct PermissionScopeKey(PermissionScopeType ScopeType, int? ScopeId);
+
+        public async Task<RbacOperationResult> GrantCreatorTeamAdminAsync(
+            int userProfileId,
+            int teamId,
+            CancellationToken cancellationToken = default)
+        {
+            return await GrantScopedAdminAsync(
+                userProfileId,
+                PermissionScopeType.Team,
+                teamId,
+                UserRole.TeamAdmin,
+                cancellationToken);
+        }
+
+        public async Task<RbacOperationResult> GrantCreatorPortfolioAdminAsync(
+            int userProfileId,
+            int portfolioId,
+            CancellationToken cancellationToken = default)
+        {
+            return await GrantScopedAdminAsync(
+                userProfileId,
+                PermissionScopeType.Portfolio,
+                portfolioId,
+                UserRole.PortfolioAdmin,
+                cancellationToken);
+        }
+
+        private async Task<RbacOperationResult> GrantScopedAdminAsync(
+            int userProfileId,
+            PermissionScopeType scopeType,
+            int scopeId,
+            UserRole role,
+            CancellationToken cancellationToken)
+        {
+            var existingPermission = await context.UserPermissions
+                .AnyAsync(
+                    p => p.UserProfileId == userProfileId
+                        && p.ScopeType == scopeType
+                        && p.ScopeId == scopeId
+                        && p.Role == role,
+                    cancellationToken);
+
+            if (existingPermission)
+            {
+                return RbacOperationResult.Success();
+            }
+
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = userProfileId,
+                ScopeType = scopeType,
+                ScopeId = scopeId,
+                Role = role,
+                GrantedAt = DateTime.UtcNow,
+            });
+
+            await context.SaveChangesAsync(cancellationToken);
+            return RbacOperationResult.Success();
+        }
     }
 }

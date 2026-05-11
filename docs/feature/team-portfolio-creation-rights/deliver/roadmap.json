@@ -1,0 +1,206 @@
+{
+  "roadmap": {
+    "project_id": "team-portfolio-creation-rights",
+    "created_at": "2026-05-11",
+    "total_steps": 4,
+    "goal": "Align the team/portfolio creation HTTP gate and frontend gating with the inferred-rights model already implemented in RbacAdministrationService.CanCreateTeamAsync / CanCreatePortfolioAsync, and auto-grant the creator scoped-admin rights on the newly created entity.",
+    "wave": "DELIVER",
+    "paradigm": "object-oriented"
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-05-11",
+    "notes": "Reviewer flagged 1 BLOCKER (Gherkin/table count mismatch \u2014 resolved by feature-delta edit splitting 14 Gherkin scenarios from 4 implementation-invariant tests), 2 HIGH (step-01-01 sizing: 14 tests in one step justified because they all turn from RED to GREEN on the same wiring fix \u2014 single root cause, single TDD cycle; 01-02\u219201-03 serial dependency: kept serial because the frontend should not trust a gate the backend has not yet been updated to enforce \u2014 deployment-order safety), and 1 LOW (01-04 test_file confusion \u2014 resolved by replacing test_file with a gate descriptor). Approval is conditional on these clarifications and the documented decisions stand for delivery.",
+    "blocker_findings_addressed": [
+      "Feature-delta scenario table reconciled with .feature file: 14 Gherkin + 4 invariant tests; row IDs renumbered (1-14 Gherkin, TM-1 to TM-4 invariants)."
+    ],
+    "accepted_high_findings": [
+      "Step 01-01 sizing (14 tests in one cycle): kept as one step. Cohesion rationale: every RED test in CreateRightsAcceptanceTest.cs fails today for the same root cause (unimplemented switch arm OR throwing scaffold). A single coherent implementation flips all 14 to GREEN. Splitting would create an artificial RED-GREEN cycle whose first half cannot be exercised without the second.",
+      "Step 01-02\u219201-03 hard dependency: kept hard. Rationale: 01-03 changes the frontend to trust the new HTTP gate. Shipping 01-03 before 01-02 means the UI shows the Add button to Team Admins but the backend still returns 403 \u2014 broken UX in a release window."
+    ],
+    "low_findings_addressed": [
+      "01-04 test_file replaced with a gate descriptor; the actual gate is the full repository test suite remaining green."
+    ]
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/team-portfolio-creation-rights/feature-delta.md",
+    "gherkin": "docs/feature/team-portfolio-creation-rights/distill/team-portfolio-creation-rights.feature",
+    "red_tests": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/CreateRightsAcceptanceTest.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs"
+    ]
+  },
+  "out_of_scope": [
+    "Full HTTP-level integration tests against the real RbacGuardAttribute pipeline. The existing TestWebApplicationFactory runs with Authentication.Enabled = false, which short-circuits IsRbacEnforcedAsync. Building a controllable test auth handler is documented in feature-delta Pre-requisites row 1 and is deferred to a follow-up feature.",
+    "Option B (dedicated TeamCreator / PortfolioCreator system roles). Tracked as an open question in feature-delta. Not blocking this delivery."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Inferred-rights creation flow",
+      "description": "Wire the new RbacGuardRequirement values through the service, the HTTP controllers, and the frontend gating; auto-grant creator-admin on successful creation. Each step transitions a specific group of RED tests to GREEN.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Service-layer inferred-rights and auto-admin grant (walking skeleton)",
+          "description": "Replace the scaffold throws with real implementations of GrantCreatorTeamAdminAsync and GrantCreatorPortfolioAdminAsync. Add two switch arms in CanSatisfyRequirementAsync delegating to the existing CanCreateTeamAsync / CanCreatePortfolioAsync methods. This step makes the walking skeleton scenario 'Team Admin creates a team and is recorded as its administrator' reachable end-to-end at the service level: inferred-rights guard evaluation plus observable UserPermission persistence in a real EF in-memory DbContext.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/CreateRightsAcceptanceTest.cs",
+          "scenario_name": "Team Admin creates a team and is recorded as its administrator (walking skeleton) \u2014 covered by RbacGuard_CanCreateTeam_AdmitsTeamAdmin and GrantCreatorTeamAdminAsync_AfterTeamCreation_RecordsCreatorAsTeamAdminOfNewTeam",
+          "red_to_green_tests": [
+            "RbacGuard_CanCreateTeam_AdmitsTeamAdmin",
+            "RbacGuard_CanCreatePortfolio_AdmitsPortfolioAdmin",
+            "RbacGuard_CanCreateTeam_AdmitsSystemAdmin",
+            "RbacGuard_CanCreatePortfolio_AdmitsSystemAdmin",
+            "RbacGuard_CanCreateTeam_RefusesViewer",
+            "RbacGuard_CanCreatePortfolio_RefusesViewer",
+            "RbacGuard_CanCreateTeam_AdmitsGroupDerivedTeamAdmin",
+            "RbacGuard_CanCreatePortfolio_AdmitsGroupDerivedPortfolioAdmin",
+            "GrantCreatorTeamAdminAsync_AfterTeamCreation_RecordsCreatorAsTeamAdminOfNewTeam",
+            "GrantCreatorPortfolioAdminAsync_AfterPortfolioCreation_RecordsCreatorAsPortfolioAdminOfNewPortfolio",
+            "GrantCreatorTeamAdminAsync_PreservesExistingTeamAdminScopes",
+            "GrantCreatorPortfolioAdminAsync_PreservesExistingPortfolioAdminScopes",
+            "GrantCreatorTeamAdminAsync_IsIdempotent",
+            "GrantCreatorPortfolioAdminAsync_IsIdempotent"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs"
+          ],
+          "criteria": [
+            "CanSatisfyRequirementAsync admits any user who holds at least one TeamAdmin role (direct or group-derived) when the requirement is CanCreateTeam.",
+            "CanSatisfyRequirementAsync admits any user who holds at least one PortfolioAdmin role (direct or group-derived) when the requirement is CanCreatePortfolio.",
+            "CanSatisfyRequirementAsync admits System Admins for both new requirement values regardless of scoped role state.",
+            "CanSatisfyRequirementAsync refuses callers who hold only Viewer roles for both new requirement values.",
+            "GrantCreatorTeamAdminAsync persists exactly one UserPermission row (Role=TeamAdmin, ScopeType=Team, ScopeId=teamId) for the given userProfileId.",
+            "GrantCreatorPortfolioAdminAsync persists exactly one UserPermission row (Role=PortfolioAdmin, ScopeType=Portfolio, ScopeId=portfolioId) for the given userProfileId.",
+            "Both grant methods are idempotent: calling them twice with identical arguments yields exactly one UserPermission row, not two.",
+            "Both grant methods preserve any pre-existing scoped admin permissions the creator already held; only the new (entity, role) tuple is added.",
+            "All 14 tests in CreateRightsAcceptanceTest.cs pass; the existing RbacAdministrationServiceTest suite remains green.",
+            "The // SCAFFOLD (feature: team-portfolio-creation-rights) and __SCAFFOLD__ markers are removed from the production source \u2014 grep returns zero matches under Lighthouse.Backend/."
+          ],
+          "out_of_scope": [
+            "Controller attribute swap (handled in 01-02).",
+            "Auto-admin wiring from the controllers into these grant methods (handled in 01-02).",
+            "Frontend gating change (handled in 01-03)."
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Controller wiring: attribute swap, auto-admin call, obsolete-pin cleanup",
+          "description": "Swap the [RbacGuard] requirement on the four create/validate endpoints from SystemAdmin to the new CanCreate* values. Wire the auto-admin grant calls into TeamsController.CreateTeam and PortfoliosController.CreatePortfolio after a successful entity persistence, gated on IsRbacEnforcedAsync to avoid polluting permission rows in disabled-auth mode. Delete the two now-obsolete pin tests that asserted the previous SystemAdmin gate on these endpoints.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs",
+          "scenario_name": "CreateTeam controller uses the CanCreateTeam requirement (and symmetric scenarios for CreatePortfolio, ValidateTeamSettings, ValidatePortfolioSettings)",
+          "red_to_green_tests": [
+            "CreateTeam_IsGuardedOnCanCreateTeamRequirement",
+            "CreatePortfolio_IsGuardedOnCanCreatePortfolioRequirement",
+            "ValidateTeamSettings_IsGuardedOnCanCreateTeamRequirement",
+            "ValidatePortfolioSettings_IsGuardedOnCanCreatePortfolioRequirement"
+          ],
+          "tests_to_delete": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs::CreateTeam_HasSystemAdminRbacGuardAttribute (lines ~530-541 \u2014 pin assumed the old SystemAdmin gate)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs::CreatePortfolio_HasSystemAdminRbacGuardAttribute (lines ~348-359 \u2014 pin assumed the old SystemAdmin gate)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs"
+          ],
+          "criteria": [
+            "TeamsController.CreateTeam carries [RbacGuard(RbacGuardRequirement.CanCreateTeam)] (was SystemAdmin).",
+            "TeamsController.ValidateTeamSettings carries [RbacGuard(RbacGuardRequirement.CanCreateTeam)] (was SystemAdmin).",
+            "PortfoliosController.CreatePortfolio carries [RbacGuard(RbacGuardRequirement.CanCreatePortfolio)] (was SystemAdmin).",
+            "PortfoliosController.ValidatePortfolioSettings carries [RbacGuard(RbacGuardRequirement.CanCreatePortfolio)] (was SystemAdmin).",
+            "On successful CreateTeam, the controller resolves the current user via ICurrentUserProfileService.GetOrCreateFromPrincipalAsync and calls IRbacAdministrationService.GrantCreatorTeamAdminAsync with the newly created teamId, but only when IsRbacEnforcedAsync returns true.",
+            "On successful CreatePortfolio, the controller invokes the symmetric GrantCreatorPortfolioAdminAsync call under the same guard.",
+            "The two obsolete pin tests are deleted (not modified) \u2014 they assert behaviour that this feature deliberately changes; modifying them would dilute their original intent.",
+            "All four tests in CreateRightsControllerGuardTest.cs pass.",
+            "The existing TeamsControllerTest and PortfoliosControllerTest suites remain green aside from the two deletions called out above."
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "out_of_scope": [
+            "Full HTTP-pipeline integration tests with a controllable auth handler (documented as a follow-up in feature-delta Pre-requisites).",
+            "Frontend gating change (handled in 01-03)."
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Frontend gating: route Add buttons through canCreateTeam / canCreatePortfolio",
+          "description": "In OverviewDashboard.tsx, replace the outer rbac.isSystemAdmin visibility guards on the Add Team and Add Portfolio buttons with rbac.canCreateTeam and rbac.canCreatePortfolio respectively. Keep the inner license-driven disabled logic. The 'connections required' precondition continues to apply only to System Admins (who own connection management), so non-System-Admin creators are not blocked by the absence of a connection they cannot configure. Update the OverviewDashboard tests that asserted System-Admin-only visibility to assert role-derived visibility instead, and roll back the rbac-ui-completeness D8 tightening.",
+          "test_file": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+          "scenario_name": "Add Team / Add Portfolio buttons visible to non-System-Admin creators (Pre-requisite row 2 + D8 rollback in feature-delta)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx"
+          ],
+          "criteria": [
+            "The Add Team button renders when rbac.canCreateTeam is true, regardless of rbac.isSystemAdmin.",
+            "The Add Portfolio button renders when rbac.canCreatePortfolio is true, regardless of rbac.isSystemAdmin.",
+            "The connections-required precondition on the Add Team button applies only when the current user is a System Admin; a Team Admin without configured connections can still see and use the button.",
+            "License-driven disabled behaviour (canCreateTeam / canCreatePortfolio from useLicenseRestrictions) is preserved unchanged.",
+            "Existing OverviewDashboard tests that asserted 'System-Admin-only visibility' for the Add buttons are updated to assert the new role-derived visibility contract \u2014 not deleted en masse, but rewritten in place so the test still covers the intent (gating by capability, not by SystemAdmin).",
+            "pnpm test, pnpm build (which runs tsc -b and Biome via the prebuild hook) all pass with zero warnings.",
+            "No new SonarQube issues introduced (cognitive complexity, duplication, any-in-TS, etc)."
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "out_of_scope": [
+            "Changes to useRbac() \u2014 the hook already exposes canCreateTeam / canCreatePortfolio derived from /my-summary; no signature change needed.",
+            "Changes to the OnboardingStepper visibility \u2014 it remains a System-Admin-only onboarding aid."
+          ]
+        },
+        {
+          "id": "01-04",
+          "name": "Back-propagate annotations to superseded feature deltas",
+          "description": "Doc-only step. Annotate the prior feature deltas whose decisions this feature overrides or reverts, so the project's wave history stays coherent and future readers can trace the chain.",
+          "scenario_name": "No new behavioural scenario \u2014 gate is full-suite green after doc-only edits",
+          "files_to_modify": [
+            "docs/feature/rbac-enhancements/feature-delta.md",
+            "docs/feature/rbac-ui-completeness/feature-delta.md"
+          ],
+          "criteria": [
+            "rbac-enhancements/feature-delta.md WD-03 row carries an in-place annotation 'Superseded 2026-05-11 by team-portfolio-creation-rights \u2014 inferred-rights model in RbacAdministrationService.CanCreateTeamAsync / CanCreatePortfolioAsync is the service-level truth; this feature aligns the HTTP gate and frontend gating with it.'",
+            "rbac-enhancements/feature-delta.md Q4 row carries the symmetric annotation.",
+            "rbac-ui-completeness/feature-delta.md D8 row carries the annotation 'Reverted 2026-05-11 by team-portfolio-creation-rights \u2014 frontend gating now uses rbac.canCreateTeam / rbac.canCreatePortfolio directly, not AND-with-isSystemAdmin.'",
+            "No production source files touched; the full pnpm test + dotnet test suites remain green.",
+            "Annotations are inline next to the affected rows (not appended in a separate section) so future readers see them at the point of decision."
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "out_of_scope": [
+            "Restructuring or summarising the superseded feature deltas \u2014 only the targeted rows get an annotation."
+          ],
+          "gate": "full repository test suite remains green (dotnet test + pnpm test)"
+        }
+      ]
+    }
+  ],
+  "walking_skeleton": {
+    "scenario": "Team Admin creates a team and is recorded as its administrator",
+    "covered_by_step": "01-01",
+    "coverage_estimate": "100% of the @walking_skeleton scenario at the service level. The HTTP-pipeline portion of the WS is deliberately deferred (feature-delta Pre-requisites row 1) and remains a documented follow-up; the service-level coverage proves the inferred-rights guard evaluation and the auto-admin persistence \u2014 the two behaviours the bug report names directly."
+  },
+  "scaffold_removal_check": {
+    "command": "grep -rn '__SCAFFOLD__\\|SCAFFOLD (feature: team-portfolio-creation-rights)' Lighthouse.Backend/",
+    "expected_after_01_01": "zero matches",
+    "expected_after_01_02": "zero matches (controller wiring does not add scaffolds)"
+  },
+  "quality_gates": {
+    "backend": [
+      "dotnet build with zero warnings (TreatWarningsAsErrors)",
+      "dotnet test \u2014 all xUnit/NUnit suites green, including CreateRightsAcceptanceTest and CreateRightsControllerGuardTest"
+    ],
+    "frontend": [
+      "pnpm test \u2014 all Vitest suites green",
+      "pnpm build \u2014 tsc -b plus vite build complete with zero errors and zero warnings (Biome runs as prebuild)"
+    ],
+    "sonarqube": [
+      "No new issues introduced (bugs, vulnerabilities, code smells, security hotspots)"
+    ]
+  }
+}
