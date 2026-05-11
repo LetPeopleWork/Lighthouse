@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -22,7 +23,8 @@ namespace Lighthouse.Backend.API
         IPortfolioUpdater portfolioUpdater,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        ICurrentUserProfileService currentUserProfileService)
         : ControllerBase
     {
         [HttpGet]
@@ -69,7 +71,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckPortfolioConstraint = true, PortfolioLimitOverride = 0)]
-        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [RbacGuard(RbacGuardRequirement.CanCreatePortfolio)]
         public async Task<ActionResult<PortfolioSettingDto>> CreatePortfolio(PortfolioSettingDto portfolioSetting, CancellationToken cancellationToken = default)
         {
             var baselineValidation = BaselineValidationService.Validate(
@@ -96,13 +98,22 @@ namespace Lighthouse.Backend.API
             portfolioRepository.Add(newPortfolio);
             await portfolioRepository.Save();
 
+            if (await rbacAdministrationService.IsRbacEnforcedAsync(cancellationToken))
+            {
+                var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
+                if (currentUser is not null)
+                {
+                    await rbacAdministrationService.GrantCreatorPortfolioAdminAsync(currentUser.Id, newPortfolio.Id, cancellationToken);
+                }
+            }
+
             var portfolioSettingDto = new PortfolioSettingDto(newPortfolio);
             return Ok(portfolioSettingDto);
         }
 
         [HttpPost("validate")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
-        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [RbacGuard(RbacGuardRequirement.CanCreatePortfolio)]
         public async Task<ActionResult<object>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto, CancellationToken cancellationToken = default)
         {
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(portfolioSettingDto.WorkTrackingSystemConnectionId);

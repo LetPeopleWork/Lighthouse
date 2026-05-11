@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -26,7 +27,8 @@ namespace Lighthouse.Backend.API
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         ILicenseService licenseService,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        ICurrentUserProfileService currentUserProfileService)
         : ControllerBase
     {
         [HttpGet]
@@ -80,7 +82,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost]
         [LicenseGuard(CheckTeamConstraint = true, TeamLimitOverride = 2)]
-        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [RbacGuard(RbacGuardRequirement.CanCreateTeam)]
         public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting, CancellationToken cancellationToken = default)
         {
             var baselineValidation = BaselineValidationService.Validate(
@@ -124,13 +126,22 @@ namespace Lighthouse.Backend.API
             teamRepository.Add(newTeam);
             await teamRepository.Save();
 
+            if (await rbacAdministrationService.IsRbacEnforcedAsync(cancellationToken))
+            {
+                var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
+                if (currentUser is not null)
+                {
+                    await rbacAdministrationService.GrantCreatorTeamAdminAsync(currentUser.Id, newTeam.Id, cancellationToken);
+                }
+            }
+
             var teamSettingDto = new TeamSettingDto(newTeam);
             return Ok(teamSettingDto);
         }
 
         [HttpPost("validate")]
         [LicenseGuard(CheckTeamConstraint = true)]
-        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [RbacGuard(RbacGuardRequirement.CanCreateTeam)]
         public async Task<ActionResult<object>> ValidateTeamSettings(TeamSettingDto teamSettingDto, CancellationToken cancellationToken = default)
         {
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);
