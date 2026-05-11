@@ -296,8 +296,6 @@ describe("RbacService", () => {
 
 		await subject.deleteUser(17);
 
-		expect(mockedAxios.delete).toHaveBeenCalledWith(
-			"/authorization/users/17",
-		);
+		expect(mockedAxios.delete).toHaveBeenCalledWith("/authorization/users/17");
 	});
 });

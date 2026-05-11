@@ -141,6 +141,25 @@ test.describe("@rbac E2E", () => {
 				).toBeVisible();
 			});
 
+			await test.step(
+				"load 'When Will This Be Done?' demo scenario so Team Zenith and Project Apollo exist for the scoped-role steps",
+				async () => {
+					// The rbac flow asserts against entities provisioned by demo scenario 0
+					// (Team Zenith, Project Apollo). On a fresh CI/local DB these do not
+					// exist, so load them via the demo API while the test user is the
+					// System Admin from Scenario 1.
+					const loadResponse = await overview.page.request.post(
+						"/api/latest/demo/scenarios/0/load",
+					);
+					expect(loadResponse.ok()).toBe(true);
+					await overview.lightHousePage.goToOverview();
+					await overview.search(TEAM_NAME);
+					await expect(
+						overview.page.getByRole("link", { name: TEAM_NAME, exact: true }),
+					).toBeVisible();
+				},
+			);
+
 			const scopedUsernames = [
 				TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
 				TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
@@ -350,22 +369,15 @@ test.describe("@rbac E2E", () => {
 					teamReaderTeamRow.getByRole("button", { name: "Delete" }),
 				).not.toBeVisible();
 
+				// Team Reader has no portfolio access — the Project Apollo row is
+				// filtered out by the backend (GetReadablePortfolioIdsAsync), so the
+				// entire row is absent rather than rendered with read-only icons.
 				await overview.search(PORTFOLIO_NAME);
-				const teamReaderPortfolioRow = overview.page
-					.getByRole("row")
-					.filter({ hasText: PORTFOLIO_NAME });
 				await expect(
-					teamReaderPortfolioRow.getByRole("link", { name: "Details" }),
-				).toBeVisible();
-				await expect(
-					teamReaderPortfolioRow.getByRole("link", { name: "Edit" }),
-				).not.toBeVisible();
-				await expect(
-					teamReaderPortfolioRow.getByRole("button", { name: "Clone" }),
-				).not.toBeVisible();
-				await expect(
-					teamReaderPortfolioRow.getByRole("button", { name: "Delete" }),
-				).not.toBeVisible();
+					overview.page
+						.getByRole("row")
+						.filter({ hasText: PORTFOLIO_NAME }),
+				).toHaveCount(0);
 
 				await overview.page.getByTestId("license-status-button").click();
 				await expect(
@@ -393,6 +405,7 @@ test.describe("@rbac E2E", () => {
 
 			await test.step("team reader (individual rights) sees Forecast but not Settings, Access, or write controls", async () => {
 				await overview.lightHousePage.goToOverview();
+				await overview.page.waitForURL("**/");
 				await overview.search(TEAM_NAME);
 				await overview.page
 					.getByRole("link", { name: TEAM_NAME, exact: true })
@@ -439,22 +452,14 @@ test.describe("@rbac E2E", () => {
 					teamAdminTeamRow.getByRole("button", { name: "Clone" }),
 				).not.toBeVisible();
 
+				// Team Admin has no portfolio access — Project Apollo row is filtered
+				// out by the backend; entire row absent.
 				await overview.search(PORTFOLIO_NAME);
-				const teamAdminPortfolioRow = overview.page
-					.getByRole("row")
-					.filter({ hasText: PORTFOLIO_NAME });
 				await expect(
-					teamAdminPortfolioRow.getByRole("link", { name: "Details" }),
-				).toBeVisible();
-				await expect(
-					teamAdminPortfolioRow.getByRole("link", { name: "Edit" }),
-				).not.toBeVisible();
-				await expect(
-					teamAdminPortfolioRow.getByRole("button", { name: "Clone" }),
-				).not.toBeVisible();
-				await expect(
-					teamAdminPortfolioRow.getByRole("button", { name: "Delete" }),
-				).not.toBeVisible();
+					overview.page
+						.getByRole("row")
+						.filter({ hasText: PORTFOLIO_NAME }),
+				).toHaveCount(0);
 
 				await overview.search(TEAM_NAME);
 				await overview.page
@@ -530,22 +535,14 @@ test.describe("@rbac E2E", () => {
 					portfolioAdminPortfolioRow.getByRole("button", { name: "Clone" }),
 				).not.toBeVisible();
 
+				// Portfolio Admin has no team access — Team Zenith row is filtered
+				// out by the backend (GetReadableTeamIdsAsync); entire row absent.
 				await overview.search(TEAM_NAME);
-				const portfolioAdminTeamRow = overview.page
-					.getByRole("row")
-					.filter({ hasText: TEAM_NAME });
 				await expect(
-					portfolioAdminTeamRow.getByRole("link", { name: "Details" }),
-				).toBeVisible();
-				await expect(
-					portfolioAdminTeamRow.getByRole("link", { name: "Edit" }),
-				).not.toBeVisible();
-				await expect(
-					portfolioAdminTeamRow.getByRole("button", { name: "Clone" }),
-				).not.toBeVisible();
-				await expect(
-					portfolioAdminTeamRow.getByRole("button", { name: "Delete" }),
-				).not.toBeVisible();
+					overview.page
+						.getByRole("row")
+						.filter({ hasText: TEAM_NAME }),
+				).toHaveCount(0);
 
 				await overview.search(PORTFOLIO_NAME);
 				await overview.page
@@ -800,6 +797,15 @@ test.describe("@rbac E2E", () => {
 				TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
 				TestConfig.AUTH_TEST_USER_PASSWORD,
 			);
+
+			// Wait for the SPA to be fully ready post-OIDC-callback so the auth cookie
+			// is established before the direct page.goto navigation. Without this wait,
+			// the goto can race the cookie write and hit the backend FallbackPolicy
+			// challenge (redirect loop to /Account/Login).
+			await overview.page
+				.getByRole("link", { name: "Overview" })
+				.first()
+				.waitFor({ state: "visible" });
 
 			await overview.page.goto("/teams/new");
 			await expect(

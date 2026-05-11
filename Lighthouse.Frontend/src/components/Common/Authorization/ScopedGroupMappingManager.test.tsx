@@ -41,8 +41,8 @@ interface RenderOptions {
 	allowedRoles?: ScopedRbacRole[];
 	mappings?: RbacGroupMapping[];
 	fetcherImpl?: () => Promise<RbacGroupMapping[]>;
-	onCreateMapping?: ReturnType<typeof vi.fn>;
-	onRemoveMapping?: ReturnType<typeof vi.fn>;
+	onCreateMapping?: (groupValue: string, role: ScopedRbacRole) => Promise<void>;
+	onRemoveMapping?: (mappingId: number) => Promise<void>;
 }
 
 const renderManager = (overrides: RenderOptions = {}) => {
@@ -100,7 +100,9 @@ describe("ScopedGroupMappingManager", () => {
 			renderManager({ fetcherImpl: () => pending });
 
 			expect(screen.getByTestId("scoped-groups-loading")).toBeInTheDocument();
-			expect(screen.queryByTestId("scoped-groups-table")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("scoped-groups-table"),
+			).not.toBeInTheDocument();
 
 			resolve(teamMappings);
 		});
@@ -122,7 +124,9 @@ describe("ScopedGroupMappingManager", () => {
 			await waitFor(() => {
 				expect(screen.getByTestId("scoped-groups-table")).toBeInTheDocument();
 			});
-			expect(screen.queryByTestId(/^scoped-group-row-/)).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId(/^scoped-group-row-/),
+			).not.toBeInTheDocument();
 		});
 	});
 
@@ -271,7 +275,10 @@ describe("ScopedGroupMappingManager", () => {
 			await waitFor(() => {
 				expect(onCreateMapping).toHaveBeenCalledTimes(1);
 			});
-			expect(onCreateMapping).toHaveBeenCalledWith("new-team-admins", "TeamAdmin");
+			expect(onCreateMapping).toHaveBeenCalledWith(
+				"new-team-admins",
+				"TeamAdmin",
+			);
 		});
 
 		it("clears the group value input after successful create", async () => {
@@ -424,8 +431,7 @@ describe("ScopedGroupMappingManager", () => {
 	describe("load error paths", () => {
 		it("displays the specific permission error message when fetcher rejects with ApiError 403", async () => {
 			renderManager({
-				fetcherImpl: () =>
-					Promise.reject(new ApiError(403, "Forbidden")),
+				fetcherImpl: () => Promise.reject(new ApiError(403, "Forbidden")),
 			});
 
 			const alert = await screen.findByRole("alert");
@@ -436,8 +442,7 @@ describe("ScopedGroupMappingManager", () => {
 
 		it("displays the generic load error when fetcher rejects with ApiError other than 403", async () => {
 			renderManager({
-				fetcherImpl: () =>
-					Promise.reject(new ApiError(500, "Server Error")),
+				fetcherImpl: () => Promise.reject(new ApiError(500, "Server Error")),
 			});
 
 			const alert = await screen.findByRole("alert");

@@ -201,6 +201,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									component={Link}
 									to={`/${api}/${row.id}`}
 									size={isTablet ? "small" : "medium"}
+									aria-label="Details"
 									sx={{
 										color: theme.palette.primary.main,
 										transition: "transform 0.2s",
@@ -216,6 +217,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 										component={Link}
 										to={`/${api}/edit/${row.id}`}
 										size={isTablet ? "small" : "medium"}
+										aria-label="Edit"
 										sx={{
 											color: theme.palette.primary.main,
 											transition: "transform 0.2s",
@@ -250,6 +252,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									<IconButton
 										onClick={() => onDelete(row)}
 										size={isTablet ? "small" : "medium"}
+										aria-label="Delete"
 										sx={{
 											color: theme.palette.primary.main,
 											transition: "transform 0.2s",
