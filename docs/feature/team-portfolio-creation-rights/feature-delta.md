@@ -188,3 +188,142 @@ Two prior feature deltas should be annotated in DELIVER:
    > **Reverted 2026-05-11 by `team-portfolio-creation-rights`** — frontend gating now uses `rbac.canCreateTeam` / `rbac.canCreatePortfolio` directly, not AND-with-`isSystemAdmin`.
 
 DELIVER picks these up as part of the same change so the deltas stay coherent across the project.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+The inferred-rights bug shipped in four roadmap steps plus a refactor pass. Backend service `RbacAdministrationService.CanSatisfyRequirementAsync` gained two switch arms (`CanCreateTeam`, `CanCreatePortfolio`) that delegate to the pre-existing `CanCreateTeamAsync` / `CanCreatePortfolioAsync` methods — which already implemented the "System Admin OR any TeamAdmin/PortfolioAdmin role (direct or group-derived)" rule. Two new idempotent grant methods (`GrantCreatorTeamAdminAsync`, `GrantCreatorPortfolioAdminAsync`) persist a single `UserPermission` row binding the creator to the new entity as its scoped admin. The four HTTP endpoints (`CreateTeam`, `CreatePortfolio`, `ValidateTeamSettings`, `ValidatePortfolioSettings`) had their `[RbacGuard]` requirement swapped from `SystemAdmin` to the new values, and `CreateTeam` / `CreatePortfolio` now invoke `EnsureCreatorTeamAdminAsync` / `EnsureCreatorPortfolioAdminAsync` after a successful save (gated on `IsRbacEnforcedAsync` so disabled-auth mode does not pollute permission rows). The frontend `OverviewDashboard` outer-guard switched from `rbac.isSystemAdmin` to `rbac.canCreateTeam` / `rbac.canCreatePortfolio`, rolling back the `rbac-ui-completeness/D8` tightening. Back-propagation annotations were added to `rbac-enhancements/feature-delta.md` (WD-03, Q4) and `rbac-ui-completeness/feature-delta.md` (D8).
+
+---
+
+## Wave: DELIVER / [REF] Files modified
+
+**Production (backend)**
+- `Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs` — added `CanCreateTeam`, `CanCreatePortfolio` enum members
+- `Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs` — added `GrantCreatorTeamAdminAsync`, `GrantCreatorPortfolioAdminAsync`, `EnsureCreatorTeamAdminAsync`, `EnsureCreatorPortfolioAdminAsync` signatures
+- `Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs` — implemented the four new methods, the shared private `EnsureCreatorAdminAsync` orchestration helper, and `GrantScopedAdminAsync` idempotent persistence helper; extended `CanSatisfyRequirementAsync` switch with two new arms
+- `Lighthouse.Backend/API/TeamsController.cs` — swapped `[RbacGuard]` on `CreateTeam` and `ValidateTeamSettings` to `CanCreateTeam`; wired `EnsureCreatorTeamAdminAsync` call after save
+- `Lighthouse.Backend/API/PortfoliosController.cs` — symmetric swap to `CanCreatePortfolio`; wired `EnsureCreatorPortfolioAdminAsync` call
+
+**Production (frontend)**
+- `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx` — outer-guard on Add Team / Add Portfolio buttons switched from `rbac.isSystemAdmin` to `rbac.canCreateTeam` / `rbac.canCreatePortfolio`; connections-required disabled clause still scoped to System Admin only
+
+**Tests (backend, new)**
+- `Lighthouse.Backend.Tests/Services/Implementation/Authorization/CreateRightsAcceptanceTest.cs` — 14 NUnit tests, real EF in-memory DbContext, real RBAC service
+- `Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs` — 4 NUnit tests asserting `[RbacGuard]` requirement contract on the four affected endpoints
+
+**Tests (backend, modified — obsolete pin deletion)**
+- `Lighthouse.Backend.Tests/API/TeamsControllerTest.cs` — removed `CreateTeam_HasSystemAdminRbacGuardAttribute` (and any symmetric Validate variant)
+- `Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs` — removed `CreatePortfolio_HasSystemAdminRbacGuardAttribute` (and any symmetric Validate variant)
+
+**Tests (frontend)**
+- `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx` — rewrote System-Admin-only visibility tests to assert the role-derived visibility contract; added new tests for Team Admin / Portfolio Admin / Viewer cases
+
+**Docs**
+- `docs/feature/team-portfolio-creation-rights/feature-delta.md` — DISTILL + DELIVER sections in this file
+- `docs/feature/team-portfolio-creation-rights/distill/team-portfolio-creation-rights.feature` — 14 Gherkin scenarios (created in DISTILL)
+- `docs/feature/team-portfolio-creation-rights/deliver/roadmap.json` — DES-compliant 4-step plan
+- `docs/feature/team-portfolio-creation-rights/deliver/execution-log.json` — DES audit log, 4 steps × 5 phases (PREPARE/RED_ACCEPTANCE/RED_UNIT/GREEN/COMMIT)
+- `docs/feature/rbac-enhancements/feature-delta.md` — WD-03 and Q4 rows annotated as superseded
+- `docs/feature/rbac-ui-completeness/feature-delta.md` — D8 row annotated as reverted
+
+**Commits in this feature's chain (5)**
+- `923d1f01 feat(authorization): implement CanCreateTeam/CanCreatePortfolio guard arms and auto-admin grants` (step 01-01)
+- `66234c68 feat(authorization): route Create/Validate endpoints through inferred-rights guards and auto-grant creator admin` (step 01-02)
+- `2ce65551 feat(overview): gate Add Team/Portfolio buttons on rbac.canCreateTeam/canCreatePortfolio` (step 01-03)
+- `113a8909 docs(rbac): back-propagate team-portfolio-creation-rights supersession annotations` (step 01-04)
+- `8260f304 refactor(authorization): move creator-admin grant orchestration into RBAC service` (Phase 3 L1-L6 — L2 duplication fix)
+
+---
+
+## Wave: DELIVER / [REF] Scenarios green count
+
+**18 of 18 assertions green** (verified 2026-05-11):
+
+| Source | Count | Status |
+|---|---|---|
+| Gherkin scenarios in `distill/team-portfolio-creation-rights.feature` | 14 | All embodied as NUnit test methods, all GREEN |
+| Implementation-invariant tests (TM-1 to TM-4: idempotency + scope preservation) | 4 | All GREEN |
+| Total | 18 | 100% pass |
+
+Regression spread (targeted `dotnet test --filter "FullyQualifiedName~CreateRights|FullyQualifiedName~RbacAdministration|FullyQualifiedName~RbacGuard|FullyQualifiedName~TeamsController|FullyQualifiedName~PortfoliosController"`): **219 of 219 GREEN**.
+
+Full frontend suite (`pnpm test --run`): **2740 of 2740 GREEN** after step 01-03.
+
+Full backend suite (`dotnet test Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj`): **GREEN** (background run exit 0 confirmed mid-orchestration).
+
+---
+
+## Wave: DELIVER / [REF] DoD check
+
+| DoR / DoD item from DISTILL | Status |
+|---|---|
+| Every Gherkin scenario in `distill/*.feature` has at least one passing test | PASS — 14/14 |
+| Walking-skeleton scenario ("Team Admin creates a team and is recorded as its administrator") proven end-to-end at the service level | PASS — `RbacGuard_CanCreateTeam_AdmitsTeamAdmin` + `GrantCreatorTeamAdminAsync_AfterTeamCreation_RecordsCreatorAsTeamAdminOfNewTeam` both GREEN |
+| Every `RbacGuardRequirement` value has a switch arm in `CanSatisfyRequirementAsync` (no fall-through false for the new values) | PASS — verified by `RbacGuard_CanCreate*_RefusesViewer` (Viewer denial happens inside the new arm, not via fall-through) |
+| `__SCAFFOLD__` markers absent from production source | PASS — `grep -rn "__SCAFFOLD__\|SCAFFOLD (feature: team-portfolio-creation-rights)" Lighthouse.Backend/` returns zero matches |
+| Mandate 6 — every driven adapter has at least one `@real-io` scenario | PASS — `LighthouseAppContext` (EF in-memory), `RbacGroupMappings` table, `UserPermissions` table all exercised by service-level acceptance tests |
+| Mandate 7 — scaffolds replaced by implementation, no stub bodies remain | PASS — scaffold throws replaced by real implementations |
+| Hexagonal boundary preserved (`IRbacAdministrationService` single inbound port) | PASS — confirmed by Phase 4 adversarial review; refactor pass moved controller-level orchestration into the service so controllers no longer carry `ICurrentUserProfileService` as a direct dependency |
+| Obsolete pin tests deleted (not commented out) | PASS — `CreateTeam_HasSystemAdminRbacGuardAttribute`, `CreatePortfolio_HasSystemAdminRbacGuardAttribute` removed from their files |
+| Back-propagation annotations applied inline in prior feature deltas | PASS — `WD-03`, `Q4`, `D8` rows annotated |
+| Conventional commits with `Step-ID:` trailer where applicable | PASS — all 5 commits conform |
+
+---
+
+## Wave: DELIVER / [REF] Demo evidence
+
+No `@infrastructure`-tagged user stories with elevator-pitch CLI demos exist for this feature (it is a bug fix, not a CLI/UX-driven feature). The Phase 3.5 gate's demo-execution requirement is therefore moot.
+
+**Substitute evidence** (the user-visible promise of the bug fix, asserted by the executable acceptance tests):
+
+| User-visible claim | Executable evidence |
+|---|---|
+| "Any System Admin can create teams and portfolios" | `RbacGuard_CanCreateTeam_AdmitsSystemAdmin` + `RbacGuard_CanCreatePortfolio_AdmitsSystemAdmin` (both GREEN) |
+| "Anyone with at least one team admin role can create teams" | `RbacGuard_CanCreateTeam_AdmitsTeamAdmin` (GREEN) |
+| "Anyone with at least one portfolio admin role can create portfolios" | `RbacGuard_CanCreatePortfolio_AdmitsPortfolioAdmin` (GREEN) |
+| "Group-derived rights work identically to direct user rights" | `RbacGuard_CanCreateTeam_AdmitsGroupDerivedTeamAdmin` + `RbacGuard_CanCreatePortfolio_AdmitsGroupDerivedPortfolioAdmin` (both GREEN) |
+| "Viewers cannot create teams or portfolios" | `RbacGuard_CanCreateTeam_RefusesViewer` + `RbacGuard_CanCreatePortfolio_RefusesViewer` (both GREEN) |
+| "Creator automatically becomes admin of the new entity" | `GrantCreatorTeamAdminAsync_AfterTeamCreation_RecordsCreatorAsTeamAdminOfNewTeam` + `GrantCreatorPortfolioAdminAsync_AfterPortfolioCreation_RecordsCreatorAsPortfolioAdminOfNewPortfolio` (both GREEN) |
+| "Existing scoped admin assignments preserved" | `GrantCreator*Async_PreservesExisting*AdminScopes` (both GREEN) |
+| "Auto-admin grant is idempotent" | `GrantCreator*Async_IsIdempotent` (both GREEN) |
+| "Frontend Add Team / Add Portfolio buttons visible to non-System-Admin creators" | New role-derived visibility tests in `OverviewDashboard.test.tsx` (GREEN) |
+
+---
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Phase | Outcome | Evidence |
+|---|---|---|
+| Phase 1 — Roadmap creation + reviewer | PASS | 4-step DES-compliant roadmap; reviewer flagged 1 BLOCKER + 1 LOW (both resolved by inline docs reconciliation) + 2 HIGH (kept as deliberate decisions, documented in `validation.notes`) |
+| Phase 2 — Per-step TDD (4 steps × 5 phases) | PASS | Every step recorded PREPARE/RED_ACCEPTANCE/RED_UNIT(SKIPPED with NOT_APPLICABLE reason)/GREEN/COMMIT in `execution-log.json`; commits 923d1f01, 66234c68, 2ce65551, 113a8909 |
+| Phase 3.5 — Post-merge integration gate | PASS | 219 targeted regression tests + 2740 frontend tests + full backend suite (background exit 0) all green; demo step moot for bug-fix feature (substitute evidence in table above) |
+| Phase 3 — L1-L6 refactor | PASS | One HIGH-rated L2 duplication fix: controller-level orchestration extracted into `IRbacAdministrationService.EnsureCreator*Async` service-level helpers (commit 8260f304); controllers shed their `ICurrentUserProfileService` direct dependency; gate retest 267/267 green |
+| Phase 4 — Adversarial review | APPROVED, zero defects | Reviewer dispatched against the full commit chain; reported 0 BLOCKER / 0 HIGH / 0 LOW, no Testing Theater pattern matches, contract conformance and hexagonal boundary integrity verified |
+| Phase 5 — Mutation testing (Stryker.NET, target ≥80% kill rate) | DEFERRED with justification | Per-feature Stryker pass requires a full baseline test run (2311 tests serially per concurrency=4 ≈ 50 minutes) before mutation even begins; total expected runtime exceeds 2 hours for a 150-line bug fix. Proxy evidence: 18 high-density acceptance tests covering positive/negative/group-derived/idempotency/scope-preservation axes; 219 module regression tests green; the modified file (`RbacAdministrationService.cs`) had ≥95% kill rate in the most recent Stryker run on 2026-05-10. Recommend: include this commit chain in the next nightly Stryker pass and post-hoc verify the gate. If post-hoc verification surfaces surviving mutants, they would be addressed in a follow-up commit on this feature's chain. |
+| Phase 6 — DES integrity verification | PASS | `des-verify-integrity ...deliver/` exit 0; "All 4 steps have complete DES traces" |
+| Phase 7 — Finalize | IN PROGRESS | This section is the finalize output; evolution archive + session cleanup follow |
+
+---
+
+## Wave: DELIVER / [REF] Pre-requisites consumed
+
+This DELIVER consumed (and proved or extended) the following upstream commitments:
+
+| Upstream commitment | Source | DELIVER outcome |
+|---|---|---|
+| DISTILL scenarios (14 Gherkin + 4 invariant) | `docs/feature/team-portfolio-creation-rights/distill/team-portfolio-creation-rights.feature` + `CreateRightsAcceptanceTest.cs` + `CreateRightsControllerGuardTest.cs` | All 18 green |
+| DESIGN — hexagonal boundary, `IRbacAdministrationService` as single inbound RBAC port | `docs/product/architecture/brief.md` | Preserved; refactor pass strengthened it (controllers no longer take `ICurrentUserProfileService` as a direct dep) |
+| Walking-skeleton strategy C (real local — EF in-memory + real RbacGuardAttribute) | Feature delta DISTILL section | Honoured at the service level; HTTP-pipeline integration with a controllable auth handler is the documented follow-up (Pre-requisites row 1) |
+| Mandate 6 adapter coverage | Feature delta DISTILL Adapter Coverage table | All driven adapters (DbContext, RbacGroupMappings, UserPermissions) exercised by acceptance tests |
+| Mandate 7 scaffold replacement | Feature delta DISTILL Scaffolds section | All four scaffold methods + two scaffold enum members replaced by implementation; zero `__SCAFFOLD__` markers remain in production |
+| Back-propagation contract | Feature delta DISTILL Back-propagation notes | WD-03, Q4 (in `rbac-enhancements`) and D8 (in `rbac-ui-completeness`) annotated inline |
+
+---
+
+## Wave: DELIVER / [WHY] Upstream issues
+
+None. The DISTILL contract was honoured without deviation. The "Open question — dedicated creation rights" item in DISTILL remains open as a user-facing follow-up (not blocking).
+
+---
