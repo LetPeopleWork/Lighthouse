@@ -120,7 +120,7 @@ jobs:
           Authentication__SessionLifetimeMinutes: 480
           Authentication__RequireHttpsMetadata: false
           Authorization__Enabled: true
-          Authorization__EmergencySystemAdminSubjects: '["bc58019b-61fb-4cf9-9315-976faf7238aa"]'
+          Authorization__EmergencySystemAdminSubjects__0: "bc58019b-61fb-4cf9-9315-976faf7238aa"
           Authorization__GroupClaimName: "groups"
 
       - name: Wait for Lighthouse to start (Auth tests)
@@ -187,7 +187,7 @@ jobs:
           Authentication__SessionLifetimeMinutes: 480
           Authentication__RequireHttpsMetadata: false
           Authorization__Enabled: true
-          Authorization__EmergencySystemAdminSubjects: '["bc58019b-61fb-4cf9-9315-976faf7238aa"]'
+          Authorization__EmergencySystemAdminSubjects__0: "bc58019b-61fb-4cf9-9315-976faf7238aa"
           Authorization__GroupClaimName: "groups"
 
       - name: Wait for Lighthouse to restart (RBAC tests)
