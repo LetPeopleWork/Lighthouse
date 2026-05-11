@@ -1,11 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
-import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import {
+	createMockApiServiceContext,
+	createMockRbacService,
+} from "../../../tests/MockApiServiceProvider";
 import Header from "./Header";
 
 // Mock the useUpdateAll hook
@@ -44,13 +47,30 @@ describe("Header component", () => {
 		};
 	});
 
-	const renderHeader = (props?: {
-		isAuthenticated?: boolean;
-		currentUserDisplayName?: string;
-		onLogout?: () => void;
-	}) => {
+	const renderHeader = (
+		props?: {
+			isAuthenticated?: boolean;
+			currentUserDisplayName?: string;
+			onLogout?: () => void;
+		},
+		rbacOverride?: {
+			isRbacEnabled?: boolean;
+			isSystemAdmin?: boolean;
+		},
+	) => {
+		const mockRbacService = createMockRbacService();
+		if (rbacOverride) {
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: rbacOverride.isRbacEnabled ?? true,
+				isSystemAdmin: rbacOverride.isSystemAdmin ?? false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+			});
+		}
+
 		const mockApiContext = createMockApiServiceContext({
 			licensingService: mockLicensingService,
+			rbacService: mockRbacService,
 		});
 
 		return render(
@@ -166,5 +186,21 @@ describe("Header component", () => {
 	it("should not render logout button when authenticated but no onLogout provided", () => {
 		renderHeader({ isAuthenticated: true });
 		expect(screen.queryByTestId("logout-button")).not.toBeInTheDocument();
+	});
+
+	it("should hide UpdateAllButton when user is not a system admin", async () => {
+		renderHeader(undefined, { isRbacEnabled: true, isSystemAdmin: false });
+
+		await waitFor(() => {
+			expect(screen.queryByTestId("update-all-button")).not.toBeInTheDocument();
+		});
+	});
+
+	it("should render UpdateAllButton when user is a system admin", async () => {
+		renderHeader(undefined, { isRbacEnabled: true, isSystemAdmin: true });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("update-all-button")).toBeInTheDocument();
+		});
 	});
 });

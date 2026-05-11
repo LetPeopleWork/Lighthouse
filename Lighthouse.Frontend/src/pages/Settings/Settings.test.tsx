@@ -141,7 +141,7 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 
-	it("should hide system-admin tabs when user is not system admin", async () => {
+	it("should hide system-admin tabs (including API Keys) when user is not system admin", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -158,12 +158,12 @@ describe("Settings Component", () => {
 			expect(screen.queryByTestId("demo-data-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("database-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
-			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+			expect(screen.queryByTestId("api-keys-tab")).not.toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 		});
 	});
 
-	it("should default to API Keys panel when current tab is hidden for non-system admins", async () => {
+	it("should default to System Info panel when current tab is hidden for non-system admins", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -176,8 +176,8 @@ describe("Settings Component", () => {
 		renderWithRouter(["/settings"], { rbacService: mockRbacService });
 
 		await waitFor(() => {
-			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
-			expect(screen.getByTestId("api-keys-panel")).toBeVisible();
+			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
+			expect(screen.getByTestId("system-info-panel")).toBeVisible();
 			expect(
 				screen.queryByTestId("configuration-panel"),
 			).not.toBeInTheDocument();

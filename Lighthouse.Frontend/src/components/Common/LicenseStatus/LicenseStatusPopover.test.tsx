@@ -4,8 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
+import type { IRbacService } from "../../../services/Api/RbacService";
 import type { IVersionService } from "../../../services/Api/VersionService";
-import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import {
+	createMockApiServiceContext,
+	createMockRbacService,
+} from "../../../tests/MockApiServiceProvider";
 import LicenseStatusPopover from "./LicenseStatusPopover";
 
 describe("LicenseStatusPopover", () => {
@@ -14,6 +18,7 @@ describe("LicenseStatusPopover", () => {
 	const mockAnchorEl = document.createElement("button");
 	let mockLicensingService: ILicensingService;
 	let mockVersionService: IVersionService;
+	let mockRbacService: IRbacService;
 
 	beforeEach(() => {
 		mockOnClose.mockClear();
@@ -34,6 +39,8 @@ describe("LicenseStatusPopover", () => {
 			getDistributionInfo: vi.fn(),
 		};
 
+		mockRbacService = createMockRbacService();
+
 		// Mock window.open
 		vi.stubGlobal("open", vi.fn());
 
@@ -44,10 +51,21 @@ describe("LicenseStatusPopover", () => {
 
 	const renderComponent = (
 		props: Partial<React.ComponentProps<typeof LicenseStatusPopover>> = {},
+		rbacOverride?: { isRbacEnabled?: boolean; isSystemAdmin?: boolean },
 	) => {
+		if (rbacOverride) {
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: rbacOverride.isRbacEnabled ?? true,
+				isSystemAdmin: rbacOverride.isSystemAdmin ?? false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+			});
+		}
+
 		const mockApiContext = createMockApiServiceContext({
 			licensingService: mockLicensingService,
 			versionService: mockVersionService,
+			rbacService: mockRbacService,
 		});
 
 		return render(
@@ -877,6 +895,80 @@ describe("LicenseStatusPopover", () => {
 			renderComponent({ licenseStatus });
 
 			expect(mockVersionService.getCurrentVersion).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("System Admin gating", () => {
+		const licensedStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "Test User",
+		};
+
+		const unlicensedStatus: ILicenseStatus = {
+			hasLicense: false,
+			isValid: false,
+			canUsePremiumFeatures: false,
+		};
+
+		it("hides Add License button when user is not a system admin", async () => {
+			renderComponent(
+				{ licenseStatus: unlicensedStatus },
+				{ isRbacEnabled: true, isSystemAdmin: false },
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("license-add-button"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("hides Clear License button when user is not a system admin", async () => {
+			renderComponent(
+				{ licenseStatus: licensedStatus },
+				{ isRbacEnabled: true, isSystemAdmin: false },
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("license-clear-button"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("keeps license status row visible when user is not a system admin", async () => {
+			renderComponent(
+				{ licenseStatus: unlicensedStatus },
+				{ isRbacEnabled: true, isSystemAdmin: false },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("No License")).toBeInTheDocument();
+			});
+		});
+
+		it("shows Add License button when user is a system admin", async () => {
+			renderComponent(
+				{ licenseStatus: unlicensedStatus },
+				{ isRbacEnabled: true, isSystemAdmin: true },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("license-add-button")).toBeInTheDocument();
+			});
+		});
+
+		it("shows Clear License button when user is a system admin", async () => {
+			renderComponent(
+				{ licenseStatus: licensedStatus },
+				{ isRbacEnabled: true, isSystemAdmin: true },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("license-clear-button")).toBeInTheDocument();
+			});
 		});
 	});
 });

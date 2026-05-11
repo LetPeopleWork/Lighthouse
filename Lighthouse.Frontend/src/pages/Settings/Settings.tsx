@@ -82,7 +82,7 @@ const Settings: React.FC = () => {
 		}
 	};
 
-	const systemAdminTabValues = new Set(["20", "25", "30", "50"]);
+	const systemAdminTabValues = new Set(["20", "25", "30", "40", "50"]);
 
 	const tabConfig = [
 		{

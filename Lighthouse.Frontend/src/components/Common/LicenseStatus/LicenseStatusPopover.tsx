@@ -22,6 +22,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useContext, useEffect, useId, useRef, useState } from "react";
+import { useRbac } from "../../../hooks/useRbac";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
@@ -48,6 +49,7 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 	onLicenseImported,
 }) => {
 	const theme = useTheme();
+	const rbac = useRbac();
 	const { licensingService, versionService } = useContext(ApiServiceContext);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isUploading, setIsUploading] = useState(false);
@@ -634,11 +636,12 @@ Thank you for your support!
 								</Button>
 							)}
 
-							{licenseStatus?.hasLicense && (
+							{rbac.isSystemAdmin && licenseStatus?.hasLicense && (
 								<Button
 									variant="outlined"
 									size="small"
 									color="error"
+									data-testid="license-clear-button"
 									startIcon={
 										isClearing ? <CircularProgress size={16} /> : <ClearIcon />
 									}
@@ -653,25 +656,28 @@ Thank you for your support!
 								</Button>
 							)}
 
-							<Button
-								variant="outlined"
-								size="small"
-								startIcon={
-									isUploading ? (
-										<CircularProgress size={16} />
-									) : (
-										<UploadFileIcon />
-									)
-								}
-								onClick={handleUploadClick}
-								disabled={isUploading || isClearing}
-								sx={{
-									textTransform: "none",
-									fontSize: "0.75rem",
-								}}
-							>
-								{getUploadButtonText()}
-							</Button>
+							{rbac.isSystemAdmin && (
+								<Button
+									variant="outlined"
+									size="small"
+									data-testid="license-add-button"
+									startIcon={
+										isUploading ? (
+											<CircularProgress size={16} />
+										) : (
+											<UploadFileIcon />
+										)
+									}
+									onClick={handleUploadClick}
+									disabled={isUploading || isClearing}
+									sx={{
+										textTransform: "none",
+										fontSize: "0.75rem",
+									}}
+								>
+									{getUploadButtonText()}
+								</Button>
+							)}
 						</Box>
 					</Box>
 				</Box>

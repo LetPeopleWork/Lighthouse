@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useState } from "react";
+import { useRbac } from "../../../hooks/useRbac";
 import LicenseStatusIcon from "../../Common/LicenseStatus/LicenseStatusIcon";
 import ThemeToggler from "../../Common/ThemeToggler/ThemeToggler";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
@@ -36,6 +37,7 @@ const Header: React.FC<HeaderProps> = ({
 	onLogout,
 }) => {
 	const theme = useTheme();
+	const rbac = useRbac();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
@@ -70,9 +72,11 @@ const Header: React.FC<HeaderProps> = ({
 			<ListItem>
 				<LicenseStatusIcon />
 			</ListItem>
-			<ListItem>
-				<UpdateAllButton />
-			</ListItem>
+			{rbac.isSystemAdmin && (
+				<ListItem>
+					<UpdateAllButton />
+				</ListItem>
+			)}
 			{isAuthenticated && onLogout && (
 				<ListItem>
 					{currentUserDisplayName && (
@@ -146,7 +150,7 @@ const Header: React.FC<HeaderProps> = ({
 							))}
 						</Box>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
-							<UpdateAllButton />
+							{rbac.isSystemAdmin && <UpdateAllButton />}
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<ExternalLinkButton
