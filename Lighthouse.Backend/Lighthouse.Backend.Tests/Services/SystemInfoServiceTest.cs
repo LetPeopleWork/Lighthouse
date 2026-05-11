@@ -254,25 +254,25 @@ namespace Lighthouse.Backend.Tests.Services
         [Test]
         public void GetSystemInfo_SingleEmergencyAdminSubject_ReturnsSingleElementList()
         {
-            var configuration = BuildConfiguration(emergencyAdminSubjects: new[] { "alice@example.com" });
+            var configuration = BuildConfiguration(emergencyAdminSubjects: ["alice@example.com"]);
 
             var subject = CreateSubjectWithConfiguration(configuration);
 
             var result = subject.GetSystemInfo();
 
-            Assert.That(result.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com" }));
+            Assert.That(result.EmergencyAdminSubjects, Is.EqualTo(["alice@example.com"]));
         }
 
         [Test]
         public void GetSystemInfo_MultipleEmergencyAdminSubjects_ReturnsAllSubjectsInOrder()
         {
-            var configuration = BuildConfiguration(emergencyAdminSubjects: new[] { "alice@example.com", "bob@example.com", "carol@example.com" });
+            var configuration = BuildConfiguration(emergencyAdminSubjects: ["alice@example.com", "bob@example.com", "carol@example.com"]);
 
             var subject = CreateSubjectWithConfiguration(configuration);
 
             var result = subject.GetSystemInfo();
 
-            Assert.That(result.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com", "bob@example.com", "carol@example.com" }));
+            Assert.That(result.EmergencyAdminSubjects, Is.EqualTo(["alice@example.com", "bob@example.com", "carol@example.com"]));
         }
 
         private static IConfiguration BuildConfiguration(

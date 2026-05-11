@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(systemInfo!.IsAuthenticationEnabled, Is.True);
                 Assert.That(systemInfo.IsAuthorizationEnabled, Is.True);
-                Assert.That(systemInfo.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com", "bob@example.com" }));
+                Assert.That(systemInfo.EmergencyAdminSubjects, Is.EqualTo(["alice@example.com", "bob@example.com"]));
 
                 Assert.That(bannerLines, Has.Some.Contains("Authentication").And.Contains("Enabled"));
                 Assert.That(bannerLines, Has.Some.Contains("Authorization").And.Contains("Enabled"));

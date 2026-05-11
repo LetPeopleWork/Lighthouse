@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests
         {
             var configuration = BuildConfiguration(
                 authorizationEnabled: true,
-                emergencyAdminSubjects: new[] { "alice@example.com", "bob@example.com" });
+                emergencyAdminSubjects: ["alice@example.com", "bob@example.com"]);
 
             var lines = AuthPostureBanner.BuildAuthPostureLines(configuration);
 
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests
         {
             var configuration = BuildConfiguration(
                 authorizationEnabled: false,
-                emergencyAdminSubjects: new[] { "alice@example.com" });
+                emergencyAdminSubjects: ["alice@example.com"]);
 
             var lines = AuthPostureBanner.BuildAuthPostureLines(configuration);
 

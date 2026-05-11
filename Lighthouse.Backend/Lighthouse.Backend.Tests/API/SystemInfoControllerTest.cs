@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.API
                 LogPath: "/var/log/lighthouse",
                 IsAuthenticationEnabled: true,
                 IsAuthorizationEnabled: true,
-                EmergencyAdminSubjects: new[] { "alice@example.com", "bob@example.com" });
+                EmergencyAdminSubjects: ["alice@example.com", "bob@example.com"]);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(actual!.IsAuthenticationEnabled, Is.True);
                 Assert.That(actual.IsAuthorizationEnabled, Is.True);
-                Assert.That(actual.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com", "bob@example.com" }));
+                Assert.That(actual.EmergencyAdminSubjects, Is.EqualTo(["alice@example.com", "bob@example.com"]));
             }
         }
 
