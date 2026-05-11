@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
-using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -23,8 +22,7 @@ namespace Lighthouse.Backend.API
         IPortfolioUpdater portfolioUpdater,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
-        IRbacAdministrationService rbacAdministrationService,
-        ICurrentUserProfileService currentUserProfileService)
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet]
@@ -98,14 +96,7 @@ namespace Lighthouse.Backend.API
             portfolioRepository.Add(newPortfolio);
             await portfolioRepository.Save();
 
-            if (await rbacAdministrationService.IsRbacEnforcedAsync(cancellationToken))
-            {
-                var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
-                if (currentUser is not null)
-                {
-                    await rbacAdministrationService.GrantCreatorPortfolioAdminAsync(currentUser.Id, newPortfolio.Id, cancellationToken);
-                }
-            }
+            await rbacAdministrationService.EnsureCreatorPortfolioAdminAsync(User, newPortfolio.Id, cancellationToken);
 
             var portfolioSettingDto = new PortfolioSettingDto(newPortfolio);
             return Ok(portfolioSettingDto);

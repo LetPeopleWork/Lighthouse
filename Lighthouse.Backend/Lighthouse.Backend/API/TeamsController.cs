@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
-using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -27,8 +26,7 @@ namespace Lighthouse.Backend.API
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         ILicenseService licenseService,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
-        IRbacAdministrationService rbacAdministrationService,
-        ICurrentUserProfileService currentUserProfileService)
+        IRbacAdministrationService rbacAdministrationService)
         : ControllerBase
     {
         [HttpGet]
@@ -126,14 +124,7 @@ namespace Lighthouse.Backend.API
             teamRepository.Add(newTeam);
             await teamRepository.Save();
 
-            if (await rbacAdministrationService.IsRbacEnforcedAsync(cancellationToken))
-            {
-                var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
-                if (currentUser is not null)
-                {
-                    await rbacAdministrationService.GrantCreatorTeamAdminAsync(currentUser.Id, newTeam.Id, cancellationToken);
-                }
-            }
+            await rbacAdministrationService.EnsureCreatorTeamAdminAsync(User, newTeam.Id, cancellationToken);
 
             var teamSettingDto = new TeamSettingDto(newTeam);
             return Ok(teamSettingDto);

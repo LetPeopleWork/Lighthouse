@@ -91,5 +91,15 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
             int userProfileId,
             int portfolioId,
             CancellationToken cancellationToken = default);
+
+        Task EnsureCreatorTeamAdminAsync(
+            ClaimsPrincipal principal,
+            int teamId,
+            CancellationToken cancellationToken = default);
+
+        Task EnsureCreatorPortfolioAdminAsync(
+            ClaimsPrincipal principal,
+            int portfolioId,
+            CancellationToken cancellationToken = default);
     }
 }

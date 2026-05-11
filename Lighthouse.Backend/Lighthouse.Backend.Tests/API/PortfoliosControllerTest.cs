@@ -6,7 +6,6 @@ using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -28,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
-        private Mock<ICurrentUserProfileService> currentUserProfileServiceMock;
 
         [SetUp]
         public void Setup()
@@ -42,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
-            currentUserProfileServiceMock = new Mock<ICurrentUserProfileService>();
         }
 
         [Test]
@@ -369,8 +366,7 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioUpdaterMock.Object,
                 workTrackingConnectorFactoryMock.Object,
                 workTrackingSystemConnectionRepoMock.Object,
-                rbacAdministrationServiceMock.Object,
-                currentUserProfileServiceMock.Object
+                rbacAdministrationServiceMock.Object
             );
         }
 

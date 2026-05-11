@@ -1186,6 +1186,50 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 cancellationToken);
         }
 
+        public Task EnsureCreatorTeamAdminAsync(
+            ClaimsPrincipal principal,
+            int teamId,
+            CancellationToken cancellationToken = default)
+        {
+            return EnsureCreatorAdminAsync(
+                principal,
+                teamId,
+                GrantCreatorTeamAdminAsync,
+                cancellationToken);
+        }
+
+        public Task EnsureCreatorPortfolioAdminAsync(
+            ClaimsPrincipal principal,
+            int portfolioId,
+            CancellationToken cancellationToken = default)
+        {
+            return EnsureCreatorAdminAsync(
+                principal,
+                portfolioId,
+                GrantCreatorPortfolioAdminAsync,
+                cancellationToken);
+        }
+
+        private async Task EnsureCreatorAdminAsync(
+            ClaimsPrincipal principal,
+            int scopeId,
+            Func<int, int, CancellationToken, Task<RbacOperationResult>> grant,
+            CancellationToken cancellationToken)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return;
+            }
+
+            await grant(currentUser.Id, scopeId, cancellationToken);
+        }
+
         private async Task<RbacOperationResult> GrantScopedAdminAsync(
             int userProfileId,
             PermissionScopeType scopeType,

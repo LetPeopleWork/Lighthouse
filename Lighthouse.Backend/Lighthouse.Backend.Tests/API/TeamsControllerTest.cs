@@ -6,7 +6,6 @@ using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -30,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
-        private Mock<ICurrentUserProfileService> currentUserProfileServiceMock;
 
         [SetUp]
         public void Setup()
@@ -47,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
-            currentUserProfileServiceMock = new Mock<ICurrentUserProfileService>();
         }
 
         [Test]
@@ -593,8 +590,7 @@ namespace Lighthouse.Backend.Tests.API
                 workTrackingConnectorFactoryMock.Object,
                 licenseServiceMock.Object,
                 blackoutPeriodRepositoryMock.Object,
-                rbacAdministrationServiceMock.Object,
-                currentUserProfileServiceMock.Object);
+                rbacAdministrationServiceMock.Object);
         }
     }
 }
