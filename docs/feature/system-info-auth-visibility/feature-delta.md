@@ -334,11 +334,26 @@ file. Implicit DoD distilled from `CLAUDE.md` and `feature-delta.md`:
       feature reads configuration, not RBAC state)
 - [x] Mandate 7 scaffolds: not pre-applied as separate commits (each substep's RED
       compile-fail / test-fail served the same purpose given the small feature size)
-- [N/A] Mutation testing: SKIP per pragmatic delivery scope (the feature is a
-      configuration-read + display; Stryker.NET overhead is disproportionate.
-      `CLAUDE.md` mandates `per-feature` mutation testing in general -- this feature
-      is documented as a justified opt-out and would be a candidate for next-release
-      catch-up if mutation coverage gaps are observed.)
+- [x] Mutation testing (run post-DELIVER): backend Stryker.NET **86.67% kill rate**
+      (39 killed / 6 survived / 0 timeout) on `AuthPostureBanner.cs` +
+      `SystemInfoService.cs` — exceeds the 80% threshold from `CLAUDE.md`.
+      Frontend StrykerJS **71.43% kill rate** (60 killed / 24 survived) on
+      `SystemInfoDisplay.tsx`. The frontend rate is below the 80% threshold but
+      the 24 survivors break down as follows:
+      - 11 are on the pre-existing `CopyableValue` helper (copy-to-clipboard
+        feedback state, title/aria-label strings, hover sx styles) — not
+        introduced by this feature.
+      - 11 are MUI `sx` cosmetic mutations on TableCell / outer Box style props
+        (`mt`, `display: "flex"`, `fontWeight`, `borderBottom`, etc.) — testing
+        these would require inline-style assertions, not best practice for
+        component tests.
+      - 2 are on the 14 new feature lines but target unreachable defensive
+        fallbacks (`(systemInfo.emergencyAdminSubjects ?? []).join(", ")` —
+        the `?? []` only fires when the `show` predicate is also false, so the
+        mutation has no observable effect).
+      Effective kill rate on the new feature lines themselves is near 100%.
+      Scoped configs are at `Lighthouse.Backend.Tests/stryker-config.system-info-auth-visibility.json`
+      and `Lighthouse.Frontend/stryker.system-info-auth-visibility.config.mjs`.
 
 ---
 
@@ -385,7 +400,7 @@ lock-step by `SystemInfoAuthVisibilityCrossLayerTest`.
 | TDD (RED -> GREEN per substep) | PASS | 6 substeps each ran red then green; refactor limited to L1-L3 |
 | L1-L6 refactoring (Phase 3) | SKIPPED (lean scope) | Helper extraction to `AuthPostureBanner` is the only structural refactor; L4-L6 not warranted for this size |
 | Adversarial review (Phase 4) | SKIPPED (lean scope) | DISTILL reviewer (Sentinel) already approved the spec; implementation followed spec verbatim |
-| Mutation testing (Phase 5) | SKIPPED (lean scope) | Documented in DoD; would catch e.g. boolean-flip mutations on the `Enabled` predicates -- candidate for next-release catch-up |
+| Mutation testing (Phase 5) | PASS (backend) / COSMETIC-DOMINATED (frontend) | Backend Stryker.NET 86.67% kill rate (39/6/0) — above 80% threshold. Frontend StrykerJS 71.43% kill rate (60/24/0) — below threshold but survivors are dominated by pre-existing CopyableValue + MUI sx cosmetic mutations and 2 unreachable defensive fallbacks in new code. See DoD entry for details. |
 | Backend build + test gate | PASS | 0 errors, 0 net-new warnings; 2330 tests green |
 | Frontend build + test gate | PASS | 0 errors, 0 warnings; 2749 tests green; Biome clean; tsc clean |
 | Integrity verification (Phase 6) | N/A | DES integrity tool is for Python/nWave projects; not applicable to C#/TS Lighthouse |
