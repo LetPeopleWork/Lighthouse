@@ -355,8 +355,7 @@ const OverviewDashboard: React.FC = () => {
 					</Alert>
 				)}
 
-				{/* Onboarding stepper — visible when setup is incomplete and user can create at least one of team/portfolio */}
-				{(rbac.canCreateTeam || rbac.canCreatePortfolio) && (
+				{rbac.isSystemAdmin && (
 					<Box sx={{ mt: 2 }}>
 						<OnboardingStepper
 							hasConnections={hasConnections}
@@ -397,7 +396,7 @@ const OverviewDashboard: React.FC = () => {
 								buttonVariant="contained"
 							/>
 						)}
-						{rbac.canCreateTeam && (
+						{rbac.isSystemAdmin && (
 							<Tooltip
 								title={
 									rbac.isSystemAdmin && !hasConnections
@@ -427,7 +426,7 @@ const OverviewDashboard: React.FC = () => {
 								</span>
 							</Tooltip>
 						)}
-						{rbac.canCreatePortfolio && (
+						{rbac.isSystemAdmin && (
 							<Tooltip
 								title={
 									hasTeams ? "" : "Create a team before adding a portfolio"
@@ -469,6 +468,9 @@ const OverviewDashboard: React.FC = () => {
 						api="portfolios"
 						onDelete={handlePortfolioDelete}
 						filterText={filterText}
+						canEditRow={(row) => rbac.isPortfolioAdmin(row.id)}
+						canDeleteRow={(row) => rbac.isPortfolioAdmin(row.id)}
+						canCloneRow={() => rbac.isSystemAdmin}
 					/>
 					<DataOverviewTable
 						data={teams}
@@ -476,6 +478,9 @@ const OverviewDashboard: React.FC = () => {
 						api="teams"
 						onDelete={handleTeamDelete}
 						filterText={filterText}
+						canEditRow={(row) => rbac.isTeamAdmin(row.id)}
+						canDeleteRow={(row) => rbac.isTeamAdmin(row.id)}
+						canCloneRow={() => rbac.isSystemAdmin}
 					/>
 
 					{/* Connections Section — styled consistently with Portfolios/Teams. Hidden for non-system-admins (WD-11). */}

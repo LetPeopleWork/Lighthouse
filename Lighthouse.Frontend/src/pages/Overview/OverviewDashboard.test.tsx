@@ -584,7 +584,7 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	it("shows Add Team enabled for non-system-admin with canCreateTeam regardless of connections", async () => {
+	it("hides Add Team for non-system-admin with canCreateTeam regardless of connections", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -600,9 +600,12 @@ describe("OverviewDashboard", () => {
 		);
 
 		await waitFor(() => {
-			const addTeamButton = screen.getByRole("button", { name: "Add Team" });
-			expect(addTeamButton).toBeEnabled();
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});
+
+		expect(
+			screen.queryByRole("button", { name: "Add Team" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("disables Add Team for system admin with no connections", async () => {
@@ -649,7 +652,7 @@ describe("OverviewDashboard", () => {
 		expect(screen.queryByTestId("onboarding-stepper")).not.toBeInTheDocument();
 	});
 
-	it("shows OnboardingStepper when canCreateTeam is true", async () => {
+	it("hides OnboardingStepper when canCreateTeam is true but user is not system admin", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -665,7 +668,179 @@ describe("OverviewDashboard", () => {
 		);
 
 		await waitFor(() => {
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByTestId("onboarding-stepper")).not.toBeInTheDocument();
+	});
+
+	it("shows OnboardingStepper when user is system admin and onboarding incomplete", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ connections: [], teams: [] },
+		);
+
+		await waitFor(() => {
 			expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
+		});
+	});
+
+	describe("Row action gating via DataOverviewTable predicates", () => {
+		it("shows only Details icon on every team and portfolio row for Team Reader (no admin scopes)", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+				adminTeamIds: [],
+				adminPortfolioIds: [],
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+
+			expect(screen.queryAllByLabelText("Edit")).toHaveLength(0);
+			expect(screen.queryAllByLabelText("Clone")).toHaveLength(0);
+			expect(screen.queryAllByLabelText("Delete")).toHaveLength(0);
+		});
+
+		it("shows Edit and Delete only on Team A row for a Team Admin scoped to Team A, no Clone anywhere", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+				adminTeamIds: [1],
+				adminPortfolioIds: [],
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Test Team 1")).toBeInTheDocument();
+			});
+
+			expect(screen.queryAllByLabelText("Edit")).toHaveLength(1);
+			expect(screen.queryAllByLabelText("Delete")).toHaveLength(1);
+			expect(screen.queryAllByLabelText("Clone")).toHaveLength(0);
+		});
+
+		it("shows Edit and Delete only on Portfolio X row for a Portfolio Admin scoped to Portfolio X, no Clone anywhere", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+				adminTeamIds: [],
+				adminPortfolioIds: [2],
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Test Project 2")).toBeInTheDocument();
+			});
+
+			expect(screen.queryAllByLabelText("Edit")).toHaveLength(1);
+			expect(screen.queryAllByLabelText("Delete")).toHaveLength(1);
+			expect(screen.queryAllByLabelText("Clone")).toHaveLength(0);
+		});
+
+		it("shows Edit, Clone, and Delete on every team and portfolio row for system admin", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: true,
+				canCreateTeam: true,
+				canCreatePortfolio: true,
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+
+			const dataGrids = screen.getAllByTestId("datagrid-container");
+			const cloneIcons = dataGrids.flatMap((grid) =>
+				Array.from(grid.querySelectorAll('[aria-label="Clone"]')),
+			);
+			expect(cloneIcons).toHaveLength(4);
+
+			const deleteIcons = dataGrids.flatMap((grid) =>
+				Array.from(grid.querySelectorAll('[data-testid="delete-item-button"]')),
+			);
+			expect(deleteIcons).toHaveLength(4);
+
+			const editIcons = dataGrids.flatMap((grid) =>
+				Array.from(grid.querySelectorAll("svg[data-testid='EditIcon']")),
+			);
+			expect(editIcons).toHaveLength(4);
+		});
+	});
+
+	describe("Add Team / Add Portfolio system-admin gating", () => {
+		it("hides Add Team and Add Portfolio when user is not system admin even if canCreateTeam/canCreatePortfolio true", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: true,
+				canCreatePortfolio: true,
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+
+			expect(screen.queryByText("Add Team")).not.toBeInTheDocument();
+			expect(screen.queryByText("Add Portfolio")).not.toBeInTheDocument();
+		});
+
+		it("shows Add Team and Add Portfolio for system admin when license/connection conditions met", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: true,
+				canCreateTeam: true,
+				canCreatePortfolio: true,
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Add Team")).toBeInTheDocument();
+				expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
+			});
 		});
 	});
 });
