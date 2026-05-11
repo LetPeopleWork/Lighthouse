@@ -316,4 +316,67 @@ describe("SystemInfoDisplay", () => {
 			screen.getByText("alice@example.com, bob@example.com, carol@example.com"),
 		).toBeInTheDocument();
 	});
+
+	it("renders Authentication as Disabled when authenticationEnabled is undefined", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: undefined,
+			authorizationEnabled: false,
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+		});
+
+		const authenticationRow = screen.getByText("Authentication").closest("tr");
+		expect(authenticationRow).toHaveTextContent("Disabled");
+	});
+
+	it("renders Authorization as Disabled when authorizationEnabled is undefined", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: false,
+			authorizationEnabled: undefined,
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authorization")).toBeInTheDocument();
+		});
+
+		const authorizationRow = screen.getByText("Authorization").closest("tr");
+		expect(authorizationRow).toHaveTextContent("Disabled");
+	});
+
+	it("hides Emergency Admin row when emergencyAdminSubjects is undefined", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: true,
+			authorizationEnabled: true,
+			emergencyAdminSubjects: undefined,
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authorization")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("Emergency Admin")).not.toBeInTheDocument();
+	});
 });
