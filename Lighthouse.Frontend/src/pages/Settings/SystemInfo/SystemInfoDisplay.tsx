@@ -71,6 +71,21 @@ const SystemInfoDisplay: React.FC = () => {
 						value: systemInfo.logPath,
 						show: systemInfo.logPath !== null,
 					},
+					{
+						label: "Authentication",
+						value: systemInfo.authenticationEnabled ? "Enabled" : "Disabled",
+					},
+					{
+						label: "Authorization",
+						value: systemInfo.authorizationEnabled ? "Enabled" : "Disabled",
+					},
+					{
+						label: "Emergency Admin",
+						value: (systemInfo.emergencyAdminSubjects ?? []).join(", "),
+						show:
+							systemInfo.authorizationEnabled === true &&
+							(systemInfo.emergencyAdminSubjects?.length ?? 0) > 0,
+					},
 				]
 			: [];
 

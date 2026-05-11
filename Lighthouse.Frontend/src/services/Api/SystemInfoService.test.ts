@@ -27,6 +27,9 @@ describe("SystemInfoService", () => {
 			databaseProvider: "sqlite",
 			databaseConnection: "/data/lighthouse.db",
 			logPath: "/var/log/lighthouse",
+			authenticationEnabled: true,
+			authorizationEnabled: true,
+			emergencyAdminSubjects: ["alice@example.com"],
 		};
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -46,11 +49,39 @@ describe("SystemInfoService", () => {
 			databaseConnection:
 				"Host=dbserver;Port=5432;Database=lighthouse;User Id=app",
 			logPath: null,
+			authenticationEnabled: false,
+			authorizationEnabled: false,
+			emergencyAdminSubjects: [],
 		};
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
 		const result = await systemInfoService.getSystemInfo();
 
 		expect(result.logPath).toBeNull();
+	});
+
+	it("deserialises authentication, authorization, and emergency admin fields", async () => {
+		const mockResponse: SystemInfo = {
+			os: "Linux 5.15.0",
+			runtime: ".NET 10.0.0",
+			architecture: "X64",
+			processId: 1,
+			databaseProvider: "sqlite",
+			databaseConnection: null,
+			logPath: null,
+			authenticationEnabled: true,
+			authorizationEnabled: true,
+			emergencyAdminSubjects: ["alice@example.com", "bob@example.com"],
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+		const result = await systemInfoService.getSystemInfo();
+
+		expect(result.authenticationEnabled).toBe(true);
+		expect(result.authorizationEnabled).toBe(true);
+		expect(result.emergencyAdminSubjects).toEqual([
+			"alice@example.com",
+			"bob@example.com",
+		]);
 	});
 });

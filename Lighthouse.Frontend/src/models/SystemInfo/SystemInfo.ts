@@ -6,4 +6,7 @@ export interface SystemInfo {
 	databaseProvider: string;
 	databaseConnection: string | null;
 	logPath: string | null;
+	authenticationEnabled?: boolean;
+	authorizationEnabled?: boolean;
+	emergencyAdminSubjects?: string[];
 }

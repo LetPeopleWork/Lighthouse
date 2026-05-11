@@ -21,6 +21,9 @@ const mockSystemInfo: SystemInfo = {
 	databaseProvider: "sqlite",
 	databaseConnection: "/data/lighthouse.db",
 	logPath: "/var/lighthouse/logs",
+	authenticationEnabled: true,
+	authorizationEnabled: true,
+	emergencyAdminSubjects: ["alice@example.com"],
 };
 
 const MockProvider = ({ children }: { children: React.ReactNode }) => (
@@ -198,5 +201,119 @@ describe("SystemInfoDisplay", () => {
 		await waitFor(() => {
 			expect(writeTextMock).toHaveBeenCalledWith("/var/lighthouse/logs");
 		});
+	});
+
+	it("renders Authentication, Authorization, and Emergency Admin rows when enabled with subjects", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: true,
+			authorizationEnabled: true,
+			emergencyAdminSubjects: ["alice@example.com"],
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+		});
+
+		expect(screen.getByText("Authorization")).toBeInTheDocument();
+		expect(screen.getByText("Emergency Admin")).toBeInTheDocument();
+		expect(screen.getAllByText("Enabled")).toHaveLength(2);
+		expect(screen.getByText("alice@example.com")).toBeInTheDocument();
+	});
+
+	it("renders Authentication and Authorization rows as Disabled when both flags false", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: false,
+			authorizationEnabled: false,
+			emergencyAdminSubjects: [],
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+		});
+
+		expect(screen.getAllByText("Disabled")).toHaveLength(2);
+	});
+
+	it("hides Emergency Admin row when authorization is enabled but no subjects are configured", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: true,
+			authorizationEnabled: true,
+			emergencyAdminSubjects: [],
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authorization")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("Emergency Admin")).not.toBeInTheDocument();
+	});
+
+	it("hides Emergency Admin row when authorization is disabled even if subjects are configured", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: true,
+			authorizationEnabled: false,
+			emergencyAdminSubjects: ["alice@example.com"],
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authorization")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("Emergency Admin")).not.toBeInTheDocument();
+	});
+
+	it("renders multiple emergency admins as a comma-separated value", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			authenticationEnabled: true,
+			authorizationEnabled: true,
+			emergencyAdminSubjects: [
+				"alice@example.com",
+				"bob@example.com",
+				"carol@example.com",
+			],
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Emergency Admin")).toBeInTheDocument();
+		});
+
+		expect(
+			screen.getByText("alice@example.com, bob@example.com, carol@example.com"),
+		).toBeInTheDocument();
 	});
 });
