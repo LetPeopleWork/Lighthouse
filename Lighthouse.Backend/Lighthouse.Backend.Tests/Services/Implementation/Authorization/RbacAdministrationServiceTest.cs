@@ -1310,7 +1310,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             var users = await subject.GetUsersAsync(CancellationToken.None);
 
             // Ascending DisplayName, then ascending Email when DisplayName ties.
-            Assert.That(users.Select(x => x.Id), Is.EqualTo(new[] { 2, 3, 4, 1 }));
+            Assert.That(users.Select(x => x.Id), Is.EqualTo([2, 3, 4, 1]));
         }
 
         [Test]
@@ -1390,7 +1390,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var ids = await subject.GetReadablePortfolioIdsAsync(principal, [10, 20, 30], CancellationToken.None);
 
-            Assert.That(ids, Is.EquivalentTo(new[] { 10, 20, 30 }));
+            Assert.That(ids, Is.EquivalentTo([10, 20, 30]));
         }
 
         [Test]
@@ -1637,7 +1637,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(summary.IsSystemAdmin, Is.False);
-                Assert.That(summary.AdminPortfolioIds, Is.EquivalentTo(new[] { 7, 8 }));
+                Assert.That(summary.AdminPortfolioIds, Is.EquivalentTo([7, 8]));
                 Assert.That(summary.AdminTeamIds, Is.Empty);
             }
         }
@@ -1669,7 +1669,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(summary.IsSystemAdmin, Is.False);
-                Assert.That(summary.AdminTeamIds, Is.EquivalentTo(new[] { 10, 11 }));
+                Assert.That(summary.AdminTeamIds, Is.EquivalentTo([10, 11]));
                 Assert.That(summary.AdminPortfolioIds, Is.Empty);
             }
         }
@@ -2073,7 +2073,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             var mappings = await subject.GetGroupMappingsAsync(CancellationToken.None);
 
             // OrderBy GroupValue ASC: a-group, m-group, z-group.
-            Assert.That(mappings.Select(x => x.GroupValue), Is.EqualTo(new[] { "a-group", "m-group", "z-group" }));
+            Assert.That(mappings.Select(x => x.GroupValue), Is.EqualTo(["a-group", "m-group", "z-group"]));
         }
 
         [Test]
@@ -2090,7 +2090,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var mappings = await subject.GetTeamGroupMappingsAsync(1, CancellationToken.None);
 
-            Assert.That(mappings.Select(x => x.GroupValue), Is.EqualTo(new[] { "alpha", "mu", "zeta" }));
+            Assert.That(mappings.Select(x => x.GroupValue), Is.EqualTo(["alpha", "mu", "zeta"]));
         }
 
         [Test]
@@ -2107,7 +2107,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var mappings = await subject.GetPortfolioGroupMappingsAsync(1, CancellationToken.None);
 
-            Assert.That(mappings.Select(x => x.GroupValue), Is.EqualTo(new[] { "alpha", "mu", "zeta" }));
+            Assert.That(mappings.Select(x => x.GroupValue), Is.EqualTo(["alpha", "mu", "zeta"]));
         }
 
         [TestCase("")]
@@ -2565,7 +2565,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
 
             // Ordinal ascending: Alice, Bob, Charlie, System Admin (placeholder for empty display name).
-            Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(new[] { "Alice", "Bob", "Charlie", "System Admin" }));
+            Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(["Alice", "Bob", "Charlie", "System Admin"]));
         }
 
         // -----------------------------------------------------------------
@@ -2754,7 +2754,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
 
             // Only the entry with HasValue=true should appear.
-            Assert.That(summary.AdminTeamIds, Is.EqualTo(new[] { 11 }));
+            Assert.That(summary.AdminTeamIds, Is.EqualTo([11]));
         }
 
         [Test]
@@ -2780,7 +2780,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
 
-            Assert.That(summary.AdminPortfolioIds, Is.EqualTo(new[] { 8 }));
+            Assert.That(summary.AdminPortfolioIds, Is.EqualTo([8]));
         }
 
         [Test]
@@ -3164,7 +3164,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             // Under && (correct): only "True Sysadmin" shown.
             // Under || (mutant): all three would be shown.
-            Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(new[] { "True Sysadmin" }));
+            Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(["True Sysadmin"]));
         }
 
         [Test]
