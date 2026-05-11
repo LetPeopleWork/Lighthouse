@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Models.Auth
             {
                 Assert.That(config.Enabled, Is.True);
                 Assert.That(config.GroupClaimName, Is.EqualTo("groups"));
-                Assert.That(config.EmergencySystemAdminSubjects, Is.EqualTo(new[] { "first-subject", "second-subject" }));
+                Assert.That(config.EmergencySystemAdminSubjects, Is.EqualTo(["first-subject", "second-subject"]));
             }
         }
 
