@@ -1,0 +1,155 @@
+{
+  "roadmap": {
+    "project_id": "rbac-ui-completeness",
+    "created_at": "2026-05-11",
+    "total_steps": 7,
+    "phases": 5
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Frontend/src",
+      "Lighthouse.EndToEndTests/tests"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator",
+    "reviewed_at": "2026-05-11",
+    "method": "Inline by orchestrator — small frontend-only feature; DESIGN already gave file-level decomposition"
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Hook foundation + global UI gates",
+      "description": "Replace the useRbacGate scaffold with a real hook, then ship Slice 01 (Header UpdateAll, Settings API Keys tab, License popover Add/Clear gates)",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Create useRbacGate hook",
+          "criteria": "useRbacGate({kind:'systemAdmin'}) returns {allowed:true,isLoading:false} when rbac.isSystemAdmin && !rbac.isLoading; useRbacGate({kind:'systemAdmin'}) returns {allowed:false} when !isSystemAdmin; useRbacGate({kind:'teamAdmin',teamId:42}) follows rbac.isTeamAdmin(42); useRbacGate({kind:'portfolioAdmin',portfolioId:7}) follows rbac.isPortfolioAdmin(7); useRbacGate returns isLoading:true while rbac.isLoading; __SCAFFOLD__ marker removed from useRbacGate.ts",
+          "test_file": "Lighthouse.Frontend/src/hooks/useRbacGate.test.ts",
+          "scenario_name": "useRbacGate hook returns allowed/isLoading per requirement and useRbac state",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useRbacGate.ts",
+            "Lighthouse.Frontend/src/hooks/useRbacGate.test.ts"
+          ],
+          "implementation_notes": "Thin composition over useRbac() per DD-02/DD-10. Discriminated-union RbacGateRequirement type: {kind:'systemAdmin'} | {kind:'teamAdmin',teamId:number} | {kind:'portfolioAdmin',portfolioId:number}. Return {allowed:boolean, isLoading:boolean}. Test by mocking useRbac via ApiServiceContext (see useRbac.test.ts for pattern). Delete the __SCAFFOLD__ export and the throwing stub."
+        },
+        {
+          "id": "01-02",
+          "name": "Slice 01 — Header / Settings / LicensePopover SystemAdmin gates",
+          "criteria": "Header: update-all-button is NOT in DOM when isSystemAdmin=false; IS in DOM when isSystemAdmin=true; both desktop and mobile drawer gated; Settings: api-keys-tab is NOT visible for non-SystemAdmin; IS visible for SystemAdmin; LicensePopover: Add/Update License button NOT in DOM when !isSystemAdmin; Clear License button NOT in DOM when !isSystemAdmin; License status row IS visible to all; new testids license-add-button and license-clear-button added",
+          "deps": ["01-01"],
+          "test_file": "Lighthouse.Frontend/src/components/App/Header/Header.test.tsx | Settings.test.tsx | LicenseStatusPopover.test.tsx",
+          "scenario_name": "Header/Settings/LicensePopover hide controls from non-SystemAdmin",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/App/Header/Header.tsx",
+            "Lighthouse.Frontend/src/components/App/Header/Header.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Settings.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx",
+            "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx"
+          ],
+          "implementation_notes": "Header.tsx invokes useRbac() at the top; gates both UpdateAllButton instances (lines 74 desktop, 149 mobile drawer) on rbac.isSystemAdmin. Settings.tsx line 85: add '40' to the systemAdminTabValues Set. LicenseStatusPopover.tsx invokes useRbac(); wraps Add/Update License button and Clear License button in {rbac.isSystemAdmin && (...)}. The license status text/row stays unconditional. Add data-testid='license-add-button' and 'license-clear-button' to the respective buttons (per DISTILL pre-requisites). All three are independent edits — use one TDD micro-cycle per file."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Overview gating",
+      "description": "Slice 02 — per-row table gating + onboarding stepper + Add Team/Portfolio buttons",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "DataOverviewTable accepts predicate props",
+          "criteria": "DataOverviewTable accepts new optional props canEditRow?:(row)=>boolean, canCloneRow?:(row)=>boolean, canDeleteRow?:(row)=>boolean; When canEditRow returns false for a row, Edit IconButton not rendered on that row; same for canCloneRow and canDeleteRow; Defaults all return true (backward compat — existing callers unchanged); Details icon stays unconditional",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx",
+          "scenario_name": "DataOverviewTable hides Edit/Clone/Delete icons per predicate prop",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx"
+          ],
+          "implementation_notes": "Per DD-03 — table stays RBAC-agnostic. Add the three predicate props with () => true defaults so all existing callers are unaffected. Wrap the existing Edit (line 207-220), Clone (lines 221-236) and Delete (lines 237-252) IconButton blocks in {canEditRow(row) && (...)} etc. Details icon (lines 193-206) is unconditional."
+        },
+        {
+          "id": "02-02",
+          "name": "OverviewDashboard wires RBAC + gates Onboarding/Add Team/Add Portfolio",
+          "criteria": "Team Reader: only Details icon on team and portfolio rows; Team Admin on Team A: Edit+Delete on Team A row, only Details on Team B row, no Clone anywhere; Portfolio Admin on Portfolio X: Edit+Delete on Portfolio X row, only Details on others, no Clone; System Admin: Details+Edit+Clone+Delete on every row; onboarding-stepper NOT in DOM when isSystemAdmin=false; onboarding-stepper IS in DOM when isSystemAdmin=true and onboarding incomplete; Add Team button NOT in DOM when !isSystemAdmin; Add Portfolio button: same; existing test 'shows OnboardingStepper when canCreateTeam is true' updated to expect stepper hidden for non-sysadmin",
+          "deps": ["02-01"],
+          "test_file": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+          "scenario_name": "OverviewDashboard hides admin controls and onboarding from non-SystemAdmin",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx"
+          ],
+          "implementation_notes": "Wire predicates: for the teams DataOverviewTable use canEditRow={(row)=>rbac.isTeamAdmin(row.id)}, canDeleteRow=same, canCloneRow={()=>rbac.isSystemAdmin}. For the portfolios table same pattern with isPortfolioAdmin. (Connections table is already wrapped in isSystemAdmin and is unreachable for non-sysadmin, but defensive predicates can still be set to ()=>isSystemAdmin.) Change OnboardingStepper gate at line 359 from (rbac.canCreateTeam || rbac.canCreatePortfolio) to rbac.isSystemAdmin. Change Add Team gate at line 400 from rbac.canCreateTeam to rbac.isSystemAdmin. Change Add Portfolio gate at line 430 from rbac.canCreatePortfolio to rbac.isSystemAdmin. Update OverviewDashboard.test.tsx:652 ('shows OnboardingStepper when canCreateTeam is true') to assert hidden for non-sysadmin, replace with 'shows OnboardingStepper when isSystemAdmin is true' test."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Route guards",
+      "description": "Slice 03 — Wizard/Edit pages reject non-SystemAdmin client-side via useRbacGate + inline no-access alert",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "EditTeam/EditPortfolio/EditConnection route guards via useRbacGate",
+          "criteria": "EditTeam: when useRbacGate({systemAdmin}) returns {allowed:false,isLoading:false}, renders team-edit-no-access-alert + link to /; form not rendered; EditTeam {allowed:true}: form renders as today; EditTeam {isLoading:true}: neither alert nor form (avoid flicker per DD-10); EditPortfolio: symmetric with portfolio-edit-no-access-alert; EditConnection: symmetric with connection-edit-no-access-alert; all three reuse the <Alert severity='info'> + back link pattern",
+          "deps": ["01-01"],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.test.tsx | EditPortfolio.test.tsx | EditConnection.test.tsx",
+          "scenario_name": "Wizard/Edit pages render no-access alert when user lacks SystemAdmin",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.test.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.test.tsx"
+          ],
+          "implementation_notes": "At the top of each page: const gate = useRbacGate({kind:'systemAdmin'}); if (gate.isLoading) return null (or a tiny <CircularProgress/> if the page already does that for other reasons); if (!gate.allowed) return <Container><Alert severity='info' data-testid='{team|portfolio|connection}-edit-no-access-alert'>You don't have permission to access this page. <Link to='/'>Back to Overview</Link></Alert></Container>. Match the pattern at TeamDetail.tsx:340-349 and PortfolioDetail.tsx:396-405. /teams/edit/:id and /portfolios/edit/:id are redirect-only (TeamEditRedirect/PortfolioEditRedirect in App.tsx) — they do not mount these pages, so the guards cover /teams/new, /portfolios/new, /connections/new, /connections/:id/edit only."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Polish",
+      "description": "Slice 04 — Access tab load-flash fix + useRbac doc comment",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Access tab load-flash fix + useRbac doc comment",
+          "criteria": "TeamDetail: on initial render with isRbacEnabled=false, Access tab NOT in DOM (no flicker); TeamDetail: Settings tab unchanged (still shows during load — intentional); PortfolioDetail: symmetric with isPortfolioAdmin; useRbac.ts: canCreateTeam and canCreatePortfolio have a TS doc comment clarifying current semantics (Team Admin on at least one team — see DD-08/OQ-D1); no behavioral change",
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx | PortfolioDetail.test.tsx",
+          "scenario_name": "TeamDetail/PortfolioDetail Access tab does not render before entity loads in non-RBAC mode",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx",
+            "Lighthouse.Frontend/src/hooks/useRbac.ts"
+          ],
+          "implementation_notes": "TeamDetail.tsx line 120-121: change showAccessTab from `!team || (rbac.isRbacEnabled && rbac.isTeamAdmin(team.id))` to `!!team && rbac.isRbacEnabled && rbac.isTeamAdmin(team.id)`. PortfolioDetail.tsx line 102-103: symmetric. Leave showSettingsTab as-is per DD-07. useRbac.ts: add a one-line JSDoc above canCreateTeam and canCreatePortfolio in the UserAuthorizationSummary type (or the RbacState interface) noting 'Currently equivalent to: user is Team Admin on at least one team. See OQ-D1 for planned rename.'"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "E2E coverage",
+      "description": "Extend the Playwright @rbac suite with viewer/scoped-admin assertions for the new gates",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Extend Playwright @rbac E2E with viewer/scoped-admin assertions",
+          "criteria": "Playwright @rbac suite (pnpm run test:rbac) passes locally end-to-end; new assertions added at the correct role-traversal steps in the existing big testWithAuth: Team Reader step asserts update-all-button hidden, api-keys-tab hidden, license-add-button hidden, license-clear-button hidden, no Edit/Clone/Delete on overview rows, onboarding-stepper hidden; Team Admin step asserts Edit+Delete visible on Team Zenith row + no Clone + nothing on Project Apollo; Portfolio Admin step asserts Edit+Delete on Project Apollo + no Clone + nothing on Team Zenith; new testWithAuth at end for direct-URL nav: Team Reader navigates to /teams/new → team-edit-no-access-alert visible, no wizard form",
+          "deps": ["01-02", "02-02", "03-01", "04-01"],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "Viewer/Team Admin/Portfolio Admin/System Admin gating across header, overview, settings, license popover, route guards",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts"
+          ],
+          "implementation_notes": "The existing test (the big testWithAuth with 12+ test.step calls) already does the role traversal — interleave the new assertions inside the existing test.step blocks. Add a NEW testWithAuth at the end of the @rbac describe for direct-URL nav (US-07). Tag both with the existing @rbac E2E describe. The CI workflow today runs both auth (.spec.ts) and rbac (.spec.ts) sequentially with a DB reset between; that workflow needs no changes."
+        }
+      ]
+    }
+  ]
+}
