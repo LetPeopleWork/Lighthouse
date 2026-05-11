@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
-        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
+        [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         [ProducesResponseType<IEnumerable<DeliveryWithLikelihoodDto>>(StatusCodes.Status200OK)]
         public IActionResult GetByPortfolio(int portfolioId)
         {

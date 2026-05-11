@@ -508,7 +508,18 @@ test.describe("@rbac E2E", () => {
 					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
 				).not.toBeVisible();
 
+				const deliveriesResponsePromise = portfolioDetailPage.page.waitForResponse(
+					(response) =>
+						response.url().includes("/deliveries/portfolio/") &&
+						response.request().method() === "GET",
+				);
 				const deliveriesPage = await portfolioDetailPage.goToDeliveries();
+				const deliveriesResponse = await deliveriesResponsePromise;
+				expect(deliveriesResponse.status()).toBe(200);
+
+				await expect(
+					deliveriesPage.page.getByText("Failed to fetch deliveries"),
+				).not.toBeVisible();
 				await expect(
 					deliveriesPage.page.getByRole("button", { name: "Add Delivery" }),
 				).not.toBeVisible();
@@ -750,7 +761,18 @@ test.describe("@rbac E2E", () => {
 					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
 				).not.toBeVisible();
 
+				const deliveriesResponsePromise = portfolioDetailPage.page.waitForResponse(
+					(response) =>
+						response.url().includes("/deliveries/portfolio/") &&
+						response.request().method() === "GET",
+				);
 				const deliveriesPage = await portfolioDetailPage.goToDeliveries();
+				const deliveriesResponse = await deliveriesResponsePromise;
+				expect(deliveriesResponse.status()).toBe(200);
+
+				await expect(
+					deliveriesPage.page.getByText("Failed to fetch deliveries"),
+				).not.toBeVisible();
 				await expect(
 					deliveriesPage.page.getByRole("button", { name: "Add Delivery" }),
 				).not.toBeVisible();

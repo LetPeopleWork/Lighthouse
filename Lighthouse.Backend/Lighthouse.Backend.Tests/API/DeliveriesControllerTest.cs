@@ -263,7 +263,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetByPortfolio_HasPortfolioWriteRbacGuardAttribute()
+        public void GetByPortfolio_HasPortfolioReadRbacGuardAttribute()
         {
             var method = typeof(DeliveriesController).GetMethod(nameof(DeliveriesController.GetByPortfolio));
             var attribute = method?
@@ -274,7 +274,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(attribute, Is.Not.Null);
-                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
                 Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
             }
         }
@@ -294,6 +294,67 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
                 Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
             }
+        }
+
+        [Test]
+        public async Task UpdateDelivery_WithoutPortfolioWrite_ReturnsForbidden()
+        {
+            const int deliveryId = 42;
+            const int portfolioId = 7;
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(10), portfolioId) { Id = deliveryId };
+
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
+            rbacAdministrationServiceMock
+                .Setup(x => x.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    RbacGuardRequirement.PortfolioWrite,
+                    portfolioId,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var controller = CreateSubject();
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Renamed",
+                Date = DateTime.UtcNow.AddDays(20),
+                FeatureIds = []
+            };
+
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+            rbacAdministrationServiceMock.Verify(
+                x => x.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    RbacGuardRequirement.PortfolioWrite,
+                    portfolioId,
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteDelivery_WithoutPortfolioWrite_ReturnsForbidden()
+        {
+            const int deliveryId = 42;
+            const int portfolioId = 7;
+
+            deliveryRepositoryMock.Setup(x => x.GetPortfolioId(deliveryId)).Returns(portfolioId);
+            rbacAdministrationServiceMock
+                .Setup(x => x.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    RbacGuardRequirement.PortfolioWrite,
+                    portfolioId,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var controller = CreateSubject();
+
+            var result = await controller.DeleteDelivery(deliveryId);
+
+            Assert.That(result, Is.InstanceOf<ForbidResult>());
+            deliveryRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
         }
 
         private static List<Feature> GetTestFeatures(List<int> ids)

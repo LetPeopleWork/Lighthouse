@@ -1,0 +1,40 @@
+{
+  "roadmap": {
+    "project_id": "delivery-list-read-access",
+    "created_at": "2026-05-11",
+    "total_steps": 1,
+    "phases": 1
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/API"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator",
+    "reviewed_at": "2026-05-11",
+    "method": "Inline by orchestrator — bug fix with single-line attribute change; DISTILL wrote RED test with exact required value; DESIGN/DISCUSS committed to PortfolioRead behaviour (rbac-enhancements WD-12 / DD-08)"
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Flip GetByPortfolio RBAC guard",
+      "description": "Change RbacGuardRequirement.PortfolioWrite to PortfolioRead on DeliveriesController.GetByPortfolio so portfolio-read users can fetch the delivery list. Write endpoints (Create/Update/Delete) keep PortfolioWrite.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Flip GetByPortfolio RbacGuardRequirement",
+          "criteria": "DeliveriesController.GetByPortfolio is decorated [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = \"portfolioId\")]; renamed unit test GetByPortfolio_HasPortfolioReadRbacGuardAttribute passes; CreateDelivery / UpdateDelivery / DeleteDelivery guards unchanged; new tests UpdateDelivery_WithoutPortfolioWrite_ReturnsForbidden and DeleteDelivery_WithoutPortfolioWrite_ReturnsForbidden pass; full DeliveriesControllerTest suite green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs",
+          "scenario_name": "GetByPortfolio has PortfolioRead RbacGuard attribute; write endpoints retain PortfolioWrite",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs"
+          ],
+          "implementation_notes": "Single-line attribute requirement change on line 27 of DeliveriesController.cs: replace RbacGuardRequirement.PortfolioWrite with RbacGuardRequirement.PortfolioRead. Do NOT touch lines 36 (CreateDelivery), 95+ (UpdateDelivery in-method guard at line 118), or 163+ (DeleteDelivery in-method guard at line 169) — write endpoints must keep PortfolioWrite. The RED test asserting PortfolioRead already exists at DeliveriesControllerTest.cs:266. Verify with `dotnet test` on the test project.",
+          "estimated_hours": 0.25
+        }
+      ]
+    }
+  ]
+}
