@@ -174,6 +174,21 @@ const RbacSettings: React.FC = () => {
 			);
 		});
 
+	const renderAdminLabel = (user: RbacUser): React.ReactNode => {
+		if (user.isEmergencyAdmin) {
+			return (
+				<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+					<Typography variant="body2">Emergency Admin</Typography>
+					<LockIcon fontSize="small" />
+				</Box>
+			);
+		}
+		if (user.isSystemAdmin) {
+			return "Yes";
+		}
+		return "No";
+	};
+
 	return (
 		<Box>
 			{error && <Alert severity="error">{error}</Alert>}
@@ -275,60 +290,55 @@ const RbacSettings: React.FC = () => {
 					</TableRow>
 				</TableHead>
 				<TableBody>
-					{visibleUsers.map((user) => (
-						<TableRow key={user.id} data-testid={`rbac-user-row-${user.id}`}>
-							<TableCell>{user.displayName || "(Unnamed user)"}</TableCell>
-							<TableCell>{user.email || "-"}</TableCell>
-							<TableCell>{user.subject}</TableCell>
-							<TableCell>
-								const adminLabel = user.isEmergencyAdmin ? (
-								<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-									<Typography variant="body2">Emergency Admin</Typography>
-									<LockIcon fontSize="small" />
-								</Box>
-								) : user.isSystemAdmin ? ( "Yes" ) : ( "No" );
-							</TableCell>
-							<TableCell>{user.isUnassigned ? "Yes" : "No"}</TableCell>
-							<TableCell align="right">
-								<Box
-									sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
-								>
-									{!user.isEmergencyAdmin && (
-										<>
-											{user.isSystemAdmin ? (
-												<Button
-													size="small"
-													color="error"
-													onClick={() => handleRevokeSystemAdmin(user.id)}
-													data-testid={`rbac-revoke-system-admin-${user.id}`}
-												>
-													Revoke
-												</Button>
-											) : (
-												<Button
-													size="small"
-													onClick={() => handleGrantSystemAdmin(user.id)}
-													data-testid={`rbac-grant-system-admin-${user.id}`}
-												>
-													Grant
-												</Button>
-											)}
-											{user.subject !== currentUserSubject && (
-												<Button
-													size="small"
-													color="error"
-													onClick={() => setRemoveDialogUserId(user.id)}
-													data-testid={`rbac-remove-user-${user.id}`}
-												>
-													Remove
-												</Button>
-											)}
-										</>
-									)}
-								</Box>
-							</TableCell>
-						</TableRow>
-					))}
+					{visibleUsers.map((user) => {
+						return (
+							<TableRow key={user.id} data-testid={`rbac-user-row-${user.id}`}>
+								<TableCell>{user.displayName || "(Unnamed user)"}</TableCell>
+								<TableCell>{user.email || "-"}</TableCell>
+								<TableCell>{user.subject}</TableCell>
+								<TableCell>{renderAdminLabel(user)}</TableCell>
+								<TableCell>{user.isUnassigned ? "Yes" : "No"}</TableCell>
+								<TableCell align="right">
+									<Box
+										sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
+									>
+										{!user.isEmergencyAdmin && (
+											<>
+												{user.isSystemAdmin ? (
+													<Button
+														size="small"
+														color="error"
+														onClick={() => handleRevokeSystemAdmin(user.id)}
+														data-testid={`rbac-revoke-system-admin-${user.id}`}
+													>
+														Revoke
+													</Button>
+												) : (
+													<Button
+														size="small"
+														onClick={() => handleGrantSystemAdmin(user.id)}
+														data-testid={`rbac-grant-system-admin-${user.id}`}
+													>
+														Grant
+													</Button>
+												)}
+												{user.subject !== currentUserSubject && (
+													<Button
+														size="small"
+														color="error"
+														onClick={() => setRemoveDialogUserId(user.id)}
+														data-testid={`rbac-remove-user-${user.id}`}
+													>
+														Remove
+													</Button>
+												)}
+											</>
+										)}
+									</Box>
+								</TableCell>
+							</TableRow>
+						);
+					})}
 				</TableBody>
 			</Table>
 
