@@ -66,7 +66,9 @@ export class Delivery implements IDelivery {
 	}
 
 	getFormattedDate(): string {
-		return new Date(this.date).toLocaleDateString();
+		return new Date(this.date).toLocaleDateString(undefined, {
+			timeZone: "UTC",
+		});
 	}
 
 	getFeatureCount(): number {

@@ -317,6 +317,51 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task UpdateDelivery_ManualSelection_DateChange_PersistsNewDate()
+        {
+            var portfolio = await AddPortfolio();
+            var features = await AddFeatures(portfolio);
+
+            var originalDate = DateTime.UtcNow.AddDays(30);
+            var createRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = originalDate,
+                FeatureIds = [features[0].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+            var createContent = new StringContent(
+                JsonSerializer.Serialize(createRequest), Encoding.UTF8, "application/json");
+            var createResponse = await Client.PostAsync(
+                $"/api/latest/deliveries/portfolio/{portfolio.Id}", createContent);
+            createResponse.EnsureSuccessStatusCode();
+
+            var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
+            var createdDelivery = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Single();
+
+            var newDate = DateTime.UtcNow.AddDays(60);
+            var updateRequest = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = newDate,
+                FeatureIds = [features[0].Id],
+                SelectionMode = DeliverySelectionMode.Manual
+            };
+            var updateContent = new StringContent(
+                JsonSerializer.Serialize(updateRequest), Encoding.UTF8, "application/json");
+            var updateResponse = await Client.PutAsync(
+                $"/api/latest/deliveries/{createdDelivery.Id}", updateContent);
+            Assert.That(updateResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
+            var persistedDelivery = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Single();
+
+            Assert.That(persistedDelivery.Date, Is.EqualTo(newDate).Within(TimeSpan.FromSeconds(1)));
+        }
+
+        [Test]
         public async Task UpdateDelivery_ManualSelection_ConsecutiveUpdates_ReturnsOk()
         {
             // Arrange
