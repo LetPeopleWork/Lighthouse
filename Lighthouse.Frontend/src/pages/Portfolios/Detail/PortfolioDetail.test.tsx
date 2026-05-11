@@ -698,6 +698,52 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 		).not.toBeInTheDocument();
 	});
 
+	it("does not render Access tab on initial render before portfolio loads in non-RBAC mode (DD-07)", () => {
+		const mockPortfolioSvc = createMockPortfolioService();
+		let resolveGetPortfolio: ((value: unknown) => void) | undefined;
+		(
+			mockPortfolioSvc.getPortfolio as ReturnType<typeof vi.fn>
+		).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveGetPortfolio = resolve;
+				}),
+		);
+
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			adminPortfolioIds: [],
+		});
+
+		const mockContext = createMockApiServiceContext({
+			portfolioService: mockPortfolioSvc,
+			teamService: createMockTeamService(),
+			rbacService: mockRbacService,
+			updateSubscriptionService: createMockUpdateSubscriptionService(),
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockContext}>
+				<MemoryRouter initialEntries={["/portfolios/1"]}>
+					<Routes>
+						<Route path="/portfolios/:id" element={<PortfolioDetail />} />
+						<Route path="/portfolios/:id/:tab" element={<PortfolioDetail />} />
+					</Routes>
+				</MemoryRouter>
+			</ApiServiceContext.Provider>,
+		);
+
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+
+		resolveGetPortfolio?.(undefined);
+	});
+
 	it("shows Refresh Features button and QuickSettingsBar for Portfolio Admin of own portfolio", async () => {
 		renderForRbac({
 			isRbacEnabled: true,

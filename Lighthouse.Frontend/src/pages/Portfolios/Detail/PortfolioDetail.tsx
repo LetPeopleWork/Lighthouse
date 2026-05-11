@@ -100,7 +100,7 @@ const PortfolioDetail: React.FC = () => {
 
 	const showSettingsTab = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 	const showAccessTab =
-		!portfolio || (rbac.isRbacEnabled && rbac.isPortfolioAdmin(portfolio.id));
+		!!portfolio && rbac.isRbacEnabled && rbac.isPortfolioAdmin(portfolio.id);
 	const showWriteControls = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 	const canEditDeliveries = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 

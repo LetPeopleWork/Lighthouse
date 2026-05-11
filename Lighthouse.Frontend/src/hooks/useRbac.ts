@@ -15,7 +15,9 @@ export interface RbacState {
 	isLoading: boolean;
 	isRbacEnabled: boolean;
 	isSystemAdmin: boolean;
+	/** Currently equivalent to: user is Team Admin on at least one team. See DD-08 and OQ-D1 for the planned rename. */
 	canCreateTeam: boolean;
+	/** Currently equivalent to: user is Portfolio Admin on at least one portfolio. See DD-08 and OQ-D1 for the planned rename. */
 	canCreatePortfolio: boolean;
 	/** Returns true if the current user is a Team Admin for the given team (by system-admin or explicit grant). */
 	isTeamAdmin: (teamId: number) => boolean;

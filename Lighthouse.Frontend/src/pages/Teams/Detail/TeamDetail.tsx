@@ -118,7 +118,7 @@ const TeamDetail: React.FC = () => {
 
 	const showSettingsTab = !team || rbac.isTeamAdmin(team.id);
 	const showAccessTab =
-		!team || (rbac.isRbacEnabled && rbac.isTeamAdmin(team.id));
+		!!team && rbac.isRbacEnabled && rbac.isTeamAdmin(team.id);
 	const showWriteControls = !team || rbac.isTeamAdmin(team.id);
 
 	const loadTeamMembers = useCallback(

@@ -832,6 +832,44 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("does not render Access tab on initial render before team loads in non-RBAC mode (DD-07)", () => {
+		const mockTeamService = createMockTeamService();
+		let resolveGetTeam: ((value: unknown) => void) | undefined;
+		(mockTeamService.getTeam as ReturnType<typeof vi.fn>).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveGetTeam = resolve;
+				}),
+		);
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			adminTeamIds: [],
+		});
+		const mockApiContext = createMockApiServiceContext({
+			teamService: mockTeamService,
+			rbacService: mockRbacService,
+			updateSubscriptionService: createMockUpdateSubscriptionService(),
+		});
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		expect(
+			screen.queryByRole("tab", { name: "Access" }),
+		).not.toBeInTheDocument();
+
+		resolveGetTeam?.(undefined);
+	});
+
 	it("shows Update Team Data button and QuickSettingsBar for Team Admin of own team", async () => {
 		renderForRbac({
 			isRbacEnabled: true,
