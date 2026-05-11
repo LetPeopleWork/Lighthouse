@@ -433,3 +433,5 @@ StrykerOutput/
 **/.stryker-tmp/
 reports/mutation/
 
+.claude/scheduled_tasks.lock
+Lighthouse.Frontend/reports/mutation/*
