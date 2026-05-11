@@ -290,4 +290,14 @@ describe("RbacService", () => {
 			"/authorization/group-mappings/4",
 		);
 	});
+
+	it("should delete a user by id", async () => {
+		mockedAxios.delete.mockResolvedValueOnce({ data: {} });
+
+		await subject.deleteUser(17);
+
+		expect(mockedAxios.delete).toHaveBeenCalledWith(
+			"/authorization/users/17",
+		);
+	});
 });
