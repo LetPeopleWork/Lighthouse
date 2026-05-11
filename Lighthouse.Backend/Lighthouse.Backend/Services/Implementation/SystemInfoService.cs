@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
@@ -26,6 +27,9 @@ namespace Lighthouse.Backend.Services.Implementation
             var dbProvider = configuration.GetValue<string>("Database:Provider") ?? "Unknown";
             var connectionString = configuration.GetValue<string>("Database:ConnectionString");
 
+            var authentication = configuration.GetSection("Authentication").Get<AuthenticationConfiguration>() ?? new AuthenticationConfiguration();
+            var authorization = configuration.GetSection("Authorization").Get<AuthorizationConfiguration>() ?? new AuthorizationConfiguration();
+
             return new SystemInfo(
                 Os: RuntimeInformation.OSDescription.Trim(),
                 Runtime: RuntimeInformation.FrameworkDescription,
@@ -33,7 +37,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 ProcessId: Environment.ProcessId,
                 DatabaseProvider: dbProvider,
                 DatabaseConnection: GetSafeDatabaseConnection(dbProvider, connectionString),
-                LogPath: logConfiguration.LogPath);
+                LogPath: logConfiguration.LogPath,
+                IsAuthenticationEnabled: authentication.Enabled,
+                IsAuthorizationEnabled: authorization.Enabled,
+                EmergencyAdminSubjects: authorization.EmergencySystemAdminSubjects);
         }
 
         private static string? GetSafeDatabaseConnection(string provider, string? connectionString)

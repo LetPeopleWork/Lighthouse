@@ -210,5 +210,104 @@ namespace Lighthouse.Backend.Tests.Services
         {
             return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object);
         }
+
+        [TestCase("true", true)]
+        [TestCase("false", false)]
+        [TestCase(null, false)]
+        public void GetSystemInfo_ReflectsAuthenticationEnabledFromConfiguration(string? configValue, bool expected)
+        {
+            var configuration = BuildConfiguration(authenticationEnabled: configValue);
+
+            var subject = CreateSubjectWithConfiguration(configuration);
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.IsAuthenticationEnabled, Is.EqualTo(expected));
+        }
+
+        [TestCase("true", true)]
+        [TestCase("false", false)]
+        [TestCase(null, false)]
+        public void GetSystemInfo_ReflectsAuthorizationEnabledFromConfiguration(string? configValue, bool expected)
+        {
+            var configuration = BuildConfiguration(authorizationEnabled: configValue);
+
+            var subject = CreateSubjectWithConfiguration(configuration);
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.IsAuthorizationEnabled, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void GetSystemInfo_NoEmergencyAdminSubjectsConfigured_ReturnsEmptyList()
+        {
+            var configuration = BuildConfiguration();
+
+            var subject = CreateSubjectWithConfiguration(configuration);
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.EmergencyAdminSubjects, Is.Empty);
+        }
+
+        [Test]
+        public void GetSystemInfo_SingleEmergencyAdminSubject_ReturnsSingleElementList()
+        {
+            var configuration = BuildConfiguration(emergencyAdminSubjects: new[] { "alice@example.com" });
+
+            var subject = CreateSubjectWithConfiguration(configuration);
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com" }));
+        }
+
+        [Test]
+        public void GetSystemInfo_MultipleEmergencyAdminSubjects_ReturnsAllSubjectsInOrder()
+        {
+            var configuration = BuildConfiguration(emergencyAdminSubjects: new[] { "alice@example.com", "bob@example.com", "carol@example.com" });
+
+            var subject = CreateSubjectWithConfiguration(configuration);
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.EmergencyAdminSubjects, Is.EqualTo(new[] { "alice@example.com", "bob@example.com", "carol@example.com" }));
+        }
+
+        private static IConfiguration BuildConfiguration(
+            string? authenticationEnabled = null,
+            string? authorizationEnabled = null,
+            string[]? emergencyAdminSubjects = null)
+        {
+            var data = new Dictionary<string, string?>();
+
+            if (authenticationEnabled != null)
+            {
+                data["Authentication:Enabled"] = authenticationEnabled;
+            }
+
+            if (authorizationEnabled != null)
+            {
+                data["Authorization:Enabled"] = authorizationEnabled;
+            }
+
+            if (emergencyAdminSubjects != null)
+            {
+                for (var i = 0; i < emergencyAdminSubjects.Length; i++)
+                {
+                    data[$"Authorization:EmergencySystemAdminSubjects:{i}"] = emergencyAdminSubjects[i];
+                }
+            }
+
+            return new ConfigurationBuilder()
+                .AddInMemoryCollection(data)
+                .Build();
+        }
+
+        private SystemInfoService CreateSubjectWithConfiguration(IConfiguration configuration)
+        {
+            return new SystemInfoService(configuration, logConfigurationMock.Object);
+        }
     }
 }

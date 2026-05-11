@@ -40,7 +40,10 @@ namespace Lighthouse.Backend.Tests.API
                 ProcessId: 12345,
                 DatabaseProvider: "sqlite",
                 DatabaseConnection: "/data/lighthouse.db",
-                LogPath: "/var/log/lighthouse");
+                LogPath: "/var/log/lighthouse",
+                IsAuthenticationEnabled: false,
+                IsAuthorizationEnabled: false,
+                EmergencyAdminSubjects: Array.Empty<string>());
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -70,7 +73,10 @@ namespace Lighthouse.Backend.Tests.API
                 ProcessId: 99,
                 DatabaseProvider: "postgresql",
                 DatabaseConnection: "Host=myhost;Port=5432;Database=mydb",
-                LogPath: null);
+                LogPath: null,
+                IsAuthenticationEnabled: false,
+                IsAuthorizationEnabled: false,
+                EmergencyAdminSubjects: Array.Empty<string>());
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 

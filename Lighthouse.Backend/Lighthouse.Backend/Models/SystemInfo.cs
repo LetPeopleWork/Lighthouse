@@ -7,5 +7,8 @@ namespace Lighthouse.Backend.Models
         int ProcessId,
         string DatabaseProvider,
         string? DatabaseConnection,
-        string? LogPath);
+        string? LogPath,
+        bool IsAuthenticationEnabled,
+        bool IsAuthorizationEnabled,
+        IReadOnlyList<string> EmergencyAdminSubjects);
 }
