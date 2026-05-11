@@ -1,0 +1,34 @@
+{
+  "schema_version": "3.0",
+  "feature_id": "api-keys-for-all-users",
+  "events": [
+    {
+      "sid": "01-01",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-11T16:55:07Z"
+    },
+    {
+      "sid": "01-01",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: E2E assertion inversion; the assertion itself is the acceptance test for the contract",
+      "t": "2026-05-11T16:55:10Z"
+    },
+    {
+      "sid": "01-01",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: E2E assertion inversion, no unit-level coverage applicable",
+      "t": "2026-05-11T16:55:13Z"
+    },
+    {
+      "sid": "01-01",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-11T16:56:56Z"
+    }
+  ]
+}
