@@ -18,6 +18,14 @@ vi.mock("react-router-dom", async () => {
 	};
 });
 
+let mockRbacGate: { allowed: boolean; isLoading: boolean } = {
+	allowed: true,
+	isLoading: false,
+};
+vi.mock("../../../hooks/useRbacGate", () => ({
+	useRbacGate: () => mockRbacGate,
+}));
+
 // Mock CreateTeamWizard
 vi.mock("../../../components/Common/CreateWizards/CreateTeamWizard", () => ({
 	default: () => <div data-testid="create-team-wizard">CreateTeamWizard</div>,
@@ -116,6 +124,7 @@ describe("EditTeam", () => {
 		vi.clearAllMocks();
 		mockGet.mockReturnValue(null);
 		mockParams = { id: undefined };
+		mockRbacGate = { allowed: true, isLoading: false };
 		// Reset globalThis.location.search
 		globalThis.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
@@ -179,5 +188,61 @@ describe("EditTeam", () => {
 			expect(screen.getByTestId("modify-team-settings")).toBeInTheDocument();
 		});
 		expect(screen.queryByTestId("create-team-wizard")).not.toBeInTheDocument();
+	});
+
+	describe("RBAC guard", () => {
+		it("renders no-access alert and hides wizard when user is not SystemAdmin", async () => {
+			mockRbacGate = { allowed: false, isLoading: false };
+			renderEditTeamWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("team-edit-no-access-alert"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("create-team-wizard"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("modify-team-settings"),
+			).not.toBeInTheDocument();
+			const backLink = screen.getByRole("link", { name: /back to overview/i });
+			expect(backLink).toHaveAttribute("href", "/");
+		});
+
+		it("renders wizard form and hides alert when user is allowed", async () => {
+			mockRbacGate = { allowed: true, isLoading: false };
+			renderEditTeamWithContext();
+			await waitFor(() => {
+				expect(screen.getByTestId("create-team-wizard")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("team-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders neither alert nor form while RBAC summary is loading", () => {
+			mockRbacGate = { allowed: false, isLoading: true };
+			renderEditTeamWithContext();
+			expect(
+				screen.queryByTestId("team-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("create-team-wizard"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("modify-team-settings"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders wizard form in PERMISSIVE_SUMMARY case where allowed defaults to true", async () => {
+			mockRbacGate = { allowed: true, isLoading: false };
+			renderEditTeamWithContext();
+			await waitFor(() => {
+				expect(screen.getByTestId("create-team-wizard")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("team-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+		});
 	});
 });

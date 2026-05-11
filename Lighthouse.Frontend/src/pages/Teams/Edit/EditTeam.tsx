@@ -1,11 +1,12 @@
-import { Container, Typography } from "@mui/material";
+import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import CreateTeamWizard from "../../../components/Common/CreateWizards/CreateTeamWizard";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useRbacGate } from "../../../hooks/useRbacGate";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -15,6 +16,7 @@ const EditTeamPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewTeam = id === undefined;
 	const navigate = useNavigate();
+	const gate = useRbacGate({ kind: "systemAdmin" });
 
 	const urlParams = new URLSearchParams(globalThis.location.search);
 	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
@@ -123,6 +125,27 @@ const EditTeamPage: React.FC = () => {
 		await teamService.updateTeamData(newSettings.id);
 		navigate(`/teams/${newSettings.id}/metrics`);
 	};
+
+	if (gate.isLoading) {
+		return null;
+	}
+
+	if (!gate.allowed) {
+		return (
+			<Container maxWidth={false}>
+				<Alert
+					severity="info"
+					sx={{ mb: 2 }}
+					data-testid="team-edit-no-access-alert"
+				>
+					You don't have permission to access this page.{" "}
+					<Link component={RouterLink} to="/">
+						Back to Overview
+					</Link>
+				</Alert>
+			</Container>
+		);
+	}
 
 	if (useWizard) {
 		return (

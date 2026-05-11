@@ -1,10 +1,11 @@
-import { Container, Typography } from "@mui/material";
+import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import CreateConnectionWizard from "../../../components/Common/Connection/CreateConnectionWizard";
 import ModifyConnectionSettings from "../../../components/Common/Connection/ModifyConnectionSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useRbacGate } from "../../../hooks/useRbacGate";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -14,6 +15,7 @@ const EditConnectionPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewConnection = id === undefined;
 	const navigate = useNavigate();
+	const gate = useRbacGate({ kind: "systemAdmin" });
 
 	const { getTerm } = useTerminology();
 	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
@@ -62,6 +64,27 @@ const EditConnectionPage: React.FC = () => {
 			connection,
 		);
 	};
+
+	if (gate.isLoading) {
+		return null;
+	}
+
+	if (!gate.allowed) {
+		return (
+			<Container maxWidth={false}>
+				<Alert
+					severity="info"
+					sx={{ mb: 2 }}
+					data-testid="connection-edit-no-access-alert"
+				>
+					You don't have permission to access this page.{" "}
+					<Link component={RouterLink} to="/">
+						Back to Overview
+					</Link>
+				</Alert>
+			</Container>
+		);
+	}
 
 	if (isNewConnection) {
 		return (

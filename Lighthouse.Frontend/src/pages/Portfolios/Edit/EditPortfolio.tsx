@@ -1,10 +1,11 @@
-import { Container, Typography } from "@mui/material";
+import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import CreatePortfolioWizard from "../../../components/Common/CreateWizards/CreatePortfolioWizard";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useRbacGate } from "../../../hooks/useRbacGate";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -13,6 +14,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 const EditPortfolio: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewPortfolio = id === undefined;
+	const gate = useRbacGate({ kind: "systemAdmin" });
 
 	const urlParams = new URLSearchParams(globalThis.location.search);
 	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
@@ -126,6 +128,27 @@ const EditPortfolio: React.FC = () => {
 		await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 		navigate(`/portfolios/${savedSettings.id}/metrics`);
 	};
+
+	if (gate.isLoading) {
+		return null;
+	}
+
+	if (!gate.allowed) {
+		return (
+			<Container maxWidth={false}>
+				<Alert
+					severity="info"
+					sx={{ mb: 2 }}
+					data-testid="portfolio-edit-no-access-alert"
+				>
+					You don't have permission to access this page.{" "}
+					<Link component={RouterLink} to="/">
+						Back to Overview
+					</Link>
+				</Alert>
+			</Container>
+		);
+	}
 
 	if (useWizard) {
 		return (

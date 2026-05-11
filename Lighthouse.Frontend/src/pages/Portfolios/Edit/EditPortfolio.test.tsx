@@ -21,6 +21,14 @@ vi.mock("react-router-dom", async () => {
 	};
 });
 
+let mockRbacGate: { allowed: boolean; isLoading: boolean } = {
+	allowed: true,
+	isLoading: false,
+};
+vi.mock("../../../hooks/useRbacGate", () => ({
+	useRbacGate: () => mockRbacGate,
+}));
+
 // Mock CreatePortfolioWizard
 vi.mock(
 	"../../../components/Common/CreateWizards/CreatePortfolioWizard",
@@ -127,6 +135,7 @@ describe("EditPortfolio", () => {
 		vi.clearAllMocks();
 		mockGet.mockReturnValue(null);
 		mockParams = { id: undefined };
+		mockRbacGate = { allowed: true, isLoading: false };
 		// Reset window.location.search
 		globalThis.location.search = "";
 
@@ -219,5 +228,65 @@ describe("EditPortfolio", () => {
 		expect(
 			screen.queryByTestId("create-portfolio-wizard"),
 		).not.toBeInTheDocument();
+	});
+
+	describe("RBAC guard", () => {
+		it("renders no-access alert and hides wizard when user is not SystemAdmin", async () => {
+			mockRbacGate = { allowed: false, isLoading: false };
+			renderEditPortfolioWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("portfolio-edit-no-access-alert"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("create-portfolio-wizard"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("modify-project-settings"),
+			).not.toBeInTheDocument();
+			const backLink = screen.getByRole("link", { name: /back to overview/i });
+			expect(backLink).toHaveAttribute("href", "/");
+		});
+
+		it("renders wizard form and hides alert when user is allowed", async () => {
+			mockRbacGate = { allowed: true, isLoading: false };
+			renderEditPortfolioWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("create-portfolio-wizard"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("portfolio-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders neither alert nor form while RBAC summary is loading", () => {
+			mockRbacGate = { allowed: false, isLoading: true };
+			renderEditPortfolioWithContext();
+			expect(
+				screen.queryByTestId("portfolio-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("create-portfolio-wizard"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("modify-project-settings"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders wizard form in PERMISSIVE_SUMMARY case where allowed defaults to true", async () => {
+			mockRbacGate = { allowed: true, isLoading: false };
+			renderEditPortfolioWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("create-portfolio-wizard"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("portfolio-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+		});
 	});
 });

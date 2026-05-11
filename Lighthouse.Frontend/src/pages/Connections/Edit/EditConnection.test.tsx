@@ -24,6 +24,14 @@ vi.mock("react-router-dom", async () => {
 	};
 });
 
+let mockRbacGate: { allowed: boolean; isLoading: boolean } = {
+	allowed: true,
+	isLoading: false,
+};
+vi.mock("../../../hooks/useRbacGate", () => ({
+	useRbacGate: () => mockRbacGate,
+}));
+
 vi.mock("../../../pages/Settings/Connections/AdditionalFieldsEditor", () => ({
 	default: () => <div data-testid="additional-fields-editor" />,
 }));
@@ -134,6 +142,7 @@ describe("EditConnectionPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockParamsId = undefined;
+		mockRbacGate = { allowed: true, isLoading: false };
 	});
 
 	describe("Create mode (no id param)", () => {
@@ -230,6 +239,74 @@ describe("EditConnectionPage", () => {
 					mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems,
 				).toHaveBeenCalled();
 			});
+		});
+	});
+
+	describe("RBAC guard", () => {
+		it("renders no-access alert and hides wizard in create mode when user is not SystemAdmin", async () => {
+			mockRbacGate = { allowed: false, isLoading: false };
+			renderWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("connection-edit-no-access-alert"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText(/Create.*Work Tracking System.*Connection/i),
+			).not.toBeInTheDocument();
+			const backLink = screen.getByRole("link", { name: /back to overview/i });
+			expect(backLink).toHaveAttribute("href", "/");
+		});
+
+		it("renders no-access alert and hides form in edit mode when user is not SystemAdmin", async () => {
+			mockParamsId = "42";
+			mockRbacGate = { allowed: false, isLoading: false };
+			renderWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("connection-edit-no-access-alert"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText(/Update.*Work Tracking System.*Connection/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders wizard form and hides alert when user is allowed in create mode", async () => {
+			mockRbacGate = { allowed: true, isLoading: false };
+			renderWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Create.*Work Tracking System.*Connection/i),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("connection-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders neither alert nor form while RBAC summary is loading", () => {
+			mockRbacGate = { allowed: false, isLoading: true };
+			renderWithContext();
+			expect(
+				screen.queryByTestId("connection-edit-no-access-alert"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByText(/Create.*Work Tracking System.*Connection/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders wizard form in PERMISSIVE_SUMMARY case where allowed defaults to true", async () => {
+			mockRbacGate = { allowed: true, isLoading: false };
+			renderWithContext();
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Create.*Work Tracking System.*Connection/i),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("connection-edit-no-access-alert"),
+			).not.toBeInTheDocument();
 		});
 	});
 });
