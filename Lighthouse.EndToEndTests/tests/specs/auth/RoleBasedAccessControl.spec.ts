@@ -397,7 +397,7 @@ test.describe("@rbac E2E", () => {
 				).not.toBeVisible();
 				await expect(
 					settingsPage.page.getByTestId("api-keys-tab"),
-				).not.toBeVisible();
+				).toBeVisible();
 				await expect(
 					settingsPage.page.getByTestId("system-info-tab"),
 				).toBeVisible();

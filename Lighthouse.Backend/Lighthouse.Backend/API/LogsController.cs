@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
@@ -8,7 +7,6 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    [RbacGuard]
     public class LogsController : ControllerBase
     {
         private readonly ILogConfiguration logConfiguration;

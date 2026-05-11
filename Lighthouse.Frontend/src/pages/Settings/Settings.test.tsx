@@ -141,7 +141,7 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 
-	it("should hide system-admin tabs (including API Keys) when user is not system admin", async () => {
+	it("shows API Keys tab when user is not system admin (other system-admin tabs still hidden)", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -158,12 +158,73 @@ describe("Settings Component", () => {
 			expect(screen.queryByTestId("demo-data-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("database-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("api-keys-tab")).not.toBeInTheDocument();
+			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 		});
 	});
 
-	it("should default to System Info panel when current tab is hidden for non-system admins", async () => {
+	it("shows API Keys tab to team admin who is not system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: false,
+			adminTeamIds: [42],
+			adminPortfolioIds: [],
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
+			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+		});
+	});
+
+	it("shows API Keys tab to portfolio admin who is not system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: true,
+			adminTeamIds: [],
+			adminPortfolioIds: [7],
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
+		});
+		expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+	});
+
+	it("shows API Keys tab to viewer with no admin role", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+			adminTeamIds: [],
+			adminPortfolioIds: [],
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
+			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+		});
+	});
+
+	it("lands on the first visible tab (API Keys) when the default tab is hidden for non-system admins", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -176,8 +237,8 @@ describe("Settings Component", () => {
 		renderWithRouter(["/settings"], { rbacService: mockRbacService });
 
 		await waitFor(() => {
-			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
-			expect(screen.getByTestId("system-info-panel")).toBeVisible();
+			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
+			expect(screen.getByTestId("api-keys-panel")).toBeVisible();
 			expect(
 				screen.queryByTestId("configuration-panel"),
 			).not.toBeInTheDocument();

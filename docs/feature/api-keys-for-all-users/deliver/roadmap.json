@@ -1,0 +1,181 @@
+{
+  "roadmap": {
+    "project_id": "api-keys-for-all-users",
+    "created_at": "2026-05-11",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Make the API Keys settings tab visible to every authenticated user and let every authenticated user manage their own API keys, by removing the systemAdmin tab-visibility gate on tab value \"40\" in Settings.tsx and aligning the existing test and E2E assertions with that contract. The backend ApiKeyController is already per-user scoped (sub/oid claim), so no production change is needed there \u2014 the delivery adds backend integration tests that pin the per-user contract and the 401/400 negative paths, plus frontend tests that pin tab visibility across all RBAC role variants and the RBAC-disabled / auth-disabled branches."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-05-11",
+    "notes": "Reviewer returned conditionally_approved with 0 blockers, 2 high, 1 low. All findings addressed in-place: (a) duplicate acceptance_criteria/criteria fields collapsed to a single `criteria` field per step; (b) step 01-02 criteria now explicitly acknowledge the @rbac Playwright suite remains RED from the 01-01 inversion until 01-03 lands the production edit (deployment-safety design call-out); (c) step 01-04 files_to_modify now lists ApiKeysSettings.test.tsx upfront so patch scope is predictable, with the description clarifying it is a no-op commit if existing coverage is complete. Walking skeleton coverage 100% across 01-02 (backend) + 01-03 (frontend). All 14 DISTILL scenarios covered with no orphans. Step IDs match ^\\d{2}-\\d{2}$. Sizing under 8 scenarios per step."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/api-keys-for-all-users/feature-delta.md",
+    "gherkin": [
+      "docs/feature/api-keys-for-all-users/acceptance/walking-skeleton.feature",
+      "docs/feature/api-keys-for-all-users/acceptance/milestone-1-tab-visibility.feature",
+      "docs/feature/api-keys-for-all-users/acceptance/milestone-2-non-admin-create.feature",
+      "docs/feature/api-keys-for-all-users/acceptance/milestone-3-auth-disabled.feature"
+    ]
+  },
+  "out_of_scope": [
+    "Per-user API key quota (tracked as follow-up feature api-keys-per-user-quota \u2014 see feature-delta Wave-decision reconciliation). This feature ships uncapped; operator abuse detection relies on the existing ApiKeyService.CreateApiKeyAsync logger output.",
+    "Observability dashboards / new metrics. The existing ILogger<ApiKeyService> signal in ApiKeyService.cs is the only operator-facing instrumentation in scope; no new log shapes, no new metrics, no dashboard assets shipped here.",
+    "Changes to useRbac() hook \u2014 the gate relaxation removes a consumer-side check in Settings.tsx; the hook signature is untouched.",
+    "Changes to ApiKeyController.cs production source \u2014 the controller is already [Authorize]-only and per-user scoped; milestone-2 scenarios are contract pins on existing behaviour, not new behaviour."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Relax API Keys tab to all authenticated users",
+      "description": "Invert the Playwright assertion first (deployment-safety: prevents the @rbac suite from going red in CI when the production edit lands). Then add backend integration tests that pin per-user scoping + 401/400 paths against the already-correct controller. Then add frontend non-admin visibility tests and flip systemAdminTabValues in Settings.tsx in a single cohesive RED\u2192GREEN cycle. Finally verify the milestone-3 auth-disabled gate is still GREEN against existing ApiKeysSettings.test.tsx coverage.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Invert E2E Playwright Team Reader assertion (deployment-safety pre-flight)",
+          "description": "In Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts, locate the Team Reader role step (around lines 399\u2013400) and invert the assertion: api-keys-tab testId MUST be in the DOM (was: MUST NOT be in the DOM). This must land BEFORE the production edit in step 01-03 \u2014 the @rbac Playwright suite runs in CI and would otherwise go red the moment systemAdminTabValues is changed. The dev pnpm test loop does not include Playwright, so this inversion is safe to ship first as a 'remove the trap' commit; the assertion is testing the contract this feature establishes, not the current production behaviour, so it will be RED locally if the E2E suite is run before 01-03 \u2014 that is acceptable per feature-delta DEVOPS section since Playwright is not part of the per-commit gate.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "Team Reader sees api-keys-tab in the Settings DOM (inverted assertion in the existing @rbac role-traversal spec)",
+          "red_to_green_tests": [
+            "RoleBasedAccessControl @rbac role-traversal :: Team Reader step asserts api-keys-tab present"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The Team Reader role step in RoleBasedAccessControl.spec.ts asserts api-keys-tab testId IS present in the DOM (the previous 'NOT present' assertion is removed in the same change, not left commented out).",
+            "No other role steps in the spec are modified \u2014 the inversion is scoped to the Team Reader step around the previous lines 399\u2013400.",
+            "pnpm test (frontend) and dotnet test (backend) remain green \u2014 this change does not affect either suite.",
+            "The Playwright suite remains the only sink that observes the new assertion until step 01-03 lands; this is documented in the commit body to make the temporary 'E2E red, dev green' window auditable."
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Backend integration tests: non-admin create/list/delete + per-user scoping pins + 401/400",
+          "description": "Create new file Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ApiKeyControllerNonAdminAccessTests.cs. Uses WebApplicationFactory<Program> with a test authentication scheme that injects a non-admin ClaimsPrincipal with a configurable sub claim (and a separate principal for Riley). Covers milestone-2 scenarios M2.1\u2013M2.5: non-admin happy path (POST 201 \u2192 GET 200 lists own key \u2192 DELETE 204 \u2192 GET 200 empty), per-user scoping pin (Jordan does not see Riley's key in GET), cross-user deletion pin (Jordan DELETE on Riley's id returns 404 and Riley's key remains), unauthenticated POST returns 401, whitespace-only name returns 400. The controller is already [Authorize]-only and per-user scoped, so these are contract pins on existing behaviour \u2014 they pass on the first run once the test plumbing (custom auth handler + principal switch) is wired correctly. No production source change in this step.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ApiKeyControllerNonAdminAccessTests.cs",
+          "scenario_name": "Non-admin authenticated user creates, lists, and deletes a personal key (plus M2.2/M2.3 scoping pins, M2.4 401, M2.5 400) \u2014 covers milestone-2-non-admin-create.feature scenarios M2.1\u2013M2.5",
+          "red_to_green_tests": [
+            "NonAdmin_PostApiKey_Returns201WithPlainTextKey",
+            "NonAdmin_GetApiKeys_ListsOnlyOwnKeys",
+            "NonAdmin_DeleteOwnKey_Returns204",
+            "NonAdmin_GetApiKeys_AfterDeletion_Returns200WithEmptyList",
+            "NonAdmin_GetApiKeys_DoesNotIncludeOtherUsersKeys",
+            "NonAdmin_DeleteOtherUsersKey_Returns404",
+            "NonAdmin_DeleteOtherUsersKey_DoesNotRemoveTheKey",
+            "Unauthenticated_PostApiKey_Returns401",
+            "NonAdmin_PostApiKey_WithWhitespaceName_Returns400"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ApiKeyControllerNonAdminAccessTests.cs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "The new file lives under Lighthouse.Backend.Tests/API/Integration/ alongside other integration tests (not under API/ \u2014 the directory split signals real-HTTP coverage vs controller-unit).",
+            "Test fixture uses WebApplicationFactory<Program> with a custom AuthenticationHandler registered as the default scheme; the handler is configurable per test to emit a ClaimsPrincipal with a specific 'sub' value, no roles, and no IsSystemAdmin claim.",
+            "Happy path: POST /api/latest/apikeys with body {\"name\":\"jordan-cli\",\"description\":\"local CLI\"} returns 201; response body contains a non-empty plainTextKey field. GET /api/latest/apikeys returns 200 listing exactly one key with name=jordan-cli and createdByUser identifying Jordan. DELETE /api/latest/apikeys/{id} for that id returns 204. A subsequent GET returns 200 with zero keys.",
+            "Per-user scoping pin: Riley (different sub claim) creates a key named 'riley-cli'. Jordan's GET response body does NOT contain any key named 'riley-cli'.",
+            "Cross-user deletion pin: Jordan DELETE /api/latest/apikeys/{rileyKeyId} returns 404. Riley's subsequent GET still lists the key with id=rileyKeyId.",
+            "Unauthenticated path: a request issued with the default (anonymous) scheme to POST /api/latest/apikeys returns 401, not 403.",
+            "Validation path: POST /api/latest/apikeys with body {\"name\":\"   \"} returns 400 and the response body indicates the name is required.",
+            "No production source file under Lighthouse.Backend/ is modified by this step \u2014 the test file is the only added artefact.",
+            "dotnet build succeeds with zero warnings (TreatWarningsAsErrors). dotnet test reports all new tests green and no existing test regressed.",
+            "No new SonarQube issues introduced.",
+            "The @rbac Playwright suite status is unchanged by this step (remains RED from the 01-01 inversion until 01-03 lands the production edit); expected per the deployment-safety design documented in the validation notes."
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Frontend non-admin tab visibility tests + Settings.tsx production edit (cohesive RED\u2192GREEN)",
+          "description": "Add new test cases in Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx for milestone-1 role variants: System Admin pin (M1.1, regression), Team Admin sees api-keys-tab (M1.2, RED today), Portfolio Admin sees api-keys-tab (M1.3, RED today), Viewer sees api-keys-tab (M1.4, RED today), RBAC-disabled pin (M1.5, regression), default-tab edge case where a non-admin without a tab query parameter lands on the first visible tab (M1.6). Invert the existing 'should hide system-admin tabs (including API Keys) when user is not system admin' test at line 144 \u2014 rename to 'shows API Keys tab even when not system admin (other system-admin tabs still hidden)' and assert getByTestId('api-keys-tab') in the DOM while configuration-tab/database-tab/rbac-tab remain absent. Then in Lighthouse.Frontend/src/pages/Settings/Settings.tsx, remove '40' from the systemAdminTabValues Set so it becomes new Set(['20','25','30','50']); this single production-source character group is what turns all new RED tests GREEN at once. Cohesion rationale: every new milestone-1 RED test fails today for the same root cause (api-keys-tab gated on isSystemAdmin via the '40' membership in systemAdminTabValues); a single one-line production edit flips them all simultaneously \u2014 splitting would create an artificial first-half cycle that cannot reach GREEN without the second.",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx",
+          "scenario_name": "API Keys tab is visible to every authenticated user (System Admin pin + Team Admin RED + Portfolio Admin RED + Viewer RED + RBAC-disabled pin + default-tab edge case) \u2014 covers milestone-1-tab-visibility.feature scenarios M1.1\u2013M1.6 and the walking-skeleton frontend half",
+          "red_to_green_tests": [
+            "Settings.test.tsx :: shows API Keys tab when user is System Admin (regression pin for M1.1)",
+            "Settings.test.tsx :: shows API Keys tab when user is Team Admin but not System Admin (M1.2)",
+            "Settings.test.tsx :: shows API Keys tab when user is Portfolio Admin but not System Admin (M1.3)",
+            "Settings.test.tsx :: shows API Keys tab when user is a Viewer with no admin role (M1.4)",
+            "Settings.test.tsx :: shows API Keys tab when RBAC enforcement is disabled (M1.5)",
+            "Settings.test.tsx :: shows API Keys tab even when not system admin (other system-admin tabs still hidden) \u2014 inverted from the previous 'should hide system-admin tabs (including API Keys)' test at line 144",
+            "Settings.test.tsx :: non-admin without a tab query parameter lands on the first visible tab (M1.6 default-tab edge case)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Settings.tsx"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "systemAdminTabValues in Settings.tsx is new Set(['20','25','30','50']) \u2014 the literal '40' is removed (not commented out, not relocated).",
+            "No other production change is made in Settings.tsx in this commit \u2014 the tabConfig, visibleTabs filter, reverseTabMapping, and useEffect blocks remain byte-for-byte identical apart from the one-character set removal.",
+            "Settings.test.tsx contains a System Admin happy-path test asserting api-keys-tab present (regression pin for M1.1).",
+            "Settings.test.tsx contains a Team Admin test (isSystemAdmin: false, with at least one TeamAdmin scope in the mocked summary) asserting api-keys-tab present while configuration-tab and rbac-tab are absent (M1.2).",
+            "Settings.test.tsx contains a Portfolio Admin test (isSystemAdmin: false, with at least one PortfolioAdmin scope in the mocked summary) asserting api-keys-tab present (M1.3).",
+            "Settings.test.tsx contains a Viewer test (isSystemAdmin: false, canCreateTeam: false, canCreatePortfolio: false) asserting api-keys-tab present, system-info-tab present, configuration-tab absent, rbac-tab absent (M1.4).",
+            "Settings.test.tsx contains an RBAC-disabled test (isRbacEnabled: false) asserting api-keys-tab present (M1.5).",
+            "Settings.test.tsx contains a default-tab edge-case test (non-admin, no tab query parameter) asserting the user lands on the first visible tab and that exactly one panel is visible (M1.6).",
+            "The previous line-144 test 'should hide system-admin tabs (including API Keys) when user is not system admin' is renamed (not deleted) to reflect the new contract \u2014 it asserts api-keys-tab IS in the DOM while configuration-tab, demo-data-tab, database-tab, and rbac-tab remain NOT in the DOM. Renaming preserves the original intent (the other system-admin tabs are still hidden) while inverting the api-keys-tab assertion.",
+            "The existing 'should default to System Info panel when current tab is hidden for non-system admins' test (around line 166) is reviewed: if it still passes against the new visibility set, leave it untouched; if it must be reworded for the new default-tab landing (API Keys may now be first), update its assertion in this same commit \u2014 do not let it drift.",
+            "pnpm test runs all Vitest suites green including the new and renamed cases.",
+            "pnpm build (tsc -b + vite build + Biome via prebuild) completes with zero errors and zero warnings.",
+            "No new SonarQube issues introduced; cognitive complexity of Settings.tsx is unchanged (the edit removes a Set element, no control-flow change)."
+          ]
+        },
+        {
+          "id": "01-04",
+          "name": "Milestone-3 auth-disabled coverage verification (gate-only)",
+          "description": "Verification-only step. The existing Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.test.tsx already asserts (a) api-keys-disabled-message is in the DOM when getRuntimeAuthStatus returns AuthMode.Disabled, and (b) create-api-key-button is disabled in that same branch \u2014 see the 'disables api key management when auth is disabled' test at lines 116\u2013136. These two assertions together cover milestone-3 scenarios M3.1 (tab visible but disabled-message alert visible) and M3.2 (create button disabled). The gate for this step is: run pnpm test, confirm the existing 'disables api key management when auth is disabled' test still passes after 01-03's production edit (the panel is now reachable for non-admins, so the auth-disabled branch is exercised by a wider audience than before \u2014 but the assertion target is unchanged). If the test is found to be missing the explicit 'alert text contains Authentication is not enabled' substring assertion from M3.1, extend it in place; otherwise leave the file untouched. No new test file is created; this is a gate-only step. The file is listed in files_to_modify upfront so the patch scope is predictable: if the existing assertions already include the 'Authentication is not enabled' substring, this step ships as a no-op commit with the gate-only justification recorded in the audit log. Otherwise the single substring assertion is added in place and committed.",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.test.tsx",
+          "scenario_name": "API Keys panel degrades gracefully when authentication is disabled (existing coverage gate) \u2014 covers milestone-3-auth-disabled.feature scenarios M3.1 and M3.2",
+          "red_to_green_tests": [
+            "ApiKeysSettings.test.tsx :: disables api key management when auth is disabled (existing test at lines 116\u2013136 \u2014 must remain GREEN; if M3.1 alert-text substring is missing, add it in place)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.test.tsx"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "gate": "Existing ApiKeysSettings.test.tsx 'disables api key management when auth is disabled' remains GREEN; full pnpm test + dotnet test suites green.",
+          "criteria": [
+            "pnpm test passes including the existing 'disables api key management when auth is disabled' test in ApiKeysSettings.test.tsx \u2014 no regression introduced by 01-03's production edit.",
+            "The existing test asserts api-keys-disabled-message is in the DOM (M3.1 panel-side assertion) and create-api-key-button is disabled (M3.2). Both assertions are confirmed present in the current test body.",
+            "If the test is found to be missing an explicit substring assertion that the disabled-message text contains 'Authentication is not enabled' (M3.1 fine-grained criterion), add that single assertion in place and re-run pnpm test. Otherwise files_to_modify remains empty and this step ships as a documented verification.",
+            "The tab-visible portion of M3.1 ('a tab with testId api-keys-tab is in the DOM') is covered transitively by the M1.5 RBAC-disabled-equivalent test in 01-03 plus the Settings.tsx production edit \u2014 with no system-admin gate on tab value '40', the tab is in the DOM for every authenticated rendering, including the auth-disabled branch.",
+            "Full repository test suite (pnpm test + dotnet test) remains green; pnpm build remains clean.",
+            "If files_to_modify is non-empty after the gate check, the commit message explicitly calls out the M3.1 alert-text extension and references this step id."
+          ]
+        }
+      ]
+    }
+  ],
+  "walking_skeleton": {
+    "scenario": "Authenticated non-admin opens Settings, sees API Keys tab, and creates a key end-to-end",
+    "covered_by_step": "01-02 (backend HTTP create/list/delete via WebApplicationFactory<Program> with a non-admin principal) + 01-03 (frontend Settings render asserts api-keys-tab present for a non-admin user)",
+    "coverage_estimate": "100% of the @walking_skeleton scenario at the two driving-adapter levels the feature touches: (a) the React <Settings /> tab filter under a non-admin mocked RBAC summary, and (b) the HTTP POST /api/latest/apikeys + GET + DELETE pipeline under a non-admin test ClaimsPrincipal. The E2E Playwright spec (RoleBasedAccessControl.spec.ts) covers the full browser-driven walk in step 01-01."
+  },
+  "quality_gates": {
+    "backend": [
+      "dotnet build with zero warnings (TreatWarningsAsErrors)",
+      "dotnet test \u2014 all xUnit suites green, including the new ApiKeyControllerNonAdminAccessTests integration suite"
+    ],
+    "frontend": [
+      "pnpm test \u2014 all Vitest suites green, including the new and renamed milestone-1 cases in Settings.test.tsx",
+      "pnpm build \u2014 tsc -b plus vite build complete with zero errors and zero warnings (Biome runs as prebuild)"
+    ],
+    "e2e": [
+      "Playwright @rbac suite green after step 01-01 lands the Team Reader assertion inversion and step 01-03 lands the production edit; the temporary window between 01-01 and 01-03 has Playwright red and dev pnpm test green by design"
+    ],
+    "sonarqube": [
+      "No new issues introduced (bugs, vulnerabilities, code smells, security hotspots) across both stacks"
+    ]
+  }
+}

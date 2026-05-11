@@ -131,6 +131,9 @@ describe("ApiKeysSettings", () => {
 				screen.getByTestId("api-keys-disabled-message"),
 			).toBeInTheDocument();
 		});
+		expect(screen.getByTestId("api-keys-disabled-message")).toHaveTextContent(
+			/Authentication is not enabled/,
+		);
 		expect(screen.getByTestId("create-api-key-button")).toBeDisabled();
 		expect(getApiKeys).not.toHaveBeenCalled();
 	});
