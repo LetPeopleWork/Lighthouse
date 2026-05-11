@@ -219,6 +219,20 @@ Feature flags: none. The relaxed gate is unconditional once shipped. Operators w
 
 ---
 
+## Wave: DELIVER / [WHY] Upstream Issues — incidental commits on this branch
+
+During DELIVER, three commits landed on `feat/api-keys-for-all-users` that are NOT part of this feature's stated scope. They were created as side-effects by the crafter sub-agents (likely while running pre-commit hooks or staging adjacent uncommitted work). They are documented here so PR review can decide whether to keep them or rebase them out.
+
+| Commit | Scope | Recommendation |
+|---|---|---|
+| `37284d30` chore(.gitignore): add ignore rule for Stryker reports in Lighthouse.Frontend | One line added to `.gitignore` — ignores Stryker mutation testing report directory. Harmless project hygiene. | KEEP. Trivial, low-risk, not domain-specific. |
+| `df824e60` test(system-info): mutation testing scope configs + optional-field tests | Adds Stryker scope configuration for the `system-info-auth-visibility` feature plus a few optional-field tests. Belongs to a different feature branch. | RECOMMEND CHERRY-PICK to `system-info-auth-visibility` branch or its own PR. Not blocking this PR but should not be claimed as part of api-keys delivery. |
+| `c5578c23` chore(LogsController): remove unused authorization guard | Removes `[RbacGuard]` (default requirement: SystemAdmin) from `LogsController`. The commit message says "unused" but the guard WAS active — this is a permission relaxation similar in shape to this feature's change, but on a different controller. | FLAG FOR REVIEW. This is a security-sensitive change that deserves its own justification and PR. Recommend cherry-pick to a separate branch (`chore/logs-controller-rbac-relaxation` or similar) with a dedicated commit message explaining why the LogsController gate is now considered unnecessary. Do NOT silently ship as part of this feature. |
+
+These commits do not affect the api-keys-for-all-users acceptance gates: frontend `pnpm test` (2755 tests) and backend `dotnet test` (2332 tests) remain green with all three present.
+
+---
+
 ## Wave: DISTILL / [REF] Self-review checklist
 
 - [x] WS strategy declared (Strategy C — Real local)
@@ -232,3 +246,58 @@ Feature flags: none. The relaxed gate is unconditional once shipped. Operators w
 - [x] Error path coverage 50% (>= 40% target).
 - [x] Prior-wave contradictions: 1 contradiction with `rbac-ui-completeness/D4` and US-04 AC3. **Resolved** via the explicit override recorded in "Wave-decision reconciliation" above; the prior-wave caveat ("If keys become per-user in the future, revisit") already applies.
 - [x] Outcomes registry: feature relaxes an existing UI gate; it does not introduce a new typed contract surface. Per D-6 gate-scoping, methodology / observability / permission-relaxation features do not need OUT-N registration. The existing `POST/GET/DELETE /api/latest/apikeys` operations are unchanged.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary
+
+The feature shipped as a single-character production change: removing `"40"` from the `systemAdminTabValues` Set in `Settings.tsx`. Backend stayed untouched because `ApiKeyController` was already `[Authorize]`-only and per-user scoped — the four DELIVER steps therefore landed E2E assertion inversion, backend HTTP contract pins, frontend role-variant visibility tests, and an auth-disabled alert-text pin around that one-line edit. All 14 DISTILL acceptance scenarios are green.
+
+### Files modified
+
+| Category | File | Change |
+|---|---|---|
+| Production | `Lighthouse.Frontend/src/pages/Settings/Settings.tsx` | Removed `"40"` from `systemAdminTabValues` Set (one line) |
+| Tests (frontend) | `Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx` | Added role-variant tests M1.1–M1.6; inverted the previous "hide system-admin tabs" test |
+| Tests (frontend) | `Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.test.tsx` | Pinned M3.1 alert-text substring "Authentication is not enabled" |
+| Tests (backend) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ApiKeyControllerNonAdminAccessTests.cs` | NEW — non-admin CRUD round-trip + per-user scoping pins + 401/400 paths |
+| Tests (E2E) | `Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts` | Inverted Team Reader `api-keys-tab` assertion (NOT present → present) |
+
+### Scenarios green: 14 / 14
+
+Walking skeleton + M1.1–M1.6 (tab visibility across role variants) + M2.1–M2.5 (non-admin CRUD + scoping + 401 + 400) + M3.1–M3.2 (auth-disabled graceful degradation). M2.2 / M2.3 / M2.4 are additionally pinned at unit level in the pre-existing `ApiKeyControllerTest.cs` and `ApiKeyServiceTest.cs`; the HTTP-level scope wall is documented (real authentication-handler wiring cannot be exercised below the `WebApplicationFactory<Program>` boundary — the new `Integration/` directory split signals exactly that).
+
+### Definition of Done
+
+- [x] All 4 DELIVER steps reached COMMIT with `d: PASS`
+- [x] DES integrity verification clean (`All 4 steps have complete DES traces`)
+- [x] Frontend: 214 test files / 2755 tests passing
+- [x] Backend: 2332 tests passing
+- [x] Production diff: exactly 1 line in `Settings.tsx`
+- [x] Acceptance scenarios SSOT (`acceptance/*.feature`) reflects shipped behaviour
+- [x] No new SonarQube issues introduced
+- [x] `pnpm build` clean (tsc + Vite + Biome prebuild, zero warnings)
+- [x] `dotnet build` clean (`TreatWarningsAsErrors`, zero warnings)
+
+### Quality gates per phase
+
+| Phase | Outcome |
+|---|---|
+| Phase 1 — Roadmap | Approved by `nw-acceptance-designer-reviewer` (`conditionally_approved` → blockers addressed in-place: duplicate criteria collapsed, deployment-safety call-out added to 01-02, 01-04 patch scope clarified) |
+| Phase 2 — Step execution | All 4 steps COMMIT/PASS (`b14ad8f2`, `8eadf300`, `e5c68d2a`, `edddc10a`) |
+| Phase 3 — Refactor | SKIPPED — a one-line Set-element removal has no refactor surface |
+| Phase 4 — Adversarial review | `conditionally_approved`; three out-of-scope incidental commits (`37284d30`, `df824e60`, `c5578c23`) flagged for PR-time decision (see "Upstream Issues" section above) |
+| Phase 5 — Mutation testing | SKIPPED — rationale: (a) zero new backend production code, (b) no frontend Stryker config exists in repo, (c) the new milestone-1 tests directly cover the Set-membership contract that the lone production change implements; mutating a single Set-literal element has trivial kill semantics |
+| Phase 6 — Integrity verification | Clean — `All 4 steps have complete DES traces` |
+
+### Demo evidence
+
+Not applicable — this is a UI-only permission relaxation. No CLI elevator pitch was prepared; the operator-facing change is the inverted Team Reader `@rbac` Playwright step plus the user-visible tab in `/settings`. The breaking-change UI note (top of this file, "Breaking-change note for the DELIVER commit message and release notes") is the release-notes payload.
+
+### Pre-requisites
+
+- `ApiKeyController` already at `[Authorize]` only (no `[Authorize(Roles=...)]` or `[RbacGuard]`); per-user scoping already enforced via `stableSubject` (`sub` / `oid` claim) — verified at `Lighthouse.Backend/API/ApiKeyController.cs`
+- `useRbac()` hook signature unchanged — the gate relaxation removes a consumer-side check, not a hook field
+- Existing `WebApplicationFactory<Program>` test infrastructure with custom auth scheme — leveraged by the new integration test file
+- Existing `createMockRbacService` factory in `Settings.test.tsx` — extended for the new role-variant cases
+- Existing `@rbac` Playwright role-traversal suite — assertion piggy-backed onto the existing Team Reader step

@@ -253,7 +253,7 @@ All driving ports are React component render conditions or route guards — no n
 | Overview row actions | `components/Common/DataOverviewTable/DataOverviewTable.tsx` | Always rendered | Per-row admin gate; Clone = `isSystemAdmin` |
 | OnboardingStepper | `pages/Overview/OverviewDashboard.tsx:359` | `canCreateTeam \|\| canCreatePortfolio` | `isSystemAdmin` |
 | Add Team / Add Portfolio | `pages/Overview/OverviewDashboard.tsx:400,430` | `canCreate*` | `isSystemAdmin` |
-| API Keys tab | `pages/Settings/Settings.tsx:85` | Visible to all | In `systemAdminTabValues` |
+| API Keys tab | `pages/Settings/Settings.tsx:85` | Visible to all | Visible to all (D4 overridden 2026-05-11 by `api-keys-for-all-users` — keys are per-user scoped at the backend; tab value `"40"` is NOT in `systemAdminTabValues`) |
 | License import/clear | `components/Common/LicenseStatus/LicenseStatusPopover.tsx` | Visible to all | Buttons gated `isSystemAdmin` |
 | Access tab (load flash) | `pages/Teams/Detail/TeamDetail.tsx:120`, `pages/Portfolios/Detail/PortfolioDetail.tsx:102` | `!entity \|\| (...)` | `entity && (...)` |
 | Edit/Wizard routes | `pages/Teams/Edit/EditTeam.tsx`, `pages/Portfolios/Edit/EditPortfolio.tsx`, `pages/Connections/Edit/EditConnection.tsx` | No client guard | On-mount RBAC check + redirect |
