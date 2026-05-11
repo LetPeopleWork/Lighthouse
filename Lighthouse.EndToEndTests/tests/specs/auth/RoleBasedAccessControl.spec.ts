@@ -96,7 +96,30 @@ test.describe("@rbac E2E", () => {
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
+				await expect(
+					overview.page.getByTestId("update-all-button"),
+				).toBeVisible();
+				await expect(
+					overview.page.getByTestId("onboarding-stepper"),
+				).toBeVisible();
+				await expect(
+					overview.page.getByRole("button", { name: "Add Team" }).first(),
+				).toBeVisible();
+				await expect(
+					overview.page.getByRole("button", { name: "Add Portfolio" }).first(),
+				).toBeVisible();
+
 				const rbac = await goToRbacSettings(overview);
+				await expect(rbac.page.getByTestId("api-keys-tab")).toBeVisible();
+
+				await overview.page.getByTestId("license-status-button").click();
+				await expect(
+					overview.page.getByTestId("license-add-button"),
+				).toBeVisible();
+				await expect(
+					overview.page.getByTestId("license-clear-button"),
+				).toBeVisible();
+				await overview.page.keyboard.press("Escape");
 
 				await expect(rbac.bootstrapBanner).toBeVisible();
 				await expect(rbac.bootstrapButton).toBeVisible();
@@ -185,6 +208,18 @@ test.describe("@rbac E2E", () => {
 				);
 
 				await overview.search(TEAM_NAME);
+				const systemAdminTeamRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: TEAM_NAME });
+				await expect(
+					systemAdminTeamRow.getByRole("link", { name: "Edit" }),
+				).toBeVisible();
+				await expect(
+					systemAdminTeamRow.getByRole("button", { name: "Clone" }),
+				).toBeVisible();
+				await expect(
+					systemAdminTeamRow.getByRole("button", { name: "Delete" }),
+				).toBeVisible();
 				await overview.page
 					.getByRole("link", { name: TEAM_NAME, exact: true })
 					.click();
@@ -225,6 +260,18 @@ test.describe("@rbac E2E", () => {
 
 				await overview.lightHousePage.goToOverview();
 				await overview.search(PORTFOLIO_NAME);
+				const systemAdminPortfolioRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: PORTFOLIO_NAME });
+				await expect(
+					systemAdminPortfolioRow.getByRole("link", { name: "Edit" }),
+				).toBeVisible();
+				await expect(
+					systemAdminPortfolioRow.getByRole("button", { name: "Clone" }),
+				).toBeVisible();
+				await expect(
+					systemAdminPortfolioRow.getByRole("button", { name: "Delete" }),
+				).toBeVisible();
 				await overview.page
 					.getByRole("link", { name: PORTFOLIO_NAME, exact: true })
 					.click();
@@ -273,12 +320,71 @@ test.describe("@rbac E2E", () => {
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
 
+				await expect(
+					overview.page.getByTestId("update-all-button"),
+				).not.toBeVisible();
+				await expect(
+					overview.page.getByTestId("onboarding-stepper"),
+				).not.toBeVisible();
+				await expect(
+					overview.page.getByRole("button", { name: "Add Team" }),
+				).not.toBeVisible();
+				await expect(
+					overview.page.getByRole("button", { name: "Add Portfolio" }),
+				).not.toBeVisible();
+
+				await overview.search(TEAM_NAME);
+				const teamReaderTeamRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: TEAM_NAME });
+				await expect(
+					teamReaderTeamRow.getByRole("link", { name: "Details" }),
+				).toBeVisible();
+				await expect(
+					teamReaderTeamRow.getByRole("link", { name: "Edit" }),
+				).not.toBeVisible();
+				await expect(
+					teamReaderTeamRow.getByRole("button", { name: "Clone" }),
+				).not.toBeVisible();
+				await expect(
+					teamReaderTeamRow.getByRole("button", { name: "Delete" }),
+				).not.toBeVisible();
+
+				await overview.search(PORTFOLIO_NAME);
+				const teamReaderPortfolioRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: PORTFOLIO_NAME });
+				await expect(
+					teamReaderPortfolioRow.getByRole("link", { name: "Details" }),
+				).toBeVisible();
+				await expect(
+					teamReaderPortfolioRow.getByRole("link", { name: "Edit" }),
+				).not.toBeVisible();
+				await expect(
+					teamReaderPortfolioRow.getByRole("button", { name: "Clone" }),
+				).not.toBeVisible();
+				await expect(
+					teamReaderPortfolioRow.getByRole("button", { name: "Delete" }),
+				).not.toBeVisible();
+
+				await overview.page.getByTestId("license-status-button").click();
+				await expect(
+					overview.page.getByTestId("license-add-button"),
+				).not.toBeVisible();
+				await expect(
+					overview.page.getByTestId("license-clear-button"),
+				).not.toBeVisible();
+				await overview.page.keyboard.press("Escape");
+
 				const settingsPage = await overview.lightHousePage.goToSettings();
 				await expect(
 					settingsPage.page.getByTestId("rbac-tab"),
 				).not.toBeVisible();
 				await expect(
 					settingsPage.page.getByTestId("log-level-section"),
+				).not.toBeVisible();
+				await expect(
+					settingsPage.page.getByTestId("api-keys-tab"),
 				).not.toBeVisible();
 				await expect(
 					settingsPage.page.getByTestId("system-info-tab"),
@@ -318,6 +424,37 @@ test.describe("@rbac E2E", () => {
 					TestConfig.AUTHZ_TEST_TEAMADMIN_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
+
+				await overview.search(TEAM_NAME);
+				const teamAdminTeamRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: TEAM_NAME });
+				await expect(
+					teamAdminTeamRow.getByRole("link", { name: "Edit" }),
+				).toBeVisible();
+				await expect(
+					teamAdminTeamRow.getByRole("button", { name: "Delete" }),
+				).toBeVisible();
+				await expect(
+					teamAdminTeamRow.getByRole("button", { name: "Clone" }),
+				).not.toBeVisible();
+
+				await overview.search(PORTFOLIO_NAME);
+				const teamAdminPortfolioRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: PORTFOLIO_NAME });
+				await expect(
+					teamAdminPortfolioRow.getByRole("link", { name: "Details" }),
+				).toBeVisible();
+				await expect(
+					teamAdminPortfolioRow.getByRole("link", { name: "Edit" }),
+				).not.toBeVisible();
+				await expect(
+					teamAdminPortfolioRow.getByRole("button", { name: "Clone" }),
+				).not.toBeVisible();
+				await expect(
+					teamAdminPortfolioRow.getByRole("button", { name: "Delete" }),
+				).not.toBeVisible();
 
 				await overview.search(TEAM_NAME);
 				await overview.page
@@ -378,6 +515,37 @@ test.describe("@rbac E2E", () => {
 					TestConfig.AUTHZ_TEST_PORTFOLIOADMIN_USERNAME,
 					TestConfig.AUTH_TEST_USER_PASSWORD,
 				);
+
+				await overview.search(PORTFOLIO_NAME);
+				const portfolioAdminPortfolioRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: PORTFOLIO_NAME });
+				await expect(
+					portfolioAdminPortfolioRow.getByRole("link", { name: "Edit" }),
+				).toBeVisible();
+				await expect(
+					portfolioAdminPortfolioRow.getByRole("button", { name: "Delete" }),
+				).toBeVisible();
+				await expect(
+					portfolioAdminPortfolioRow.getByRole("button", { name: "Clone" }),
+				).not.toBeVisible();
+
+				await overview.search(TEAM_NAME);
+				const portfolioAdminTeamRow = overview.page
+					.getByRole("row")
+					.filter({ hasText: TEAM_NAME });
+				await expect(
+					portfolioAdminTeamRow.getByRole("link", { name: "Details" }),
+				).toBeVisible();
+				await expect(
+					portfolioAdminTeamRow.getByRole("link", { name: "Edit" }),
+				).not.toBeVisible();
+				await expect(
+					portfolioAdminTeamRow.getByRole("button", { name: "Clone" }),
+				).not.toBeVisible();
+				await expect(
+					portfolioAdminTeamRow.getByRole("button", { name: "Delete" }),
+				).not.toBeVisible();
 
 				await overview.search(PORTFOLIO_NAME);
 				await overview.page
@@ -621,6 +789,38 @@ test.describe("@rbac E2E", () => {
 				await expect(scopedAccess.groupMappingsSection).toBeVisible();
 				await expect(scopedAccess.groupMappingsErrorMessage).not.toBeVisible();
 			});
+		},
+	);
+
+	testWithAuth(
+		"team reader hitting create routes directly sees the no-access alert and no edit form",
+		async ({ loginPage }) => {
+			const overview = await loginAs(
+				loginPage,
+				TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
+				TestConfig.AUTH_TEST_USER_PASSWORD,
+			);
+
+			await overview.page.goto("/teams/new");
+			await expect(
+				overview.page.getByTestId("team-edit-no-access-alert"),
+			).toBeVisible();
+			await expect(
+				overview.page.getByLabel("Name", { exact: true }),
+			).toHaveCount(0);
+
+			await overview.page.goto("/portfolios/new");
+			await expect(
+				overview.page.getByTestId("portfolio-edit-no-access-alert"),
+			).toBeVisible();
+			await expect(
+				overview.page.getByLabel("Name", { exact: true }),
+			).toHaveCount(0);
+
+			await overview.page.goto("/connections/new");
+			await expect(
+				overview.page.getByTestId("connection-edit-no-access-alert"),
+			).toBeVisible();
 		},
 	);
 });
