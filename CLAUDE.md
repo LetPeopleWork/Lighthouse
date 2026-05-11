@@ -21,6 +21,10 @@ Ports-and-adapters (hexagonal) on the backend. All RBAC business logic flows thr
 
 See `docs/product/architecture/brief.md` for full architecture documentation.
 
+## CI Learnings
+
+Before writing or changing code in any area, consult `docs/ci-learnings.md`. It captures durable rules harvested from prior CI / SonarCloud failures (formatting quirks, Sonar rule keys, recurring foot-guns). The `/clean-ci` command maintains this file — apply every rule it lists.
+
 ## Coding Conventions
 
 Synthesized from `.github/instructions/*.md`. Rules below extend (don't restate) the paradigm/architecture/test-framework choices above.
