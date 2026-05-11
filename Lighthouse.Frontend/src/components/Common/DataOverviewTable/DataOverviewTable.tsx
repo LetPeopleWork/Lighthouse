@@ -34,6 +34,9 @@ interface DataOverviewTableProps<IFeatureOwner> {
 	title: string;
 	onDelete: (item: IFeatureOwner) => void;
 	filterText: string;
+	canEditRow?: (row: IFeatureOwner) => boolean;
+	canCloneRow?: (row: IFeatureOwner) => boolean;
+	canDeleteRow?: (row: IFeatureOwner) => boolean;
 }
 
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
@@ -42,6 +45,9 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	title,
 	onDelete,
 	filterText,
+	canEditRow = () => true,
+	canCloneRow = () => true,
+	canDeleteRow = () => true,
 }) => {
 	const theme = useTheme();
 	const navigate = useNavigate();
@@ -204,52 +210,59 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									<InfoIcon fontSize={isTablet ? "small" : "medium"} />
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Edit">
-								<IconButton
-									component={Link}
-									to={`/${api}/edit/${row.id}`}
-									size={isTablet ? "small" : "medium"}
-									sx={{
-										color: theme.palette.primary.main,
-										transition: "transform 0.2s",
-										"&:hover": { transform: "scale(1.1)" },
-									}}
-								>
-									<EditIcon fontSize={isTablet ? "small" : "medium"} />
-								</IconButton>
-							</Tooltip>
-							{(api === "teams" || api === "portfolios") && (
-								<Tooltip title="Clone">
+							{canEditRow(row) && (
+								<Tooltip title="Edit">
 									<IconButton
-										onClick={() => handleClone(row)}
+										component={Link}
+										to={`/${api}/edit/${row.id}`}
 										size={isTablet ? "small" : "medium"}
 										sx={{
 											color: theme.palette.primary.main,
 											transition: "transform 0.2s",
 											"&:hover": { transform: "scale(1.1)" },
 										}}
-										aria-label="Clone"
 									>
-										<ContentCopyIcon fontSize={isTablet ? "small" : "medium"} />
+										<EditIcon fontSize={isTablet ? "small" : "medium"} />
 									</IconButton>
 								</Tooltip>
 							)}
-							<Tooltip title="Delete">
-								<IconButton
-									onClick={() => onDelete(row)}
-									size={isTablet ? "small" : "medium"}
-									sx={{
-										color: theme.palette.primary.main,
-										transition: "transform 0.2s",
-										"&:hover": { transform: "scale(1.1)" },
-									}}
-								>
-									<DeleteIcon
-										fontSize={isTablet ? "small" : "medium"}
-										data-testid="delete-item-button"
-									/>
-								</IconButton>
-							</Tooltip>
+							{(api === "teams" || api === "portfolios") &&
+								canCloneRow(row) && (
+									<Tooltip title="Clone">
+										<IconButton
+											onClick={() => handleClone(row)}
+											size={isTablet ? "small" : "medium"}
+											sx={{
+												color: theme.palette.primary.main,
+												transition: "transform 0.2s",
+												"&:hover": { transform: "scale(1.1)" },
+											}}
+											aria-label="Clone"
+										>
+											<ContentCopyIcon
+												fontSize={isTablet ? "small" : "medium"}
+											/>
+										</IconButton>
+									</Tooltip>
+								)}
+							{canDeleteRow(row) && (
+								<Tooltip title="Delete">
+									<IconButton
+										onClick={() => onDelete(row)}
+										size={isTablet ? "small" : "medium"}
+										sx={{
+											color: theme.palette.primary.main,
+											transition: "transform 0.2s",
+											"&:hover": { transform: "scale(1.1)" },
+										}}
+									>
+										<DeleteIcon
+											fontSize={isTablet ? "small" : "medium"}
+											data-testid="delete-item-button"
+										/>
+									</IconButton>
+								</Tooltip>
+							)}
 						</Box>
 					),
 				},
@@ -266,6 +279,9 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 			isPortfolio,
 			onDelete,
 			handleClone,
+			canEditRow,
+			canCloneRow,
+			canDeleteRow,
 		]);
 
 	return (

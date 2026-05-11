@@ -426,6 +426,109 @@ describe("DataOverviewTable", () => {
 			expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
 		});
 
+		it("hides Edit icon on rows where canEditRow returns false but keeps it where true", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+					canEditRow={(row) => row.id !== 1}
+				/>,
+			);
+
+			const editLinks = screen
+				.getAllByRole("link")
+				.filter((a) => a.getAttribute("href")?.startsWith("/teams/edit/"));
+			const editHrefs = editLinks.map((a) => a.getAttribute("href"));
+			expect(editHrefs).not.toContain("/teams/edit/1");
+			expect(editHrefs).toContain("/teams/edit/2");
+			expect(editHrefs).toContain("/teams/edit/3");
+		});
+
+		it("hides Clone icon on rows where canCloneRow returns false but keeps it where true", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+					canCloneRow={(row) => row.id !== 2}
+				/>,
+			);
+
+			const cloneButtons = screen.getAllByLabelText("Clone");
+			expect(cloneButtons).toHaveLength(sampleTeamData.length - 1);
+		});
+
+		it("hides Delete icon on rows where canDeleteRow returns false but keeps it where true", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+					canDeleteRow={(row) => row.id === 3}
+				/>,
+			);
+
+			const deleteButtons = screen.getAllByTestId("delete-item-button");
+			expect(deleteButtons).toHaveLength(1);
+		});
+
+		it("renders Edit, Clone, and Delete on every row when no predicates are provided", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+
+			const editLinks = screen
+				.getAllByRole("link")
+				.filter((a) => a.getAttribute("href")?.startsWith("/teams/edit/"));
+			expect(editLinks).toHaveLength(sampleTeamData.length);
+			expect(screen.getAllByLabelText("Clone")).toHaveLength(
+				sampleTeamData.length,
+			);
+			expect(screen.getAllByTestId("delete-item-button")).toHaveLength(
+				sampleTeamData.length,
+			);
+		});
+
+		it("always renders the Details icon on every row regardless of predicates", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+					canEditRow={() => false}
+					canCloneRow={() => false}
+					canDeleteRow={() => false}
+				/>,
+			);
+
+			const detailsLinks = screen
+				.getAllByRole("link")
+				.filter(
+					(a) =>
+						a.getAttribute("href")?.startsWith("/teams/") &&
+						!a.getAttribute("href")?.startsWith("/teams/edit/"),
+				);
+			const detailsHrefs = detailsLinks.map((a) => a.getAttribute("href"));
+			expect(detailsHrefs).toContain("/teams/1");
+			expect(detailsHrefs).toContain("/teams/2");
+			expect(detailsHrefs).toContain("/teams/3");
+		});
+
 		it("shows demo data link when no data is available", () => {
 			renderWithRouter(
 				<DataOverviewTable
