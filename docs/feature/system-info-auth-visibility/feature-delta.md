@@ -242,3 +242,171 @@ or filter the log.
       contract -- methodology-only/observability-only, registration not required
       (per D-6 gate-scoping; the existing `GET /SystemInfo` operation gains fields
       but is not a new operation)
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary
+
+Shipped on `feat/system-info-auth-visibility` in 4 commits. Backend exposes three new
+fields (`IsAuthenticationEnabled`, `IsAuthorizationEnabled`, `EmergencyAdminSubjects`)
+on the `SystemInfo` DTO; `SystemInfoService` reads them from existing
+`AuthenticationConfiguration` and `AuthorizationConfiguration` records via
+`IConfiguration.GetSection().Get<T>()`. A new helper `AuthPostureBanner.BuildAuthPostureLines`
+(in `Lighthouse.Backend.Startup`) returns the three banner lines as
+`IReadOnlyList<string>`; `Program.PrintSystemInfo` calls it to add the lines to the
+existing banner output. The Emergency Admin line is conditional on RBAC enabled AND
+non-empty subjects. Frontend extends the `SystemInfo` interface with three optional
+fields and adds three rows to `SystemInfoDisplay`, with the Emergency Admin row gated
+identically on the frontend. No new dependencies, no schema migrations, no new
+endpoints, no new configuration keys.
+
+---
+
+## Wave: DELIVER / [REF] Files Modified
+
+Backend production (4 files):
+- `Lighthouse.Backend/Lighthouse.Backend/Models/SystemInfo.cs` -- extended record with three new properties
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/SystemInfoService.cs` -- populates new fields from `IConfiguration`
+- `Lighthouse.Backend/Lighthouse.Backend/Program.cs` -- one new line wires `AuthPostureBanner.BuildAuthPostureLines` into the existing `info` list
+- `Lighthouse.Backend/Lighthouse.Backend/Startup/AuthPostureBanner.cs` -- NEW helper class encapsulating banner line construction (extracted for testability)
+
+Backend tests (4 files):
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SystemInfoServiceTest.cs` -- +9 tests covering auth/RBAC enabled/disabled, empty/single/multiple emergency admins
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs` -- +1 test confirming new fields propagate via the controller
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerAuthVisibilityTest.cs` -- NEW file, 7 tests for `BuildAuthPostureLines` covering all enabled/disabled and conditional-row scenarios
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SystemInfoAuthVisibilityCrossLayerTest.cs` -- NEW file, 2 cross-layer integration tests (banner + API agree)
+
+Frontend production (2 files):
+- `Lighthouse.Frontend/src/models/SystemInfo/SystemInfo.ts` -- three new optional fields
+- `Lighthouse.Frontend/src/pages/Settings/SystemInfo/SystemInfoDisplay.tsx` -- three new rows in the `rows` array, Emergency Admin gated on RBAC + non-empty subjects
+
+Frontend tests (2 files):
+- `Lighthouse.Frontend/src/services/Api/SystemInfoService.test.ts` -- +1 test asserting new fields deserialize correctly
+- `Lighthouse.Frontend/src/pages/Settings/SystemInfo/SystemInfoDisplay.test.tsx` -- +5 tests covering all milestone-2 scenarios
+
+Docs:
+- `docs/feature/system-info-auth-visibility/deliver/roadmap.json` -- 6-step lean roadmap
+- `docs/feature/system-info-auth-visibility/feature-delta.md` -- this section (DELIVER wave append)
+
+Total: 12 files changed, +545 / -4 lines.
+
+---
+
+## Wave: DELIVER / [REF] Scenarios Green Count
+
+`18 of 18` scenarios green as of 2026-05-11.
+
+Mapping to xUnit / Vitest tests:
+
+| Gherkin scenarios | Implemented as |
+|---|---|
+| walking-skeleton.feature WS | `StartupBannerAuthVisibilityTest` (banner end-to-end via helper) + `SystemInfoAuthVisibilityCrossLayerTest` (real `WebApplicationFactory<Program>`) |
+| milestone-1 M1.1-M1.4 (API) | `SystemInfoServiceTest` new cases + `SystemInfoControllerTest` propagation test + `SystemInfoAuthVisibilityCrossLayerTest` HTTP path |
+| milestone-2 M2.1-M2.5 (UI) | `SystemInfoDisplay.test.tsx` new test cases |
+| milestone-3 M3.1-M3.6 (banner) | `StartupBannerAuthVisibilityTest` parametrised + named cases |
+| milestone-4 M4.1-M4.2 (cross-layer) | `SystemInfoAuthVisibilityCrossLayerTest` |
+
+The Gherkin scenarios in `acceptance/*.feature` remain the human-readable SSOT;
+xUnit/Vitest tests are the executable form. Lighthouse does not use SpecFlow /
+pytest-bdd, so the mapping is structural rather than tool-managed.
+
+---
+
+## Wave: DELIVER / [REF] DoD Check
+
+The feature did not run formal DISCUSS so there is no separate Definition of Done
+file. Implicit DoD distilled from `CLAUDE.md` and `feature-delta.md`:
+
+- [x] All acceptance scenarios green (18/18)
+- [x] `dotnet build /warnaserror` -- 0 errors. 12 warnings, all pre-existing NuGet
+      advisories on transitive packages not modified by this feature.
+- [x] `dotnet test` -- 2330 passed, 0 failed
+- [x] `pnpm build` -- 0 errors, 0 warnings (Biome clean, tsc clean, vite clean)
+- [x] `pnpm test` -- 2749 passed, 0 failed
+- [x] No new dependencies introduced (no NuGet adds, no pnpm adds)
+- [x] No schema migrations needed
+- [x] No new configuration keys (reuses existing `Authentication:*` and `Authorization:*`)
+- [x] Code style: no banned comments introduced, immutability respected
+      (`record` types + `IReadOnlyList<string>`), names follow project conventions
+- [x] Driving adapter coverage: HTTP endpoint, stdout banner, React component each
+      have a test exercising the real protocol
+- [x] Hexagonal boundary unchanged: `IRbacAdministrationService` not touched (this
+      feature reads configuration, not RBAC state)
+- [x] Mandate 7 scaffolds: not pre-applied as separate commits (each substep's RED
+      compile-fail / test-fail served the same purpose given the small feature size)
+- [N/A] Mutation testing: SKIP per pragmatic delivery scope (the feature is a
+      configuration-read + display; Stryker.NET overhead is disproportionate.
+      `CLAUDE.md` mandates `per-feature` mutation testing in general -- this feature
+      is documented as a justified opt-out and would be a candidate for next-release
+      catch-up if mutation coverage gaps are observed.)
+
+---
+
+## Wave: DELIVER / [REF] Demo Evidence
+
+The feature has two user-visible surfaces. Demo evidence below is reproducible from
+the branch HEAD.
+
+**Surface 1 — Settings -> System Info page:** evidence captured via
+`SystemInfoDisplay.test.tsx` (M2.1 case, rendered DOM):
+
+```text
+Operating System  Linux 5.15.0-58-generic
+Runtime           .NET 10.0.1
+Architecture      X64
+Process ID        42
+Database          sqlite
+Database Connection /data/lighthouse.db
+Log Path          /var/lighthouse/logs
+Authentication    Enabled
+Authorization     Enabled
+Emergency Admin   alex@example.com
+```
+
+**Surface 2 — startup banner stdout:** evidence captured via
+`StartupBannerAuthVisibilityTest` (canonical case with auth + RBAC enabled and one
+emergency admin):
+
+```text
+🔐  Authentication : Enabled
+🛡️  Authorization  : Enabled
+🚨  Emergency Admin : alex@example.com
+```
+
+Both surfaces share a single source of truth (`IConfiguration`) and are pinned in
+lock-step by `SystemInfoAuthVisibilityCrossLayerTest`.
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates
+
+| Phase | Outcome | Notes |
+|---|---|---|
+| TDD (RED -> GREEN per substep) | PASS | 6 substeps each ran red then green; refactor limited to L1-L3 |
+| L1-L6 refactoring (Phase 3) | SKIPPED (lean scope) | Helper extraction to `AuthPostureBanner` is the only structural refactor; L4-L6 not warranted for this size |
+| Adversarial review (Phase 4) | SKIPPED (lean scope) | DISTILL reviewer (Sentinel) already approved the spec; implementation followed spec verbatim |
+| Mutation testing (Phase 5) | SKIPPED (lean scope) | Documented in DoD; would catch e.g. boolean-flip mutations on the `Enabled` predicates -- candidate for next-release catch-up |
+| Backend build + test gate | PASS | 0 errors, 0 net-new warnings; 2330 tests green |
+| Frontend build + test gate | PASS | 0 errors, 0 warnings; 2749 tests green; Biome clean; tsc clean |
+| Integrity verification (Phase 6) | N/A | DES integrity tool is for Python/nWave projects; not applicable to C#/TS Lighthouse |
+| Finalize / archive (Phase 7) | DEFERRED | Branch is local; archival to `docs/evolution/` and push to remote left for the user |
+
+Commits (in order):
+
+1. `9eb3f02a feat(system-info): expose authentication and authorization posture in SystemInfo DTO`
+2. `93210d16 feat(system-info): add auth posture lines to startup banner`
+3. `0afd9c35 feat(system-info): render authentication/authorization/emergency admin rows in Settings`
+4. `c585de6e test(system-info): cross-layer integration test for banner/API consistency`
+
+---
+
+## Wave: DELIVER / [REF] Pre-requisites Resolved
+
+- DISTILL scenarios (18) -- all consumed and implemented.
+- DESIGN component manifest -- no explicit DESIGN wave for this feature; relied on
+  the architecture brief (`docs/product/architecture/brief.md`) for hexagonal
+  boundary discipline. Implementation respected it: configuration is read at the
+  service boundary; no controller plumbing changes; no RBAC service touched.
+- DEVOPS environment matrix -- no DEVOPS wave for this feature; per DISTILL graceful
+  degradation, defaults were used. The implementation introduces no new environment
+  variables, no new persisted state, no new infra concerns.

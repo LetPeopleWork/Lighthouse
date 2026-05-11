@@ -1,0 +1,129 @@
+{
+  "feature_id": "system-info-auth-visibility",
+  "feature_description": "Display authentication, authorization (RBAC), and emergency-admin posture in the startup banner and the Settings -> System Info page",
+  "paradigm": "object-oriented",
+  "test_frameworks": {
+    "backend": "xUnit + Moq + WebApplicationFactory",
+    "frontend": "Vitest + React Testing Library"
+  },
+  "rigor_profile": "lean",
+  "validation": {
+    "status": "approved",
+    "approved_by": "main-orchestrator",
+    "approved_date": "2026-05-11"
+  },
+  "steps": [
+    {
+      "step_id": "01-01",
+      "name": "Extend SystemInfo DTO and SystemInfoService (backend service unit tests)",
+      "description": "Add authenticationEnabled, authorizationEnabled, emergencyAdminSubjects to the SystemInfo record. Populate them from IConfiguration in SystemInfoService. Cover via Lighthouse.Backend.Tests/Services/SystemInfoServiceTest.cs extensions.",
+      "acceptance_criteria": [
+        "SystemInfo record has IsAuthenticationEnabled (bool), IsAuthorizationEnabled (bool), EmergencyAdminSubjects (IReadOnlyList<string>) properties",
+        "SystemInfoService.GetSystemInfo reads Authentication:Enabled, Authorization:Enabled, and Authorization:EmergencySystemAdminSubjects from IConfiguration",
+        "All existing SystemInfoServiceTest cases remain green",
+        "New unit tests cover: auth enabled true/false, RBAC enabled true/false, empty/single/multiple emergency admin subjects"
+      ],
+      "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SystemInfoServiceTest.cs",
+      "scenario_name": "Service-level unit coverage of new fields (supports milestone-1 integration scenarios)",
+      "files_to_modify": [
+        "Lighthouse.Backend/Lighthouse.Backend/Models/SystemInfo.cs",
+        "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/SystemInfoService.cs",
+        "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SystemInfoServiceTest.cs"
+      ],
+      "quality_gates": ["dotnet build /warnaserror passes", "dotnet test SystemInfoServiceTest passes"],
+      "dependencies": []
+    },
+    {
+      "step_id": "01-02",
+      "name": "Expose new fields via GET /api/latest/SystemInfo (controller test + integration verification)",
+      "description": "Verify the SystemInfoController returns the new fields with correct JSON camelCase serialization. Extend SystemInfoControllerTest.cs with assertions for the new fields. The controller itself needs no logic change (DTO contract change only).",
+      "acceptance_criteria": [
+        "Controller test asserts the new fields appear in the returned SystemInfo with correct values",
+        "JSON property names are authenticationEnabled, authorizationEnabled, emergencyAdminSubjects (camelCase via default ASP.NET Core JSON options)"
+      ],
+      "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs",
+      "scenario_name": "milestone-1-api-exposes-auth-fields.feature scenarios M1.1-M1.4",
+      "files_to_modify": [
+        "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs"
+      ],
+      "quality_gates": ["dotnet test SystemInfoControllerTest passes"],
+      "dependencies": ["01-01"]
+    },
+    {
+      "step_id": "01-03",
+      "name": "Add auth posture lines to the startup banner",
+      "description": "Extend Program.PrintSystemInfo to emit 'Authentication: Enabled/Disabled', 'Authorization: Enabled/Disabled', and 'Emergency Admin: <subjects>' lines (the last only when RBAC is enabled AND subjects are present). Cover via a new test that captures Log output from the banner.",
+      "acceptance_criteria": [
+        "Banner output includes 'Authentication : Enabled' when Authentication:Enabled = true",
+        "Banner output includes 'Authentication : Disabled' when Authentication:Enabled = false",
+        "Banner output includes 'Authorization : Enabled' or 'Disabled' matching Authorization:Enabled",
+        "Banner includes 'Emergency Admin : <comma-joined-subjects>' when RBAC is enabled AND subjects non-empty",
+        "Banner omits the Emergency Admin line when subjects empty",
+        "Banner omits the Emergency Admin line when RBAC is disabled (even if subjects configured)"
+      ],
+      "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerAuthVisibilityTest.cs",
+      "scenario_name": "milestone-3-terminal-banner.feature scenarios M3.1-M3.6 + walking-skeleton.feature WS",
+      "files_to_modify": [
+        "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+        "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerAuthVisibilityTest.cs"
+      ],
+      "quality_gates": ["dotnet test StartupBannerAuthVisibilityTest passes"],
+      "dependencies": ["01-01"]
+    },
+    {
+      "step_id": "02-01",
+      "name": "Extend SystemInfo TypeScript model",
+      "description": "Add the three new optional fields to the TypeScript SystemInfo interface and update SystemInfoService.test.ts to assert the new fields deserialize correctly.",
+      "acceptance_criteria": [
+        "SystemInfo interface has authenticationEnabled?: boolean, authorizationEnabled?: boolean, emergencyAdminSubjects?: string[]",
+        "SystemInfoService.test.ts asserts the three new fields are present and correctly typed in the deserialised response (per F-001 contract requirement from feature-delta adapter coverage)"
+      ],
+      "test_file": "Lighthouse.Frontend/src/services/Api/SystemInfoService.test.ts",
+      "scenario_name": "Frontend HTTP contract test for new fields (adapter coverage Mandate 6)",
+      "files_to_modify": [
+        "Lighthouse.Frontend/src/models/SystemInfo/SystemInfo.ts",
+        "Lighthouse.Frontend/src/services/Api/SystemInfoService.test.ts"
+      ],
+      "quality_gates": ["pnpm test SystemInfoService passes"],
+      "dependencies": ["01-02"]
+    },
+    {
+      "step_id": "02-02",
+      "name": "Render Authentication, Authorization, and Emergency Admin rows in SystemInfoDisplay",
+      "description": "Extend SystemInfoDisplay.tsx to render the three new rows. Emergency Admin row is conditional: shown only when authorizationEnabled is true AND emergencyAdminSubjects is non-empty.",
+      "acceptance_criteria": [
+        "Row 'Authentication' with value 'Enabled' or 'Disabled' rendered always",
+        "Row 'Authorization' with value 'Enabled' or 'Disabled' rendered always",
+        "Row 'Emergency Admin' rendered only when authorizationEnabled true AND emergencyAdminSubjects.length > 0",
+        "Multiple emergency admins joined with ', '",
+        "All existing SystemInfoDisplay tests remain green"
+      ],
+      "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/SystemInfoDisplay.test.tsx",
+      "scenario_name": "milestone-2-ui-renders-auth-rows.feature scenarios M2.1-M2.5",
+      "files_to_modify": [
+        "Lighthouse.Frontend/src/pages/Settings/SystemInfo/SystemInfoDisplay.tsx",
+        "Lighthouse.Frontend/src/pages/Settings/SystemInfo/SystemInfoDisplay.test.tsx"
+      ],
+      "quality_gates": ["pnpm test SystemInfoDisplay passes", "pnpm build passes (Biome clean, tsc clean, vite clean)"],
+      "dependencies": ["02-01"]
+    },
+    {
+      "step_id": "03-01",
+      "name": "Cross-layer integration test (banner + API agree)",
+      "description": "Add an integration test that boots a real WebApplicationFactory<Program> with configured auth settings, captures banner output via a Serilog test sink, and asserts the banner and a GET /api/latest/SystemInfo response describe the same configuration.",
+      "acceptance_criteria": [
+        "Test boots WebApplicationFactory<Program> with overridden Authentication:Enabled, Authorization:Enabled, Authorization:EmergencySystemAdminSubjects",
+        "Test captures banner output (Log.Logger Information sink)",
+        "Test issues GET /api/latest/SystemInfo with authenticated client",
+        "Asserts banner line values match the API response field values for all three new fields"
+      ],
+      "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SystemInfoAuthVisibilityCrossLayerTest.cs",
+      "scenario_name": "milestone-4-cross-layer-consistency.feature M4.1-M4.2",
+      "files_to_modify": [
+        "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SystemInfoAuthVisibilityCrossLayerTest.cs"
+      ],
+      "quality_gates": ["dotnet test SystemInfoAuthVisibilityCrossLayerTest passes"],
+      "dependencies": ["01-02", "01-03"]
+    }
+  ]
+}
