@@ -584,7 +584,7 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	it("hides Add Team for non-system-admin with canCreateTeam regardless of connections", async () => {
+	it("shows enabled Add Team for non-system-admin Team Admin even when no connections exist", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -603,9 +603,9 @@ describe("OverviewDashboard", () => {
 			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});
 
-		expect(
-			screen.queryByRole("button", { name: "Add Team" }),
-		).not.toBeInTheDocument();
+		const addTeamButton = screen.getByRole("button", { name: "Add Team" });
+		expect(addTeamButton).toBeInTheDocument();
+		expect(addTeamButton).toBeEnabled();
 	});
 
 	it("disables Add Team for system admin with no connections", async () => {
@@ -802,14 +802,75 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	describe("Add Team / Add Portfolio system-admin gating", () => {
-		it("hides Add Team and Add Portfolio when user is not system admin even if canCreateTeam/canCreatePortfolio true", async () => {
+	describe("Add Team / Add Portfolio capability-based gating", () => {
+		it("shows Add Team for non-system-admin Team Admin and shows Add Portfolio for non-system-admin Portfolio Admin", async () => {
 			const mockRbacService = createMockRbacService();
 			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 				isRbacEnabled: true,
 				isSystemAdmin: false,
 				canCreateTeam: true,
 				canCreatePortfolio: true,
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Add Team")).toBeInTheDocument();
+				expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
+			});
+		});
+
+		it("shows Add Team for Team Admin only and hides Add Portfolio when canCreatePortfolio is false", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: true,
+				canCreatePortfolio: false,
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+
+			expect(screen.getByText("Add Team")).toBeInTheDocument();
+			expect(screen.queryByText("Add Portfolio")).not.toBeInTheDocument();
+		});
+
+		it("shows Add Portfolio for Portfolio Admin only and hides Add Team when canCreateTeam is false", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: true,
+			});
+
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: mockRbacService,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+
+			expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
+			expect(screen.queryByText("Add Team")).not.toBeInTheDocument();
+		});
+
+		it("hides Add Team and Add Portfolio for Viewer with no create capabilities", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
 			});
 
 			renderWithProviders(<OverviewDashboard />, {

@@ -396,7 +396,7 @@ const OverviewDashboard: React.FC = () => {
 								buttonVariant="contained"
 							/>
 						)}
-						{rbac.isSystemAdmin && (
+						{rbac.canCreateTeam && (
 							<Tooltip
 								title={
 									rbac.isSystemAdmin && !hasConnections
@@ -426,7 +426,7 @@ const OverviewDashboard: React.FC = () => {
 								</span>
 							</Tooltip>
 						)}
-						{rbac.isSystemAdmin && (
+						{rbac.canCreatePortfolio && (
 							<Tooltip
 								title={
 									hasTeams ? "" : "Create a team before adding a portfolio"
