@@ -1,9 +1,14 @@
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -20,15 +25,45 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useId, useState } from "react";
-import type { IApiKeyInfo } from "../../../models/ApiKey/ApiKey";
+import type {
+	IApiKeyInfo,
+	IApiKeyScope,
+	ICreateApiKeyRequest,
+} from "../../../models/ApiKey/ApiKey";
 import { AuthMode } from "../../../models/Auth/AuthModels";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import ScopeRowList, {
+	type IPortfolioOption,
+	type IScopeRow,
+	type ITeamOption,
+} from "./ScopeRowList";
 
 interface CreateApiKeyDialogProps {
 	open: boolean;
 	onClose: () => void;
 	onCreated: () => void;
 }
+
+const isScopeRowComplete = (row: IScopeRow): boolean =>
+	row.role !== undefined &&
+	row.scopeType !== undefined &&
+	row.scopeId !== undefined &&
+	row.scopeId !== null;
+
+const toApiKeyScopes = (rows: IScopeRow[]): IApiKeyScope[] =>
+	rows.filter(isScopeRowComplete).map((row) => ({
+		role: row.role as IApiKeyScope["role"],
+		scopeType: row.scopeType as IApiKeyScope["scopeType"],
+		scopeId: row.scopeId as number,
+	}));
+
+const resolveCreateErrorMessage = (error: unknown): string => {
+	if (error instanceof ApiError && error.message) {
+		return error.message;
+	}
+	return "Failed to create API key. Please try again.";
+};
 
 const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 	open,
@@ -41,9 +76,59 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 	const [copied, setCopied] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [scopeExpanded, setScopeExpanded] = useState(false);
+	const [scopeRows, setScopeRows] = useState<IScopeRow[]>([]);
+	const [availableTeams, setAvailableTeams] = useState<ITeamOption[] | null>(
+		null,
+	);
+	const [availablePortfolios, setAvailablePortfolios] = useState<
+		IPortfolioOption[] | null
+	>(null);
+	const [scopeDataLoaded, setScopeDataLoaded] = useState(false);
 
-	const { apiKeyService } = useContext(ApiServiceContext);
+	const { apiKeyService, teamService, portfolioService } =
+		useContext(ApiServiceContext);
 	const titleId = useId();
+
+	useEffect(() => {
+		if (!open || !scopeExpanded || scopeDataLoaded) return;
+
+		let cancelled = false;
+		const loadScopeOptions = async () => {
+			try {
+				const [teams, portfolios] = await Promise.all([
+					teamService.getTeams(),
+					portfolioService.getPortfolios(),
+				]);
+				if (cancelled) return;
+				setAvailableTeams(
+					teams.map((team) => ({ id: team.id, name: team.name })),
+				);
+				setAvailablePortfolios(
+					portfolios.map((portfolio) => ({
+						id: portfolio.id,
+						name: portfolio.name,
+					})),
+				);
+				setScopeDataLoaded(true);
+			} catch {
+				if (cancelled) return;
+				setAvailableTeams([]);
+				setAvailablePortfolios([]);
+				setScopeDataLoaded(true);
+			}
+		};
+
+		void loadScopeOptions();
+		return () => {
+			cancelled = true;
+		};
+	}, [open, scopeExpanded, scopeDataLoaded, teamService, portfolioService]);
+
+	const hasIncompleteScopeRow = scopeRows.some(
+		(row) => !isScopeRowComplete(row),
+	);
+	const submitDisabled = !name.trim() || loading || hasIncompleteScopeRow;
 
 	const handleCreate = async () => {
 		if (!name.trim()) return;
@@ -51,15 +136,21 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 		setLoading(true);
 		setError(null);
 
+		const completedScopes = toApiKeyScopes(scopeRows);
+		const request: ICreateApiKeyRequest = {
+			name: name.trim(),
+			description: description.trim() || undefined,
+		};
+		if (completedScopes.length > 0) {
+			request.scope = completedScopes;
+		}
+
 		try {
-			const result = await apiKeyService.createApiKey({
-				name: name.trim(),
-				description: description.trim() || undefined,
-			});
+			const result = await apiKeyService.createApiKey(request);
 			setCreatedKey(result.plainTextKey);
 			onCreated(); // refreshes the key list in the parent; does NOT close the dialog
-		} catch {
-			setError("Failed to create API key. Please try again.");
+		} catch (caught) {
+			setError(resolveCreateErrorMessage(caught));
 		} finally {
 			setLoading(false);
 		}
@@ -78,6 +169,11 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 		setCreatedKey(null);
 		setCopied(false);
 		setError(null);
+		setScopeExpanded(false);
+		setScopeRows([]);
+		setAvailableTeams(null);
+		setAvailablePortfolios(null);
+		setScopeDataLoaded(false);
 		onClose();
 	};
 
@@ -152,6 +248,38 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 								htmlInput: { "data-testid": "api-key-description-input" },
 							}}
 						/>
+						<Accordion
+							defaultExpanded={false}
+							expanded={scopeExpanded}
+							onChange={(_, expanded) => setScopeExpanded(expanded)}
+							data-testid="scope-accordion"
+						>
+							<AccordionSummary
+								expandIcon={<ExpandMoreIcon />}
+								data-testid="scope-accordion-summary"
+							>
+								<Typography variant="body2">
+									Restrict scope (optional)
+								</Typography>
+							</AccordionSummary>
+							<AccordionDetails>
+								{scopeDataLoaded ? (
+									<ScopeRowList
+										rows={scopeRows}
+										onChange={setScopeRows}
+										availableTeams={availableTeams ?? []}
+										availablePortfolios={availablePortfolios ?? []}
+									/>
+								) : (
+									<Box
+										sx={{ display: "flex", justifyContent: "center", p: 2 }}
+										data-testid="scope-data-loading"
+									>
+										<CircularProgress size={24} />
+									</Box>
+								)}
+							</AccordionDetails>
+						</Accordion>
 					</Box>
 				)}
 			</DialogContent>
@@ -166,7 +294,7 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 						<Button
 							onClick={handleCreate}
 							variant="contained"
-							disabled={!name.trim() || loading}
+							disabled={submitDisabled}
 							data-testid="create-api-key-submit-button"
 						>
 							{loading ? "Creating..." : "Create"}
