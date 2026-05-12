@@ -1596,7 +1596,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         [Test]
         public async Task GetAuthorizationSummaryAsync_WhenNoSystemAdminConfigured_AndTeamsExist_AnyUserGetsBootstrapAdmin()
         {
-            // Pins line 367 Boolean false mutant - bootstrap shortcut returns IsSystemAdmin=true.
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
 

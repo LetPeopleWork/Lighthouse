@@ -295,7 +295,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         {
             if (!await IsRbacEnforcedAsync(cancellationToken))
             {
-                return await context.Teams.AnyAsync(cancellationToken);
+                return await HasAnyTeamAsync(cancellationToken);
             }
 
             if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
@@ -305,7 +305,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             if (await CanManageRbacAsync(principal, cancellationToken))
             {
-                return await context.Teams.AnyAsync(cancellationToken);
+                return await HasAnyTeamAsync(cancellationToken);
             }
 
             var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
@@ -314,7 +314,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            if (!await context.Teams.AnyAsync(cancellationToken))
+            if (!await HasAnyTeamAsync(cancellationToken))
             {
                 return false;
             }
@@ -361,7 +361,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     IsRbacEnabled = false,
                     IsSystemAdmin = true,
                     CanCreateTeam = true,
-                    CanCreatePortfolio = await context.Teams.AnyAsync(cancellationToken),
+                    CanCreatePortfolio = await HasAnyTeamAsync(cancellationToken),
                     SystemAdminDisplayNames = [],
                 };
             }
@@ -377,7 +377,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     IsRbacEnabled = true,
                     IsSystemAdmin = true,
                     CanCreateTeam = true,
-                    CanCreatePortfolio = await context.Teams.AnyAsync(cancellationToken),
+                    CanCreatePortfolio = await HasAnyTeamAsync(cancellationToken),
                     SystemAdminDisplayNames = [],
                 };
             }
@@ -1123,6 +1123,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return context.UserPermissions.AnyAsync(
                 p => p.ScopeType == PermissionScopeType.System && p.Role == UserRole.SystemAdmin,
                 cancellationToken);
+        }
+
+        private Task<bool> HasAnyTeamAsync(CancellationToken cancellationToken)
+        {
+            return context.Teams.AnyAsync(cancellationToken);
         }
 
         private Task<int> GetUnassignedUserCountAsync(CancellationToken cancellationToken)
