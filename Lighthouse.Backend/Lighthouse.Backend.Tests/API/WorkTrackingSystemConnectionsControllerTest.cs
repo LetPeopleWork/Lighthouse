@@ -426,15 +426,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkTrackingSystemConnections_HasSystemAdminRbacGuardAttribute()
+        public void GetWorkTrackingSystemConnections_HasNoRbacGuardAttribute()
         {
             var method = typeof(WorkTrackingSystemConnectionsController).GetMethod(nameof(WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections));
             var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+            Assert.That(
+                attribute,
+                Is.Null,
+                "Under v1, the connection list is readable by any authenticated user — Team/Portfolio Admins need it to populate the connection dropdown on their edit pages. Secrets are redacted at the DTO layer so this does not leak credentials.");
         }
 
         [Test]

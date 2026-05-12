@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -11,7 +12,6 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [Route("api/latest/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [ApiController]
-    [RbacGuard]
     public class WorkTrackingSystemConnectionController(
         IRepository<WorkTrackingSystemConnection> repository,
         IRepository<Team> teamRepository,
@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(
             int workTrackingSystemConnectionId, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
@@ -68,6 +69,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult> DeleteWorkTrackingSystemConnectionAsync(int workTrackingSystemConnectionId)
         {
             if (!repository.Exists(workTrackingSystemConnectionId))

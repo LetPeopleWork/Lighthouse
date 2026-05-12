@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ImportLicense_HasSystemAdminRbacGuardAttribute()
+        public void ImportLicense_HasSystemAdminOrBootstrapRbacGuardAttribute()
         {
             var method = typeof(LicenseController).GetMethod(nameof(LicenseController.ImportLicense));
             var attribute = method?
@@ -46,11 +46,11 @@ namespace Lighthouse.Backend.Tests.API
                 .SingleOrDefault();
 
             Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdminOrBootstrap));
         }
 
         [Test]
-        public void ClearLicense_HasSystemAdminRbacGuardAttribute()
+        public void ClearLicense_HasSystemAdminOrBootstrapRbacGuardAttribute()
         {
             var method = typeof(LicenseController).GetMethod(nameof(LicenseController.ClearLicense));
             var attribute = method?
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API
                 .SingleOrDefault();
 
             Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdminOrBootstrap));
         }
 
         [Test]
