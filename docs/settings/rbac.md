@@ -5,7 +5,7 @@ parent: System Settings
 nav_order: 6
 ---
 
-Lighthouse supports **Role-Based Access Control (RBAC)** for fine-grained control over who can read, edit, and create teams and portfolios. RBAC builds on top of [Authentication](../Installation/authentication.html) and is configured under **Settings → Access**.
+Lighthouse supports **Role-Based Access Control (RBAC)** for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [Authentication](../Installation/authentication.html) and is configured under **Settings → Access**.
 
 {: .note}
 RBAC is a **Premium** feature. A valid Premium license is required, and [OIDC authentication](../Installation/authentication.html) must be enabled first.
@@ -27,7 +27,7 @@ flowchart LR
     U -->|may inherit| G[Group-mapped roles via SSO]
     D --> E[Effective permissions]
     G --> E
-    E -->|gates| A[What the user can read / write / create]
+    E -->|gates| A[What the user can read / edit]
 ```
 
 A user's **effective permissions** are the merged set of their direct assignments and any roles inherited from SSO group memberships. When the two overlap, the higher role wins.
@@ -36,13 +36,13 @@ A user's **effective permissions** are the merged set of their direct assignment
 
 ## Roles
 
-Lighthouse defines four roles. Each role is scoped:
+Lighthouse defines four roles. Each role is scoped to either the whole system, a single team, or a single portfolio.
 
 | Role | Scope | What it grants |
 |---|---|---|
-| **System Admin** | System-wide | Full read / write / delete on every team and portfolio, plus management of users, group mappings, and system settings. |
-| **Team Admin** | A specific team | Read and write the team's settings, throughput, features, and metrics; delete the team. Can also create new teams and new portfolios (see [Creation Rights](#creation-rights-for-teams-and-portfolios)). |
-| **Portfolio Admin** | A specific portfolio | Read and write the portfolio's features, settings, and metrics; delete the portfolio. Can also create new portfolios and new teams (see [Creation Rights](#creation-rights-for-teams-and-portfolios)). |
+| **System Admin** | System-wide | Full read / edit / delete on every team and portfolio, plus management of users, group mappings, work tracking system connections, and system settings. **Creates new teams and portfolios.** Clones and deletes existing ones. |
+| **Team Admin** | A specific team | Read and **edit** the team's settings, throughput, features, and metrics. Cannot create, clone, or delete teams; cannot manage any portfolio. |
+| **Portfolio Admin** | A specific portfolio | Read and **edit** the portfolio's features, settings, and metrics. Cannot create, clone, or delete portfolios; cannot manage any team. |
 | **Viewer** | A specific team **or** a specific portfolio | Read-only access to the assigned entity. Cannot edit, delete, or create. |
 
 A single user can hold multiple role assignments — for example, *Team Admin on Team Alpha*, *Viewer on Portfolio Vision*, and *Portfolio Admin on Portfolio Horizon* at the same time.
@@ -50,19 +50,60 @@ A single user can hold multiple role assignments — for example, *Team Admin on
 {: .important}
 The System Admin role is the only role that is **not** scoped to a specific team or portfolio. Every other role is bound to exactly one entity.
 
+### Capability matrix at a glance
+
+|  | System Admin | Team Admin (scope) | Portfolio Admin (scope) | Viewer (scope) |
+|---|---|---|---|---|
+| Create a new team | ✅ | ❌ | ❌ | ❌ |
+| Create a new portfolio | ✅ † | ❌ | ❌ | ❌ |
+| Clone a team / portfolio | ✅ | ❌ | ❌ | ❌ |
+| Delete a team / portfolio | ✅ | ❌ | ❌ | ❌ |
+| Edit settings on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
+| Read assigned team / portfolio (metrics, features, etc.) | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
+| Manage users / group mappings | ✅ | ❌ | ❌ | ❌ |
+| Manage work tracking system connections | ✅ | ❌ | ❌ | ❌ |
+| List work tracking system connections | ✅ | ✅ | ✅ | ✅ |
+
+† **Portfolio creation also requires at least one team to exist in the system.** This applies even to System Admin: a portfolio without any team to roll up is structurally meaningless, so the **Add Portfolio** button stays hidden until the first team is created.
+
+---
+
+## Prerequisites for creating teams and portfolios
+
+Authorization (System Admin role) is necessary but not sufficient — Lighthouse also enforces functional prerequisites:
+
+| To create… | You must have | You must also have |
+|---|---|---|
+| A team | System Admin role | At least one **work tracking system connection** (e.g. Jira, Azure DevOps, Linear, CSV) |
+| A portfolio | System Admin role | At least one **team** in the system, and at least one work tracking system connection |
+
+The team-existence check is **system-wide**, not visibility-filtered: even if you only have read access to some teams, the gate considers every team in the database. (Under v1 this only matters for the connection-availability case; widening creation rights to scoped admins is a future possibility.)
+
 ---
 
 ## Bootstrap: becoming the first System Admin
 
 When RBAC is enabled for the first time on a fresh database, **no System Admin exists yet**. Lighthouse handles this with a one-time bootstrap flow:
 
-1. Sign in to Lighthouse as the user you want to become the first System Admin.
+1. Sign in to Lighthouse as the user you want to become the first System Admin. (Note: license upload is allowed in bootstrap mode — see below.)
 2. Go to **Settings → Access**.
 3. A yellow banner shows **You have not been granted a System Admin role yet**. Click **Become First System Admin**.
 4. You are now the first System Admin. The banner disappears and the Users / Group Mappings tables become editable.
 
+### Bootstrap flow on a fresh install
+
+Greenfield install with auth enabled, in order:
+
+1. Sign in as the first user (any user authorised by your IdP).
+2. On the **Premium License Required** screen, upload your Premium license. *(In bootstrap mode — i.e. before any System Admin has been granted — license upload is open to any authenticated user. Once a System Admin exists, only the System Admin or an Emergency Admin can upload / replace the license.)*
+3. Sign in as the user you want to become the first System Admin.
+4. Go to **Settings → Access → Become First System Admin**.
+5. Add at least one **work tracking system connection** (Settings → Configuration, or directly on the Overview).
+6. Create your first **team** on the Overview.
+7. The **Add Portfolio** button becomes visible once a team exists.
+
 {: .note}
-Until the first System Admin is bootstrapped, **every authenticated user** is treated as a System Admin by Lighthouse. This is the only way the very first sign-in can configure access. Once the bootstrap is complete, the unconditional access goes away — only the bootstrapped user (and any users they explicitly grant access to) retains administrative rights.
+Until the first System Admin is bootstrapped, **every authenticated user** is treated as a System Admin by Lighthouse — they can manage RBAC and upload the license. Once the bootstrap is complete, the unconditional access goes away.
 
 ---
 
@@ -87,6 +128,9 @@ The subject value must match the `sub` claim issued by your identity provider fo
 {: .recommendation}
 Keep at least one Emergency Admin entry for your production environments. The Access tab marks these users with an **Emergency Admin** badge and prevents their System Admin role from being revoked through the UI.
 
+{: .important}
+For the **license-upload bootstrap path**, the Emergency Admin does NOT count as a "real" System Admin. A fresh install with only an emergency admin configured still counts as bootstrap mode — any authenticated user can upload the license. Once a real System Admin has been bootstrapped through **Become First System Admin**, the bootstrap mode ends and the license endpoint locks down to the System Admin and Emergency Admin only.
+
 ---
 
 ## Granting roles to users
@@ -95,8 +139,7 @@ Once you are a System Admin, you can grant roles from **Settings → Access → 
 
 1. Sign-in events automatically create a user row the first time someone authenticates. If a user has not signed in yet, ask them to sign in once so their row appears.
 2. Click the **Edit** icon next to the user's row.
-3. Choose a role and (for Team Admin / Portfolio Admin / Viewer) the team or portfolio to scope it to.
-4. Click **Save**.
+3. Choose a role and (for Team Admin / Portfolio Admin / Viewer) the team or portfolio to scope it to. Role changes apply immediately — there is no separate Save step.
 
 To revoke access, click the **Trash** icon. Removing the last role assignment for a user takes their permissions back to nothing — they will still be able to sign in, but Lighthouse will not show them any teams or portfolios.
 
@@ -113,7 +156,7 @@ If your identity provider issues group claims, you can grant roles to entire gro
 2. Click **Add Group Mapping**.
 3. Enter the **Group value** as it appears in the user's token claims (case-sensitive — copy/paste from your IdP).
 4. Choose the **Role** and the scope (System / a specific team / a specific portfolio).
-5. Click **Save**.
+5. The mapping applies immediately.
 
 The next time a user from that group signs in (or refreshes their session), they will automatically have the mapped role. No database row is created — the role is computed from the claim on every request.
 
@@ -122,32 +165,18 @@ The group claim name Lighthouse reads is the IdP-configured claim that lists gro
 
 ---
 
-## Creation Rights for Teams and Portfolios
+## What each user sees in the UI
 
-Creating a new team or portfolio requires an administrative role somewhere in the system. The rules:
+Behaviour of the buttons and row actions on the Overview page:
 
-| You can create… | If you hold ANY of these | Additional prerequisite |
+| State | Add Team / Add Portfolio | Edit / Delete / Clone on a row |
 |---|---|---|
-| A new team | System Admin · Team Admin (any team) · Portfolio Admin (any portfolio) | — |
-| A new portfolio | System Admin · Team Admin (any team) · Portfolio Admin (any portfolio) | At least **one team** must exist in the system. |
-
-A few practical consequences:
-
-- **Holding *any* administrative role lets you create both teams and portfolios.** A Team Admin on Team Alpha can still create a brand-new portfolio. A Portfolio Admin on Portfolio Vision can still create a brand-new team.
-- **The team-existence rule applies to everyone — including System Admin.** A portfolio without any team to roll up is structurally meaningless, so Lighthouse hides the **Add Portfolio** button until at least one team exists anywhere in the system.
-- **Visibility is decoupled from the gate.** The check is "*does a team exist anywhere?*" not "*does this user have read access to a team?*". If three teams exist in the system and you only have visibility into one of them, you can still create a portfolio that contributes to the other two — you just won't be able to see those teams' details.
-- **Creators are auto-promoted on what they create.** A successful Create Team grants the creator **Team Admin** on the new team. A successful Create Portfolio grants the creator **Portfolio Admin** on the new portfolio. Existing roles on other entities are preserved.
-- **Viewers cannot create anything.** A user who holds only Viewer roles never sees the Add buttons.
-
-### What the Add buttons look like
-
-| State | Add Team button | Add Portfolio button |
-|---|---|---|
-| Authenticated user with no admin role | Hidden | Hidden |
-| Holds any admin role · 0 teams exist in the system | Visible | Hidden |
-| Holds any admin role · ≥1 team exists in the system | Visible | Visible |
-| Bootstrap mode (no System Admin configured yet) · 0 teams | Visible | Hidden |
-| RBAC disabled · 0 teams | Visible | Hidden |
+| Bootstrap mode (no System Admin configured yet) | Both shown; Add Portfolio hidden until a team exists | Bootstrap user is system-admin-equivalent |
+| RBAC disabled | Both shown; Add Portfolio hidden until a team exists | Every action available |
+| System Admin | Both shown; Add Portfolio hidden until a team exists | Edit + Clone + Delete on every team and portfolio |
+| Team Admin on Team X | Both hidden | Edit on Team X only; no Delete / Clone anywhere |
+| Portfolio Admin on Portfolio Y | Both hidden | Edit on Portfolio Y only; no Delete / Clone anywhere |
+| Viewer on Team X (or Portfolio Y) | Both hidden | Detail action only on the assigned entity |
 
 ---
 
@@ -164,18 +193,18 @@ To restrict what an API key can reach, scope the **owner's** roles rather than t
 ### Grant Team Admin to a specific user
 
 1. Ask the user to sign in once (so their row appears in the Users table).
-2. **Settings → Access → Users → Edit** that user → choose **Team Admin** + the team → **Save**.
+2. **Settings → Access → Users → Edit** that user → choose **Team Admin** + the team. Change applies immediately.
 
 ### Map an SSO group to Portfolio Admin
 
 1. **Settings → Access → Group Mappings → Add Group Mapping**.
 2. Enter the group value (case-sensitive, as it appears in the user's IdP token).
-3. Choose **Portfolio Admin** + the portfolio → **Save**.
+3. Choose **Portfolio Admin** + the portfolio.
 
 ### Revoke a user's access entirely
 
 1. **Settings → Access → Users**, find the user.
-2. Click **Edit** → remove each role → **Save**. The user can still sign in, but Lighthouse will not show them any teams or portfolios.
+2. Click **Edit** → remove each role. The user can still sign in, but Lighthouse will not show them any teams or portfolios.
 
 ### Recover access when locked out
 
@@ -187,13 +216,13 @@ To restrict what an API key can reach, scope the **owner's** roles rather than t
 
 ## Troubleshooting
 
-### The **Add Portfolio** button is missing even though I'm an admin
+### The **Add Portfolio** button is missing even though I'm a System Admin
 
-Portfolios require at least one team to exist anywhere in the system. Create a team first and the button will appear. This applies to every role, including System Admin and the bootstrap-time first user.
+Portfolios require at least one team to exist anywhere in the system. Create a team first and the button will appear. This applies even to System Admin and during first-time bootstrap.
 
-### I'm a Team Admin but the **Add Portfolio** button is hidden
+### I'm a Team Admin and can't see Add Team / Add Portfolio
 
-Same as above — check whether any team exists. If at least one team exists and the button is still hidden, refresh the page (the authorization summary is fetched on load) or sign out and back in to pick up role changes.
+Under v1 of RBAC, only System Admin can create teams or portfolios. Team Admin and Portfolio Admin can edit their assigned scope but not create new entities. Ask your System Admin to create the team or portfolio and grant you the corresponding role.
 
 ### A user signed in but does not appear in the Users table
 
@@ -213,6 +242,14 @@ Compare the value Lighthouse sees (visible in the browser's token after sign-in,
 
 That user is configured as an Emergency Admin in `appsettings.json`. To revoke their access you must remove them from `Authentication.EmergencySystemAdminSubjects` and restart Lighthouse. The badge on their row explains why the button is hidden.
 
+### A team or portfolio admin sees the team/portfolio but the Edit settings tab won't load
+
+Earlier versions of Lighthouse gated the work-tracking-system-connection list to System Admin only, which broke the Edit Settings tab for scoped admins. As of vNext this is fixed — Team Admin and Portfolio Admin can read the connection list (with secret values redacted at the DTO layer). Editing connection details still requires System Admin.
+
 ### The bootstrap banner does not appear for the first user
 
 The bootstrap flow only triggers when **no** System Admin exists in the database. If you have already bootstrapped (or restored a database that contains a System Admin), the banner is correctly hidden. To recover, either sign in as that System Admin or use the Emergency Admin path described above.
+
+### I uploaded the license but it says "License could not be loaded"
+
+Verify the license file is a JSON file produced by Lighthouse's licensing service and that the system clock is correct (the license has both a `validFrom` and `expiryDate`). On a fresh install (no System Admin bootstrapped yet), any authenticated user can upload — but the file itself must be valid.

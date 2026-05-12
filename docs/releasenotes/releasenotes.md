@@ -6,17 +6,30 @@ nav_order: 95
 
 # Lighthouse vNext
 
-## Role-Based Access Control: unified creation rights for teams and portfolios
-This release reshapes who is allowed to create teams and portfolios. The previous rules tied each creation right to a specific scoped admin role — Team Admins could only create teams, Portfolio Admins could only create portfolios. The new rules are simpler and more useful in practice:
+## Role-Based Access Control
+This release introduces **Role-Based Access Control (RBAC)** — a Premium feature for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [OIDC authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html) and is configured under **Settings → Access**.
 
-- **Any administrative role grants both creation rights.** If you are a System Admin, or you hold at least one Team Admin role anywhere, or you hold at least one Portfolio Admin role anywhere, you can create both new teams **and** new portfolios. Group-derived roles count the same as direct grants.
-- **Portfolios require at least one team to exist somewhere in the system.** A portfolio without any team to roll up is structurally meaningless, so the **Add Portfolio** button stays hidden until at least one team has been created. This rule applies uniformly — including for System Admin and during first-time bootstrap.
-- **Visibility no longer affects creation.** If three teams exist in the system and your role only lets you see one of them, you can still create a portfolio. The check is "*do any teams exist?*", not "*can this user see a team?*".
-- **Creators are auto-promoted on what they create.** Successfully creating a team grants you Team Admin on that new team. Successfully creating a portfolio grants you Portfolio Admin on that new portfolio. Any roles you already had on other entities are preserved.
+### What the four roles can do
+
+- **System Admin** — full control. Manages users, group mappings, and connections; creates, edits, clones, and deletes teams and portfolios.
+- **Team Admin (scoped to a specific team)** — reads and edits the assigned team's settings, throughput, features, and metrics.
+- **Portfolio Admin (scoped to a specific portfolio)** — reads and edits the assigned portfolio's features, settings, and metrics.
+- **Viewer (scoped to a team or portfolio)** — read-only access to the assigned entity.
+
+In v1, **only System Admin creates, clones, or deletes** teams and portfolios. Team Admin and Portfolio Admin edit their assigned scope but cannot create new entities. We may widen this in a future release based on feedback.
+
+### Key invariants
+
+- **Portfolios require at least one team to exist somewhere in the system.** The **Add Portfolio** button stays hidden until the first team is created — including for System Admin and during first-time bootstrap. A portfolio without any team to roll up is structurally meaningless.
+- **First-time bootstrap is open by design.** Until you've granted the first System Admin via *Become First System Admin*, every authenticated user has system-admin-equivalent rights — so they can upload the Premium license, configure the work-tracking system, and bootstrap themselves. The system locks down to the granted System Admin (and any configured Emergency Admins) once that step completes.
+- **Emergency Admins are a recovery path.** Users listed in `Authentication.EmergencySystemAdminSubjects` retain System Admin rights even if their database role is removed. Their UI row shows an **Emergency Admin** badge and the Revoke button is hidden.
+- **SSO group mappings are first-class.** Map an IdP group to a role at a specific scope; users in that group inherit the role behaviourally identically to a direct user grant.
 
 The full role matrix, bootstrap walkthrough, group-mapping guide, and troubleshooting steps are documented under [System Settings → Role-Based Access Control](https://docs.lighthouse.letpeople.work/settings/rbac.html). The [Authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html) page now links across to it.
 
 ## Bugfixes and Improvements
+- **Bootstrap-mode license upload** — on a fresh install with auth enabled, the **Premium License Required** screen now accepts the license file from any authenticated user. Previously this endpoint was locked to System Admin only, which made the system unbootstrappable without configuring an Emergency Admin in `appsettings.json` first. Once a real System Admin is bootstrapped, the license endpoint locks down to System Admin and Emergency Admin as usual.
+- **Connection-list visibility for scoped admins** — Team Admin and Portfolio Admin can now read the list of work-tracking-system connections, which is needed for the Edit-Settings tab on their assigned team or portfolio to load. Secret option values remain redacted at the DTO layer; only System Admin can create, edit, or delete connections.
 - Updated various third-party libraries.
 
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.3.5...HEAD)
