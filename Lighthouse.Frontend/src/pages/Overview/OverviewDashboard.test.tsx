@@ -342,19 +342,29 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	it("disables Add Portfolio button when no teams exist", async () => {
-		renderWithProviders(<OverviewDashboard />, {}, { teams: [] });
+	it("enables Add Portfolio button when no teams are visible to user but rbac.canCreatePortfolio is true", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: false,
+			canCreatePortfolio: true,
+		});
 
-		// Wait for loading to complete first (same pattern as other tests)
+		renderWithProviders(
+			<OverviewDashboard />,
+			{ rbacService: mockRbacService },
+			{ teams: [] },
+		);
+
 		await waitFor(() => {
 			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});
 
-		// Now assert the disabled state
 		const addPortfolioButton = screen.getByRole("button", {
 			name: "Add Portfolio",
 		});
-		expect(addPortfolioButton).toBeDisabled();
+		expect(addPortfolioButton).toBeEnabled();
 	});
 
 	it("shows RBAC no-access guidance when enabled and no teams or portfolios are visible", async () => {

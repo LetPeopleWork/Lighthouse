@@ -427,29 +427,21 @@ const OverviewDashboard: React.FC = () => {
 							</Tooltip>
 						)}
 						{rbac.canCreatePortfolio && (
-							<Tooltip
-								title={
-									hasTeams ? "" : "Create a team before adding a portfolio"
-								}
+							<LicenseTooltip
+								canUseFeature={canCreatePortfolio}
+								defaultTooltip=""
+								premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
 							>
 								<span>
-									<LicenseTooltip
-										canUseFeature={canCreatePortfolio}
-										defaultTooltip=""
-										premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
-									>
-										<span>
-											<ActionButton
-												buttonText={`Add ${portfolioTerm}`}
-												startIcon={<AddIcon />}
-												onClickHandler={handleAddPortfolio}
-												buttonVariant="contained"
-												disabled={!canCreatePortfolio || !hasTeams}
-											/>
-										</span>
-									</LicenseTooltip>
+									<ActionButton
+										buttonText={`Add ${portfolioTerm}`}
+										startIcon={<AddIcon />}
+										onClickHandler={handleAddPortfolio}
+										buttonVariant="contained"
+										disabled={!canCreatePortfolio}
+									/>
 								</span>
-							</Tooltip>
+							</LicenseTooltip>
 						)}
 					</Box>
 				</Box>
