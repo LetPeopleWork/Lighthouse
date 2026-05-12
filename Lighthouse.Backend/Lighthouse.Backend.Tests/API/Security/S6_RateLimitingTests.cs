@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             using var throttledResponse = await SendLoginRequest(client, PrimaryClientIp);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(statusesBeforeLimit, Has.All.Not.EqualTo(HttpStatusCode.TooManyRequests));
                 Assert.That(throttledResponse.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Assert.That(retryAfter, Is.Not.Null.And.Not.Empty, "Retry-After header must be present on 429");
                 Assert.That(int.TryParse(retryAfter, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds), Is.True);
                 Assert.That(seconds, Is.GreaterThan(0));
-            });
+            }
         }
 
         [Test]

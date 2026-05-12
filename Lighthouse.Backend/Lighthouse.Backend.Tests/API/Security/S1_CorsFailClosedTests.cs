@@ -83,12 +83,12 @@ namespace Lighthouse.Backend.Tests.API.Security
             using var request = BuildPreflightRequest(AnonymousProbeEndpoint, ConfiguredOrigin);
             using var response = await client.SendAsync(request);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.AnyOf(HttpStatusCode.NoContent, HttpStatusCode.OK));
                 Assert.That(ReadHeader(response, "Access-Control-Allow-Origin"), Is.EqualTo(ConfiguredOrigin));
                 Assert.That(ReadHeader(response, "Access-Control-Allow-Credentials"), Is.EqualTo("true"));
-            });
+            }
         }
 
         [Test]

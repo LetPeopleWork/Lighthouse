@@ -59,11 +59,11 @@ namespace Lighthouse.Backend.Tests.API.Security
             var nonSecretOption = options.EnumerateArray()
                 .Single(o => o.GetProperty("key").GetString() == NonSecretKey);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(secretOption.GetProperty("value").GetString(), Is.Empty);
                 Assert.That(nonSecretOption.GetProperty("value").GetString(), Is.EqualTo(NonSecretValue));
-            });
+            }
         }
 
         [Test]
@@ -135,12 +135,12 @@ namespace Lighthouse.Backend.Tests.API.Security
             var teamAdminSummary = await GetWithIdentity(c => c.AsTeamAdmin(TeamScopeId), SummaryPath);
             var portfolioAdminSummary = await GetWithIdentity(c => c.AsPortfolioAdmin(PortfolioScopeId), SummaryPath);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(systemAdminFullList, Does.Not.Contain(SecretValue));
                 Assert.That(teamAdminSummary, Does.Not.Contain(SecretValue));
                 Assert.That(portfolioAdminSummary, Does.Not.Contain(SecretValue));
-            });
+            }
         }
 
         private async Task<string> GetWithIdentity(Func<HttpClient, HttpClient> applyIdentity, string path)
@@ -156,8 +156,11 @@ namespace Lighthouse.Backend.Tests.API.Security
             var body = await response.Content.ReadAsStringAsync();
             using var document = JsonDocument.Parse(body);
 
-            Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array));
-            Assert.That(document.RootElement.GetArrayLength(), Is.GreaterThan(0));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array));
+                Assert.That(document.RootElement.GetArrayLength(), Is.GreaterThan(0));
+            }
 
             var allowedProperties = new HashSet<string>(StringComparer.Ordinal)
             {

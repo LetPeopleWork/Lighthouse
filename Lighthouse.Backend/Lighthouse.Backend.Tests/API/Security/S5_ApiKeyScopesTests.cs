@@ -124,11 +124,11 @@ namespace Lighthouse.Backend.Tests.API.Security
             var inScopeResponse = await keyClient.GetAsync($"/api/v1/portfolios/{InScopePortfolioId}");
             var outOfScopeResponse = await keyClient.GetAsync($"/api/v1/portfolios/{OutOfScopePortfolioId}");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(inScopeResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(outOfScopeResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            });
+            }
         }
 
         [Test]
@@ -173,11 +173,11 @@ namespace Lighthouse.Backend.Tests.API.Security
             var teamAdminResponse = await teamAdminClient.GetAsync(SummaryPath);
             var viewerResponse = await viewerClient.GetAsync(SummaryPath);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(teamAdminResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(viewerResponse.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
-            });
+            }
         }
 
         private async Task<string> CreateScopedKeyAsSystemAdmin(ApiKeyScopeDto scopeEntry)
