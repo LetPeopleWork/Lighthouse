@@ -232,6 +232,8 @@ Lighthouse is self-hosted software. Users accept responsibility for:
 - Infrastructure security
 - Backup and recovery
 
+**RBAC eventual consistency on API-key issuance.** When a System Admin or scoped admin creates an API key via `POST /api/apikeys` with an explicit `scope`, the server validates that the caller's current permissions are a superset of the requested scope, then persists the `ApiKeyPermission` rows. Between the validation and the persist there is a small window during which the caller's permissions could be revoked by another administrator; if revocation occurs in that window, the issued key carries a scope that exceeds the caller's *current* permissions. Mitigations: (a) every issued key is immediately visible to System Admins in the API-key management UI with its full scope and owner, enabling rapid audit and revocation; (b) RBAC mutations are themselves audited (Annex I §1(2)(l)); (c) revocations of administrator permissions are rare, discrete, security-relevant events that operators are expected to monitor. The window cannot be closed without serialising RBAC changes against key issuance globally, which would impose disproportionate locking on a self-hosted system. Operators of high-assurance deployments should review the API-key list after any privilege revocation to confirm no over-scoped key was issued during the revocation event.
+
 ---
 
 ## 6. Security Controls

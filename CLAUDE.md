@@ -7,7 +7,7 @@ This project follows the **object-oriented** paradigm. Use @nw-software-crafter 
 - Backend: C# .NET 8 ASP.NET Core (OOP, ports-and-adapters / hexagonal architecture)
 - Frontend: React 18 + TypeScript (functional-leaning hooks, but overall OOP project)
 - E2E Tests: Playwright with Page Object Model pattern
-- Test Framework (backend): xUnit + NSubstitute
+- Test Framework (backend): NUnit 4.6 + Moq + Microsoft.EntityFrameworkCore.InMemory + Microsoft.AspNetCore.Mvc.Testing (WebApplicationFactory)
 - Test Framework (frontend): Vitest + React Testing Library
 - Test Framework (E2E): Playwright
 
