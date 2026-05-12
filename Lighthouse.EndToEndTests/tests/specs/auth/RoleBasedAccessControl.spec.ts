@@ -107,7 +107,7 @@ test.describe("@rbac E2E", () => {
 				).toBeVisible();
 				await expect(
 					overview.page.getByRole("button", { name: "Add Portfolio" }).first(),
-				).toBeVisible();
+				).not.toBeVisible();
 
 				const rbac = await goToRbacSettings(overview);
 				await expect(rbac.page.getByTestId("api-keys-tab")).toBeVisible();
@@ -156,6 +156,10 @@ test.describe("@rbac E2E", () => {
 					await overview.search(TEAM_NAME);
 					await expect(
 						overview.page.getByRole("link", { name: TEAM_NAME, exact: true }),
+					).toBeVisible();
+					await overview.search("");
+					await expect(
+						overview.page.getByRole("button", { name: "Add Portfolio" }).first(),
 					).toBeVisible();
 				},
 			);

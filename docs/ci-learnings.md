@@ -22,7 +22,11 @@ _None yet._
 
 ## Tests
 
-_None yet._
+### 2026-05-12 — RBAC E2E bootstrap assertion contradicted the team-existence portfolio gate
+- **Symptom**: `Verify Authentication / verifyauth` failed at step 25 ("Run RBAC Playwright tests"). The failing assertion in `Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:108-110` expected the "Add Portfolio" button to be visible during the first-user bootstrap step, where ZERO teams exist in the system.
+- **Root cause**: Under R2 (`team-portfolio-creation-rights` feature delta), `rbac.canCreatePortfolio` is `false` whenever `LighthouseAppContext.Teams` is empty — even for System Admin, even in bootstrap mode. The frontend Add Portfolio button is gated by `rbac.canCreatePortfolio`, so it is intentionally hidden during bootstrap-with-zero-teams. The E2E test was pinning the R1 contract that gave SysAdmin unconditional portfolio creation.
+- **Fix**: Flipped the bootstrap assertion to `.not.toBeVisible()` for Add Portfolio, then added a positive assertion right after the "load demo scenario 0" step (where Team Zenith is created) confirming the button becomes visible once a team exists. `Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:108-110, 156-163`.
+- **Rule going forward**: The Add Portfolio button is hidden whenever the system has zero teams, in every RBAC mode (enforced, bootstrap-no-admin, RBAC-disabled). E2E flows that touch a fresh-database state MUST NOT assert Add Portfolio visibility until at least one team has been seeded (via demo scenario load, fixture, or the test creating one first). For unit / Vitest tests that pass `rbac.canCreatePortfolio = true` directly to `OverviewDashboard`, the visible-teams prop no longer affects the button — that gate is now backend-side only.
 
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
 
