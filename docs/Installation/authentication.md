@@ -21,6 +21,12 @@ By default, Lighthouse is accessible to anyone who can reach the URL. Enabling a
 
 Once authentication is enabled, you can also issue API keys for non-browser clients such as the Lighthouse CLI and Lighthouse MCP servers. Create those keys from [System Settings > API Keys](../settings/apikeys.html), and see [AI and Automation](../aiintegration.html) for end-to-end usage examples.
 
+### Authorization (Role-Based Access Control)
+
+Authentication answers *"who is this user?"*. **Authorization** is the next layer: *"what is this user allowed to do?"*. Lighthouse provides this through **[Role-Based Access Control (RBAC)](../settings/rbac.html)** — a Premium feature that lets you scope read, edit, and create rights on individual teams and portfolios.
+
+Until RBAC is bootstrapped, every signed-in user has full access. After the first user clicks **Become First System Admin** under **Settings → Access**, only users with an explicit role assignment (or an Emergency Admin entry in `appsettings.json`) retain administrative rights. See [Role-Based Access Control](../settings/rbac.html) for the full bootstrap walkthrough, the role matrix, SSO group mappings, and the rules that govern team / portfolio creation.
+
 ### Authentication Flow
 
 When authentication is enabled, users interact with the following screens depending on their state:

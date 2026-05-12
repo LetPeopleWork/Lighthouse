@@ -27,5 +27,8 @@ Backup, Restore, and Clear your database.
 ### [API Keys](apikeys.html)
 Create and manage API keys for the Lighthouse CLI, MCP servers, and other automation clients. This is especially relevant when you follow the [AI and Automation](../aiintegration.html) setup and your Lighthouse instance requires authentication.
 
+### [Role-Based Access Control](rbac.html)
+Configure who can read, edit, and create teams and portfolios once [authentication](../Installation/authentication.html) is enabled. Covers the four roles (System Admin, Team Admin, Portfolio Admin, Viewer), the first-time bootstrap, direct grants, SSO group mappings, team / portfolio creation rights, and the Emergency Admin recovery path.
+
 ### [System Info](systeminfo.html)
 Access detailed information about your system as well as logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.

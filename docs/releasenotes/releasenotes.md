@@ -4,6 +4,24 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Role-Based Access Control: unified creation rights for teams and portfolios
+This release reshapes who is allowed to create teams and portfolios. The previous rules tied each creation right to a specific scoped admin role — Team Admins could only create teams, Portfolio Admins could only create portfolios. The new rules are simpler and more useful in practice:
+
+- **Any administrative role grants both creation rights.** If you are a System Admin, or you hold at least one Team Admin role anywhere, or you hold at least one Portfolio Admin role anywhere, you can create both new teams **and** new portfolios. Group-derived roles count the same as direct grants.
+- **Portfolios require at least one team to exist somewhere in the system.** A portfolio without any team to roll up is structurally meaningless, so the **Add Portfolio** button stays hidden until at least one team has been created. This rule applies uniformly — including for System Admin and during first-time bootstrap.
+- **Visibility no longer affects creation.** If three teams exist in the system and your role only lets you see one of them, you can still create a portfolio. The check is "*do any teams exist?*", not "*can this user see a team?*".
+- **Creators are auto-promoted on what they create.** Successfully creating a team grants you Team Admin on that new team. Successfully creating a portfolio grants you Portfolio Admin on that new portfolio. Any roles you already had on other entities are preserved.
+
+The full role matrix, bootstrap walkthrough, group-mapping guide, and troubleshooting steps are documented under [System Settings → Role-Based Access Control](https://docs.lighthouse.letpeople.work/settings/rbac.html). The [Authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html) page now links across to it.
+
+## Bugfixes and Improvements
+- Updated various third-party libraries.
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.3.5...HEAD)
+
+
 # Lighthouse v26.5.3.5
 
 ## Support for new Lighthouse Clients
