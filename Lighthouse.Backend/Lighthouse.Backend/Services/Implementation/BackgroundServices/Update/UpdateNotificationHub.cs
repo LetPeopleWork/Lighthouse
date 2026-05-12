@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
+    [Authorize]
     public class UpdateNotificationHub : Hub
     {
         private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
