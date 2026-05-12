@@ -273,22 +273,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            if (await CanManageRbacAsync(principal, cancellationToken))
-            {
-                return true;
-            }
-
-            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
-            if (currentUser is null)
-            {
-                return false;
-            }
-
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-
-            return effectivePermissions.Any(entry =>
-                entry.Value == UserRole.TeamAdmin
-                || entry.Value == UserRole.PortfolioAdmin);
+            return await CanManageRbacAsync(principal, cancellationToken);
         }
 
         public async Task<bool> CanCreatePortfolioAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -303,27 +288,12 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            if (await CanManageRbacAsync(principal, cancellationToken))
-            {
-                return await HasAnyTeamAsync(cancellationToken);
-            }
-
-            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
-            if (currentUser is null)
+            if (!await CanManageRbacAsync(principal, cancellationToken))
             {
                 return false;
             }
 
-            if (!await HasAnyTeamAsync(cancellationToken))
-            {
-                return false;
-            }
-
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-
-            return effectivePermissions.Any(entry =>
-                entry.Value == UserRole.TeamAdmin
-                || entry.Value == UserRole.PortfolioAdmin);
+            return await HasAnyTeamAsync(cancellationToken);
         }
 
         public async Task<bool> CanSatisfyRequirementAsync(
@@ -383,7 +353,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             }
 
             var isSystemAdmin = await CanManageRbacAsync(principal, cancellationToken);
-            var canCreateTeam = isSystemAdmin || await CanCreateTeamAsync(principal, cancellationToken);
+            var canCreateTeam = await CanCreateTeamAsync(principal, cancellationToken);
             var canCreatePortfolio = await CanCreatePortfolioAsync(principal, cancellationToken);
             var systemAdminDisplayNames = await GetSystemAdminDisplayNamesAsync(cancellationToken);
 

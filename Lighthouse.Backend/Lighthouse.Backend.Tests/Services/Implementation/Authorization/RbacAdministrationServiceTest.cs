@@ -343,7 +343,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task CanCreateTeamAsync_WhenUserHasTeamAdminOnAnyTeam_ReturnsTrue()
+        public async Task CanCreateTeamAsync_WhenUserHasOnlyTeamAdminRole_ReturnsFalse()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
@@ -363,7 +363,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var result = await subject.CanCreateTeamAsync(principal, CancellationToken.None);
 
-            Assert.That(result, Is.True);
+            Assert.That(result, Is.False, "Under v1, only System Admins may create teams. A scoped Team Admin must be refused.");
         }
 
         [Test]
@@ -412,7 +412,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task CanCreatePortfolioAsync_WhenUserHasPortfolioAdminOnAnyPortfolio_ReturnsTrue()
+        public async Task CanCreatePortfolioAsync_WhenUserHasOnlyPortfolioAdminRole_ReturnsFalse()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
@@ -433,7 +433,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var result = await subject.CanCreatePortfolioAsync(principal, CancellationToken.None);
 
-            Assert.That(result, Is.True);
+            Assert.That(result, Is.False, "Under v1, only System Admins may create portfolios. A scoped Portfolio Admin must be refused.");
         }
 
         [Test]
@@ -554,7 +554,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task GetAuthorizationSummaryAsync_TeamAdmin_CanCreateBothTeamsAndPortfolios_WhenTeamsExist()
+        public async Task GetAuthorizationSummaryAsync_TeamAdmin_CannotCreateTeamsOrPortfolios_UnderV1ConservativeContract()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
@@ -578,8 +578,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(summary.IsSystemAdmin, Is.False);
-                Assert.That(summary.CanCreateTeam, Is.True);
-                Assert.That(summary.CanCreatePortfolio, Is.True, "Under R2 unified rights, a Team Admin can create portfolios when at least one team exists.");
+                Assert.That(summary.CanCreateTeam, Is.False, "Under v1, only System Admins create teams; a Team Admin must NOT see CanCreateTeam=true.");
+                Assert.That(summary.CanCreatePortfolio, Is.False, "Under v1, only System Admins create portfolios; a Team Admin must NOT see CanCreatePortfolio=true even when teams exist.");
                 Assert.That(summary.IsRbacEnabled, Is.True);
                 Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(["System Admin User"]));
             }
@@ -1476,65 +1476,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             var canRead = await subject.CanReadPortfolioAsync(principal, 1, CancellationToken.None);
 
             Assert.That(canRead, Is.False);
-        }
-
-        [Test]
-        public async Task CanCreateTeamAsync_WithMultiplePermissionsExactlyOneTeamAdmin_ReturnsTrue()
-        {
-            // Pins line 286 Any -> All mutant. Multiple permissions, only ONE matches Team+TeamAdmin.
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
-
-            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|other-admin", SubjectClaimType = "sub" });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
-
-            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|mixed", SubjectClaimType = "sub" });
-            // Three permissions for user 2: Viewer (team), Viewer (portfolio), TeamAdmin (team) - only one is the matching combo.
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Portfolio, ScopeId = 5 });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 11 });
-            await context.SaveChangesAsync();
-
-            var principal = BuildPrincipal(new Claim("sub", "auth0|mixed"));
-            currentUserProfileService
-                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
-
-            var subject = CreateSubject(context, emergencySubjects: []);
-
-            var canCreate = await subject.CanCreateTeamAsync(principal, CancellationToken.None);
-
-            // Under .All() this would be false because not every permission is Team+TeamAdmin.
-            Assert.That(canCreate, Is.True);
-        }
-
-        [Test]
-        public async Task CanCreatePortfolioAsync_WithMultiplePermissionsExactlyOnePortfolioAdmin_ReturnsTrue()
-        {
-            // Pins line 316 Any -> All mutant. Mirror of the previous test for portfolio scope.
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
-
-            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|other-admin", SubjectClaimType = "sub" });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
-
-            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|mixed", SubjectClaimType = "sub" });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Portfolio, ScopeId = 5 });
-            context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 6 });
-            context.Teams.Add(new Team { Id = 11, Name = "Alpha" });
-            await context.SaveChangesAsync();
-
-            var principal = BuildPrincipal(new Claim("sub", "auth0|mixed"));
-            currentUserProfileService
-                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 2));
-
-            var subject = CreateSubject(context, emergencySubjects: []);
-
-            var canCreate = await subject.CanCreatePortfolioAsync(principal, CancellationToken.None);
-
-            Assert.That(canCreate, Is.True);
         }
 
         [Test]
@@ -2704,11 +2645,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task GetAuthorizationSummaryAsync_NonSystemAdmin_CanCreatePortfolioFollowsCanCreatePortfolioCheck()
+        public async Task GetAuthorizationSummaryAsync_NonSystemAdmin_DoesNotGetCanCreatePortfolio_UnderV1ConservativeContract()
         {
-            // Pins line 380 logical mutant (3204): when isSystemAdmin is FALSE, CanCreatePortfolio MUST come
-            // from the CanCreatePortfolioAsync result. With && instead of ||, the result would be (false && ...) = false.
-            // We test a Portfolio Admin user: isSystemAdmin=false, but CanCreatePortfolioAsync=true.
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
 
@@ -2731,7 +2669,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(summary.IsSystemAdmin, Is.False);
-                Assert.That(summary.CanCreatePortfolio, Is.True);
+                Assert.That(summary.CanCreatePortfolio, Is.False, "Under v1, a Portfolio Admin must NOT see CanCreatePortfolio=true. Only System Admins create portfolios.");
             }
         }
 

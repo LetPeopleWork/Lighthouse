@@ -17,9 +17,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
     [TestFixture]
     public class CreateRightsAcceptanceTest
     {
-        private static readonly int[] AllSeededTeamIds = [10, 20, 30, 40];
-        private static readonly int[] CreatorVisibleTeamIds = [10];
-
         private DbContextOptions<LighthouseAppContext> options;
         private Mock<ICryptoService> cryptoService;
         private Mock<ILogger<LighthouseAppContext>> appContextLogger;
@@ -43,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task RbacGuard_CanCreateTeam_AdmitsTeamAdmin()
+        public async Task RbacGuard_CanCreateTeam_RefusesTeamAdmin()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
@@ -62,12 +59,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             Assert.That(
                 canCreate,
-                Is.True,
-                "The CanCreateTeam guard must admit a non-System-Admin who holds at least one Team Admin role.");
+                Is.False,
+                "Under v1, only System Admins may create teams. A Team Admin must NOT be admitted by CanCreateTeam.");
         }
 
         [Test]
-        public async Task RbacGuard_CanCreatePortfolio_AdmitsPortfolioAdmin()
+        public async Task RbacGuard_CanCreatePortfolio_RefusesPortfolioAdmin()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
@@ -87,8 +84,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             Assert.That(
                 canCreate,
-                Is.True,
-                "The CanCreatePortfolio guard must admit a non-System-Admin who holds at least one Portfolio Admin role.");
+                Is.False,
+                "Under v1, only System Admins may create portfolios. A Portfolio Admin must NOT be admitted by CanCreatePortfolio.");
         }
 
         [Test]
@@ -177,7 +174,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task RbacGuard_CanCreateTeam_AdmitsGroupDerivedTeamAdmin()
+        public async Task RbacGuard_CanCreateTeam_RefusesGroupDerivedTeamAdmin()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
@@ -214,17 +211,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             {
                 Assert.That(
                     canCreateTeam,
-                    Is.True,
-                    "Team Admin rights derived from an SSO group mapping must enable team creation — group-based rights are behaviourally identical to direct user rights (rbac-enhancements WD-07).");
+                    Is.False,
+                    "Under v1, a group-derived Team Admin must NOT be admitted by CanCreateTeam. Only System Admins create teams.");
                 Assert.That(
                     canCreatePortfolio,
-                    Is.True,
-                    "Under R2 unified rights, a group-derived Team Admin must also be able to create portfolios (provided a team exists in the system).");
+                    Is.False,
+                    "Under v1, a group-derived Team Admin must NOT be admitted by CanCreatePortfolio either.");
             }
         }
 
         [Test]
-        public async Task RbacGuard_CanCreatePortfolio_AdmitsGroupDerivedPortfolioAdmin()
+        public async Task RbacGuard_CanCreatePortfolio_RefusesGroupDerivedPortfolioAdmin()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
@@ -261,12 +258,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             {
                 Assert.That(
                     canCreatePortfolio,
-                    Is.True,
-                    "Portfolio Admin rights derived from an SSO group mapping must enable portfolio creation — group-based rights are behaviourally identical to direct user rights (rbac-enhancements WD-07).");
+                    Is.False,
+                    "Under v1, a group-derived Portfolio Admin must NOT be admitted by CanCreatePortfolio. Only System Admins create portfolios.");
                 Assert.That(
                     canCreateTeam,
-                    Is.True,
-                    "Under R2 unified rights, a group-derived Portfolio Admin must also be able to create teams.");
+                    Is.False,
+                    "Under v1, a group-derived Portfolio Admin must NOT be admitted by CanCreateTeam either.");
             }
         }
 
@@ -417,51 +414,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task WalkingSkeleton_TeamAdmin_CreatesPortfolio_WhenOtherTeamsExistButAreInvisible()
-        {
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
-            SeedTeamAdmin(context, profileId: 2, subject: "auth0|team-admin", teamId: 10);
-            SeedTeam(context, teamId: 10, name: "Alpha");
-            SeedTeam(context, teamId: 20, name: "Beta");
-            SeedTeam(context, teamId: 30, name: "Gamma");
-            SeedTeam(context, teamId: 40, name: "Delta");
-            await context.SaveChangesAsync();
-
-            var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
-            SetCurrentUser(principal, context, profileId: 2);
-            var subject = CreateSubject(context);
-
-            var canCreatePortfolio = await subject.CanSatisfyRequirementAsync(
-                principal,
-                RbacGuardRequirement.CanCreatePortfolio,
-                scopeId: null,
-                CancellationToken.None);
-
-            var readableTeamIds = await subject.GetReadableTeamIdsAsync(
-                principal,
-                AllSeededTeamIds,
-                CancellationToken.None);
-
-            const int newlyCreatedPortfolioId = 500;
-            var grantResult = await subject.GrantCreatorPortfolioAdminAsync(
-                userProfileId: 2,
-                portfolioId: newlyCreatedPortfolioId,
-                CancellationToken.None);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(canCreatePortfolio, Is.True, "A Team Admin must be admitted to create portfolios under R2 unified rights.");
-                Assert.That(readableTeamIds, Is.EquivalentTo(CreatorVisibleTeamIds), "The creator only sees their own team — the existence gate must not be filtered by per-user visibility.");
-                Assert.That(grantResult.Succeeded, Is.True, "Grant of PortfolioAdmin on the newly created portfolio must succeed for the creator.");
-                Assert.That(
-                    context.UserPermissions.Any(p => p.UserProfileId == 2 && p.ScopeType == PermissionScopeType.Portfolio && p.ScopeId == newlyCreatedPortfolioId && p.Role == UserRole.PortfolioAdmin),
-                    Is.True,
-                    "The creator's PortfolioAdmin grant for the new portfolio must be persisted.");
-            }
-        }
-
-        [Test]
         public async Task AuthorizationSummary_SystemAdmin_CannotCreatePortfolio_WhenNoTeamsExist()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
@@ -479,105 +431,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 Assert.That(summary.IsSystemAdmin, Is.True);
                 Assert.That(summary.CanCreateTeam, Is.True, "System Admins must always be able to create teams — the existence gate does not apply to team creation.");
                 Assert.That(summary.CanCreatePortfolio, Is.False, "Even a System Admin must be refused portfolio creation when no teams exist anywhere in the system.");
-            }
-        }
-
-        [Test]
-        public async Task AuthorizationSummary_TeamAdmin_CanCreatePortfolio_WhenTeamExists()
-        {
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
-            SeedTeamAdmin(context, profileId: 2, subject: "auth0|team-admin", teamId: 10);
-            SeedTeam(context, teamId: 10, name: "Alpha");
-            await context.SaveChangesAsync();
-
-            var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
-            SetCurrentUser(principal, context, profileId: 2);
-            var subject = CreateSubject(context);
-
-            var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(summary.IsSystemAdmin, Is.False);
-                Assert.That(summary.CanCreateTeam, Is.True, "A Team Admin must be able to create teams.");
-                Assert.That(summary.CanCreatePortfolio, Is.True, "Under R2 unified rights, a Team Admin must be able to create portfolios when at least one team exists.");
-            }
-        }
-
-        [Test]
-        public async Task AuthorizationSummary_PortfolioAdmin_CanCreateTeam()
-        {
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
-            SeedPortfolioAdmin(context, profileId: 2, subject: "auth0|portfolio-admin", portfolioId: 5);
-            SeedTeam(context, teamId: 10, name: "Alpha");
-            await context.SaveChangesAsync();
-
-            var principal = BuildPrincipal(new Claim("sub", "auth0|portfolio-admin"));
-            SetCurrentUser(principal, context, profileId: 2);
-            var subject = CreateSubject(context);
-
-            var summary = await subject.GetAuthorizationSummaryAsync(principal, CancellationToken.None);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(summary.IsSystemAdmin, Is.False);
-                Assert.That(summary.CanCreateTeam, Is.True, "Under R2 unified rights, a Portfolio Admin must be able to create teams.");
-                Assert.That(summary.CanCreatePortfolio, Is.True, "A Portfolio Admin must be able to create portfolios when at least one team exists.");
-            }
-        }
-
-        [Test]
-        public async Task AutoAdmin_TeamAdmin_WhoCreatesPortfolio_BecomesPortfolioAdminOfNewPortfolio()
-        {
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            SeedTeamAdmin(context, profileId: 2, subject: "auth0|jordan", teamId: 100);
-            SeedTeam(context, teamId: 100, name: "Alpha");
-            await context.SaveChangesAsync();
-
-            var subject = CreateSubject(context);
-
-            const int newlyCreatedPortfolioId = 700;
-            var result = await subject.GrantCreatorPortfolioAdminAsync(
-                userProfileId: 2,
-                portfolioId: newlyCreatedPortfolioId,
-                CancellationToken.None);
-
-            var grant = await context.UserPermissions.SingleOrDefaultAsync(p =>
-                p.UserProfileId == 2 && p.ScopeType == PermissionScopeType.Portfolio && p.ScopeId == newlyCreatedPortfolioId);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Succeeded, Is.True);
-                Assert.That(grant, Is.Not.Null, "A Team Admin who creates a portfolio must become PortfolioAdmin of that new portfolio (cross-role auto-admin).");
-                Assert.That(grant!.Role, Is.EqualTo(UserRole.PortfolioAdmin));
-            }
-        }
-
-        [Test]
-        public async Task AutoAdmin_PortfolioAdmin_WhoCreatesTeam_BecomesTeamAdminOfNewTeam()
-        {
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            SeedPortfolioAdmin(context, profileId: 2, subject: "auth0|riley", portfolioId: 100);
-            await context.SaveChangesAsync();
-
-            var subject = CreateSubject(context);
-
-            const int newlyCreatedTeamId = 800;
-            var result = await subject.GrantCreatorTeamAdminAsync(
-                userProfileId: 2,
-                teamId: newlyCreatedTeamId,
-                CancellationToken.None);
-
-            var grant = await context.UserPermissions.SingleOrDefaultAsync(p =>
-                p.UserProfileId == 2 && p.ScopeType == PermissionScopeType.Team && p.ScopeId == newlyCreatedTeamId);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Succeeded, Is.True);
-                Assert.That(grant, Is.Not.Null, "A Portfolio Admin who creates a team must become TeamAdmin of that new team (cross-role auto-admin).");
-                Assert.That(grant!.Role, Is.EqualTo(UserRole.TeamAdmin));
             }
         }
 
@@ -602,40 +455,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 canCreatePortfolio,
                 Is.False,
                 "Portfolio creation must be refused — even for System Admin — when no team rows exist in the system. A portfolio without any team to roll up is structurally meaningless.");
-        }
-
-        [Test]
-        public async Task CanCreatePortfolio_IsGlobal_NotVisibilityScoped()
-        {
-            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
-            SeedTeamAdmin(context, profileId: 2, subject: "auth0|scoped-admin", teamId: 10);
-            SeedTeam(context, teamId: 10, name: "Alpha");
-            SeedTeam(context, teamId: 20, name: "Beta");
-            SeedTeam(context, teamId: 30, name: "Gamma");
-            SeedTeam(context, teamId: 40, name: "Delta");
-            await context.SaveChangesAsync();
-
-            var principal = BuildPrincipal(new Claim("sub", "auth0|scoped-admin"));
-            SetCurrentUser(principal, context, profileId: 2);
-            var subject = CreateSubject(context);
-
-            var canCreatePortfolio = await subject.CanSatisfyRequirementAsync(
-                principal,
-                RbacGuardRequirement.CanCreatePortfolio,
-                scopeId: null,
-                CancellationToken.None);
-
-            var readableTeamIds = await subject.GetReadableTeamIdsAsync(
-                principal,
-                AllSeededTeamIds,
-                CancellationToken.None);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(canCreatePortfolio, Is.True, "The portfolio existence gate must succeed because teams exist anywhere in the database.");
-                Assert.That(readableTeamIds, Is.EquivalentTo(CreatorVisibleTeamIds), "The creator only has read access to their own team — the existence gate must NOT be visibility-filtered.");
-            }
         }
 
         [Test]
