@@ -17,6 +17,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
     [TestFixture]
     public class CreateRightsAcceptanceTest
     {
+        private static readonly int[] AllSeededTeamIds = [10, 20, 30, 40];
+        private static readonly int[] CreatorVisibleTeamIds = [10];
+
         private DbContextOptions<LighthouseAppContext> options;
         private Mock<ICryptoService> cryptoService;
         private Mock<ILogger<LighthouseAppContext>> appContextLogger;
@@ -437,7 +440,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var readableTeamIds = await subject.GetReadableTeamIdsAsync(
                 principal,
-                new[] { 10, 20, 30, 40 },
+                AllSeededTeamIds,
                 CancellationToken.None);
 
             const int newlyCreatedPortfolioId = 500;
@@ -449,7 +452,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(canCreatePortfolio, Is.True, "A Team Admin must be admitted to create portfolios under R2 unified rights.");
-                Assert.That(readableTeamIds, Is.EquivalentTo(new[] { 10 }), "The creator only sees their own team — the existence gate must not be filtered by per-user visibility.");
+                Assert.That(readableTeamIds, Is.EquivalentTo(CreatorVisibleTeamIds), "The creator only sees their own team — the existence gate must not be filtered by per-user visibility.");
                 Assert.That(grantResult.Succeeded, Is.True, "Grant of PortfolioAdmin on the newly created portfolio must succeed for the creator.");
                 Assert.That(
                     context.UserPermissions.Any(p => p.UserProfileId == 2 && p.ScopeType == PermissionScopeType.Portfolio && p.ScopeId == newlyCreatedPortfolioId && p.Role == UserRole.PortfolioAdmin),
@@ -625,13 +628,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             var readableTeamIds = await subject.GetReadableTeamIdsAsync(
                 principal,
-                new[] { 10, 20, 30, 40 },
+                AllSeededTeamIds,
                 CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(canCreatePortfolio, Is.True, "The portfolio existence gate must succeed because teams exist anywhere in the database.");
-                Assert.That(readableTeamIds, Is.EquivalentTo(new[] { 10 }), "The creator only has read access to their own team — the existence gate must NOT be visibility-filtered.");
+                Assert.That(readableTeamIds, Is.EquivalentTo(CreatorVisibleTeamIds), "The creator only has read access to their own team — the existence gate must NOT be visibility-filtered.");
             }
         }
 
