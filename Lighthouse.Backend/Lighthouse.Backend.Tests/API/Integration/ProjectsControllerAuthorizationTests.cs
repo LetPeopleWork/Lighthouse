@@ -115,12 +115,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private async Task SetupPortfolios(int numberOfPortfolios)
         {
             var portfolioRepo = ServiceProvider.GetService<IRepository<Portfolio>>();
+            var teamRepo = ServiceProvider.GetService<IRepository<Team>>();
 
             var workTrackingSystemConnection = new WorkTrackingSystemConnection
             {
                 Name = "Connection",
                 WorkTrackingSystem = WorkTrackingSystems.Jira
             };
+
+            teamRepo.Add(new Team
+            {
+                Name = "Baseline Team",
+                WorkTrackingSystemConnection = workTrackingSystemConnection
+            });
+            await teamRepo.Save();
 
             for (var i = 0; i < numberOfPortfolios; i++)
             {

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -390,10 +391,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task CanCreatePortfolioAsync_WhenRbacDisabled_ReturnsTrue()
+        public async Task CanCreatePortfolioAsync_WhenRbacDisabled_AndTeamsExist_ReturnsTrue()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
+            await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|user-no-grants"));
             currentUserProfileService
@@ -417,6 +421,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|portfolio-admin", SubjectClaimType = "sub" });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 5 });
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
             await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|portfolio-admin"));
@@ -527,6 +532,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
             await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|system-admin"));
@@ -548,7 +554,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task GetAuthorizationSummaryAsync_TeamAdmin_CanCreateTeamButNotPortfolio()
+        public async Task GetAuthorizationSummaryAsync_TeamAdmin_CanCreateBothTeamsAndPortfolios_WhenTeamsExist()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
@@ -557,6 +563,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|team-admin", SubjectClaimType = "sub" });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
             await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
@@ -572,17 +579,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             {
                 Assert.That(summary.IsSystemAdmin, Is.False);
                 Assert.That(summary.CanCreateTeam, Is.True);
-                Assert.That(summary.CanCreatePortfolio, Is.False);
+                Assert.That(summary.CanCreatePortfolio, Is.True, "Under R2 unified rights, a Team Admin can create portfolios when at least one team exists.");
                 Assert.That(summary.IsRbacEnabled, Is.True);
                 Assert.That(summary.SystemAdminDisplayNames, Is.EqualTo(["System Admin User"]));
             }
         }
 
         [Test]
-        public async Task GetAuthorizationSummaryAsync_WhenRbacDisabled_AllCapabilitiesTrue()
+        public async Task GetAuthorizationSummaryAsync_WhenRbacDisabled_AndTeamsExist_AllCapabilitiesTrue()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
+            await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|any-user"));
             currentUserProfileService
@@ -744,6 +754,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 ScopeType = PermissionScopeType.System,
                 ScopeId = null,
             });
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
             await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(
@@ -1511,6 +1522,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 10 });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Portfolio, ScopeId = 5 });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 6 });
+            context.Teams.Add(new Team { Id = 11, Name = "Alpha" });
             await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|mixed"));
@@ -1582,11 +1594,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task GetAuthorizationSummaryAsync_WhenNoSystemAdminConfigured_AnyUserGetsBootstrapAdmin()
+        public async Task GetAuthorizationSummaryAsync_WhenNoSystemAdminConfigured_AndTeamsExist_AnyUserGetsBootstrapAdmin()
         {
             // Pins line 367 Boolean false mutant - bootstrap shortcut returns IsSystemAdmin=true.
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
+            await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|first-user"));
             currentUserProfileService
@@ -2702,6 +2717,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
             context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|portfolio-admin", SubjectClaimType = "sub" });
             context.UserPermissions.Add(new UserPermission { UserProfileId = 2, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 7 });
+            context.Teams.Add(new Team { Id = 10, Name = "Alpha" });
             await context.SaveChangesAsync();
 
             var principal = BuildPrincipal(new Claim("sub", "auth0|portfolio-admin"));
@@ -2716,7 +2732,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(summary.IsSystemAdmin, Is.False);
-                // Under && mutation: (false && true) = false. Under || (original): (false || true) = true.
                 Assert.That(summary.CanCreatePortfolio, Is.True);
             }
         }
