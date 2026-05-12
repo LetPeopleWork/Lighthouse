@@ -1,0 +1,195 @@
+{
+  "roadmap": {
+    "project_id": "team-portfolio-creation-rights",
+    "revision": "R2",
+    "created_at": "2026-05-12",
+    "total_steps": 2,
+    "goal": "Apply the R2 contract delta: (a) unify inferred creation rights so any TeamAdmin or PortfolioAdmin role grants BOTH CanCreateTeam and CanCreatePortfolio, and (b) introduce a system-wide team-existence gate on portfolio creation that fires in all three branches of GetAuthorizationSummaryAsync (RBAC-disabled, bootstrap-no-admin, normal) and in CanCreatePortfolioAsync, ordered after the policy-level short-circuits. Frontend already reads rbac.canCreatePortfolio from the summary; the only remaining frontend change is removing the auxiliary visibility-scoped !hasTeams disabled-clause on the Add Portfolio button so the backend summary is the single source of truth for the existence gate.",
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "supersedes": "docs/feature/team-portfolio-creation-rights/deliver/roadmap-r1.json"
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/team-portfolio-creation-rights/feature-delta.md",
+    "feature_delta_section": "Wave: DISTILL / [REF] Revision R2 \u2014 DELIVER re-run scope",
+    "gherkin": "docs/feature/team-portfolio-creation-rights/distill/team-portfolio-creation-rights.feature",
+    "r1_artefacts_shipped": [
+      "923d1f01 feat(authorization): implement CanCreateTeam/CanCreatePortfolio guard arms and auto-admin grants",
+      "66234c68 feat(authorization): route Create/Validate endpoints through inferred-rights guards and auto-grant creator admin",
+      "2ce65551 feat(overview): gate Add Team/Portfolio buttons on rbac.canCreateTeam/canCreatePortfolio",
+      "113a8909 docs(rbac): back-propagate team-portfolio-creation-rights supersession annotations",
+      "8260f304 refactor(authorization): move creator-admin grant orchestration into RBAC service"
+    ]
+  },
+  "out_of_scope": [
+    "Re-running R1 work. Enum values, interface signatures, controller [RbacGuard] attributes, and the auto-admin Grant/EnsureCreator* methods are already shipped under R1 and unchanged by R2.",
+    "DTO / schema / migration / enum / interface changes. The R2 delta is purely a predicate-broadening plus an existence guard inside method bodies whose public signatures are stable.",
+    "Full HTTP-level integration with a controllable test auth handler. Still deferred to a follow-up feature (feature-delta Pre-requisites row 1).",
+    "Option B (dedicated TeamCreator / PortfolioCreator roles). Foreclosed for this cycle by R2's expansion of the inferred-rights model; a fresh follow-up feature is the path if reopened.",
+    "Re-annotating rbac-enhancements/feature-delta.md and rbac-ui-completeness/feature-delta.md. The R1 supersession annotations remain valid; R2 is an iteration on this feature, not a fresh override of prior waves.",
+    "Stryker.NET mutation testing. Phase 5 of the DELIVER orchestration, not a roadmap step."
+  ],
+  "phases": [
+    {
+      "id": "02",
+      "name": "R2 contract delta \u2014 unified rights and team-existence gate",
+      "description": "Single-phase delivery of the R2 behavioural delta. Backend predicate broadening, existence-gate insertion in all three summary branches, RED-then-GREEN cycle for the new and updated acceptance tests. Frontend follows once the backend summary truly carries the new contract.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Unified inferred-rights predicate and team-existence gate (service + summary + acceptance tests)",
+          "description": "Author the R2 acceptance tests in CreateRightsAcceptanceTest.cs (~10 new test methods covering WS2, scenarios 2b, 3b, 4b, 15, 16, 17, 18, 19, 20 plus the updated group-derived pair) and then make them GREEN by: (1) broadening the effective-permissions predicate in CanCreateTeamAsync and CanCreatePortfolioAsync from scope-typed (`ScopeType == Team && Value == TeamAdmin`) to role-unified (`Value == TeamAdmin || Value == PortfolioAdmin`); (2) inserting `if (!await context.Teams.AnyAsync(cancellationToken)) return false;` in CanCreatePortfolioAsync immediately after the SysAdmin short-circuit and the current-user resolution, before the effective-permissions predicate \u2014 matching the contractual gate ordering specified in feature-delta; (3) applying the symmetric team-existence guard in all three return branches of GetAuthorizationSummaryAsync, so RBAC-disabled and bootstrap-no-admin branches compute `CanCreatePortfolio = await context.Teams.AnyAsync(cancellationToken)` instead of unconditional `true`. The new RED tests all fail today for one root cause (the unbroadened predicate AND the missing existence guard); a single coherent change flips them GREEN. Resist splitting test-authoring from implementation \u2014 they belong to one TDD cycle in the prompt's own guidance.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/CreateRightsAcceptanceTest.cs",
+          "scenario_name": "Team Admin creates a portfolio in a system where other teams exist but are invisible to them (WS2 walking skeleton); System Admin cannot create portfolios when no teams exist (2b); Team Admin can create portfolios when at least one team exists (3b); Portfolio Admin can create teams (4b); Team Admin who creates a portfolio becomes that new portfolio's admin (15); Portfolio Admin who creates a team becomes that new team's admin (16); Create Portfolio endpoint refuses every caller when no team exists in the system (17); Portfolio existence gate is global, not visibility-scoped (18); Authorization summary in RBAC-disabled mode still blocks portfolio creation when no teams exist (19); Authorization summary in bootstrap-no-admin mode still blocks portfolio creation when no teams exist (20); plus the in-place updates to the two group-derived scenarios (7, 8) to assert BOTH creation rights against a single group-derived role",
+          "red_tests_to_add": [
+            "WalkingSkeleton_TeamAdmin_CreatesPortfolio_WhenOtherTeamsExistButAreInvisible (WS2 \u2014 proves unified rights + visibility-decoupled existence gate end-to-end at the service level)",
+            "AuthorizationSummary_SystemAdmin_CannotCreatePortfolio_WhenNoTeamsExist (scenario 2b)",
+            "AuthorizationSummary_TeamAdmin_CanCreatePortfolio_WhenTeamExists (scenario 3b \u2014 supersedes the implied R1 'TA cannot create portfolio' gate)",
+            "AuthorizationSummary_PortfolioAdmin_CanCreateTeam (scenario 4b \u2014 supersedes the implied R1 'PA cannot create team' gate)",
+            "AutoAdmin_TeamAdmin_WhoCreatesPortfolio_BecomesPortfolioAdminOfNewPortfolio (scenario 15 \u2014 cross-role auto-admin)",
+            "AutoAdmin_PortfolioAdmin_WhoCreatesTeam_BecomesTeamAdminOfNewTeam (scenario 16 \u2014 cross-role auto-admin)",
+            "CanCreatePortfolio_RefusesEvenSystemAdmin_WhenNoTeamsExist (scenario 17 \u2014 existence gate is unconditional, applies to SysAdmin)",
+            "CanCreatePortfolio_IsGlobal_NotVisibilityScoped (scenario 18 \u2014 TA with no TeamRead on the existing teams still passes; assert via direct CanCreatePortfolioAsync call)",
+            "AuthorizationSummary_InRbacDisabledMode_BlocksPortfolioCreation_WhenNoTeamsExist (scenario 19 \u2014 RBAC-disabled branch must apply the existence gate)",
+            "AuthorizationSummary_InBootstrapNoAdminMode_BlocksPortfolioCreation_WhenNoTeamsExist (scenario 20 \u2014 bootstrap-no-admin branch must apply the existence gate)"
+          ],
+          "red_tests_to_update_in_place": [
+            "RbacGuard_CanCreateTeam_AdmitsGroupDerivedTeamAdmin \u2192 expand to also assert CanCreatePortfolio is true for the same group-derived Team Admin, with at least one team seeded so the existence gate passes (scenario 7 R2 update)",
+            "RbacGuard_CanCreatePortfolio_AdmitsGroupDerivedPortfolioAdmin \u2192 expand to also assert CanCreateTeam is true for the same group-derived Portfolio Admin (scenario 8 R2 update)"
+          ],
+          "red_tests_to_delete": [
+            "None. Confirmed by reading CreateRightsAcceptanceTest.cs: the R1 file asserts admit-each-role separately and contains no role-typed denial tests (no 'TA cannot create portfolio' or 'PA cannot create team' methods). The feature-delta's 'delete obsolete' bullet is vacuous against the actual R1 file shape."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/CreateRightsAcceptanceTest.cs"
+          ],
+          "criteria": [
+            "CanCreateTeamAsync admits any caller whose effective permissions contain a TeamAdmin entry (any scope) OR a PortfolioAdmin entry (any scope). Scope type no longer carries authorization weight for this check.",
+            "CanCreatePortfolioAsync admits any caller whose effective permissions contain a TeamAdmin entry (any scope) OR a PortfolioAdmin entry (any scope), AND at least one team row exists in LighthouseAppContext.Teams.",
+            "CanCreatePortfolioAsync evaluates the existence gate AFTER the RBAC-disabled / enforcement-gate / CanManageRbac short-circuits and the current-user resolution, but BEFORE the effective-permissions predicate. Gate ordering matches the six-step sequence in feature-delta 'Wave: DISTILL / [REF] Revision R2 \u2014 Scaffolds delta'.",
+            "When RBAC is disabled (`IsRbacEnforcedAsync` returns false), CanCreatePortfolioAsync returns the result of `context.Teams.AnyAsync(cancellationToken)` rather than unconditional `true`. The existence gate still fires in disabled mode \u2014 the rule is unconditional with respect to RBAC mode.",
+            "When the caller is a System Admin (CanManageRbacAsync returns true), CanCreatePortfolioAsync returns the result of `context.Teams.AnyAsync(cancellationToken)` rather than unconditional `true`. SysAdmin is no exception to the existence gate.",
+            "GetAuthorizationSummaryAsync \u2014 RBAC-disabled branch \u2014 returns `CanCreatePortfolio = await context.Teams.AnyAsync(cancellationToken)` instead of `true`. `CanCreateTeam` remains `true` (no existence gate for team creation).",
+            "GetAuthorizationSummaryAsync \u2014 bootstrap-no-admin branch \u2014 returns `CanCreatePortfolio = await context.Teams.AnyAsync(cancellationToken)` instead of `true`. `CanCreateTeam` remains `true`.",
+            "GetAuthorizationSummaryAsync \u2014 normal branch \u2014 `canCreatePortfolio` derives from `CanCreatePortfolioAsync` (which already carries the broadened predicate plus existence gate after this step). The existing `isSystemAdmin ||` short-circuit on that branch must be removed so the existence gate fires for SysAdmin too (otherwise SysAdmin gets `true` even with zero teams, contradicting scenario 2b).",
+            "All ten new R2 NUnit test methods listed in red_tests_to_add pass GREEN.",
+            "The two updated group-derived test methods listed in red_tests_to_update_in_place pass GREEN with the broadened cross-role assertions.",
+            "All sixteen R1-era acceptance tests in CreateRightsAcceptanceTest.cs remain GREEN unchanged.",
+            "The wider RbacAdministrationServiceTest suite remains GREEN. If any pre-existing summary test asserted `CanCreatePortfolio == true` in RBAC-disabled or bootstrap-no-admin mode without seeding teams, update its arrangement to seed at least one team \u2014 that is a contract update, not a regression.",
+            "Three distinct seeded DbContext states are used across the new tests per feature-delta 'Test-data fixtures' table (zero-teams; teams-exist-but-creator-has-no-TeamRead; one-team-plus-portfolio normal). Reusing a single seeded context across all new scenarios is forbidden \u2014 it would mask the existence-gate and visibility-decoupling assertions.",
+            "Acceptance criteria reference only the public service contract (`CanSatisfyRequirementAsync`, `CanCreateTeamAsync`, `CanCreatePortfolioAsync`, `GetAuthorizationSummaryAsync`, `GrantCreatorTeamAdminAsync`, `GrantCreatorPortfolioAdminAsync`). No private method names, no internal helpers, no method signatures beyond the existing public surface.",
+            "Regression catch: scenario 2b (`System Admin cannot create portfolios when no teams exist`) MUST pass. The R1 contract gave SysAdmin unconditional portfolio creation; R2 removes that exemption. The existence gate fires for SysAdmin too. This criterion exists separately from the GetAuthorizationSummary criteria above so the implementer cannot accidentally leave a SysAdmin short-circuit anywhere in the call path."
+          ],
+          "out_of_scope": [
+            "Controller attribute changes. The `[RbacGuard(CanCreateTeam)]` / `[RbacGuard(CanCreatePortfolio)]` attributes on TeamsController and PortfoliosController are correct under R2 \u2014 no change.",
+            "New interface methods or enum values. R2 is internal to existing method bodies behind stable public signatures.",
+            "Frontend changes (handled in 02-02 once the backend summary carries the new contract).",
+            "Updating CreateRightsControllerGuardTest.cs. Controller attributes are unchanged; the controller-attribute pin tests remain valid as-is."
+          ]
+        },
+        {
+          "id": "02-02",
+          "name": "Frontend visibility-decoupling \u2014 remove auxiliary !hasTeams gate on Add Portfolio button",
+          "description": "OverviewDashboard.tsx currently disables the Add Portfolio button with `disabled={!canCreatePortfolio || !hasTeams}`, where `hasTeams = teams.length > 0` is the per-user *visible* teams list. Under R2 the existence gate is system-wide and lives on the backend `rbac.canCreatePortfolio` flag; the auxiliary `!hasTeams` clause is a visibility-scoped gate that contradicts the user-cited rule 'I may create a portfolio even if I don't see the 3 teams that exist'. Remove the `!hasTeams` portion of the disabled predicate; the `rbac.canCreatePortfolio` outer-guard plus the license-driven `canCreatePortfolio` predicate already carry the full gating contract. Also remove the now-misleading `'Create a team before adding a portfolio'` tooltip (the message would only fire when the system genuinely has zero teams, in which case rbac.canCreatePortfolio is already false and the button is already hidden). Update OverviewDashboard.test.tsx assertions that pinned the button's disabled state on `teams.length === 0` to assert the new contract: button hidden iff `rbac.canCreatePortfolio` is false; button enabled when `rbac.canCreatePortfolio` is true regardless of the per-user visible teams list.",
+          "test_file": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+          "scenario_name": "Portfolio existence gate is global, not visibility-scoped (scenario 18 frontend manifestation); Team Admin creates a portfolio in a system where other teams exist but are invisible to them (WS2 frontend manifestation)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx"
+          ],
+          "criteria": [
+            "The Add Portfolio button's `disabled` predicate is `!canCreatePortfolio` (license-restriction only), not `!canCreatePortfolio || !hasTeams`. The `hasTeams` local in OverviewDashboard.tsx is either removed or kept only for any unrelated remaining usage.",
+            "The Add Portfolio button's outer visibility guard remains `rbac.canCreatePortfolio`. The backend summary's existence gate (delivered in 02-01) is the single source of truth for the 'no teams in system' case \u2014 when no teams exist, rbac.canCreatePortfolio is false and the button is not rendered at all.",
+            "The tooltip text `'Create a team before adding a portfolio'` is removed (or the entire Tooltip wrapper that only carried that message is removed). The tooltip would never fire under the new contract because rbac.canCreatePortfolio already encodes the zero-teams case as 'not visible at all'.",
+            "OverviewDashboard.test.tsx tests that previously asserted the Add Portfolio button was disabled because of `teams.length === 0` are rewritten to assert the new contract: a user whose backend summary returns `rbac.canCreatePortfolio = true` sees an enabled Add Portfolio button regardless of how many teams are present in their visible teams prop (visibility decoupling). A user whose backend summary returns `rbac.canCreatePortfolio = false` does not see the button at all.",
+            "Tests are not commented out, not deleted en masse. Rewrites preserve the original intent (gate the button) while updating the gating predicate to match R2.",
+            "pnpm test passes \u2014 all Vitest suites green.",
+            "pnpm build completes with zero errors and zero warnings (tsc -b + vite build + Biome via prebuild hook).",
+            "No new SonarQube issues introduced (cognitive complexity, duplication, any-in-TS, dead variables \u2014 if `hasTeams` is fully unused after the change, remove its declaration; do not leave dead locals)."
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "out_of_scope": [
+            "Changes to useRbac() or the /my-summary DTO. The hook and the summary shape are unchanged by R2; only the values flowing through them change (backend 02-01).",
+            "Add Team button gating. The existence gate is portfolio-only; the Add Team button predicate is unchanged.",
+            "License-restriction logic (`useLicenseRestrictions().canCreatePortfolio` and `maxPortfoliosWithoutPremium`). License gating is orthogonal to RBAC gating and remains unchanged."
+          ]
+        }
+      ]
+    }
+  ],
+  "walking_skeleton": {
+    "scenario": "Team Admin creates a portfolio in a system where other teams exist but are invisible to them (WS2)",
+    "covered_by_step": "02-01",
+    "coverage_estimate": "100% of the WS2 scenario at the service level \u2014 proves unified inferred rights (TA invokes CanCreatePortfolio successfully) AND the visibility-decoupled existence gate (the existing Beta/Gamma/Delta teams trigger the system-wide existence query even though the creator has no UserPermission rows on them, and CanCreatePortfolioAsync makes no call to GetReadableTeamIdsAsync or any visibility-filtered helper). The HTTP-pipeline portion of WS2 remains deferred to the same follow-up flagged by R1 (feature-delta Pre-requisites row 1)."
+  },
+  "scaffold_removal_check": {
+    "expected": "No new scaffolds in R2. R1 scaffolds (RbacGuardRequirement enum members CanCreateTeam/CanCreatePortfolio, IRbacAdministrationService.GrantCreator*Async / EnsureCreator*Async signatures and implementations) are already production code. The R2 delta is internal to existing method bodies behind stable public signatures, so no `__SCAFFOLD__` markers or new scaffolded files are introduced.",
+    "command": "grep -rn '__SCAFFOLD__\\|SCAFFOLD (feature: team-portfolio-creation-rights)' Lighthouse.Backend/",
+    "expected_after_02_01": "zero matches (unchanged from R1's zero matches)",
+    "expected_after_02_02": "zero matches (frontend change does not introduce scaffolds)"
+  },
+  "quality_gates": {
+    "backend": [
+      "dotnet build with zero warnings (TreatWarningsAsErrors)",
+      "dotnet test \u2014 all NUnit suites green, including CreateRightsAcceptanceTest (R1 16 tests + R2 ~10 new tests + 2 updated group-derived tests) and RbacAdministrationServiceTest",
+      "Targeted regression: `dotnet test --filter \"FullyQualifiedName~CreateRights|FullyQualifiedName~RbacAdministration|FullyQualifiedName~RbacGuard|FullyQualifiedName~TeamsController|FullyQualifiedName~PortfoliosController\"` remains green (R1 baseline: 219/219)"
+    ],
+    "frontend": [
+      "pnpm test \u2014 all Vitest suites green",
+      "pnpm build \u2014 tsc -b plus vite build complete with zero errors and zero warnings (Biome runs as prebuild)"
+    ],
+    "sonarqube": [
+      "No new issues introduced (bugs, vulnerabilities, code smells, security hotspots) on either stack"
+    ],
+    "contract_invariants": [
+      "Hexagonal boundary preserved: IRbacAdministrationService remains the single inbound RBAC port; no controller acquires direct access to LighthouseAppContext.Teams for the existence check \u2014 that query lives inside the service.",
+      "Existence-gate ordering preserved: in CanCreatePortfolioAsync and in GetAuthorizationSummaryAsync, the team-existence query runs AFTER the policy-level short-circuits (RBAC-disabled, enforcement gate, SysAdmin) and BEFORE the per-user effective-permissions predicate. Documented in feature-delta as contractual, not implementation choice.",
+      "All three GetAuthorizationSummaryAsync branches (RBAC-disabled, bootstrap-no-admin, normal) apply the existence gate. Skipping any branch silently regresses scenarios 19 / 20 / 2b respectively."
+    ]
+  },
+  "test_data_fixtures": {
+    "zero_teams": {
+      "used_by": [
+        "AuthorizationSummary_SystemAdmin_CannotCreatePortfolio_WhenNoTeamsExist",
+        "CanCreatePortfolio_RefusesEvenSystemAdmin_WhenNoTeamsExist",
+        "AuthorizationSummary_InRbacDisabledMode_BlocksPortfolioCreation_WhenNoTeamsExist",
+        "AuthorizationSummary_InBootstrapNoAdminMode_BlocksPortfolioCreation_WhenNoTeamsExist"
+      ],
+      "setup": "Fresh LighthouseAppContext, no context.Teams rows. For the RBAC-disabled scenario, construct the subject with `enabled: false`. For the bootstrap-no-admin scenario, construct with `enabled: true` but seed no SystemAdmin UserPermission row."
+    },
+    "teams_exist_creator_has_no_read_access": {
+      "used_by": [
+        "WalkingSkeleton_TeamAdmin_CreatesPortfolio_WhenOtherTeamsExistButAreInvisible",
+        "CanCreatePortfolio_IsGlobal_NotVisibilityScoped"
+      ],
+      "setup": "Seed Team rows Beta, Gamma, Delta with no UserPermission rows for the creator on any of them. Seed the creator with one TeamAdmin permission on a separate team Alpha. Assert CanCreatePortfolioAsync returns true even though the creator has TeamRead only on Alpha."
+    },
+    "one_team_plus_portfolio_normal": {
+      "used_by": [
+        "AuthorizationSummary_TeamAdmin_CanCreatePortfolio_WhenTeamExists",
+        "AuthorizationSummary_PortfolioAdmin_CanCreateTeam",
+        "AutoAdmin_TeamAdmin_WhoCreatesPortfolio_BecomesPortfolioAdminOfNewPortfolio",
+        "AutoAdmin_PortfolioAdmin_WhoCreatesTeam_BecomesTeamAdminOfNewTeam",
+        "group-derived updates"
+      ],
+      "setup": "Seed one team Alpha and one portfolio Vision. Standard. The two cross-role auto-admin scenarios (15, 16) additionally exercise the EnsureCreator* path that R1 already shipped \u2014 under R2 those methods are reachable from cross-role creators because the broadened predicate admits TAs into CreatePortfolio and PAs into CreateTeam."
+    }
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-05-12",
+    "notes": "Conditionally approved on first pass: 1 HIGH (SysAdmin regression criterion now added as explicit row), 2 LOW (scenario_name prose format and forward-looking file references \u2014 accepted without change). Approval is final.",
+    "blocker_findings_addressed": [],
+    "accepted_high_findings": [
+      "Added explicit SysAdmin regression criterion to step 02-01 per reviewer recommendation."
+    ],
+    "low_findings_accepted_without_change": [
+      "scenario_name prose format: kept as readable prose; downstream tooling can split on '; ' if needed.",
+      "OverviewDashboard.tsx forward refs in 02-02: criteria are logical, not line-numbered, so they survive refactors."
+    ]
+  }
+}
