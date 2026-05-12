@@ -17,5 +17,7 @@ namespace Lighthouse.Backend.Models.Auth
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
+
+        public string? LastKnownGroupClaimValues { get; set; }
     }
 }
