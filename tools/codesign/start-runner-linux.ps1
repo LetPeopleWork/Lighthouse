@@ -9,7 +9,7 @@ if ($Help) {
 # ------------------------------
 Write-Host "Checking for YubiKey and Code Signing Key (ID 01)..."
 # Check if pcscd is running, attempt to start it automatically if not
-if ((Get-Process pcscd -ErrorAction SilentlyContinue) -eq $null) {
+if ($null -eq (Get-Process pcscd -ErrorAction SilentlyContinue)) {
     Write-Host "pcscd is not running. Attempting to start it via sudo systemctl..."
     $startResult = sudo systemctl start pcscd 2>&1
     if ($LASTEXITCODE -ne 0) {
@@ -19,7 +19,7 @@ if ((Get-Process pcscd -ErrorAction SilentlyContinue) -eq $null) {
     }
     # Give pcscd a moment to initialize
     Start-Sleep -Seconds 2
-    if ((Get-Process pcscd -ErrorAction SilentlyContinue) -eq $null) {
+    if ($null -eq (Get-Process pcscd -ErrorAction SilentlyContinue)) {
         Write-Error "pcscd was started but is not visible as a process. Something may be wrong."
         exit 1
     }
@@ -31,7 +31,8 @@ if (-not (Test-Path $pkcs11Module)) {
     Write-Error "OpenSC PKCS11 module not found at $pkcs11Module"
     exit 1
 }
-$keyCheck = pkcs11-tool --module $pkcs11Module --list-objects | Select-String "ID:.*01"
+$pkcs11Tool = "pkcs11-tool"
+$keyCheck = & $pkcs11Tool --module $pkcs11Module --list-objects | Select-String "ID:.*01"
 if (-not $keyCheck) {
     Write-Error "YubiKey detected, but Code Signing Key (ID 01) was not found."
     Write-Host "Ensure your YubiKey is plugged in and the PIV application is initialized."
@@ -68,7 +69,7 @@ if (-not (Test-Path "$RunnerDir/config.sh")) {
 # 4. Registration & Run
 # ------------------------------
 Write-Host "Requesting registration token..."
-$Headers = @{ 
+$Headers = @{
     Authorization = "token $($env:GITHUB_PAT)"
     "Accept" = "application/vnd.github+json"
 }

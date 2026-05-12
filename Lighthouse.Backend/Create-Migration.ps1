@@ -7,14 +7,14 @@ function Stop-DockerContainer {
     param (
         [string]$ContainerName
     )
-    
-    Write-Host "Stopping container $ContainerName if it exists..."
+
+    Write-Output "Stopping container $ContainerName if it exists..."
     docker stop $ContainerName 2>$null
     docker rm $ContainerName 2>$null
 }
 
 function Start-PostgresContainer {
-    Write-Host "Starting PostgreSQL container..."
+    Write-Output "Starting PostgreSQL container..."
     docker run --name lighthouse-postgres-migration `
         -e POSTGRES_DB=lighthouse `
         -e POSTGRES_USER=postgres `
@@ -22,7 +22,7 @@ function Start-PostgresContainer {
         -p 5432:5432 `
         -d postgres:17.2-alpine
 
-    Write-Host "Waiting for PostgreSQL to start..."
+    Write-Output "Waiting for PostgreSQL to start..."
     Start-Sleep -Seconds 5
 }
 
@@ -32,7 +32,7 @@ try {
     $env:Database__Provider = "sqlite"
     $tempDbName = "Migration_$(Get-Random).db"
     $env:Database__ConnectionString = "Data Source=$tempDbName"
-    
+
     # Ensure we'll delete the temporary database after migration
     $Script:TempSqliteDb = $tempDbName
 
@@ -40,7 +40,7 @@ try {
         --project Lighthouse.Migrations.Sqlite `
         --startup-project Lighthouse.Backend `
         --context LighthouseAppContext
-    
+
     if ($LASTEXITCODE -ne 0) {
         throw "SQLite migration creation failed"
     }
@@ -52,12 +52,12 @@ try {
 
     $env:Database__Provider = "postgres"
     $env:Database__ConnectionString = "Host=localhost;Database=lighthouse;Username=postgres;Password=postgres"
-    
+
     dotnet ef migrations add $MigrationName `
         --project Lighthouse.Migrations.Postgres `
         --startup-project Lighthouse.Backend `
         --context LighthouseAppContext
-    
+
     if ($LASTEXITCODE -ne 0) {
         throw "PostgreSQL migration creation failed"
     }

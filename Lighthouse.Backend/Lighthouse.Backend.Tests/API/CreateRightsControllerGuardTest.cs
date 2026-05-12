@@ -32,27 +32,25 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ValidateTeamSettings_IsGuardedOnCanCreateTeamRequirement()
+        public void ValidateTeamSettings_HasNoRbacGuardAttribute()
         {
             var attribute = GetRbacGuardAttribute(typeof(TeamsController), nameof(TeamsController.ValidateTeamSettings));
 
-            Assert.That(attribute, Is.Not.Null, "TeamsController.ValidateTeamSettings must carry an RbacGuard attribute.");
             Assert.That(
-                attribute!.Requirement,
-                Is.EqualTo(RbacGuardRequirement.CanCreateTeam),
-                "ValidateTeamSettings is the pre-flight for CreateTeam; it must accept the same callers as CreateTeam itself.");
+                attribute,
+                Is.Null,
+                "Under v1, ValidateTeamSettings is reachable by any authenticated user. The endpoint is shared by the System-Admin-only Create flow and by the Team-Admin / Portfolio-Admin Edit-and-Save flow; gating it on CanCreateTeam (= sysadmin-only) breaks save-edits for scoped admins. The subsequent write endpoints (POST /teams for create, PUT /teams/{id} for edit) enforce the proper scope.");
         }
 
         [Test]
-        public void ValidatePortfolioSettings_IsGuardedOnCanCreatePortfolioRequirement()
+        public void ValidatePortfolioSettings_HasNoRbacGuardAttribute()
         {
             var attribute = GetRbacGuardAttribute(typeof(PortfoliosController), nameof(PortfoliosController.ValidatePortfolioSettings));
 
-            Assert.That(attribute, Is.Not.Null, "PortfoliosController.ValidatePortfolioSettings must carry an RbacGuard attribute.");
             Assert.That(
-                attribute!.Requirement,
-                Is.EqualTo(RbacGuardRequirement.CanCreatePortfolio),
-                "ValidatePortfolioSettings is the pre-flight for CreatePortfolio; it must accept the same callers as CreatePortfolio itself.");
+                attribute,
+                Is.Null,
+                "Under v1, ValidatePortfolioSettings is reachable by any authenticated user. Same reasoning as ValidateTeamSettings — the validate endpoint is shared between Create (sysadmin) and Edit-and-Save (scoped admin) flows; the write endpoints downstream enforce scope.");
         }
 
         private static RbacGuardAttribute? GetRbacGuardAttribute(Type controllerType, string methodName)
