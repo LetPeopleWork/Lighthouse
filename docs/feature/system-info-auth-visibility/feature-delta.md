@@ -425,3 +425,126 @@ Commits (in order):
 - DEVOPS environment matrix -- no DEVOPS wave for this feature; per DISTILL graceful
   degradation, defaults were used. The implementation introduces no new environment
   variables, no new persisted state, no new infra concerns.
+
+---
+
+## Wave: DISTILL / [REF] Bug fix: SystemInfo auth wire-format property names
+
+Wave: DISTILL (bug-fix pass) | Date: 2026-05-12 | Density: lean (inherits ~/.nwave/global-config.json)
+
+### Defect
+
+Reported: Settings -> System Info renders **Authentication: Disabled** and
+**Authorization: Disabled** even on deployments where the startup banner correctly
+prints `Authentication : Enabled` / `Authorization : Disabled`. The banner is the
+operator-confirmed ground truth, so the UI is the source of disagreement.
+
+### Root cause
+
+`Lighthouse.Backend/Models/SystemInfo.cs` declares the record properties
+`IsAuthenticationEnabled` and `IsAuthorizationEnabled` (with the `Is` prefix).
+ASP.NET Core's default JSON serializer applies `JsonNamingPolicy.CamelCase`, so the
+wire-format keys are `isAuthenticationEnabled` and `isAuthorizationEnabled`.
+
+`Lighthouse.Frontend/src/models/SystemInfo/SystemInfo.ts` declares
+`authenticationEnabled?: boolean` and `authorizationEnabled?: boolean` (no `Is`
+prefix) -- matching the **original milestone-1 acceptance criteria** which
+explicitly require `JSON response contains "authenticationEnabled": true` (see
+`acceptance/milestone-1-api-exposes-auth-fields.feature` lines 13-14).
+
+`SystemInfoDisplay.tsx` reads `systemInfo.authenticationEnabled`, which is
+`undefined` against the actual wire-format -> falsy -> "Disabled".
+
+### Why the existing tests missed it
+
+| Test | Why it passed despite the bug |
+|---|---|
+| `SystemInfoAuthVisibilityCrossLayerTest` | Deserialises raw JSON into the C# `SystemInfo` record; the `Is*` C# property names match the `is*` JSON keys, so the test never observed the wire-format. |
+| `SystemInfoControllerTest.GetSystemInfo_PropagatesAuthPostureFields...` | Asserts on the C# in-process result (`OkObjectResult.Value`), not the serialised JSON. |
+| `SystemInfoService.test.ts` (frontend) | Mocks `axios.get` with synthetic `SystemInfo` objects whose keys already match the TS interface; never tested against the actual backend JSON shape. |
+| `SystemInfoDisplay.test.tsx` (frontend) | Mocks `getSystemInfo()` to return synthetic `SystemInfo` instances. Bypasses the deserialisation contract entirely. |
+
+The defect lives at the producer/consumer JSON contract boundary, which no test
+in the previous DISTILL pass instrumented. This DISTILL pass adds that
+instrumentation.
+
+### Port-to-port acceptance criteria
+
+Observable outcome | Driving port | Modified code path | Correct outcome (replaces current broken behavior)
+---|---|---|---
+JSON wire format includes `authenticationEnabled` (NOT `isAuthenticationEnabled`) | HTTP endpoint `GET /api/latest/SystemInfo` | `Lighthouse.Backend/Models/SystemInfo.cs` record property naming or `[JsonPropertyName]` attributes | Wire-format key is exactly `authenticationEnabled`; legacy `isAuthenticationEnabled` key absent
+JSON wire format includes `authorizationEnabled` (NOT `isAuthorizationEnabled`) | HTTP endpoint `GET /api/latest/SystemInfo` | `Lighthouse.Backend/Models/SystemInfo.cs` record property naming or `[JsonPropertyName]` attributes | Wire-format key is exactly `authorizationEnabled`; legacy `isAuthorizationEnabled` key absent
+"Authentication: Enabled" row appears when auth is configured on | UI route `/settings/system-info` rendered by `SystemInfoDisplay` (`Lighthouse.Frontend/src/pages/Settings/SystemInfo/SystemInfoDisplay.tsx`) | The component reads `systemInfo.authenticationEnabled` whose value is now populated because the wire-format matches | Row shows "Enabled" instead of always "Disabled"
+"Authorization: Enabled/Disabled" row reflects the configured RBAC posture | UI route `/settings/system-info` | Same component, reads `systemInfo.authorizationEnabled` | Row reflects the runtime configuration
+
+The fix path (DELIVER concern, not prescribed here) is one of:
+1. Rename backend properties to `AuthenticationEnabled` / `AuthorizationEnabled` (no `Is` prefix) and update all backend test fixtures.
+2. Add `[JsonPropertyName("authenticationEnabled")]` / `[JsonPropertyName("authorizationEnabled")]` attributes on the existing properties.
+
+Either fix satisfies the acceptance criteria above. DISTILL is agnostic about
+which fix is chosen; the regression tests pin only the observable contract.
+
+### Regression scenarios
+
+Scenario SSOT lives in
+`docs/feature/system-info-auth-visibility/acceptance/bugfix-wire-format-property-names.feature`.
+The scenarios index:
+
+| Scenario | Tags | TDD slice |
+|---|---|---|
+| HTTP response uses the agreed property name "authenticationEnabled" | `@real-io @adapter-integration @regression @bugfix-wire-format @driving_adapter` | BF.1 |
+| HTTP response uses the agreed property name "authorizationEnabled" | `@real-io @adapter-integration @regression @bugfix-wire-format @driving_adapter` | BF.2 |
+| HTTP response keeps the agreed names when auth and RBAC are disabled | `@real-io @adapter-integration @regression @bugfix-wire-format @error` | BF.3 |
+| SystemInfoService parses the wire-format JSON into the SystemInfo model | `@in-memory @regression @bugfix-wire-format @driving_adapter` | BF.4 |
+| SystemInfoDisplay renders "Enabled" / "Disabled" against the wire-format response | `@in-memory @regression @bugfix-wire-format @driving_adapter` | BF.5 |
+
+Counts: 5 scenarios. 3 happy + 2 error-path/edge. Error ratio 2/5 = 40% (meets target).
+
+### Walking skeleton strategy
+
+Inherited. The original feature used **Strategy C (Real local)**; the bug-fix
+regression follows the same approach. BF.1-BF.3 exercise the real HTTP endpoint
+via `WebApplicationFactory<Program>`; BF.4-BF.5 exercise the real frontend service
+deserialisation against verbatim wire-format JSON.
+
+### Adapter coverage (Mandate 6)
+
+| Adapter | @real-io scenario | Covered by |
+|---|---|---|
+| `SystemInfoController` (HTTP driving adapter) | YES | BF.1, BF.2, BF.3 (`WebApplicationFactory<Program>` over real Kestrel pipeline) |
+| `SystemInfoService` (frontend BaseApiService -> axios driven adapter) | YES (`@in-memory` -- axios mocked at the response layer to inject wire-format JSON verbatim) | BF.4 |
+| `SystemInfoDisplay` (React UI driving adapter) | YES (`@in-memory` -- React Testing Library) | BF.5 |
+
+### Test placement
+
+| Layer | File | Status |
+|---|---|---|
+| Backend regression | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SystemInfoWireFormatRegressionTests.cs` | Created in this DISTILL pass. Three NUnit tests: one per BF.1, BF.2, BF.3. Asserts on raw `JsonDocument` property names, not on deserialised C# records. |
+| Frontend regression (service layer) | `Lighthouse.Frontend/src/services/Api/SystemInfoService.test.ts` | Extended in this DISTILL pass. Two new cases: one feeding the agreed wire-format and asserting the parsed `SystemInfo` carries the values (BF.4); one feeding the legacy `is*`-prefixed wire-format and asserting the parsed model has `undefined` flags (regression guard against contract regression). |
+| Frontend regression (display layer) | (deferred) | The existing `SystemInfoDisplay.test.tsx` mocks `getSystemInfo()` directly with synthetic shapes; rewriting it to feed wire-format JSON requires changing the test scaffolding pattern. Coverage at the service layer (BF.4) plus the existing display-layer tests over `SystemInfo` model values is sufficient. |
+| E2E (Playwright) | (deferred) | No new spec. Existing `SystemInfoPage.ts` does not assert on auth rows. The backend integration test definitively catches the wire-format defect; an E2E spec would add CI cost without expanding coverage of the failure mode. |
+
+### Pre-requisites resolved
+
+- Original DISTILL artifacts and the existing `SystemInfo` integration tests
+  remain in place. Nothing in this bug-fix pass invalidates the milestone-1..4
+  scenarios; it adds a new wire-format regression layer that the original tests
+  did not cover.
+- No new infrastructure, no new config keys, no new domain types.
+
+### Scaffolds (Mandate 7)
+
+None. The fix modifies existing code (the `SystemInfo` record's property names or
+their `[JsonPropertyName]` attributes). No new production module needs a RED-ready
+stub.
+
+### Self-review checklist
+
+- [x] WS strategy inherited (Strategy C) and recorded above.
+- [x] Backend regression scenarios tagged `@real-io @adapter-integration`.
+- [x] Frontend regression scenarios tagged `@in-memory @regression`.
+- [x] Every driven/driving adapter implicated by the defect has at least one regression scenario.
+- [x] Driving port named on every AC row (HTTP endpoint + UI route).
+- [x] Error/edge ratio >= 40% (2/5).
+- [x] No scaffolds required (fix is on existing production code).
+- [x] Tests are RED on current code, will be GREEN on either fix path (rename or `[JsonPropertyName]`).

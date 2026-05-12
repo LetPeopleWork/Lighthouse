@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Lighthouse.Backend.Models
 {
     public record SystemInfo(
@@ -8,7 +10,7 @@ namespace Lighthouse.Backend.Models
         string DatabaseProvider,
         string? DatabaseConnection,
         string? LogPath,
-        bool IsAuthenticationEnabled,
-        bool IsAuthorizationEnabled,
+        [property: JsonPropertyName("authenticationEnabled")] bool IsAuthenticationEnabled,
+        [property: JsonPropertyName("authorizationEnabled")] bool IsAuthorizationEnabled,
         IReadOnlyList<string> EmergencyAdminSubjects);
 }

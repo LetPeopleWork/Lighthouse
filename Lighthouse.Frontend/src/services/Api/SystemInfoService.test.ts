@@ -84,4 +84,25 @@ describe("SystemInfoService", () => {
 			"bob@example.com",
 		]);
 	});
+
+	it("reads auth flags from the backend wire-format JSON (regression: bugfix-wire-format)", async () => {
+		const wireFormatResponse = {
+			os: "Linux 5.15.0",
+			runtime: ".NET 10.0.7",
+			architecture: "X64",
+			processId: 1,
+			databaseProvider: "postgres",
+			databaseConnection: "Host=postgres;Database=lighthouse",
+			logPath: "/app/logs",
+			authenticationEnabled: true,
+			authorizationEnabled: false,
+			emergencyAdminSubjects: [],
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: wireFormatResponse });
+
+		const result = await systemInfoService.getSystemInfo();
+
+		expect(result.authenticationEnabled).toBe(true);
+		expect(result.authorizationEnabled).toBe(false);
+	});
 });
