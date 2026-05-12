@@ -116,7 +116,7 @@ jobs:
           Authentication__CallbackPath: "/api/auth/callback"
           Authentication__SignedOutCallbackPath: "/api/auth/signout-callback"
           Authentication__Scopes: '["openid", "profile", "email"]'
-          Authentication__AllowedOrigins: '["http://localhost:5173"]'
+          Authentication__AllowedOrigins__0: "http://localhost:5173"
           Authentication__SessionLifetimeMinutes: 480
           Authentication__RequireHttpsMetadata: false
           Authorization__Enabled: true
@@ -183,7 +183,7 @@ jobs:
           Authentication__CallbackPath: "/api/auth/callback"
           Authentication__SignedOutCallbackPath: "/api/auth/signout-callback"
           Authentication__Scopes: '["openid", "profile", "email"]'
-          Authentication__AllowedOrigins: '["http://localhost:5173"]'
+          Authentication__AllowedOrigins__0: "http://localhost:5173"
           Authentication__SessionLifetimeMinutes: 480
           Authentication__RequireHttpsMetadata: false
           Authorization__Enabled: true
