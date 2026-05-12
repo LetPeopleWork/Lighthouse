@@ -54,7 +54,11 @@ _None yet._
 
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
-_None yet._
+### 2026-05-12 — typescript:S7718: catch parameters must use the project's underscore-suffix convention
+- **Symptom**: Sonar gate failed with `new_violations = 1` on `LetPeopleWork_Lighthouse_Frontend`. Single `typescript:S7718` ("The catch parameter `caught` should be named `error_`.") on `src/pages/Settings/ApiKeys/ApiKeysSettings.tsx:152`. MINOR severity, but the gate condition is `new_violations = 0` so it fails the build.
+- **Root cause**: The project's TypeScript / Sonar configuration enforces a specific catch-parameter naming convention: `error_` (trailing underscore). Descriptive names like `caught`, `e`, or `exception` are flagged. The convention exists so the linter can distinguish caught-but-handled (`error_`) from truly unused (`_error`) parameters without disabling unused-variable rules.
+- **Fix**: Rename `catch (caught)` → `catch (error_)`. Pure rename; the variable is still used inside the catch block.
+- **Rule going forward**: In any new TypeScript catch block in this codebase, name the parameter exactly `error_` (with trailing underscore). Don't use descriptive alternatives like `caught`, `err`, `e`, or `exception` — Sonar will reject them at the gate even at MINOR severity.
 
 ## EF migrations
 
