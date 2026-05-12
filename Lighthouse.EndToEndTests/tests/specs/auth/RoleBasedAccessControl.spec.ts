@@ -449,9 +449,10 @@ test.describe("@rbac E2E", () => {
 				await expect(
 					teamAdminTeamRow.getByRole("link", { name: "Edit" }),
 				).toBeVisible();
+				// Under v1 RBAC, only System Admin deletes / clones teams.
 				await expect(
 					teamAdminTeamRow.getByRole("button", { name: "Delete" }),
-				).toBeVisible();
+				).not.toBeVisible();
 				await expect(
 					teamAdminTeamRow.getByRole("button", { name: "Clone" }),
 				).not.toBeVisible();
@@ -543,9 +544,10 @@ test.describe("@rbac E2E", () => {
 				await expect(
 					portfolioAdminPortfolioRow.getByRole("link", { name: "Edit" }),
 				).toBeVisible();
+				// Under v1 RBAC, only System Admin deletes / clones portfolios.
 				await expect(
 					portfolioAdminPortfolioRow.getByRole("button", { name: "Delete" }),
-				).toBeVisible();
+				).not.toBeVisible();
 				await expect(
 					portfolioAdminPortfolioRow.getByRole("button", { name: "Clone" }),
 				).not.toBeVisible();
