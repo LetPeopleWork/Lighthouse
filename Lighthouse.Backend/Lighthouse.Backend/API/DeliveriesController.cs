@@ -164,7 +164,12 @@ namespace Lighthouse.Backend.API
         public async Task<IActionResult> DeleteDelivery(int deliveryId)
         {
             var portfolioId = deliveryRepository.GetPortfolioId(deliveryId);
-            if (portfolioId.HasValue && !await rbacAdministrationService.CanSatisfyRequirementAsync(
+            if (!portfolioId.HasValue)
+            {
+                return NotFound();
+            }
+
+            if (!await rbacAdministrationService.CanSatisfyRequirementAsync(
                     User,
                     RbacGuardRequirement.PortfolioWrite,
                     portfolioId.Value,
