@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("import")]
-        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [RbacGuard(RbacGuardRequirement.SystemAdminOrBootstrap)]
         public async Task<IActionResult> ImportLicense(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete]
-        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [RbacGuard(RbacGuardRequirement.SystemAdminOrBootstrap)]
         public async Task<IActionResult> ClearLicense()
         {
             try

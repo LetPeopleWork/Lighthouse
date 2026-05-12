@@ -9,5 +9,6 @@ namespace Lighthouse.Backend.Models.Authorization
         PortfolioWrite,
         CanCreateTeam,
         CanCreatePortfolio,
+        SystemAdminOrBootstrap,
     }
 }

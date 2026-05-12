@@ -316,6 +316,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     && await CanWritePortfolioAsync(principal, scopeId.Value, cancellationToken),
                 RbacGuardRequirement.CanCreateTeam => await CanCreateTeamAsync(principal, cancellationToken),
                 RbacGuardRequirement.CanCreatePortfolio => await CanCreatePortfolioAsync(principal, cancellationToken),
+                RbacGuardRequirement.SystemAdminOrBootstrap => !await HasSystemAdminAsync(cancellationToken)
+                    || await CanManageRbacAsync(principal, cancellationToken),
                 _ => false,
             };
         }

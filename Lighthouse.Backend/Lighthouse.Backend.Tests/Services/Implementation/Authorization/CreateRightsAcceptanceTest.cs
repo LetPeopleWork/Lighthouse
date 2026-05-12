@@ -508,6 +508,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             }
         }
 
+        [Test]
+        public async Task SystemAdminOrBootstrap_AdmitsAnyAuthenticatedUser_WhenNoSystemAdminExists()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|future-admin", SubjectClaimType = "sub" });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|future-admin"));
+            SetCurrentUser(principal, context, profileId: 1);
+            var subject = CreateSubject(context);
+
+            var canSatisfy = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.SystemAdminOrBootstrap,
+                scopeId: null,
+                CancellationToken.None);
+
+            Assert.That(
+                canSatisfy,
+                Is.True,
+                "In bootstrap mode (no real System Admin yet), the SystemAdminOrBootstrap requirement must admit any authenticated user so they can upload a license and bootstrap themselves as the first System Admin.");
+        }
+
+        [Test]
+        public async Task SystemAdminOrBootstrap_AdmitsEmergencyAdmin_EvenWhenSystemAdminExists()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|emergency", SubjectClaimType = "sub" });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|emergency"));
+            SetCurrentUser(principal, context, profileId: 2);
+            var subject = CreateSubject(context, emergencySubjects: ["auth0|emergency"]);
+
+            var canSatisfy = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.SystemAdminOrBootstrap,
+                scopeId: null,
+                CancellationToken.None);
+
+            Assert.That(
+                canSatisfy,
+                Is.True,
+                "An Emergency Admin must retain SystemAdminOrBootstrap rights even after a real System Admin has been configured — they are the recovery path.");
+        }
+
+        [Test]
+        public async Task SystemAdminOrBootstrap_RefusesRegularUser_WhenSystemAdminExists()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            SeedSystemAdmin(context, profileId: 1, subject: "auth0|sysadmin");
+            context.UserProfiles.Add(new UserProfile { Id = 2, Subject = "auth0|regular", SubjectClaimType = "sub" });
+            await context.SaveChangesAsync();
+
+            var principal = BuildPrincipal(new Claim("sub", "auth0|regular"));
+            SetCurrentUser(principal, context, profileId: 2);
+            var subject = CreateSubject(context);
+
+            var canSatisfy = await subject.CanSatisfyRequirementAsync(
+                principal,
+                RbacGuardRequirement.SystemAdminOrBootstrap,
+                scopeId: null,
+                CancellationToken.None);
+
+            Assert.That(
+                canSatisfy,
+                Is.False,
+                "Once a real System Admin exists, SystemAdminOrBootstrap must NOT admit a regular authenticated user. Only the System Admin (and any Emergency Admins) retain the right.");
+        }
+
         private static void SeedTeam(LighthouseAppContext context, int teamId, string name)
         {
             context.Teams.Add(new Team { Id = teamId, Name = name });
@@ -541,12 +612,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         private RbacAdministrationService CreateSubject(
             LighthouseAppContext context,
             bool enabled = true,
-            string? groupClaimName = null)
+            string? groupClaimName = null,
+            IReadOnlyList<string>? emergencySubjects = null)
         {
             var config = Options.Create(new AuthorizationConfiguration
             {
                 Enabled = enabled,
-                EmergencySystemAdminSubjects = [],
+                EmergencySystemAdminSubjects = emergencySubjects ?? [],
                 GroupClaimName = groupClaimName,
             });
 
