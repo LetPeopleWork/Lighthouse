@@ -456,7 +456,58 @@ namespace Lighthouse.Backend
                 {
                     options.Scope.Add(scope);
                 }
+
+                options.Events.OnTokenValidated = WriteGroupSnapshotOnTokenValidatedAsync;
             });
+        }
+
+        private static async Task WriteGroupSnapshotOnTokenValidatedAsync(
+            Microsoft.AspNetCore.Authentication.OpenIdConnect.TokenValidatedContext context)
+        {
+            var principal = context.Principal;
+            if (principal is null)
+            {
+                return;
+            }
+
+            var stableSubject = principal.FindFirst("sub")?.Value ?? principal.FindFirst("oid")?.Value;
+            if (string.IsNullOrWhiteSpace(stableSubject))
+            {
+                return;
+            }
+
+            var authorizationOptions = context.HttpContext.RequestServices
+                .GetRequiredService<IOptions<AuthorizationConfiguration>>();
+            var groupClaimName = authorizationOptions.Value.GroupClaimName;
+            if (string.IsNullOrWhiteSpace(groupClaimName))
+            {
+                return;
+            }
+
+            if (!GroupClaimParser.TryGetGroupValues(principal, groupClaimName, out var groupValues, out var unsupportedFormat)
+                || unsupportedFormat)
+            {
+                return;
+            }
+
+            var writer = context.HttpContext.RequestServices.GetRequiredService<IOidcGroupSnapshotWriter>();
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OidcGroupSnapshotHook");
+
+            try
+            {
+                await writer.WriteAsync(stableSubject, groupValues.ToList(), context.HttpContext.RequestAborted);
+            }
+#pragma warning disable CA1031 // intentional broad catch - hook must never break sign-in
+            catch (Exception ex)
+#pragma warning restore CA1031
+            {
+                logger.LogWarning(
+                    ex,
+                    "OIDC group-snapshot write failed for subject {Subject}; continuing sign-in.",
+                    stableSubject);
+            }
         }
 
         private static void ConfigureRateLimiting(WebApplicationBuilder builder)
@@ -616,6 +667,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IAuthModeResolver, AuthModeResolver>();
             builder.Services.AddScoped<ICurrentUserProfileService, CurrentUserProfileService>();
             builder.Services.AddScoped<IRbacAdministrationService, RbacAdministrationService>();
+            builder.Services.AddScoped<IOidcGroupSnapshotWriter, OidcGroupSnapshotWriter>();
 
             // Database Management
             builder.Services.AddSingleton<DatabaseMaintenanceGate>();

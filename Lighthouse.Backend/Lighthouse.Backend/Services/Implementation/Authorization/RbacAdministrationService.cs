@@ -1041,7 +1041,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            if (!TryGetGroupValues(principal, groupClaimName, out var groupValues, out var hasUnsupportedFormat))
+            if (!GroupClaimParser.TryGetGroupValues(principal, groupClaimName, out var groupValues, out var hasUnsupportedFormat))
             {
                 return [];
             }
@@ -1052,6 +1052,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     "RBAC group claim payload for claim '{ClaimName}' used unsupported format. Falling back to explicit grants only.",
                     groupClaimName);
                 return [];
+            }
+
+            if (groupValues.Count == 0 && TryGetApiKeyId(principal, out _))
+            {
+                groupValues = await LoadOwnerGroupSnapshotAsync(principal, cancellationToken);
             }
 
             if (groupValues.Count == 0)
@@ -1065,87 +1070,46 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ToListAsync(cancellationToken);
         }
 
-        private static bool TryGetGroupValues(
+        private async Task<HashSet<string>> LoadOwnerGroupSnapshotAsync(
             ClaimsPrincipal principal,
-            string claimName,
-            out HashSet<string> groupValues,
-            out bool hasUnsupportedFormat)
+            CancellationToken cancellationToken)
         {
-            groupValues = [];
-            hasUnsupportedFormat = false;
-
-            var claims = principal.FindAll(claimName);
-            foreach (var claim in claims)
+            var ownerSubject = principal.FindFirst("sub")?.Value;
+            if (string.IsNullOrWhiteSpace(ownerSubject))
             {
-                var claimValue = claim.Value.Trim();
-                if (string.IsNullOrWhiteSpace(claimValue))
-                {
-                    continue;
-                }
-
-                if (claimValue.StartsWith('['))
-                {
-                    if (!TryParseJsonArrayClaim(claimValue, out var parsedValues))
-                    {
-                        hasUnsupportedFormat = true;
-                        return true;
-                    }
-
-                    foreach (var parsedValue in parsedValues)
-                    {
-                        groupValues.Add(parsedValue);
-                    }
-
-                    continue;
-                }
-
-                if (claimValue.StartsWith('{'))
-                {
-                    hasUnsupportedFormat = true;
-                    return true;
-                }
-
-                groupValues.Add(claimValue);
+                return [];
             }
 
-            return true;
-        }
+            var snapshot = await context.UserProfiles
+                .Where(p => p.Subject == ownerSubject)
+                .Select(p => p.LastKnownGroupClaimValues)
+                .SingleOrDefaultAsync(cancellationToken);
 
-        private static bool TryParseJsonArrayClaim(string claimValue, out IReadOnlyList<string> values)
-        {
-            values = [];
+            if (string.IsNullOrWhiteSpace(snapshot))
+            {
+                return [];
+            }
 
             try
             {
-                using var document = JsonDocument.Parse(claimValue);
-                if (document.RootElement.ValueKind != JsonValueKind.Array)
+                var parsed = JsonSerializer.Deserialize<List<string>>(snapshot);
+                if (parsed is null)
                 {
-                    return false;
+                    return [];
                 }
 
-                var parsedValues = new List<string>();
-                foreach (var element in document.RootElement.EnumerateArray())
-                {
-                    if (element.ValueKind != JsonValueKind.String)
-                    {
-                        return false;
-                    }
-
-                    var value = element.GetString();
-                    if (string.IsNullOrWhiteSpace(value))
-                    {
-                        continue;
-                    }
-
-                    parsedValues.Add(value.Trim());
-                }
-
-                values = parsedValues;
-                return true;
+                return parsed
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .Select(v => v.Trim())
+                    .ToHashSet(StringComparer.Ordinal);
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                return false;
+                logger.LogWarning(
+                    ex,
+                    "Failed to deserialise UserProfile.LastKnownGroupClaimValues snapshot for owner subject {Subject}. Falling back to empty.",
+                    ownerSubject);
+                return [];
             }
         }
 

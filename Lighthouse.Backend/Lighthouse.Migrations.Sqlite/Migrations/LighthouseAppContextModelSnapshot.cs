@@ -150,6 +150,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("LastKnownGroupClaimValues")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("LastSeenAt")
                         .HasColumnType("TEXT");
 
