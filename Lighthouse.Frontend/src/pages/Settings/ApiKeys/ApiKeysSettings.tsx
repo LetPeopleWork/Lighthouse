@@ -149,8 +149,8 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 			const result = await apiKeyService.createApiKey(request);
 			setCreatedKey(result.plainTextKey);
 			onCreated(); // refreshes the key list in the parent; does NOT close the dialog
-		} catch (caught) {
-			setError(resolveCreateErrorMessage(caught));
+		} catch (error_) {
+			setError(resolveCreateErrorMessage(error_));
 		} finally {
 			setLoading(false);
 		}
