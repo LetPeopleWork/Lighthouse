@@ -1,7 +1,10 @@
 ﻿using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -70,6 +73,43 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             base.Dispose(disposing);
             DeleteDatabaseFile();
+        }
+
+        public static WebApplicationFactory<T> WithTestAuthentication(TestWebApplicationFactory<T> root)
+        {
+            return root.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, configurationBuilder) =>
+                {
+                    configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["Authentication:Enabled"] = "true",
+                        ["Authentication:Authority"] = "https://example.test/oidc",
+                        ["Authentication:ClientId"] = "lighthouse-test",
+                        ["Authentication:ClientSecret"] = "test-secret",
+                        ["Authentication:MetadataAddress"] = "https://example.test/oidc/.well-known/openid-configuration",
+                        ["Authentication:RequireHttpsMetadata"] = "false",
+                        ["Authorization:Enabled"] = "true",
+                    });
+                });
+
+                builder.ConfigureServices(services =>
+                {
+                    services.AddAuthentication(defaultOptions =>
+                    {
+                        defaultOptions.DefaultScheme = TestAuthHandler.SchemeName;
+                        defaultOptions.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                        defaultOptions.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                        defaultOptions.DefaultForbidScheme = TestAuthHandler.SchemeName;
+                    })
+                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                        TestAuthHandler.SchemeName,
+                        _ => { });
+
+                    services.RemoveAll<IRbacAdministrationService>();
+                    services.AddScoped<IRbacAdministrationService, ClaimsDrivenRbacAdministrationService>();
+                });
+            });
         }
     }
 }
