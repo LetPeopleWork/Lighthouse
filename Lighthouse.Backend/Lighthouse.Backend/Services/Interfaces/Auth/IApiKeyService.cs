@@ -10,6 +10,19 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
         Task<ApiKeyCreationResult> CreateApiKeyAsync(string name, string description, string createdByUser, string ownerSubject);
 
         /// <summary>
+        /// Creates a new API key with optional per-key scope rows. When <paramref name="scope"/> is
+        /// non-empty, an <see cref="Lighthouse.Backend.Models.Authorization.ApiKeyPermission"/> row
+        /// is persisted for each entry. When null or empty, the key inherits the owner's permissions
+        /// at runtime (legacy behaviour).
+        /// </summary>
+        Task<ApiKeyCreationResult> CreateApiKeyAsync(
+            string name,
+            string description,
+            string createdByUser,
+            string ownerSubject,
+            IReadOnlyList<ApiKeyScopeDto>? scope);
+
+        /// <summary>
         /// Returns metadata for API keys owned by the given subject. Never includes the plaintext key or hash.
         /// </summary>
         IEnumerable<ApiKeyInfo> GetApiKeysByOwnerSubject(string ownerSubject);

@@ -1,6 +1,8 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -11,11 +13,20 @@ namespace Lighthouse.Backend.Tests.API
     public class ApiKeyControllerTest
     {
         private Mock<IApiKeyService> apiKeyServiceMock;
+        private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
         public void Setup()
         {
             apiKeyServiceMock = new Mock<IApiKeyService>();
+            rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            rbacAdministrationServiceMock
+                .Setup(s => s.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    It.IsAny<RbacGuardRequirement>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
         }
 
         // --- Create ---
@@ -33,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API
                 PlainTextKey = "lh_plaintext_key"
             };
 
-            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject"))
+            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", It.IsAny<IReadOnlyList<ApiKeyScopeDto>?>()))
                 .ReturnsAsync(creationResult);
 
             var subject = CreateSubjectWithUser("alice", "alice-subject");
@@ -64,13 +75,13 @@ namespace Lighthouse.Backend.Tests.API
         public async Task CreateApiKey_CallsServiceWithCurrentUser()
         {
             var creationResult = new ApiKeyCreationResult { Name = "k", PlainTextKey = "x" };
-            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync(It.IsAny<string>(), It.IsAny<string>(), "bob", "bob-subject"))
+            apiKeyServiceMock.Setup(x => x.CreateApiKeyAsync(It.IsAny<string>(), It.IsAny<string>(), "bob", "bob-subject", It.IsAny<IReadOnlyList<ApiKeyScopeDto>?>()))
                 .ReturnsAsync(creationResult);
 
             var subject = CreateSubjectWithUser("bob", "bob-subject");
             await subject.CreateApiKey(new CreateApiKeyRequest { Name = "k", Description = "" });
 
-            apiKeyServiceMock.Verify(x => x.CreateApiKeyAsync("k", "", "bob", "bob-subject"), Times.Once);
+            apiKeyServiceMock.Verify(x => x.CreateApiKeyAsync("k", "", "bob", "bob-subject", null), Times.Once);
         }
 
         [Test]
@@ -186,7 +197,7 @@ namespace Lighthouse.Backend.Tests.API
             var identity = new ClaimsIdentity(claims, "Test");
             var principal = new ClaimsPrincipal(identity);
 
-            var controller = new ApiKeyController(apiKeyServiceMock.Object)
+            var controller = new ApiKeyController(apiKeyServiceMock.Object, rbacAdministrationServiceMock.Object)
             {
                 ControllerContext = new ControllerContext
                 {

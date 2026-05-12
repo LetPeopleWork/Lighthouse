@@ -5,5 +5,7 @@ namespace Lighthouse.Backend.Models.Auth
         public string Name { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+
+        public IReadOnlyList<ApiKeyScopeDto>? Scope { get; set; }
     }
 }

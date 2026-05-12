@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Security.Cryptography;
@@ -9,17 +10,28 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
     public class ApiKeyService(
         IApiKeyRepository repository,
         IRepository<UserProfile> userProfileRepository,
+        IRepository<ApiKeyPermission> apiKeyPermissionRepository,
         ILogger<ApiKeyService> logger) : IApiKeyService
     {
         private const int KeyByteLength = 32;
         private const int SaltByteLength = 16;
         private const int Pbkdf2Iterations = 100_000;
 
-        public async Task<ApiKeyCreationResult> CreateApiKeyAsync(
+        public Task<ApiKeyCreationResult> CreateApiKeyAsync(
             string name,
             string description,
             string createdByUser,
             string ownerSubject)
+        {
+            return CreateApiKeyAsync(name, description, createdByUser, ownerSubject, scope: null);
+        }
+
+        public async Task<ApiKeyCreationResult> CreateApiKeyAsync(
+            string name,
+            string description,
+            string createdByUser,
+            string ownerSubject,
+            IReadOnlyList<ApiKeyScopeDto>? scope)
         {
             var plainTextKey = GenerateSecureKey();
             var salt = GenerateSalt();
@@ -40,6 +52,23 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 
             repository.Add(apiKey);
             await repository.Save();
+
+            if (scope is not null && scope.Count > 0)
+            {
+                foreach (var entry in scope)
+                {
+                    apiKeyPermissionRepository.Add(new ApiKeyPermission
+                    {
+                        ApiKeyId = apiKey.Id,
+                        Role = entry.Role,
+                        ScopeType = entry.ScopeType,
+                        ScopeId = entry.ScopeId,
+                        GrantedAt = DateTime.UtcNow,
+                    });
+                }
+
+                await apiKeyPermissionRepository.Save();
+            }
 
             return new ApiKeyCreationResult
             {

@@ -1,7 +1,9 @@
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Lighthouse.Backend.API
 {
@@ -28,6 +30,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("bootstrap/system-admin")]
+        [EnableRateLimiting(RateLimitingConfiguration.BootstrapSystemAdminPolicy)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
     {
         private Mock<IApiKeyRepository> repositoryMock;
         private Mock<IRepository<UserProfile>> userProfileRepositoryMock;
+        private Mock<IRepository<ApiKeyPermission>> apiKeyPermissionRepositoryMock;
         private Mock<ILogger<ApiKeyService>> loggerMock;
         private ApiKeyService subject;
 
@@ -18,9 +20,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             repositoryMock = new Mock<IApiKeyRepository>();
             userProfileRepositoryMock = new Mock<IRepository<UserProfile>>();
+            apiKeyPermissionRepositoryMock = new Mock<IRepository<ApiKeyPermission>>();
             loggerMock = new Mock<ILogger<ApiKeyService>>();
             userProfileRepositoryMock.Setup(r => r.GetAll()).Returns([]);
-            subject = new ApiKeyService(repositoryMock.Object, userProfileRepositoryMock.Object, loggerMock.Object);
+            subject = new ApiKeyService(
+                repositoryMock.Object,
+                userProfileRepositoryMock.Object,
+                apiKeyPermissionRepositoryMock.Object,
+                loggerMock.Object);
         }
 
         // --- CreateApiKey ---

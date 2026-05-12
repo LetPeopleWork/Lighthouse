@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
@@ -24,6 +25,7 @@ using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Settings.Configuration;
 using System.Collections.Concurrent;
@@ -34,6 +36,8 @@ using System.Text.Json.Serialization;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -42,6 +46,7 @@ using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
 using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API.Swagger;
@@ -56,6 +61,8 @@ namespace Lighthouse.Backend
 
             // Check if we are running as a Tauri Sidecar
             var isStandalone = Environment.GetEnvironmentVariable("Standalone") == "true";
+
+            EnsureCorsFailsClosed(builder, isStandalone);
 
             try
             {
@@ -162,6 +169,16 @@ namespace Lighthouse.Backend
             });
 
             app.UseRouting();
+
+            var rateLimitsConfig = app.Services.GetRequiredService<IConfiguration>()
+                .GetSection(RateLimitingConfiguration.SectionName)
+                .Get<RateLimitingConfiguration>() ?? new RateLimitingConfiguration();
+
+            if (rateLimitsConfig.Enabled)
+            {
+                app.UseRateLimiter();
+            }
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -198,6 +215,7 @@ namespace Lighthouse.Backend
             ConfigureCors(builder, authConfig);
             ConfigureForwardedHeaders(builder, authConfig);
             ConfigureAuthentication(builder, authConfig);
+            ConfigureRateLimiting(builder);
 
             builder.Services
                 .AddControllers(options =>
@@ -243,6 +261,27 @@ namespace Lighthouse.Backend
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 EnableMultipleHttp2Connections = true
             });
+        }
+
+        private static void EnsureCorsFailsClosed(WebApplicationBuilder builder, bool isStandalone)
+        {
+            if (isStandalone)
+            {
+                return;
+            }
+
+            var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationConfiguration>() ?? new AuthenticationConfiguration();
+
+            if (authConfig.Enabled && authConfig.AllowedOrigins.Count == 0)
+            {
+                const string message =
+                    "Authentication is enabled but Authentication:AllowedOrigins is empty. " +
+                    "Populate Authentication:AllowedOrigins with the exact browser-facing origins " +
+                    "(scheme + host + port) that are permitted to call the Lighthouse API. " +
+                    "Refusing to start with a wildcard CORS policy under authentication.";
+                Console.Error.WriteLine($"FATAL: {message}");
+                throw new InvalidOperationException(message);
+            }
         }
 
         private static void ConfigureCors(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
@@ -420,6 +459,77 @@ namespace Lighthouse.Backend
             });
         }
 
+        private static void ConfigureRateLimiting(WebApplicationBuilder builder)
+        {
+            builder.Services.Configure<RateLimitingConfiguration>(
+                builder.Configuration.GetSection(RateLimitingConfiguration.SectionName));
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.OnRejected = (context, cancellationToken) =>
+                {
+                    var policyName = context.HttpContext.GetEndpoint()?
+                        .Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+
+                    var snapshot = context.HttpContext.RequestServices
+                        .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
+                    var retryAfterSeconds = ResolveRetryAfterSeconds(snapshot, policyName);
+                    context.HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+                    return ValueTask.CompletedTask;
+                };
+
+                foreach (var policyName in new[]
+                {
+                    RateLimitingConfiguration.AuthLoginPolicy,
+                    RateLimitingConfiguration.ApiKeysPolicy,
+                    RateLimitingConfiguration.BootstrapSystemAdminPolicy,
+                })
+                {
+                    var capturedPolicyName = policyName;
+                    options.AddPolicy(capturedPolicyName, httpContext =>
+                    {
+                        var snapshot = httpContext.RequestServices
+                            .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
+
+                        if (!snapshot.Policies.TryGetValue(capturedPolicyName, out var policyConfig))
+                        {
+                            return RateLimitPartition.GetNoLimiter("unconfigured");
+                        }
+
+                        var partitionKey = ResolvePartitionKey(httpContext);
+                        return RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey,
+                            _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = policyConfig.PermitLimit,
+                                Window = TimeSpan.FromSeconds(policyConfig.WindowSeconds),
+                                QueueLimit = policyConfig.QueueLimit,
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                AutoReplenishment = true,
+                            });
+                    });
+                }
+            });
+        }
+
+        private static string ResolvePartitionKey(HttpContext httpContext)
+        {
+            return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
+        private static int ResolveRetryAfterSeconds(RateLimitingConfiguration config, string? policyName)
+        {
+            if (policyName is not null
+                && config.Policies.TryGetValue(policyName, out var policyConfig)
+                && policyConfig.WindowSeconds > 0)
+            {
+                return policyConfig.WindowSeconds;
+            }
+
+            return 60;
+        }
+
         private static void RegisterServices(WebApplicationBuilder builder)
         {
             // Repos
@@ -437,6 +547,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
             builder.Services.AddScoped<IRepository<RefreshLog>, RefreshLogRepository>();
             builder.Services.AddScoped<IRepository<UserProfile>, UserProfileRepository>();
+            builder.Services.AddScoped<IRepository<ApiKeyPermission>, ApiKeyPermissionRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();

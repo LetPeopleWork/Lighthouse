@@ -426,17 +426,27 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkTrackingSystemConnections_HasNoRbacGuardAttribute()
+        public void GetWorkTrackingSystemConnections_HasSystemAdminRbacGuardAttribute()
         {
             var method = typeof(WorkTrackingSystemConnectionsController).GetMethod(nameof(WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections));
             var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
                 .Cast<RbacGuardAttribute>()
                 .SingleOrDefault();
 
-            Assert.That(
-                attribute,
-                Is.Null,
-                "Under v1, the connection list is readable by any authenticated user — Team/Portfolio Admins need it to populate the connection dropdown on their edit pages. Secrets are redacted at the DTO layer so this does not leak credentials.");
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnectionSummaries_HasAnyScopedAdminRbacGuardAttribute()
+        {
+            var method = typeof(WorkTrackingSystemConnectionsController).GetMethod(nameof(WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnectionSummaries));
+            var attribute = method?.GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.AnyScopedAdmin));
         }
 
         [Test]

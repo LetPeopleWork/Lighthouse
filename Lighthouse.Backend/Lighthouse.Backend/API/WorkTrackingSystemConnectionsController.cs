@@ -49,12 +49,23 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public ActionResult<IEnumerable<WorkTrackingSystemConnectionDto>> GetWorkTrackingSystemConnections()
         {
             var existingConnections = repository.GetAll();
 
             var connectionDtos = existingConnections.Select(c => new WorkTrackingSystemConnectionDto(c));
             return Ok(connectionDtos);
+        }
+
+        [HttpGet("summary")]
+        [RbacGuard(RbacGuardRequirement.AnyScopedAdmin)]
+        public ActionResult<IEnumerable<WorkTrackingSystemConnectionSummaryDto>> GetWorkTrackingSystemConnectionSummaries()
+        {
+            var existingConnections = repository.GetAll();
+
+            var summaries = existingConnections.Select(c => new WorkTrackingSystemConnectionSummaryDto(c));
+            return Ok(summaries);
         }
 
         [HttpPost]

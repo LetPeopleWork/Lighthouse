@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace Lighthouse.Backend.API
@@ -32,6 +34,7 @@ namespace Lighthouse.Backend.API
 
         [HttpGet("login")]
         [AllowAnonymous]
+        [EnableRateLimiting(RateLimitingConfiguration.AuthLoginPolicy)]
         public IActionResult Login()
         {
             var status = authModeResolver.Resolve();

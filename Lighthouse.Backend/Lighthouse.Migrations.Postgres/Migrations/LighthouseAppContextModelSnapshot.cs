@@ -181,6 +181,38 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("UserProfiles");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.ApiKeyPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApiKeyId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ScopeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ScopeType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiKeyId");
+
+                    b.HasIndex("ScopeType", "ScopeId");
+
+                    b.ToTable("ApiKeyPermissions");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.RbacGroupMapping", b =>
                 {
                     b.Property<int>("Id")
@@ -1057,6 +1089,15 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .WithMany()
                         .HasForeignKey("OwnerUserProfileId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.ApiKeyPermission", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Auth.ApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.UserPermission", b =>

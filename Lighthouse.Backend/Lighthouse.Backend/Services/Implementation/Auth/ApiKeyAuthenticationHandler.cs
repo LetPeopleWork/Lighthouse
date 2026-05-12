@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 
@@ -9,6 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 {
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
+        public const string ApiKeyIdClaimType = "api_key_id";
         private const string ApiKeyHeaderName = "X-Api-Key";
         private readonly IApiKeyService apiKeyService;
 
@@ -50,6 +52,13 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 new Claim(ClaimTypes.Name, "api-key-user"),
                 new Claim("auth_method", "api-key"),
             };
+
+            if (validationResult.ApiKeyId.HasValue)
+            {
+                claims.Add(new Claim(
+                    ApiKeyIdClaimType,
+                    validationResult.ApiKeyId.Value.ToString(CultureInfo.InvariantCulture)));
+            }
 
             if (validationResult.OwnerResolutionState == ApiKeyOwnerResolutionState.Resolved
                 && !string.IsNullOrWhiteSpace(validationResult.OwnerSubject))

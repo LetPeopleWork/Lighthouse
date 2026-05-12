@@ -49,6 +49,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<UserPermission> UserPermissions { get; set; } = null!;
 
         public DbSet<RbacGroupMapping> RbacGroupMappings { get; set; } = null!;
+
+        public DbSet<ApiKeyPermission> ApiKeyPermissions { get; set; } = null!;
         
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
@@ -101,6 +103,18 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<RbacGroupMapping>()
                 .Property(m => m.GroupValue)
                 .IsRequired();
+
+            modelBuilder.Entity<ApiKeyPermission>()
+                .HasOne<ApiKey>()
+                .WithMany()
+                .HasForeignKey(p => p.ApiKeyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ApiKeyPermission>()
+                .HasIndex(p => p.ApiKeyId);
+
+            modelBuilder.Entity<ApiKeyPermission>()
+                .HasIndex(p => new { p.ScopeType, p.ScopeId });
 
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()
