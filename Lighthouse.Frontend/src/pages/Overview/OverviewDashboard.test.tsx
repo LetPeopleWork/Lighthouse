@@ -729,7 +729,7 @@ describe("OverviewDashboard", () => {
 			expect(screen.queryAllByLabelText("Delete")).toHaveLength(0);
 		});
 
-		it("shows Edit and Delete only on Team A row for a Team Admin scoped to Team A, no Clone anywhere", async () => {
+		it("shows Edit only on Team A row for a Team Admin scoped to Team A, no Delete or Clone (v1: only sysadmin deletes/clones)", async () => {
 			const mockRbacService = createMockRbacService();
 			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 				isRbacEnabled: true,
@@ -749,11 +749,11 @@ describe("OverviewDashboard", () => {
 			});
 
 			expect(screen.queryAllByLabelText("Edit")).toHaveLength(1);
-			expect(screen.queryAllByLabelText("Delete")).toHaveLength(1);
+			expect(screen.queryAllByLabelText("Delete")).toHaveLength(0);
 			expect(screen.queryAllByLabelText("Clone")).toHaveLength(0);
 		});
 
-		it("shows Edit and Delete only on Portfolio X row for a Portfolio Admin scoped to Portfolio X, no Clone anywhere", async () => {
+		it("shows Edit only on Portfolio X row for a Portfolio Admin scoped to Portfolio X, no Delete or Clone (v1: only sysadmin deletes/clones)", async () => {
 			const mockRbacService = createMockRbacService();
 			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 				isRbacEnabled: true,
@@ -773,7 +773,7 @@ describe("OverviewDashboard", () => {
 			});
 
 			expect(screen.queryAllByLabelText("Edit")).toHaveLength(1);
-			expect(screen.queryAllByLabelText("Delete")).toHaveLength(1);
+			expect(screen.queryAllByLabelText("Delete")).toHaveLength(0);
 			expect(screen.queryAllByLabelText("Clone")).toHaveLength(0);
 		});
 

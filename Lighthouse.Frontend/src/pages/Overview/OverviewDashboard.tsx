@@ -461,7 +461,7 @@ const OverviewDashboard: React.FC = () => {
 						onDelete={handlePortfolioDelete}
 						filterText={filterText}
 						canEditRow={(row) => rbac.isPortfolioAdmin(row.id)}
-						canDeleteRow={(row) => rbac.isPortfolioAdmin(row.id)}
+						canDeleteRow={() => rbac.isSystemAdmin}
 						canCloneRow={() => rbac.isSystemAdmin}
 					/>
 					<DataOverviewTable
@@ -471,7 +471,7 @@ const OverviewDashboard: React.FC = () => {
 						onDelete={handleTeamDelete}
 						filterText={filterText}
 						canEditRow={(row) => rbac.isTeamAdmin(row.id)}
-						canDeleteRow={(row) => rbac.isTeamAdmin(row.id)}
+						canDeleteRow={() => rbac.isSystemAdmin}
 						canCloneRow={() => rbac.isSystemAdmin}
 					/>
 
