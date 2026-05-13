@@ -25,6 +25,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useId, useState } from "react";
+import { useRbac } from "../../../hooks/useRbac";
 import type {
 	IApiKeyInfo,
 	IApiKeyScope,
@@ -88,6 +89,7 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 
 	const { apiKeyService, teamService, portfolioService } =
 		useContext(ApiServiceContext);
+	const rbac = useRbac();
 	const titleId = useId();
 
 	useEffect(() => {
@@ -248,38 +250,40 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 								htmlInput: { "data-testid": "api-key-description-input" },
 							}}
 						/>
-						<Accordion
-							defaultExpanded={false}
-							expanded={scopeExpanded}
-							onChange={(_, expanded) => setScopeExpanded(expanded)}
-							data-testid="scope-accordion"
-						>
-							<AccordionSummary
-								expandIcon={<ExpandMoreIcon />}
-								data-testid="scope-accordion-summary"
+						{rbac.isRbacEnabled && (
+							<Accordion
+								defaultExpanded={false}
+								expanded={scopeExpanded}
+								onChange={(_, expanded) => setScopeExpanded(expanded)}
+								data-testid="scope-accordion"
 							>
-								<Typography variant="body2">
-									Restrict scope (optional)
-								</Typography>
-							</AccordionSummary>
-							<AccordionDetails>
-								{scopeDataLoaded ? (
-									<ScopeRowList
-										rows={scopeRows}
-										onChange={setScopeRows}
-										availableTeams={availableTeams ?? []}
-										availablePortfolios={availablePortfolios ?? []}
-									/>
-								) : (
-									<Box
-										sx={{ display: "flex", justifyContent: "center", p: 2 }}
-										data-testid="scope-data-loading"
-									>
-										<CircularProgress size={24} />
-									</Box>
-								)}
-							</AccordionDetails>
-						</Accordion>
+								<AccordionSummary
+									expandIcon={<ExpandMoreIcon />}
+									data-testid="scope-accordion-summary"
+								>
+									<Typography variant="body2">
+										Restrict scope (optional)
+									</Typography>
+								</AccordionSummary>
+								<AccordionDetails>
+									{scopeDataLoaded ? (
+										<ScopeRowList
+											rows={scopeRows}
+											onChange={setScopeRows}
+											availableTeams={availableTeams ?? []}
+											availablePortfolios={availablePortfolios ?? []}
+										/>
+									) : (
+										<Box
+											sx={{ display: "flex", justifyContent: "center", p: 2 }}
+											data-testid="scope-data-loading"
+										>
+											<CircularProgress size={24} />
+										</Box>
+									)}
+								</AccordionDetails>
+							</Accordion>
+						)}
 					</Box>
 				)}
 			</DialogContent>

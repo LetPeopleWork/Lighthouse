@@ -259,7 +259,7 @@ export const createMockRbacService = (): IRbacService => {
 		getStatus: vi.fn(),
 		getUsers: vi.fn(),
 		getAuthorizationSummary: vi.fn().mockResolvedValue({
-			isRbacEnabled: false,
+			isRbacEnabled: true,
 			isSystemAdmin: true,
 			canCreateTeam: true,
 			canCreatePortfolio: true,
