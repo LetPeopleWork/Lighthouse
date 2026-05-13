@@ -210,7 +210,7 @@ namespace Lighthouse.Backend
 
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
-            var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationConfiguration>() ?? new AuthenticationConfiguration();
+            var authConfig = LoadAuthenticationConfiguration(builder);
 
             ConfigureCors(builder, authConfig);
             ConfigureForwardedHeaders(builder, authConfig);
@@ -263,6 +263,33 @@ namespace Lighthouse.Backend
             });
         }
 
+        private static readonly char[] AllowedOriginsSeparators = [',', ';'];
+
+        private static AuthenticationConfiguration LoadAuthenticationConfiguration(WebApplicationBuilder builder)
+        {
+            var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationConfiguration>()
+                ?? new AuthenticationConfiguration();
+
+            if (authConfig.AllowedOrigins.Count > 0)
+            {
+                return authConfig;
+            }
+
+            // Environment-variable provider binds List<string> only via indexed keys (__0, __1, ...).
+            // Operators routinely set the scalar Authentication__AllowedOrigins=value; recover that form here.
+            var scalar = builder.Configuration["Authentication:AllowedOrigins"];
+            if (string.IsNullOrWhiteSpace(scalar))
+            {
+                return authConfig;
+            }
+
+            var origins = scalar
+                .Split(AllowedOriginsSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToArray();
+
+            return authConfig with { AllowedOrigins = origins };
+        }
+
         private static void EnsureCorsFailsClosed(WebApplicationBuilder builder, bool isStandalone)
         {
             if (isStandalone)
@@ -270,7 +297,7 @@ namespace Lighthouse.Backend
                 return;
             }
 
-            var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationConfiguration>() ?? new AuthenticationConfiguration();
+            var authConfig = LoadAuthenticationConfiguration(builder);
 
             if (authConfig.Enabled && authConfig.AllowedOrigins.Count == 0)
             {

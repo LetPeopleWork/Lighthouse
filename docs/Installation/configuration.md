@@ -201,7 +201,8 @@ Lighthouse supports OpenID Connect (OIDC) authentication to protect your instanc
 - `Authentication__ClientId`
 - `Authentication__ClientSecret`
 - `Authentication__Scopes__0`, `Authentication__Scopes__1`, ...
-- `Authentication__AllowedOrigins__0`, `Authentication__AllowedOrigins__1`, ...
+- `Authentication__AllowedOrigins` — single origin (`https://app.example`) or a comma- or semicolon-separated list (`https://app.example,https://admin.example` or `https://app.example;https://admin.example`). Whitespace around delimiters is trimmed; empty fragments are dropped.
+- `Authentication__AllowedOrigins__0`, `Authentication__AllowedOrigins__1`, ... — alternative indexed form for the same list. Use either form; do not combine them on the same instance.
 - `Authentication__SessionLifetimeMinutes`
 - `Authentication__RequireHttpsMetadata`
 

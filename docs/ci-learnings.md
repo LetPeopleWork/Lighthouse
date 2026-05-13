@@ -24,6 +24,14 @@ Each entry follows:
 
 _None yet._
 
+## Runtime / startup
+
+### 2026-05-13 — `Authentication__AllowedOrigins` scalar env var bound to empty list, crashing host
+- **Symptom**: Deployed Lighthouse container failed to start with `System.InvalidOperationException: Authentication is enabled but Authentication:AllowedOrigins is empty.` thrown by `Program.EnsureCorsFailsClosed`. Operator's container set `Authentication__AllowedOrigins=https://localhost:48332` (scalar, no `__N` suffix) — the natural form, and the form the repo's own `render.yaml:57` template prescribes.
+- **Root cause**: `AuthenticationConfiguration.AllowedOrigins` is `IReadOnlyList<string>`. .NET's environment-variable configuration provider binds list-typed properties ONLY via indexed keys (`Authentication__AllowedOrigins__0`, `__1`, ...); a scalar `Authentication__AllowedOrigins=value` silently binds to an empty list. The fail-closed CORS guard then refused to start.
+- **Fix**: `Lighthouse.Backend/Program.cs` — added `LoadAuthenticationConfiguration(WebApplicationBuilder)` helper that binds via `Get<AuthenticationConfiguration>()` first, then if `AllowedOrigins` is empty falls back to the scalar configuration key and splits on `,`/`;` (trim entries, drop empties), returning a new record via `with`-expression. Both `EnsureCorsFailsClosed` and `ConfigureCors` consume the helper; the indexed form remains correct because the initial bind populates the list and the fallback path is skipped.
+- **Rule going forward**: ASP.NET Core list-typed configuration (`IReadOnlyList<string>` / `List<string>` / `string[]`) populated from environment variables MUST accept both the indexed form (`Section__Key__0`, `__1`, ...) AND a scalar comma- or semicolon-separated form, with a binding-layer fallback that converts the scalar to a list. The indexed-only contract is a foot-gun for operators because it differs from the JSON/appsettings shape — never publish a deployment template using the scalar form unless the binding accepts it.
+
 ## Tests
 
 ### 2026-05-12 — RBAC E2E bootstrap assertion contradicted the team-existence portfolio gate
