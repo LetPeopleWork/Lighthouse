@@ -207,6 +207,11 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	const logs = await settingsPage.goToSystemInfo();
 	await takePageScreenshot(logs.page, "settings/systeminfo.png");
 
+	const systemInfoTable = logs.page.getByRole("table", {
+		name: "system information",
+	});
+	await takeElementScreenshot(systemInfoTable, "settings/systeminfo_auth.png");
+
 	const databaseManagement = await settingsPage.goToDatabaseManagement();
 	await takePageScreenshot(
 		databaseManagement.page,
