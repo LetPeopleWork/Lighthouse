@@ -1,0 +1,74 @@
+{
+  "roadmap": {
+    "project_id": "apikey-scope-ui-hidden-when-rbac-off",
+    "created_at": "2026-05-13",
+    "total_steps": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Hide the 'Restrict scope (optional)' accordion in the Create API Key dialog when RBAC is disabled. The picker has no functional effect when RBAC is off (RbacAdministrationService short-circuits permission checks before any scope intersection runs), so it should not be visible. Single-step delivery: one new Vitest+RTL test file pinning the hide/show behaviour across RBAC-enabled, RBAC-disabled, loading, fetch-failure, and no-scope-payload cases, plus one conditional render gate in ApiKeysSettings.tsx."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-05-13",
+    "notes": "Single-step roadmap for a 6-scenario UI conditional. Step covers walking-skeleton + all M1.1-M1.5 scenarios in one TDD cycle because the production change is a single conditional render — splitting it would create artificial RED states that fail for the same reason. Sentinel reviewer of DISTILL already approved scenario sizing as one TDD cycle per scenario at the scenario level; at the production-code level they collapse to one gate. All 6 scenarios share the same test file (CreateApiKeyDialogScope_RbacOff.test.tsx) and the same one-line gate (`useRbac().isRbacEnabled && (...)` around lines 251-282 of ApiKeysSettings.tsx)."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/apikey-scope-ui-hidden-when-rbac-off/feature-delta.md",
+    "gherkin": [
+      "docs/feature/apikey-scope-ui-hidden-when-rbac-off/acceptance/walking-skeleton.feature",
+      "docs/feature/apikey-scope-ui-hidden-when-rbac-off/acceptance/milestone-1-scope-visibility.feature"
+    ],
+    "wave_decisions": "docs/feature/apikey-scope-ui-hidden-when-rbac-off/distill/wave-decisions.md"
+  },
+  "out_of_scope": [
+    "Caller-permission-based gating (Viewer on RBAC-enabled deployment sees the picker but cannot use it) — tracked as follow-up feature `apikey-scope-ui-gated-on-caller-permissions` per feature-delta Wave-decision reconciliation.",
+    "Live RBAC-toggle detection — full page refresh required to pick up a runtime RBAC config flip; consistent with all other useRbac()-gated UI (Header, Settings, OverviewDashboard).",
+    "Backend changes — RbacAdministrationService already short-circuits scope intersection when RBAC is off (verified at line ~44 IsRbacEnforcedAsync gate). No defensive backend rejection of scope payloads is added per DWD-3.",
+    "Mutation testing — a single boolean conditional render has no meaningful mutants beyond the inversion (already covered by the M1.1 regression pin in F_FE_1_CreateApiKeyDialogScope.test.tsx + the new M1.2 RBAC-off case). Stryker would surface zero additional coverage gaps; skipped per pragmatic cost-benefit, logged in delivery feature-delta."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Gate scope accordion on RBAC enablement",
+      "description": "One RED→GREEN→COMMIT cycle: write Vitest test file pinning the five M1 scenarios + the walking-skeleton acceptance behaviour, then add the conditional render gate that makes them pass.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Hide scope accordion when useRbac().isRbacEnabled is false",
+          "description": "TDD execution:\n\n**RED phase** — Create `Lighthouse.Frontend/src/pages/Settings/ApiKeys/CreateApiKeyDialogScope_RbacOff.test.tsx`. The file imports `ApiKeysSettings` from `./ApiKeysSettings`, the `ApiServiceContext` from `../../../services/Api/ApiServiceContext`, and the existing test factory `createMockApiServiceContext` + `createMockApiKeyService` from `../../../tests/MockApiServiceProvider`. It uses the same `Wrapper` pattern as the sibling file `F_FE_1_CreateApiKeyDialogScope.test.tsx` (read it as the reference for shape, mocks, and helper utilities — but do NOT modify it). The new file mocks `rbacService.getAuthorizationSummary` per scenario to return: (a) isRbacEnabled=true for M1.1, (b) isRbacEnabled=false for WS + M1.2 + M1.5, (c) a rejected promise for M1.3, (d) a never-resolving promise (or one that resolves after the test asserts) for M1.4. Each test opens the Create API Key dialog by clicking the `create-api-key-button` and asserts either the presence or absence of the `scope-accordion` testId. M1.5 additionally captures the request body passed to `apiKeyService.createApiKey` and asserts `scope` is undefined.\n\n**GREEN phase** — Edit `ApiKeysSettings.tsx`. Inside `CreateApiKeyDialog`, call `useRbac()` (import from `../../../hooks/useRbac`). Wrap the `<Accordion data-testid='scope-accordion' ...>` block (currently lines 251–282) in a conditional: `{rbac.isRbacEnabled && (<Accordion ...>...</Accordion>)}`. Do NOT change the loading / error fallback in `useRbac` — its existing PERMISSIVE_SUMMARY default (isRbacEnabled=false) is the safe behaviour and is what M1.3/M1.4 pin. Do NOT change any other dialog logic; `scopeRows` stays as the local empty default so M1.5's `request.scope` omission is preserved by the pre-existing `if (completedScopes.length > 0)` guard on line 144.\n\n**COMMIT phase** — Conventional commit: `feat(apikey): hide scope picker when RBAC is disabled`. Body must reference feature-delta.md and note: backend behaviour unchanged; UI-only gate.\n\n**Quality gates (mandatory before COMMIT):**\n- `pnpm test` from `Lighthouse.Frontend/` — all suites green including the new file.\n- `pnpm build` from `Lighthouse.Frontend/` — zero errors and zero warnings (this runs `pnpm biome check ./src` as prebuild + `tsc -b` + `vite build`).\n- Existing `F_FE_1_CreateApiKeyDialogScope.test.tsx` remains GREEN unmodified (its mocks return isRbacEnabled=true, which is the M1.1 regression pin — the new gate keeps the accordion visible in that state).\n- Existing `ApiKeysSettings.test.tsx` remains GREEN unmodified (does not depend on the accordion presence either way).",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/ApiKeys/CreateApiKeyDialogScope_RbacOff.test.tsx",
+          "scenario_name": "WS + M1.1 (regression pin) + M1.2 (the fix) + M1.3 (fetch failure) + M1.4 (loading) + M1.5 (no-scope-payload) — covers walking-skeleton.feature + milestone-1-scope-visibility.feature in full",
+          "red_to_green_tests": [
+            "renders scope accordion when RBAC is enabled (M1.1 regression pin)",
+            "does NOT render scope accordion when RBAC is disabled (M1.2 + WS)",
+            "does NOT render scope accordion when authorization summary fetch fails (M1.3)",
+            "does NOT render scope accordion while authorization summary is loading (M1.4)",
+            "submits request without scope field when RBAC is off and no rows are configured (M1.5)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/ApiKeys/CreateApiKeyDialogScope_RbacOff.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "New file CreateApiKeyDialogScope_RbacOff.test.tsx exists at Lighthouse.Frontend/src/pages/Settings/ApiKeys/ and contains 5 distinct Vitest tests, one per scenario in milestone-1-scope-visibility.feature plus the walking-skeleton scenario.",
+            "Every new test fails on the unmodified ApiKeysSettings.tsx (RED state confirmed before any production edit).",
+            "ApiKeysSettings.tsx imports useRbac and wraps the scope Accordion in `{rbac.isRbacEnabled && (...)}`. No other line is changed except the new import + the conditional wrap.",
+            "After the production change, all 5 new tests pass.",
+            "F_FE_1_CreateApiKeyDialogScope.test.tsx remains GREEN without modification (its 'isRbacEnabled=true' mocks satisfy the new gate).",
+            "ApiKeysSettings.test.tsx remains GREEN without modification.",
+            "pnpm test (full suite) is green.",
+            "pnpm build is clean: zero TypeScript errors, zero Biome errors, zero warnings.",
+            "Commit message follows conventional commits: `feat(apikey): hide scope picker when RBAC is disabled`."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "Lighthouse.Frontend/src/pages/Settings/ApiKeys/CreateApiKeyDialogScope_RbacOff.test.tsx (new)",
+            "Lighthouse.Frontend/src/pages/Settings/ApiKeys/ApiKeysSettings.tsx (modified: +1 import, +2-line conditional wrap)"
+          ]
+        }
+      ]
+    }
+  ]
+}
