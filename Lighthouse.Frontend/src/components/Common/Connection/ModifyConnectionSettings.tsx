@@ -3,6 +3,7 @@ import {
 	Container,
 	FormControl,
 	InputLabel,
+	Link,
 	MenuItem,
 	Select,
 	type SelectChangeEvent,
@@ -12,6 +13,8 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type {
@@ -24,8 +27,15 @@ import AdditionalFieldsEditor from "../../../pages/Settings/Connections/Addition
 import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBackMappingsEditor";
 import { ApiError } from "../../../services/Api/ApiError";
 import { useTerminology } from "../../../services/TerminologyContext";
+import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
+import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
+
+const OAUTH_KEY_SUFFIX = ".oauth";
+
+const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
+	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
 
 interface ModifyConnectionSettingsProps {
 	title: string;
@@ -86,6 +96,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const { licenseStatus } = useLicenseRestrictions();
+	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
 
 	const getAuthOptionKeys = useCallback(
 		(authMethod: IAuthenticationMethod | null): Set<string> => {
@@ -289,12 +301,12 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		}
 	};
 
-	const handleAuthMethodChange = (event: SelectChangeEvent<string>) => {
+	const handleAuthMethodKeyChange = (key: string) => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
 		const availableMethods =
 			selectedWorkTrackingSystem?.availableAuthenticationMethods ?? [];
-		const method = availableMethods.find((m) => m.key === event.target.value);
+		const method = availableMethods.find((m) => m.key === key);
 		if (method) {
 			setSelectedAuthMethod(method);
 			setAuthOptions(getEmptyAuthOptions(method));
@@ -439,27 +451,19 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					{(selectedWorkTrackingSystem?.availableAuthenticationMethods
 						?.length ?? 0) > 1 && (
 						<Grid size={{ xs: 12, md: 6 }}>
-							<FormControl fullWidth>
-								<InputLabel>Authentication Method</InputLabel>
-								<Select
-									value={selectedAuthMethod?.key ?? ""}
-									onChange={handleAuthMethodChange}
-									label="Authentication Method"
-								>
-									{selectedWorkTrackingSystem?.availableAuthenticationMethods?.map(
-										(method) => (
-											<MenuItem key={method.key} value={method.key}>
-												{method.displayName}
-											</MenuItem>
-										),
-									)}
-								</Select>
-							</FormControl>
+							<AuthMethodDropdown
+								methods={
+									selectedWorkTrackingSystem?.availableAuthenticationMethods ??
+									[]
+								}
+								selectedKey={selectedAuthMethod?.key ?? ""}
+								canUsePremiumFeatures={canUsePremiumFeatures}
+								onChange={handleAuthMethodKeyChange}
+							/>
 						</Grid>
 					)}
 
-					{/* Auth Options */}
-					{showAuthSection && authOptions.length > 0 && (
+					{showAuthSection && isOAuthMethod(selectedAuthMethod) && (
 						<Grid size={{ xs: 12 }}>
 							<Typography
 								variant="subtitle2"
@@ -468,34 +472,68 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							>
 								Authentication
 							</Typography>
-							<Grid container spacing={2}>
-								{authOptions.map((option) => {
-									const displayName =
-										selectedAuthMethod?.options.find(
-											(o) => o.key === option.key,
-										)?.displayName ?? option.key;
-									return (
-										<Grid size={{ xs: 12, md: 6 }} key={option.key}>
-											<TextField
-												label={displayName}
-												type={option.isSecret ? "password" : "text"}
-												fullWidth
-												value={option.value}
-												placeholder={
-													isEditMode && option.isSecret && option.value === ""
-														? "Leave empty to keep existing value"
-														: ""
-												}
-												onChange={(e) =>
-													handleAuthOptionChange(option, e.target.value)
-												}
-											/>
-										</Grid>
-									);
-								})}
-							</Grid>
+							{canUsePremiumFeatures ? (
+								<OAuthAuthForm
+									connectionId={selectedWorkTrackingSystem?.id ?? 0}
+									providerKey={selectedAuthMethod?.key ?? ""}
+									baseUrl={null}
+								/>
+							) : (
+								<Alert
+									severity="info"
+									data-testid="oauth-premium-upgrade-affordance"
+								>
+									<Typography variant="body2">
+										OAuth 2.0 authentication is a Premium feature. Upgrade to
+										Premium to connect via OAuth.{" "}
+										<Link component={RouterLink} to="/settings/license">
+											View license options
+										</Link>
+									</Typography>
+								</Alert>
+							)}
 						</Grid>
 					)}
+
+					{showAuthSection &&
+						!isOAuthMethod(selectedAuthMethod) &&
+						authOptions.length > 0 && (
+							<Grid size={{ xs: 12 }}>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									sx={{ mb: 1 }}
+								>
+									Authentication
+								</Typography>
+								<Grid container spacing={2}>
+									{authOptions.map((option) => {
+										const displayName =
+											selectedAuthMethod?.options.find(
+												(o) => o.key === option.key,
+											)?.displayName ?? option.key;
+										return (
+											<Grid size={{ xs: 12, md: 6 }} key={option.key}>
+												<TextField
+													label={displayName}
+													type={option.isSecret ? "password" : "text"}
+													fullWidth
+													value={option.value}
+													placeholder={
+														isEditMode && option.isSecret && option.value === ""
+															? "Leave empty to keep existing value"
+															: ""
+													}
+													onChange={(e) =>
+														handleAuthOptionChange(option, e.target.value)
+													}
+												/>
+											</Grid>
+										);
+									})}
+								</Grid>
+							</Grid>
+						)}
 
 					{/* Additional Fields */}
 					<Grid size={{ xs: 12 }}>

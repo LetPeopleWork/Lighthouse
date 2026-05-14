@@ -3,15 +3,48 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ILicensingService } from "../../../services/Api/LicensingService";
+import type { IOAuthService } from "../../../services/Api/OAuthService";
+import type { IPortfolioService } from "../../../services/Api/PortfolioService";
+import type { ITeamService } from "../../../services/Api/TeamService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import ModifyConnectionSettings from "./ModifyConnectionSettings";
+
+const createLicensingService = (
+	canUsePremiumFeatures: boolean,
+): ILicensingService => {
+	const status: ILicenseStatus = {
+		hasLicense: canUsePremiumFeatures,
+		isValid: canUsePremiumFeatures,
+		canUsePremiumFeatures,
+	};
+	return {
+		getLicenseStatus: vi.fn().mockResolvedValue(status),
+		importLicense: vi.fn(),
+		clearLicense: vi.fn(),
+	};
+};
+
+const createEmptyTeamService = (): Partial<ITeamService> => ({
+	getTeams: vi.fn().mockResolvedValue([]),
+});
+
+const createEmptyPortfolioService = (): Partial<IPortfolioService> => ({
+	getPortfolios: vi.fn().mockResolvedValue([]),
+});
+
+const createMockOAuthService = (): IOAuthService => ({
+	initiateConnect: vi.fn(),
+	disconnect: vi.fn(),
+});
 
 vi.mock("../../../pages/Settings/Connections/AdditionalFieldsEditor", () => ({
 	default: () => <div data-testid="additional-fields-editor" />,
@@ -81,6 +114,46 @@ const mockSystemNoAuth = new WorkTrackingSystemConnection({
 	authenticationMethodKey: "linear.noop",
 });
 
+const mockJiraSystemWithOAuth = new WorkTrackingSystemConnection({
+	id: 0,
+	name: "Jira",
+	workTrackingSystem: "Jira",
+	options: [],
+	availableAuthenticationMethods: [
+		{
+			key: "jira.cloud",
+			displayName: "Jira Cloud",
+			options: [
+				{
+					key: "ApiToken",
+					displayName: "API Token",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		},
+		{
+			key: "jira.oauth",
+			displayName: "OAuth 2.0",
+			options: [],
+			isPremium: true,
+		},
+	],
+	additionalFieldDefinitions: [],
+	authenticationMethodKey: "jira.cloud",
+});
+
+const mockExistingOAuthConnection = new WorkTrackingSystemConnection({
+	id: 99,
+	name: "My Jira OAuth Connection",
+	workTrackingSystem: "Jira",
+	options: [],
+	availableAuthenticationMethods:
+		mockJiraSystemWithOAuth.availableAuthenticationMethods,
+	additionalFieldDefinitions: [],
+	authenticationMethodKey: "jira.oauth",
+});
+
 const mockExistingConnection = new WorkTrackingSystemConnection({
 	id: 7,
 	name: "My Existing Connection",
@@ -107,7 +180,13 @@ const defaultProps = {
 	disableSave: false,
 };
 
-const renderComponent = (propsOverride: Partial<typeof defaultProps> = {}) => {
+const renderComponent = (
+	propsOverride: Partial<typeof defaultProps> = {},
+	contextOverrides: {
+		canUsePremiumFeatures?: boolean;
+		oauthService?: IOAuthService;
+	} = {},
+) => {
 	const props = { ...defaultProps, ...propsOverride };
 
 	const mockTerminologyService = createMockTerminologyService();
@@ -123,6 +202,12 @@ const renderComponent = (propsOverride: Partial<typeof defaultProps> = {}) => {
 
 	const mockApiServiceContext = createMockApiServiceContext({
 		terminologyService: mockTerminologyService,
+		licensingService: createLicensingService(
+			contextOverrides.canUsePremiumFeatures ?? true,
+		),
+		teamService: createEmptyTeamService() as ITeamService,
+		portfolioService: createEmptyPortfolioService() as IPortfolioService,
+		oauthService: contextOverrides.oauthService ?? createMockOAuthService(),
 	});
 
 	return render(
@@ -377,6 +462,59 @@ describe("ModifyConnectionSettings", () => {
 			await waitFor(() => {
 				expect(screen.getByRole("button", { name: /Save/i })).toBeDisabled();
 			});
+		});
+	});
+
+	describe("OAuth premium-gated authentication method", () => {
+		it("renders OAuthAuthForm when an .oauth method is selected and user has premium", async () => {
+			renderComponent(
+				{
+					getConnectionSettings: vi
+						.fn()
+						.mockResolvedValue(mockExistingOAuthConnection),
+				},
+				{ canUsePremiumFeatures: true },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Client ID")).toBeInTheDocument();
+			});
+			expect(screen.getByLabelText("Client Secret")).toBeInTheDocument();
+			expect(screen.queryByText(/Upgrade to Premium/i)).not.toBeInTheDocument();
+		});
+
+		it("renders Upgrade affordance and not OAuthAuthForm when .oauth is selected and user lacks premium", async () => {
+			renderComponent(
+				{
+					getConnectionSettings: vi
+						.fn()
+						.mockResolvedValue(mockExistingOAuthConnection),
+				},
+				{ canUsePremiumFeatures: false },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText(/Upgrade to Premium/i)).toBeInTheDocument();
+			});
+			expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
+			expect(screen.queryByLabelText("Client Secret")).not.toBeInTheDocument();
+		});
+
+		it("renders the legacy auth form and not OAuthAuthForm when a non-oauth method is selected", async () => {
+			renderComponent(
+				{
+					getSupportedSystems: vi
+						.fn()
+						.mockResolvedValue([mockJiraSystemWithOAuth]),
+				},
+				{ canUsePremiumFeatures: true },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("API Token")).toBeInTheDocument();
+			});
+			expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
+			expect(screen.queryByText(/Upgrade to Premium/i)).not.toBeInTheDocument();
 		});
 	});
 });

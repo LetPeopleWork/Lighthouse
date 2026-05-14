@@ -27,6 +27,7 @@ export interface IAuthenticationMethod {
 	key: string;
 	displayName: string;
 	options: IAuthenticationMethodOption[];
+	isPremium?: boolean;
 }
 
 export interface IWorkTrackingSystemConnection {
