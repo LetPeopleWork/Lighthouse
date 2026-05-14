@@ -1,21 +1,3 @@
-export interface IApiKeyInfo {
-	id: number;
-	name: string;
-	description: string;
-	createdByUser: string;
-	createdAt: string;
-	lastUsedAt: string | null;
-}
-
-export interface IApiKeyCreationResult {
-	id: number;
-	name: string;
-	description: string;
-	createdByUser: string;
-	createdAt: string;
-	plainTextKey: string;
-}
-
 export type ApiKeyScopeRole =
 	| "SystemAdmin"
 	| "TeamAdmin"
@@ -28,6 +10,23 @@ export interface IApiKeyScope {
 	role: ApiKeyScopeRole;
 	scopeType: ApiKeyScopeType;
 	scopeId: number | null;
+}
+
+export interface IApiKeyInfo {
+	id: number;
+	name: string;
+	description: string;
+	createdAt: string;
+	lastUsedAt: string | null;
+	scopes: IApiKeyScope[];
+}
+
+export interface IApiKeyCreationResult {
+	id: number;
+	name: string;
+	description: string;
+	createdAt: string;
+	plainTextKey: string;
 }
 
 export interface ICreateApiKeyRequest {

@@ -63,9 +63,9 @@ describe("ApiKeysSettings", () => {
 				id: 1,
 				name: "CI Key",
 				description: "For CI",
-				createdByUser: "alice",
 				createdAt: "2026-01-01T00:00:00Z",
 				lastUsedAt: null,
+				scopes: [],
 			},
 		];
 		const { Wrapper } = buildWrapper({
@@ -87,9 +87,9 @@ describe("ApiKeysSettings", () => {
 				id: 1,
 				name: "Key",
 				description: "",
-				createdByUser: "alice",
 				createdAt: "2026-01-01T00:00:00Z",
 				lastUsedAt: null,
+				scopes: [],
 			},
 		];
 		const { Wrapper } = buildWrapper({
@@ -159,9 +159,9 @@ describe("ApiKeysSettings", () => {
 				id: 5,
 				name: "Key",
 				description: "",
-				createdByUser: "alice",
 				createdAt: "2026-01-01T00:00:00Z",
 				lastUsedAt: null,
+				scopes: [],
 			},
 		];
 		const mockDeleteApiKey = vi.fn().mockResolvedValue(undefined);
@@ -183,15 +183,40 @@ describe("ApiKeysSettings", () => {
 		});
 	});
 
+	it("M1.1 omits Created By column header when keys are present", async () => {
+		const keys: IApiKeyInfo[] = [
+			{
+				id: 1,
+				name: "CI Key",
+				description: "For CI",
+				createdAt: "2026-01-01T00:00:00Z",
+				lastUsedAt: null,
+				scopes: [],
+			},
+		];
+		const { Wrapper } = buildWrapper({
+			getApiKeys: vi.fn().mockResolvedValue(keys),
+		});
+
+		render(<ApiKeysSettings />, { wrapper: Wrapper });
+
+		await waitFor(() => {
+			expect(screen.getByTestId("api-keys-table")).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByRole("columnheader", { name: "Created By" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("removes key from list after deletion", async () => {
 		const keys: IApiKeyInfo[] = [
 			{
 				id: 5,
 				name: "Key",
 				description: "",
-				createdByUser: "alice",
 				createdAt: "2026-01-01T00:00:00Z",
 				lastUsedAt: null,
+				scopes: [],
 			},
 		];
 		const { Wrapper } = buildWrapper({
@@ -257,7 +282,6 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 			id: 1,
 			name: "my-key",
 			description: "",
-			createdByUser: "alice",
 			createdAt: "2026-01-01T00:00:00Z",
 			plainTextKey: "lh_supersecretkey",
 		});
@@ -283,7 +307,6 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 			id: 1,
 			name: "my-key",
 			description: "",
-			createdByUser: "alice",
 			createdAt: "2026-01-01T00:00:00Z",
 			plainTextKey: "lh_supersecretkey",
 		});
@@ -306,7 +329,6 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 			id: 1,
 			name: "my-key",
 			description: "",
-			createdByUser: "alice",
 			createdAt: "2026-01-01T00:00:00Z",
 			plainTextKey: "lh_staysopen",
 		});
@@ -336,7 +358,6 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 			id: 1,
 			name: "my-key",
 			description: "",
-			createdByUser: "alice",
 			createdAt: "2026-01-01T00:00:00Z",
 			plainTextKey: "lh_closeonlydone",
 		});
@@ -368,7 +389,6 @@ describe("CreateApiKeyDialog (via ApiKeysSettings)", () => {
 			id: 1,
 			name: "my-key",
 			description: "for ci",
-			createdByUser: "alice",
 			createdAt: "2026-01-01T00:00:00Z",
 			plainTextKey: "lh_key",
 		});

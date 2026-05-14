@@ -36,7 +36,6 @@ const buildContext = (options: BuildContextOptions = {}) => {
 			id: 1,
 			name: "key",
 			description: "",
-			createdByUser: "alice",
 			createdAt: "2026-01-01T00:00:00Z",
 			plainTextKey: "lh_secret",
 		}),

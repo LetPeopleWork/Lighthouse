@@ -8,12 +8,14 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -27,6 +29,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useId, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import type {
+	ApiKeyScopeRole,
 	IApiKeyInfo,
 	IApiKeyScope,
 	ICreateApiKeyRequest,
@@ -65,6 +68,62 @@ const resolveCreateErrorMessage = (error: unknown): string => {
 	}
 	return "Failed to create API key. Please try again.";
 };
+
+const ROLE_LABELS: Record<ApiKeyScopeRole, string> = {
+	SystemAdmin: "System Admin",
+	TeamAdmin: "Team Admin",
+	PortfolioAdmin: "Portfolio Admin",
+	Viewer: "Viewer",
+};
+
+interface IScopeLookup {
+	teams: Map<number, string>;
+	portfolios: Map<number, string>;
+}
+
+const resolveScopeTargetName = (
+	scope: IApiKeyScope,
+	lookup: IScopeLookup,
+): string => {
+	if (scope.scopeType === "System") return "System";
+	if (scope.scopeId === null) return scope.scopeType;
+	if (scope.scopeType === "Team") {
+		return lookup.teams.get(scope.scopeId) ?? `Team #${scope.scopeId}`;
+	}
+	return lookup.portfolios.get(scope.scopeId) ?? `Portfolio #${scope.scopeId}`;
+};
+
+const renderScopeCell = (
+	scopes: IApiKeyScope[],
+	lookup: IScopeLookup,
+): React.ReactNode => {
+	if (scopes.length === 0) {
+		return <Chip label="Unrestricted" size="small" variant="outlined" />;
+	}
+	return (
+		<Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap" }} useFlexGap>
+			{scopes.map((scope, index) => {
+				const roleLabel = ROLE_LABELS[scope.role];
+				const targetLabel = resolveScopeTargetName(scope, lookup);
+				const key = `${scope.role}-${scope.scopeType}-${scope.scopeId ?? "null"}-${index}`;
+				return (
+					<Chip
+						key={key}
+						label={`${roleLabel} · ${targetLabel}`}
+						size="small"
+					/>
+				);
+			})}
+		</Stack>
+	);
+};
+
+const requiresScopeLookup = (keys: IApiKeyInfo[]): boolean =>
+	keys.some((key) =>
+		key.scopes.some(
+			(scope) => scope.scopeType === "Team" || scope.scopeType === "Portfolio",
+		),
+	);
 
 const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 	open,
@@ -315,8 +374,15 @@ const ApiKeysSettings: React.FC = () => {
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [authEnabled, setAuthEnabled] = useState<boolean | null>(null);
+	const [teamLookup, setTeamLookup] = useState<Map<number, string>>(new Map());
+	const [portfolioLookup, setPortfolioLookup] = useState<Map<number, string>>(
+		new Map(),
+	);
+	const [scopeLookupLoaded, setScopeLookupLoaded] = useState(false);
 
-	const { apiKeyService, authService } = useContext(ApiServiceContext);
+	const { apiKeyService, authService, teamService, portfolioService } =
+		useContext(ApiServiceContext);
+	const rbac = useRbac();
 
 	const fetchKeys = useCallback(async () => {
 		try {
@@ -348,6 +414,47 @@ const ApiKeysSettings: React.FC = () => {
 		void initialize();
 	}, [authService, fetchKeys]);
 
+	useEffect(() => {
+		if (!rbac.isRbacEnabled || scopeLookupLoaded) return;
+		if (!requiresScopeLookup(keys)) return;
+
+		let cancelled = false;
+		const loadScopeLookup = async () => {
+			const [teamsResult, portfoliosResult] = await Promise.allSettled([
+				teamService.getTeams(),
+				portfolioService.getPortfolios(),
+			]);
+			if (cancelled) return;
+			if (teamsResult.status === "fulfilled") {
+				setTeamLookup(
+					new Map(teamsResult.value.map((team) => [team.id, team.name])),
+				);
+			}
+			if (portfoliosResult.status === "fulfilled") {
+				setPortfolioLookup(
+					new Map(
+						portfoliosResult.value.map((portfolio) => [
+							portfolio.id,
+							portfolio.name,
+						]),
+					),
+				);
+			}
+			setScopeLookupLoaded(true);
+		};
+
+		void loadScopeLookup();
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		rbac.isRbacEnabled,
+		scopeLookupLoaded,
+		keys,
+		teamService,
+		portfolioService,
+	]);
+
 	const handleDelete = async (id: number) => {
 		try {
 			await apiKeyService.deleteApiKey(id);
@@ -356,6 +463,12 @@ const ApiKeysSettings: React.FC = () => {
 			setError("Failed to delete API key.");
 		}
 	};
+
+	const scopeLookup: IScopeLookup = {
+		teams: teamLookup,
+		portfolios: portfolioLookup,
+	};
+	const showScopesColumn = rbac.isRbacEnabled;
 
 	let keysContent: React.ReactNode;
 	if (authEnabled === false) {
@@ -383,7 +496,7 @@ const ApiKeysSettings: React.FC = () => {
 						<TableRow>
 							<TableCell>Name</TableCell>
 							<TableCell>Description</TableCell>
-							<TableCell>Created By</TableCell>
+							{showScopesColumn && <TableCell>Scopes</TableCell>}
 							<TableCell>Created At</TableCell>
 							<TableCell>Last Used</TableCell>
 							<TableCell align="right">Actions</TableCell>
@@ -394,7 +507,11 @@ const ApiKeysSettings: React.FC = () => {
 							<TableRow key={key.id} data-testid={`api-key-row-${key.id}`}>
 								<TableCell>{key.name}</TableCell>
 								<TableCell>{key.description}</TableCell>
-								<TableCell>{key.createdByUser}</TableCell>
+								{showScopesColumn && (
+									<TableCell>
+										{renderScopeCell(key.scopes, scopeLookup)}
+									</TableCell>
+								)}
 								<TableCell>
 									{new Date(key.createdAt).toLocaleDateString()}
 								</TableCell>

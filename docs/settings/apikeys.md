@@ -53,9 +53,10 @@ The API Keys table shows metadata for each configured key:
 | --- | --- |
 | Name | Friendly label for the key |
 | Description | Optional note about where the key is used |
-| Created By | Which user created the key |
 | Created At | When the key was created |
 | Last Used | When the key was most recently used |
+
+When RBAC is enabled, an additional **Scopes** column is shown. Each cell renders the per-key permission rows (role + scope target), or **Unrestricted** for keys that were created without explicit scopes (which inherit the owner's permissions at runtime, per ADR-004). When RBAC is disabled, the Scopes column is hidden — per-key scopes have no effect in that configuration.
 
 This makes it easier to distinguish long-running automation keys from test credentials and to spot keys that are no longer in active use.
 
