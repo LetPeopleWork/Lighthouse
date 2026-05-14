@@ -5,10 +5,12 @@ namespace Lighthouse.Backend.API.DTO
     public class AuthenticationMethodDto
     {
         public required string Key { get; init; }
-        
+
         public required string DisplayName { get; init; }
 
         public required List<AuthenticationMethodOptionDto> Options { get; init; }
+
+        public bool IsPremium { get; init; }
 
         public static AuthenticationMethodDto FromSchema(AuthenticationMethod method)
         {
@@ -16,6 +18,7 @@ namespace Lighthouse.Backend.API.DTO
             {
                 Key = method.Key,
                 DisplayName = method.DisplayName,
+                IsPremium = method.IsPremium,
                 Options = method.Options.Select(AuthenticationMethodOptionDto.FromSchema).ToList()
             };
         }

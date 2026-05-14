@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
+
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
         public required string Key { get; init; }
         public required string DisplayName { get; init; }
         public required List<AuthenticationMethodOption> Options { get; init; }
+        public bool IsPremium { get; init; }
     }
 
     /// <summary>
@@ -81,6 +84,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
                             new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = "Jira URL", IsSecret = false },
                             new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Username, DisplayName = "Username (Email)", IsSecret = false },
                             new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Scoped Access Token", IsSecret = true }
+                        ]
+                    },
+                    new AuthenticationMethod
+                    {
+                        Key = AuthenticationMethodKeys.JiraOAuth,
+                        DisplayName = "Jira Cloud (OAuth)",
+                        IsPremium = true,
+                        Options =
+                        [
+                            new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientId, DisplayName = "Client ID", IsSecret = false },
+                            new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientSecret, DisplayName = "Client Secret", IsSecret = true }
                         ]
                     }
                 ]
