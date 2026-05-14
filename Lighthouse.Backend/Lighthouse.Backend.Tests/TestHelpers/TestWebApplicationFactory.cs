@@ -12,7 +12,7 @@ using System.Data.Common;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
-    public sealed class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
+    public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {
         private readonly string databaseFileName = $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
 

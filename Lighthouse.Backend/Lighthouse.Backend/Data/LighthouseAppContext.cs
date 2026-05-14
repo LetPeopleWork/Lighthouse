@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -51,7 +52,9 @@ namespace Lighthouse.Backend.Data
         public DbSet<RbacGroupMapping> RbacGroupMappings { get; set; } = null!;
 
         public DbSet<ApiKeyPermission> ApiKeyPermissions { get; set; } = null!;
-        
+
+        public DbSet<OAuthCredential> OAuthCredentials { get; set; } = null!;
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database
@@ -203,6 +206,16 @@ namespace Lighthouse.Backend.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<OAuthCredential>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                entity.HasOne<WorkTrackingSystemConnection>()
+                      .WithMany()
+                      .HasForeignKey(c => c.WorkTrackingSystemConnectionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(c => c.WorkTrackingSystemConnectionId);
+            });
+
             modelBuilder.Entity<WriteBackMappingDefinition>(entity =>
             {
                 entity.HasOne(wbm => wbm.AdditionalFieldDefinition)
@@ -333,6 +346,21 @@ namespace Lighthouse.Backend.Data
                     option.Value = cryptoService.Encrypt(option.Value);
                     logger.LogDebug("Encrypted secret for option {OptionId}", option.Id);
                 }
+            }
+
+            foreach (var entry in ChangeTracker.Entries<OAuthCredential>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+            {
+                var credential = entry.Entity;
+                if (entry.State == EntityState.Added || entry.Property(c => c.AccessToken).IsModified)
+                {
+                    credential.AccessToken = cryptoService.Encrypt(credential.AccessToken);
+                }
+                if (entry.State == EntityState.Added || entry.Property(c => c.RefreshToken).IsModified)
+                {
+                    credential.RefreshToken = cryptoService.Encrypt(credential.RefreshToken);
+                }
+                logger.LogDebug("Encrypted OAuth tokens for credential {CredentialId}", credential.Id);
             }
         }
 

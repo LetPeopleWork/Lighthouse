@@ -498,6 +498,39 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("LicenseInformation");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.OAuth.OAuthCredential", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AccessToken")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("WorkTrackingSystemConnectionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkTrackingSystemConnectionId");
+
+                    b.ToTable("OAuthCredentials");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.OptionalFeatures.OptionalFeature", b =>
                 {
                     b.Property<string>("Key")
@@ -1103,6 +1136,15 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Forecast");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.OAuth.OAuthCredential", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", null)
+                        .WithMany()
+                        .HasForeignKey("WorkTrackingSystemConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
