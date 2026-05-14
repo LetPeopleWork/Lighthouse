@@ -751,10 +751,13 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
             builder.Services.AddSingleton<IOAuthProviderRegistry, OAuthProviderRegistry>();
+            // Replaced by OAuthService in step 01-06.
+            builder.Services.AddSingleton<IOAuthService, NotYetImplementedOAuthService>();
             builder.Services.AddSingleton<PatAuthStrategy>();
             builder.Services.AddSingleton<JiraCloudBasicAuthStrategy>();
             builder.Services.AddSingleton<LinearApiKeyAuthStrategy>();
             builder.Services.AddSingleton<NoOpAuthStrategy>();
+            builder.Services.AddSingleton<OAuthBearerAuthStrategy>();
             builder.Services.AddSingleton<IWorkTrackingAuthStrategyFactory, WorkTrackingAuthStrategyFactory>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();

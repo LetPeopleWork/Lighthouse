@@ -1,13 +1,16 @@
 using System.Net.Http.Headers;
 using System.Text;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Auth
@@ -131,6 +134,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        [TestCase("jira.oauth")]
+        [TestCase("ado.oauth")]
+        [TestCase("whatever.oauth")]
+        public void Resolve_OAuthSuffixedKey_ReturnsOAuthBearerAuthStrategy(string authenticationMethodKey)
+        {
+            var factory = CreateFactory();
+
+            var strategy = factory.Resolve(authenticationMethodKey);
+
+            Assert.That(strategy, Is.InstanceOf<OAuthBearerAuthStrategy>());
+        }
+
+        [Test]
         public void Resolve_UnknownKey_ThrowsAndNamesTheKey()
         {
             var factory = CreateFactory();
@@ -141,13 +157,74 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(ex!.Message, Does.Contain("nonexistent.method"));
         }
 
+        [Test]
+        public async Task OAuthBearerAuthStrategy_ApplyAsync_SetsBearerHeaderFromEnsureFreshTokenAsync()
+        {
+            const string freshToken = "fresh-access-token";
+            const int connectionId = 42;
+            var oauthServiceMock = new Mock<IOAuthService>();
+            oauthServiceMock
+                .Setup(s => s.EnsureFreshTokenAsync(connectionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(freshToken);
+            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object, NullLogger<OAuthBearerAuthStrategy>.Instance);
+            var connection = CreateOAuthConnection(connectionId);
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
+
+            await strategy.ApplyAsync(request, connection, CancellationToken.None);
+
+            Assert.That(request.Headers.Authorization, Is.EqualTo(new AuthenticationHeaderValue("Bearer", freshToken)));
+            oauthServiceMock.Verify(s => s.EnsureFreshTokenAsync(connectionId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public void OAuthBearerAuthStrategy_ApplyAsync_PropagatesOAuthCredentialNotValidException()
+        {
+            var oauthServiceMock = new Mock<IOAuthService>();
+            oauthServiceMock
+                .Setup(s => s.EnsureFreshTokenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OAuthCredentialNotValidException("reconnect required"));
+            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object, NullLogger<OAuthBearerAuthStrategy>.Instance);
+            var connection = CreateOAuthConnection(7);
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
+
+            Assert.ThrowsAsync<OAuthCredentialNotValidException>(
+                () => strategy.ApplyAsync(request, connection, CancellationToken.None));
+        }
+
+        [Test]
+        public void OAuthBearerAuthStrategy_ApplyAsync_PropagatesOAuthRefreshFailedException()
+        {
+            var oauthServiceMock = new Mock<IOAuthService>();
+            oauthServiceMock
+                .Setup(s => s.EnsureFreshTokenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OAuthRefreshFailedException("refresh failed"));
+            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object, NullLogger<OAuthBearerAuthStrategy>.Instance);
+            var connection = CreateOAuthConnection(7);
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
+
+            Assert.ThrowsAsync<OAuthRefreshFailedException>(
+                () => strategy.ApplyAsync(request, connection, CancellationToken.None));
+        }
+
         private IWorkTrackingAuthStrategyFactory CreateFactory()
         {
             return new WorkTrackingAuthStrategyFactory(
                 new PatAuthStrategy(cryptoServiceMock.Object),
                 new JiraCloudBasicAuthStrategy(cryptoServiceMock.Object),
                 new LinearApiKeyAuthStrategy(cryptoServiceMock.Object),
-                new NoOpAuthStrategy());
+                new NoOpAuthStrategy(),
+                new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>(), NullLogger<OAuthBearerAuthStrategy>.Instance));
+        }
+
+        private static WorkTrackingSystemConnection CreateOAuthConnection(int id)
+        {
+            return new WorkTrackingSystemConnection
+            {
+                Id = id,
+                Name = "OAuth Connection",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                AuthenticationMethodKey = "jira.oauth",
+            };
         }
 
         private static WorkTrackingSystemConnection CreateAdoConnection()

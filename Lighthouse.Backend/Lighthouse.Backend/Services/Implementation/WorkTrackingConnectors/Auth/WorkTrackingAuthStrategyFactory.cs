@@ -6,9 +6,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth
         PatAuthStrategy patAuthStrategy,
         JiraCloudBasicAuthStrategy jiraCloudBasicAuthStrategy,
         LinearApiKeyAuthStrategy linearApiKeyAuthStrategy,
-        NoOpAuthStrategy noOpAuthStrategy)
+        NoOpAuthStrategy noOpAuthStrategy,
+        OAuthBearerAuthStrategy oauthBearerAuthStrategy)
         : IWorkTrackingAuthStrategyFactory
     {
+        private const string OAuthAuthenticationMethodKeySuffix = ".oauth";
+
         public IWorkTrackingAuthStrategy Resolve(string authenticationMethodKey)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(authenticationMethodKey);
@@ -21,6 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth
                 AuthenticationMethodKeys.JiraScopedToken => jiraCloudBasicAuthStrategy,
                 AuthenticationMethodKeys.LinearApiKey => linearApiKeyAuthStrategy,
                 AuthenticationMethodKeys.None => noOpAuthStrategy,
+                string s when s.EndsWith(OAuthAuthenticationMethodKeySuffix, StringComparison.Ordinal) => oauthBearerAuthStrategy,
                 _ => throw new WorkTrackingAuthStrategyNotFoundException(
                     $"No IWorkTrackingAuthStrategy is registered for authentication method key '{authenticationMethodKey}'."),
             };
