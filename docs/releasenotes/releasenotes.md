@@ -9,6 +9,8 @@ nav_order: 95
 ## Role-Based Access Control
 This release introduces **Role-Based Access Control (RBAC)** — a Premium feature for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [OIDC authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html) and is configured under **Settings → Access**.
 
+![Role-Based Access Control settings page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/rbac.png)
+
 ### What the four roles can do
 
 - **System Admin** — full control. Manages users, group mappings, and connections; creates, edits, clones, and deletes teams and portfolios.
@@ -25,15 +27,20 @@ In v1, **only System Admin creates, clones, or deletes** teams and portfolios. T
 - **Emergency Admins are a recovery path.** Users listed in `Authentication.EmergencySystemAdminSubjects` retain System Admin rights even if their database role is removed. Their UI row shows an **Emergency Admin** badge and the Revoke button is hidden.
 - **SSO group mappings are first-class.** Map an IdP group to a role at a specific scope; users in that group inherit the role behaviourally identically to a direct user grant.
 
+![SSO group-to-role mapping controls](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/rbac_groupmapping.png)
+
 The full role matrix, bootstrap walkthrough, group-mapping guide, and troubleshooting steps are documented under [System Settings → Role-Based Access Control](https://docs.lighthouse.letpeople.work/settings/rbac.html). The [Authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html) page now links across to it.
 
-## API Keys for All Authenticated Users
-[API Keys](https://docs.lighthouse.letpeople.work/settings/apikeys.html) — introduced in v26.5.3.5 for CLI and MCP scenarios — are no longer limited to System Admin. Any authenticated user can now create and manage their own keys from **Settings → API Keys**, with scopes restricted to what they're allowed to do.
+## API Keys with Scopes
+[API Keys](https://docs.lighthouse.letpeople.work/settings/apikeys.html) — introduced in v26.5.3.5 for CLI and MCP scenarios — can now be scoped.
+
+![API Keys settings page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/apikeys.png)
 
 The create dialog now includes a guided **scope-row builder** so you can compose Team and Portfolio scopes without hand-crafting strings, and API keys inherit the owner's SSO group claims at issuance time so RBAC behaves identically whether you call Lighthouse from the browser or with a key.
 
+![Create API Key dialog with scope-row builder](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/apikeys_create.png)
+
 ## Bugfixes and Improvements
-- **Bootstrap-mode license upload** — on a fresh install with auth enabled, the **Premium License Required** screen now accepts the license file from any authenticated user. Previously this endpoint was locked to System Admin only, which made the system unbootstrappable without configuring an Emergency Admin in `appsettings.json` first. Once a real System Admin is bootstrapped, the license endpoint locks down to System Admin and Emergency Admin as usual.
 - **Connection-list visibility for scoped admins** — Team Admin and Portfolio Admin can now read the list of work-tracking-system connections, which is needed for the Edit-Settings tab on their assigned team or portfolio to load. Secret option values remain redacted at the DTO layer; only System Admin can create, edit, or delete connections.
 - **Manual Delivery date updates** — editing the Delivery date on a Manual Delivery sometimes appeared to do nothing: the forecast updated but the displayed date stayed put. Root cause was a timezone shift on westward zones; delivery dates now render in UTC and reflect changes immediately.
 - Updated various third-party libraries.
