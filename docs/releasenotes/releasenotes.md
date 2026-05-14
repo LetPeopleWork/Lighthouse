@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.5.14.2
 
 ## Role-Based Access Control
 This release introduces **Role-Based Access Control (RBAC)** — a Premium feature for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [OIDC authentication](https://docs.lighthouse.letpeople.work/Installation/authentication.html) and is configured under **Settings → Access**.
@@ -50,7 +50,7 @@ The create dialog now includes a guided **scope-row builder** so you can compose
 Special thanks to everyone who contributed feedback for this release:
 - [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.3.5...HEAD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.3.5...v26.5.14.2)
 
 
 # Lighthouse v26.5.3.5
