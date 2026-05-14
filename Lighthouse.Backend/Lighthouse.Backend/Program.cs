@@ -12,6 +12,7 @@ using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.TeamData;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
@@ -93,6 +94,9 @@ namespace Lighthouse.Backend
                 ConfigureDatabase(builder);
 
                 var app = builder.Build();
+
+                EnsureOAuthProvidersRegistered(app);
+
                 ConfigureApp(app);
 
                 if (isStandalone)
@@ -126,6 +130,12 @@ namespace Lighthouse.Backend
                 // Vital for sidecar debugging: ensure the error hits StdErr
                 await Console.Error.WriteLineAsync($"FATAL: {ex.Message}");
                 Log.Fatal(ex, "Application terminated unexpectedly");
+
+                if (builder.Environment.IsEnvironment("Testing"))
+                {
+                    throw;
+                }
+
                 Environment.Exit(1); // Force non-zero exit code on failure
             }
             finally
@@ -312,6 +322,41 @@ namespace Lighthouse.Backend
             {
                 [OAuthStateSecretConfigKey] = generated,
             });
+        }
+
+        private static void EnsureOAuthProvidersRegistered(WebApplication app)
+        {
+            var registry = app.Services.GetRequiredService<IOAuthProviderRegistry>();
+            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("OAuthProvidersStartupCheck");
+
+            var missingKeys = AuthenticationMethodSchema.GetOAuthProviderKeys()
+                .Where(key => !TryResolveProvider(registry, key))
+                .ToList();
+
+            if (missingKeys.Count == 0)
+            {
+                return;
+            }
+
+            var message =
+                "OAuth authentication methods declared in AuthenticationMethodSchema have no matching " +
+                $"IOAuthProvider registered: [{string.Join(", ", missingKeys)}]. " +
+                "Every '*.oauth' key in the schema must have a corresponding IOAuthProvider registration in DI.";
+            logger.LogCritical("{Message}", message);
+            throw new InvalidOperationException(message);
+        }
+
+        private static bool TryResolveProvider(IOAuthProviderRegistry registry, string key)
+        {
+            try
+            {
+                _ = registry.GetByKey(key);
+                return true;
+            }
+            catch (OAuthProviderNotFoundException)
+            {
+                return false;
+            }
         }
 
         private static void EnsureCorsFailsClosed(WebApplicationBuilder builder, bool isStandalone)
@@ -704,6 +749,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IServiceConfig, ServiceConfig>();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
+            builder.Services.AddSingleton<IOAuthProviderRegistry, OAuthProviderRegistry>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IPlatformService, PlatformService>();

@@ -27,6 +27,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
     /// </summary>
     public static class AuthenticationMethodSchema
     {
+        private const string OAuthKeySuffix = ".oauth";
+
+        private static IReadOnlyList<string> extraOAuthKeysForTesting = Array.Empty<string>();
+
         private static readonly Dictionary<WorkTrackingSystems, List<AuthenticationMethod>> MethodsBySystem = new()
         {
             {
@@ -124,6 +128,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
         {
             var method = GetMethodByKey(system, key);
             return method?.DisplayName ?? key;
+        }
+
+        public static IEnumerable<string> GetOAuthProviderKeys()
+        {
+            var schemaKeys = MethodsBySystem.Values
+                .SelectMany(methods => methods)
+                .Select(method => method.Key)
+                .Where(key => key.EndsWith(OAuthKeySuffix, StringComparison.Ordinal));
+
+            return schemaKeys.Concat(extraOAuthKeysForTesting).Distinct(StringComparer.Ordinal);
+        }
+
+        internal static void SetExtraOAuthKeysForTesting(IReadOnlyList<string> extras)
+        {
+            ArgumentNullException.ThrowIfNull(extras);
+            extraOAuthKeysForTesting = extras;
         }
     }
 }
