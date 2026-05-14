@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
@@ -29,6 +30,8 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<ILicenseService> licenseServiceMock;
 
+        private Mock<IRepository<OAuthCredential>> oAuthCredentialRepositoryMock;
+
         [SetUp]
         public void Setup()
         {
@@ -37,6 +40,8 @@ namespace Lighthouse.Backend.Tests.API
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             cryptoServiceMock = new Mock<ICryptoService>();
             licenseServiceMock = new Mock<ILicenseService>();
+            oAuthCredentialRepositoryMock = new Mock<IRepository<OAuthCredential>>();
+            oAuthCredentialRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<OAuthCredential>());
 
             cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => input);
             cryptoServiceMock.Setup(x => x.Decrypt(It.IsAny<string>())).Returns((string input) => input);
@@ -422,7 +427,77 @@ namespace Lighthouse.Backend.Tests.API
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
             return new WorkTrackingSystemConnectionsController(
-                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object);
+                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object, oAuthCredentialRepositoryMock.Object);
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnections_OAuthCredentialStatusRefreshFailed_SetsRequiresReconnectTrue()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 17 };
+            repositoryMock.Setup(x => x.GetAll()).Returns(new[] { connection });
+            oAuthCredentialRepositoryMock
+                .Setup(x => x.GetAll())
+                .Returns(new[]
+                {
+                    new OAuthCredential
+                    {
+                        WorkTrackingSystemConnectionId = 17,
+                        Status = OAuthCredentialStatus.RefreshFailed,
+                    },
+                });
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemConnections();
+
+            var okResult = result.Result as OkObjectResult;
+            var connections = okResult!.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
+            Assert.That(connections!.Single().RequiresReconnect, Is.True);
+        }
+
+        [Test]
+        [TestCase(OAuthCredentialStatus.Valid)]
+        [TestCase(OAuthCredentialStatus.Disconnected)]
+        public void GetWorkTrackingSystemConnections_OAuthCredentialNotRefreshFailed_SetsRequiresReconnectFalse(OAuthCredentialStatus status)
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 23 };
+            repositoryMock.Setup(x => x.GetAll()).Returns(new[] { connection });
+            oAuthCredentialRepositoryMock
+                .Setup(x => x.GetAll())
+                .Returns(new[]
+                {
+                    new OAuthCredential
+                    {
+                        WorkTrackingSystemConnectionId = 23,
+                        Status = status,
+                    },
+                });
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemConnections();
+
+            var okResult = result.Result as OkObjectResult;
+            var connections = okResult!.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
+            Assert.That(connections!.Single().RequiresReconnect, Is.False);
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnections_NoOAuthCredentialForConnection_SetsRequiresReconnectFalse()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 41 };
+            repositoryMock.Setup(x => x.GetAll()).Returns(new[] { connection });
+            oAuthCredentialRepositoryMock
+                .Setup(x => x.GetAll())
+                .Returns(Array.Empty<OAuthCredential>());
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemConnections();
+
+            var okResult = result.Result as OkObjectResult;
+            var connections = okResult!.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
+            Assert.That(connections!.Single().RequiresReconnect, Is.False);
         }
 
         [Test]

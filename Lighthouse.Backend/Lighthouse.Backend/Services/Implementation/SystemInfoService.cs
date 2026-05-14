@@ -15,11 +15,13 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private readonly IConfiguration configuration;
         private readonly ILogConfiguration logConfiguration;
+        private readonly IServiceConfig serviceConfig;
 
-        public SystemInfoService(IConfiguration configuration, ILogConfiguration logConfiguration)
+        public SystemInfoService(IConfiguration configuration, ILogConfiguration logConfiguration, IServiceConfig serviceConfig)
         {
             this.configuration = configuration;
             this.logConfiguration = logConfiguration;
+            this.serviceConfig = serviceConfig;
         }
 
         public SystemInfo GetSystemInfo()
@@ -40,7 +42,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 LogPath: logConfiguration.LogPath,
                 IsAuthenticationEnabled: authentication.Enabled,
                 IsAuthorizationEnabled: authorization.Enabled,
-                EmergencyAdminSubjects: authorization.EmergencySystemAdminSubjects);
+                EmergencyAdminSubjects: authorization.EmergencySystemAdminSubjects,
+                BaseUrl: serviceConfig.BaseUrl);
         }
 
         private static string? GetSafeDatabaseConnection(string provider, string? connectionString)

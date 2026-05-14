@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -24,15 +25,17 @@ namespace Lighthouse.Backend.API
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
         private readonly ICryptoService cryptoService;
         private readonly ILicenseService licenseService;
+        private readonly IRepository<OAuthCredential> oAuthCredentialRepository;
 
         public WorkTrackingSystemConnectionsController(
-            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, ILicenseService licenseService)
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, ILicenseService licenseService, IRepository<OAuthCredential> oAuthCredentialRepository)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
             this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.cryptoService = cryptoService;
             this.licenseService = licenseService;
+            this.oAuthCredentialRepository = oAuthCredentialRepository;
         }
 
         [HttpGet("supported")]
@@ -53,8 +56,15 @@ namespace Lighthouse.Backend.API
         public ActionResult<IEnumerable<WorkTrackingSystemConnectionDto>> GetWorkTrackingSystemConnections()
         {
             var existingConnections = repository.GetAll();
+            var credentialsByConnectionId = oAuthCredentialRepository
+                .GetAll()
+                .ToDictionary(c => c.WorkTrackingSystemConnectionId);
 
-            var connectionDtos = existingConnections.Select(c => new WorkTrackingSystemConnectionDto(c));
+            var connectionDtos = existingConnections.Select(c =>
+            {
+                credentialsByConnectionId.TryGetValue(c.Id, out var credential);
+                return new WorkTrackingSystemConnectionDto(c, credential);
+            });
             return Ok(connectionDtos);
         }
 

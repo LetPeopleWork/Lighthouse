@@ -2,6 +2,7 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -20,6 +21,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
         private Mock<ICryptoService> cryptoServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IRepository<OAuthCredential>> oAuthCredentialRepositoryMock;
 
         [SetUp]
         public void Setup()
@@ -29,6 +31,8 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             cryptoServiceMock = new Mock<ICryptoService>();
             licenseServiceMock = new Mock<ILicenseService>();
+            oAuthCredentialRepositoryMock = new Mock<IRepository<OAuthCredential>>();
+            oAuthCredentialRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<OAuthCredential>());
 
             cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => input);
         }
@@ -114,7 +118,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
             return new WorkTrackingSystemConnectionsController(
-                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object);
+                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object, oAuthCredentialRepositoryMock.Object);
         }
     }
 }

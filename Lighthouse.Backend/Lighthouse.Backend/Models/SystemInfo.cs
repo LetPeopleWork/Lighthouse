@@ -12,5 +12,6 @@ namespace Lighthouse.Backend.Models
         string? LogPath,
         [property: JsonPropertyName("authenticationEnabled")] bool IsAuthenticationEnabled,
         [property: JsonPropertyName("authorizationEnabled")] bool IsAuthorizationEnabled,
-        IReadOnlyList<string> EmergencyAdminSubjects);
+        IReadOnlyList<string> EmergencyAdminSubjects,
+        string BaseUrl);
 }

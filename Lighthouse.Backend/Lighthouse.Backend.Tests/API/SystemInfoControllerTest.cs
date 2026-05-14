@@ -43,7 +43,8 @@ namespace Lighthouse.Backend.Tests.API
                 LogPath: "/var/log/lighthouse",
                 IsAuthenticationEnabled: false,
                 IsAuthorizationEnabled: false,
-                EmergencyAdminSubjects: Array.Empty<string>());
+                EmergencyAdminSubjects: Array.Empty<string>(),
+                BaseUrl: string.Empty);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -76,7 +77,8 @@ namespace Lighthouse.Backend.Tests.API
                 LogPath: null,
                 IsAuthenticationEnabled: false,
                 IsAuthorizationEnabled: false,
-                EmergencyAdminSubjects: Array.Empty<string>());
+                EmergencyAdminSubjects: Array.Empty<string>(),
+                BaseUrl: string.Empty);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -95,6 +97,33 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetSystemInfo_PropagatesBaseUrlFromService()
+        {
+            var expectedSystemInfo = new SystemInfo(
+                Os: "Linux 5.15.0",
+                Runtime: ".NET 10.0.0",
+                Architecture: "X64",
+                ProcessId: 12345,
+                DatabaseProvider: "sqlite",
+                DatabaseConnection: "/data/lighthouse.db",
+                LogPath: "/var/log/lighthouse",
+                IsAuthenticationEnabled: false,
+                IsAuthorizationEnabled: false,
+                EmergencyAdminSubjects: Array.Empty<string>(),
+                BaseUrl: "https://lighthouse.example.com");
+
+            systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetSystemInfo();
+
+            var okResult = response.Result as OkObjectResult;
+            var actual = okResult!.Value as SystemInfo;
+            Assert.That(actual!.BaseUrl, Is.EqualTo("https://lighthouse.example.com"));
+        }
+
+        [Test]
         public void GetSystemInfo_PropagatesAuthPostureFieldsFromService()
         {
             var expectedSystemInfo = new SystemInfo(
@@ -107,7 +136,8 @@ namespace Lighthouse.Backend.Tests.API
                 LogPath: "/var/log/lighthouse",
                 IsAuthenticationEnabled: true,
                 IsAuthorizationEnabled: true,
-                EmergencyAdminSubjects: ["alice@example.com", "bob@example.com"]);
+                EmergencyAdminSubjects: ["alice@example.com", "bob@example.com"],
+                BaseUrl: string.Empty);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 

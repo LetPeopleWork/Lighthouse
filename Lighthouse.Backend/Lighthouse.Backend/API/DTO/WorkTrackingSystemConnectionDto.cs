@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using System.Text.Json.Serialization;
 
@@ -12,6 +13,13 @@ namespace Lighthouse.Backend.API.DTO
 
 
         public WorkTrackingSystemConnectionDto(WorkTrackingSystemConnection workTrackingSystemConnection)
+            : this(workTrackingSystemConnection, oAuthCredential: null)
+        {
+        }
+
+        public WorkTrackingSystemConnectionDto(
+            WorkTrackingSystemConnection workTrackingSystemConnection,
+            OAuthCredential? oAuthCredential)
         {
             Id = workTrackingSystemConnection.Id;
             Name = workTrackingSystemConnection.Name;
@@ -30,8 +38,7 @@ namespace Lighthouse.Backend.API.DTO
             WriteBackMappingDefinitions.AddRange(
                 workTrackingSystemConnection.WriteBackMappingDefinitions.Select(m => new WriteBackMappingDefinitionDto(m)));
 
-            // Populated from the joined OAuthCredential.Status == RefreshFailed in step 02-04; placeholder until then.
-            RequiresReconnect = false;
+            RequiresReconnect = oAuthCredential?.Status == OAuthCredentialStatus.RefreshFailed;
         }
 
         [JsonRequired]

@@ -9,12 +9,15 @@ namespace Lighthouse.Backend.Tests.Services
     {
         private Mock<IConfiguration> configurationMock;
         private Mock<ILogConfiguration> logConfigurationMock;
+        private Mock<IServiceConfig> serviceConfigMock;
 
         [SetUp]
         public void Setup()
         {
             configurationMock = new Mock<IConfiguration>();
             logConfigurationMock = new Mock<ILogConfiguration>();
+            serviceConfigMock = new Mock<IServiceConfig>();
+            serviceConfigMock.Setup(x => x.BaseUrl).Returns(string.Empty);
 
             // Default: GetSection returns an empty section so GetValue<T> falls back to defaultValue
             var emptySection = new Mock<IConfigurationSection>();
@@ -208,7 +211,19 @@ namespace Lighthouse.Backend.Tests.Services
 
         private SystemInfoService CreateSubject()
         {
-            return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object);
+            return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object, serviceConfigMock.Object);
+        }
+
+        [Test]
+        public void GetSystemInfo_ReturnsBaseUrlFromServiceConfig()
+        {
+            serviceConfigMock.Setup(x => x.BaseUrl).Returns("https://lighthouse.example.com");
+
+            var subject = CreateSubject();
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.BaseUrl, Is.EqualTo("https://lighthouse.example.com"));
         }
 
         [TestCase("true", true)]
@@ -307,7 +322,7 @@ namespace Lighthouse.Backend.Tests.Services
 
         private SystemInfoService CreateSubjectWithConfiguration(IConfiguration configuration)
         {
-            return new SystemInfoService(configuration, logConfigurationMock.Object);
+            return new SystemInfoService(configuration, logConfigurationMock.Object, serviceConfigMock.Object);
         }
     }
 }
