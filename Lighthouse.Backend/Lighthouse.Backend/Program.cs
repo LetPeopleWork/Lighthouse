@@ -2,6 +2,7 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
@@ -751,8 +752,8 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
             builder.Services.AddSingleton<IOAuthProviderRegistry, OAuthProviderRegistry>();
-            // Replaced by OAuthService in step 01-06.
-            builder.Services.AddSingleton<IOAuthService, NotYetImplementedOAuthService>();
+            builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
+            builder.Services.AddScoped<IOAuthService, OAuthService>();
             builder.Services.AddSingleton<PatAuthStrategy>();
             builder.Services.AddSingleton<JiraCloudBasicAuthStrategy>();
             builder.Services.AddSingleton<LinearApiKeyAuthStrategy>();

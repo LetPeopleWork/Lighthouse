@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Interfaces.OAuth;
 
 namespace Lighthouse.Backend.Services.Implementation.OAuth
 {
+    [Obsolete("Replaced by OAuthService in step 01-06; retained for historical reference; safe to delete in a future cleanup PR.")]
     public class NotYetImplementedOAuthService : IOAuthService
     {
         private const string NotImplementedMessage = "OAuthService is wired in step 01-06; calls to IOAuthService are not supported in the current build.";
