@@ -73,12 +73,14 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
             return PostTokenRequestAsync(formParameters, cancellationToken);
         }
 
-        public Task<OAuthTokens> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
+        public Task<OAuthTokens> RefreshTokenAsync(OAuthRefreshContext context, CancellationToken cancellationToken)
         {
             var formParameters = new Dictionary<string, string>
             {
                 ["grant_type"] = "refresh_token",
-                ["refresh_token"] = refreshToken,
+                ["refresh_token"] = context.RefreshToken,
+                ["client_id"] = context.ClientId,
+                ["client_secret"] = context.ClientSecret,
             };
 
             return PostTokenRequestAsync(formParameters, cancellationToken);

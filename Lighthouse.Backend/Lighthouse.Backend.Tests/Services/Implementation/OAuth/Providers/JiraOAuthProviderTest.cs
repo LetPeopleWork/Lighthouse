@@ -162,8 +162,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             });
 
             var provider = CreateProvider(handler);
+            var refreshContext = new OAuthRefreshContext("old-refresh-token", "abc123", "secret");
 
-            var tokens = await provider.RefreshTokenAsync("old-refresh-token", CancellationToken.None);
+            var tokens = await provider.RefreshTokenAsync(refreshContext, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -177,6 +178,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             {
                 Assert.That(formParameters["grant_type"].ToString(), Is.EqualTo("refresh_token"));
                 Assert.That(formParameters["refresh_token"].ToString(), Is.EqualTo("old-refresh-token"));
+                Assert.That(formParameters["client_id"].ToString(), Is.EqualTo("abc123"));
+                Assert.That(formParameters["client_secret"].ToString(), Is.EqualTo("secret"));
             }
 
             using (Assert.EnterMultipleScope())
@@ -197,9 +200,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             }));
 
             var provider = CreateProvider(handler);
+            var refreshContext = new OAuthRefreshContext("revoked-refresh-token", "abc123", "secret");
 
             var ex = Assert.ThrowsAsync<OAuthProviderResponseException>(
-                () => provider.RefreshTokenAsync("revoked-refresh-token", CancellationToken.None));
+                () => provider.RefreshTokenAsync(refreshContext, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
             {

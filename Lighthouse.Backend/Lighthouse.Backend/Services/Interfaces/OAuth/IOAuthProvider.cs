@@ -12,6 +12,6 @@ namespace Lighthouse.Backend.Services.Interfaces.OAuth
 
         Task<OAuthTokens> ExchangeCodeAsync(string code, OAuthFlowContext context, CancellationToken cancellationToken);
 
-        Task<OAuthTokens> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken);
+        Task<OAuthTokens> RefreshTokenAsync(OAuthRefreshContext context, CancellationToken cancellationToken);
     }
 }
