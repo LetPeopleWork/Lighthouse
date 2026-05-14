@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(IJiraWorkTrackingConnector)))
-            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService()));
+            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), Mock.Of<IWorkTrackingAuthStrategyFactory>()));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(CsvWorkTrackingConnector)))

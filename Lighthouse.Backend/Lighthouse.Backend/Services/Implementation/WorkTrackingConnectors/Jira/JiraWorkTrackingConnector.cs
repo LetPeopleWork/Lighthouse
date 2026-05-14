@@ -8,7 +8,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Extensions;
@@ -18,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     public class JiraWorkTrackingConnector(
         IIssueFactory issueFactory,
         ILogger<JiraWorkTrackingConnector> logger,
-        ICryptoService cryptoService)
+        IWorkTrackingAuthStrategyFactory authStrategyFactory)
         : IJiraWorkTrackingConnector
     {
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
@@ -1181,14 +1180,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<HttpClient> GetJiraRestClientAsync(WorkTrackingSystemConnection connection)
         {
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
-            var apiToken = cryptoService.Decrypt(encryptedApiToken);
             var requestTimeoutInSeconds =
                 connection.GetWorkTrackingSystemConnectionOptionByKey<int>(JiraWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
 
             var (baseUrl, cacheKey) = await ResolveBaseUrlAndCacheKeyAsync(connection, encryptedApiToken);
             var client = GetOrCreateClient(cacheKey, baseUrl, requestTimeoutInSeconds);
 
-            SetAuthorizationHeader(client, connection, apiToken);
+            await SetAuthorizationHeader(client, connection);
 
             return client;
         }
@@ -1246,21 +1244,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             });
         }
 
-        private static void SetAuthorizationHeader(
-            HttpClient client, WorkTrackingSystemConnection connection, string apiToken)
+        private async Task SetAuthorizationHeader(HttpClient client, WorkTrackingSystemConnection connection)
         {
-            if (connection.AuthenticationMethodKey is
-                AuthenticationMethodKeys.JiraCloud or
-                AuthenticationMethodKeys.JiraScopedToken)
-            {
-                var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
-                var encoded = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{apiToken}"));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encoded);
-            }
-            else
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
-            }
+            using var probeRequest = new HttpRequestMessage();
+            var strategy = authStrategyFactory.Resolve(connection.AuthenticationMethodKey);
+            await strategy.ApplyAsync(probeRequest, connection, CancellationToken.None);
+
+            client.DefaultRequestHeaders.Authorization = probeRequest.Headers.Authorization;
         }
 
         private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)

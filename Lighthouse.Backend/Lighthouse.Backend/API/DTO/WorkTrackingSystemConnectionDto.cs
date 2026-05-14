@@ -29,6 +29,9 @@ namespace Lighthouse.Backend.API.DTO
                 workTrackingSystemConnection.AdditionalFieldDefinitions.Select(f => new AdditionalFieldDefinitionDto(f)));
             WriteBackMappingDefinitions.AddRange(
                 workTrackingSystemConnection.WriteBackMappingDefinitions.Select(m => new WriteBackMappingDefinitionDto(m)));
+
+            // Populated from the joined OAuthCredential.Status == RefreshFailed in step 02-04; placeholder until then.
+            RequiresReconnect = false;
         }
 
         [JsonRequired]
@@ -51,5 +54,7 @@ namespace Lighthouse.Backend.API.DTO
         public List<AdditionalFieldDefinitionDto> AdditionalFieldDefinitions { get; set; } = [];
 
         public List<WriteBackMappingDefinitionDto> WriteBackMappingDefinitions { get; set; } = [];
+
+        public bool RequiresReconnect { get; set; }
     }
 }

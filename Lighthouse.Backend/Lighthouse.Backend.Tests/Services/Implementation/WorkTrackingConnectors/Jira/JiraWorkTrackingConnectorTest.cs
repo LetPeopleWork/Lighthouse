@@ -832,8 +832,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static JiraWorkTrackingConnector CreateSubject()
         {
+            var authStrategyFactory = TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService());
             return new JiraWorkTrackingConnector(
-                new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService());
+                new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), authStrategyFactory);
         }
     }
 }

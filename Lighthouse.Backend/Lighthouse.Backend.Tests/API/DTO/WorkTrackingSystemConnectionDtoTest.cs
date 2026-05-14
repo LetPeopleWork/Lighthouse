@@ -96,5 +96,18 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(subject.AdditionalFieldDefinitions[0].Id, Is.EqualTo(123));
         }
+
+        [Test]
+        public void Create_RequiresReconnect_DefaultsToFalse()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection
+            {
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+
+            var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
+
+            Assert.That(subject.RequiresReconnect, Is.False);
+        }
     }
 }
