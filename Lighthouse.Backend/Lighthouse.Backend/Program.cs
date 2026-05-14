@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Licensing;
@@ -18,6 +19,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -63,6 +65,8 @@ namespace Lighthouse.Backend
             var isStandalone = Environment.GetEnvironmentVariable("Standalone") == "true";
 
             EnsureCorsFailsClosed(builder, isStandalone);
+
+            EnsureOAuthStateSecret(builder);
 
             try
             {
@@ -288,6 +292,26 @@ namespace Lighthouse.Backend
                 .ToArray();
 
             return authConfig with { AllowedOrigins = origins };
+        }
+
+        private const string OAuthStateSecretConfigKey = "Lighthouse:OAuth:StateSecret";
+        private const int OAuthStateSecretByteLength = 32;
+
+        private static void EnsureOAuthStateSecret(WebApplicationBuilder builder)
+        {
+            var existing = builder.Configuration[OAuthStateSecretConfigKey];
+            if (!string.IsNullOrWhiteSpace(existing))
+            {
+                return;
+            }
+
+            var generated = Convert.ToBase64String(
+                System.Security.Cryptography.RandomNumberGenerator.GetBytes(OAuthStateSecretByteLength));
+
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [OAuthStateSecretConfigKey] = generated,
+            });
         }
 
         private static void EnsureCorsFailsClosed(WebApplicationBuilder builder, bool isStandalone)
@@ -677,6 +701,9 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
 
             builder.Services.AddSingleton<ICryptoService, CryptoService>();
+            builder.Services.AddSingleton<IServiceConfig, ServiceConfig>();
+            builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
