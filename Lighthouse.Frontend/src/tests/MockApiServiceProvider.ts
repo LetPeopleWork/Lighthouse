@@ -10,6 +10,7 @@ import type {
 	IProjectMetricsService,
 	ITeamMetricsService,
 } from "../services/Api/MetricsService";
+import type { IOAuthService } from "../services/Api/OAuthService";
 import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureService";
 import type { IPortfolioService } from "../services/Api/PortfolioService";
 import type { IRbacService } from "../services/Api/RbacService";
@@ -59,7 +60,15 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["blackoutPeriodService"],
 		databaseManagementService:
 			null as unknown as IApiServiceContext["databaseManagementService"],
+		oauthService: null as unknown as IApiServiceContext["oauthService"],
 		...overrides,
+	};
+};
+
+export const createMockOAuthService = (): IOAuthService => {
+	return {
+		initiateConnect: vi.fn(),
+		disconnect: vi.fn(),
 	};
 };
 

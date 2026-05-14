@@ -24,6 +24,7 @@ import type {
 	IProjectMetricsService,
 	ITeamMetricsService,
 } from "./MetricsService";
+import { type IOAuthService, OAuthService } from "./OAuthService";
 import {
 	type IOptionalFeatureService,
 	OptionalFeatureService,
@@ -78,6 +79,7 @@ export interface IApiServiceContext {
 	systemInfoService: ISystemInfoService;
 	blackoutPeriodService: IBlackoutPeriodService;
 	databaseManagementService: IDatabaseManagementService;
+	oauthService: IOAuthService;
 }
 
 const defaultServices: IApiServiceContext = {
@@ -105,6 +107,7 @@ const defaultServices: IApiServiceContext = {
 	systemInfoService: new SystemInfoService(),
 	blackoutPeriodService: new BlackoutPeriodService(),
 	databaseManagementService: new DatabaseManagementService(),
+	oauthService: new OAuthService(),
 };
 
 export function getApiServices(): IApiServiceContext {
