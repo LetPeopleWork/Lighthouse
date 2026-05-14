@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API
                 Id = 1,
                 Name = "my-key",
                 Description = "desc",
-                CreatedByUser = "alice",
                 CreatedAt = DateTime.UtcNow,
                 PlainTextKey = "lh_plaintext_key"
             };

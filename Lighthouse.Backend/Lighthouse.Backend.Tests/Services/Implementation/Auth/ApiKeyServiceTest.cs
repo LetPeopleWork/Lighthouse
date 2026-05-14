@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             apiKeyPermissionRepositoryMock = new Mock<IRepository<ApiKeyPermission>>();
             loggerMock = new Mock<ILogger<ApiKeyService>>();
             userProfileRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+            apiKeyPermissionRepositoryMock.Setup(r => r.GetAll()).Returns([]);
             subject = new ApiKeyService(
                 repositoryMock.Object,
                 userProfileRepositoryMock.Object,
@@ -114,7 +115,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             {
                 Assert.That(result.Name, Is.EqualTo("my-key"));
                 Assert.That(result.Description, Is.EqualTo("A description"));
-                Assert.That(result.CreatedByUser, Is.EqualTo("alice"));
             }
         }
 
@@ -165,10 +165,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 Assert.That(result.Id, Is.EqualTo(42));
                 Assert.That(result.Name, Is.EqualTo("k"));
                 Assert.That(result.Description, Is.EqualTo("desc"));
-                Assert.That(result.CreatedByUser, Is.EqualTo("alice"));
                 Assert.That(result.CreatedAt, Is.EqualTo(createdAt));
                 Assert.That(result.LastUsedAt, Is.EqualTo(lastUsed));
             }
+        }
+
+        [Test]
+        public void GetApiKeysByOwnerSubject_PopulatesScopesFromPermissionRows()
+        {
+            var keys = new List<ApiKey>
+            {
+                new ApiKey { Id = 1, Name = "k1", CreatedByUser = "alice", OwnerSubject = "alice-subject", CreatedAt = DateTime.UtcNow },
+                new ApiKey { Id = 2, Name = "k2", CreatedByUser = "alice", OwnerSubject = "alice-subject", CreatedAt = DateTime.UtcNow },
+            };
+            var permissions = new List<ApiKeyPermission>
+            {
+                new ApiKeyPermission { Id = 10, ApiKeyId = 1, Role = UserRole.PortfolioAdmin, ScopeType = PermissionScopeType.Portfolio, ScopeId = 7 },
+                new ApiKeyPermission { Id = 11, ApiKeyId = 1, Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 42 },
+                new ApiKeyPermission { Id = 12, ApiKeyId = 2, Role = UserRole.Viewer, ScopeType = PermissionScopeType.Portfolio, ScopeId = 9 },
+            };
+            repositoryMock.Setup(r => r.GetAll()).Returns(keys);
+            apiKeyPermissionRepositoryMock.Setup(r => r.GetAll()).Returns(permissions);
+
+            var result = subject.GetApiKeysByOwnerSubject("alice-subject").ToList();
+
+            var key1Info = result.Single(k => k.Id == 1);
+            var key2Info = result.Single(k => k.Id == 2);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Has.Count.EqualTo(2));
+                Assert.That(key1Info.Scopes, Has.Count.EqualTo(2));
+                Assert.That(key1Info.Scopes.Any(s =>
+                    s.Role == UserRole.PortfolioAdmin
+                    && s.ScopeType == PermissionScopeType.Portfolio
+                    && s.ScopeId == 7), Is.True);
+                Assert.That(key1Info.Scopes.Any(s =>
+                    s.Role == UserRole.TeamAdmin
+                    && s.ScopeType == PermissionScopeType.Team
+                    && s.ScopeId == 42), Is.True);
+                Assert.That(key2Info.Scopes, Has.Count.EqualTo(1));
+                Assert.That(key2Info.Scopes.Single().Role, Is.EqualTo(UserRole.Viewer));
+                Assert.That(key2Info.Scopes.Single().ScopeType, Is.EqualTo(PermissionScopeType.Portfolio));
+                Assert.That(key2Info.Scopes.Single().ScopeId, Is.EqualTo(9));
+            }
+        }
+
+        [Test]
+        public void GetApiKeysByOwnerSubject_KeyWithoutPermissions_HasEmptyScopes()
+        {
+            var keys = new List<ApiKey>
+            {
+                new ApiKey { Id = 99, Name = "lonely-key", CreatedByUser = "alice", OwnerSubject = "alice-subject", CreatedAt = DateTime.UtcNow },
+            };
+            repositoryMock.Setup(r => r.GetAll()).Returns(keys);
+            apiKeyPermissionRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+
+            var result = subject.GetApiKeysByOwnerSubject("alice-subject").Single();
+
+            Assert.That(result.Scopes, Is.Empty);
         }
 
         // --- DeleteApiKey ---

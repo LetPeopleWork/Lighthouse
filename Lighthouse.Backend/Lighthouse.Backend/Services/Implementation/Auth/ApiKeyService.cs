@@ -75,7 +75,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 Id = apiKey.Id,
                 Name = apiKey.Name,
                 Description = apiKey.Description,
-                CreatedByUser = apiKey.CreatedByUser,
                 CreatedAt = apiKey.CreatedAt,
                 PlainTextKey = plainTextKey,
             };
@@ -84,6 +83,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         public IEnumerable<ApiKeyInfo> GetApiKeysByOwnerSubject(string ownerSubject)
         {
             var profiles = userProfileRepository.GetAll().ToList();
+            var scopesByKeyId = BuildScopeIndex(apiKeyPermissionRepository.GetAll().ToList());
 
             return repository.GetAll()
                 .Where(k => string.Equals(TryResolveOwnerSubject(k, profiles), ownerSubject, StringComparison.Ordinal))
@@ -92,10 +92,28 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                     Id = k.Id,
                     Name = k.Name,
                     Description = k.Description,
-                    CreatedByUser = k.CreatedByUser,
                     CreatedAt = k.CreatedAt,
                     LastUsedAt = k.LastUsedAt,
+                    Scopes = scopesByKeyId.TryGetValue(k.Id, out var scopes)
+                        ? scopes
+                        : Array.Empty<ApiKeyScopeDto>(),
                 });
+        }
+
+        private static Dictionary<int, IReadOnlyList<ApiKeyScopeDto>> BuildScopeIndex(IReadOnlyList<ApiKeyPermission> permissions)
+        {
+            return permissions
+                .GroupBy(permission => permission.ApiKeyId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<ApiKeyScopeDto>)group
+                        .Select(permission => new ApiKeyScopeDto
+                        {
+                            Role = permission.Role,
+                            ScopeType = permission.ScopeType,
+                            ScopeId = permission.ScopeId,
+                        })
+                        .ToList());
         }
 
         public async Task<bool> DeleteApiKey(int id, string ownerSubject)

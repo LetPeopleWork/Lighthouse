@@ -8,8 +8,6 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string Description { get; set; } = string.Empty;
 
-        public string CreatedByUser { get; set; } = string.Empty;
-
         public DateTime CreatedAt { get; set; }
 
         /// <summary>

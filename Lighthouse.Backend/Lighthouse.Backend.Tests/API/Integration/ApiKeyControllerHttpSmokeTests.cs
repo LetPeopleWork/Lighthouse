@@ -1,7 +1,11 @@
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
@@ -44,8 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(createdRow, Is.Not.Null, "Posted key should be visible in subsequent GET.");
-                Assert.That(createdRow!.CreatedByUser, Is.Not.Empty);
-                Assert.That(createdRow.Id, Is.EqualTo(creationResult.Id));
+                Assert.That(createdRow!.Id, Is.EqualTo(creationResult.Id));
             }
 
 
@@ -57,6 +60,69 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var keysAfterDelete = await listAfterDelete.Content.ReadFromJsonAsync<IEnumerable<ApiKeyInfo>>();
             Assert.That(keysAfterDelete, Is.Not.Null);
             Assert.That(keysAfterDelete!.Any(k => k.Name == keyName), Is.False, "Deleted key should not appear in GET.");
+        }
+
+        [Test]
+        public async Task GetApiKeys_OverHttp_ReturnsScopesArrayAndOmitsCreatedByUser()
+        {
+            const string ownerSubject = "lighthouse|auth-disabled";
+            const int portfolioScopeId = 7;
+            using (var seedScope = ServiceProvider.CreateScope())
+            {
+                var db = seedScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var seededKey = new ApiKey
+                {
+                    Name = $"scopes-key-{Guid.NewGuid():N}",
+                    Description = "scopes-fixture",
+                    CreatedByUser = "Authentication Disabled",
+                    OwnerSubject = ownerSubject,
+                    CreatedAt = DateTime.UtcNow,
+                    KeyHash = "irrelevant-hash",
+                    Salt = "irrelevant-salt",
+                };
+                db.ApiKeys.Add(seededKey);
+                await db.SaveChangesAsync();
+
+                db.ApiKeyPermissions.Add(new ApiKeyPermission
+                {
+                    ApiKeyId = seededKey.Id,
+                    Role = UserRole.PortfolioAdmin,
+                    ScopeType = PermissionScopeType.Portfolio,
+                    ScopeId = portfolioScopeId,
+                    GrantedAt = DateTime.UtcNow,
+                });
+                await db.SaveChangesAsync();
+            }
+
+            var response = await Client.GetAsync("/api/latest/apikeys");
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            await using var bodyStream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(bodyStream);
+            var root = document.RootElement;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(root.ValueKind, Is.EqualTo(JsonValueKind.Array));
+                Assert.That(root.GetArrayLength(), Is.EqualTo(1));
+            }
+
+            var element = root[0];
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(element.TryGetProperty("createdByUser", out _), Is.False,
+                    "createdByUser should be removed from the response DTO.");
+                Assert.That(element.TryGetProperty("scopes", out var scopesProperty), Is.True,
+                    "scopes property should be present on the response DTO.");
+                Assert.That(scopesProperty.ValueKind, Is.EqualTo(JsonValueKind.Array));
+                Assert.That(scopesProperty.GetArrayLength(), Is.EqualTo(1));
+
+                var scopeElement = scopesProperty[0];
+                Assert.That(scopeElement.GetProperty("role").GetString(), Is.EqualTo(nameof(UserRole.PortfolioAdmin)));
+                Assert.That(scopeElement.GetProperty("scopeType").GetString(), Is.EqualTo(nameof(PermissionScopeType.Portfolio)));
+                Assert.That(scopeElement.GetProperty("scopeId").GetInt32(), Is.EqualTo(portfolioScopeId));
+            }
         }
 
         [Test]
