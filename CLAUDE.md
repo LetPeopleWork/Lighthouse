@@ -25,6 +25,10 @@ See `docs/product/architecture/brief.md` for full architecture documentation.
 
 Before writing or changing code in any area, consult `docs/ci-learnings.md`. It captures durable rules harvested from prior CI / SonarCloud failures (formatting quirks, Sonar rule keys, recurring foot-guns). The `/clean-ci` command maintains this file — apply every rule it lists.
 
+## ADO Work-Item Sync
+
+This project's source of truth for "what's in flight" is the Azure DevOps board at `dev.azure.com/letpeoplework` (project `Lighthouse`). Mirror nWave work onto the board as it happens — Epic → child Stories/Bugs — and auto-transition states (`New` → `Active` → `Resolved` → `Closed`/`Done`). Pause before every `git push` so the user can review. The `/ado-sync` slash command encodes the full workflow; apply its rules proactively, not only when invoked. Confirm before any create / remove / `Release Notes` tag — never silently.
+
 ## Coding Conventions
 
 Synthesized from `.github/instructions/*.md`. Rules below extend (don't restate) the paradigm/architecture/test-framework choices above.
