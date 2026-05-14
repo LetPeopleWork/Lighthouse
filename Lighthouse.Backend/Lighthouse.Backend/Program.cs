@@ -332,6 +332,26 @@ namespace Lighthouse.Backend
             });
         }
 
+        private const string UseStubOAuthProviderConfigKey = "Lighthouse:OAuth:UseStubProvider";
+
+        private static void RegisterStubOAuthProviderIfEnabled(WebApplicationBuilder builder)
+        {
+            var useStub = builder.Configuration[UseStubOAuthProviderConfigKey];
+            if (!string.Equals(useStub, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            builder.Services.AddSingleton<IOAuthProvider>(sp =>
+            {
+                var serviceConfig = sp.GetRequiredService<IServiceConfig>();
+                var timeProvider = sp.GetRequiredService<TimeProvider>();
+                return new StubOAuthProvider(serviceConfig, timeProvider);
+            });
+
+            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(new[] { AuthenticationMethodKeys.StubOAuth });
+        }
+
         private static void EnsureOAuthProvidersRegistered(WebApplication app)
         {
             var registry = app.Services.GetRequiredService<IOAuthProviderRegistry>();
@@ -764,6 +784,9 @@ namespace Lighthouse.Backend
                 var timeProvider = sp.GetRequiredService<TimeProvider>();
                 return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider);
             });
+
+            RegisterStubOAuthProviderIfEnabled(builder);
+
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
             builder.Services.AddSingleton<PatAuthStrategy>();

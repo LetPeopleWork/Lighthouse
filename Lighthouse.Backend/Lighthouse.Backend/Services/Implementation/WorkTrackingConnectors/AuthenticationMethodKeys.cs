@@ -14,6 +14,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
 
         public const string JiraOAuth = "jira.oauth";
 
+        // Test-only OAuth provider — only registered when Lighthouse:OAuth:UseStubProvider=true.
+        public const string StubOAuth = "stub.oauth";
+
         // Linear
         public const string LinearApiKey = "linear.apikey";
 
