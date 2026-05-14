@@ -9,6 +9,8 @@ nav_order: 5
 
 API keys let you authenticate non-browser Lighthouse clients such as the CLI, MCP servers, scripts, and other automation workflows. If you are setting up Lighthouse for AI clients or automation, start with [AI and Automation](../aiintegration.html) and then come back here to create the credential.
 
+![API Keys Settings](../assets/settings/apikeys.png)
+
 ## Why API Keys Exist
 
 Browser users sign in through the normal Lighthouse authentication flow. Automated clients are different: they need a stable credential they can send on each request without an interactive login.
@@ -35,7 +37,10 @@ API keys are intended for non-browser clients. They complement interactive sign-
 2. Go to *API Keys*.
 3. Click *New API Key*.
 4. Enter a **Name** and, optionally, a **Description**.
-5. Create the key and copy the generated plaintext value immediately.
+5. Optionally expand **Scopes** to restrict the key to specific teams or portfolios. Each scope row picks a scope type (System / Team / Portfolio), a role, and — for team/portfolio scopes — the specific entity.
+6. Create the key and copy the generated plaintext value immediately.
+
+![Create API Key Dialog](../assets/settings/apikeys_create.png)
 
 {: .important}
 The plaintext API key is shown only once, directly after creation. Lighthouse stores only a protected representation of the key. If you lose the value, you must delete the key and create a new one.

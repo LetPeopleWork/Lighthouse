@@ -32,6 +32,8 @@ flowchart LR
 
 A user's **effective permissions** are the merged set of their direct assignments and any roles inherited from SSO group memberships. When the two overlap, the higher role wins.
 
+![RBAC Settings](../assets/settings/rbac.png)
+
 ---
 
 ## Roles
@@ -157,6 +159,8 @@ If your identity provider issues group claims, you can grant roles to entire gro
 3. Enter the **Group value** as it appears in the user's token claims (case-sensitive — copy/paste from your IdP).
 4. Choose the **Role** and the scope (System / a specific team / a specific portfolio).
 5. The mapping applies immediately.
+
+![Group Mapping Controls](../assets/settings/rbac_groupmapping.png)
 
 The next time a user from that group signs in (or refreshes their session), they will automatically have the mapped role. No database row is created — the role is computed from the claim on every request.
 
