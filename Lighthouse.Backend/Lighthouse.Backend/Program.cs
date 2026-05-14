@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.OAuth;
+using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Licensing;
@@ -276,6 +277,11 @@ namespace Lighthouse.Backend
                 MaxConnectionsPerServer = 100,
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 EnableMultipleHttp2Connections = true
+            });
+
+            builder.Services.AddHttpClient(JiraOAuthProvider.HttpClientName, client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
             });
         }
 
@@ -752,6 +758,12 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
             builder.Services.AddSingleton<IOAuthProviderRegistry, OAuthProviderRegistry>();
+            builder.Services.AddSingleton<IOAuthProvider>(sp =>
+            {
+                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+                var timeProvider = sp.GetRequiredService<TimeProvider>();
+                return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider);
+            });
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
             builder.Services.AddSingleton<PatAuthStrategy>();
