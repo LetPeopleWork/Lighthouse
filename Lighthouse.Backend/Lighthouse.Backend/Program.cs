@@ -789,12 +789,12 @@ namespace Lighthouse.Backend
 
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
-            builder.Services.AddSingleton<PatAuthStrategy>();
-            builder.Services.AddSingleton<JiraCloudBasicAuthStrategy>();
-            builder.Services.AddSingleton<LinearApiKeyAuthStrategy>();
-            builder.Services.AddSingleton<NoOpAuthStrategy>();
-            builder.Services.AddSingleton<OAuthBearerAuthStrategy>();
-            builder.Services.AddSingleton<IWorkTrackingAuthStrategyFactory, WorkTrackingAuthStrategyFactory>();
+            builder.Services.AddScoped<PatAuthStrategy>();
+            builder.Services.AddScoped<JiraCloudBasicAuthStrategy>();
+            builder.Services.AddScoped<LinearApiKeyAuthStrategy>();
+            builder.Services.AddScoped<NoOpAuthStrategy>();
+            builder.Services.AddScoped<OAuthBearerAuthStrategy>();
+            builder.Services.AddScoped<IWorkTrackingAuthStrategyFactory, WorkTrackingAuthStrategyFactory>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
