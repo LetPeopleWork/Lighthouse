@@ -141,28 +141,25 @@ test.describe("@rbac E2E", () => {
 				).toBeVisible();
 			});
 
-			await test.step(
-				"load 'When Will This Be Done?' demo scenario so Team Zenith and Project Apollo exist for the scoped-role steps",
-				async () => {
-					// The rbac flow asserts against entities provisioned by demo scenario 0
-					// (Team Zenith, Project Apollo). On a fresh CI/local DB these do not
-					// exist, so load them via the demo API while the test user is the
-					// System Admin from Scenario 1.
-					const loadResponse = await overview.page.request.post(
-						"/api/latest/demo/scenarios/0/load",
-					);
-					expect(loadResponse.ok()).toBe(true);
-					await overview.lightHousePage.goToOverview();
-					await overview.search(TEAM_NAME);
-					await expect(
-						overview.page.getByRole("link", { name: TEAM_NAME, exact: true }),
-					).toBeVisible();
-					await overview.search("");
-					await expect(
-						overview.page.getByRole("button", { name: "Add Portfolio" }).first(),
-					).toBeVisible();
-				},
-			);
+			await test.step("load 'When Will This Be Done?' demo scenario so Team Zenith and Project Apollo exist for the scoped-role steps", async () => {
+				// The rbac flow asserts against entities provisioned by demo scenario 0
+				// (Team Zenith, Project Apollo). On a fresh CI/local DB these do not
+				// exist, so load them via the demo API while the test user is the
+				// System Admin from Scenario 1.
+				const loadResponse = await overview.page.request.post(
+					"/api/latest/demo/scenarios/0/load",
+				);
+				expect(loadResponse.ok()).toBe(true);
+				await overview.lightHousePage.goToOverview();
+				await overview.search(TEAM_NAME);
+				await expect(
+					overview.page.getByRole("link", { name: TEAM_NAME, exact: true }),
+				).toBeVisible();
+				await overview.search("");
+				await expect(
+					overview.page.getByRole("button", { name: "Add Portfolio" }).first(),
+				).toBeVisible();
+			});
 
 			const scopedUsernames = [
 				TestConfig.AUTHZ_TEST_TEAMREADER_USERNAME,
@@ -378,9 +375,7 @@ test.describe("@rbac E2E", () => {
 				// entire row is absent rather than rendered with read-only icons.
 				await overview.search(PORTFOLIO_NAME);
 				await expect(
-					overview.page
-						.getByRole("row")
-						.filter({ hasText: PORTFOLIO_NAME }),
+					overview.page.getByRole("row").filter({ hasText: PORTFOLIO_NAME }),
 				).toHaveCount(0);
 
 				await overview.page.getByTestId("license-status-button").click();
@@ -461,9 +456,7 @@ test.describe("@rbac E2E", () => {
 				// out by the backend; entire row absent.
 				await overview.search(PORTFOLIO_NAME);
 				await expect(
-					overview.page
-						.getByRole("row")
-						.filter({ hasText: PORTFOLIO_NAME }),
+					overview.page.getByRole("row").filter({ hasText: PORTFOLIO_NAME }),
 				).toHaveCount(0);
 
 				await overview.search(TEAM_NAME);
@@ -513,11 +506,12 @@ test.describe("@rbac E2E", () => {
 					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
 				).not.toBeVisible();
 
-				const deliveriesResponsePromise = portfolioDetailPage.page.waitForResponse(
-					(response) =>
-						response.url().includes("/deliveries/portfolio/") &&
-						response.request().method() === "GET",
-				);
+				const deliveriesResponsePromise =
+					portfolioDetailPage.page.waitForResponse(
+						(response) =>
+							response.url().includes("/deliveries/portfolio/") &&
+							response.request().method() === "GET",
+					);
 				const deliveriesPage = await portfolioDetailPage.goToDeliveries();
 				const deliveriesResponse = await deliveriesResponsePromise;
 				expect(deliveriesResponse.status()).toBe(200);
@@ -556,9 +550,7 @@ test.describe("@rbac E2E", () => {
 				// out by the backend (GetReadableTeamIdsAsync); entire row absent.
 				await overview.search(TEAM_NAME);
 				await expect(
-					overview.page
-						.getByRole("row")
-						.filter({ hasText: TEAM_NAME }),
+					overview.page.getByRole("row").filter({ hasText: TEAM_NAME }),
 				).toHaveCount(0);
 
 				await overview.search(PORTFOLIO_NAME);
@@ -767,11 +759,12 @@ test.describe("@rbac E2E", () => {
 					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
 				).not.toBeVisible();
 
-				const deliveriesResponsePromise = portfolioDetailPage.page.waitForResponse(
-					(response) =>
-						response.url().includes("/deliveries/portfolio/") &&
-						response.request().method() === "GET",
-				);
+				const deliveriesResponsePromise =
+					portfolioDetailPage.page.waitForResponse(
+						(response) =>
+							response.url().includes("/deliveries/portfolio/") &&
+							response.request().method() === "GET",
+					);
 				const deliveriesPage = await portfolioDetailPage.goToDeliveries();
 				const deliveriesResponse = await deliveriesResponsePromise;
 				expect(deliveriesResponse.status()).toBe(200);

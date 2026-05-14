@@ -1,0 +1,112 @@
+# Environment inventory — work-tracking-oauth-authentication
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+
+target_environments:
+  - name: local-dev
+    description: "Developer workstation — SQLite, no real IdP, stub IOAuthProvider via test DI overrides"
+    platform: [linux, macos, windows, wsl]
+    preconditions:
+      - "dotnet 8 SDK installed"
+      - "pnpm + Node.js 20+ installed"
+      - "ICryptoService keyset auto-generated on first run (existing pattern)"
+      - "Lighthouse:BaseUrl unset is acceptable — form shows the warning (US-01 AC #7)"
+      - "Lighthouse:OAuth:StateSecret auto-generated on first run"
+    oauth_provider_source: "StubOAuthProvider (test-only IOAuthProvider implementation registered via test DI)"
+
+  - name: ci-sqlite
+    description: "GitHub Actions ubuntu-latest with ephemeral SQLite. Existing ci_verifysqlite.yml extended."
+    platform: [linux]
+    preconditions:
+      - "GitHub Actions ubuntu-latest runner"
+      - "SQLite ephemeral DB created per job"
+      - "Lighthouse:BaseUrl set to http://localhost:5000 (deterministic for callback URL display assertions)"
+      - "Lighthouse:OAuth:StateSecret set to a fixed deterministic value via env var (NOT the production auto-gen path)"
+    oauth_provider_source: "StubOAuthProvider — no outbound HTTPS to real IdPs in main CI"
+
+  - name: ci-postgres
+    description: "GitHub Actions ubuntu-latest with PostgreSQL service container. Existing ci_verifypostgres.yml extended."
+    platform: [linux]
+    preconditions:
+      - "PostgreSQL 16 service container (existing pattern)"
+      - "EF migration applied — verifies OAuthCredentials table cascade-delete FK works on Postgres provider"
+      - "All other ci-sqlite preconditions"
+    oauth_provider_source: "StubOAuthProvider"
+
+  - name: ci-integration-smoke-pre-release
+    description: "Pre-release job hitting REAL Atlassian Cloud sandbox + Entra ID sandbox OAuth apps. Runs only on release-tagged builds / manual workflow_dispatch, manually approved."
+    workflow_location: "NEW oauth-smoke JOB inside the existing ci_e2e.yml (not a separate workflow file — workflow consolidation per maintainer principle 2026-05-14). The job is gated by `if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'` AND `environment: oauth-smoke`."
+    platform: [linux]
+    preconditions:
+      - "GitHub Actions environment 'oauth-smoke' with required-reviewer protection (configures the approval gate)"
+      - "Repository secret JIRA_OAUTH_SANDBOX_CLIENT_ID / JIRA_OAUTH_SANDBOX_CLIENT_SECRET (Atlassian Cloud sandbox tenant) — scoped to the oauth-smoke environment, NOT visible to PR-triggered jobs"
+      - "Repository secret ADO_OAUTH_SANDBOX_CLIENT_ID / ADO_OAUTH_SANDBOX_CLIENT_SECRET (Entra ID sandbox tenant) — same scoping"
+      - "Repository secret OAUTH_SMOKE_BASE_URL pointing to a publicly-reachable Lighthouse instance (vendor demo env) — same scoping"
+      - "Atlassian sandbox project pre-populated with at least one real Jira issue"
+      - "ADO sandbox organisation pre-populated with at least one real work item"
+    oauth_provider_source: "REAL JiraOAuthProvider + AdoOAuthProvider"
+
+  - name: demo-vendor-hosted
+    description: "Vendor-controlled demo instance at the public demo URL. PostgreSQL. Real OAuth apps. The dogfood target."
+    platform: [linux]
+    preconditions:
+      - "PostgreSQL 16"
+      - "Lighthouse:BaseUrl set to the demo public hostname (HTTPS)"
+      - "Lighthouse:OAuth:StateSecret persisted via the existing data-protection key store"
+      - "Atlassian Cloud sandbox OAuth app registered with redirect URI {BaseUrl}/api/oauth/callback"
+      - "Entra ID sandbox OAuth app registered with redirect URI {BaseUrl}/api/oauth/callback"
+      - "Premium license active"
+    oauth_provider_source: "REAL JiraOAuthProvider + AdoOAuthProvider"
+
+  - name: customer-self-hosted
+    description: "End-user-controlled deployment. NOT directly observable by the Lighthouse vendor team. KPI measurement is per-instance only."
+    platform: [linux, windows, macos, docker]
+    preconditions:
+      - "Customer registers their own OAuth apps in Atlassian/Entra ID with the correct redirect URI matching their Lighthouse:BaseUrl"
+      - "Premium license active"
+      - "BaseUrl correctly configured to the customer's public Lighthouse URL"
+      - "ICryptoService keyset persisted (existing data-protection key store pattern)"
+    oauth_provider_source: "REAL JiraOAuthProvider + AdoOAuthProvider"
+    observability_note: "Customer instances are NOT in the vendor team's telemetry pipeline. KPIs measurable here are admin-visible only (OAuth Health tile)."
+
+coexistence_matrix:
+  - tool: existing-PAT-connections
+    must_not_break: true
+    rationale: "DISCUSS D8 — OAuth is additive. Existing Jira / ADO / Linear PAT and API-token connections continue working unchanged. The IWorkTrackingAuthStrategy refactor (DDD-9) preserves behaviour for the existing strategies."
+  - tool: existing-OIDC-login
+    must_not_break: true
+    rationale: "OAuth for connections is orthogonal to OIDC for the Lighthouse app login (DISCUSS D9). Different ports, different audiences."
+  - tool: existing-CryptoService-keyset
+    must_not_break: true
+    rationale: "OAuthCredential reuses the existing AES value converter. A keyset rotation must continue to work — OAuthCredential rows must be re-encryptable like any other secret column."
+  - tool: existing-ICryptoService-design-time
+    must_not_break: true
+    rationale: "DesignTimeCryptoService at LighthouseAppContextFactory.cs:42 must accept the new OAuthCredential entity. EF migration generation runs under the design-time crypto, not the production keyset."
+  - tool: existing-RBAC-bootstrap-flow
+    must_not_break: true
+    rationale: "Bootstrap (no SystemAdmin yet) does not require OAuth connections. OAuth setup is post-bootstrap, gated by SystemAdmin + Premium. Bootstrap E2E (per rbac-enhancements) must not regress."
+  - tool: existing-Stryker-mutation-tests
+    must_not_break: true
+    rationale: "Stryker.NET configured at the solution level. New OAuth files added to the existing mutation scope without manual Stryker config edits. Per-feature mutation gate >= 80% applies."
+  - tool: existing-SonarCloud-quality-gate
+    must_not_break: true
+    rationale: "No new Sonar issues permitted on the PR. The conventions in CLAUDE.md and docs/ci-learnings.md already cover the common rule families."
+
+platform_coverage:
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  Windows: [Windows Server 2022, Windows 11]
+  macOS: [13.x, 14.x]
+  Docker: ["mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim base image (existing)"]
+  WSL: [WSL2]
+  CI: ["GitHub Actions ubuntu-latest (existing ci_*.yml workflows)"]
+  Database:
+    SQLite: ["3.40+ (existing)"]
+    PostgreSQL: ["15.x", "16.x"]
+
+deployment_assumptions:
+  - "OAuth feature is server-mode only (DISCUSS D2). Standalone Tauri builds MUST ship with the OAuth UI guard (US-04) but no backend OAuth code paths are exercised in standalone."
+  - "Lighthouse:OAuth:StateSecret is persisted via the existing data-protection key store. If absent on boot, the host auto-generates and persists a new secret (per OQ-D1 recommendation). Operators do NOT need to set this manually."
+  - "EF migrations run on startup (existing pattern). The OAuthCredentials table migration is additive and idempotent on both providers (SQLite + PostgreSQL); generated via the existing CreateMigration PowerShell script per CLAUDE.md."
+  - "Lighthouse:BaseUrl is set explicitly in production deployments. When unset, the UI surfaces a non-blocking warning (US-01 AC #7) — the feature still functions if Request.Host happens to be correct (e.g., direct, no proxy)."
+  - "Existing CORS allowed-origins configuration (`Authentication:AllowedOrigins`) MUST include the OAuth callback origin if behind a reverse proxy. Already documented per ci-learnings.md 2026-05-13 entry."
+  - "Existing customer deployments without Premium license cannot exercise the OAuth code paths at the API boundary (LicenseGuard returns 402). The frontend renders the upgrade affordance per US-01 AC #2 — no broken state, no data loss."
+  - "Existing PAT-based connections are unaffected by the IWorkTrackingAuthStrategy refactor (DDD-9). E2E regression coverage exists in ci_verifyauth.yml and the connector test suites."

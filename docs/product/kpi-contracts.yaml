@@ -1,0 +1,159 @@
+schema_version: 1
+updated: 2026-05-14
+description: >
+  KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
+  Created during the DEVOPS wave of work-tracking-oauth-authentication.
+  Future features APPEND new outcome entries; do not rewrite existing ones.
+
+  Lighthouse is a SELF-HOSTED product. There is no central vendor telemetry pipeline
+  unless the customer opts in (no such mechanism exists today). Therefore each KPI
+  declares its `measurement_scope`:
+
+    - per_instance: structured log events + in-app admin-visible aggregation.
+                    The customer admin sees this; the vendor team does NOT, unless
+                    the customer shares logs out-of-band.
+
+    - vendor_demo_only: the vendor team's dev/QA/demo deployment(s) are the only
+                        observable population. Treat aggregate numbers from this
+                        scope as directional, not statistically representative.
+
+    - opt_in_telemetry_required: not measurable without a future opt-in telemetry
+                                 feature that does not exist. Flag for product
+                                 decision; do NOT build instrumentation that
+                                 phones home without consent.
+
+outcomes:
+
+  - id: OUT-oauth-setup-success-rate
+    feature: work-tracking-oauth-authentication
+    title: OAuth connection setup success rate
+    target: ">= 90% of started OAuth flows complete with status=Valid in the first 30 days post-release"
+    measurement_scope: per_instance + vendor_demo_only
+    acceptance_scenarios:
+      - file: Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts
+        scenario: "Jira OAuth connection is configured end-to-end and the first sync succeeds"
+        tag: "@kpi-OUT-oauth-setup-success-rate"
+        gate_type: hard
+      - file: Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts
+        scenario: "Real Atlassian Cloud sandbox 3LO flow completes"
+        tag: "@requires_external @smoke"
+        gate_type: hard (pre-release)
+    measurement_window: rolling 30 days post-release
+    rationale: >
+      Validates the docs (Atlassian / Entra ID app registration instructions) and the
+      form UX (callback URL display, premium gating) are clear enough that an admin
+      can complete the dance unaided.
+    measurement_plan:
+      data_collection:
+        - "Structured log event `oauth.flow.initiated` with fields { connectionId, providerKey, timestamp }"
+        - "Structured log event `oauth.flow.completed` with fields { connectionId, providerKey, durationMs, scopes, timestamp }"
+        - "Structured log event `oauth.flow.failed` with fields { connectionId, providerKey, reason, timestamp }"
+      derivation: >
+        success_rate = count(oauth.flow.completed) /
+                       (count(oauth.flow.initiated) - count(in-flight at window boundary))
+        Computed per 30-day rolling window.
+      surfacing:
+        - "In-app OAuth Health tile (admin-visible) on the Connections settings page"
+        - "Vendor demo: same tile + log-aggregation export for the product team"
+    alerting:
+      - "Vendor demo only: page the on-call engineer if success_rate < 50% over any 24-hour window with >= 5 initiations (indicates docs or code regression)"
+      - "Customer instance: no automatic alert — the metric is informational for the admin"
+
+  - id: OUT-oauth-time-to-first-sync
+    feature: work-tracking-oauth-authentication
+    title: Time-to-first-sync after OAuth connect
+    target: "<= 60 seconds (p95) between oauth.flow.completed and the first successful work-item sync against that connection"
+    measurement_scope: per_instance + vendor_demo_only
+    rationale: >
+      OAuth's promise is 'as easy as PAT'. If the first sync is slow, users will
+      revert to PAT thinking OAuth is operationally heavier.
+    measurement_plan:
+      data_collection:
+        - "Structured log event `oauth.flow.completed` (existing per OUT-oauth-setup-success-rate)"
+        - "Structured log event `connection.sync.first_after_oauth` with fields { connectionId, providerKey, latencyMsSinceOAuthCompleted, itemsSynced, timestamp }"
+      derivation: >
+        For each OAuth-completed connection, find the first subsequent sync;
+        compute the latency; aggregate p50 / p95 per 30-day rolling window.
+      surfacing:
+        - "In-app OAuth Health tile: 'Avg time to first sync after Connect'"
+    alerting:
+      - "Vendor demo: page if p95 > 5 minutes (indicates background sync schedule misconfiguration)"
+      - "Customer instance: informational only"
+
+  - id: OUT-oauth-refresh-success-rate
+    feature: work-tracking-oauth-authentication
+    title: OAuth refresh success rate
+    target: ">= 99% over rolling 7 days per connection"
+    measurement_scope: per_instance + vendor_demo_only
+    acceptance_scenarios:
+      - file: Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts
+        scenario: "Access token is refreshed silently before its expiry"
+        tag: "@kpi-OUT-oauth-refresh-success-rate"
+        gate_type: hard
+      - file: Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts
+        scenario: "Concurrent syncs against one connection trigger at most one refresh (single-flight)"
+        tag: "@US-02 @error"
+        gate_type: hard (related — single-flight is the load-bearing invariant)
+    measurement_window: rolling 7 days per connection
+    rationale: >
+      If this falls below 99%, the 'stay alive past expiry' promise is broken;
+      admins will revert to PAT. This is the load-bearing operational KPI.
+    measurement_plan:
+      data_collection:
+        - "Structured log event `oauth.token.refreshed` with fields { credentialId, providerKey, durationMs, timestamp }"
+        - "Structured log event `oauth.token.refresh_failed` with fields { credentialId, providerKey, reason, timestamp }"
+      derivation: >
+        refresh_success_rate = count(oauth.token.refreshed) /
+                               (count(oauth.token.refreshed) + count(oauth.token.refresh_failed))
+        Computed per 7-day rolling window per connection.
+      surfacing:
+        - "In-app OAuth Health tile: 'Refresh success rate (7d)' per connection"
+        - "Reconnect banner triggers immediately on any refresh_failed (per US-02 AC #2-3); the rate is the broader health view"
+    alerting:
+      - "Customer instance: the per-connection Reconnect banner IS the alert"
+      - "Vendor demo: page if refresh_success_rate < 95% on any connection for >2h (indicates IdP changes or our handling regression)"
+
+  - id: OUT-oauth-vs-pat-adoption
+    feature: work-tracking-oauth-authentication
+    title: OAuth-vs-PAT adoption ratio for new connections (Premium customers)
+    target: ">= 30% of new Jira/ADO connections created in Premium-licensed instances use OAuth at 90 days post-release"
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      Validates the business hypothesis that Premium customers want OAuth.
+      Without this signal, the team cannot decide whether to invest in
+      a third or fourth OAuth provider, or whether OAuth was the right
+      premium feature to build.
+    measurement_plan:
+      data_collection:
+        - "NOT INSTRUMENTED in this feature. No phone-home telemetry exists."
+        - "Proxy signals (acceptable to use, but biased): (a) support tickets mentioning OAuth, (b) vendor-team interviews with Premium customers, (c) the vendor demo environment as a sample of one."
+        - "Future opt-in telemetry feature (not in scope for Epic 2438) would unlock this."
+      derivation: "N/A — see above."
+      surfacing:
+        - "Quarterly business review using proxy signals only."
+    alerting: []
+    status: deferred-pending-telemetry-feature
+    blocked_by: "ADO Epic #5015 — Opt-in Product Telemetry (https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5015). State: New, no timeline."
+    interim_measurement: "Proxy signals only — support tickets, customer interviews, vendor demo env. Treat aggregate numbers as directional, not statistically representative."
+    upstream_change_resolution: "Product owner decision 2026-05-14: open a follow-up Epic for opt-in GDPR-compliant telemetry. This KPI's measurement is deferred until that Epic ships; no timeline committed. OAuth feature (Epic 2438) proceeds with the per-instance KPIs."
+
+  - id: OUT-oauth-reconnect-recovery-rate
+    feature: work-tracking-oauth-authentication
+    title: Reconnect recovery rate after RefreshFailed
+    target: ">= 80% of connections that enter RefreshFailed state return to Valid within 7 days"
+    measurement_scope: per_instance + vendor_demo_only
+    rationale: >
+      Derived metric — not in DISCUSS but worth tracking. If admins ignore the
+      reconnect banner, OAuth's operational story breaks regardless of code quality.
+      Low recovery suggests the banner is invisible or confusing.
+    measurement_plan:
+      data_collection:
+        - "Structured log event `oauth.credential.status_changed` with fields { credentialId, providerKey, fromStatus, toStatus, timestamp }"
+      derivation: >
+        For each credential entering RefreshFailed, look for a subsequent
+        status_changed transition back to Valid within 7 days.
+      surfacing:
+        - "In-app OAuth Health tile: count of stale RefreshFailed connections (>=24h, >=7d)"
+    alerting:
+      - "Customer instance: in-app banner per connection (already covered by US-02)"
+      - "Vendor demo: weekly digest, not paging"

@@ -1,6 +1,8 @@
 schema_version: 1
-updated: 2026-05-10
-feature_context: rbac-enhancements
+updated: 2026-05-14
+feature_context:
+  - rbac-enhancements
+  - work-tracking-oauth-authentication
 
 jobs:
   - id: job-rbac-bootstrap
@@ -100,3 +102,49 @@ jobs:
       importance: 4
       current_satisfaction: 1
       gap: 3
+
+  - id: job-oauth-work-tracking-credentials
+    title: Govern work-tracking-system credentials from my IdP, not from a pasted PAT
+    persona: connector-admin
+    feature_context: work-tracking-oauth-authentication
+    job_story: >
+      When I configure Lighthouse to read from Jira or Azure DevOps in an organisation
+      where API tokens are governed centrally,
+      I want to authenticate the connection via my organisation's OAuth identity provider
+      instead of pasting a long-lived personal access token,
+      so I can rotate and revoke that connection's access from the IdP without
+      re-deploying Lighthouse or chasing the engineer whose PAT it was.
+    dimensions:
+      functional: >
+        Configure connection-level OAuth credentials (clientId, clientSecret) per Jira/ADO connector;
+        complete the consent dance once; have Lighthouse refresh tokens silently;
+        revoke access centrally in the IdP when needed.
+      emotional: >
+        Move from quiet anxiety ("whose PAT is this and when will it expire?") to confidence
+        ("the IdP is the source of truth and Lighthouse follows it").
+      social: >
+        Demonstrate to security/IT colleagues that Lighthouse is a well-behaved
+        OAuth client in the corporate identity perimeter — not a special case requiring a service-account PAT exception.
+    forces:
+      push: >
+        PATs are issued from a specific human's account; that person leaves the company and every Lighthouse connection breaks.
+        Security policy increasingly forbids long-lived tokens stored outside the IdP.
+      pull: >
+        Single in-app OAuth dance replaces a recurring "rotate the PAT" chore.
+        Token revocation moves to the IdP UI where the rest of the org already manages access.
+      anxiety: >
+        What if the OAuth app registration is wrong and the callback URL doesn't match what Lighthouse expects?
+        What if refresh tokens fail silently and I find out only when a forecast is wrong?
+        What if Premium licensing makes this too expensive to justify?
+      habit: >
+        Connector admins are used to creating a PAT in their personal Atlassian/ADO account
+        and pasting it into Lighthouse — the OAuth path is unfamiliar and requires registering
+        an app in the developer console first.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Important for premium/enterprise customers whose security policy disallows long-lived
+        PATs; satisfaction-gap is moderate because PATs do work today, just at growing
+        operational cost as orgs mature their IAM posture.

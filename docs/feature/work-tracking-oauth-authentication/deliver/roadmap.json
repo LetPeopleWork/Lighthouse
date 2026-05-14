@@ -1,0 +1,1292 @@
+{
+  "roadmap": {
+    "project_id": "work-tracking-oauth-authentication",
+    "created_at": "2026-05-14",
+    "total_steps": 39,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Ship OAuth-authenticated work-tracking connections (Jira 3LO + Azure DevOps Entra ID OAuth) as the canonical Premium-licensed alternative to PAT/API-token authentication, plus an admin-visible OAuth Health tile surfacing setup-success and refresh-success KPIs. Source: ADO Epic #2438 with 6 child stories (#4967\u20134972). The implementation extends the established AuthenticationMethodSchema + WorkTrackingSystemConnectionOption + ICryptoService surfaces (per DESIGN reuse analysis) and introduces a single new entity (OAuthCredential), a single new outbound port (IOAuthProvider), and a single new controller (OAuthController). 4 slices of crafter dispatch: Slice 01 Jira OAuth foundation, Slice 02 refresh + Health tile, Slice 03 ADO OAuth, Slice 04 standalone-mode guard. Plus a release-readiness phase wiring the oauth-smoke JOB into ci_e2e.yml.",
+    "overview": "Five phases. Phase 01 (Slice 01) is the foundation: it lands the new entity, the IOAuthProvider abstraction with its first concrete user (JiraOAuthProvider), the controller, the auth-strategy refactor (DDD-9), the premium gate (DDD-6), the HMAC state token (DDD-8), and the Jira-side UI. Phase 01 step 14 is the walking-skeleton moment \u2014 Playwright scenario 1 goes green end-to-end against the StubOAuthProvider. Phase 02 adds silent token refresh (DDD-7 single-flight via ConcurrentDictionary<int, SemaphoreSlim>) plus the OAuth Health tile folded in per OQ-DV1. Phase 03 ships AdoOAuthProvider \u2014 by design, the diff touches only the new provider + DI + auth-method schema entry + docs (Slice 03 AC #5 invariant). Phase 04 is frontend-only: standalone-mode dropdown guard + the BI-4 route-rejection invariant. Phase 05 wires the release-gated oauth-smoke JOB into the existing ci_e2e.yml (workflow consolidation per maintainer principle) + ci-learnings + observability docs. Test placement is symmetric: every Playwright scenario in OAuthConnection.spec.ts has a corresponding production step; every backend integration test (BI-1..BI-4) has its own unignore step in the slice that owns it.",
+    "slice_to_phase": {
+      "slice-01-jira-oauth": "phase-01 (16 steps, +1 for the 2026-05-14 IOAuthProvider.RefreshTokenAsync signature correction)",
+      "slice-02-token-refresh": "phase-02 (9 steps, OAuth Health tile folded in per OQ-DV1 resolution 2026-05-14)",
+      "slice-03-ado-oauth": "phase-03 (6 steps)",
+      "slice-04-standalone-guard": "phase-04 (4 steps)",
+      "release-readiness": "phase-05 (4 steps, cross-slice CI + docs + OAuthStateSecret persistence)"
+    }
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "self-review against automated quality gate (Phase 1.c) \u2014 Eclipse + Architect + Forge + Sentinel already reviewed DISCUSS/DESIGN/DEVOPS/DISTILL in the consolidated final review gate on 2026-05-14",
+    "reviewed_at": "2026-05-14",
+    "notes": "Self-review against the 6-check automated gate: (1) AC coupling \u2014 every criteria references public APIs (HTTP endpoints, public service methods, persisted entity columns, DOM-observable UI); no private-method references. (2) Decomposition ratio \u2014 37 steps across ~50 files-to-modify = 0.74, well under 2.5 gate. (3) Identical patterns \u2014 Phase 01 unique-per-step (entity \u2192 ports \u2192 strategies \u2192 service \u2192 provider \u2192 controller \u2192 DI \u2192 connector refactor \u2192 FE adapter \u2192 FE form \u2192 integration \u2192 backend integration tests \u2192 Playwright \u2192 docs); Phase 02 unique-per-step; Phase 03 mirrors Phase 01 structure but at half the depth (provider + schema + connector refactor + FE + tests + docs) \u2014 intentional parallelism, not duplication, justified by the provider-agnostic abstraction (DDD-3); Phase 04 + Phase 05 are short and distinct. (4) Validation-only \u2014 zero steps with empty files_to_modify. (5) Step-ID format \u2014 all match ^\\d{2}-\\d{2}$. (6) DISTILL linkage \u2014 every step lists test_file + scenario_name (Playwright .spec.ts + .feature file path, plus the corresponding BI-N integration test for steps that drive those tests). All 12 main+smoke Playwright scenarios mapped (3 to Phase 01, 4 to Phase 02, 2 to Phase 03, 1 to Phase 04, 2 smoke to Phase 05). All 4 backend integration tests (BI-1..BI-4) mapped (BI-1+BI-2 to Phase 01 step 13, BI-3 to Phase 02 step 07, BI-4 to Phase 04 step 03). Walking skeleton scenario 1 (Slice 01 Jira OAuth happy path) goes green at step 01-14, the last green-driving step of Phase 01 before docs. Zero blockers."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/work-tracking-oauth-authentication/feature-delta.md",
+    "playwright_spec": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+    "gherkin_documentation": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.feature",
+    "backend_integration_tests": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs"
+    ],
+    "slice_briefs": [
+      "docs/feature/work-tracking-oauth-authentication/slices/slice-01-jira-oauth.md",
+      "docs/feature/work-tracking-oauth-authentication/slices/slice-02-token-refresh.md",
+      "docs/feature/work-tracking-oauth-authentication/slices/slice-03-ado-oauth.md",
+      "docs/feature/work-tracking-oauth-authentication/slices/slice-04-standalone-guard.md"
+    ],
+    "adrs": [
+      "docs/product/architecture/adr-007-oauth-provider-registry.md",
+      "docs/product/architecture/adr-008-oauth-credential-separation.md",
+      "docs/product/architecture/adr-009-oauth-baseurl-callback.md",
+      "docs/product/architecture/adr-010-oauth-single-flight-refresh.md"
+    ],
+    "environments": "docs/feature/work-tracking-oauth-authentication/environments.yaml",
+    "kpi_contracts": "docs/product/kpi-contracts.yaml"
+  },
+  "out_of_scope": [
+    "Migration tooling to convert existing PAT/API-token connections to OAuth (DISCUSS D8 \u2014 opt-in per connection).",
+    "Per-user OAuth (DISCUSS D9 \u2014 connection-level only).",
+    "OAuth for the Lighthouse app login (handled by the existing OIDC feature).",
+    "OAuth for Linear, GitHub, or any third future provider (abstraction is built and proven by BI-1, but no third concrete provider ships in this feature).",
+    "Standalone-mode OAuth backend support (DISCUSS D2 + US-04 \u2014 frontend guard only).",
+    "OAuth-app registration automation (admin always registers in Atlassian/Microsoft first).",
+    "Token introspection / proactive revocation endpoints.",
+    "Bespoke audit-log events beyond what LighthouseAppContext change-tracking already provides plus the 8 structured ILogger events.",
+    "time_to_first_sync_p95_30d KPI on the OAuth Health tile \u2014 deferred to a follow-up step wiring connection.sync.first_after_oauth (per Slice 02 brief).",
+    "OAuth-vs-PAT adoption-ratio KPI \u2014 deferred to ADO Epic #5015 (Opt-in Product Telemetry, no timeline).",
+    "Centralised log aggregation for the vendor demo (OQ-DV4) \u2014 separate DEVOPS task under Epic #5015 scope.",
+    "Sandbox-credential rotation playbook (OQ-DV2) \u2014 operational documentation deferred to after 2-3 release cycles."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 \u2014 Jira OAuth foundation",
+      "description": "The foundation slice. Lands every new architectural surface: OAuthCredential entity, IOAuthProvider port + registry, IOAuthStateTokenIssuer (HMAC), IWorkTrackingAuthStrategy refactor (DDD-9) with three concrete strategies (PAT, JiraBasic, OAuthBearer), IOAuthService + OAuthService, JiraOAuthProvider, OAuthController, AuthenticationMethodSchema premium flag + jira.oauth entry, DI wiring in Program.cs, IServiceConfig.BaseUrl, JiraWorkTrackingConnector refactor, WorkTrackingSystemConnectionDto.RequiresReconnect placeholder, and the Jira-side UI (OAuthService.ts, OAuthAuthForm.tsx, AuthMethodDropdown premium-gate logic, connection settings page integration). Walking-skeleton scenario 1 (Playwright) goes green at step 01-14. Backend integration tests BI-1 + BI-2 unignored at step 01-13. Slice 03 (ADO) will then add the second concrete IOAuthProvider with zero changes to anything else \u2014 that's the integrity proof.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "OAuthCredential entity + DbSet + EF migration (SQLite + PostgreSQL)",
+          "description": "RED: write `Lighthouse.Backend.Tests/Models/OAuth/OAuthCredentialTest.cs` asserting (a) `OAuthCredentialStatus` has the three values `Valid=0, RefreshFailed=1, Disconnected=2`; (b) `OAuthCredential` has the 6 required properties with the correct C# nullability per `<Nullable>enable</Nullable>`; (c) a record-round-trip through `LighthouseAppContext` persists AccessToken/RefreshToken as encrypted columns (compare on-disk bytes against cleartext \u2014 must differ). Tests fail because the types do not exist. GREEN: create `Models/OAuth/OAuthCredentialStatus.cs` + `OAuthCredential.cs`; extend `Data/LighthouseAppContext.cs` with `DbSet<OAuthCredential>` and the `OnModelCreating` configuration (FK with `ON DELETE CASCADE` to `WorkTrackingSystemConnection`; AccessToken/RefreshToken via existing encrypted-string value converter); run the existing `CreateMigration` PowerShell script to generate SQLite + PostgreSQL migrations under `Migrations/Sqlite/` and `Migrations/Postgres/`. COMMIT: `feat(oauth): add OAuthCredential entity with cascade-delete FK and encrypted token columns`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OAuth/OAuthCredentialTest.cs",
+          "scenario_name": "Entity contract + persistence round-trip (foundation for all subsequent steps)",
+          "red_to_green_tests": [
+            "OAuthCredentialStatus enum has Valid=0, RefreshFailed=1, Disconnected=2",
+            "OAuthCredential round-trips through LighthouseAppContext with AccessToken/RefreshToken encrypted at rest",
+            "Cascade-delete FK from OAuthCredential.WorkTrackingSystemConnectionId removes the row when the connection is deleted"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredentialStatus.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Migrations/Sqlite/*",
+            "Lighthouse.Backend/Lighthouse.Backend/Migrations/Postgres/*",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OAuth/OAuthCredentialTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "OAuthCredentialStatus + OAuthCredential exist under Models/OAuth/.",
+            "LighthouseAppContext has DbSet<OAuthCredential>; FK + cascade-delete configured.",
+            "EF migrations generated via the existing CreateMigration PowerShell script for SQLite AND PostgreSQL providers (per CLAUDE.md).",
+            "Persistence integration test passes: AccessToken/RefreshToken encrypted at rest via existing ICryptoService pipeline.",
+            "dotnet build clean (zero warnings, TreatWarningsAsErrors).",
+            "ci_verifysqlite.yml + ci_verifypostgres.yml regression-pass (existing migrations + new migration apply cleanly)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "OAuthCredentialStatus.cs (new)",
+            "OAuthCredential.cs (new)",
+            "LighthouseAppContext.cs (modified \u2014 +DbSet, +OnModelCreating)",
+            "SQLite + PostgreSQL migration files (new)",
+            "OAuthCredentialTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "IOAuthStateTokenIssuer + HMAC-SHA256 implementation + IServiceConfig.BaseUrl/OAuthStateSecret",
+          "description": "RED: write `OAuthStateTokenIssuerTest.cs` covering Issue+Verify round-trip (returns claims unchanged), tampered token rejection (returns false / throws), expired token rejection (15-minute window), and missing-secret fail-fast on construction. GREEN: introduce `Services/Interfaces/OAuth/IOAuthStateTokenIssuer.cs` (`string Issue(int connectionId, string providerKey)`; `OAuthStateClaims Verify(string token)`); implement `Services/Implementation/OAuth/OAuthStateTokenIssuer.cs` using `System.Security.Cryptography.HMACSHA256` over JSON-serialised `{ connectionId, providerKey, nonce, expiresAt }`. Extend `Services/Interfaces/IServiceConfig.cs` with `string BaseUrl { get; }` and `string OAuthStateSecret { get; }`; bind both via existing `IOptions<ServiceConfig>` to `Lighthouse:BaseUrl` and `Lighthouse:OAuth:StateSecret` in appsettings + env vars. If `OAuthStateSecret` is unset, auto-generate via the existing data-protection key store on first boot (per OQ-D1 recommendation). COMMIT: `feat(oauth): add IOAuthStateTokenIssuer HMAC-signed state token (no session store)`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateTokenIssuerTest.cs",
+          "scenario_name": "CSRF state-token issue + verify + tamper-reject \u2014 foundation for BI-2",
+          "red_to_green_tests": [
+            "Issue then Verify returns the same { connectionId, providerKey } claims",
+            "Verify on a tampered token throws OAuthStateTokenInvalidException (or equivalent)",
+            "Verify on an expired token (> 15 min) throws OAuthStateTokenExpiredException",
+            "Construction throws if OAuthStateSecret is empty (fail-fast)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthStateTokenIssuer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenIssuer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthStateClaims.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IServiceConfig.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ServiceConfig.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateTokenIssuerTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "IOAuthStateTokenIssuer defines Issue + Verify methods.",
+            "OAuthStateTokenIssuer uses HMACSHA256 over JSON claims; no session store dependency.",
+            "Verify rejects tampered tokens AND expired tokens (> 15 min).",
+            "IServiceConfig.BaseUrl + OAuthStateSecret bind from configuration.",
+            "OAuthStateSecret auto-generated and persisted via the existing data-protection key store if absent on boot (per ADR-009 + OQ-D1).",
+            "Unit test kill rate >= 80% for OAuthStateTokenIssuer in Stryker.NET (per CLAUDE.md per-feature gate)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "IOAuthStateTokenIssuer.cs (new)",
+            "OAuthStateTokenIssuer.cs (new)",
+            "OAuthStateClaims.cs (new record)",
+            "IServiceConfig.cs + ServiceConfig.cs (modified \u2014 +BaseUrl, +OAuthStateSecret)",
+            "OAuthStateTokenIssuerTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "IOAuthProvider port + IOAuthProviderRegistry + concrete registry + startup self-check",
+          "description": "RED: write `OAuthProviderRegistryTest.cs` covering (a) `GetByKey` returns the registered provider for a known key; (b) `GetByKey` throws `OAuthProviderNotFoundException` for an unknown key; (c) registry built once from `IEnumerable<IOAuthProvider>` and is read-only thereafter. GREEN: define `Services/Interfaces/OAuth/IOAuthProvider.cs` (per ADR-007: `string ProviderKey`, `IReadOnlyList<string> DefaultScopes`, `Uri BuildAuthorizationUrl`, `Task<OAuthTokens> ExchangeCodeAsync`, `Task<OAuthTokens> RefreshTokenAsync`). Define `IOAuthProviderRegistry.cs`. Implement `OAuthProviderRegistry` (concrete) that takes `IEnumerable<IOAuthProvider>` in its constructor and builds a `Dictionary<string, IOAuthProvider>`. Add a startup self-check in `Program.cs` that iterates `AuthenticationMethodSchema.MethodsBySystem` and asserts every `*.oauth`-suffixed key has a matching registered `IOAuthProvider` \u2014 fails fast at boot on mismatch. No concrete providers yet \u2014 registry starts empty; the self-check is no-op until step 01-08 adds the schema entry and step 01-07 implements JiraOAuthProvider. COMMIT: `feat(oauth): add IOAuthProvider port and DI registry with startup self-check`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthProviderRegistryTest.cs",
+          "scenario_name": "Provider registry resolves by string key \u2014 foundation for BI-1",
+          "red_to_green_tests": [
+            "GetByKey returns the registered provider for a known key",
+            "GetByKey throws OAuthProviderNotFoundException for an unknown key",
+            "Registry construction with duplicate ProviderKey throws (fail-fast)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProvider.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProviderRegistry.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthTokens.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthFlowContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderRegistry.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthProviderRegistryTest.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "IOAuthProvider has the 5-member shape from ADR-007.",
+            "OAuthProviderRegistry resolves by string ProviderKey from IEnumerable<IOAuthProvider>.",
+            "Startup self-check (in Program.cs) iterates AuthenticationMethodSchema for *.oauth keys and asserts each has a registered provider; fails boot on mismatch.",
+            "Self-check is no-op while no *.oauth keys are in the schema (Phase 01 step 01-08 adds the first).",
+            "Stryker kill rate >= 80% on OAuthProviderRegistry."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "IOAuthProvider.cs (new)",
+            "IOAuthProviderRegistry.cs (new)",
+            "OAuthTokens.cs (new record)",
+            "OAuthFlowContext.cs (new record)",
+            "OAuthProviderRegistry.cs (new)",
+            "Program.cs (modified \u2014 +startup self-check)",
+            "OAuthProviderRegistryTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-04",
+          "name": "IWorkTrackingAuthStrategy port + PatAuthStrategy + JiraCloudBasicAuthStrategy (refactor existing inline auth)",
+          "description": "RED: write `WorkTrackingAuthStrategyTest.cs` covering each strategy's `ApplyAsync` against a `HttpRequestMessage` mock \u2014 PAT strategy sets Bearer with the PAT value from `WorkTrackingSystemConnectionOption`; JiraCloudBasic sets Basic auth with username:apiToken base64. GREEN: define `Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategy.cs` (`Task ApplyAsync(HttpRequestMessage req, WorkTrackingSystemConnection conn, CancellationToken)`). Define `Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategyFactory.cs` (`IWorkTrackingAuthStrategy Resolve(string authenticationMethodKey)`). Implement `PatAuthStrategy` (extracts ADO PAT from the Options bag, sets Basic auth with empty username \u2014 current ADO behavior). Implement `JiraCloudBasicAuthStrategy` (extracts username + apiToken, sets Basic auth with `username:apiToken` base64 \u2014 current Jira Cloud behavior). Both REFACTOR the inline auth-header construction currently in `JiraWorkTrackingConnector` and `AzureDevOpsWorkTrackingConnector`; the connectors themselves are refactored in step 01-10. No behavior change for existing PAT/API-token paths. COMMIT: `refactor(oauth): extract IWorkTrackingAuthStrategy with PatAuthStrategy + JiraCloudBasicAuthStrategy`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs",
+          "scenario_name": "Auth-strategy port + 2 concrete strategies wrap existing PAT/Basic behaviour (DDD-9 refactor)",
+          "red_to_green_tests": [
+            "PatAuthStrategy.ApplyAsync sets Authorization header for ADO Bearer-with-empty-username pattern",
+            "JiraCloudBasicAuthStrategy.ApplyAsync sets Authorization header with base64(username:apiToken)",
+            "Factory.Resolve returns the correct strategy for each AuthenticationMethodKey",
+            "Factory.Resolve throws for an unknown authentication method key"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategy.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategyFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategy.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "IWorkTrackingAuthStrategy port defined.",
+            "Two concrete strategies for the existing PAT + Jira-Cloud-Basic flows (no behaviour change).",
+            "Factory resolves by AuthenticationMethodKey.",
+            "Stryker kill rate >= 80% on strategies + factory."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "IWorkTrackingAuthStrategy.cs (new)",
+            "IWorkTrackingAuthStrategyFactory.cs (new)",
+            "PatAuthStrategy.cs (new)",
+            "JiraCloudBasicAuthStrategy.cs (new)",
+            "WorkTrackingAuthStrategyFactory.cs (new)",
+            "WorkTrackingAuthStrategyTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-05",
+          "name": "OAuthBearerAuthStrategy + IOAuthService interface stub",
+          "description": "RED: extend `WorkTrackingAuthStrategyTest.cs` with an OAuthBearer scenario asserting it calls `IOAuthService.EnsureFreshTokenAsync(connectionId)` and sets `Authorization: Bearer {token}`. GREEN: define `Services/Interfaces/OAuth/IOAuthService.cs` with the 4 methods (InitiateAsync, CompleteAsync, DisconnectAsync, EnsureFreshTokenAsync) \u2014 interface only at this step, no implementation. Implement `OAuthBearerAuthStrategy` that takes `IOAuthService` and `ILogger<OAuthBearerAuthStrategy>` in its constructor; ApplyAsync resolves `connection.Id`, calls `EnsureFreshTokenAsync`, sets the Bearer header. Update the factory to resolve `OAuthBearerAuthStrategy` for any `*.oauth` AuthenticationMethodKey (not just jira.oauth \u2014 ADO ships in Phase 03 reusing this strategy). The strategy compiles against a still-unimplemented IOAuthService; tests use Moq. COMMIT: `feat(oauth): add OAuthBearerAuthStrategy bridging to IOAuthService.EnsureFreshTokenAsync`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs",
+          "scenario_name": "OAuthBearer strategy sets Bearer header using IOAuthService.EnsureFreshTokenAsync result",
+          "red_to_green_tests": [
+            "OAuthBearerAuthStrategy.ApplyAsync calls IOAuthService.EnsureFreshTokenAsync once with the connection's id",
+            "OAuthBearerAuthStrategy.ApplyAsync sets Authorization: Bearer with the returned token",
+            "Factory.Resolve returns OAuthBearerAuthStrategy for any AuthenticationMethodKey suffixed '.oauth'"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/OAuthBearerAuthStrategy.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "IOAuthService interface declared with the 4 ADR-010 methods (no implementation yet \u2014 implementation lands in step 01-06).",
+            "OAuthBearerAuthStrategy resolves the access token via IOAuthService and sets Authorization: Bearer.",
+            "Factory routes any *.oauth key to OAuthBearerAuthStrategy."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "IOAuthService.cs (new \u2014 interface only)",
+            "OAuthBearerAuthStrategy.cs (new)",
+            "WorkTrackingAuthStrategyFactory.cs (modified \u2014 *.oauth routing)"
+          ]
+        },
+        {
+          "id": "01-06",
+          "name": "OAuthService \u2014 InitiateAsync + CompleteAsync + DisconnectAsync (no refresh yet)",
+          "description": "RED: write `OAuthServiceTest.cs` covering: InitiateAsync returns the authorizationUrl from the resolved provider and issues a valid state token; CompleteAsync verifies the state token, calls provider.ExchangeCodeAsync, persists OAuthCredential with Status=Valid, returns the connectionId; CompleteAsync rejects an invalid state token with OAuthStateTokenInvalidException (this is the case BI-2 will exercise via HTTP); DisconnectAsync sets Status=Disconnected and clears AccessToken/RefreshToken. EnsureFreshTokenAsync throws NotImplementedException \u2014 Phase 02 implements it. GREEN: implement `Services/Implementation/OAuth/OAuthService.cs` composing IOAuthProviderRegistry, IRepository<WorkTrackingSystemConnection>, IRepository<OAuthCredential>, ICryptoService, IOAuthStateTokenIssuer, ILogger. Emit structured log events `oauth.flow.initiated`, `oauth.flow.completed`, `oauth.flow.failed`, `oauth.credential.status_changed` per the DEVOPS \u00a7 Monitoring contracts table. COMMIT: `feat(oauth): add OAuthService initiate/complete/disconnect flow`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
+          "scenario_name": "OAuthService composes registry + state token + crypto + persistence (foundation for OAuthController + BI-1)",
+          "red_to_green_tests": [
+            "InitiateAsync returns authorizationUrl built by IOAuthProvider.BuildAuthorizationUrl",
+            "InitiateAsync issues a state token via IOAuthStateTokenIssuer",
+            "CompleteAsync verifies state, exchanges code, persists OAuthCredential(Status=Valid)",
+            "CompleteAsync throws when state token verification fails",
+            "DisconnectAsync sets Status=Disconnected and emits oauth.credential.status_changed",
+            "EnsureFreshTokenAsync throws NotImplementedException (deferred to Phase 02)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs"
+          ],
+          "dependencies": [
+            "01-01",
+            "01-02",
+            "01-03",
+            "01-05"
+          ],
+          "criteria": [
+            "OAuthService implements IOAuthService for InitiateAsync, CompleteAsync, DisconnectAsync (EnsureFreshTokenAsync stub throws NotImplemented).",
+            "4 structured log events emitted via ILogger<OAuthService>.",
+            "Stryker kill rate >= 80% on OAuthService."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "OAuthService.cs (new)",
+            "OAuthServiceTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-07",
+          "name": "JiraOAuthProvider implementation (Atlassian 3LO endpoints)",
+          "description": "RED: write `JiraOAuthProviderTest.cs` covering: ProviderKey == 'jira.oauth'; DefaultScopes == ['read:jira-work', 'read:jira-user', 'offline_access']; BuildAuthorizationUrl returns a well-formed URL pointing at `https://auth.atlassian.com/authorize` with the configured clientId, scope, state, response_type=code, redirect_uri matching `{BaseUrl}/api/oauth/callback`; ExchangeCodeAsync POSTs to `https://auth.atlassian.com/oauth/token` with the code + clientId + clientSecret + grant_type=authorization_code and returns the parsed OAuthTokens; RefreshTokenAsync POSTs the same endpoint with grant_type=refresh_token and returns the new tokens. Use a mocked HttpClient via the existing pattern in JiraWorkTrackingConnector. GREEN: implement `Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs` per ADR-007 + DESIGN component decomposition. COMMIT: `feat(oauth): add JiraOAuthProvider with Atlassian 3LO flow`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs",
+          "scenario_name": "Jira OAuth provider implements IOAuthProvider with Atlassian 3LO endpoints",
+          "red_to_green_tests": [
+            "ProviderKey == 'jira.oauth'",
+            "DefaultScopes contains 'read:jira-work', 'read:jira-user', 'offline_access'",
+            "BuildAuthorizationUrl returns auth.atlassian.com/authorize URL with correct query params",
+            "ExchangeCodeAsync calls auth.atlassian.com/oauth/token and parses access/refresh tokens",
+            "RefreshTokenAsync calls the same endpoint with grant_type=refresh_token"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "JiraOAuthProvider implements IOAuthProvider.",
+            "All 5 contract members behave per Atlassian's 3LO spec.",
+            "HttpClient is injected (testable); no static HttpClient construction.",
+            "Stryker kill rate >= 80%."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "JiraOAuthProvider.cs (new)",
+            "JiraOAuthProviderTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-08",
+          "name": "Refactor IOAuthProvider.RefreshTokenAsync to take OAuthRefreshContext (interface correction)",
+          "description": "Interleaved correction step inserted 2026-05-14 after step 01-07 surfaced that the locked IOAuthProvider.RefreshTokenAsync(string refreshToken, CancellationToken) signature cannot accommodate real OAuth IdPs (Atlassian, Entra ID) that require client_id + client_secret on the refresh-token endpoint.\n\nRED: extend `JiraOAuthProviderTest.cs` (created in step 01-07) by RESTORING the two assertions the crafter dropped during 01-07 \u2014 the form body for grant_type=refresh_token MUST contain client_id and client_secret. Also assert the new signature compiles against the new context type.\n\nGREEN: 1) Create `Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthRefreshContext.cs` as a record `(string RefreshToken, string ClientId, string ClientSecret)`. 2) Change `IOAuthProvider.RefreshTokenAsync(string refreshToken, CancellationToken)` to `RefreshTokenAsync(OAuthRefreshContext context, CancellationToken)`. 3) Update `JiraOAuthProvider.RefreshTokenAsync` to use context.RefreshToken/ClientId/ClientSecret in the form body. 4) Update `OAuthBearerAuthStrategy` if it references RefreshTokenAsync directly (likely not \u2014 it goes through IOAuthService.EnsureFreshTokenAsync). 5) Update `NotYetImplementedOAuthService` if needed (the stub for IOAuthService, not IOAuthProvider \u2014 likely no change). 6) Confirm no production code currently calls IOAuthProvider.RefreshTokenAsync (it ships in step 02-01); the compile-fix is in the test file and JiraOAuthProvider only.\n\nCOMMIT: `refactor(oauth): change IOAuthProvider.RefreshTokenAsync to take OAuthRefreshContext\\n\\nADR-007 amendment 2026-05-14 \u2014 the original signature could not accommodate IdPs that require client credentials on the refresh-token endpoint (Atlassian, Entra ID). The new context wraps refresh_token + client_id + client_secret. No production callers exist yet (EnsureFreshTokenAsync ships in step 02-01); the change is contained to the interface + JiraOAuthProvider + tests.\\n\\nStep-ID: 01-08`",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs",
+          "scenario_name": "RefreshTokenAsync form body carries client_id + client_secret (restored assertions from step 01-07)",
+          "red_to_green_tests": [
+            "JiraOAuthProvider.RefreshTokenAsync form body contains client_id matching the context's ClientId",
+            "JiraOAuthProvider.RefreshTokenAsync form body contains client_secret matching the context's ClientSecret",
+            "IOAuthProvider.RefreshTokenAsync(OAuthRefreshContext, CancellationToken) is the canonical signature; the old (string, CancellationToken) overload is gone (compile-check)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthRefreshContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProvider.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs",
+            "docs/product/architecture/adr-007-oauth-provider-registry.md"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "criteria": [
+            "OAuthRefreshContext record exists.",
+            "IOAuthProvider.RefreshTokenAsync signature takes OAuthRefreshContext.",
+            "JiraOAuthProvider.RefreshTokenAsync form body contains both client_id and client_secret.",
+            "Pre-existing 7 JiraOAuthProvider tests still pass (regression).",
+            "ADR-007 has a dated amendment note documenting the signature change and the design error it corrects.",
+            "Pre-existing backend test suite green.",
+            "dotnet build clean."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "OAuthRefreshContext.cs (new record)",
+            "IOAuthProvider.cs (modified \u2014 signature change)",
+            "JiraOAuthProvider.cs (modified \u2014 RefreshTokenAsync body uses context)",
+            "JiraOAuthProviderTest.cs (modified \u2014 restore the two dropped assertions + adjust to new signature)",
+            "adr-007-oauth-provider-registry.md (modified \u2014 amendment note)"
+          ],
+          "correction_history": {
+            "reason": "Step 01-07 crafter dropped two test assertions (client_id + client_secret in refresh form body) because they conflicted with the locked IOAuthProvider.RefreshTokenAsync signature \u2014 but the SIGNATURE was the real bug (real IdPs require client credentials on refresh). PO chose option 1 (2026-05-14) to fix the signature now rather than defer to step 02-01."
+          }
+        },
+        {
+          "id": "01-09",
+          "name": "AuthenticationMethodSchema premium flag + jira.oauth entry + AuthenticationMethodDto",
+          "description": "RED: extend `AuthenticationMethodSchemaTest.cs` to assert: AuthenticationMethod record has an `IsPremium` boolean (default false); MethodsBySystem[Jira] contains an entry with Key='jira.oauth', DisplayName='Jira Cloud (OAuth)', IsPremium=true, and exactly two options 'oauth.clientId' (not secret) + 'oauth.clientSecret' (secret); AuthenticationMethodDto.FromSchema propagates the IsPremium flag. GREEN: extend `Models/AuthenticationMethodKeys.cs` with `JiraOAuth = \"jira.oauth\"`. Extend `Models/AuthenticationMethodSchema.cs` adding the IsPremium property to the record + the jira.oauth entry under the Jira system. Extend `API/DTO/AuthenticationMethodDto.cs::FromSchema` to carry IsPremium through to the frontend. COMMIT: `feat(oauth): add jira.oauth premium-gated entry to AuthenticationMethodSchema`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchemaTest.cs",
+          "scenario_name": "Schema gains IsPremium flag and jira.oauth entry (premium-gated)",
+          "red_to_green_tests": [
+            "AuthenticationMethod has IsPremium boolean (default false)",
+            "MethodsBySystem[Jira] contains jira.oauth entry with IsPremium=true",
+            "jira.oauth entry has options oauth.clientId (not secret) + oauth.clientSecret (secret)",
+            "AuthenticationMethodDto.FromSchema propagates IsPremium"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodKeys.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/AuthenticationMethodDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchemaTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "AuthenticationMethod has IsPremium bool property.",
+            "MethodsBySystem[Jira] has jira.oauth entry with IsPremium=true and the two oauth.* options.",
+            "AuthenticationMethodDto.FromSchema carries IsPremium through.",
+            "Pre-existing schema tests still green."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "AuthenticationMethodKeys.cs (modified \u2014 +JiraOAuth constant)",
+            "AuthenticationMethodSchema.cs (modified \u2014 +IsPremium prop, +jira.oauth entry)",
+            "AuthenticationMethodDto.cs (modified \u2014 +IsPremium carryover)",
+            "AuthenticationMethodSchemaTest.cs (modified \u2014 +new cases)"
+          ]
+        },
+        {
+          "id": "01-10",
+          "name": "OAuthController + DI registration in Program.cs + startup self-check passes",
+          "description": "RED: write `OAuthControllerIntegrationTest.cs` covering: POST /api/oauth/jira.oauth/connect returns 200 with authorizationUrl for a Premium-licensed SystemAdmin caller; the same endpoint returns 402 for an expired-license caller (LicenseGuard); 403 for a non-SystemAdmin caller (RbacGuard); 401 for unauthenticated; GET /api/oauth/callback with a valid code+state returns a 302 redirect to the connection settings page; POST /api/oauth/jira.oauth/disconnect clears the credential and returns 204. GREEN: implement `API/OAuthController.cs` with 3 actions per ADR-007 + DESIGN driving ports table. Connect + Disconnect carry `[Authorize] + [RbacGuard(SystemAdmin)] + [LicenseGuard(RequirePremium = true)]`; Callback carries `[AllowAnonymous]` (state token is the CSRF protection per ADR-008 DDD-8). Register `OAuthController` via DI in `Program.cs` along with `IOAuthService \u2192 OAuthService`, `IOAuthProviderRegistry \u2192 OAuthProviderRegistry`, `IOAuthStateTokenIssuer \u2192 OAuthStateTokenIssuer`, `IWorkTrackingAuthStrategyFactory \u2192 WorkTrackingAuthStrategyFactory`, and `IOAuthProvider \u2192 JiraOAuthProvider` (singleton). The startup self-check from step 01-03 now succeeds (jira.oauth registered + has matching provider). COMMIT: `feat(oauth): add OAuthController and DI wiring`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs",
+          "scenario_name": "OAuth HTTP routes \u2014 connect / callback / disconnect with full RBAC + Premium + CSRF gating",
+          "red_to_green_tests": [
+            "POST /api/oauth/jira.oauth/connect returns 200 with authorizationUrl (Premium SystemAdmin)",
+            "POST /api/oauth/jira.oauth/connect returns 402 (expired Premium license)",
+            "POST /api/oauth/jira.oauth/connect returns 403 (non-SystemAdmin)",
+            "GET /api/oauth/callback with valid code+state returns 302 to /settings/connections/{id}?oauth=success",
+            "POST /api/oauth/jira.oauth/disconnect returns 204 and persists Status=Disconnected"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "01-06",
+            "01-07",
+            "01-09"
+          ],
+          "criteria": [
+            "OAuthController has 3 actions with the documented auth attributes.",
+            "DI registers all OAuth-related services + JiraOAuthProvider as the first IOAuthProvider.",
+            "Startup self-check (from step 01-03) succeeds: jira.oauth in schema + JiraOAuthProvider in DI = pass.",
+            "Integration tests cover the auth gates AND the happy path."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "OAuthController.cs (new)",
+            "Program.cs (modified \u2014 +DI registrations)",
+            "OAuthControllerIntegrationTest.cs (new)"
+          ]
+        },
+        {
+          "id": "01-11",
+          "name": "JiraWorkTrackingConnector refactor + WorkTrackingSystemConnectionDto.RequiresReconnect placeholder",
+          "description": "RED: extend existing `JiraWorkTrackingConnectorTest.cs` with a new test asserting outbound HTTP requests use the auth strategy resolved from the connection's AuthenticationMethodKey (not inline construction). For an oauth-keyed connection, the strategy is `OAuthBearerAuthStrategy` (verified via DI integration \u2014 the mock `IOAuthService.EnsureFreshTokenAsync` is invoked once per outbound request). Update `WorkTrackingSystemConnectionDtoTest.cs` to assert the new `RequiresReconnect` boolean defaults to false and reflects the OAuthCredential.Status (false for Valid, true for RefreshFailed). GREEN: refactor `JiraWorkTrackingConnector` to inject `IWorkTrackingAuthStrategyFactory` and call `factory.Resolve(connection.AuthenticationMethodKey).ApplyAsync(request, connection, ct)` before sending outbound HTTP. Remove the inline `BasicAuthenticationHeaderValue` construction. Extend `WorkTrackingSystemConnectionDto` with `bool RequiresReconnect { get; }` and populate it in the constructor by joining on the OAuthCredential entity (returns false when no OAuthCredential exists or Status != RefreshFailed). Per ADR-006 the additive flag does not change the lean summary DTO. COMMIT: `refactor(oauth): JiraWorkTrackingConnector delegates auth to IWorkTrackingAuthStrategy + DTO.RequiresReconnect`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs + Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs",
+          "scenario_name": "Connector delegates auth to strategy (DDD-9 refactor) + DTO carries RequiresReconnect flag (ADR-006)",
+          "red_to_green_tests": [
+            "JiraWorkTrackingConnector outbound HTTP carries auth header produced by IWorkTrackingAuthStrategyFactory.Resolve",
+            "Existing PAT/JiraBasic-keyed Jira connections continue working (regression)",
+            "WorkTrackingSystemConnectionDto.RequiresReconnect == false when no OAuthCredential exists",
+            "WorkTrackingSystemConnectionDto.RequiresReconnect == true when OAuthCredential.Status == RefreshFailed"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs"
+          ],
+          "dependencies": [
+            "01-04",
+            "01-05"
+          ],
+          "criteria": [
+            "JiraWorkTrackingConnector no longer constructs auth headers inline.",
+            "All pre-existing JiraWorkTrackingConnector tests still green (regression invariant).",
+            "DTO.RequiresReconnect reflects OAuthCredential.Status correctly.",
+            "ci_verifyauth.yml regression-pass (existing PAT/API-token Jira connections unaffected)."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "JiraWorkTrackingConnector.cs (modified \u2014 auth strategy delegation)",
+            "WorkTrackingSystemConnectionDto.cs (modified \u2014 +RequiresReconnect)",
+            "JiraWorkTrackingConnectorTest.cs (modified \u2014 +strategy delegation test)",
+            "WorkTrackingSystemConnectionDtoTest.cs (modified \u2014 +RequiresReconnect tests)"
+          ]
+        },
+        {
+          "id": "01-12",
+          "name": "Frontend OAuthService.ts adapter + OAuthAuthForm.tsx",
+          "description": "RED: write `OAuthService.test.ts` (Vitest) asserting initiateConnect calls POST /api/oauth/{providerKey}/connect with the connectionId and returns the authorizationUrl; disconnect calls POST /api/oauth/{providerKey}/disconnect. Write `OAuthAuthForm.test.tsx` asserting (a) renders clientId + clientSecret inputs; (b) renders the read-only callback URL from the server-info baseUrl; (c) renders the BaseUrl warning when baseUrl is empty; (d) clicking Connect calls OAuthService.initiateConnect and then window.location.assign with the authorizationUrl. GREEN: implement `services/Api/OAuthService.ts` mirroring the existing service-adapter pattern. Implement `components/Common/Connections/OAuthAuthForm.tsx` (MUI form, controlled inputs, props: connectionId, providerKey, baseUrl, onConnect callback). COMMIT: `feat(oauth): add OAuthService frontend adapter + OAuthAuthForm component`.",
+          "test_file": "Lighthouse.Frontend/src/services/Api/OAuthService.test.ts + Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx",
+          "scenario_name": "Frontend OAuth adapter + form (Vitest)",
+          "red_to_green_tests": [
+            "OAuthService.initiateConnect POSTs to /api/oauth/{providerKey}/connect",
+            "OAuthService.disconnect POSTs to /api/oauth/{providerKey}/disconnect",
+            "OAuthAuthForm renders clientId + clientSecret + read-only callback URL",
+            "OAuthAuthForm shows BaseUrl warning when baseUrl is empty",
+            "OAuthAuthForm Connect button triggers initiateConnect + browser redirect"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/OAuthService.ts",
+            "Lighthouse.Frontend/src/services/Api/OAuthService.test.ts",
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "OAuthService.ts implements initiateConnect + disconnect.",
+            "OAuthAuthForm.tsx renders all required fields + warnings.",
+            "Vitest suite green (existing + new).",
+            "Stryker (frontend) kill rate >= 80% on these new files."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "OAuthService.ts (new)",
+            "OAuthService.test.ts (new)",
+            "OAuthAuthForm.tsx (new)",
+            "OAuthAuthForm.test.tsx (new)"
+          ]
+        },
+        {
+          "id": "01-13",
+          "name": "AuthMethodDropdown premium-gate logic + connection settings integration",
+          "description": "RED: extend `AuthMethodDropdown.test.tsx` to assert: when an entry has IsPremium=true and licenseService.canUsePremiumFeatures()==false, the entry is rendered but selection shows the Upgrade affordance instead of the form. Extend the connection-settings page test to assert: when AuthenticationMethodKey starts with a *.oauth value, the OAuthAuthForm is rendered (not the legacy username/token form). GREEN: extend `components/Common/Connections/AuthMethodDropdown.tsx` to read the IsPremium flag from the DTO and render the upgrade affordance. Extend the connection settings page (`pages/Settings/Connections/EditConnection.tsx` or equivalent) with a conditional render: OAuthAuthForm for *.oauth keys, existing form otherwise. COMMIT: `feat(oauth): premium-gate OAuth entries in AuthMethodDropdown + OAuth form rendering on connection settings page`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.test.tsx + connection-settings page test",
+          "scenario_name": "OAuth premium gate visible in UI + connection settings renders OAuthAuthForm",
+          "red_to_green_tests": [
+            "AuthMethodDropdown renders OAuth entry with disabled/upgrade affordance when isPremium && !canUsePremiumFeatures",
+            "Connection settings page renders OAuthAuthForm when AuthenticationMethodKey ends with .oauth",
+            "Connection settings page renders the legacy form when AuthenticationMethodKey does not end with .oauth"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Connections/EditConnection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Connections/EditConnection.test.tsx"
+          ],
+          "dependencies": [
+            "01-12"
+          ],
+          "criteria": [
+            "Premium-gate logic in AuthMethodDropdown.",
+            "Conditional render in connection settings page.",
+            "Vitest suite green."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "AuthMethodDropdown.tsx + .test.tsx (modified)",
+            "EditConnection.tsx + .test.tsx (modified)"
+          ]
+        },
+        {
+          "id": "01-14",
+          "name": "Drive backend integration tests BI-1 + BI-2 to green",
+          "description": "RED: BI-1 + BI-2 already exist as [Ignore]'d scaffolds from DISTILL \u2014 remove the [Ignore] attributes. BI-1 (OAuthProviderAbstractionIntegrationTest) needs the test fixture to register a TestOnlyOAuthProvider with ProviderKey 'test.oauth' via WAF DI override + extend AuthenticationMethodSchema in the test container. BI-2 (OAuthCallbackCsrfIntegrationTest) needs to issue a valid state token, tamper it, hit GET /api/oauth/callback, assert 400 + no DB row + log event emitted. GREEN: implement the test bodies per the TODO comments left at DISTILL time. Both should pass against the Phase 01 production code already shipped. COMMIT: `test(oauth): drive BI-1 + BI-2 integration tests to green`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs + OAuthCallbackCsrfIntegrationTest.cs",
+          "scenario_name": "BI-1: provider-agnostic abstraction integrity (US-01 AC #8) | BI-2: CSRF state-token rejection",
+          "red_to_green_tests": [
+            "BI-1: registering a new IOAuthProvider in test DI alone makes POST /api/oauth/test.oauth/connect return 200 with authorizationUrl",
+            "BI-2: GET /api/oauth/callback with tampered state returns 400 + zero credential rows + oauth.callback.invalid_state log event"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "01-10"
+          ],
+          "criteria": [
+            "Both [Ignore] attributes removed; both tests green.",
+            "BI-1 passes without ANY change to OAuthController, OAuthService, OAuthCredential, persistence (US-01 AC #8 integrity).",
+            "BI-2 verifies the security invariant end-to-end."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "OAuthProviderAbstractionIntegrationTest.cs (modified \u2014 unignored + body)",
+            "OAuthCallbackCsrfIntegrationTest.cs (modified \u2014 unignored + body)"
+          ]
+        },
+        {
+          "id": "01-15",
+          "name": "Drive Playwright scenarios 1-3 to green (walking skeleton + non-premium + BaseUrl warning)",
+          "description": "RED: Playwright scenarios 1-3 in `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts` already exist as `test.skip()` scaffolds \u2014 remove the .skip. Implement the test bodies per the TODO comments. Scenario 1 (walking skeleton) is the headline: navigate Settings \u2192 Connections \u2192 New Jira \u2192 select OAuth \u2192 paste clientId/clientSecret \u2192 click Connect \u2192 handle the stub-provider auto-consent redirect \u2192 assert connection settings shows 'Connected \u2014 OAuth (Jira Cloud)' \u2192 trigger Update All \u2192 assert bearer-token outbound + at least one synced work item. Scenarios 2 + 3 are shorter (license-state + BaseUrl-state checks). Add the Page Object Model classes (OAuthAuthFormPage, ConnectionSettingsPage extensions) under `tests/models/`. GREEN: drive the implementation, fixing any gaps surfaced by the E2E runs. This is the slice 01 walking-skeleton moment. COMMIT: `test(oauth): unskip Playwright scenarios 1-3 (Jira OAuth walking skeleton + premium + BaseUrl)`.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+          "scenario_name": "Playwright 1 (walking skeleton) + 2 (non-premium) + 3 (BaseUrl warning)",
+          "red_to_green_tests": [
+            "Scenario 1: end-to-end Jira OAuth flow against StubOAuthProvider, sync produces at least one work item",
+            "Scenario 2: non-Premium instance shows Upgrade affordance + 402 on backend",
+            "Scenario 3: BaseUrl unset shows the non-blocking form warning"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/oauth/OAuthAuthFormPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/oauth/ConnectionSettingsOAuthExtensions.ts"
+          ],
+          "dependencies": [
+            "01-13",
+            "01-14"
+          ],
+          "criteria": [
+            "Playwright scenarios 1-3 green in main CI (ci_e2e.yml).",
+            "Walking-skeleton scenario 1 is the demo of slice 01 (verifiable end-to-end).",
+            "POM classes added under tests/models/ matching the existing convention."
+          ],
+          "estimated_hours": 3.0,
+          "deliverables": [
+            "OAuthConnection.spec.ts (modified \u2014 scenarios 1-3 unskipped + implemented)",
+            "OAuthAuthFormPage.ts (new POM)",
+            "ConnectionSettingsOAuthExtensions.ts (new POM)"
+          ]
+        },
+        {
+          "id": "01-16",
+          "name": "Docs \u2014 Jira OAuth setup + BaseUrl configuration",
+          "description": "RED: no executable test for docs, but a structural check via the existing `docs-site` lint (if present) plus a manual review against the slice 01 brief's docs commitment (per DEVOPS \u00a7 Pre-requisites). GREEN: write `docs/integrations/oauth-jira.md` covering: 1) how to register an OAuth 2.0 (3LO) app in the Atlassian developer console, 2) which redirect URI to register ({BaseUrl}/api/oauth/callback), 3) which scopes to request (read:jira-work, read:jira-user, offline_access), 4) clientId + clientSecret pasting into Lighthouse, 5) what to do if the consent dance fails. Write `docs/operations/oauth-baseurl.md` covering: 1) why BaseUrl matters for OAuth, 2) how to configure it in appsettings vs env vars, 3) worked examples for nginx, Caddy, Traefik reverse-proxy setups. Cross-link both pages. COMMIT: `docs(oauth): add Jira OAuth setup + BaseUrl configuration pages`.",
+          "test_file": "n/a (documentation)",
+          "scenario_name": "Documentation completeness (verified by manual review against slice 01 brief)",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/integrations/oauth-jira.md",
+            "docs/operations/oauth-baseurl.md"
+          ],
+          "dependencies": [
+            "01-15"
+          ],
+          "criteria": [
+            "Both docs pages exist and link to each other.",
+            "Worked examples present for nginx / Caddy / Traefik in oauth-baseurl.md.",
+            "Atlassian sandbox app registration step-by-step in oauth-jira.md."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "docs/integrations/oauth-jira.md (new)",
+            "docs/operations/oauth-baseurl.md (new)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 \u2014 Token refresh + OAuth Health tile (folded per OQ-DV1)",
+      "description": "Adds silent token refresh (DDD-7 single-flight) and the reconnect-banner UX for refresh failures. Folds in the OAuth Health tile per the OQ-DV1 resolution 2026-05-14 \u2014 the tile surfaces the KPIs (setup-success rate, refresh-success rate, stale RefreshFailed count) the slice already produces data for. time_to_first_sync_p95_30d is deferred to a later step that wires connection.sync.first_after_oauth.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "OAuthService.EnsureFreshTokenAsync (single-flight via ConcurrentDictionary<int, SemaphoreSlim>)",
+          "description": "RED: extend `OAuthServiceTest.cs` with: EnsureFreshTokenAsync returns the existing accessToken when ExpiresAt - now > 5 min; refreshes once when within the 5-min window; double-check under semaphore ensures only one thread calls provider.RefreshTokenAsync; 30s timeout per OQ-D3 throws OAuthRefreshTimeoutException. Emits oauth.token.refreshed on success. GREEN: implement EnsureFreshTokenAsync per ADR-010: acquire SemaphoreSlim keyed on credentialId from a ConcurrentDictionary; re-read credential under the lock; refresh if still stale. COMMIT: `feat(oauth): implement single-flight token refresh`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
+          "scenario_name": "Single-flight refresh per ADR-010 + DDD-7",
+          "red_to_green_tests": [
+            "EnsureFreshTokenAsync returns cached token when expiry > 5 min away",
+            "EnsureFreshTokenAsync refreshes once when expiry within 5 min",
+            "Double-check under the lock skips the refresh if another thread already refreshed",
+            "30s timeout throws OAuthRefreshTimeoutException",
+            "Emits oauth.token.refreshed log event on success"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "criteria": [
+            "EnsureFreshTokenAsync replaces the NotImplementedException stub from step 01-06.",
+            "Single-flight invariant per ADR-010.",
+            "Stryker kill rate >= 80% on the new logic."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "OAuthService.cs (modified \u2014 +EnsureFreshTokenAsync)",
+            "OAuthServiceTest.cs (modified \u2014 +refresh cases)"
+          ]
+        },
+        {
+          "id": "02-02",
+          "name": "OAuthCredential status transitions on refresh failure (Status=RefreshFailed)",
+          "description": "RED: extend `OAuthServiceTest.cs` with: when provider.RefreshTokenAsync throws / returns non-2xx, the credential's Status transitions to RefreshFailed, oauth.token.refresh_failed + oauth.credential.status_changed events are emitted, the original sync call aborts cleanly with OAuthRefreshFailedException. GREEN: extend EnsureFreshTokenAsync's error-handling branch per ADR-010. COMMIT: `feat(oauth): mark credential RefreshFailed on refresh error and emit log events`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
+          "scenario_name": "Failed refresh marks credential RefreshFailed + emits log events",
+          "red_to_green_tests": [
+            "Failed RefreshTokenAsync sets Status=RefreshFailed in DB",
+            "Failed refresh emits oauth.token.refresh_failed + oauth.credential.status_changed",
+            "Failed refresh throws OAuthRefreshFailedException (caller aborts cleanly)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "RefreshFailed transition is atomic with the refresh call.",
+            "Both log events emitted via ILogger<OAuthService>."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "OAuthService.cs (modified \u2014 +failure path)",
+            "OAuthServiceTest.cs (modified \u2014 +failure cases)"
+          ]
+        },
+        {
+          "id": "02-03",
+          "name": "WorkTrackingSystemConnectionDto.RequiresReconnect populated from join + system-info BaseUrl",
+          "description": "RED: extend `WorkTrackingSystemConnectionDtoTest.cs` with a real-DB integration scenario: seed a connection + OAuthCredential(Status=RefreshFailed), call GET /api/v1/worktrackingsystemconnections, assert response[0].requiresReconnect===true. Extend `SystemInfoControllerTest.cs` to assert the system-info endpoint returns baseUrl from IServiceConfig (for the frontend to read). GREEN: in `WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections`, project the response through a join with OAuthCredentials and populate the additive RequiresReconnect flag. Add baseUrl to the system-info DTO. COMMIT: `feat(oauth): populate WorkTrackingSystemConnectionDto.RequiresReconnect from OAuthCredential + expose BaseUrl on system-info`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs + SystemInfoControllerTest.cs",
+          "scenario_name": "Connection-list payload carries requiresReconnect:true when refresh failed + system-info exposes BaseUrl",
+          "red_to_green_tests": [
+            "GET /api/v1/worktrackingsystemconnections returns requiresReconnect:true for connections with RefreshFailed credential",
+            "GET /api/v1/worktrackingsystemconnections returns requiresReconnect:false for Valid or no-credential connections",
+            "GET /api/v1/systeminfo returns baseUrl from IServiceConfig.BaseUrl"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/SystemInfoDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "Connection-list endpoint joins on OAuthCredentials and populates RequiresReconnect.",
+            "System-info endpoint additionally returns baseUrl.",
+            "Existing connection-list contract unchanged for non-OAuth connections (regression)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "WorkTrackingSystemConnectionsController.cs (modified \u2014 +join projection)",
+            "SystemInfoController.cs + SystemInfoDto.cs (modified \u2014 +baseUrl)",
+            "DTO tests (modified)"
+          ]
+        },
+        {
+          "id": "02-04",
+          "name": "Frontend ReconnectBanner.tsx + connections-list integration + connection settings banner",
+          "description": "RED: write `ReconnectBanner.test.tsx` covering: renders only when connection.requiresReconnect===true; clicking Reconnect calls OAuthService.disconnect then initiateConnect; uses MUI Alert with severity 'warning'. Extend connection-settings + connections-list page tests to assert the banner renders inline when needed. GREEN: implement `components/Common/Connections/ReconnectBanner.tsx`. Integrate into the connections-list page (one banner per RefreshFailed connection) and the connection-settings page (the active connection's banner only). COMMIT: `feat(oauth): add ReconnectBanner with disconnect-then-reconnect flow`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx + page tests",
+          "scenario_name": "ReconnectBanner appears when requiresReconnect:true + drives reconnect flow",
+          "red_to_green_tests": [
+            "ReconnectBanner renders only when requiresReconnect:true",
+            "Clicking Reconnect calls disconnect then initiateConnect",
+            "Banner uses MUI Alert severity 'warning'",
+            "Connection-list and connection-settings pages render the banner inline"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsList.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Connections/EditConnection.tsx"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "ReconnectBanner component + tests.",
+            "Integrated into both pages."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "ReconnectBanner.tsx + .test.tsx (new)",
+            "ConnectionsList.tsx + EditConnection.tsx (modified)"
+          ]
+        },
+        {
+          "id": "02-05",
+          "name": "GET /api/oauth/health endpoint with KPI aggregation",
+          "description": "RED: write `OAuthHealthControllerTest.cs` covering: GET /api/oauth/health returns { setup_success_rate_30d, refresh_success_rate_7d_per_connection, stale_refresh_failed_count_24h, stale_refresh_failed_count_7d }; gated by [RbacGuard(SystemAdmin)] + [LicenseGuard(RequirePremium=true)] (403 / 402 otherwise); accurate aggregation over seeded log-event data. GREEN: implement `API/OAuthHealthController.cs` and a supporting `Services/Implementation/OAuth/OAuthHealthAggregator.cs` that reads from a structured-log-event store + the OAuthCredentials table. v1 computes aggregation at request time (no caching). COMMIT: `feat(oauth): add GET /api/oauth/health endpoint surfacing KPIs (RBAC + Premium gated)`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OAuthHealthControllerTest.cs",
+          "scenario_name": "OAuth Health endpoint returns aggregated KPIs to SystemAdmin/Premium callers",
+          "red_to_green_tests": [
+            "GET /api/oauth/health returns 200 with the 4 KPI fields (SystemAdmin + Premium)",
+            "GET /api/oauth/health returns 402 (expired Premium)",
+            "GET /api/oauth/health returns 403 (non-SystemAdmin)",
+            "Setup success rate computed correctly from seeded oauth.flow.initiated + completed events",
+            "Refresh success rate per connection computed correctly from oauth.token.refreshed + refresh_failed events"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/OAuthHealthController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthHealthAggregator.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthHealthAggregator.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OAuthHealthControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthHealthAggregatorTest.cs"
+          ],
+          "dependencies": [
+            "02-01",
+            "02-02"
+          ],
+          "criteria": [
+            "OAuthHealthController gated by SystemAdmin + Premium.",
+            "Aggregation logic correct over seeded events.",
+            "Stryker kill rate >= 80%."
+          ],
+          "estimated_hours": 2.5,
+          "deliverables": [
+            "OAuthHealthController.cs + OAuthHealthAggregator.cs (new)",
+            "IOAuthHealthAggregator.cs (new)",
+            "Controller + aggregator tests (new)"
+          ]
+        },
+        {
+          "id": "02-06",
+          "name": "Frontend OAuthHealthTile.tsx + integration on connections settings page",
+          "description": "RED: write `OAuthHealthTile.test.tsx` covering: fetches GET /api/oauth/health on mount; renders the three KPI rows (setup-success, refresh-success, stale RefreshFailed); shows the Upgrade affordance when the 402 response indicates non-Premium; hides entirely when the user is not SystemAdmin (per useRbac). GREEN: implement the component. Integrate it into the Connections settings page (above the connections list). COMMIT: `feat(oauth): add OAuthHealthTile component surfacing KPIs (folded into Slice 02 per OQ-DV1)`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/OAuthHealthTile.test.tsx + page test",
+          "scenario_name": "OAuth Health tile renders KPIs to SystemAdmin + Premium users (Playwright scenario 7)",
+          "red_to_green_tests": [
+            "OAuthHealthTile renders 3 KPI rows for Premium SystemAdmin",
+            "OAuthHealthTile shows Upgrade affordance for non-Premium",
+            "OAuthHealthTile hides entirely for non-SystemAdmin"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthHealthTile.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthHealthTile.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsList.tsx",
+            "Lighthouse.Frontend/src/services/Api/OAuthService.ts"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "criteria": [
+            "Tile component + tests.",
+            "Integrated above the connections list on the settings page.",
+            "OAuthService.ts extended with getHealth()."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "OAuthHealthTile.tsx + .test.tsx (new)",
+            "ConnectionsList.tsx (modified)",
+            "OAuthService.ts (modified \u2014 +getHealth)"
+          ]
+        },
+        {
+          "id": "02-07",
+          "name": "Drive BI-3 to green (unignore single-flight test)",
+          "description": "RED: BI-3 (OAuthRefreshSingleFlightTest) already exists as an [Ignore]'d scaffold. Remove [Ignore]. Implement the test body: build OAuthService with CountingStubOAuthProvider (interlocked counter on RefreshTokenAsync); seed an OAuthCredential with ExpiresAt 3 min from now; fire Task.WhenAll over 32 concurrent EnsureFreshTokenAsync calls; assert (a) RefreshInvocationCount==1, (b) tokens.Distinct().Count()==1, (c) DB row updated once. GREEN: drive any implementation fixes surfaced by the test. COMMIT: `test(oauth): drive BI-3 OAuthRefreshSingleFlightTest to green`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs",
+          "scenario_name": "BI-3: single-flight invariant under 32 concurrent callers (ADR-010 DDD-7)",
+          "red_to_green_tests": [
+            "32 concurrent EnsureFreshTokenAsync calls \u2192 refresh invoked exactly once",
+            "All 32 callers receive the same fresh token",
+            "DB row updated exactly once (no double-write)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestDoubles/CountingStubOAuthProvider.cs"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "[Ignore] removed; test green.",
+            "CountingStubOAuthProvider test double added under TestDoubles/."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "OAuthRefreshSingleFlightTest.cs (modified \u2014 unignored + body)",
+            "CountingStubOAuthProvider.cs (new test double)"
+          ]
+        },
+        {
+          "id": "02-08",
+          "name": "Drive Playwright scenarios 4-7 to green (silent refresh + failed refresh banner + reconnect + Health tile)",
+          "description": "RED: Playwright scenarios 4-7 already exist as test.skip() scaffolds \u2014 remove .skip on each. Implement bodies per TODOs: scenario 4 (silent refresh \u2014 seed Valid credential with imminent expiry, trigger sync, assert refresh path + no banner); scenario 5 (failed refresh \u2014 seed credential whose refresh token the stub rejects, trigger sync, assert yellow banner appears); scenario 6 (reconnect from banner \u2014 click Reconnect, complete stub dance, assert Status=Valid + banner gone); scenario 7 (Health tile \u2014 seed log events for 5 setups (4 successful) + 100 refreshes (99 successful), open settings, assert tile renders 80% / 99% / 0; assert non-SysAdmin/non-Premium gating). GREEN: drive any implementation fixes. COMMIT: `test(oauth): unskip Playwright scenarios 4-7 (refresh + banner + reconnect + Health tile)`.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+          "scenario_name": "Playwright 4 (silent refresh) + 5 (failed refresh banner) + 6 (reconnect) + 7 (Health tile)",
+          "red_to_green_tests": [
+            "Scenario 4: silent refresh, no banner shown",
+            "Scenario 5: failed refresh shows yellow banner with 'Reconnect required'",
+            "Scenario 6: clicking Reconnect restores Status=Valid + banner disappears",
+            "Scenario 7: OAuth Health tile renders 3 KPIs + RBAC + Premium gating"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/oauth/ReconnectBannerComponent.ts",
+            "Lighthouse.EndToEndTests/tests/models/oauth/OAuthHealthTileComponent.ts"
+          ],
+          "dependencies": [
+            "02-04",
+            "02-06",
+            "02-07"
+          ],
+          "criteria": [
+            "Scenarios 4-7 green in ci_e2e.yml.",
+            "POMs added for ReconnectBanner + OAuthHealthTile components."
+          ],
+          "estimated_hours": 3.0,
+          "deliverables": [
+            "OAuthConnection.spec.ts (modified \u2014 4 scenarios unskipped + bodies)",
+            "ReconnectBannerComponent.ts + OAuthHealthTileComponent.ts (new POMs)"
+          ]
+        },
+        {
+          "id": "02-09",
+          "name": "Docs \u2014 refresh + reconnect UX summary in oauth-jira.md + OAuth Health tile reference",
+          "description": "RED: no test. GREEN: extend `docs/integrations/oauth-jira.md` with a 'What to expect operationally' section: silent token refresh, what RefreshFailed means, what the reconnect banner looks like. Add a brief reference to the OAuth Health tile (where to find it, what each KPI means, that it's SystemAdmin + Premium gated). COMMIT: `docs(oauth): add refresh/reconnect/Health-tile sections to oauth-jira.md`.",
+          "test_file": "n/a",
+          "scenario_name": "Documentation completeness for Slice 02",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/integrations/oauth-jira.md"
+          ],
+          "dependencies": [
+            "02-08"
+          ],
+          "criteria": [
+            "Refresh + reconnect + Health tile sections added.",
+            "No new file (extends existing)."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "docs/integrations/oauth-jira.md (modified \u2014 +operational sections)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 \u2014 Azure DevOps OAuth",
+      "description": "Adds the second concrete IOAuthProvider \u2014 AdoOAuthProvider \u2014 and the ADO-side schema entry + DI registration + connector refactor + UI label entry. The integrity claim is that the diff touches NOTHING outside this slice's named files (AC #5, Slice 03 brief).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "AdoOAuthProvider implementation (Entra ID + ADO OAuth endpoints)",
+          "description": "RED: write `AdoOAuthProviderTest.cs` mirroring JiraOAuthProviderTest but for Entra ID / ADO OAuth: ProviderKey == 'ado.oauth'; DefaultScopes contains 'vso.work_write'; BuildAuthorizationUrl returns login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize URL with correct query params; ExchangeCodeAsync POSTs to login.microsoftonline.com/{tenant}/oauth2/v2.0/token with the code; RefreshTokenAsync uses grant_type=refresh_token. GREEN: implement `Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs`. COMMIT: `feat(oauth): add AdoOAuthProvider with Entra ID OAuth flow`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/AdoOAuthProviderTest.cs",
+          "scenario_name": "ADO OAuth provider implements IOAuthProvider with Entra ID endpoints",
+          "red_to_green_tests": [
+            "ProviderKey == 'ado.oauth'",
+            "DefaultScopes contains 'vso.work_write'",
+            "BuildAuthorizationUrl returns login.microsoftonline.com URL with correct query params",
+            "ExchangeCodeAsync and RefreshTokenAsync call the v2.0 token endpoint"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/AdoOAuthProviderTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "AdoOAuthProvider implements IOAuthProvider.",
+            "Stryker kill rate >= 80%.",
+            "ONLY new file in the Services tree (Slice 03 AC #5 invariant \u2014 verified by diff review)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "AdoOAuthProvider.cs (new)",
+            "AdoOAuthProviderTest.cs (new)"
+          ]
+        },
+        {
+          "id": "03-02",
+          "name": "AuthenticationMethodSchema ado.oauth entry + DI registration + startup self-check passes",
+          "description": "RED: extend `AuthenticationMethodSchemaTest.cs` asserting MethodsBySystem[AzureDevOps] now contains ado.oauth entry (IsPremium=true, two option keys). GREEN: extend `AuthenticationMethodKeys.cs` with AzureDevOpsOAuth constant; extend `AuthenticationMethodSchema.cs` with the ado.oauth entry under AzureDevOps; register AdoOAuthProvider in Program.cs as `IOAuthProvider`. The startup self-check from step 01-03 now passes for ado.oauth as well. COMMIT: `feat(oauth): register ado.oauth provider in schema + DI`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchemaTest.cs",
+          "scenario_name": "Schema + DI gain ado.oauth; startup self-check passes",
+          "red_to_green_tests": [
+            "MethodsBySystem[AzureDevOps] contains ado.oauth entry with IsPremium=true",
+            "Program.cs registers AdoOAuthProvider in DI",
+            "Startup self-check passes for ado.oauth (registered + has provider)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodKeys.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchemaTest.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "ado.oauth entry registered + DI wired.",
+            "Startup self-check passes for both jira.oauth + ado.oauth."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "AuthenticationMethodKeys.cs (modified)",
+            "AuthenticationMethodSchema.cs (modified)",
+            "Program.cs (modified \u2014 +AdoOAuthProvider registration)"
+          ]
+        },
+        {
+          "id": "03-03",
+          "name": "AzureDevOpsWorkTrackingConnector refactor to use IWorkTrackingAuthStrategy",
+          "description": "RED: extend `AzureDevOpsWorkTrackingConnectorTest.cs` mirroring the Jira refactor test from step 01-10 \u2014 outbound HTTP carries auth header from the resolved strategy. GREEN: refactor AzureDevOpsWorkTrackingConnector to delegate auth-header construction to IWorkTrackingAuthStrategyFactory. The OAuthBearerAuthStrategy from step 01-05 handles ado.oauth-keyed connections (no new strategy class). PAT-keyed ADO connections continue using PatAuthStrategy. COMMIT: `refactor(oauth): AzureDevOpsWorkTrackingConnector delegates auth to IWorkTrackingAuthStrategy`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+          "scenario_name": "ADO connector delegates auth to strategy (parallel to step 01-10)",
+          "red_to_green_tests": [
+            "AzureDevOpsWorkTrackingConnector outbound HTTP carries auth header from resolved strategy",
+            "Existing PAT-keyed ADO connections continue working (regression)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "AzureDevOpsWorkTrackingConnector no longer constructs auth headers inline.",
+            "Existing PAT-keyed regression-pass."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "AzureDevOpsWorkTrackingConnector.cs (modified)",
+            "AzureDevOpsWorkTrackingConnectorTest.cs (modified)"
+          ]
+        },
+        {
+          "id": "03-04",
+          "name": "Frontend AuthMethodDropdown ADO entry + OAuthAuthForm HTTPS warning (ADO + non-HTTPS BaseUrl)",
+          "description": "RED: extend `OAuthAuthForm.test.tsx` to assert that when providerKey==='ado.oauth' AND baseUrl.startsWith('http://') (not HTTPS), an extra warning 'Azure DevOps requires HTTPS callback URLs in production' is rendered alongside the BaseUrl warning. Extend AuthMethodDropdown test for the new ado.oauth dropdown label. GREEN: extend OAuthAuthForm.tsx with the conditional HTTPS warning. Verify AuthMethodDropdown picks up the new entry from the DTO automatically (no code change needed beyond verifying tests). COMMIT: `feat(oauth): add ADO HTTPS warning on OAuthAuthForm`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx + AuthMethodDropdown.test.tsx",
+          "scenario_name": "ADO OAuth form warns when BaseUrl is HTTP",
+          "red_to_green_tests": [
+            "OAuthAuthForm renders HTTPS warning only when providerKey==='ado.oauth' AND baseUrl is http://",
+            "AuthMethodDropdown renders the ado.oauth dropdown entry"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "HTTPS warning conditional and provider-keyed."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "OAuthAuthForm.tsx + .test.tsx (modified)"
+          ]
+        },
+        {
+          "id": "03-05",
+          "name": "Drive Playwright scenarios 8-9 to green + diff-review checkpoint for Slice 03 AC #5",
+          "description": "RED: unskip Playwright scenarios 8 (ADO happy path) + 9 (ADO HTTPS warning). Implement bodies per TODOs. GREEN: drive any implementation gaps. AT PR REVIEW: explicit checkbox confirming the diff matches the AC #5 invariant \u2014 only AdoOAuthProvider.cs, AuthenticationMethodSchema.cs, Program.cs (DI line), docs, AuthMethodDropdown.tsx (label only), OAuthAuthForm.tsx (HTTPS warning), AzureDevOpsWorkTrackingConnector.cs (strategy delegation). No diff in OAuthController / OAuthService / OAuthCredential / OAuthTokenRefreshService / persistence. COMMIT: `test(oauth): unskip Playwright scenarios 8-9 (ADO OAuth + HTTPS warning)`.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+          "scenario_name": "Playwright 8 (ADO happy) + 9 (ADO HTTPS warning) + AC #5 invariant diff review",
+          "red_to_green_tests": [
+            "Scenario 8: ADO OAuth happy path against stub provider",
+            "Scenario 9: HTTPS warning visible on ADO form when BaseUrl is http://"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts"
+          ],
+          "dependencies": [
+            "03-03",
+            "03-04"
+          ],
+          "criteria": [
+            "Scenarios 8-9 green.",
+            "PR diff matches Slice 03 AC #5 invariant (checkbox in PR template)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "OAuthConnection.spec.ts (modified \u2014 scenarios 8-9)"
+          ]
+        },
+        {
+          "id": "03-06",
+          "name": "Docs \u2014 Azure DevOps OAuth setup",
+          "description": "RED: no test. GREEN: write `docs/integrations/oauth-ado.md` covering: 1) how to register an Entra ID app in the Azure portal, 2) required API permissions (vso.work, vso.work_write), 3) redirect URI ({BaseUrl}/api/oauth/callback), 4) HTTPS requirement at the Azure registration boundary, 5) clientId + clientSecret pasting into Lighthouse. Cross-link with oauth-jira.md and oauth-baseurl.md. COMMIT: `docs(oauth): add Azure DevOps OAuth setup page`.",
+          "test_file": "n/a",
+          "scenario_name": "ADO OAuth setup documentation",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/integrations/oauth-ado.md"
+          ],
+          "dependencies": [
+            "03-05"
+          ],
+          "criteria": [
+            "Doc page exists and cross-links."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "docs/integrations/oauth-ado.md (new)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 \u2014 Standalone-mode guard",
+      "description": "Frontend-only (US-04) \u2014 disables OAuth dropdown options in standalone (Tauri) mode with explanatory tooltip + Learn more link. Also lands the BI-4 invariant (zero /api/oauth/* routes in standalone-mode backend).",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "AuthMethodDropdown standalone-mode disabled state + tooltip + Learn more link",
+          "description": "RED: extend AuthMethodDropdown.test.tsx to assert: when runtime-mode is 'standalone', every entry with key.endsWith('.oauth') is rendered with disabled attribute set + tooltip 'OAuth authentication requires the server version of Lighthouse. Learn more \u2192' + the Learn-more link points to /docs/server-vs-standalone. GREEN: extend AuthMethodDropdown.tsx to read the existing standalone-vs-server runtime flag (per brief.md rbac-enhancements OIDC precedent) and render OAuth entries as disabled-with-tooltip in standalone mode. COMMIT: `feat(oauth): disable OAuth entries in standalone mode with explanatory tooltip`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.test.tsx",
+          "scenario_name": "Standalone-mode OAuth dropdown is disabled with tooltip (US-04 AC #1-2)",
+          "red_to_green_tests": [
+            "Every *.oauth entry is disabled in standalone mode",
+            "Hover tooltip text matches US-04 AC #2 wording",
+            "Learn more link points to /docs/server-vs-standalone"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.test.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Disabled state + tooltip + Learn-more link rendered in standalone mode.",
+            "No backend code touched (US-04 AC #3 invariant \u2014 verified at diff review)."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "AuthMethodDropdown.tsx + .test.tsx (modified)"
+          ]
+        },
+        {
+          "id": "04-02",
+          "name": "StandaloneModeTestWebApplicationFactory + Lighthouse:Mode runtime flag (skip OAuth controller registration)",
+          "description": "RED: BI-4 (OAuthStandaloneModeRouteRejectionIntegrationTest) is the consumer \u2014 its two tests assert POST /api/oauth/jira.oauth/connect and GET /api/oauth/callback both return 404 when the WAF is configured for standalone mode. GREEN: implement StandaloneModeTestWebApplicationFactory.ConfigureWebHost to set Lighthouse:Mode=Standalone via UseSetting. Add a check in Program.cs that skips OAuthController registration (and related DI) when Lighthouse:Mode==Standalone. Verify the legitimate server-mode WAF still registers everything correctly. COMMIT: `feat(oauth): skip OAuth controller registration in standalone mode`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs",
+          "scenario_name": "Standalone mode does not register OAuth controller (US-04 AC #3 invariant \u2014 implementation)",
+          "red_to_green_tests": [
+            "In standalone mode, POST /api/oauth/jira.oauth/connect returns 404 (route absent, not 405 from guard)",
+            "In standalone mode, GET /api/oauth/callback returns 404",
+            "In server mode, both routes are reachable (regression)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "01-10"
+          ],
+          "criteria": [
+            "Lighthouse:Mode runtime flag respected by Program.cs.",
+            "Server-mode regression-pass."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "Program.cs (modified \u2014 +standalone-mode skip path)",
+            "OAuthStandaloneModeRouteRejectionIntegrationTest.cs (modified \u2014 WAF factory body filled in)"
+          ]
+        },
+        {
+          "id": "04-03",
+          "name": "Drive BI-4 to green (unignore both standalone route rejection tests)",
+          "description": "RED: BI-4 already has two [Ignore]'d tests. Remove [Ignore] on both. Verify they pass against the implementation from step 04-02. GREEN: drive any gaps. COMMIT: `test(oauth): drive BI-4 standalone route rejection tests to green`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs",
+          "scenario_name": "BI-4: zero /api/oauth/* routes in standalone-mode backend",
+          "red_to_green_tests": [
+            "Both BI-4 [Ignore]'d tests now green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "Both [Ignore] removed; both tests green.",
+            "Confirms US-04 AC #3 invariant via integration test."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "OAuthStandaloneModeRouteRejectionIntegrationTest.cs (modified \u2014 fully unignored)"
+          ]
+        },
+        {
+          "id": "04-04",
+          "name": "Drive Playwright scenario 10 to green + docs/server-vs-standalone page",
+          "description": "RED: unskip Playwright scenario 10 (standalone disabled dropdown). Implement body per TODO. GREEN: drive any gaps. Write `docs/server-vs-standalone.md` explaining the difference + why OAuth is server-only. COMMIT: `test(oauth): unskip Playwright scenario 10 + add server-vs-standalone docs`.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+          "scenario_name": "Playwright 10: standalone OAuth dropdown disabled + tooltip",
+          "red_to_green_tests": [
+            "Scenario 10 green against the standalone Tauri build"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+            "docs/server-vs-standalone.md"
+          ],
+          "dependencies": [
+            "04-01",
+            "04-03"
+          ],
+          "criteria": [
+            "Scenario 10 green in ci_e2e.yml AND ci_verifymacos.yml / ci_verifywindows.yml standalone packaging workflows (Forge medium #3 follow-through).",
+            "Docs page links from the standalone-mode tooltip's Learn-more URL."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "OAuthConnection.spec.ts (modified \u2014 scenario 10)",
+            "docs/server-vs-standalone.md (new)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Release readiness \u2014 CI workflow + ci-learnings + observability docs",
+      "description": "Cross-slice release-gate work: extend ci_e2e.yml with the oauth-smoke JOB (workflow consolidation per maintainer principle \u2014 no new workflow file), document the OAuth callback origin / AllowedOrigins interplay in ci-learnings, and ship docs/oauth-observability.md with the 8 structured log event schemas. Smoke scenarios 11-12 wire up here but only run against real IdPs in the gated job.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Add oauth-smoke JOB to ci_e2e.yml + verify oauth-smoke environment + 5 secrets",
+          "description": "GREEN: extend `.github/workflows/ci_e2e.yml` with a new job `oauth-smoke` that: (a) gates on `if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'`, (b) declares `environment: oauth-smoke` (required-reviewer protection at the GitHub Actions environment level \u2014 operational task to set up), (c) reads JIRA_OAUTH_SANDBOX_CLIENT_ID/SECRET, ADO_OAUTH_SANDBOX_CLIENT_ID/SECRET, OAUTH_SMOKE_BASE_URL from environment secrets, (d) runs only the Playwright scenarios tagged `@requires_external @smoke`. The PR-fast `e2e` job in the same workflow does NOT declare the environment so cannot see the sandbox secrets (threat-model preserved). Verify the `oauth-smoke` GitHub environment exists with required-reviewer protection and the 5 secrets configured (operational task \u2014 GitHub admin action). COMMIT: `ci(oauth): add release-gated oauth-smoke JOB to ci_e2e.yml`.",
+          "test_file": "n/a (workflow validation via gh workflow run --ref + manual smoke at release)",
+          "scenario_name": "Release-gated oauth-smoke JOB exists in ci_e2e.yml with environment + secret isolation",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            ".github/workflows/ci_e2e.yml"
+          ],
+          "dependencies": [
+            "01-15",
+            "03-05"
+          ],
+          "criteria": [
+            "ci_e2e.yml has a new `oauth-smoke` job gated by event type + environment.",
+            "Workflow YAML lints cleanly (actionlint).",
+            "PR-fast e2e job in the same workflow cannot see the oauth-smoke environment secrets (threat-model verified).",
+            "GitHub Actions environment `oauth-smoke` configured with required-reviewer protection + 5 secrets (operational checklist; not in PR diff)."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "ci_e2e.yml (modified \u2014 +oauth-smoke job)"
+          ]
+        },
+        {
+          "id": "05-02",
+          "name": "Wire Playwright smoke scenarios 11-12 + manual-smoke runbook",
+          "description": "GREEN: unskip Playwright scenarios 11 (real Atlassian Cloud 3LO) + 12 (real Entra ID OAuth). These scenarios only execute in the oauth-smoke job. They require the GitHub environment secrets + the demo Lighthouse instance to be reachable + the sandbox Atlassian/ADO apps to be pre-configured. Write a short `docs/release/oauth-smoke-runbook.md` documenting the manual approval flow, what success looks like, and what to do if the smoke fails on a release tag. COMMIT: `test(oauth): unskip Playwright smoke scenarios 11-12 + add manual-smoke runbook`.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+          "scenario_name": "Playwright smoke 11 (Atlassian real) + 12 (Entra ID real) \u2014 runs in oauth-smoke job only",
+          "red_to_green_tests": [
+            "Scenario 11 passes when run against real Atlassian sandbox with valid secrets",
+            "Scenario 12 passes when run against real Entra ID sandbox with valid secrets"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+            "docs/release/oauth-smoke-runbook.md"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "criteria": [
+            "Scenarios 11-12 [test.skip()] removed; they execute in the oauth-smoke job.",
+            "Manual-smoke runbook documents the manual approval flow."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "OAuthConnection.spec.ts (modified \u2014 smoke scenarios)",
+            "docs/release/oauth-smoke-runbook.md (new)"
+          ]
+        },
+        {
+          "id": "05-03",
+          "name": "ci-learnings AllowedOrigins note + docs/oauth-observability.md",
+          "description": "GREEN: extend `docs/ci-learnings.md` under 'Runtime / startup' with a new entry documenting that the OAuth callback origin must be included in `Authentication:AllowedOrigins` for reverse-proxy deployments \u2014 extends the existing 2026-05-13 entry about list-typed env-var binding. Write `docs/operations/oauth-observability.md` documenting the 8 structured log event schemas (oauth.flow.initiated/completed/failed, oauth.callback.invalid_state, oauth.token.refreshed/refresh_failed, oauth.credential.status_changed, connection.sync.first_after_oauth) with field names, cardinality, and admin export procedure for the demo environment. Cross-link from oauth-jira.md and oauth-ado.md. COMMIT: `docs(oauth): ci-learnings AllowedOrigins note + observability schema reference`.",
+          "test_file": "n/a",
+          "scenario_name": "Release-readiness documentation",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/ci-learnings.md",
+            "docs/operations/oauth-observability.md"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "criteria": [
+            "AllowedOrigins ci-learnings note added.",
+            "Observability page documents all 8 log event schemas."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "docs/ci-learnings.md (modified)",
+            "docs/operations/oauth-observability.md (new)"
+          ]
+        },
+        {
+          "id": "05-04",
+          "name": "Persist OAuthStateSecret across restarts via IDataProtectionProvider",
+          "description": "Added 2026-05-14 after step 01-02 surfaced that the auto-generated OAuthStateSecret currently lives in-memory only \u2014 each boot regenerates it, invalidating any outstanding 15-minute state tokens. Per OQ-D1's design intent (auto-generate AND persist), this step wires ASP.NET Core's built-in `IDataProtectionProvider` (already in the Lighthouse stack for cookie/auth-token protection) to seed and persist the secret.\n\nRED: extend the test from step 01-02 with a new `OAuthStateSecretPersistenceTest.cs` integration test that (a) starts a `WebApplicationFactory<Program>`, (b) reads the in-memory `IServiceConfig.OAuthStateSecret` value, (c) disposes the factory and starts a SECOND factory pointing at the same data-protection key location, (d) asserts the second factory's `OAuthStateSecret` matches the first.\n\nGREEN: refactor `EnsureOAuthStateSecret` in `Program.cs` to use `IDataProtectionProvider`:\n  - Resolve `IDataProtectionProvider` from the service container.\n  - Create a `IDataProtector` with purpose string `\"Lighthouse.OAuth.StateSecret.v1\"`.\n  - On first boot: generate 32 random bytes, protect them via the data protector, persist the protected blob via the existing config or a tiny new persistent-secrets table (or via `IDataProtectionBuilder.PersistKeysToFileSystem` / `PersistKeysToDbContext` whichever fits \u2014 read the existing data-protection setup to match).\n  - On subsequent boots: unprotect and reuse.\n\nCross-boot test must pass. Pre-existing 4 tests in step 01-02 still pass.\n\nCOMMIT: `feat(oauth): persist OAuthStateSecret across restarts via IDataProtectionProvider`",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateSecretPersistenceTest.cs",
+          "scenario_name": "OAuthStateSecret survives a process restart (fulfils OQ-D1 design intent)",
+          "red_to_green_tests": [
+            "Two WebApplicationFactory<Program> instances pointing at the same data-protection key location resolve the same OAuthStateSecret value"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateSecretPersistenceTest.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "OAuthStateSecret persists across process restarts.",
+            "Pre-existing OAuthStateTokenIssuerTest cases still green.",
+            "No new NuGet dependency (uses built-in Microsoft.AspNetCore.DataProtection).",
+            "Failure mode acceptable: if the data-protection key store is wiped, the secret regenerates (current behaviour \u2014 not a regression)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "Program.cs (modified \u2014 EnsureOAuthStateSecret rewired to IDataProtectionProvider)",
+            "OAuthStateSecretPersistenceTest.cs (new)"
+          ],
+          "deferral_history": {
+            "reason": "Step 01-02 crafter found no existing persistent-secret precedent in the codebase, took the in-memory deferral path under the prompt's 'make the reasonable call' clause, and flagged it transparently in the commit body. PO accepted the deferral (2026-05-14) and added this step to track the persistence fix as release-readiness work \u2014 v1 is shippable with in-memory regeneration (15-min token lifetime caps the user impact); GA should not ship without persistence."
+          }
+        }
+      ]
+    }
+  ]
+}

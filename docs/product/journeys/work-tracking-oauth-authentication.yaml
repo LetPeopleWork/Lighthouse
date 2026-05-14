@@ -1,0 +1,96 @@
+schema_version: 1
+feature_id: work-tracking-oauth-authentication
+updated: 2026-05-14
+
+journeys:
+
+  - name: oauth-connection-setup
+    goal: A connector-admin replaces (or adds alongside) a PAT-based Jira/ADO connection with an OAuth-authenticated one, end-to-end
+    persona: connector-admin (existing Lighthouse instance owner; not RBAC-specific)
+    job_id: job-oauth-work-tracking-credentials
+
+    emotional_arc:
+      start: Wary — "Is this going to be more complicated than just pasting a PAT? What if I get the callback URL wrong?"
+      middle: Focused — "Form is clear, callback URL is shown explicitly, scopes are listed; I know exactly what I'm registering with my IdP."
+      end: Relieved — "Lighthouse is connected, the first sync ran, and I no longer have a PAT in a config field I'll forget about."
+
+    steps:
+      - id: 1
+        actor: connector-admin
+        action: Register OAuth app in Atlassian developer console (or Entra ID for ADO)
+        location: external (Atlassian / Microsoft) — not in Lighthouse
+        artifact: clientId + clientSecret + scopes
+        shared_artifact_source: external IdP (Atlassian dev console / Entra ID app registration)
+        output: clientId and clientSecret pasted into Lighthouse in the next step
+        emotional_state: focused
+
+      - id: 2
+        actor: connector-admin
+        action: Open Lighthouse connector form, select Authentication = "OAuth (Jira Cloud)" or "OAuth (Azure DevOps)"
+        location: Lighthouse → Settings → Connections → New / Edit connection
+        artifact: connection draft with clientId + clientSecret + read-only callback URL
+        shared_artifact_source: server-configured BaseUrl → callback URL display (single source of truth)
+        output: form shows callback URL the admin will register with the IdP (or already did in step 1)
+        emotional_state: focused
+
+      - id: 3
+        actor: connector-admin
+        action: Click "Connect"; browser redirects to IdP consent screen
+        location: IdP consent UI (Atlassian / Microsoft)
+        artifact: authorization code
+        shared_artifact_source: IdP issues the code on consent
+        output: redirect back to GET /api/oauth/callback?code=...&state=...
+        emotional_state: focused
+
+      - id: 4
+        actor: Lighthouse backend
+        action: Exchange authorization code for access + refresh tokens; persist OAuthCredential with status=Valid
+        location: Lighthouse → OAuthController → IOAuthProvider.ExchangeCode
+        artifact: OAuthCredential (accessToken, refreshToken, expiresAt, status)
+        shared_artifact_source: OAuthCredential entity (single source of truth for token lifecycle)
+        output: 302 back to /settings/connections/{id} with success state
+        emotional_state: relieved
+
+      - id: 5
+        actor: connector-admin
+        action: Trigger first sync ("Update All" or implicit on next scheduled cycle)
+        location: Lighthouse → Connection settings
+        artifact: synced work items
+        shared_artifact_source: Jira / ADO REST API; auth header Bearer {accessToken}
+        output: connection card shows "Last synced: just now"; team views populate
+        emotional_state: confident
+
+    error_paths:
+      - id: E1
+        scenario: BaseUrl is not configured; callback URL displayed is wrong
+        recovery: Non-blocking warning in the form before "Connect" is clicked, instructing admin to set Lighthouse:BaseUrl
+        coverage: US-01 AC #7
+
+      - id: E2
+        scenario: ADO requires HTTPS callback; BaseUrl is HTTP
+        recovery: Warning shown on the ADO form before "Connect"; form stays usable (registration will fail at IdP; that error is informative)
+        coverage: US-03 AC #2
+
+      - id: E3
+        scenario: Refresh token revoked from the IdP
+        recovery: Pre-request expiry check fails; OAuthCredential.status → RefreshFailed; ReconnectBanner appears on connection card; Reconnect button re-runs POST /api/oauth/jira/connect
+        coverage: US-02 AC #2-3
+
+      - id: E4
+        scenario: Standalone-mode user opens the form
+        recovery: OAuth option is rendered disabled with explanatory tooltip and Learn-more link
+        coverage: US-04 AC #1-2
+
+    shared_artifacts:
+      - name: BaseUrl
+        source: server appsettings (Lighthouse:BaseUrl)
+        single_source_of_truth: yes
+        used_by: callback URL display in form; OAuthController redirect computation
+      - name: OAuthConfiguration
+        source: per-connection persisted entity (clientId, clientSecret, provider name)
+        single_source_of_truth: yes
+        used_by: IOAuthProvider implementations to build authorization URL and exchange code
+      - name: OAuthCredential
+        source: per-connection persisted entity (accessToken, refreshToken, expiresAt, status)
+        single_source_of_truth: yes
+        used_by: JiraWorkTrackingConnector / AzureDevOpsWorkTrackingConnector (Bearer header); OAuthTokenRefreshService (refresh + status updates)
