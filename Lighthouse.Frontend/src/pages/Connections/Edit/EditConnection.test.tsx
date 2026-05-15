@@ -240,6 +240,31 @@ describe("EditConnectionPage", () => {
 				).toHaveBeenCalled();
 			});
 		});
+
+		it("renders the ReconnectBanner inline when the loaded connection requiresReconnect", async () => {
+			const staleConnection = new WorkTrackingSystemConnection({
+				id: 42,
+				name: "Stale OAuth Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+			staleConnection.requiresReconnect = true;
+
+			renderWithContext({
+				getConfiguredWorkTrackingSystems: vi
+					.fn()
+					.mockResolvedValue([staleConnection]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(
+						"Reconnect required — the OAuth refresh token is no longer valid",
+					),
+				).toBeInTheDocument();
+			});
+		});
 	});
 
 	describe("RBAC guard", () => {

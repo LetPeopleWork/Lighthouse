@@ -18,6 +18,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
+import ReconnectBanner from "../../components/Common/Connections/ReconnectBanner";
 import DataGridBase from "../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../components/Common/DataGrid/types";
 import DataOverviewTable from "../../components/Common/DataOverviewTable/DataOverviewTable";
@@ -565,6 +566,14 @@ const OverviewDashboard: React.FC = () => {
 									</Alert>
 								</Fade>
 							)}
+
+							{filteredConnections
+								.filter((c) => c.requiresReconnect === true)
+								.map((c) => (
+									<Box key={`reconnect-${c.id}`} sx={{ mb: 2 }}>
+										<ReconnectBanner connection={c} />
+									</Box>
+								))}
 
 							{connections.length > 0 && filteredConnections.length > 0 && (
 								<Box data-testid="connections-datagrid-container">

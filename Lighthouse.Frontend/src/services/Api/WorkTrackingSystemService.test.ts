@@ -295,6 +295,31 @@ describe("WorkTrackingSystemService", () => {
 		);
 	});
 
+	it("should deserialize requiresReconnect flag from configured-connections response", async () => {
+		const mockResponse: (IWorkTrackingSystemConnection & {
+			requiresReconnect?: boolean;
+		})[] = [
+			{
+				id: 7,
+				name: "Stale OAuth Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				authenticationMethodKey: "jira.oauth",
+				additionalFieldDefinitions: [],
+				writeBackMappingDefinitions: [],
+				workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
+				requiresReconnect: true,
+			},
+		];
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+		const configuredSystems =
+			await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+
+		expect(configuredSystems[0].requiresReconnect).toBe(true);
+	});
+
 	it("should deserialize authenticationMethodKey from response", async () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{

@@ -30,6 +30,7 @@ import { ApiError } from "../../../services/Api/ApiError";
 import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
+import ReconnectBanner from "../Connections/ReconnectBanner";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
 
@@ -406,6 +407,13 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					<Grid size={{ xs: 12 }}>
 						<Typography variant="h4">{title}</Typography>
 					</Grid>
+
+					{isEditMode &&
+						selectedWorkTrackingSystem?.requiresReconnect === true && (
+							<Grid size={{ xs: 12 }}>
+								<ReconnectBanner connection={selectedWorkTrackingSystem} />
+							</Grid>
+						)}
 
 					<Grid size={{ xs: 12, md: 6 }}>
 						<TextField

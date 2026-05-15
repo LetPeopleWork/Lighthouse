@@ -51,6 +51,22 @@ const mockConnections = [
 	}),
 ];
 
+const makeReconnectingConnection = (
+	id: number,
+	name: string,
+	requiresReconnect: boolean,
+): WorkTrackingSystemConnection => {
+	const connection = new WorkTrackingSystemConnection({
+		id,
+		name,
+		workTrackingSystem: "Jira",
+		options: [],
+		authenticationMethodKey: "jira.oauth",
+	});
+	connection.requiresReconnect = requiresReconnect;
+	return connection;
+};
+
 const renderWithProviders = (
 	component: React.ReactElement,
 	overrides: Partial<IApiServiceContext> = {},
@@ -315,6 +331,34 @@ describe("OverviewDashboard", () => {
 		await waitFor(() => {
 			expect(screen.getByText("My ADO Connection")).toBeInTheDocument();
 		});
+	});
+
+	it("renders one ReconnectBanner per RefreshFailed connection and none for healthy connections", async () => {
+		const connections = [
+			makeReconnectingConnection(101, "Healthy Jira", false),
+			makeReconnectingConnection(102, "Stale Jira", true),
+			makeReconnectingConnection(103, "Stale ADO", true),
+		];
+
+		renderWithProviders(<OverviewDashboard />, {}, { connections });
+
+		await waitFor(() => {
+			expect(screen.getByText("Stale Jira")).toBeInTheDocument();
+		});
+
+		const reconnectButtons = screen.getAllByRole("button", {
+			name: /Reconnect/i,
+		});
+		expect(reconnectButtons).toHaveLength(2);
+
+		const reconnectAlerts = screen
+			.getAllByRole("alert")
+			.filter((node) =>
+				node.textContent?.includes(
+					"Reconnect required — the OAuth refresh token is no longer valid",
+				),
+			);
+		expect(reconnectAlerts).toHaveLength(2);
 	});
 
 	it("shows empty state alert when no connections exist", async () => {

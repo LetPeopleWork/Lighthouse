@@ -41,6 +41,7 @@ export interface IWorkTrackingSystemConnection {
 	availableAuthenticationMethods?: IAuthenticationMethod[];
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
+	requiresReconnect?: boolean;
 }
 
 export class WorkTrackingSystemConnection
@@ -55,6 +56,7 @@ export class WorkTrackingSystemConnection
 	availableAuthenticationMethods?: IAuthenticationMethod[];
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
+	requiresReconnect?: boolean;
 
 	constructor(data: {
 		name: string;
@@ -66,6 +68,7 @@ export class WorkTrackingSystemConnection
 		availableAuthenticationMethods?: IAuthenticationMethod[];
 		additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 		writeBackMappingDefinitions?: IWriteBackMappingDefinition[];
+		requiresReconnect?: boolean;
 	}) {
 		this.id = data.id ?? null;
 		this.name = data.name;
@@ -76,6 +79,7 @@ export class WorkTrackingSystemConnection
 		this.availableAuthenticationMethods = data.availableAuthenticationMethods;
 		this.additionalFieldDefinitions = data.additionalFieldDefinitions ?? [];
 		this.writeBackMappingDefinitions = data.writeBackMappingDefinitions ?? [];
+		this.requiresReconnect = data.requiresReconnect;
 	}
 
 	workTrackingSystemGetDataRetrievalDisplayName(): string {

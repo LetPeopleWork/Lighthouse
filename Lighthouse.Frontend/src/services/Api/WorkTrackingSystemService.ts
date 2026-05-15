@@ -134,6 +134,7 @@ export class WorkTrackingSystemService
 					m as unknown as Record<string, unknown>,
 				),
 			),
+			requiresReconnect: workTrackingSystemConnection.requiresReconnect,
 		});
 	}
 

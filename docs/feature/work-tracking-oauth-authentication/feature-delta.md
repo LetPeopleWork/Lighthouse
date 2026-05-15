@@ -902,3 +902,13 @@ Pre-delivered tests (all green under `dotnet test --filter`):
 - `Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:486` — `GetWorkTrackingSystemConnections_NoOAuthCredentialForConnection_SetsRequiresReconnectFalse` covers the other half of RGB-test #2.
 - `Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs:100` — `GetSystemInfo_PropagatesBaseUrlFromService` covers RGB-test #3.
 
+## Wave: DELIVER / [WHY] Step 02-04 path drift from roadmap
+
+The roadmap's `files_to_modify` named two paths that do not exist in the codebase. Actual integration points used:
+
+- Roadmap said `pages/Settings/Connections/ConnectionsList.tsx` — actual connection-list rendering lives in `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx`. Banners now render in the system-admin connections section above the DataGrid (one per `requiresReconnect === true` row).
+- Roadmap said `pages/Settings/Connections/EditConnection.tsx` — actual file is `Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx`, which renders edit-mode via `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx`. The banner integration landed inside `ModifyConnectionSettings.tsx` since that component owns the loaded-connection state in edit mode.
+- New `ReconnectBanner.tsx` placed under `Lighthouse.Frontend/src/components/Common/Connections/` (plural — alongside `OAuthAuthForm.tsx` and `AuthMethodDropdown.tsx`).
+
+Pre-requisite model gap also closed by 02-04 (roadmap missed it): the frontend model `IWorkTrackingSystemConnection` and the deserializer in `WorkTrackingSystemService.ts` did not propagate the backend's `requiresReconnect` flag. 02-04 added `requiresReconnect?: boolean` to the interface and class, threaded it through `deserializeWorkTrackingSystemConnection`, and added a focused round-trip test in `WorkTrackingSystemService.test.ts`.
+
