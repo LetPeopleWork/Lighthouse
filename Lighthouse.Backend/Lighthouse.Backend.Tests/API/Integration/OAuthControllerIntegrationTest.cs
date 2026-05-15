@@ -162,7 +162,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
                 Assert.That(response.Headers.Location, Is.Not.Null);
                 Assert.That(response.Headers.Location!.ToString(),
-                    Is.EqualTo($"/settings/connections/new?oauth=success&connectionId={SeededConnectionId}"));
+                    Is.EqualTo($"/connections/new?oauth=success&connectionId={SeededConnectionId}"));
             }
 
             using var verificationScope = factory.Services.CreateScope();
