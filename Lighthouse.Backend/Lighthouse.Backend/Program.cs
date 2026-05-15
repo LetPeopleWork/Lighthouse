@@ -817,6 +817,7 @@ namespace Lighthouse.Backend
 
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
+            builder.Services.AddScoped<IOAuthHealthAggregator, OAuthHealthAggregator>();
             builder.Services.AddScoped<PatAuthStrategy>();
             builder.Services.AddScoped<JiraCloudBasicAuthStrategy>();
             builder.Services.AddScoped<LinearApiKeyAuthStrategy>();

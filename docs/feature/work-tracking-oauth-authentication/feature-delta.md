@@ -912,3 +912,42 @@ The roadmap's `files_to_modify` named two paths that do not exist in the codebas
 
 Pre-requisite model gap also closed by 02-04 (roadmap missed it): the frontend model `IWorkTrackingSystemConnection` and the deserializer in `WorkTrackingSystemService.ts` did not propagate the backend's `requiresReconnect` flag. 02-04 added `requiresReconnect?: boolean` to the interface and class, threaded it through `deserializeWorkTrackingSystemConnection`, and added a focused round-trip test in `WorkTrackingSystemService.test.ts`.
 
+## Wave: DELIVER / [WHY] Upstream issues — OAuth event store deferred (step 02-05 scope cut)
+
+Step 02-05 was scope-cut at dispatch time. The roadmap assumed an OAuth event store
+(persisted history of `oauth.flow.initiated/completed/failed` + `oauth.token.refreshed/refresh_failed`
+events). That store does not exist in this codebase — Serilog writes to Console + File sinks only
+(`Lighthouse.Backend/Lighthouse.Backend/appsettings.json:14-36`); the `OAuthCredential` entity carries
+only `Status` and `UpdatedAt` (no event history, no `CreatedAt`, no refresh-attempt counter). Two of
+the four roadmap-declared KPIs are therefore unavailable today:
+
+- `setup_success_rate_30d` — needs counts of `oauth.flow.initiated` vs `oauth.flow.completed`/`oauth.flow.failed`.
+- `refresh_success_rate_7d_per_connection` — needs counts of `oauth.token.refreshed` vs `oauth.token.refresh_failed`.
+
+What 02-05 actually delivered:
+
+- `GET /api/oauth/health` endpoint gated by `[Authorize] + [LicenseGuard(RequirePremium = true)] + [RbacGuard(SystemAdmin)]`.
+- `OAuthHealthAggregator` computes `staleRefreshFailedCount24h` and `staleRefreshFailedCount7d` from
+  the existing `OAuthCredentials` table (rows with `Status == RefreshFailed AND UpdatedAt < now − 24h/7d`).
+- The two unavailable KPIs return `{ value: null, unavailableReason: "event_store_pending" }` so the
+  frontend tile (step 02-06) can render the available data and explain the gaps without lying.
+- Non-Premium callers receive `403`, matching `LicenseGuardAttribute` semantics (the roadmap text said
+  `402`; the actual project guard returns `403` and the test asserts that).
+
+Proposed follow-up work (NEW step, recommended placement: start of Slice 05 release-readiness):
+
+- Add `OAuthEvent` entity mirroring `RefreshLog` (Id, EventType enum, ConnectionId, CredentialId nullable,
+  ProviderKey, OccurredAt, Success, DurationMs nullable, ReasonCode nullable).
+- Generate EF migration via the `CreateMigration` PowerShell script (SQLite + Postgres).
+- Add `IOAuthEventLog` / `OAuthEventLog` service (precedent: `IRefreshLogService` / `RefreshLogService`).
+- Wire write-side: `OAuthService` already calls `_logger.LogInformation("oauth.…")` at all the right
+  emission sites — extend each call site to also `eventLog.RecordAsync(...)`. Same pattern in
+  `OAuthController` for `oauth.callback.invalid_state` + `oauth.flow.failed`.
+- Extend `OAuthHealthAggregator` to compute the two unavailable KPIs from `OAuthEvent` rows in the
+  trailing 30d / 7d window. Replace the `unavailableReason: "event_store_pending"` payloads with real
+  numbers.
+
+The aggregator + controller + tests landed here are forward-compatible: when the event store ships,
+only the aggregator body changes; the `OAuthHealthDto` contract stays stable; the frontend tile (02-06)
+does not need a redesign.
+
