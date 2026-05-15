@@ -22,6 +22,27 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
+        public void GetWorkTrackingSystemConnectionOptionByKey_Generic_NoOptionWithKey_ReturnsNull()
+        {
+            var subject = CreateSubject();
+
+            var value = subject.GetWorkTrackingSystemConnectionOptionByKey<int>("Missing");
+
+            Assert.That(value, Is.Null);
+        }
+
+        [Test]
+        public void GetWorkTrackingSystemConnectionOptionByKey_Generic_ValueAvailable_ReturnsParsedValue()
+        {
+            var subject = new WorkTrackingSystemConnection();
+            subject.Options.Add(new WorkTrackingSystemConnectionOption { Key = "Timeout", Value = "42" });
+
+            var value = subject.GetWorkTrackingSystemConnectionOptionByKey<int>("Timeout");
+
+            Assert.That(value, Is.EqualTo(42));
+        }
+
+        [Test]
         public void AdditionalFieldDefinitions_EmptyByDefault()
         {
             var subject = new WorkTrackingSystemConnection();
