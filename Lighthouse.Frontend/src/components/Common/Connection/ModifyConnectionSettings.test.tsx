@@ -528,9 +528,8 @@ describe("ModifyConnectionSettings", () => {
 				},
 			);
 
-			const callback = await screen.findByLabelText<HTMLInputElement>(
-				"Callback URL",
-			);
+			const callback =
+				await screen.findByLabelText<HTMLInputElement>("Callback URL");
 			expect(callback.value).toBe(
 				"https://lighthouse.example.com/api/oauth/callback",
 			);

@@ -2,11 +2,7 @@ import {
 	Alert,
 	Box,
 	Button,
-	FormControl,
-	InputLabel,
-	MenuItem,
-	Select,
-	type SelectChangeEvent,
+	Link,
 	Step,
 	StepLabel,
 	Stepper,
@@ -15,6 +11,9 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { useBaseUrl } from "../../../hooks/useBaseUrl";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
 	IAuthenticationMethod,
 	IWorkTrackingSystemConnection,
@@ -22,7 +21,18 @@ import type {
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import { ApiError } from "../../../services/Api/ApiError";
 import ActionButton from "../ActionButton/ActionButton";
+import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
+
+const OAUTH_KEY_SUFFIX = ".oauth";
+
+const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
+	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
+
+const buildOAuthCallbackUrl = (baseUrl: string | null): string => {
+	const root = baseUrl && baseUrl.length > 0 ? baseUrl : window.location.origin;
+	return `${root}/api/oauth/callback`;
+};
 
 const STEPS = ["Choose Type", "Configuration", "Name & Create"];
 
@@ -66,6 +76,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		string | null
 	>(null);
 	const [saving, setSaving] = useState(false);
+
+	const { licenseStatus } = useLicenseRestrictions();
+	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
+	const baseUrl = useBaseUrl();
+	const callbackUrl = buildOAuthCallbackUrl(baseUrl);
+	const isOAuthSelected = isOAuthMethod(selectedAuthMethod);
+	const hasBaseUrl = Boolean(baseUrl && baseUrl.length > 0);
 
 	const getAllAuthOptionKeys = useCallback(
 		(connection: IWorkTrackingSystemConnection | null): Set<string> => {
@@ -134,10 +151,10 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		setActiveStep(1);
 	};
 
-	const handleAuthMethodChange = (event: SelectChangeEvent<string>) => {
+	const handleAuthMethodChange = (key: string) => {
 		const availableMethods =
 			selectedSystem?.availableAuthenticationMethods ?? [];
-		const method = availableMethods.find((m) => m.key === event.target.value);
+		const method = availableMethods.find((m) => m.key === key);
 		if (method) {
 			setSelectedAuthMethod(method);
 			setAuthOptions(
@@ -268,66 +285,98 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		</Box>
 	);
 
-	const renderStep2 = () => (
-		<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-			{showAuthMethodSelector && (
-				<FormControl fullWidth>
-					<InputLabel>Authentication Method</InputLabel>
-					<Select
-						value={selectedAuthMethod?.key ?? ""}
-						onChange={handleAuthMethodChange}
-						label="Authentication Method"
-					>
-						{selectedSystem?.availableAuthenticationMethods?.map((method) => (
-							<MenuItem key={method.key} value={method.key}>
-								{method.displayName}
-							</MenuItem>
-						))}
-					</Select>
-				</FormControl>
-			)}
+	const renderStep2 = () => {
+		const showOAuthFields = isOAuthSelected && canUsePremiumFeatures;
+		const showOAuthUpgrade = isOAuthSelected && !canUsePremiumFeatures;
+		const showSchemaAuthFields = !isOAuthSelected || showOAuthFields;
 
-			{authOptions.map((option) => {
-				const displayName =
-					selectedAuthMethod?.options.find((o) => o.key === option.key)
-						?.displayName ?? option.key;
-				return (
+		return (
+			<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+				{showAuthMethodSelector && (
+					<AuthMethodDropdown
+						methods={selectedSystem?.availableAuthenticationMethods ?? []}
+						selectedKey={selectedAuthMethod?.key ?? ""}
+						canUsePremiumFeatures={canUsePremiumFeatures}
+						onChange={handleAuthMethodChange}
+					/>
+				)}
+
+				{showOAuthFields && !hasBaseUrl && (
+					<Alert severity="warning">
+						Your callback URL may be incorrect. Set Lighthouse:BaseUrl in your
+						server configuration to guarantee OAuth registration works.
+					</Alert>
+				)}
+
+				{showOAuthUpgrade && (
+					<Alert
+						severity="info"
+						data-testid="oauth-premium-upgrade-affordance-wizard"
+					>
+						<Typography variant="body2">
+							OAuth 2.0 authentication is a Premium feature. Upgrade to Premium
+							to connect via OAuth.{" "}
+							<Link component={RouterLink} to="/settings/license">
+								View license options
+							</Link>
+						</Typography>
+					</Alert>
+				)}
+
+				{showSchemaAuthFields &&
+					authOptions.map((option) => {
+						const displayName =
+							selectedAuthMethod?.options.find((o) => o.key === option.key)
+								?.displayName ?? option.key;
+						return (
+							<TextField
+								key={option.key}
+								label={displayName}
+								type={option.isSecret ? "password" : "text"}
+								fullWidth
+								value={option.value}
+								onChange={(e) =>
+									handleAuthOptionChange(option.key, e.target.value)
+								}
+							/>
+						);
+					})}
+
+				{showOAuthFields && (
+					<TextField
+						label="Callback URL"
+						value={callbackUrl}
+						slotProps={{ input: { readOnly: true } }}
+						fullWidth
+					/>
+				)}
+
+				{requiredOtherOptions.map((option) => (
 					<TextField
 						key={option.key}
-						label={displayName}
+						label={option.key}
 						type={option.isSecret ? "password" : "text"}
 						fullWidth
 						value={option.value}
-						onChange={(e) => handleAuthOptionChange(option.key, e.target.value)}
+						onChange={(e) =>
+							handleRequiredOtherOptionChange(option.key, e.target.value)
+						}
 					/>
-				);
-			})}
+				))}
 
-			{requiredOtherOptions.map((option) => (
-				<TextField
-					key={option.key}
-					label={option.key}
-					type={option.isSecret ? "password" : "text"}
-					fullWidth
-					value={option.value}
-					onChange={(e) =>
-						handleRequiredOtherOptionChange(option.key, e.target.value)
-					}
-				/>
-			))}
-
-			{validationError && (
-				<Alert severity="error" sx={{ width: "100%" }}>
-					<Typography variant="body2">{validationError}</Typography>
-					{validationTechnicalDetails && (
-						<Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-							{validationTechnicalDetails}
-						</Typography>
-					)}
-				</Alert>
-			)}
-		</Box>
-	);
+				{validationError && (
+					<Alert severity="error" sx={{ width: "100%" }}>
+						<Typography variant="body2">{validationError}</Typography>
+						{validationTechnicalDetails && (
+							<Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+								{validationTechnicalDetails}
+							</Typography>
+						)}
+					</Alert>
+				)}
+			</Box>
+		);
+	};
 
 	const renderStep3 = () => (
 		<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>

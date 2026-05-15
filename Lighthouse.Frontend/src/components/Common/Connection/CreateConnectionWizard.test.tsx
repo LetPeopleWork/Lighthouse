@@ -3,12 +3,17 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ILicensingService } from "../../../services/Api/LicensingService";
+import type { IPortfolioService } from "../../../services/Api/PortfolioService";
+import type { ITeamService } from "../../../services/Api/TeamService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
+	createMockSystemInfoService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import CreateConnectionWizard from "./CreateConnectionWizard";
@@ -143,6 +148,63 @@ const mockJiraSystem = new WorkTrackingSystemConnection({
 	authenticationMethodKey: "jira.cloud",
 });
 
+const mockJiraSystemWithOAuth = new WorkTrackingSystemConnection({
+	id: 0,
+	name: "Jira",
+	workTrackingSystem: "Jira",
+	options: [],
+	availableAuthenticationMethods: [
+		{
+			key: "jira.cloud",
+			displayName: "Jira Cloud (API Token)",
+			options: [
+				{
+					key: "ApiToken",
+					displayName: "API Token",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		},
+		{
+			key: "jira.oauth",
+			displayName: "Jira Cloud (OAuth)",
+			isPremium: true,
+			options: [
+				{
+					key: "oauth.clientId",
+					displayName: "Client ID",
+					isSecret: false,
+					isOptional: false,
+				},
+				{
+					key: "oauth.clientSecret",
+					displayName: "Client Secret",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
+		},
+	],
+	additionalFieldDefinitions: [],
+	authenticationMethodKey: "jira.cloud",
+});
+
+const createLicensingService = (
+	canUsePremiumFeatures: boolean,
+): ILicensingService => {
+	const status: ILicenseStatus = {
+		hasLicense: canUsePremiumFeatures,
+		isValid: canUsePremiumFeatures,
+		canUsePremiumFeatures,
+	};
+	return {
+		getLicenseStatus: vi.fn().mockResolvedValue(status),
+		importLicense: vi.fn(),
+		clearLicense: vi.fn(),
+	};
+};
+
 const mockLinearSystem = new WorkTrackingSystemConnection({
 	id: 0,
 	name: "Linear",
@@ -176,6 +238,8 @@ interface RenderOptions {
 	validateConnection?: (conn: unknown) => Promise<boolean>;
 	saveConnection?: (conn: unknown) => Promise<void>;
 	onCancel?: () => void;
+	canUsePremiumFeatures?: boolean;
+	baseUrl?: string | null;
 }
 
 const renderWizard = (options: RenderOptions = {}) => {
@@ -184,6 +248,8 @@ const renderWizard = (options: RenderOptions = {}) => {
 		validateConnection = vi.fn().mockResolvedValue(true),
 		saveConnection = vi.fn().mockResolvedValue(undefined),
 		onCancel = vi.fn(),
+		canUsePremiumFeatures = true,
+		baseUrl,
 	} = options;
 
 	const getSupportedSystems = vi.fn().mockResolvedValue(supportedSystems);
@@ -199,8 +265,31 @@ const renderWizard = (options: RenderOptions = {}) => {
 		},
 	]);
 
+	const mockSystemInfoService = createMockSystemInfoService();
+	vi.mocked(mockSystemInfoService.getSystemInfo).mockResolvedValue({
+		os: "test",
+		runtime: "test",
+		architecture: "test",
+		processId: 0,
+		databaseProvider: "sqlite",
+		databaseConnection: null,
+		logPath: null,
+		baseUrl: baseUrl ?? undefined,
+	});
+
+	const mockTeamService = {
+		getTeams: vi.fn().mockResolvedValue([]),
+	} as unknown as ITeamService;
+	const mockPortfolioService = {
+		getPortfolios: vi.fn().mockResolvedValue([]),
+	} as unknown as IPortfolioService;
+
 	const mockApiServiceContext = createMockApiServiceContext({
 		terminologyService: mockTerminologyService,
+		licensingService: createLicensingService(canUsePremiumFeatures),
+		systemInfoService: mockSystemInfoService,
+		teamService: mockTeamService,
+		portfolioService: mockPortfolioService,
 	});
 
 	render(
@@ -504,6 +593,65 @@ describe("CreateConnectionWizard", () => {
 				// Should see auth method selector with Jira Cloud as default
 				expect(screen.getByLabelText("Username")).toBeInTheDocument();
 			});
+		});
+	});
+
+	describe("Step 2: OAuth premium-gated authentication method", () => {
+		const goToOAuthStep2 = async (options: RenderOptions = {}) => {
+			const user = userEvent.setup();
+			renderWizard({
+				supportedSystems: [mockJiraSystemWithOAuth],
+				...options,
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Jira/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Jira/i }));
+			const select = await screen.findByRole("combobox");
+			await user.click(select);
+			await user.click(await screen.findByRole("option", { name: /OAuth/i }));
+		};
+
+		it("renders read-only Callback URL field derived from server BaseUrl when Premium", async () => {
+			await goToOAuthStep2({
+				canUsePremiumFeatures: true,
+				baseUrl: "https://lighthouse.example.com",
+			});
+
+			const callback =
+				await screen.findByLabelText<HTMLInputElement>("Callback URL");
+			expect(callback).toHaveAttribute("readonly");
+			expect(callback.value).toBe(
+				"https://lighthouse.example.com/api/oauth/callback",
+			);
+			expect(
+				screen.queryByText(/Your callback URL may be incorrect/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders the BaseUrl warning when Premium but no BaseUrl configured", async () => {
+			await goToOAuthStep2({
+				canUsePremiumFeatures: true,
+				baseUrl: null,
+			});
+
+			expect(
+				await screen.findByText(/Your callback URL may be incorrect/i),
+			).toBeInTheDocument();
+			expect(screen.getByText(/Set Lighthouse:BaseUrl/i)).toBeInTheDocument();
+		});
+
+		it("renders Upgrade affordance and hides Client ID / Secret when not Premium", async () => {
+			await goToOAuthStep2({ canUsePremiumFeatures: false });
+
+			expect(
+				await screen.findByText(/Upgrade to Premium/i),
+			).toBeInTheDocument();
+			expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
+			expect(screen.queryByLabelText("Client Secret")).not.toBeInTheDocument();
+			expect(screen.queryByLabelText("Callback URL")).not.toBeInTheDocument();
 		});
 	});
 
