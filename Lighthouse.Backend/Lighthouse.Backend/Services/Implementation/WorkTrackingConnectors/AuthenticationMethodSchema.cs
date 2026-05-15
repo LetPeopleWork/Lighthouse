@@ -93,6 +93,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
                         IsPremium = true,
                         Options =
                         [
+                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = "Jira URL", IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientId, DisplayName = "Client ID", IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientSecret, DisplayName = "Client Secret", IsSecret = true }
                         ]

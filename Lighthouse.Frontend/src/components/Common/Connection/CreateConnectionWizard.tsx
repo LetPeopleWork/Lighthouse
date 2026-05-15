@@ -230,31 +230,40 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	};
 
 	const handleNext = async () => {
-		if (activeStep === 1) {
-			setValidating(true);
+		if (activeStep !== 1) {
+			return;
+		}
+
+		if (isOAuthSelected) {
 			setValidationError(null);
 			setValidationTechnicalDetails(null);
-			try {
-				const isValid = await runValidation();
-				if (isValid) {
-					setActiveStep(2);
-				} else {
-					setValidationError(
-						"Could not validate the connection. Check your settings and try again.",
-					);
-				}
-			} catch (error) {
-				if (error instanceof ApiError && error.code !== 403) {
-					setValidationError(error.message);
-					setValidationTechnicalDetails(error.technicalDetails ?? null);
-				} else {
-					setValidationError(
-						"Could not validate the connection. Check your settings and try again.",
-					);
-				}
-			} finally {
-				setValidating(false);
+			setActiveStep(2);
+			return;
+		}
+
+		setValidating(true);
+		setValidationError(null);
+		setValidationTechnicalDetails(null);
+		try {
+			const isValid = await runValidation();
+			if (isValid) {
+				setActiveStep(2);
+			} else {
+				setValidationError(
+					"Could not validate the connection. Check your settings and try again.",
+				);
 			}
+		} catch (error) {
+			if (error instanceof ApiError && error.code !== 403) {
+				setValidationError(error.message);
+				setValidationTechnicalDetails(error.technicalDetails ?? null);
+			} else {
+				setValidationError(
+					"Could not validate the connection. Check your settings and try again.",
+				);
+			}
+		} finally {
+			setValidating(false);
 		}
 	};
 

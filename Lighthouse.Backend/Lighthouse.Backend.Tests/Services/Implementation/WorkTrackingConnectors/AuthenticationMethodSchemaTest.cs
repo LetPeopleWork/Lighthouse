@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetMethodByKey_JiraOAuth_HasClientIdAndClientSecretOptions()
+        public void GetMethodByKey_JiraOAuth_HasUrlClientIdAndClientSecretOptions()
         {
             var method = AuthenticationMethodSchema.GetMethodByKey(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraOAuth);
 
@@ -130,7 +130,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(method!.Options, Has.Count.EqualTo(2));
+                Assert.That(method!.Options, Has.Count.EqualTo(3));
+
+                var url = method.Options.Single(o => o.Key == Backend.Services.Implementation.WorkTrackingConnectors.Jira.JiraWorkTrackingOptionNames.Url);
+                Assert.That(url.DisplayName, Is.EqualTo("Jira URL"));
+                Assert.That(url.IsSecret, Is.False);
 
                 var clientId = method.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientId);
                 Assert.That(clientId.DisplayName, Is.EqualTo("Client ID"));

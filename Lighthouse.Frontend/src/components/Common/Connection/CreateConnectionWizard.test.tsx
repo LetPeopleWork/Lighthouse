@@ -172,6 +172,12 @@ const mockJiraSystemWithOAuth = new WorkTrackingSystemConnection({
 			isPremium: true,
 			options: [
 				{
+					key: "Jira Url",
+					displayName: "Jira URL",
+					isSecret: false,
+					isOptional: false,
+				},
+				{
 					key: "oauth.clientId",
 					displayName: "Client ID",
 					isSecret: false,
@@ -641,6 +647,48 @@ describe("CreateConnectionWizard", () => {
 				await screen.findByText(/Your callback URL may be incorrect/i),
 			).toBeInTheDocument();
 			expect(screen.getByText(/Set Lighthouse:BaseUrl/i)).toBeInTheDocument();
+		});
+
+		it("skips validateConnection and advances to step 3 when OAuth method is selected", async () => {
+			const user = userEvent.setup();
+			const validateConnection = vi.fn().mockResolvedValue(true);
+			renderWizard({
+				supportedSystems: [mockJiraSystemWithOAuth],
+				canUsePremiumFeatures: true,
+				baseUrl: "https://lighthouse.example.com",
+				validateConnection,
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Jira/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Jira/i }));
+			const select = await screen.findByRole("combobox");
+			await user.click(select);
+			await user.click(
+				await screen.findByRole("option", { name: /OAuth/i }),
+			);
+
+			await user.type(
+				await screen.findByLabelText("Jira URL"),
+				"https://example.atlassian.net",
+			);
+			await user.type(
+				await screen.findByLabelText("Client ID"),
+				"stub-client-id",
+			);
+			await user.type(
+				await screen.findByLabelText("Client Secret"),
+				"stub-client-secret",
+			);
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			expect(
+				await screen.findByLabelText(/Connection Name/i),
+			).toBeInTheDocument();
+			expect(validateConnection).not.toHaveBeenCalled();
 		});
 
 		it("renders Upgrade affordance and hides Client ID / Secret when not Premium", async () => {
