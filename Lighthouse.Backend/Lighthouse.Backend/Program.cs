@@ -342,14 +342,30 @@ namespace Lighthouse.Backend
                 return;
             }
 
+            // Register the stub under its dedicated key so abstraction-honesty integration tests can
+            // exercise a brand-new IOAuthProvider via DI only.
             builder.Services.AddSingleton<IOAuthProvider>(sp =>
             {
                 var serviceConfig = sp.GetRequiredService<IServiceConfig>();
                 var timeProvider = sp.GetRequiredService<TimeProvider>();
-                return new StubOAuthProvider(serviceConfig, timeProvider);
+                return new StubOAuthProvider(serviceConfig, timeProvider, AuthenticationMethodKeys.StubOAuth);
             });
-
             AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(new[] { AuthenticationMethodKeys.StubOAuth });
+
+            // Substitute the stub for every real *.oauth method declared in the schema so Playwright
+            // walking-skeleton scenarios can drive jira.oauth (and future ado.oauth) connections
+            // without contacting external identity providers.
+            var realOAuthKeys = AuthenticationMethodSchema.GetOAuthProviderKeys()
+                .Where(k => k != AuthenticationMethodKeys.StubOAuth)
+                .ToList();
+            foreach (var key in realOAuthKeys)
+            {
+                builder.Services.AddSingleton<IOAuthProvider>(sp =>
+                    new StubOAuthProvider(
+                        sp.GetRequiredService<IServiceConfig>(),
+                        sp.GetRequiredService<TimeProvider>(),
+                        key));
+            }
         }
 
         private static void EnsureOAuthProvidersRegistered(WebApplication app)
@@ -778,13 +794,22 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IOAuthStateTokenIssuer, OAuthStateTokenIssuer>();
             builder.Services.AddSingleton<IOAuthProviderRegistry, OAuthProviderRegistry>();
-            builder.Services.AddSingleton<IOAuthProvider>(sp =>
+
+            var stubModeEnabled = string.Equals(
+                builder.Configuration[UseStubOAuthProviderConfigKey],
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (!stubModeEnabled)
             {
-                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                var timeProvider = sp.GetRequiredService<TimeProvider>();
-                var providerLogger = sp.GetRequiredService<ILogger<JiraOAuthProvider>>();
-                return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider, providerLogger);
-            });
+                builder.Services.AddSingleton<IOAuthProvider>(sp =>
+                {
+                    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+                    var timeProvider = sp.GetRequiredService<TimeProvider>();
+                    var providerLogger = sp.GetRequiredService<ILogger<JiraOAuthProvider>>();
+                    return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider, providerLogger);
+                });
+            }
 
             RegisterStubOAuthProviderIfEnabled(builder);
 

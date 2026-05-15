@@ -108,6 +108,8 @@ jobs:
         env:
           Database__Provider: sqlite
           Database__ConnectionString: "Data Source=lighthouse.db"
+          Lighthouse__OAuth__UseStubProvider: "true"
+          Lighthouse__BaseUrl: "http://localhost:5000"
 
       - name: Write private key to file
         run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem

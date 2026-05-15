@@ -24,17 +24,25 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
 
         private readonly IServiceConfig serviceConfig;
         private readonly TimeProvider timeProvider;
+        private readonly string providerKey;
 
         public StubOAuthProvider(IServiceConfig serviceConfig, TimeProvider timeProvider)
+            : this(serviceConfig, timeProvider, AuthenticationMethodKeys.StubOAuth)
+        {
+        }
+
+        public StubOAuthProvider(IServiceConfig serviceConfig, TimeProvider timeProvider, string providerKey)
         {
             ArgumentNullException.ThrowIfNull(serviceConfig);
             ArgumentNullException.ThrowIfNull(timeProvider);
+            ArgumentException.ThrowIfNullOrWhiteSpace(providerKey);
 
             this.serviceConfig = serviceConfig;
             this.timeProvider = timeProvider;
+            this.providerKey = providerKey;
         }
 
-        public string ProviderKey => AuthenticationMethodKeys.StubOAuth;
+        public string ProviderKey => providerKey;
 
         public IReadOnlyList<string> DefaultScopes => StubDefaultScopes;
 
@@ -48,7 +56,6 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
 
             var queryParameters = new Dictionary<string, string?>
             {
-                ["provider"] = ProviderKey,
                 ["code"] = $"stub-test-code-{Guid.NewGuid():N}",
                 ["state"] = context.State,
             };

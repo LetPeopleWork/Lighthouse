@@ -97,8 +97,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(document.RootElement.TryGetProperty("authorizationUrl", out var authUrl), Is.True, body);
                 var url = authUrl.GetString();
                 Assert.That(url, Is.Not.Null.And.Not.Empty);
-                Assert.That(url, Does.Contain($"provider={StubProviderKey}"), body);
                 Assert.That(url, Does.Contain("/api/oauth/callback"), body);
+                Assert.That(url, Does.Contain("state="), body);
             }
         }
 

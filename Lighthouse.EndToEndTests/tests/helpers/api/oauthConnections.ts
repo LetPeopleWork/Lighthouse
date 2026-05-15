@@ -10,14 +10,20 @@ type WorkTrackingSystemOption = {
 export async function createOAuthJiraConnection(
 	api: APIRequestContext,
 	connectionName: string,
-	options: { clientId?: string; clientSecret?: string } = {},
+	options: {
+		clientId?: string;
+		clientSecret?: string;
+		jiraUrl?: string;
+	} = {},
 ): Promise<{ id: number; name: string }> {
 	const clientId = options.clientId ?? "test-jira-client";
 	const clientSecret = options.clientSecret ?? "test-jira-secret";
+	const jiraUrl = options.jiraUrl ?? "https://example.atlassian.net";
 
 	const connectionOptions: WorkTrackingSystemOption[] = [
-		{ key: "ClientId", value: clientId, isSecret: false },
-		{ key: "ClientSecret", value: clientSecret, isSecret: true },
+		{ key: "Jira Url", value: jiraUrl, isSecret: false },
+		{ key: "oauth.clientId", value: clientId, isSecret: false },
+		{ key: "oauth.clientSecret", value: clientSecret, isSecret: true },
 	];
 
 	const response = await api.post("/api/latest/worktrackingsystemconnections", {

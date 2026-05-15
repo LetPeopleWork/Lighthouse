@@ -70,7 +70,7 @@ test.describe("Slice 01 — Jira OAuth", () => {
 			expect(callback.status).toBeGreaterThanOrEqual(300);
 			expect(callback.status).toBeLessThan(400);
 			expect(callback.location).toContain(
-				`/settings/connections/${connection.id}?oauth=success`,
+				`/connections/new?oauth=success&connectionId=${connection.id}`,
 			);
 
 			await request.delete(
