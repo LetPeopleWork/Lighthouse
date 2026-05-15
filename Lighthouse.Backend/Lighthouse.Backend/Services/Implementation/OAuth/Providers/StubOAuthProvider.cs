@@ -15,7 +15,10 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
     public class StubOAuthProvider : IOAuthProvider
     {
         private const string CallbackPath = "/api/oauth/callback";
+
+#pragma warning disable S1075 // The stub provider only ships when Lighthouse:OAuth:UseStubProvider=true (test/dev). It needs a benign localhost fallback so integration tests that don't configure BaseUrl still produce a parsable redirect URI; this constant never reaches production builds.
         private const string FallbackBaseUrl = "http://localhost";
+#pragma warning restore S1075
 
         private static readonly IReadOnlyList<string> StubDefaultScopes = ["stub.read"];
 
