@@ -1177,13 +1177,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return query;
         }
 
+        public static bool RoutesViaAtlassianCloudGateway(string authenticationMethodKey) =>
+            authenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken
+            || authenticationMethodKey == AuthenticationMethodKeys.JiraOAuth;
+
         private async Task<HttpClient> GetJiraRestClientAsync(WorkTrackingSystemConnection connection)
         {
-            var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var requestTimeoutInSeconds =
                 connection.GetWorkTrackingSystemConnectionOptionByKey<int>(JiraWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
 
-            var (baseUrl, cacheKey) = await ResolveBaseUrlAndCacheKeyAsync(connection, encryptedApiToken);
+            var (baseUrl, cacheKey) = await ResolveBaseUrlAndCacheKeyAsync(connection);
             var client = GetOrCreateClient(cacheKey, baseUrl, requestTimeoutInSeconds);
 
             await SetAuthorizationHeader(client, connection);
@@ -1193,16 +1196,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
 
         private async Task<(string BaseUrl, string CacheKey)> ResolveBaseUrlAndCacheKeyAsync(
-            WorkTrackingSystemConnection connection, string encryptedApiToken)
+            WorkTrackingSystemConnection connection)
         {
-            if (connection.AuthenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken)
+            if (RoutesViaAtlassianCloudGateway(connection.AuthenticationMethodKey))
             {
                 var jiraUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
                 var cloudId = await ResolveCloudIdAsync(jiraUrl);
                 var baseUrl = $"https://api.atlassian.com/ex/jira/{cloudId}/";
-                return (baseUrl, $"{baseUrl}|{encryptedApiToken}");
+                return (baseUrl, $"{baseUrl}|conn:{connection.Id}");
             }
 
+            var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
             return (url, $"{url}|{encryptedApiToken}");
         }
@@ -1255,7 +1259,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
         {
-            if (connection.AuthenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken)
+            if (RoutesViaAtlassianCloudGateway(connection.AuthenticationMethodKey))
             {
                 return JiraDeployment.Cloud;
             }

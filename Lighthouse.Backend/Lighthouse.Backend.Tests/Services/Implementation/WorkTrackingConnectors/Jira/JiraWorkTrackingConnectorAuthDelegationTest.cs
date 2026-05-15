@@ -2,6 +2,7 @@ using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -33,6 +34,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             strategyMock.Verify(
                 s => s.ApplyAsync(It.IsAny<HttpRequestMessage>(), It.Is<WorkTrackingSystemConnection>(c => c == connection), It.IsAny<CancellationToken>()),
                 Times.AtLeastOnce);
+        }
+
+        [TestCase(AuthenticationMethodKeys.JiraOAuth, ExpectedResult = true)]
+        [TestCase(AuthenticationMethodKeys.JiraScopedToken, ExpectedResult = true)]
+        [TestCase(AuthenticationMethodKeys.JiraCloud, ExpectedResult = false)]
+        [TestCase(AuthenticationMethodKeys.JiraDataCenter, ExpectedResult = false)]
+        public bool RoutesViaAtlassianCloudGateway_TrueForBearerTokenMethods(string authMethodKey)
+        {
+            return JiraWorkTrackingConnector.RoutesViaAtlassianCloudGateway(authMethodKey);
         }
 
         private static WorkTrackingSystemConnection CreateConnection(string authMethodKey, string url)
