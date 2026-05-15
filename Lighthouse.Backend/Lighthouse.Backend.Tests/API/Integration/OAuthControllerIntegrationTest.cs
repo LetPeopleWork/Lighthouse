@@ -173,6 +173,27 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task Callback_WithoutProviderQueryParam_Redirects302ToSuccess()
+        {
+            var expiresAt = DateTimeOffset.UtcNow.AddHours(1);
+            providerMock
+                .Setup(p => p.ExchangeCodeAsync("auth-code-456", It.IsAny<OAuthFlowContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OAuthTokens("at", "rt", expiresAt));
+
+            var validState = IssueStateToken(SeededConnectionId, ProviderKey);
+
+            using var noRedirectClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+            });
+
+            var response = await noRedirectClient.GetAsync(
+                $"/api/oauth/callback?code=auth-code-456&state={Uri.EscapeDataString(validState)}");
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
+        }
+
+        [Test]
         public async Task Callback_WithTamperedState_Returns400AndPersistsNoCredential()
         {
             var validState = IssueStateToken(SeededConnectionId, ProviderKey);

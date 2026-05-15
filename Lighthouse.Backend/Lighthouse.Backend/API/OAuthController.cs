@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.API
         [HttpGet("callback")]
         [AllowAnonymous]
         public async Task<IActionResult> Callback(
-            [FromQuery] string provider,
             [FromQuery] string code,
             [FromQuery] string state,
             CancellationToken cancellationToken)
