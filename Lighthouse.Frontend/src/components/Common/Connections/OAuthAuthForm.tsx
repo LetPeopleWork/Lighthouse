@@ -21,8 +21,6 @@ const OAuthAuthForm = ({
 	onConnect,
 }: OAuthAuthFormProps) => {
 	const { oauthService } = useContext(ApiServiceContext);
-	const [clientId, setClientId] = useState("");
-	const [clientSecret, setClientSecret] = useState("");
 	const [isConnecting, setIsConnecting] = useState(false);
 
 	const callbackUrl = buildCallbackUrl(baseUrl);
@@ -50,21 +48,6 @@ const OAuthAuthForm = ({
 					server configuration to guarantee OAuth registration works.
 				</Alert>
 			)}
-
-			<TextField
-				label="Client ID"
-				value={clientId}
-				onChange={(event) => setClientId(event.target.value)}
-				fullWidth
-			/>
-
-			<TextField
-				label="Client Secret"
-				type="password"
-				value={clientSecret}
-				onChange={(event) => setClientSecret(event.target.value)}
-				fullWidth
-			/>
 
 			<TextField
 				label="Callback URL"

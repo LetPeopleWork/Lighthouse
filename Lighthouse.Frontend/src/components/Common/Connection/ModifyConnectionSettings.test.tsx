@@ -136,7 +136,26 @@ const mockJiraSystemWithOAuth = new WorkTrackingSystemConnection({
 		{
 			key: "jira.oauth",
 			displayName: "OAuth 2.0",
-			options: [],
+			options: [
+				{
+					key: "Jira Url",
+					displayName: "Jira URL",
+					isSecret: false,
+					isOptional: false,
+				},
+				{
+					key: "oauth.clientId",
+					displayName: "Client ID",
+					isSecret: false,
+					isOptional: false,
+				},
+				{
+					key: "oauth.clientSecret",
+					displayName: "Client Secret",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
 			isPremium: true,
 		},
 	],
@@ -148,7 +167,26 @@ const mockExistingOAuthConnection = new WorkTrackingSystemConnection({
 	id: 99,
 	name: "My Jira OAuth Connection",
 	workTrackingSystem: "Jira",
-	options: [],
+	options: [
+		{
+			key: "Jira Url",
+			value: "https://example.atlassian.net",
+			isSecret: false,
+			isOptional: false,
+		},
+		{
+			key: "oauth.clientId",
+			value: "persisted-client-id",
+			isSecret: false,
+			isOptional: false,
+		},
+		{
+			key: "oauth.clientSecret",
+			value: "",
+			isSecret: true,
+			isOptional: false,
+		},
+	],
 	availableAuthenticationMethods:
 		mockJiraSystemWithOAuth.availableAuthenticationMethods,
 	additionalFieldDefinitions: [],
@@ -513,6 +551,27 @@ describe("ModifyConnectionSettings", () => {
 			});
 			expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
 			expect(screen.queryByLabelText("Client Secret")).not.toBeInTheDocument();
+		});
+
+		it("prefills schema-driven Client ID and Jira URL fields from the persisted OAuth connection", async () => {
+			renderComponent(
+				{
+					getConnectionSettings: vi
+						.fn()
+						.mockResolvedValue(mockExistingOAuthConnection),
+				},
+				{ canUsePremiumFeatures: true },
+			);
+
+			const clientIdInput = await screen.findByLabelText<HTMLInputElement>(
+				"Client ID",
+			);
+			expect(clientIdInput.value).toBe("persisted-client-id");
+
+			const jiraUrlInput = await screen.findByLabelText<HTMLInputElement>(
+				"Jira URL",
+			);
+			expect(jiraUrlInput.value).toBe("https://example.atlassian.net");
 		});
 
 		it("renders OAuth callback URL derived from server BaseUrl when systemInfo provides one", async () => {

@@ -465,7 +465,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						</Grid>
 					)}
 
-					{showAuthSection && isOAuthMethod(selectedAuthMethod) && (
+					{showAuthSection && isOAuthMethod(selectedAuthMethod) && !canUsePremiumFeatures && (
 						<Grid size={{ xs: 12 }}>
 							<Typography
 								variant="subtitle2"
@@ -474,31 +474,23 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							>
 								Authentication
 							</Typography>
-							{canUsePremiumFeatures ? (
-								<OAuthAuthForm
-									connectionId={selectedWorkTrackingSystem?.id ?? 0}
-									providerKey={selectedAuthMethod?.key ?? ""}
-									baseUrl={baseUrl}
-								/>
-							) : (
-								<Alert
-									severity="info"
-									data-testid="oauth-premium-upgrade-affordance"
-								>
-									<Typography variant="body2">
-										OAuth 2.0 authentication is a Premium feature. Upgrade to
-										Premium to connect via OAuth.{" "}
-										<Link component={RouterLink} to="/settings/license">
-											View license options
-										</Link>
-									</Typography>
-								</Alert>
-							)}
+							<Alert
+								severity="info"
+								data-testid="oauth-premium-upgrade-affordance"
+							>
+								<Typography variant="body2">
+									OAuth 2.0 authentication is a Premium feature. Upgrade to
+									Premium to connect via OAuth.{" "}
+									<Link component={RouterLink} to="/settings/license">
+										View license options
+									</Link>
+								</Typography>
+							</Alert>
 						</Grid>
 					)}
 
 					{showAuthSection &&
-						!isOAuthMethod(selectedAuthMethod) &&
+						(!isOAuthMethod(selectedAuthMethod) || canUsePremiumFeatures) &&
 						authOptions.length > 0 && (
 							<Grid size={{ xs: 12 }}>
 								<Typography
@@ -534,6 +526,18 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 										);
 									})}
 								</Grid>
+							</Grid>
+						)}
+
+					{showAuthSection &&
+						isOAuthMethod(selectedAuthMethod) &&
+						canUsePremiumFeatures && (
+							<Grid size={{ xs: 12 }}>
+								<OAuthAuthForm
+									connectionId={selectedWorkTrackingSystem?.id ?? 0}
+									providerKey={selectedAuthMethod?.key ?? ""}
+									baseUrl={baseUrl}
+								/>
 							</Grid>
 						)}
 

@@ -53,7 +53,7 @@ describe("OAuthAuthForm", () => {
 		});
 	});
 
-	it("renders client credentials and a read-only callback URL when baseUrl is set", () => {
+	it("renders a read-only callback URL and a Connect button when baseUrl is set", () => {
 		renderForm({
 			connectionId: 7,
 			providerKey: "jira.oauth",
@@ -61,18 +61,16 @@ describe("OAuthAuthForm", () => {
 			oauthService: createMockOAuthService(),
 		});
 
-		expect(screen.getByLabelText("Client ID")).toBeInTheDocument();
-
-		const secret = screen.getByLabelText<HTMLInputElement>("Client Secret");
-		expect(secret).toBeInTheDocument();
-		expect(secret).toHaveAttribute("type", "password");
-
 		const callback = screen.getByLabelText<HTMLInputElement>("Callback URL");
 		expect(callback).toHaveAttribute("readonly");
 		expect(callback.value).toBe(
 			"https://lighthouse.example.com/api/oauth/callback",
 		);
 
+		expect(screen.getByRole("button", { name: /Connect/i })).toBeInTheDocument();
+
+		expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
+		expect(screen.queryByLabelText("Client Secret")).not.toBeInTheDocument();
 		expect(
 			screen.queryByText(/Your callback URL may be incorrect/i),
 		).not.toBeInTheDocument();
