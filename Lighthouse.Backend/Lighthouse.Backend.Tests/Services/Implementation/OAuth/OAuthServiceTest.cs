@@ -209,14 +209,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public async Task EnsureFreshTokenAsync_ValidCredential_ReturnsStoredAccessToken()
+        public async Task EnsureFreshTokenAsync_ValidCredential_ReturnsDecryptedAccessToken()
         {
+            cryptoServiceMock.Setup(c => c.Decrypt("encrypted-at")).Returns("plain-at");
+
             var credential = new OAuthCredential
             {
                 Id = 7,
                 WorkTrackingSystemConnectionId = ConnectionId,
-                AccessToken = "stored-at",
-                RefreshToken = "stored-rt",
+                AccessToken = "encrypted-at",
+                RefreshToken = "encrypted-rt",
                 ExpiresAt = timeProvider.GetUtcNow().AddHours(1),
                 Status = OAuthCredentialStatus.Valid,
                 UpdatedAt = timeProvider.GetUtcNow(),
@@ -229,7 +231,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             var token = await sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
 
-            Assert.That(token, Is.EqualTo("stored-at"));
+            Assert.That(token, Is.EqualTo("plain-at"));
         }
 
         [Test]

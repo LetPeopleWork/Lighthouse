@@ -103,7 +103,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var response = await client.GetAsync("rest/api/2/myself");
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogInformation("Authentication is not valid for {Connection}", connection.Name);
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    logger.LogInformation(
+                        "Authentication is not valid for {Connection}. Jira returned {StatusCode} {Reason} at {RequestUri}. Body: {Body}",
+                        connection.Name,
+                        (int)response.StatusCode,
+                        response.ReasonPhrase,
+                        response.RequestMessage?.RequestUri,
+                        responseBody);
 
                     return ConnectionValidationResult.Failure(
                         "authentication_failed",
@@ -493,7 +500,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogInformation("Authentication is not valid for {Connection}", workTrackingSystemConnection.Name);
+                    var failBody = await response.Content.ReadAsStringAsync();
+                    logger.LogInformation(
+                        "Authentication is not valid for {Connection}. Jira returned {StatusCode} {Reason} at {RequestUri}. Body: {Body}",
+                        workTrackingSystemConnection.Name,
+                        (int)response.StatusCode,
+                        response.ReasonPhrase,
+                        response.RequestMessage?.RequestUri,
+                        failBody);
                     return [];
                 }
 

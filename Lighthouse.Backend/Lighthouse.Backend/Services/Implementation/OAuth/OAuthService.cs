@@ -142,7 +142,8 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                     $"OAuth credential for connection {connectionId} is in status {credential.Status}. Reconnect required.");
             }
 
-            return Task.FromResult(credential.AccessToken);
+            var decryptedAccessToken = cryptoService.Decrypt(credential.AccessToken);
+            return Task.FromResult(decryptedAccessToken);
         }
 
         private WorkTrackingSystemConnection LoadConnectionOrThrow(int connectionId)
