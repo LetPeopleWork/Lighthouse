@@ -743,6 +743,106 @@ describe("CreateConnectionWizard", () => {
 			expect(validateConnection).not.toHaveBeenCalled();
 		});
 
+		it("deletes the draft connection when Cancel is clicked after an OAuth handshake resumes the wizard", async () => {
+			const user = userEvent.setup();
+			const persistedDraft = new WorkTrackingSystemConnection({
+				id: 88,
+				name: "My Pending OAuth Connection",
+				workTrackingSystem: "Jira",
+				options: [],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+
+			const onCancel = vi.fn();
+
+			const getSupportedSystems = vi
+				.fn()
+				.mockResolvedValue([mockJiraSystemWithOAuth]);
+			const mockTerminologyService = createMockTerminologyService();
+			vi.mocked(mockTerminologyService.getAllTerminology).mockResolvedValue([
+				{
+					id: 1,
+					key: "workTrackingSystem",
+					defaultValue: "Work Tracking System",
+					description: "",
+					value: "Work Tracking System",
+				},
+			]);
+			const mockSystemInfoService = createMockSystemInfoService();
+			vi.mocked(mockSystemInfoService.getSystemInfo).mockResolvedValue({
+				os: "test",
+				runtime: "test",
+				architecture: "test",
+				processId: 0,
+				databaseProvider: "sqlite",
+				databaseConnection: null,
+				logPath: null,
+				baseUrl: "https://lighthouse.example.com",
+			});
+
+			const deleteWorkTrackingSystemConnection = vi
+				.fn()
+				.mockResolvedValue(undefined);
+			const workTrackingSystemServiceMock = {
+				getConfiguredWorkTrackingSystems: vi
+					.fn()
+					.mockResolvedValue([persistedDraft]),
+				deleteWorkTrackingSystemConnection,
+			} as unknown as IWorkTrackingSystemService;
+
+			const teamServiceMock = {
+				getTeams: vi.fn().mockResolvedValue([]),
+			} as unknown as ITeamService;
+			const portfolioServiceMock = {
+				getPortfolios: vi.fn().mockResolvedValue([]),
+			} as unknown as IPortfolioService;
+
+			const mockApiServiceContext = createMockApiServiceContext({
+				terminologyService: mockTerminologyService,
+				licensingService: createLicensingService(true),
+				systemInfoService: mockSystemInfoService,
+				teamService: teamServiceMock,
+				portfolioService: portfolioServiceMock,
+				oauthService: createMockOAuthService(),
+				workTrackingSystemService: workTrackingSystemServiceMock,
+			});
+
+			render(
+				<QueryClientProvider client={createQueryClient()}>
+					<MemoryRouter
+						initialEntries={["/connections/new?oauth=success&connectionId=88"]}
+					>
+						<ApiServiceContext.Provider value={mockApiServiceContext}>
+							<TerminologyProvider>
+								<CreateConnectionWizard
+									getSupportedSystems={getSupportedSystems}
+									validateConnection={vi.fn()}
+									saveConnection={vi
+										.fn()
+										.mockImplementation(async (conn) => conn)}
+									onCancel={onCancel}
+								/>
+							</TerminologyProvider>
+						</ApiServiceContext.Provider>
+					</MemoryRouter>
+				</QueryClientProvider>,
+			);
+
+			expect(
+				await screen.findByLabelText(/Connection Name/i),
+			).toBeInTheDocument();
+
+			await user.click(screen.getByRole("button", { name: /Cancel/i }));
+
+			await waitFor(() => {
+				expect(deleteWorkTrackingSystemConnection).toHaveBeenCalledWith(88);
+			});
+			expect(onCancel).toHaveBeenCalled();
+		});
+
 		it("resumes on step 3 with the persisted connection when mounted with ?oauth=success&connectionId=...", async () => {
 			const persistedDraft = new WorkTrackingSystemConnection({
 				id: 88,

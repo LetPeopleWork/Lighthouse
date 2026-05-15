@@ -380,6 +380,19 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		}
 	};
 
+	const handleCancel = async () => {
+		if (draftConnectionId !== null) {
+			try {
+				await workTrackingSystemService.deleteWorkTrackingSystemConnection(
+					draftConnectionId,
+				);
+			} catch {
+				// The draft will be left behind if the delete fails; safe to ignore.
+			}
+		}
+		onCancel();
+	};
+
 	const handleBack = () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
@@ -550,7 +563,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 						mt: 3,
 					}}
 				>
-					<Button variant="outlined" onClick={onCancel}>
+					<Button variant="outlined" onClick={handleCancel}>
 						Cancel
 					</Button>
 
