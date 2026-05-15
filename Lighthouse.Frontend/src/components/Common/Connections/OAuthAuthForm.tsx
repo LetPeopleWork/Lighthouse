@@ -10,7 +10,8 @@ interface OAuthAuthFormProps {
 }
 
 const buildCallbackUrl = (baseUrl: string | null): string => {
-	const root = baseUrl && baseUrl.length > 0 ? baseUrl : window.location.origin;
+	const root =
+		baseUrl && baseUrl.length > 0 ? baseUrl : globalThis.location.origin;
 	return `${root}/api/oauth/callback`;
 };
 
@@ -34,7 +35,7 @@ const OAuthAuthForm = ({
 				connectionId,
 			);
 			onConnect?.();
-			window.location.assign(result.authorizationUrl);
+			globalThis.location.assign(result.authorizationUrl);
 		} finally {
 			setIsConnecting(false);
 		}

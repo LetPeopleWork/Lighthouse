@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
             "read:board-scope:jira-software",
             "read:sprint:jira-software",
             "read:issue:jira-software",
+            "read:project:jira",
             "offline_access",
         ];
 

@@ -62,6 +62,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<WriteBackMappingDefinitionDto> WriteBackMappingDefinitions { get; set; } = [];
 
-        public bool RequiresReconnect { get; set; }
+        public bool? RequiresReconnect { get; set; }
     }
 }

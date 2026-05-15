@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
     public class StubOAuthProvider : IOAuthProvider
     {
         private const string CallbackPath = "/api/oauth/callback";
+        private const string FallbackBaseUrl = "http://localhost";
 
         private static readonly IReadOnlyList<string> StubDefaultScopes = ["stub.read"];
 
@@ -39,7 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
             ArgumentNullException.ThrowIfNull(context);
 
             var baseUrl = string.IsNullOrWhiteSpace(serviceConfig.BaseUrl)
-                ? "http://localhost"
+                ? FallbackBaseUrl
                 : serviceConfig.BaseUrl;
 
             var queryParameters = new Dictionary<string, string?>

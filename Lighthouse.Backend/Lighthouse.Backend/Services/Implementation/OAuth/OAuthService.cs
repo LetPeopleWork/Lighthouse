@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.OAuth
 {
+#pragma warning disable S107 // OAuth flow legitimately needs 8 collaborators: provider registry, two repositories, crypto, state-token issuer, service config, time provider, and logger. Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
     public class OAuthService(
         IOAuthProviderRegistry providerRegistry,
         IRepository<WorkTrackingSystemConnection> connectionRepository,
@@ -17,6 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
         IServiceConfig serviceConfig,
         TimeProvider timeProvider,
         ILogger<OAuthService> logger) : IOAuthService
+#pragma warning restore S107
     {
         private const string CallbackPath = "/api/oauth/callback";
 
@@ -39,41 +41,13 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
 
         public async Task<OAuthCompleteResult> CompleteAsync(string code, string state, CancellationToken cancellationToken)
         {
-            OAuthStateClaims claims;
-            try
-            {
-                claims = stateTokenIssuer.Verify(state);
-            }
-            catch (OAuthStateTokenInvalidException ex)
-            {
-                logger.LogWarning(
-                    ex,
-                    "oauth.callback.invalid_state {Reason}",
-                    ex.Message);
-                throw;
-            }
-
+            var claims = stateTokenIssuer.Verify(state);
             var connection = LoadConnectionOrThrow(claims.ConnectionId);
             var provider = providerRegistry.GetByKey(connection.AuthenticationMethodKey);
             var flowContext = BuildFlowContext(connection, provider, state);
 
             var start = Stopwatch.GetTimestamp();
-            OAuthTokens tokens;
-            try
-            {
-                tokens = await provider.ExchangeCodeAsync(code, flowContext, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                var failureDurationMs = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
-                logger.LogWarning(
-                    ex,
-                    "oauth.flow.failed {ConnectionId} {ProviderKey} {DurationMs}",
-                    connection.Id,
-                    connection.AuthenticationMethodKey,
-                    failureDurationMs);
-                throw;
-            }
+            var tokens = await provider.ExchangeCodeAsync(code, flowContext, cancellationToken);
             var durationMs = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 
             var credential = new OAuthCredential

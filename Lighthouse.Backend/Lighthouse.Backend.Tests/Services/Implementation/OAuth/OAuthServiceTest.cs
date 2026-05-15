@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         private const string BaseUrl = "https://lighthouse.example.com";
         private const string ValidStateToken = "valid.state.token";
 
+        private static readonly string[] DefaultProviderScopes = ["read:jira-work"];
+
         private Mock<IOAuthProviderRegistry> providerRegistryMock = null!;
         private Mock<IOAuthProvider> providerMock = null!;
         private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock = null!;
@@ -39,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             providerRegistryMock = new Mock<IOAuthProviderRegistry>();
             providerMock = new Mock<IOAuthProvider>();
             providerMock.SetupGet(p => p.ProviderKey).Returns(ProviderKey);
-            providerMock.SetupGet(p => p.DefaultScopes).Returns(new[] { "read:jira-work" });
+            providerMock.SetupGet(p => p.DefaultScopes).Returns(DefaultProviderScopes);
             providerRegistryMock.Setup(r => r.GetByKey(ProviderKey)).Returns(providerMock.Object);
 
             connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();

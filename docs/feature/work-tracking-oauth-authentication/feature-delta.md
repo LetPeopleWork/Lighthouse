@@ -56,6 +56,9 @@ Job traceability: `job-oauth-work-tracking-credentials` (added to `docs/product/
 #### Slice composition note
 Stories #4971 (abstraction) and #4972 (BaseUrl) are folded into this slice because (a) shipping a Jira-only implementation without `IOAuthProvider` would force a destructive refactor when ADO arrives, and (b) without a correct callback URL the slice does not actually let a user complete the flow end-to-end against a real Atlassian OAuth app.
 
+#### Known limitation against real Atlassian (as shipped 2026-05-15)
+AC #5 ("Bearer header on outbound Jira call, returns work items successfully") is implemented end-to-end: handshake completes, the credential is persisted with the full granted scope set, outbound calls correctly route through `api.atlassian.com/ex/jira/{cloudId}/` with the decrypted Bearer token. However, Atlassian's Agile API (`/rest/agile/...`) returns `401 "scope does not match"` for OAuth tokens, even when the token explicitly carries `read:board-scope:jira-software`, `read:sprint:jira-software`, and `read:issue:jira-software`. Plain Jira platform endpoints (e.g. `/rest/api/2/myself`) accept the same token. Until the underlying Atlassian-side scope mismatch is resolved, the **team-creation board picker returns zero results for `jira.oauth` connections** — workaround is `jira.cloud` (API token) or `jira.scopedtoken`. See `slices/slice-01-jira-oauth.md` "Known limitations as shipped" for details.
+
 ---
 
 ### US-02 — OAuth tokens stay alive past expiry (ADO #4968)

@@ -98,8 +98,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await strategy.ApplyAsync(request, connection, CancellationToken.None);
 
-            Assert.That(request.Headers.TryGetValues("Authorization", out var values), Is.True);
-            Assert.That(values!.Single(), Is.EqualTo(PlaintextLinearKey));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(request.Headers.TryGetValues("Authorization", out var values), Is.True);
+                Assert.That(values!.Single(), Is.EqualTo(PlaintextLinearKey));
+            }
         }
 
         [Test]
@@ -206,7 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 () => strategy.ApplyAsync(request, connection, CancellationToken.None));
         }
 
-        private IWorkTrackingAuthStrategyFactory CreateFactory()
+        private WorkTrackingAuthStrategyFactory CreateFactory()
         {
             return new WorkTrackingAuthStrategyFactory(
                 new PatAuthStrategy(cryptoServiceMock.Object),

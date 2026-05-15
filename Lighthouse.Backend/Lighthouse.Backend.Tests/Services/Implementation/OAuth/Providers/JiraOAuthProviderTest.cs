@@ -29,20 +29,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             Assert.That(provider.ProviderKey, Is.EqualTo("jira.oauth"));
         }
 
+        private static readonly string[] ExpectedDefaultScopes =
+        [
+            "read:jira-work",
+            "read:jira-user",
+            "read:board-scope:jira-software",
+            "read:sprint:jira-software",
+            "read:issue:jira-software",
+            "read:project:jira",
+            "offline_access",
+        ];
+
         [Test]
         public void DefaultScopes_ContainsRequiredAtlassianScopesIncludingJiraSoftwareGranularScopes()
         {
             var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
 
-            Assert.That(provider.DefaultScopes, Is.EquivalentTo(new[]
-            {
-                "read:jira-work",
-                "read:jira-user",
-                "read:board-scope:jira-software",
-                "read:sprint:jira-software",
-                "read:issue:jira-software",
-                "offline_access",
-            }));
+            Assert.That(provider.DefaultScopes, Is.EquivalentTo(ExpectedDefaultScopes));
         }
 
         [Test]
@@ -82,10 +85,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             HttpRequestMessage? capturedRequest = null;
             string? capturedBody = null;
 
-            var handler = CreateHandler(async (request, _) =>
+            var handler = CreateHandler(async (request, ct) =>
             {
                 capturedRequest = request;
-                capturedBody = request.Content is null ? null : await request.Content.ReadAsStringAsync();
+                capturedBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
                 return SuccessTokenResponse(
                     accessToken: "access-token-789",
                     refreshToken: "refresh-token-789",
@@ -154,10 +157,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             string? capturedBody = null;
             HttpRequestMessage? capturedRequest = null;
 
-            var handler = CreateHandler(async (request, _) =>
+            var handler = CreateHandler(async (request, ct) =>
             {
                 capturedRequest = request;
-                capturedBody = request.Content is null ? null : await request.Content.ReadAsStringAsync();
+                capturedBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
                 return SuccessTokenResponse(
                     accessToken: "new-access-token",
                     refreshToken: "new-refresh-token",
@@ -260,6 +263,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             };
         }
 
+        private static readonly string[] FlowContextScopes =
+        [
+            "read:jira-work",
+            "read:jira-user",
+            "offline_access",
+        ];
+
         private static OAuthFlowContext CreateFlowContext()
         {
             return new OAuthFlowContext(
@@ -269,7 +279,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
                 ClientSecret: "secret",
                 RedirectUri: new Uri("https://lighthouse.example.com/api/oauth/callback"),
                 State: "signed-state-token",
-                Scopes: new[] { "read:jira-work", "read:jira-user", "offline_access" });
+                Scopes: FlowContextScopes);
         }
     }
 }

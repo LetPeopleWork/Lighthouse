@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API
 {
@@ -65,7 +66,7 @@ namespace Lighthouse.Backend.API
         }
     }
 
-    public record OAuthConnectRequest(int ConnectionId);
+    public record OAuthConnectRequest([property: JsonRequired] int ConnectionId);
 
-    public record OAuthDisconnectRequest(int ConnectionId);
+    public record OAuthDisconnectRequest([property: JsonRequired] int ConnectionId);
 }

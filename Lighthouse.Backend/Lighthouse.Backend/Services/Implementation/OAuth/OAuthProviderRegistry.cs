@@ -10,17 +10,21 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
         {
             ArgumentNullException.ThrowIfNull(providers);
 
-            providersByKey = new Dictionary<string, IOAuthProvider>(StringComparer.Ordinal);
+            var providerList = providers.ToList();
+            var duplicateKey = providerList
+                .GroupBy(p => p.ProviderKey, StringComparer.Ordinal)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .FirstOrDefault();
 
-            foreach (var provider in providers)
+            if (duplicateKey is not null)
             {
-                if (!providersByKey.TryAdd(provider.ProviderKey, provider))
-                {
-                    throw new InvalidOperationException(
-                        $"Duplicate IOAuthProvider registration for ProviderKey '{provider.ProviderKey}'. " +
-                        "Each OAuth provider must have a unique ProviderKey.");
-                }
+                throw new InvalidOperationException(
+                    $"Duplicate IOAuthProvider registration for ProviderKey '{duplicateKey}'. " +
+                    "Each OAuth provider must have a unique ProviderKey.");
             }
+
+            providersByKey = providerList.ToDictionary(p => p.ProviderKey, p => p, StringComparer.Ordinal);
         }
 
         public IOAuthProvider GetByKey(string authenticationMethodKey)
