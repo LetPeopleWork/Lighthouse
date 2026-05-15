@@ -572,6 +572,28 @@ describe("ModifyConnectionSettings", () => {
 			expect(jiraUrlInput.value).toBe("https://example.atlassian.net");
 		});
 
+		it("locks Client ID / Client Secret / Jira URL as read-only in edit mode for OAuth methods", async () => {
+			renderComponent(
+				{
+					getConnectionSettings: vi
+						.fn()
+						.mockResolvedValue(mockExistingOAuthConnection),
+				},
+				{ canUsePremiumFeatures: true },
+			);
+
+			const clientIdInput =
+				await screen.findByLabelText<HTMLInputElement>("Client ID");
+			expect(clientIdInput).toHaveAttribute("readonly");
+
+			const clientSecretInput =
+				screen.getByLabelText<HTMLInputElement>("Client Secret");
+			expect(clientSecretInput).toHaveAttribute("readonly");
+
+			const jiraUrlInput = screen.getByLabelText<HTMLInputElement>("Jira URL");
+			expect(jiraUrlInput).toHaveAttribute("readonly");
+		});
+
 		it("renders OAuth callback URL derived from server BaseUrl when systemInfo provides one", async () => {
 			renderComponent(
 				{

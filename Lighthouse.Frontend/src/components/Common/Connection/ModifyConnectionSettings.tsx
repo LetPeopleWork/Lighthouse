@@ -508,6 +508,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 											selectedAuthMethod?.options.find(
 												(o) => o.key === option.key,
 											)?.displayName ?? option.key;
+										const lockOAuthField =
+											isEditMode && isOAuthMethod(selectedAuthMethod);
 										return (
 											<Grid size={{ xs: 12, md: 6 }} key={option.key}>
 												<TextField
@@ -519,6 +521,16 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 														isEditMode && option.isSecret && option.value === ""
 															? "Leave empty to keep existing value"
 															: ""
+													}
+													slotProps={
+														lockOAuthField
+															? { input: { readOnly: true } }
+															: undefined
+													}
+													helperText={
+														lockOAuthField
+															? "Locked after the OAuth connect handshake. Reconnect to rotate."
+															: undefined
 													}
 													onChange={(e) =>
 														handleAuthOptionChange(option, e.target.value)
