@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Time.Testing;
@@ -282,7 +283,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_RefreshFailedCredential_ThrowsInvalidOperationException()
+        public void EnsureFreshTokenAsync_RefreshFailedCredential_ThrowsOAuthCredentialNotValidException()
         {
             var credential = new OAuthCredential
             {
@@ -300,11 +301,233 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             var sut = CreateService();
 
-            Assert.ThrowsAsync<InvalidOperationException>(
+            Assert.ThrowsAsync<OAuthCredentialNotValidException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
         }
 
-        private OAuthService CreateService(IHttpContextAccessor? httpContextAccessor = null)
+        [Test]
+        public async Task EnsureFreshTokenAsync_ExpiresMoreThan5MinutesAway_ReturnsCachedTokenWithoutRefresh()
+        {
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-access-token")).Returns("plain-access-token");
+
+            var credential = new OAuthCredential
+            {
+                Id = 11,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "enc-access-token",
+                RefreshToken = "enc-refresh-token",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(5).AddSeconds(1),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow(),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            var sut = CreateService();
+
+            var token = await sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            Assert.That(token, Is.EqualTo("plain-access-token"));
+            providerMock.Verify(
+                p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            credentialRepositoryMock.Verify(r => r.Update(It.IsAny<OAuthCredential>()), Times.Never);
+        }
+
+        [Test]
+        public async Task EnsureFreshTokenAsync_ExpiresWithin5Minutes_RefreshesOnceAndPersistsNewTokens()
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-rt-old")).Returns("plain-rt-old");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-at-new")).Returns("enc-at-new");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-rt-new")).Returns("enc-rt-new");
+
+            var credential = new OAuthCredential
+            {
+                Id = 13,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "enc-at-old",
+                RefreshToken = "enc-rt-old",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(4).AddSeconds(59),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow().AddMinutes(-10),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            var newExpiry = timeProvider.GetUtcNow().AddHours(1);
+            providerMock
+                .Setup(p => p.RefreshTokenAsync(
+                    It.Is<OAuthRefreshContext>(ctx =>
+                        ctx.RefreshToken == "plain-rt-old"
+                        && ctx.ClientId == PlaintextClientId
+                        && ctx.ClientSecret == PlaintextClientSecret),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OAuthTokens("plain-at-new", "plain-rt-new", newExpiry));
+
+            var sut = CreateService();
+
+            var token = await sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(token, Is.EqualTo("plain-at-new"));
+                Assert.That(credential.AccessToken, Is.EqualTo("enc-at-new"));
+                Assert.That(credential.RefreshToken, Is.EqualTo("enc-rt-new"));
+                Assert.That(credential.ExpiresAt, Is.EqualTo(newExpiry));
+                Assert.That(credential.UpdatedAt, Is.EqualTo(timeProvider.GetUtcNow()));
+            }
+            providerMock.Verify(
+                p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+            credentialRepositoryMock.Verify(r => r.Update(credential), Times.Once);
+            credentialRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task EnsureFreshTokenAsync_ConcurrentCallers_DoubleCheckUnderLockSkipsRedundantRefresh()
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-rt-old")).Returns("plain-rt-old");
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-at-new")).Returns("plain-at-new");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-at-new")).Returns("enc-at-new");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-rt-new")).Returns("enc-rt-new");
+
+            var credential = new OAuthCredential
+            {
+                Id = 17,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "enc-at-old",
+                RefreshToken = "enc-rt-old",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(2),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow().AddMinutes(-10),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            var refreshGate = new TaskCompletionSource<OAuthTokens>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var newExpiry = timeProvider.GetUtcNow().AddHours(1);
+            providerMock
+                .Setup(p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()))
+                .Returns(() => refreshGate.Task);
+
+            var sut = CreateService();
+
+            var caller1 = sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+            var caller2 = sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+            var caller3 = sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            refreshGate.SetResult(new OAuthTokens("plain-at-new", "plain-rt-new", newExpiry));
+
+            var tokens = await Task.WhenAll(caller1, caller2, caller3);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(tokens[0], Is.EqualTo("plain-at-new"));
+                Assert.That(tokens[1], Is.EqualTo("plain-at-new"));
+                Assert.That(tokens[2], Is.EqualTo("plain-at-new"));
+            }
+            providerMock.Verify(
+                p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task EnsureFreshTokenAsync_SemaphoreWaitTimesOut_ThrowsOAuthRefreshTimeoutException()
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-rt")).Returns("plain-rt");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-at-new")).Returns("enc-at-new");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-rt-new")).Returns("enc-rt-new");
+
+            var credential = new OAuthCredential
+            {
+                Id = 19,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "enc-at",
+                RefreshToken = "enc-rt",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(2),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow().AddMinutes(-10),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            var blocker = new TaskCompletionSource<OAuthTokens>(TaskCreationOptions.RunContinuationsAsynchronously);
+            providerMock
+                .Setup(p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()))
+                .Returns(() => blocker.Task);
+
+            var refreshOptions = new OAuthRefreshOptions(TimeSpan.FromMilliseconds(50));
+            var sut = CreateService(refreshOptions: refreshOptions);
+
+            var holder = sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            Assert.ThrowsAsync<OAuthRefreshTimeoutException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            blocker.SetResult(new OAuthTokens("plain-at-new", "plain-rt-new", timeProvider.GetUtcNow().AddHours(1)));
+            await holder;
+        }
+
+        [Test]
+        public async Task EnsureFreshTokenAsync_RefreshSucceeds_EmitsOAuthTokenRefreshedLogEvent()
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-rt-old")).Returns("plain-rt-old");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-at-new")).Returns("enc-at-new");
+            cryptoServiceMock.Setup(c => c.Encrypt("plain-rt-new")).Returns("enc-rt-new");
+
+            var credential = new OAuthCredential
+            {
+                Id = 23,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "enc-at-old",
+                RefreshToken = "enc-rt-old",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(1),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow().AddMinutes(-10),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            providerMock
+                .Setup(p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OAuthTokens("plain-at-new", "plain-rt-new", timeProvider.GetUtcNow().AddHours(1)));
+
+            var loggerMock = new Mock<ILogger<OAuthService>>();
+            var sut = CreateService(logger: loggerMock.Object);
+
+            await sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("oauth.token.refreshed")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        private OAuthService CreateService(
+            IHttpContextAccessor? httpContextAccessor = null,
+            OAuthRefreshOptions? refreshOptions = null,
+            ILogger<OAuthService>? logger = null)
         {
             return new OAuthService(
                 providerRegistryMock.Object,
@@ -314,8 +537,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 stateTokenIssuerMock.Object,
                 serviceConfigMock.Object,
                 timeProvider,
-                NullLogger<OAuthService>.Instance,
-                httpContextAccessor ?? Mock.Of<IHttpContextAccessor>());
+                logger ?? NullLogger<OAuthService>.Instance,
+                httpContextAccessor ?? Mock.Of<IHttpContextAccessor>(),
+                refreshOptions ?? OAuthRefreshOptions.Default);
         }
 
         private static WorkTrackingSystemConnection CreateOAuthConnection(int id, string authenticationMethodKey)

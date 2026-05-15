@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
@@ -9,20 +10,72 @@ using Microsoft.AspNetCore.Http;
 
 namespace Lighthouse.Backend.Services.Implementation.OAuth
 {
-#pragma warning disable S107 // OAuth flow legitimately needs 9 collaborators: provider registry, two repositories, crypto, state-token issuer, service config, time provider, logger, and HTTP context accessor (used to derive the callback URL when Lighthouse:BaseUrl is not configured). Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
-    public class OAuthService(
-        IOAuthProviderRegistry providerRegistry,
-        IRepository<WorkTrackingSystemConnection> connectionRepository,
-        IRepository<OAuthCredential> credentialRepository,
-        ICryptoService cryptoService,
-        IOAuthStateTokenIssuer stateTokenIssuer,
-        IServiceConfig serviceConfig,
-        TimeProvider timeProvider,
-        ILogger<OAuthService> logger,
-        IHttpContextAccessor httpContextAccessor) : IOAuthService
+#pragma warning disable S107 // OAuth flow legitimately needs 9 collaborators plus refresh options (ADR-010 single-flight refresh window/timeout). Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
+    public class OAuthService : IOAuthService
 #pragma warning restore S107
     {
         private const string CallbackPath = "/api/oauth/callback";
+        private static readonly TimeSpan RefreshWindow = TimeSpan.FromMinutes(5);
+
+        private readonly IOAuthProviderRegistry providerRegistry;
+        private readonly IRepository<WorkTrackingSystemConnection> connectionRepository;
+        private readonly IRepository<OAuthCredential> credentialRepository;
+        private readonly ICryptoService cryptoService;
+        private readonly IOAuthStateTokenIssuer stateTokenIssuer;
+        private readonly IServiceConfig serviceConfig;
+        private readonly TimeProvider timeProvider;
+        private readonly ILogger<OAuthService> logger;
+        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly OAuthRefreshOptions refreshOptions;
+        private readonly ConcurrentDictionary<int, SemaphoreSlim> refreshLocks = new();
+
+        public OAuthService(
+            IOAuthProviderRegistry providerRegistry,
+            IRepository<WorkTrackingSystemConnection> connectionRepository,
+            IRepository<OAuthCredential> credentialRepository,
+            ICryptoService cryptoService,
+            IOAuthStateTokenIssuer stateTokenIssuer,
+            IServiceConfig serviceConfig,
+            TimeProvider timeProvider,
+            ILogger<OAuthService> logger,
+            IHttpContextAccessor httpContextAccessor)
+            : this(
+                providerRegistry,
+                connectionRepository,
+                credentialRepository,
+                cryptoService,
+                stateTokenIssuer,
+                serviceConfig,
+                timeProvider,
+                logger,
+                httpContextAccessor,
+                OAuthRefreshOptions.Default)
+        {
+        }
+
+        public OAuthService(
+            IOAuthProviderRegistry providerRegistry,
+            IRepository<WorkTrackingSystemConnection> connectionRepository,
+            IRepository<OAuthCredential> credentialRepository,
+            ICryptoService cryptoService,
+            IOAuthStateTokenIssuer stateTokenIssuer,
+            IServiceConfig serviceConfig,
+            TimeProvider timeProvider,
+            ILogger<OAuthService> logger,
+            IHttpContextAccessor httpContextAccessor,
+            OAuthRefreshOptions refreshOptions)
+        {
+            this.providerRegistry = providerRegistry;
+            this.connectionRepository = connectionRepository;
+            this.credentialRepository = credentialRepository;
+            this.cryptoService = cryptoService;
+            this.stateTokenIssuer = stateTokenIssuer;
+            this.serviceConfig = serviceConfig;
+            this.timeProvider = timeProvider;
+            this.logger = logger;
+            this.httpContextAccessor = httpContextAccessor;
+            this.refreshOptions = refreshOptions;
+        }
 
         public Task<Uri> InitiateAsync(int connectionId, CancellationToken cancellationToken)
         {
@@ -103,7 +156,19 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 OAuthCredentialStatus.Disconnected);
         }
 
-        public Task<string> EnsureFreshTokenAsync(int connectionId, CancellationToken cancellationToken)
+        public async Task<string> EnsureFreshTokenAsync(int connectionId, CancellationToken cancellationToken)
+        {
+            var credential = LoadValidCredentialOrThrow(connectionId);
+
+            if (IsTokenFresh(credential))
+            {
+                return cryptoService.Decrypt(credential.AccessToken);
+            }
+
+            return await RefreshUnderLockAsync(connectionId, credential.Id, cancellationToken);
+        }
+
+        private OAuthCredential LoadValidCredentialOrThrow(int connectionId)
         {
             var credential = credentialRepository.GetByPredicate(c => c.WorkTrackingSystemConnectionId == connectionId);
             if (credential is null)
@@ -114,12 +179,72 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
 
             if (credential.Status != OAuthCredentialStatus.Valid)
             {
-                throw new InvalidOperationException(
+                throw new OAuthCredentialNotValidException(
                     $"OAuth credential for connection {connectionId} is in status {credential.Status}. Reconnect required.");
             }
 
-            var decryptedAccessToken = cryptoService.Decrypt(credential.AccessToken);
-            return Task.FromResult(decryptedAccessToken);
+            return credential;
+        }
+
+        private bool IsTokenFresh(OAuthCredential credential)
+        {
+            return credential.ExpiresAt - timeProvider.GetUtcNow() > RefreshWindow;
+        }
+
+        private async Task<string> RefreshUnderLockAsync(int connectionId, int credentialId, CancellationToken cancellationToken)
+        {
+            var semaphore = refreshLocks.GetOrAdd(credentialId, _ => new SemaphoreSlim(1, 1));
+            var acquired = await semaphore.WaitAsync(refreshOptions.SemaphoreTimeout, cancellationToken);
+            if (!acquired)
+            {
+                throw new OAuthRefreshTimeoutException(
+                    $"Timed out waiting to refresh OAuth credential {credentialId} for connection {connectionId}.");
+            }
+
+            try
+            {
+                var credential = LoadValidCredentialOrThrow(connectionId);
+                if (IsTokenFresh(credential))
+                {
+                    return cryptoService.Decrypt(credential.AccessToken);
+                }
+
+                return await PerformRefreshAsync(connectionId, credential, cancellationToken);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        private async Task<string> PerformRefreshAsync(int connectionId, OAuthCredential credential, CancellationToken cancellationToken)
+        {
+            var connection = LoadConnectionOrThrow(connectionId);
+            var provider = providerRegistry.GetByKey(connection.AuthenticationMethodKey);
+
+            var encryptedClientId = connection.GetWorkTrackingSystemConnectionOptionByKey(OAuthWorkTrackingOptionNames.ClientId);
+            var encryptedClientSecret = connection.GetWorkTrackingSystemConnectionOptionByKey(OAuthWorkTrackingOptionNames.ClientSecret);
+            var clientId = cryptoService.Decrypt(encryptedClientId);
+            var clientSecret = cryptoService.Decrypt(encryptedClientSecret);
+            var refreshToken = cryptoService.Decrypt(credential.RefreshToken);
+
+            var refreshContext = new OAuthRefreshContext(refreshToken, clientId, clientSecret);
+            var refreshed = await provider.RefreshTokenAsync(refreshContext, cancellationToken);
+
+            credential.AccessToken = cryptoService.Encrypt(refreshed.AccessToken);
+            credential.RefreshToken = cryptoService.Encrypt(refreshed.RefreshToken);
+            credential.ExpiresAt = refreshed.ExpiresAt;
+            credential.UpdatedAt = timeProvider.GetUtcNow();
+            credentialRepository.Update(credential);
+            await credentialRepository.Save();
+
+            logger.LogInformation(
+                "oauth.token.refreshed {CredentialId} {ConnectionId} {ProviderKey}",
+                credential.Id,
+                connectionId,
+                connection.AuthenticationMethodKey);
+
+            return refreshed.AccessToken;
         }
 
         private WorkTrackingSystemConnection LoadConnectionOrThrow(int connectionId)
