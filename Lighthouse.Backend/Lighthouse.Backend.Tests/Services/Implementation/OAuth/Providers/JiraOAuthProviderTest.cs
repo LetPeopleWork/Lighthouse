@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
         {
             var httpClient = new HttpClient(handler);
             var timeProvider = new FakeTimeProvider(FixedNow);
-            return new JiraOAuthProvider(httpClient, timeProvider);
+            return new JiraOAuthProvider(httpClient, timeProvider, Microsoft.Extensions.Logging.Abstractions.NullLogger<JiraOAuthProvider>.Instance);
         }
 
         private static HttpMessageHandler CreateHandler(

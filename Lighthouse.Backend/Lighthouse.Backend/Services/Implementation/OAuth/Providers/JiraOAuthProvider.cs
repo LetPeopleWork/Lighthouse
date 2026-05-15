@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -34,11 +35,13 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
 
         private readonly HttpClient httpClient;
         private readonly TimeProvider timeProvider;
+        private readonly ILogger<JiraOAuthProvider> logger;
 
-        public JiraOAuthProvider(HttpClient httpClient, TimeProvider timeProvider)
+        public JiraOAuthProvider(HttpClient httpClient, TimeProvider timeProvider, ILogger<JiraOAuthProvider> logger)
         {
             this.httpClient = httpClient;
             this.timeProvider = timeProvider;
+            this.logger = logger;
         }
 
         public string ProviderKey => AuthenticationMethodKeys.JiraOAuth;
@@ -109,6 +112,10 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
                     (int)response.StatusCode,
                     "empty_response",
                     "Atlassian token endpoint returned an empty body.");
+
+            logger.LogInformation(
+                "jira.oauth.token granted scope from Atlassian: {GrantedScope}",
+                tokenResponse.Scope);
 
             var expiresAt = timeProvider.GetUtcNow().AddSeconds(tokenResponse.ExpiresIn);
             return new OAuthTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt);

@@ -782,7 +782,8 @@ namespace Lighthouse.Backend
             {
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var timeProvider = sp.GetRequiredService<TimeProvider>();
-                return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider);
+                var providerLogger = sp.GetRequiredService<ILogger<JiraOAuthProvider>>();
+                return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider, providerLogger);
             });
 
             RegisterStubOAuthProviderIfEnabled(builder);
