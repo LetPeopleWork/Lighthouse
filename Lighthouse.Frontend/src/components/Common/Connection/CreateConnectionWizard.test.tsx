@@ -8,11 +8,14 @@ import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkT
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
+import type { IOAuthService } from "../../../services/Api/OAuthService";
 import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
+import type { IWorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
+	createMockOAuthService,
 	createMockSystemInfoService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
@@ -242,20 +245,30 @@ const createQueryClient = () =>
 interface RenderOptions {
 	supportedSystems?: WorkTrackingSystemConnection[];
 	validateConnection?: (conn: unknown) => Promise<boolean>;
-	saveConnection?: (conn: unknown) => Promise<void>;
+	saveConnection?: (
+		conn: WorkTrackingSystemConnection,
+	) => Promise<WorkTrackingSystemConnection>;
 	onCancel?: () => void;
 	canUsePremiumFeatures?: boolean;
 	baseUrl?: string | null;
+	oauthService?: IOAuthService;
+	configuredConnections?: WorkTrackingSystemConnection[];
+	initialUrl?: string;
 }
 
 const renderWizard = (options: RenderOptions = {}) => {
 	const {
 		supportedSystems = [mockAdoSystem, mockJiraSystem, mockLinearSystem],
 		validateConnection = vi.fn().mockResolvedValue(true),
-		saveConnection = vi.fn().mockResolvedValue(undefined),
+		saveConnection = vi
+			.fn()
+			.mockImplementation(async (conn: WorkTrackingSystemConnection) => conn),
 		onCancel = vi.fn(),
 		canUsePremiumFeatures = true,
 		baseUrl,
+		oauthService = createMockOAuthService(),
+		configuredConnections = [],
+		initialUrl = "/settings/connections/new",
 	} = options;
 
 	const getSupportedSystems = vi.fn().mockResolvedValue(supportedSystems);
@@ -290,17 +303,25 @@ const renderWizard = (options: RenderOptions = {}) => {
 		getPortfolios: vi.fn().mockResolvedValue([]),
 	} as unknown as IPortfolioService;
 
+	const mockWorkTrackingSystemService = {
+		getConfiguredWorkTrackingSystems: vi
+			.fn()
+			.mockResolvedValue(configuredConnections),
+	} as unknown as IWorkTrackingSystemService;
+
 	const mockApiServiceContext = createMockApiServiceContext({
 		terminologyService: mockTerminologyService,
 		licensingService: createLicensingService(canUsePremiumFeatures),
 		systemInfoService: mockSystemInfoService,
 		teamService: mockTeamService,
 		portfolioService: mockPortfolioService,
+		oauthService,
+		workTrackingSystemService: mockWorkTrackingSystemService,
 	});
 
 	render(
 		<QueryClientProvider client={createQueryClient()}>
-			<MemoryRouter>
+			<MemoryRouter initialEntries={[initialUrl]}>
 				<ApiServiceContext.Provider value={mockApiServiceContext}>
 					<TerminologyProvider>
 						<CreateConnectionWizard
@@ -649,14 +670,38 @@ describe("CreateConnectionWizard", () => {
 			expect(screen.getByText(/Set Lighthouse:BaseUrl/i)).toBeInTheDocument();
 		});
 
-		it("skips validateConnection and advances to step 3 when OAuth method is selected", async () => {
+		it("saves a draft, calls initiateConnect, and redirects to the authorization URL on Next when OAuth method is selected", async () => {
 			const user = userEvent.setup();
 			const validateConnection = vi.fn().mockResolvedValue(true);
+			const savedDraft = new WorkTrackingSystemConnection({
+				id: 77,
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+			const saveConnection = vi.fn().mockResolvedValue(savedDraft);
+			const oauthService = createMockOAuthService();
+			vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+				authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+			});
+
+			const assign = vi.fn();
+			Object.defineProperty(window, "location", {
+				value: { ...window.location, assign },
+				writable: true,
+			});
+
 			renderWizard({
 				supportedSystems: [mockJiraSystemWithOAuth],
 				canUsePremiumFeatures: true,
 				baseUrl: "https://lighthouse.example.com",
 				validateConnection,
+				saveConnection,
+				oauthService,
 			});
 			await waitFor(() => {
 				expect(
@@ -666,9 +711,7 @@ describe("CreateConnectionWizard", () => {
 			await user.click(screen.getByRole("button", { name: /Jira/i }));
 			const select = await screen.findByRole("combobox");
 			await user.click(select);
-			await user.click(
-				await screen.findByRole("option", { name: /OAuth/i }),
-			);
+			await user.click(await screen.findByRole("option", { name: /OAuth/i }));
 
 			await user.type(
 				await screen.findByLabelText("Jira URL"),
@@ -685,10 +728,60 @@ describe("CreateConnectionWizard", () => {
 
 			await user.click(screen.getByRole("button", { name: /Next/i }));
 
+			await waitFor(() => {
+				expect(saveConnection).toHaveBeenCalledTimes(1);
+			});
+			expect(oauthService.initiateConnect).toHaveBeenCalledWith(
+				"jira.oauth",
+				77,
+			);
+			await waitFor(() => {
+				expect(assign).toHaveBeenCalledWith(
+					"https://auth.atlassian.com/authorize?state=xyz",
+				);
+			});
+			expect(validateConnection).not.toHaveBeenCalled();
+		});
+
+		it("resumes on step 3 with the persisted connection when mounted with ?oauth=success&connectionId=...", async () => {
+			const persistedDraft = new WorkTrackingSystemConnection({
+				id: 88,
+				name: "My Pending OAuth Connection",
+				workTrackingSystem: "Jira",
+				options: [
+					{
+						key: "Jira Url",
+						value: "https://example.atlassian.net",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "oauth.clientId",
+						value: "persisted-client-id",
+						isSecret: false,
+						isOptional: false,
+					},
+				],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+
+			renderWizard({
+				supportedSystems: [mockJiraSystemWithOAuth],
+				canUsePremiumFeatures: true,
+				baseUrl: "https://lighthouse.example.com",
+				configuredConnections: [persistedDraft],
+				initialUrl: "/settings/connections/new?oauth=success&connectionId=88",
+			});
+
 			expect(
 				await screen.findByLabelText(/Connection Name/i),
 			).toBeInTheDocument();
-			expect(validateConnection).not.toHaveBeenCalled();
+			const nameInput =
+				screen.getByLabelText<HTMLInputElement>(/Connection Name/i);
+			expect(nameInput.value).toBe("My Pending OAuth Connection");
 		});
 
 		it("renders Upgrade affordance and hides Client ID / Secret when not Premium", async () => {

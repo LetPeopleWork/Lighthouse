@@ -563,14 +563,12 @@ describe("ModifyConnectionSettings", () => {
 				{ canUsePremiumFeatures: true },
 			);
 
-			const clientIdInput = await screen.findByLabelText<HTMLInputElement>(
-				"Client ID",
-			);
+			const clientIdInput =
+				await screen.findByLabelText<HTMLInputElement>("Client ID");
 			expect(clientIdInput.value).toBe("persisted-client-id");
 
-			const jiraUrlInput = await screen.findByLabelText<HTMLInputElement>(
-				"Jira URL",
-			);
+			const jiraUrlInput =
+				await screen.findByLabelText<HTMLInputElement>("Jira URL");
 			expect(jiraUrlInput.value).toBe("https://example.atlassian.net");
 		});
 

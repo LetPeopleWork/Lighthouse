@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.API
             try
             {
                 var result = await oauthService.CompleteAsync(code, state, cancellationToken);
-                return Redirect($"/settings/connections/{result.ConnectionId}?oauth=success");
+                return Redirect($"/settings/connections/new?oauth=success&connectionId={result.ConnectionId}");
             }
             catch (OAuthStateTokenInvalidException ex)
             {

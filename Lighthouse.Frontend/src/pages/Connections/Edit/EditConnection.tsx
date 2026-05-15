@@ -45,15 +45,19 @@ const EditConnectionPage: React.FC = () => {
 	const saveConnectionSettings = async (
 		connection: IWorkTrackingSystemConnection,
 	) => {
-		if (isNewConnection) {
-			await workTrackingSystemService.addNewWorkTrackingSystemConnection(
-				connection,
-			);
-		} else {
-			await workTrackingSystemService.updateWorkTrackingSystemConnection(
-				connection,
-			);
-		}
+		const saved =
+			isNewConnection && connection.id === 0
+				? await workTrackingSystemService.addNewWorkTrackingSystemConnection(
+						connection,
+					)
+				: await workTrackingSystemService.updateWorkTrackingSystemConnection(
+						connection,
+					);
+		return saved;
+	};
+
+	const saveAndNavigate = async (connection: IWorkTrackingSystemConnection) => {
+		await saveConnectionSettings(connection);
 		navigate("/");
 	};
 
@@ -98,6 +102,7 @@ const EditConnectionPage: React.FC = () => {
 						validateConnection={validateConnectionSettings}
 						saveConnection={saveConnectionSettings}
 						onCancel={() => navigate("/")}
+						onComplete={() => navigate("/")}
 					/>
 				</Container>
 			</SnackbarErrorHandler>
@@ -110,7 +115,7 @@ const EditConnectionPage: React.FC = () => {
 				title={pageTitle}
 				getSupportedSystems={getSupportedSystems}
 				getConnectionSettings={getConnectionSettings}
-				saveConnectionSettings={saveConnectionSettings}
+				saveConnectionSettings={saveAndNavigate}
 				validateConnectionSettings={validateConnectionSettings}
 			/>
 		</SnackbarErrorHandler>

@@ -10,8 +10,8 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
@@ -20,6 +20,7 @@ import type {
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import { ApiError } from "../../../services/Api/ApiError";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -41,8 +42,11 @@ interface CreateConnectionWizardProps {
 	validateConnection: (
 		connection: IWorkTrackingSystemConnection,
 	) => Promise<boolean>;
-	saveConnection: (connection: IWorkTrackingSystemConnection) => Promise<void>;
+	saveConnection: (
+		connection: IWorkTrackingSystemConnection,
+	) => Promise<IWorkTrackingSystemConnection>;
 	onCancel: () => void;
+	onComplete?: () => void;
 }
 
 const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
@@ -50,6 +54,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	validateConnection,
 	saveConnection,
 	onCancel,
+	onComplete,
 }) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const [loading, setLoading] = useState(true);
@@ -76,6 +81,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		string | null
 	>(null);
 	const [saving, setSaving] = useState(false);
+	const [draftConnectionId, setDraftConnectionId] = useState<number | null>(
+		null,
+	);
+
+	const { oauthService, workTrackingSystemService } =
+		useContext(ApiServiceContext);
+	const [searchParams] = useSearchParams();
 
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
@@ -98,18 +110,79 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		[],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: resume-from-OAuth must read searchParams exactly once on mount; re-running on dep changes would replay the resume flow with stale data after the user navigates further.
 	useEffect(() => {
 		const fetchSystems = async () => {
 			setLoading(true);
 			try {
 				const systems = await getSupportedSystems();
 				setSupportedSystems(systems);
+
+				const oauthOutcome = searchParams.get("oauth");
+				const connectionIdParam = searchParams.get("connectionId");
+				if (!oauthOutcome || !connectionIdParam) {
+					return;
+				}
+
+				const connectionIdValue = Number.parseInt(connectionIdParam, 10);
+				if (Number.isNaN(connectionIdValue)) {
+					return;
+				}
+
+				const persisted =
+					await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+				const matching = persisted.find((c) => c.id === connectionIdValue);
+				if (!matching) {
+					return;
+				}
+
+				const matchingSystem = systems.find(
+					(s) => s.workTrackingSystem === matching.workTrackingSystem,
+				);
+				if (matchingSystem) {
+					setSelectedSystem(matchingSystem);
+				}
+
+				setSelectedAuthMethod(
+					matchingSystem?.availableAuthenticationMethods?.find(
+						(m) => m.key === matching.authenticationMethodKey,
+					) ?? null,
+				);
+
+				const matchingMethod =
+					matchingSystem?.availableAuthenticationMethods?.find(
+						(m) => m.key === matching.authenticationMethodKey,
+					) ?? null;
+				const reseedAuthOptions =
+					matchingMethod?.options.map((opt) => {
+						const persistedValue =
+							matching.options.find((p) => p.key === opt.key)?.value ?? "";
+						return {
+							key: opt.key,
+							value: persistedValue,
+							isSecret: opt.isSecret,
+							isOptional: opt.isOptional,
+						};
+					}) ?? [];
+				setAuthOptions(reseedAuthOptions);
+
+				setConnectionName(matching.name);
+				setDraftConnectionId(connectionIdValue);
+
+				if (oauthOutcome === "success") {
+					setActiveStep(2);
+				} else {
+					setActiveStep(1);
+					setValidationError(
+						"OAuth connect did not complete. Check your Client ID / Client Secret and try again.",
+					);
+				}
 			} finally {
 				setLoading(false);
 			}
 		};
 		fetchSystems();
-	}, [getSupportedSystems]);
+	}, []);
 
 	const selectSystem = (system: IWorkTrackingSystemConnection) => {
 		setSelectedSystem(system);
@@ -199,7 +272,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		useCallback((): IWorkTrackingSystemConnection | null => {
 			if (!selectedSystem || !selectedAuthMethod) return null;
 			return {
-				id: 0,
+				id: draftConnectionId ?? 0,
 				name: connectionName,
 				workTrackingSystem: selectedSystem.workTrackingSystem,
 				options: allOptions,
@@ -209,7 +282,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 				additionalFieldDefinitions: [],
 				writeBackMappingDefinitions: [],
 			};
-		}, [selectedSystem, selectedAuthMethod, connectionName, allOptions]);
+		}, [
+			selectedSystem,
+			selectedAuthMethod,
+			connectionName,
+			allOptions,
+			draftConnectionId,
+		]);
 
 	const runValidation = useCallback(async (): Promise<boolean> => {
 		const dto = buildConnectionDto();
@@ -224,6 +303,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		setSaving(true);
 		try {
 			await saveConnection(dto);
+			onComplete?.();
 		} finally {
 			setSaving(false);
 		}
@@ -237,7 +317,40 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		if (isOAuthSelected) {
 			setValidationError(null);
 			setValidationTechnicalDetails(null);
-			setActiveStep(2);
+			setValidating(true);
+			try {
+				const dto = buildConnectionDto();
+				if (!dto || !selectedAuthMethod) {
+					setValidationError(
+						"Cannot start OAuth connect: missing system or auth method.",
+					);
+					return;
+				}
+				const saved = await saveConnection(dto);
+				if (saved.id === null) {
+					setValidationError(
+						"Could not save the connection before starting OAuth connect.",
+					);
+					return;
+				}
+				setDraftConnectionId(saved.id);
+				const { authorizationUrl } = await oauthService.initiateConnect(
+					selectedAuthMethod.key,
+					saved.id,
+				);
+				window.location.assign(authorizationUrl);
+			} catch (error) {
+				const message =
+					error instanceof ApiError
+						? error.message
+						: "Failed to start the OAuth connect flow.";
+				setValidationError(message);
+				setValidationTechnicalDetails(
+					error instanceof ApiError ? (error.technicalDetails ?? null) : null,
+				);
+			} finally {
+				setValidating(false);
+			}
 			return;
 		}
 

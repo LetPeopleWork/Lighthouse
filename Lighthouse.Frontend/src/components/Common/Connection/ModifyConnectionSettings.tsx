@@ -44,7 +44,7 @@ interface ModifyConnectionSettingsProps {
 	getConnectionSettings: () => Promise<IWorkTrackingSystemConnection | null>;
 	saveConnectionSettings: (
 		connection: IWorkTrackingSystemConnection,
-	) => Promise<void>;
+	) => Promise<unknown>;
 	validateConnectionSettings: (
 		connection: IWorkTrackingSystemConnection,
 	) => Promise<boolean>;
@@ -465,29 +465,31 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						</Grid>
 					)}
 
-					{showAuthSection && isOAuthMethod(selectedAuthMethod) && !canUsePremiumFeatures && (
-						<Grid size={{ xs: 12 }}>
-							<Typography
-								variant="subtitle2"
-								color="text.secondary"
-								sx={{ mb: 1 }}
-							>
-								Authentication
-							</Typography>
-							<Alert
-								severity="info"
-								data-testid="oauth-premium-upgrade-affordance"
-							>
-								<Typography variant="body2">
-									OAuth 2.0 authentication is a Premium feature. Upgrade to
-									Premium to connect via OAuth.{" "}
-									<Link component={RouterLink} to="/settings/license">
-										View license options
-									</Link>
+					{showAuthSection &&
+						isOAuthMethod(selectedAuthMethod) &&
+						!canUsePremiumFeatures && (
+							<Grid size={{ xs: 12 }}>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									sx={{ mb: 1 }}
+								>
+									Authentication
 								</Typography>
-							</Alert>
-						</Grid>
-					)}
+								<Alert
+									severity="info"
+									data-testid="oauth-premium-upgrade-affordance"
+								>
+									<Typography variant="body2">
+										OAuth 2.0 authentication is a Premium feature. Upgrade to
+										Premium to connect via OAuth.{" "}
+										<Link component={RouterLink} to="/settings/license">
+											View license options
+										</Link>
+									</Typography>
+								</Alert>
+							</Grid>
+						)}
 
 					{showAuthSection &&
 						(!isOAuthMethod(selectedAuthMethod) || canUsePremiumFeatures) &&

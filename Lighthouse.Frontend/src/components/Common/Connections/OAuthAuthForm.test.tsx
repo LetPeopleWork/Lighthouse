@@ -67,7 +67,9 @@ describe("OAuthAuthForm", () => {
 			"https://lighthouse.example.com/api/oauth/callback",
 		);
 
-		expect(screen.getByRole("button", { name: /Connect/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /Connect/i }),
+		).toBeInTheDocument();
 
 		expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
 		expect(screen.queryByLabelText("Client Secret")).not.toBeInTheDocument();
