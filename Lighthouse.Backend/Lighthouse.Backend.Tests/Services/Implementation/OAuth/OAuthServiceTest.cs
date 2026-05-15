@@ -524,6 +524,100 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 Times.Once);
         }
 
+        [Test]
+        public void EnsureFreshTokenAsync_ProviderRefreshFails_PersistsCredentialAsRefreshFailed()
+        {
+            var credential = ArrangeRefreshFailureScenario(credentialId: 31, out _);
+
+            var sut = CreateService();
+
+            Assert.ThrowsAsync<OAuthRefreshFailedException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(credential.Status, Is.EqualTo(OAuthCredentialStatus.RefreshFailed));
+                Assert.That(credential.UpdatedAt, Is.EqualTo(timeProvider.GetUtcNow()));
+            }
+            credentialRepositoryMock.Verify(r => r.Update(credential), Times.Once);
+            credentialRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        [Test]
+        public void EnsureFreshTokenAsync_ProviderRefreshFails_EmitsRefreshFailedAndStatusChangedLogEvents()
+        {
+            ArrangeRefreshFailureScenario(credentialId: 37, out _);
+
+            var loggerMock = new Mock<ILogger<OAuthService>>();
+            var sut = CreateService(logger: loggerMock.Object);
+
+            Assert.ThrowsAsync<OAuthRefreshFailedException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            loggerMock.Verify(
+                l => l.Log(
+                    It.IsAny<LogLevel>(),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("oauth.token.refresh_failed")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+            loggerMock.Verify(
+                l => l.Log(
+                    It.IsAny<LogLevel>(),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("oauth.credential.status_changed")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public void EnsureFreshTokenAsync_ProviderRefreshFails_ThrowsOAuthRefreshFailedExceptionPreservingProviderExceptionAsInner()
+        {
+            ArrangeRefreshFailureScenario(credentialId: 41, out var providerException);
+
+            var sut = CreateService();
+
+            var thrown = Assert.ThrowsAsync<OAuthRefreshFailedException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(thrown!.InnerException, Is.SameAs(providerException));
+                Assert.That(thrown.Message, Is.Not.Null.And.Not.Empty);
+            }
+        }
+
+        private OAuthCredential ArrangeRefreshFailureScenario(int credentialId, out OAuthProviderResponseException providerException)
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+
+            cryptoServiceMock.Setup(c => c.Decrypt("enc-rt-stale")).Returns("plain-rt-stale");
+
+            var credential = new OAuthCredential
+            {
+                Id = credentialId,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "enc-at-stale",
+                RefreshToken = "enc-rt-stale",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(1),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow().AddMinutes(-10),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            providerException = new OAuthProviderResponseException(ProviderKey, 400, "invalid_grant", "Refresh token expired or revoked.");
+            providerMock
+                .Setup(p => p.RefreshTokenAsync(It.IsAny<OAuthRefreshContext>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(providerException);
+
+            return credential;
+        }
+
         private OAuthService CreateService(
             IHttpContextAccessor? httpContextAccessor = null,
             OAuthRefreshOptions? refreshOptions = null,

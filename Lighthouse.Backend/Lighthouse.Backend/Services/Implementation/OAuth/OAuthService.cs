@@ -229,7 +229,17 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             var refreshToken = cryptoService.Decrypt(credential.RefreshToken);
 
             var refreshContext = new OAuthRefreshContext(refreshToken, clientId, clientSecret);
-            var refreshed = await provider.RefreshTokenAsync(refreshContext, cancellationToken);
+            OAuthTokens refreshed;
+            try
+            {
+                refreshed = await provider.RefreshTokenAsync(refreshContext, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Cancellation must propagate without marking the credential failed.
+                await MarkRefreshFailedAndThrowAsync(connectionId, credential, connection.AuthenticationMethodKey, ex);
+                throw; // unreachable — MarkRefreshFailedAndThrowAsync always throws
+            }
 
             credential.AccessToken = cryptoService.Encrypt(refreshed.AccessToken);
             credential.RefreshToken = cryptoService.Encrypt(refreshed.RefreshToken);
@@ -245,6 +255,38 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 connection.AuthenticationMethodKey);
 
             return refreshed.AccessToken;
+        }
+
+        private async Task MarkRefreshFailedAndThrowAsync(
+            int connectionId,
+            OAuthCredential credential,
+            string providerKey,
+            Exception providerException)
+        {
+            var fromStatus = credential.Status;
+            credential.Status = OAuthCredentialStatus.RefreshFailed;
+            credential.UpdatedAt = timeProvider.GetUtcNow();
+            credentialRepository.Update(credential);
+            await credentialRepository.Save();
+
+            logger.LogWarning(
+                providerException,
+                "oauth.token.refresh_failed {CredentialId} {ConnectionId} {ProviderKey} {ErrorType}",
+                credential.Id,
+                connectionId,
+                providerKey,
+                providerException.GetType().Name);
+
+            logger.LogInformation(
+                "oauth.credential.status_changed {CredentialId} {ConnectionId} {FromStatus} {ToStatus}",
+                credential.Id,
+                connectionId,
+                fromStatus,
+                OAuthCredentialStatus.RefreshFailed);
+
+            throw new OAuthRefreshFailedException(
+                $"OAuth token refresh failed for connection {connectionId}. Reconnect required.",
+                providerException);
         }
 
         private WorkTrackingSystemConnection LoadConnectionOrThrow(int connectionId)
