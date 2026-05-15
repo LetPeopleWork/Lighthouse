@@ -479,6 +479,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
+        public async Task CanSatisfyRequirementAsync_SystemAdminOrBootstrap_WhenRbacDisabledAndSystemAdminExists_ReturnsTrue()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+            await context.SaveChangesAsync();
+
+            var anonymousPrincipal = new ClaimsPrincipal(new ClaimsIdentity());
+            var subject = CreateSubject(context, emergencySubjects: [], enabled: false);
+
+            var result = await subject.CanSatisfyRequirementAsync(
+                anonymousPrincipal,
+                RbacGuardRequirement.SystemAdminOrBootstrap,
+                null,
+                CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
         public async Task CanSatisfyRequirementAsync_TeamRead_WhenUserHasViewerRole_ReturnsTrue()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
