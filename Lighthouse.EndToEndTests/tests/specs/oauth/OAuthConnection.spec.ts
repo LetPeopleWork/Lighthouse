@@ -111,59 +111,13 @@ test.describe("Slice 01 — Jira OAuth", () => {
 	//   Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Slice 02 — Token refresh (US-02)
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe("Slice 02 — Token refresh", () => {
-	testWithAuth.skip(
-		"[@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-refresh-success-rate] Access token is refreshed silently before its expiry",
-		async () => {
-			// TODO(DELIVER Slice 02): seed a Valid OAuthCredential with ExpiresAt 3 min from now;
-			// trigger sync; assert refresh endpoint invoked once; assert credential row updated;
-			// assert no reconnect banner. Verifies the operational-cost claim of the epic.
-			throw new Error("Not yet implemented — RED scaffold");
-		},
-	);
-
-	testWithAuth.skip(
-		"[@driving_adapter @real-io @in-memory @US-02 @error] Failed refresh marks the credential RefreshFailed and surfaces the reconnect banner",
-		async () => {
-			// TODO(DELIVER Slice 02): seed credential whose refresh token the stub will reject;
-			// trigger sync; assert Status=RefreshFailed, requiresReconnect:true in connections list,
-			// yellow banner rendered.
-			throw new Error("Not yet implemented — RED scaffold");
-		},
-	);
-
-	// Re-layered on 2026-05-14 — "Concurrent syncs trigger at most one refresh
-	// (single-flight)" is a concurrency invariant. Backend service test at:
-	//   Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs
-
-	testWithAuth.skip(
-		"[@driving_adapter @real-io @in-memory @US-02] Reconnecting from the banner clears RefreshFailed and restores Status=Valid",
-		async () => {
-			// TODO(DELIVER Slice 02): set credential to RefreshFailed; click Reconnect; complete
-			// stub flow; assert Status=Valid, banner gone.
-			throw new Error("Not yet implemented — RED scaffold");
-		},
-	);
-
-	// Folded into Slice 02 per OQ-DV1 resolution (2026-05-14).
-	testWithAuth.skip(
-		"[@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-setup-success-rate @kpi-OUT-oauth-refresh-success-rate] OAuth Health tile shows current setup-success and refresh-success rates to the SystemAdmin",
-		async () => {
-			// TODO(DELIVER Slice 02): seed log events for setup attempts + refresh outcomes;
-			// open Connections settings page as SystemAdmin on Premium-licensed instance;
-			// assert the OAuth Health tile renders with the three KPI rows.
-			// Then assert: non-SystemAdmin sees no tile; SystemAdmin on non-Premium sees
-			// the Upgrade affordance instead.
-			// time_to_first_sync_p95_30d is NOT asserted in this scenario — it's deferred
-			// (requires the connection.sync.first_after_oauth event which is folded later).
-			throw new Error("Not yet implemented — RED scaffold");
-		},
-	);
-});
+// Slice 02 — Token refresh (US-02) — re-layered 2026-05-15.
+// All four scenarios (silent refresh, failed-refresh banner, reconnect-from-banner,
+// OAuth Health tile) assert implementation invariants — state transitions, DTO
+// projection, component rendering, endpoint gating — that execute deterministically
+// at the layer they belong to. See ./OAuthConnection.feature header for the
+// per-scenario routing to backend service / controller tests and Vitest component /
+// page tests.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Slice 03 — Azure DevOps OAuth (US-03)

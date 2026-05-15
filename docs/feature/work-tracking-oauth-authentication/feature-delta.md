@@ -581,10 +581,10 @@ Executable form: `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spe
 | 1 | Jira OAuth connection is configured end-to-end and the first sync succeeds | `@walking_skeleton @driving_adapter @real-io @in-memory @US-01 @adapter-integration @kpi-OUT-oauth-setup-success-rate` | 01 |
 | 2 | Non-Premium instance shows upgrade affordance instead of OAuth form | `@driving_adapter @real-io @in-memory @US-01 @error` | 01 |
 | 3 | Lighthouse:BaseUrl unset triggers the callback-URL warning | `@driving_adapter @real-io @in-memory @US-01 @error` | 01 |
-| 4 | Access token is refreshed silently before its expiry | `@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-refresh-success-rate` | 02 |
-| 5 | Failed refresh marks credential RefreshFailed and surfaces reconnect banner | `@driving_adapter @real-io @in-memory @US-02 @error` | 02 |
-| 6 | Reconnecting from the banner clears RefreshFailed | `@driving_adapter @real-io @in-memory @US-02` | 02 |
-| 7 | OAuth Health tile renders KPIs (setup-success, refresh-success, stale-RefreshFailed) gated by SystemAdmin + Premium | `@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-setup-success-rate @kpi-OUT-oauth-refresh-success-rate` | 02 (folded per OQ-DV1 resolution 2026-05-14) |
+| 4 | Access token is refreshed silently before its expiry *(re-layered 2026-05-15 → `OAuthServiceTest` + `OAuthRefreshSingleFlightTest` + `WorkTrackingSystemConnectionsControllerTest` + `ReconnectBanner.test.tsx`)* | `@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-refresh-success-rate` | 02 |
+| 5 | Failed refresh marks credential RefreshFailed and surfaces reconnect banner *(re-layered 2026-05-15 → `OAuthServiceTest` + `WorkTrackingSystemConnectionsControllerTest` + `ReconnectBanner.test.tsx` + `OverviewDashboard.test.tsx`)* | `@driving_adapter @real-io @in-memory @US-02 @error` | 02 |
+| 6 | Reconnecting from the banner clears RefreshFailed *(re-layered 2026-05-15 → `ReconnectBanner.test.tsx` click sequence; slice-01 walking-skeleton already covers the /connect → /callback → Status=Valid happy path)* | `@driving_adapter @real-io @in-memory @US-02` | 02 |
+| 7 | OAuth Health tile renders KPIs (setup-success, refresh-success, stale-RefreshFailed) gated by SystemAdmin + Premium *(re-layered 2026-05-15 → `OAuthHealthControllerTest` + `OAuthHealthTile.test.tsx` + `OverviewDashboard.test.tsx`)* | `@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-setup-success-rate @kpi-OUT-oauth-refresh-success-rate` | 02 (folded per OQ-DV1 resolution 2026-05-14) |
 | 8 | Azure DevOps OAuth connection is configured end-to-end | `@driving_adapter @real-io @in-memory @US-03 @adapter-integration` | 03 |
 | 9 | ADO OAuth form warns when BaseUrl is HTTP | `@driving_adapter @real-io @in-memory @US-03 @error` | 03 |
 | 10 | Standalone (Tauri) renders OAuth dropdown disabled with tooltip | `@real-io @in-memory @US-04` | 04 |
@@ -958,4 +958,51 @@ framing. Sketch of the engineering work it points at (subject to that analysis):
 The aggregator + controller + tests landed here are forward-compatible: when the event store ships,
 only the aggregator body changes; the `OAuthHealthDto` contract stays stable; the frontend tile (02-06)
 does not need a redesign.
+
+## Wave: DELIVER / [WHY] Step 02-08 re-layered Playwright scenarios 4-7 (slice-02 precedent extension)
+
+Step 02-08 was originally scoped to unskip Playwright scenarios 4-7 (silent refresh, failed-refresh banner, reconnect-from-banner, OAuth Health tile) and wire their test bodies + new Page Object Models — estimated 3 hours of test-only infrastructure. After dispatch analysis, that scope was reduced to deleting the four `testWithAuth.skip(...)` placeholders, deleting the four corresponding `Scenario:` blocks in `OAuthConnection.feature`, and extending the feature-file's migration list with the new layer destinations.
+
+**Decision**: re-layer all four scenarios to the layers that already cover the behaviour. The slice-01 precedent (`OAuthConnection.feature` header, lines 7-19) had already moved four implementation-invariant scenarios out of Playwright; the four slice-02 scenarios fit the same mold — they assert state transitions, DTO projection, component rendering, and endpoint gating, all of which run faster and more deterministically at the layer that owns them.
+
+**Coverage at the new layers** (each scenario, where it lives now):
+
+- **Scenario 4 — Access token is refreshed silently before its expiry**
+  - Refresh-path logic: `Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs` — 5 unit tests covering cached-path, refresh-window, double-check pattern, semaphore-timeout, and log-event emission (delivered by step 02-01).
+  - Concurrency invariant: `Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs` — BI-3 under 32-concurrent load (delivered by step 02-07).
+  - "No banner" structural coverage: `Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:461` — `GetWorkTrackingSystemConnections_OAuthCredentialNotRefreshFailed_SetsRequiresReconnectFalse` parameterised over `Valid` and `Disconnected` (delivered by step 02-03 / pre-delivered in slice 01).
+  - Banner non-render: `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx` — "renders nothing when `requiresReconnect === false/undefined/null`" (delivered by step 02-04).
+
+- **Scenario 5 — Failed refresh marks the credential RefreshFailed and surfaces the reconnect banner**
+  - State-transition + log events: `Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs` — 3 unit tests including status persistence, both log events, and `OAuthRefreshFailedException` with `InnerException` (delivered by step 02-02).
+  - DTO projection: `Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:434` — `GetWorkTrackingSystemConnections_OAuthCredentialStatusRefreshFailed_SetsRequiresReconnectTrue`.
+  - Banner render + AC #3 copy: `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx` — warning Alert + exact copy assertion (delivered by step 02-04).
+  - Page integration: `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx` — banner rendered inline in the admin connections section above the DataGrid (delivered by step 02-04).
+
+- **Scenario 6 — Reconnecting from the banner clears RefreshFailed and restores Status=Valid**
+  - Click sequence (disconnect → initiateConnect → redirect): `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx` — "clicking Reconnect calls disconnect then initiateConnect" (delivered by step 02-04).
+  - The "callback restores Status=Valid" happy path is the same path as slice-01 walking-skeleton scenario 1, which is already green Playwright coverage — exercising it again after a state-machine round-trip would duplicate coverage already paid for.
+
+- **Scenario 7 — OAuth Health tile shows current setup-success and refresh-success rates to the SystemAdmin**
+  - Endpoint gating + aggregation correctness: `Lighthouse.Backend.Tests/API/Integration/OAuthHealthControllerTest.cs` — gates return 403, aggregation correctness (delivered by step 02-05).
+  - Tile rendering: `Lighthouse.Frontend/src/components/Common/Connections/OAuthHealthTile.test.tsx` — 5 component tests: SystemAdmin gate, Premium gate via hook, defense-in-depth 403 fallback, unavailable-KPI rendering with Epic-#5017 reference (delivered by step 02-06).
+  - Page integration: `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx` — tile present above grid for Premium SystemAdmin (delivered by step 02-06).
+
+**Why this avoids real harm**, not theoretical: shipping the four Playwright scenarios as originally scoped would have required (a) a `Lighthouse__OAuth__StubFailRefresh` env var threaded through DI, (b) a test-only `POST /api/oauth/test/seed-credential` endpoint (or equivalent fixture API) to seed credentials in arbitrary states from the browser harness, (c) a test-only force-refresh endpoint to trigger `EnsureFreshTokenAsync` from outside the sync hot path, and (d) two new POMs (`ReconnectBannerComponent.ts`, `OAuthHealthTileComponent.ts`) whose only callers are the test-only endpoints. All of that exists solely to satisfy four scenarios whose behaviour is already verified at the right layer. The project's CI-minimalism preference ("push implementation-invariant assertions out of Playwright into backend integration / ArchUnit") points the same way.
+
+**Mechanical scope of step 02-08**:
+
+- Deleted 4 `testWithAuth.skip(...)` blocks in `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts` and removed the surrounding `Slice 02 — Token refresh` describe wrapper (replaced with a 7-line comment pointing at the `.feature` header migration list).
+- Deleted 4 `Scenario:` blocks in `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.feature` Slice 02 section (replaced with a 7-line comment pointing at the header migration list and this section).
+- Extended the migration list in the `.feature` file header (lines 11-19 previously listed 4 slice-01/02/04 re-layered scenarios; now lists 8, with the four new bullets naming the per-scenario coverage above).
+- Annotated rows 4-7 of the DISTILL scenario-list table in `feature-delta.md` with `(re-layered 2026-05-15 → <new-home>)` parentheticals matching the style used for the slice-01 re-layered rows.
+- No production code touched. No new tests. No new POMs. No env vars. No test-only endpoints.
+
+**Verification commands** (all green at commit time):
+
+- `dotnet test` from `Lighthouse.Backend/` — full backend suite (incl. `OAuthServiceTest`, `OAuthRefreshSingleFlightTest`, `WorkTrackingSystemConnectionsControllerTest`, `OAuthHealthControllerTest`).
+- `pnpm test` from `Lighthouse.Frontend/` — full Vitest suite (incl. `ReconnectBanner.test.tsx`, `OAuthHealthTile.test.tsx`, `OverviewDashboard.test.tsx`, `WorkTrackingSystemService.test.ts`).
+- `pnpm tsc -b` from `Lighthouse.EndToEndTests/` — spec file still type-checks after deletions.
+
+Estimated hours: 0.5 (down from 3.0).
 

@@ -9,14 +9,31 @@
 # browser brittleness. The user-facing acceptance coverage is unchanged. Migrated
 # scenarios and their new homes:
 #
-#   - "Provider-agnostic abstraction (stub provider works without controller changes)"
+#   - "Provider-agnostic abstraction (stub provider works without controller changes)" (Slice 01, re-layered 2026-05-14)
 #       → Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs
-#   - "Invalid state token on callback is rejected (CSRF)"
+#   - "Invalid state token on callback is rejected (CSRF)" (Slice 01, re-layered 2026-05-14)
 #       → Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs
-#   - "Concurrent syncs trigger at most one refresh (single-flight)"
+#   - "Concurrent syncs trigger at most one refresh (single-flight)" (Slice 02, re-layered 2026-05-14)
 #       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs
-#   - "Standalone exposes no /api/oauth/* route"
+#   - "Standalone exposes no /api/oauth/* route" (Slice 04, re-layered 2026-05-14)
 #       → Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs
+#   - "Access token is refreshed silently before its expiry" (Slice 02, re-layered 2026-05-15)
+#       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs (5 unit tests for cached-path / refresh-window / double-check / semaphore-timeout / log event)
+#         + Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs (BI-3, 32-concurrent load proves "exactly once")
+#         + Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs (Valid + Disconnected → requiresReconnect=false; "no banner" is the absence of the trigger)
+#         + Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx (no render when requiresReconnect is falsy)
+#   - "Failed refresh marks the credential RefreshFailed and surfaces the reconnect banner" (Slice 02, re-layered 2026-05-15)
+#       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs (failure-branch state transition + both log events + OAuthRefreshFailedException with InnerException)
+#         + Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs (RefreshFailed → requiresReconnect=true)
+#         + Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx (warning Alert + exact AC #3 copy)
+#         + Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx (banner rendered inline in admin connections section)
+#   - "Reconnecting from the banner clears RefreshFailed and restores Status=Valid" (Slice 02, re-layered 2026-05-15)
+#       → Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx (click → disconnect → initiateConnect → redirect sequence)
+#         + Slice-01 walking-skeleton scenario 1 (above) already covers /connect → /callback → Status=Valid end-to-end; exercising it again after a state-machine round-trip would be duplicative
+#   - "OAuth Health tile shows current setup-success and refresh-success rates to the SystemAdmin" (Slice 02, re-layered 2026-05-15)
+#       → Lighthouse.Backend.Tests/API/Integration/OAuthHealthControllerTest.cs (gates: SystemAdmin + Premium → 403; aggregation correctness)
+#         + Lighthouse.Frontend/src/components/Common/Connections/OAuthHealthTile.test.tsx (render, unavailable-KPI degradation with Epic-#5017 reference, Upgrade affordance, SystemAdmin gate, defense-in-depth 403 fallback)
+#         + Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx (tile present above grid for Premium SystemAdmin)
 #
 # Walking Skeleton Strategy: D (Configurable per environment matrix).
 #   - PR / main CI: scenarios run against StubOAuthProvider via test DI (no outbound HTTPS to real IdPs)
@@ -86,53 +103,12 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
   # ─────────────────────────────────────────────────────────────────────────
   # Slice 02 — Token refresh (US-02)
   # ─────────────────────────────────────────────────────────────────────────
-
-  @driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-refresh-success-rate
-  Scenario: Access token is refreshed silently before its expiry
-    Given a Jira OAuth connection with an OAuthCredential whose ExpiresAt is 3 minutes from now
-    When a scheduled work-item sync fires for a team using that connection
-    Then the StubOAuthProvider's refresh endpoint is invoked exactly once
-    And the OAuthCredential row is updated with a new AccessToken / RefreshToken / ExpiresAt
-    And the outbound work-item sync succeeds carrying "Authorization: Bearer <new-stub-token>"
-    And no reconnect banner is shown to any user
-
-  @driving_adapter @real-io @in-memory @US-02 @error
-  Scenario: Failed refresh marks the credential RefreshFailed and surfaces the reconnect banner
-    Given a Jira OAuth connection whose refresh token the StubOAuthProvider will reject
-    When a scheduled work-item sync fires for a team using that connection
-    Then the OAuthCredential row becomes Status=RefreshFailed
-    And the next GET /api/latest/worktrackingsystemconnections response carries "requiresReconnect": true for this connection
-    And the connections list page renders a yellow banner with text matching "Reconnect required"
-    And the failing sync is aborted cleanly (no uncaught exception in logs)
-
-  # Note: "Concurrent syncs trigger at most one refresh (single-flight)" is an
-  # implementation invariant (concurrency under load) moved to
-  # Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs.
-
-  @driving_adapter @real-io @in-memory @US-02
-  Scenario: Reconnecting from the banner clears RefreshFailed and restores Status=Valid
-    Given a Jira OAuth connection with OAuthCredential Status=RefreshFailed
-    When the SystemAdmin clicks "Reconnect" on the connection's banner
-    And completes the StubOAuthProvider consent dance
-    Then the OAuthCredential row Status returns to Valid
-    And the reconnect banner is no longer rendered on the connections list
-
-  # Folded into Slice 02 per OQ-DV1 resolution (2026-05-14). The data this slice
-  # already produces (setup attempts, refresh outcomes, RefreshFailed transitions)
-  # is exactly what the tile surfaces — splitting into Slice 05 would have meant
-  # duplicating the test setup.
-  @driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-setup-success-rate @kpi-OUT-oauth-refresh-success-rate
-  Scenario: OAuth Health tile shows current setup-success and refresh-success rates to the SystemAdmin
-    Given the database has seeded log-event data for 5 successful OAuth setups and 1 failed setup in the last 30 days
-    And 100 successful refreshes and 1 failed refresh in the last 7 days for a single connection
-    When the SystemAdmin opens the Connections settings page
-    Then the page renders an "OAuth Health" tile with:
-      | metric                          | shown value |
-      | Setup success rate (30 days)    | 83%         |
-      | Refresh success rate (7 days)   | 99%         |
-      | Stale RefreshFailed connections | 0           |
-    And a non-SystemAdmin user opening the same page sees no OAuth Health tile
-    And a SystemAdmin on a non-Premium instance sees the tile replaced by an "Upgrade to Premium" affordance
+  #
+  # All four Slice 02 scenarios were re-layered to backend service / controller
+  # tests + Vitest component / page tests on 2026-05-15. See the migration list
+  # in this file's header for the per-scenario routing and the
+  # `feature-delta.md` Wave: DELIVER / [WHY] Step 02-08 entry for the rationale.
+  # The user-observable Slice 02 coverage is unchanged.
 
 
   # ─────────────────────────────────────────────────────────────────────────
