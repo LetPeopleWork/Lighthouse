@@ -68,6 +68,7 @@ export const createMockOAuthService = (): IOAuthService => {
 	return {
 		initiateConnect: vi.fn(),
 		disconnect: vi.fn(),
+		getHealth: vi.fn(),
 	};
 };
 

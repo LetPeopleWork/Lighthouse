@@ -11,6 +11,7 @@ const originalAssign = window.location.assign;
 const createMockOAuthService = (): IOAuthService => ({
 	initiateConnect: vi.fn(),
 	disconnect: vi.fn(),
+	getHealth: vi.fn(),
 });
 
 const renderForm = (props: {

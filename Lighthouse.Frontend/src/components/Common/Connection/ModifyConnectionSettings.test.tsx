@@ -45,6 +45,7 @@ const createEmptyPortfolioService = (): Partial<IPortfolioService> => ({
 const createMockOAuthService = (): IOAuthService => ({
 	initiateConnect: vi.fn(),
 	disconnect: vi.fn(),
+	getHealth: vi.fn(),
 });
 
 vi.mock("../../../pages/Settings/Connections/AdditionalFieldsEditor", () => ({

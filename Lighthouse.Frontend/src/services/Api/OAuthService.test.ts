@@ -50,4 +50,36 @@ describe("OAuthService", () => {
 			);
 		});
 	});
+
+	describe("getHealth", () => {
+		it("gets the OAuth health endpoint and surfaces unavailable KPIs as nulls", async () => {
+			const mockResponse = {
+				setupSuccessRate30d: {
+					value: null,
+					unavailableReason: "event_store_pending",
+				},
+				refreshSuccessRate7d: {
+					value: 0.97,
+					unavailableReason: null,
+				},
+				staleRefreshFailedCount24h: 2,
+				staleRefreshFailedCount7d: 4,
+			};
+			mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+			const result = await oauthService.getHealth();
+
+			expect(result.setupSuccessRate30d.value).toBeNull();
+			expect(result.setupSuccessRate30d.unavailableReason).toBe(
+				"event_store_pending",
+			);
+			expect(result.refreshSuccessRate7d.value).toBe(0.97);
+			expect(result.staleRefreshFailedCount24h).toBe(2);
+			expect(result.staleRefreshFailedCount7d).toBe(4);
+			expect(mockedAxios.get).toHaveBeenCalledWith(
+				"/oauth/health",
+				expect.objectContaining({ baseURL: expect.stringContaining("/api") }),
+			);
+		});
+	});
 });
