@@ -788,6 +788,8 @@ namespace Lighthouse.Backend
 
             RegisterStubOAuthProviderIfEnabled(builder);
 
+            builder.Services.AddHttpContextAccessor();
+
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
             builder.Services.AddScoped<PatAuthStrategy>();

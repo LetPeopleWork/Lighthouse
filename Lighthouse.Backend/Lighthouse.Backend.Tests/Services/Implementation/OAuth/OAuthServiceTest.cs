@@ -6,7 +6,9 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -87,6 +89,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 Assert.That(capturedContext.RedirectUri, Is.EqualTo(new Uri($"{BaseUrl}/api/oauth/callback")));
                 Assert.That(capturedContext.State, Is.EqualTo(ValidStateToken));
             }
+        }
+
+        [Test]
+        public async Task InitiateAsync_BaseUrlUnset_DerivesCallbackFromIncomingRequest()
+        {
+            serviceConfigMock.SetupGet(c => c.BaseUrl).Returns(string.Empty);
+
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+            stateTokenIssuerMock.Setup(i => i.Issue(ConnectionId, ProviderKey)).Returns(ValidStateToken);
+
+            OAuthFlowContext? capturedContext = null;
+            providerMock
+                .Setup(p => p.BuildAuthorizationUrl(It.IsAny<OAuthFlowContext>()))
+                .Callback<OAuthFlowContext>(ctx => capturedContext = ctx)
+                .Returns(new Uri("https://auth.atlassian.com/authorize"));
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Scheme = "http";
+            httpContext.Request.Host = new HostString("dev.example", 5169);
+            var accessorMock = new Mock<IHttpContextAccessor>();
+            accessorMock.SetupGet(a => a.HttpContext).Returns(httpContext);
+
+            var sut = CreateService(accessorMock.Object);
+
+            await sut.InitiateAsync(ConnectionId, CancellationToken.None);
+
+            Assert.That(
+                capturedContext!.RedirectUri,
+                Is.EqualTo(new Uri("http://dev.example:5169/api/oauth/callback")));
         }
 
         [Test]
@@ -272,7 +304,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
         }
 
-        private OAuthService CreateService()
+        private OAuthService CreateService(IHttpContextAccessor? httpContextAccessor = null)
         {
             return new OAuthService(
                 providerRegistryMock.Object,
@@ -282,7 +314,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 stateTokenIssuerMock.Object,
                 serviceConfigMock.Object,
                 timeProvider,
-                NullLogger<OAuthService>.Instance);
+                NullLogger<OAuthService>.Instance,
+                httpContextAccessor ?? Mock.Of<IHttpContextAccessor>());
         }
 
         private static WorkTrackingSystemConnection CreateOAuthConnection(int id, string authenticationMethodKey)

@@ -5,10 +5,11 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Http;
 
 namespace Lighthouse.Backend.Services.Implementation.OAuth
 {
-#pragma warning disable S107 // OAuth flow legitimately needs 8 collaborators: provider registry, two repositories, crypto, state-token issuer, service config, time provider, and logger. Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
+#pragma warning disable S107 // OAuth flow legitimately needs 9 collaborators: provider registry, two repositories, crypto, state-token issuer, service config, time provider, logger, and HTTP context accessor (used to derive the callback URL when Lighthouse:BaseUrl is not configured). Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
     public class OAuthService(
         IOAuthProviderRegistry providerRegistry,
         IRepository<WorkTrackingSystemConnection> connectionRepository,
@@ -17,7 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
         IOAuthStateTokenIssuer stateTokenIssuer,
         IServiceConfig serviceConfig,
         TimeProvider timeProvider,
-        ILogger<OAuthService> logger) : IOAuthService
+        ILogger<OAuthService> logger,
+        IHttpContextAccessor httpContextAccessor) : IOAuthService
 #pragma warning restore S107
     {
         private const string CallbackPath = "/api/oauth/callback";
@@ -137,18 +139,11 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             IOAuthProvider provider,
             string stateToken)
         {
-            if (string.IsNullOrWhiteSpace(serviceConfig.BaseUrl))
-            {
-                throw new InvalidOperationException(
-                    "Lighthouse:BaseUrl is not configured. OAuth callback URL cannot be derived. " +
-                    "Set Lighthouse:BaseUrl in server configuration before initiating an OAuth flow.");
-            }
-
             var encryptedClientId = connection.GetWorkTrackingSystemConnectionOptionByKey(OAuthWorkTrackingOptionNames.ClientId);
             var encryptedClientSecret = connection.GetWorkTrackingSystemConnectionOptionByKey(OAuthWorkTrackingOptionNames.ClientSecret);
             var clientId = cryptoService.Decrypt(encryptedClientId);
             var clientSecret = cryptoService.Decrypt(encryptedClientSecret);
-            var redirectUri = new Uri(new Uri(serviceConfig.BaseUrl), CallbackPath);
+            var redirectUri = new Uri(new Uri(ResolveBaseUrl()), CallbackPath);
 
             return new OAuthFlowContext(
                 connection.Id,
@@ -158,6 +153,24 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 redirectUri,
                 stateToken,
                 provider.DefaultScopes);
+        }
+
+        private string ResolveBaseUrl()
+        {
+            if (!string.IsNullOrWhiteSpace(serviceConfig.BaseUrl))
+            {
+                return serviceConfig.BaseUrl;
+            }
+
+            var request = httpContextAccessor.HttpContext?.Request;
+            if (request is null || !request.Host.HasValue)
+            {
+                throw new InvalidOperationException(
+                    "Lighthouse:BaseUrl is not configured and no HTTP request context is available. " +
+                    "Set Lighthouse:BaseUrl in server configuration so OAuth callback URLs can be derived.");
+            }
+
+            return $"{request.Scheme}://{request.Host.Value}";
         }
     }
 }
