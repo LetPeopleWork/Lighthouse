@@ -209,11 +209,62 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_StillThrowsNotImplemented()
+        public async Task EnsureFreshTokenAsync_ValidCredential_ReturnsStoredAccessToken()
         {
+            var credential = new OAuthCredential
+            {
+                Id = 7,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "stored-at",
+                RefreshToken = "stored-rt",
+                ExpiresAt = timeProvider.GetUtcNow().AddHours(1),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow(),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
             var sut = CreateService();
 
-            Assert.ThrowsAsync<NotImplementedException>(
+            var token = await sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            Assert.That(token, Is.EqualTo("stored-at"));
+        }
+
+        [Test]
+        public void EnsureFreshTokenAsync_NoCredential_ThrowsInvalidOperationException()
+        {
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns((OAuthCredential?)null);
+
+            var sut = CreateService();
+
+            Assert.ThrowsAsync<InvalidOperationException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+        }
+
+        [Test]
+        public void EnsureFreshTokenAsync_RefreshFailedCredential_ThrowsInvalidOperationException()
+        {
+            var credential = new OAuthCredential
+            {
+                Id = 7,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "stored-at",
+                RefreshToken = "stored-rt",
+                ExpiresAt = timeProvider.GetUtcNow().AddHours(1),
+                Status = OAuthCredentialStatus.RefreshFailed,
+                UpdatedAt = timeProvider.GetUtcNow(),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            var sut = CreateService();
+
+            Assert.ThrowsAsync<InvalidOperationException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
         }
 

@@ -129,7 +129,20 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
 
         public Task<string> EnsureFreshTokenAsync(int connectionId, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException("OAuthService.EnsureFreshTokenAsync ships in step 02-01");
+            var credential = credentialRepository.GetByPredicate(c => c.WorkTrackingSystemConnectionId == connectionId);
+            if (credential is null)
+            {
+                throw new InvalidOperationException(
+                    $"No OAuth credential found for connection {connectionId}. Complete the OAuth connect flow before invoking it.");
+            }
+
+            if (credential.Status != OAuthCredentialStatus.Valid)
+            {
+                throw new InvalidOperationException(
+                    $"OAuth credential for connection {connectionId} is in status {credential.Status}. Reconnect required.");
+            }
+
+            return Task.FromResult(credential.AccessToken);
         }
 
         private WorkTrackingSystemConnection LoadConnectionOrThrow(int connectionId)
