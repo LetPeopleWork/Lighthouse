@@ -934,7 +934,14 @@ What 02-05 actually delivered:
 - Non-Premium callers receive `403`, matching `LicenseGuardAttribute` semantics (the roadmap text said
   `402`; the actual project guard returns `403` and the test asserts that).
 
-Proposed follow-up work (NEW step, recommended placement: start of Slice 05 release-readiness):
+Follow-up tracked on the ADO board as a dedicated Epic — **promoted out of this feature** so it can
+go through its own DISCOVER / DISCUSS analysis before any implementation lands:
+
+**[Epic #5017 — OAuth Event Store and Health KPI Completeness](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5017)** (state `Planned`; tags `OAuth; Observability; Premium`; related to #2438 and #5015).
+
+The Epic enumerates the open analysis questions (event subset, per-event vs aggregate rollups,
+retention default, write-path latency budget, relationship to #5015) and the acceptance-criteria
+framing. Sketch of the engineering work it points at (subject to that analysis):
 
 - Add `OAuthEvent` entity mirroring `RefreshLog` (Id, EventType enum, ConnectionId, CredentialId nullable,
   ProviderKey, OccurredAt, Success, DurationMs nullable, ReasonCode nullable).
