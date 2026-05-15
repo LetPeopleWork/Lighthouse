@@ -884,5 +884,21 @@ The roadmap is the DELIVER-wave artifact for this turn. Phase 2 execution (the a
 
 Each Phase 2 slice deserves its own focused session so DES can track the TDD phases cleanly and the operator can review Slice N's output before Slice N+1 starts.
 
+## Wave: DELIVER / [WHY] Step 02-03 scope satisfied during slice 01
 
+Step 02-03 (`WorkTrackingSystemConnectionDto.RequiresReconnect populated from join + system-info BaseUrl`) landed no new production or test code: slice 01 work already shipped both the behaviour and its coverage. The execution log records PREPARE as EXECUTED (verification run) and RED_ACCEPTANCE / RED_UNIT / GREEN as SKIPPED with `APPROVED_SKIP` / `NOT_APPLICABLE` reasons pointing here.
+
+Pre-delivered production sites:
+
+- `Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs:41` — maps `OAuthCredential?.Status == OAuthCredentialStatus.RefreshFailed` to `RequiresReconnect`.
+- `Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs:56-69` — `GetWorkTrackingSystemConnections` joins the OAuth credential repository and constructs the DTO with the credential.
+- `Lighthouse.Backend/Lighthouse.Backend/Models/SystemInfo.cs:16` — declares the `BaseUrl` record parameter.
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/SystemInfoService.cs:46` — populates `BaseUrl` from `IServiceConfig.BaseUrl`.
+
+Pre-delivered tests (all green under `dotnet test --filter`):
+
+- `Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:434` — `GetWorkTrackingSystemConnections_OAuthCredentialStatusRefreshFailed_SetsRequiresReconnectTrue` covers RGB-test #1.
+- `Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:461` — `GetWorkTrackingSystemConnections_OAuthCredentialNotRefreshFailed_SetsRequiresReconnectFalse` parameterized over `Valid` + `Disconnected` covers half of RGB-test #2.
+- `Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs:486` — `GetWorkTrackingSystemConnections_NoOAuthCredentialForConnection_SetsRequiresReconnectFalse` covers the other half of RGB-test #2.
+- `Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs:100` — `GetSystemInfo_PropagatesBaseUrlFromService` covers RGB-test #3.
 
