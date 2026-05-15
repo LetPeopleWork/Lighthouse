@@ -14,6 +14,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
+	createMockSystemInfoService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import ModifyConnectionSettings from "./ModifyConnectionSettings";
@@ -185,6 +186,7 @@ const renderComponent = (
 	contextOverrides: {
 		canUsePremiumFeatures?: boolean;
 		oauthService?: IOAuthService;
+		baseUrl?: string | null;
 	} = {},
 ) => {
 	const props = { ...defaultProps, ...propsOverride };
@@ -200,6 +202,18 @@ const renderComponent = (
 		},
 	]);
 
+	const mockSystemInfoService = createMockSystemInfoService();
+	vi.mocked(mockSystemInfoService.getSystemInfo).mockResolvedValue({
+		os: "test",
+		runtime: "test",
+		architecture: "test",
+		processId: 0,
+		databaseProvider: "sqlite",
+		databaseConnection: null,
+		logPath: null,
+		baseUrl: contextOverrides.baseUrl ?? undefined,
+	});
+
 	const mockApiServiceContext = createMockApiServiceContext({
 		terminologyService: mockTerminologyService,
 		licensingService: createLicensingService(
@@ -208,6 +222,7 @@ const renderComponent = (
 		teamService: createEmptyTeamService() as ITeamService,
 		portfolioService: createEmptyPortfolioService() as IPortfolioService,
 		oauthService: contextOverrides.oauthService ?? createMockOAuthService(),
+		systemInfoService: mockSystemInfoService,
 	});
 
 	return render(
@@ -498,6 +513,30 @@ describe("ModifyConnectionSettings", () => {
 			});
 			expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
 			expect(screen.queryByLabelText("Client Secret")).not.toBeInTheDocument();
+		});
+
+		it("renders OAuth callback URL derived from server BaseUrl when systemInfo provides one", async () => {
+			renderComponent(
+				{
+					getConnectionSettings: vi
+						.fn()
+						.mockResolvedValue(mockExistingOAuthConnection),
+				},
+				{
+					canUsePremiumFeatures: true,
+					baseUrl: "https://lighthouse.example.com",
+				},
+			);
+
+			const callback = await screen.findByLabelText<HTMLInputElement>(
+				"Callback URL",
+			);
+			expect(callback.value).toBe(
+				"https://lighthouse.example.com/api/oauth/callback",
+			);
+			expect(
+				screen.queryByText(/Your callback URL may be incorrect/i),
+			).not.toBeInTheDocument();
 		});
 
 		it("renders the legacy auth form and not OAuthAuthForm when a non-oauth method is selected", async () => {

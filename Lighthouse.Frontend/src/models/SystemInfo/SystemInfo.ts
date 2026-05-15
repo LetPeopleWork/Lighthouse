@@ -9,4 +9,5 @@ export interface SystemInfo {
 	authenticationEnabled?: boolean;
 	authorizationEnabled?: boolean;
 	emergencyAdminSubjects?: string[];
+	baseUrl?: string;
 }

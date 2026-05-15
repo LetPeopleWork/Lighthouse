@@ -54,8 +54,7 @@ export const createMockApiServiceContext = (
 		demoDataService: null as unknown as IApiServiceContext["demoDataService"],
 		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
-		systemInfoService:
-			null as unknown as IApiServiceContext["systemInfoService"],
+		systemInfoService: createMockSystemInfoService(),
 		blackoutPeriodService:
 			null as unknown as IApiServiceContext["blackoutPeriodService"],
 		databaseManagementService:
@@ -304,7 +303,15 @@ export const createMockDeliveryService = (): IDeliveryService => {
 
 export const createMockSystemInfoService = (): ISystemInfoService => {
 	return {
-		getSystemInfo: vi.fn(),
+		getSystemInfo: vi.fn().mockResolvedValue({
+			os: "test",
+			runtime: "test",
+			architecture: "test",
+			processId: 0,
+			databaseProvider: "sqlite",
+			databaseConnection: null,
+			logPath: null,
+		}),
 		getRefreshLogs: vi.fn(),
 		getBackendSbom: vi.fn(),
 		getFrontendSbom: vi.fn(),

@@ -14,6 +14,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
+import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -98,6 +99,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
+	const baseUrl = useBaseUrl();
 
 	const getAuthOptionKeys = useCallback(
 		(authMethod: IAuthenticationMethod | null): Set<string> => {
@@ -476,7 +478,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 								<OAuthAuthForm
 									connectionId={selectedWorkTrackingSystem?.id ?? 0}
 									providerKey={selectedAuthMethod?.key ?? ""}
-									baseUrl={null}
+									baseUrl={baseUrl}
 								/>
 							) : (
 								<Alert
