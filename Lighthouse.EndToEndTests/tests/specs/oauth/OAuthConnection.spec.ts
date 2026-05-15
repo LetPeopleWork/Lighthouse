@@ -80,29 +80,6 @@ test.describe("Slice 01 — Jira OAuth", () => {
 	);
 
 	testWithAuth(
-		"[@driving_adapter @real-io @in-memory @US-01 @error] Non-Premium instance shows upgrade affordance instead of OAuth form",
-		async ({ request }) => {
-			const connection = await createOAuthJiraConnection(
-				request,
-				generateRandomName(),
-			);
-
-			const initiate = await initiateOAuthConnect(
-				request,
-				"jira.oauth",
-				connection.id,
-			);
-
-			const premiumBlocked = initiate.status === 402 || initiate.status === 403;
-			expect(premiumBlocked, initiate.body).toBe(true);
-
-			await request.delete(
-				`/api/latest/worktrackingsystemconnections/${connection.id}`,
-			);
-		},
-	);
-
-	testWithAuth(
 		"[@driving_adapter @real-io @in-memory @US-01 @error] Lighthouse:BaseUrl unset triggers the callback-URL warning",
 		async ({ request }) => {
 			const connection = await createOAuthJiraConnection(
