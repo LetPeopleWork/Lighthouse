@@ -58,10 +58,7 @@ namespace Lighthouse.Backend.API
             var existingConnections = repository.GetAll();
             var credentialsByConnectionId = oAuthCredentialRepository
                 .GetAll()
-                .GroupBy(c => c.WorkTrackingSystemConnectionId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(c => c.UpdatedAt).First());
+                .ToDictionary(c => c.WorkTrackingSystemConnectionId);
 
             var connectionDtos = existingConnections.Select(c =>
             {
