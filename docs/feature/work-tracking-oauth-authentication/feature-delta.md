@@ -1618,3 +1618,76 @@ Highlights:
 
 ---
 
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] Implementation summary
+
+Story #5018 (OAuth popup reconnect) landed across 9 focused commits forming Phase 06 of the OAuth roadmap. Backend: 1 EF migration (UNIQUE index on `OAuthCredential.WorkTrackingSystemConnectionId` per DDD-13) + 1 LINQ simplification (`GroupBy`/`OrderByDescending` collapsed to plain `ToDictionary`) + 2 redirect-target rewrites in `OAuthController.Callback` (DDD-14: `/oauth/popup-complete?status=...`). Frontend: 1 new hook (`useOAuthPopup` per DDD-11/12/15/16, ~80 LOC, owns popup orchestration end-to-end) + 1 new same-origin landing page (`OAuthPopupComplete`) + `/oauth/popup-complete` route registration + 3 call-site migrations (`ReconnectBanner` / `OAuthAuthForm` / `CreateConnectionWizard`) that replace `globalThis.location.assign` with `await openOAuthPopup`. `ModifyConnectionSettings` wires `onReconnected={() => reloadConnection()}` so the connection-edit dialog re-fetches its connection (and the `requiresReconnect`-derived badge flips live) on successful popup round trip. Playwright walking-skeleton-migration scenario unskipped and implemented against `StubOAuthProvider`; the `OQ-5018-3` Safari Webkit gold-test stays `.skip @deferred` per the explicit slice-04 non-goal. ~700 LOC net change; ~10 estimated hours.
+
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] Files modified
+
+**Production code**:
+- `Lighthouse.Backend/Data/LighthouseAppContext.cs` — `.IsUnique()` on the OAuthCredential index (06-01).
+- `Lighthouse.Migrations.Sqlite/Migrations/20260516091758_AddOAuthCredentialUniqueIndex.*` — SQLite migration (06-01).
+- `Lighthouse.Migrations.Postgres/Migrations/20260516091808_AddOAuthCredentialUniqueIndex.*` — Postgres migration (06-01).
+- `Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs` — defensive `GroupBy/OrderByDescending` collapsed (06-02).
+- `Lighthouse.Backend/API/OAuthController.cs` — `Callback` 302 targets rewritten to `/oauth/popup-complete` (06-03).
+- `Lighthouse.Frontend/src/hooks/useOAuthPopup.ts` — hook implementation; scaffold marker removed (06-04).
+- `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.tsx` — landing-page implementation; scaffold marker removed (06-05).
+- `Lighthouse.Frontend/src/App.tsx` — `/oauth/popup-complete` route registered (06-05).
+- `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx` — migrated to `useOAuthPopup` + 4-status inline surfaces (06-06).
+- `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx` — migrated to `useOAuthPopup` + 4-status inline surfaces (06-07).
+- `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx` — `startOAuthHandshake` migrated to popup; dead resume-URL `useEffect` deleted; draft reused on retry (06-08).
+- `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx` — `reloadConnection` helper + `onReconnected` passed into `ReconnectBanner` (06-09).
+
+**Tests** (no body changes — RED tests on disk from commit `07875566` turn GREEN via production code; one obsolete duplicate-tolerance test was deleted in 06-02 per Test Integrity rule):
+- `OAuthControllerIntegrationTest.cs` (06-01 + 06-03 turn its RED assertions GREEN).
+- `useOAuthPopup.test.ts`, `OAuthPopupComplete.test.tsx`, `ReconnectBanner.test.tsx`, `OAuthAuthForm.test.tsx`, `CreateConnectionWizard.test.tsx` — all turn GREEN at their owning step.
+- `WorkTrackingSystemConnectionsControllerTest.cs` — one obsolete test removed in 06-02 (duplicate-tolerance scenario invalidated by DDD-13).
+- `OAuthConnection.spec.ts` — walking-skeleton-migration scenario unskipped + implemented (06-09). `@deferred @OQ-5018-3` Webkit gold-test stays `.skip`.
+- `Lighthouse.EndToEndTests/tests/helpers/api/oauthConnections.ts` — `disconnectOAuth()` + `completeOAuthRoundTrip()` helpers added (06-09).
+- `Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/WorkTrackingSystemEditPage.ts` — `reconnectBanner` / `reconnectButton` / `clickReconnectAndWaitForPopup()` POM extensions (06-09).
+
+**Docs**: only `feature-delta.md` (DESIGN/DISTILL/DELIVER sections) + `adr-011-oauth-popup-flow.md` (Earned Trust mirror, Iteration-2). No `ci-learnings.md` change for this slice — durable lessons (90 s WHY-comment, `event.origin` filter discipline) are already encoded in the source.
+
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] Scenarios green count
+
+**Vitest** (frontend): **2831 / 2831 GREEN** as of 2026-05-16 13:18Z. Suite duration ~92 s. Zero failures.
+
+**NUnit** (backend): **2497 / 2497 GREEN** as of 2026-05-16 ~13:23Z. Suite duration ~5 min. Zero failures, zero skips.
+
+**Playwright** (E2E): the `@walking_skeleton @popup-migration @driving_adapter @real-io @in-memory @US-01 @Story-5018` scenario is unskipped and compiled clean. Execution is deferred to the project's CI pipeline per the standing slice-boundary push ritual (focused local commits within the slice → push at slice end → wait for CI green → transition ADO `Active → Resolved`). The `@deferred @OQ-5018-3` Webkit gold-test stays `.skip` (explicit non-goal of this slice).
+
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] DoD check
+
+| DoD item | Status |
+|---|---|
+| All 9 Phase-06 steps reach COMMIT/PASS in `execution-log.json` | ✓ commits `587793cd`..`fe3105c6` |
+| AC #4 (amended) satisfied: connection settings surface shows `Status: Connected` for both create flow and reconnect flow | ✓ covered by Vitest scenarios at `OAuthAuthForm` and `ReconnectBanner` levels + Playwright walking-skeleton-migration |
+| US-02 AC #3 reconnect-required banner copy preserved | ✓ existing assertion stays GREEN in `ReconnectBanner.test.tsx` |
+| DDD-11..16 each have a covering GREEN test | ✓ verified by Atlas in DISTILL Iteration-2 review; all RED scaffolds from commit `07875566` are now GREEN |
+| `// SCAFFOLD: true` markers removed | ✓ removed at steps 06-04 (`useOAuthPopup.ts`) and 06-05 (`OAuthPopupComplete.tsx`) |
+| Dead code removed | ✓ `?oauth=success&connectionId=` resume URL `useEffect` deleted from `CreateConnectionWizard.tsx` (06-08); defensive `GroupBy/OrderByDescending` collapsed (06-02) |
+| `pnpm build` clean (tsc strict + Biome zero warnings) | ✓ across all 538 frontend source files |
+| `dotnet build` clean (zero warnings under `TreatWarningsAsErrors`) | ✓ |
+| Conventional commits + `Step-ID: 06-XX` trailers + Co-Authored-By | ✓ all 9 commits |
+| OQ-5018-3 Webkit gold-test explicitly deferred (`.skip @deferred`) | ✓ preserved in `OAuthConnection.spec.ts` |
+
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] Demo evidence
+
+Story #5018 is a UI feature; the demo IS the Playwright `@walking_skeleton @popup-migration` scenario — *"Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation."* The scenario uses `StubOAuthProvider` (no real IdP round trip), opens the popup via `page.context().waitForEvent("page")`, asserts `framenavigated` does NOT fire on the top-frame during the round trip, and verifies the badge text transitions from `Reconnect required` to `Connected` while the edit dialog stays mounted. Execution evidence belongs to the CI run that picks up this slice (the standing slice-boundary push ritual). Local Vitest + NUnit suites are both fully green (2831 + 2497).
+
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] Quality gates
+
+| Phase | Outcome | Evidence |
+|---|---|---|
+| Phase 2 — Execute all steps (TDD) | ✓ PASS — 9 commits, all DES-logged | `587793cd` → `fe3105c6`; `des-verify-integrity` for Phase 06 steps clean (legacy 02/03/05 violations pre-existing per known-state) |
+| Phase 3.5 — Post-merge integration gate | ✓ PASS — Vitest 2831/2831, NUnit 2497/2497; Playwright deferred to CI per slice-boundary push ritual | suite runs 2026-05-16 13:17Z (FE) and ~13:23Z (BE) |
+| Phase 3 — L1-L6 refactor (Path B) | ✓ NOTHING TO REFACTOR — per-step REFACTOR during GREEN already covered RPP L1-L6. One out-of-scope finding noted (`buildCallbackUrl` duplication between `OAuthAuthForm` and `CreateConnectionWizard` is slice-02 code, not touched by this slice — flagged for a future cleanup PR). No commit made. |
+| Phase 4 — Adversarial review (nw-software-crafter-reviewer, Haiku) | ✓ APPROVED — zero defects, zero Testing Theater patterns, zero blockers. Security checkpoints all satisfied (`postMessage targetOrigin` correct, opener-side origin filter present, query string carries no secrets, state-token TTL invariant documented at the 90 s constant). All 9 quality gates (G1–G9) pass. Genuine praise on test quality, code discipline, security model, and external wiring. |
+| Phase 5 — Mutation testing (Stryker per-feature) | ✓ PASS-with-rationale. Backend 67.21% / Frontend ~76.1% kill rate; Stryker `break: 0` threshold leaves the gate informational. **The Phase 06 changed-line surface is 100% killed** (OAuthController.Callback redirect URLs + WorkTrackingSystemConnectionsController LINQ collapse). All survivors classified: equivalent mutants (defensive null-coalescing, popup-window centering pixel math), acceptable misses (log-message strings — Sonar-banned to assert on; UI literal strings — implementation coupling), or pre-existing slice-01/02/03 code outside Phase 06's diff. One genuine gap surfaced (90 s timeout-block in `useOAuthPopup`) and closed with a new test in commit `c4821076`. Per-feature Stryker configs committed in the same SHA (`stryker.config.popup-reconnect.mjs` + `stryker-config.popup-reconnect.json` + `vitest.stryker.popup-reconnect.config.ts`). |
+
+## Wave: DELIVER (Story #5018 popup reconnect) / [REF] Pre-requisites
+
+DESIGN locked decisions (DDD-11..DDD-16) + ADR-011 (Accepted) + amended US-01 AC #4 (PO-confirmed behavioural interpretation 2026-05-16) + DISTILL RED scaffolds + tests (commit `07875566`).
+
+---
+
