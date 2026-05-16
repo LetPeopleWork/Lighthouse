@@ -1015,3 +1015,231 @@ Estimated hours: 0.5 (down from 3.0).
 - `Program.cs` standalone-mode wiring for CORS, HTTPS, startup.
 
 **Forward rule:** if standalone-OAuth turns out to be a real support burden, reopen as a new story — don't try to retrofit the original guard pattern. The right answer at that point is likely a docs/runbook entry, not a UI guard.
+
+---
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Scope
+
+**Story:** ADO #5018 — *"I can reconnect OAuth in a popup without leaving the connection edit dialog."*
+**Architect:** Morgan (Solution Architect), interaction mode = PROPOSE
+**Date:** 2026-05-16
+**Density:** lean + ask-intelligent
+
+This is a follow-on slice that surfaced from manual testing of slice 02. The reconnect UX has two problems:
+
+1. **Full-page redirect** — clicking *Reconnect* on the orange banner inside a connection edit dialog redirects the entire page to Atlassian, then drops the user back on the *create*-connection screen (`/connections/new?oauth=success&connectionId={id}`) rather than the *edit* dialog they started in. The user never sees the live `Disconnected → Connected` flip for the connection they were fixing.
+2. **Persisted intermediate state** — the full-page redirect destroys the in-memory `CreateConnectionWizard` state, so the backend persists a half-baked `OAuthCredential` row (status `Valid`) on callback `CompleteAsync` so the round-trip can survive the navigation. This is the root cause of the duplicate-key defence in slice 02 commit `ac74fa3` — both `UpsertValidCredential` (`OAuthService.cs:121-146`) and the `GroupBy/OrderByDescending` defensive read in `WorkTrackingSystemConnectionsController.cs:59-65`.
+
+In scope per the story: replace the full-page redirect with a popup window so the originating edit dialog stays open and the status badge flips live when the popup closes; and, if the popup eliminates the survive-the-redirect requirement, simplify the data model.
+
+The other 9 locked DISCUSS decisions (D1, D3-D10) and the 4 existing ADRs (007-010) are unchanged. ADR-011 (this slice) composes onto ADR-008 (OAuthCredential separation stays) and ADR-009 (BaseUrl stays the source of truth for `redirect_uri` registered with the IdP).
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Constraint and priority analysis
+
+Story #5018 raises three orthogonal questions. Each is analysed below; the same analysis frames the alternatives in ADR-011.
+
+### Q1 — Popup → opener communication channel
+
+The OAuth dance must complete inside a child window (popup), and the parent (edit dialog) must observe the outcome to flip the status badge live. Four mechanisms were evaluated; their browser-compat / testability / coupling matrices are summarised in ADR-011 *Alternatives considered*. The dominant constraint is **Safari ITP / cross-site cookie restrictions**: Atlassian / Microsoft consent screens live on third-party origins (`auth.atlassian.com`, `login.microsoftonline.com`). The popup → opener handshake must NOT depend on the popup retaining `window.opener` access across third-party origin transitions (some Safari versions sever it). Two of the four mechanisms (`window.postMessage` from a same-origin landing page, and `BroadcastChannel`) satisfy this; the other two (relying on `window.opener` directly inside the popup after the third-party round trip, server-side completion polling) either fail the constraint or add a server-side coupling for no upside.
+
+### Q2 — Persisted intermediate state simplification
+
+Today's flow:
+
+1. `CreateConnectionWizard.startOAuthHandshake` saves a draft `WorkTrackingSystemConnection` (with empty client tokens), then redirects the WHOLE page to `auth.atlassian.com` (`CreateConnectionWizard.tsx:340-352`).
+2. After consent, Atlassian → `/api/oauth/callback` → backend `CompleteAsync` performs **upsert** of `OAuthCredential` (a row may already exist for this connection if the user retried; defensive against full-page-reload races) → `Redirect("/connections/new?oauth=success&connectionId={id}")`.
+3. The wizard reconstructs itself from `?oauth=success&connectionId={id}` and resumes on step 3 (`CreateConnectionWizard.test.tsx:846-876`).
+4. `WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections` defends against multiple `OAuthCredential` rows per connection via `GroupBy(c => c.WorkTrackingSystemConnectionId).OrderByDescending(c => c.UpdatedAt).First()`.
+
+What survives if the popup keeps the opener alive:
+- No need for the draft connection to be *persisted* before the dance — but the popup still calls `POST /api/oauth/{provider}/connect` to mint a state token, and that call still needs a `connectionId` for `OAuthFlowContext`. **The draft connection persistence is still required for *new* connections** because the controller resolves the provider config (clientId, clientSecret) and the state-token issuer's `connectionId` claim from a DB row. *This is unchanged by the popup mechanism.*
+- The **OAuthCredential upsert** can become a pure **insert** if and only if: (a) the popup mechanism makes "reload mid-flow → second callback against same connectionId" impossible, and (b) the failure modes (popup closed by user, IdP error, state-token expiry) leave no partially-completed row. Neither holds: state-token expiry is independent of popup lifecycle; a user can complete OAuth once, fail, retry against the same connectionId; concurrent edits could even create a race. **Upsert defence must stay.** The simplification target is therefore **not** the credential upsert.
+- The **`GroupBy/OrderByDescending` defensive read** in `WorkTrackingSystemConnectionsController` only fires if there are duplicate rows per connection. Today there should never be duplicates because the upsert is keyed on `WorkTrackingSystemConnectionId`. The defensive read is a "belt-and-braces" against a bug that the unique-FK constraint already prevents at the DB level. **This read can be simplified** to `ToDictionary(c => c.WorkTrackingSystemConnectionId)` after we add an EF unique index on `OAuthCredential.WorkTrackingSystemConnectionId` (it is already a 1:1 FK per ADR-008 but no DB-level UNIQUE constraint was added). This is independent of the popup work but a natural co-traveller: ADR-011 calls it out.
+- The **`/connections/new?oauth=success` resume URL** is what couples the existing flow to the create-wizard. With a popup, the callback no longer needs to redirect back into the wizard at all — it redirects to a **same-origin minimal landing page** that posts a message and closes itself. This eliminates the `?oauth=success&connectionId=...` query-string contract between backend and wizard.
+
+**Verdict:** Q2's "drop persisted intermediate state entirely" is overstated by the story body. The credential upsert defence stays; what disappears is the **wizard resume coupling** (`?oauth=success&connectionId=...` query-string round trip) and the **half-baked-Valid-credential-just-to-survive-navigation** assumption. The DB-level simplification (unique index + `ToDictionary`) is small and additive.
+
+### Q3 — Interaction with existing UX surfaces
+
+| Existing surface | Today's behaviour | After popup |
+|---|---|---|
+| `requiresReconnect` DTO field (`WorkTrackingSystemConnectionDto.cs:41`) | Set when `OAuthCredential.Status == RefreshFailed`. Drives banner + header health icon. | **Unchanged.** The popup is a transport detail; the credential state machine is identical. |
+| `OAuthHealthIcon.tsx` (header) | Polls `GET /api/oauth/health`; surfaces aggregated KPIs. | **Unchanged.** The tile/icon reads aggregate state, not flow state. |
+| `ReconnectBanner.tsx` | On click: `disconnect` → `initiateConnect` → `globalThis.location.assign(authorizationUrl)` (full-page). | Replaced: on click → open popup → wait for `oauth.complete` message → re-fetch connection → banner re-renders against fresh `requiresReconnect = false`. The banner becomes the **integration site** for the popup mechanism on the connection-list / edit-dialog surface. |
+| `CreateConnectionWizard.startOAuthHandshake` | Saves draft → assigns location to authorizationUrl → resumes via `?oauth=success`. | Saves draft → opens popup → waits for `oauth.complete` message → advances to step 3 in-place. The `?oauth=success&connectionId=` resume mechanism is **deleted** — wizard never unmounts. |
+| `ModifyConnectionSettings` (edit dialog) | Renders `ReconnectBanner` and (for OAuth methods) `OAuthAuthForm`. | **Reuses** the new popup hook from `ReconnectBanner` and `OAuthAuthForm`; the edit dialog itself does not need to know about OAuth windows. |
+| `OAuthAuthForm.tsx` Connect button | `initiateConnect` → `globalThis.location.assign(authorizationUrl)`. | `initiateConnect` → `openOAuthPopup(authorizationUrl)` → on success message → `onConnect?.()` invoked which the caller (`ModifyConnectionSettings`) uses to refresh the connection. |
+| `OAuthController.Callback` | Returns 302 to `/connections/new?oauth=success&connectionId=...` or `/settings/connections?oauth=error&reason=...`. | Returns 302 to a same-origin **OAuth landing page** (`/oauth/popup-complete?status=success&connectionId={id}` or `?status=error&reason=...`) whose static HTML/JS posts a message to `window.opener` and closes itself. |
+
+The popup mechanism's surface area in the existing codebase is therefore a **small additive layer** (new landing page, new opener-side hook) plus **substitutions** at two call sites (`ReconnectBanner.handleReconnect`, `OAuthAuthForm.handleConnect`, and the wizard's `startOAuthHandshake`). No ADR-007/008/009/010 invariant changes.
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] DDD list (new decisions)
+
+| Ref | Decision | Verdict |
+|---|---|---|
+| DDD-11 | **Popup is opened by the opener on the same origin as Lighthouse**, navigated by the IdP to its consent screen, returned by the IdP via the existing `/api/oauth/callback` route, and 302'd by the backend to a new same-origin static landing page `/oauth/popup-complete?status=...`. The popup → opener handshake happens **after** the IdP round trip is finished, **on the opener's own origin**. This decouples the popup→opener channel from the IdP's third-party origin and dodges Safari ITP entirely. | **Proposed** |
+| DDD-12 | **Channel = `window.postMessage` from the landing page to `window.opener`** with `targetOrigin` set to the configured `Lighthouse:BaseUrl` (falling back to the request origin per ADR-009 semantics). The opener subscribes via a `useOAuthPopup` hook that filters incoming messages by `event.origin === window.location.origin` and `event.data.type === "oauth.complete"`. `BroadcastChannel` was considered (works without `window.opener`) but `postMessage` is simpler, works in every supported browser, requires no polyfill, and is already the canonical OAuth popup pattern (Auth0, Google Identity Services). | **Proposed** |
+| DDD-13 | **Persisted intermediate state simplification**: (a) `OAuthCredential.WorkTrackingSystemConnectionId` gains a DB-level UNIQUE index via an additive EF migration (the relationship is already 1:1 per ADR-008, but no UNIQUE constraint was emitted); (b) the `GroupBy/OrderByDescending` defensive read in `WorkTrackingSystemConnectionsController` collapses to `ToDictionary(c => c.WorkTrackingSystemConnectionId)`; (c) the **`UpsertValidCredential` defence stays** because retry-after-error against the same `connectionId` is still a real path; the upsert is now a *correctness* contract rather than a *survive-the-redirect* contract. | **Proposed** |
+| DDD-14 | **The `/connections/new?oauth=success&connectionId=...` resume contract is deleted.** The OAuth callback's 302 target becomes `/oauth/popup-complete?status=success&connectionId={id}` (success) or `/oauth/popup-complete?status=error&reason={code}` (error). The static landing page is a tiny React route (or a hand-written HTML+inline-JS page served from `wwwroot/` for maximum reliability if React-bootstrap fails) whose only behaviour is `window.opener?.postMessage(...)` then `window.close()`. `CreateConnectionWizard.startOAuthHandshake`, `ReconnectBanner.handleReconnect`, and `OAuthAuthForm.handleConnect` are migrated to call a shared `useOAuthPopup` hook instead of `globalThis.location.assign`. | **Proposed** |
+| DDD-15 | **Popup-blocked / user-closed fallbacks.** The `useOAuthPopup` hook (a) detects `window.open` returning `null` (popup-blocked) → surfaces an inline error *"Your browser blocked the OAuth popup. Allow popups for this site and click Connect/Reconnect again."* No automatic fallback to full-page redirect: the existing flow's UX is the bug we're fixing, so re-introducing it on a blocker would regress AC; (b) detects popup closed without a message via `setInterval(() => popup.closed, 500)` → resolves with `{ status: "cancelled" }` after a 90-second guard. The opener-side timeout is the same as the state-token TTL (15 min today; the popup is much shorter-lived). | **Proposed** |
+| DDD-16 | **The landing page never sees credentials** — only the success/error indicator and the `connectionId`. Tokens are exchanged server-side before the 302 (unchanged from today). The landing page's static URL contract is the new attack surface; it is protected by (a) being served from same-origin only, (b) the popup's `event.source` check on the opener side, and (c) the absence of any sensitive data in the query string. | **Proposed** |
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Component decomposition (delta only)
+
+Pattern: every overlapping component is EXTEND; only the landing page and the `useOAuthPopup` hook are CREATE NEW. The popup mechanism is intentionally lightweight.
+
+| Component | File | Change Type | Change Summary |
+|---|---|---|---|
+| `OAuthController.Callback` | `Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs:29-56` | EXTEND | Change the success 302 target from `"/connections/new?oauth=success&..."` to `"/oauth/popup-complete?status=success&connectionId={id}"`. Change the error 302 target from `"/settings/connections?oauth=error&..."` to `"/oauth/popup-complete?status=error&reason={code}"`. No new actions, no new auth contract. |
+| `OAuthPopupComplete.tsx` (FE, new) | `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.tsx` | CREATE NEW | Tiny route component. Parses `status`, `connectionId`, `reason` from `useSearchParams`. Calls `window.opener?.postMessage({ type: "oauth.complete", status, connectionId, reason }, targetOrigin)`. Calls `window.close()`. If `window.opener` is `null` (the popup was opened standalone — e.g. user pasted the URL), renders a brief "OAuth complete — you may close this window" message. |
+| Route registration | `Lighthouse.Frontend/src/App.tsx` (router config) | EXTEND | Register `/oauth/popup-complete` route → `OAuthPopupComplete`. No auth guard — the page reads only query string, holds no secrets. |
+| `useOAuthPopup.ts` (FE, new) | `Lighthouse.Frontend/src/hooks/useOAuthPopup.ts` | CREATE NEW | Hook exposing `openOAuthPopup(authorizationUrl: string): Promise<OAuthPopupResult>`. Internals: opens centred ~600x700 popup; if `window.open` returns null → reject `{ kind: "popup_blocked" }`; subscribes to `message` events filtered by `event.origin === window.location.origin && event.data?.type === "oauth.complete"`; polls `popup.closed` every 500ms with a 90s guard; resolves on first `oauth.complete` message; cleans up listener + interval in `finally`. |
+| `ReconnectBanner.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx:29-43` | EXTEND | Replace `globalThis.location.assign(authorizationUrl)` with `await openOAuthPopup(authorizationUrl)`; on `status === "success"` call a new `onReconnected?: () => void` prop the parent uses to re-fetch the connection list (or re-fetch the connection in the edit dialog). On `status === "cancelled"` or `"error"` set local error state; the banner stays visible until a successful round trip. |
+| `OAuthAuthForm.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx:30-42` | EXTEND | Same pattern: `await openOAuthPopup(authorizationUrl)`; on success call existing `onConnect?.()`. Error surface mirrors `ReconnectBanner` (inline alert, button re-enabled). |
+| `CreateConnectionWizard.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:328-365` | EXTEND | `startOAuthHandshake` calls `openOAuthPopup` instead of `globalThis.location.assign`. On success, the wizard advances to step 3 inline (no remount, no URL-driven resume). Delete the `?oauth=success&connectionId=` resume branch in the mount-time `useEffect` (separate concern: the wizard's mount-time effect that reads `URLSearchParams` for OAuth resume is now dead code). |
+| `ModifyConnectionSettings.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx` (the file `ReconnectBanner` is rendered in for edit mode) | EXTEND | Pass an `onReconnected={() => reloadConnection()}` callback into `ReconnectBanner`. `reloadConnection` already exists for the edit dialog (or is a one-line `setConnection(await fetch(...))`). The badge flip is then automatic via the existing `requiresReconnect` derivation. |
+| `OverviewDashboard.tsx` | `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx` (the system-admin connections section) | EXTEND | Pass `onReconnected={() => refetchConnections()}` to each `ReconnectBanner`. `refetchConnections` is the existing list-page fetcher. |
+| `WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections` | `Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs:54-72` | EXTEND (simplify) | Replace `GroupBy(...).ToDictionary(g => g.Key, g => g.OrderByDescending(...).First())` with `ToDictionary(c => c.WorkTrackingSystemConnectionId)`. The DB-level UNIQUE index (next row) makes the defensive ordering vacuous. |
+| EF migration | `Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/*` + `Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/*` | CREATE NEW | Generated via the existing `CreateMigration` PowerShell script. Adds `UNIQUE` index on `OAuthCredentials.WorkTrackingSystemConnectionId`. Idempotent: there is no `OAuthCredentials` data in any release-shipped customer instance (Slice 02 has not GA-shipped yet; promotion guarded behind PR review). |
+| `OAuthService.CompleteAsync` / `UpsertValidCredential` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs:97-146` | NO CHANGE | Upsert defence stays per Q2 analysis (retry-after-error still produces a second `CompleteAsync` against the same `connectionId`). The UNIQUE index makes upsert *enforced* by the DB; the C# upsert remains the correct write pattern. |
+| `useOAuthPopup.test.ts` (FE, new test) | `Lighthouse.Frontend/src/hooks/useOAuthPopup.test.ts` | CREATE NEW | Vitest unit tests: popup-blocked path, message-from-wrong-origin filtered out, success path resolves, cancelled-by-close path resolves after grace period, listener+interval cleanup on unmount. |
+| `OAuthPopupComplete.test.tsx` (FE, new test) | `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.test.tsx` | CREATE NEW | Vitest: posts the expected message shape; calls `window.close`; renders fallback text when `window.opener` is null. |
+| Existing `ReconnectBanner.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx` | EXTEND | Replace `expect(window.location.assign).toHaveBeenCalledWith(...)` with `expect(openOAuthPopup).toHaveBeenCalledWith(...)`. Add cancelled / popup-blocked branches. |
+| Existing `OAuthAuthForm.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx` | EXTEND | Same substitution. |
+| Existing `CreateConnectionWizard.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx` | EXTEND | Replace the `?oauth=success&connectionId=88` resume test with a popup-success test that asserts the wizard advances to step 3 inline. The old mount-with-resume-URL behaviour is deleted. |
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Reuse Analysis
+
+| Existing Component | Overlap with #5018 | Decision | Justification |
+|---|---|---|---|
+| `OAuthController` (`API/OAuthController.cs`) | Already hosts `/connect`, `/callback`, `/disconnect`. The popup mechanism only changes the **302 target** of `/callback`. | **EXTEND** | Two string changes. New controllers would fragment the OAuth surface for zero benefit. |
+| `OAuthService.CompleteAsync` (`Services/Implementation/OAuth/OAuthService.cs`) | Token exchange and credential persistence happen here today. Popup mechanism is purely transport; no service-layer change needed. | **NO CHANGE** | The service is correctly decoupled from how the result reaches the user. |
+| `OAuthService.UpsertValidCredential` (`OAuthService.cs:121-146`) | Defensive upsert against duplicate `OAuthCredential` rows. Story body asks: "can this become a pure insert?" | **NO CHANGE (analysed)** | Q2 analysis: retry-after-error still produces a second `CompleteAsync` for the same connection; the upsert is correctness, not survive-the-redirect. The DB-level UNIQUE index added by DDD-13 makes the upsert *enforced* by the DB. |
+| `WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections` `GroupBy/OrderByDescending` | Defensive read against duplicate credential rows per connection. | **EXTEND (simplify)** | Once the UNIQUE index is added (DDD-13), the duplicate scenario is impossible. `ToDictionary(c => c.WorkTrackingSystemConnectionId)` is the natural form. |
+| `OAuthCredential` table FK | 1:1 by intent (ADR-008) but no DB-level UNIQUE. | **EXTEND** | Additive migration adds `UNIQUE` index. No data migration needed (slice 02 has not GA-shipped). |
+| `ReconnectBanner.tsx` | Today: `globalThis.location.assign`. | **EXTEND** | One handler replaced; new `onReconnected` prop added. Component still owns the banner UX. |
+| `OAuthAuthForm.tsx` | Today: `globalThis.location.assign`. | **EXTEND** | Same substitution. Existing `onConnect` callback is the wiring point. |
+| `CreateConnectionWizard.tsx` | Today: `globalThis.location.assign` + `?oauth=success&connectionId=` resume. | **EXTEND** | Popup substitution + delete the resume-from-URL branch. Net code reduction. |
+| `OAuthHealthIcon.tsx` (header) | Polls aggregate health KPIs. | **NO CHANGE** | Aggregate state is independent of flow transport. |
+| `requiresReconnect` DTO field + `WorkTrackingSystemConnectionDto` derivation | Drives banner + tile. Computed from `OAuthCredential.Status == RefreshFailed`. | **NO CHANGE** | Credential state machine is identical. |
+| `IOAuthService.EnsureFreshTokenAsync` + single-flight refresh (ADR-010) | Pre-request refresh logic. | **NO CHANGE** | Orthogonal to the popup mechanism. |
+| `IOAuthProvider` / `IOAuthProviderRegistry` (ADR-007) | Provider abstraction. | **NO CHANGE** | The popup is a UI shell around the same provider flow. |
+| `IOAuthStateTokenIssuer` (DDD-8) | HMAC-signed state token. | **NO CHANGE** | The popup still carries `state` through the IdP round trip identically. |
+| `IServiceConfig.BaseUrl` (ADR-009) | Source of truth for `redirect_uri` registered with the IdP. | **NO CHANGE** | The IdP still posts to `/api/oauth/callback`. Only the *final* 302 target changes — that target is also derived from `BaseUrl` for `targetOrigin` enforcement on the opener side. |
+| **`useOAuthPopup.ts` (new hook)** | No existing FE component owns "open a popup, await a postMessage handshake, close cleanly." | **CREATE NEW** | The existing codebase has no popup-mediated flows; inlining this logic in three call sites would duplicate it. ~80 LOC. |
+| **`OAuthPopupComplete.tsx` (new landing page)** | No existing same-origin landing page acts as a postMessage relay. | **CREATE NEW** | ~30 LOC. The alternative (server-rendered HTML in `OAuthController.Callback`) was rejected because Lighthouse's existing frontend stack is React + Vite; injecting raw HTML out of `OAuthController` would introduce a parallel rendering path. |
+
+**Hard-gate confirmation**: every overlapping component is listed; the two CREATE NEW entries are justified (no existing surface owns popup orchestration; no existing same-origin postMessage relay exists).
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Driving / Driven ports (delta)
+
+**No new HTTP routes.** The `/api/oauth/callback` route exists. The popup landing page is a frontend route (`/oauth/popup-complete`), not a backend route.
+
+**No new driven ports.** Token exchange / refresh paths are unchanged.
+
+**New frontend driving port (internal):** `useOAuthPopup` hook. Its contract is the user-facing "Connect" / "Reconnect" click handler; its observable behaviour is `{ status: "success" | "error" | "cancelled" | "popup_blocked", connectionId?, reason? }`.
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] C4 Component (popup interaction)
+
+L3 Component diagram showing the popup interaction. System Context (L1) and Container (L2) are unchanged from the existing brief.md; only the component-level interaction inside the React frontend + the same-origin 302 target differ.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as connector-admin
+    participant Edit as EditConnection / Wizard (opener)
+    participant Banner as ReconnectBanner / OAuthAuthForm
+    participant Hook as useOAuthPopup
+    participant Popup as Browser Popup Window
+    participant Ctl as OAuthController
+    participant Svc as OAuthService
+    participant IdP as Atlassian / Entra ID
+    participant Landing as /oauth/popup-complete (same-origin)
+
+    Admin->>Banner: Click Reconnect / Connect
+    Banner->>Ctl: POST /api/oauth/{provider}/connect {connectionId}
+    Ctl->>Svc: InitiateAsync(connectionId)
+    Svc-->>Ctl: authorizationUrl (state token)
+    Ctl-->>Banner: 200 OK { authorizationUrl }
+    Banner->>Hook: openOAuthPopup(authorizationUrl)
+    Hook->>Popup: window.open(authorizationUrl, "_blank", "popup=yes,...")
+    Note over Popup: Loads IdP consent (3rd-party origin)
+    Popup->>IdP: GET authorize?...
+    Admin->>IdP: Consent
+    IdP->>Popup: 302 to /api/oauth/callback?code&state
+    Popup->>Ctl: GET /api/oauth/callback?code&state
+    Ctl->>Svc: CompleteAsync(code, state)
+    Svc-->>Ctl: { connectionId, status=Valid }
+    Ctl-->>Popup: 302 /oauth/popup-complete?status=success&connectionId=...
+    Popup->>Landing: GET /oauth/popup-complete?...
+    Landing->>Popup: window.opener.postMessage({type:"oauth.complete",status,connectionId}, BaseUrl)
+    Popup-->>Hook: message event (filtered by origin + type)
+    Landing->>Popup: window.close()
+    Hook-->>Banner: resolve { status: "success", connectionId }
+    Banner->>Edit: onReconnected() / onConnect()
+    Edit->>Ctl: GET /api/.../worktrackingsystemconnections (refetch)
+    Ctl-->>Edit: connections with requiresReconnect=false
+    Note over Edit: Status badge flips Disconnected → Connected live, no page navigation
+```
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Decisions table
+
+| DDD-Ref | Decision | Status |
+|---|---|---|
+| DDD-11 | Popup→opener handshake happens after IdP round trip, on opener's own origin (via landing page) | Proposed (awaiting user choice between options A/B/C in ADR-011) |
+| DDD-12 | `window.postMessage` from landing page to `window.opener`; opener filters by origin + message type | Proposed (option A in ADR-011) |
+| DDD-13 | Add UNIQUE index on `OAuthCredential.WorkTrackingSystemConnectionId`; simplify `GroupBy` defensive read to `ToDictionary`; keep `UpsertValidCredential` defence | Proposed |
+| DDD-14 | Delete `/connections/new?oauth=success&connectionId=` resume contract; backend 302 targets a same-origin `/oauth/popup-complete` landing page | Proposed |
+| DDD-15 | `useOAuthPopup` hook handles popup-blocked (inline error, no fallback) and user-closed (90s grace) cases | Proposed |
+| DDD-16 | Landing page query string carries no credentials, only `status`/`connectionId`/`reason`; tokens are server-side only | Proposed |
+
+See `docs/product/architecture/adr-011-oauth-popup-flow.md` for the rationale and the **three alternatives** the user is choosing between.
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Open questions
+
+- **OQ-5018-1** — Should the landing page be a **React route** (registered in the existing router) or a **static HTML file** served from `wwwroot/` directly? The latter is more robust (no React-bootstrap dependency on the popup-close path) but introduces a second rendering pipeline. **Recommendation:** React route. The route is loaded only at the *end* of the OAuth dance; if React fails to mount, the user is already in a successful tokens-persisted state — the banner re-fetch is what flips the badge. The popup will time out (90s) and the opener will re-fetch on a manual refresh. The cost of a parallel HTML pipeline (no shared types, no shared Material UI for the "you may close this window" fallback message, two test setups) outweighs the marginal robustness gain. **Decide in DELIVER.**
+- **OQ-5018-2** — Should the `useOAuthPopup` hook **automatically re-fetch the connection** on success, or leave that to the caller? **Recommendation:** leave to caller (the existing `onConnect` / `onReconnected` callback pattern). The hook stays single-responsibility. **Confirmed in this design.**
+- **OQ-5018-3** — Behaviour on Safari < 16 / iOS Safari where `window.opener` is sometimes severed by ITP even on same-origin landings? **Investigation needed in DELIVER**: gold-test against the actual oldest supported Safari per `package.json` `browserslist`. If `window.opener` is null on the landing page, the popup cannot post back; the opener will time out (90s) and surface the popup-blocked error. **Mitigation if it materialises**: switch to `BroadcastChannel` (DDD-12 alternative). The change is local to `useOAuthPopup` + `OAuthPopupComplete`; no architectural ripple. *Earned Trust check:* this is the substrate-lie scenario the popup mechanism must survive; the design must include a Playwright gold-test against Safari (Webkit driver) at DELIVER time, not just Chromium.
+- **OQ-5018-4** — Do we add a contract test against Atlassian/Entra ID to detect their consent-screen markup changes breaking popup centring or popup-blocker heuristics? **Recommendation:** no. The popup mechanism is opaque to the IdP markup; the existing `ci_e2e.yml` `oauth-smoke` job (gated on release tags) is the safety net. The IdPs don't expose a consent-screen contract test surface.
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Earned Trust check
+
+The popup mechanism introduces three new substrate dependencies. Each must demonstrate it can honour its contract:
+
+| Dependency | Possible "lie" | Probe |
+|---|---|---|
+| Browser `window.open` returning a usable popup handle | Popup blocker → returns null silently; some embedded webviews return a handle that immediately closes | `useOAuthPopup` checks for null return → surfaces `popup_blocked`; checks `popup.closed` every 500ms → surfaces `cancelled` after 90s grace. Vitest unit tests assert both. |
+| `window.opener` retained across same-origin landing | Safari ITP severs the reference; some webviews never set it | `OAuthPopupComplete` falls back to a "you may close this window" message if `window.opener` is null. Opener-side 90s timeout surfaces a popup-blocked error if no message arrives. *Gold-test required at DELIVER:* Playwright Webkit driver round trip. |
+| `postMessage` target-origin enforcement | Wrong `targetOrigin` (e.g. `"*"`) leaks the message to malicious frames; opener-side missing origin filter accepts spoofed messages | The landing page uses `BaseUrl` (ADR-009) as `targetOrigin`; the opener-side hook filters by `event.origin === window.location.origin` AND `event.data?.type === "oauth.complete"`. Vitest unit tests assert wrong-origin and wrong-type messages are ignored. |
+
+If any probe fails in DELIVER's gold-test phase, the design refuses to ship: the fallback to `BroadcastChannel` (DDD-12 alternative) is local, audited, and pre-approved by ADR-011.
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Quality attributes
+
+| ISO 25010 attribute | Strategy |
+|---|---|
+| **Usability** (primary driver — this story IS a UX bug fix) | Edit dialog never unmounts; status badge flips live; no page navigation; failure modes (popup-blocked, user-closed, IdP error) surface inline without losing context. |
+| **Security** | `targetOrigin` strict (BaseUrl, never `*`); opener-side origin + message-type filter; landing-page query string carries no credentials; tokens are exchanged server-side before the 302 (unchanged). |
+| **Reliability** | 90s opener-side timeout guards against popups that never message back; popup-blocker detection is explicit, not silent; existing `OAuthCredential` upsert defence stays — retry-after-error semantics unchanged. |
+| **Maintainability** | Single `useOAuthPopup` hook owns all popup orchestration; three call sites share it; ~110 LOC of new code total; deletes the `?oauth=success&connectionId=` resume branch (net reduction). |
+| **Testability** | Vitest unit tests for hook (popup-blocked, wrong-origin filter, success, cancelled). Existing component tests substitute the hook mock for `globalThis.location.assign`. Playwright Webkit gold-test added at DELIVER for the Safari path (OQ-5018-3). |
+| **Compatibility** | `window.postMessage` is supported in every browser Lighthouse targets. Popup blockers handled. Safari ITP defended-against per DDD-11 (handshake is opener-origin, not IdP-origin). |
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Wave decisions summary
+
+- **Architectural pattern**: unchanged (ports-and-adapters). The popup is a UI orchestration layer; ports and adapters are identical.
+- **New components**: 2 (frontend) — `useOAuthPopup` hook, `OAuthPopupComplete` landing page.
+- **Substituted call sites**: 3 (frontend) — `ReconnectBanner`, `OAuthAuthForm`, `CreateConnectionWizard.startOAuthHandshake`.
+- **Backend changes**: 2 lines (302 targets in `OAuthController.Callback`) + 1 EF migration (UNIQUE index) + simplification of one LINQ expression in `WorkTrackingSystemConnectionsController`.
+- **Deleted contracts**: 1 (`/connections/new?oauth=success&connectionId=` resume — frontend wizard branch + backend redirect target).
+- **ADRs added**: `adr-011-oauth-popup-flow.md`.
+- **C4**: sequence diagram (above) supplements the existing L1/L2 diagrams in `docs/product/architecture/c4-diagrams.md`; no new L1/L2 needed.
+
+## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Upstream changes (back-propagation)
+
+None to DISCUSS. Story #5018 is a follow-on slice that surfaces a UX defect; no DISCUSS AC is invalidated. US-01 AC #4 ("the user is redirected back to the connection settings page, and the page shows `Status: Connected — OAuth (Jira Cloud)`") is honoured *more strongly* by the popup: the user no longer leaves the connection settings page at all.
+
+The `?oauth=success&connectionId=` query-string contract is internal to the frontend wizard; no DISCUSS-locked decision depends on it. DDD-14's deletion is a pure simplification.
+
+---
+
