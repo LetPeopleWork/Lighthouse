@@ -34,7 +34,7 @@ const OAuthPopupComplete = () => {
 	const status = searchParams.get("status") ?? "";
 	const connectionId = searchParams.get("connectionId");
 	const reason = searchParams.get("reason");
-	const opener = window.opener;
+	const opener = globalThis.opener;
 	const hasOpener = opener !== null && opener !== undefined;
 
 	useEffect(() => {
@@ -42,8 +42,8 @@ const OAuthPopupComplete = () => {
 			return;
 		}
 		const message = buildMessage(status, connectionId, reason);
-		opener.postMessage(message, window.location.origin);
-		window.close();
+		opener.postMessage(message, globalThis.location.origin);
+		globalThis.close();
 	}, [hasOpener, status, connectionId, reason]);
 
 	if (hasOpener) {

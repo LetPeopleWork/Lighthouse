@@ -41,8 +41,14 @@ const isOAuthCompletePayload = (
 const computePopupFeatures = (): string => {
 	const width = POPUP_WIDTH;
 	const height = POPUP_HEIGHT;
-	const left = Math.max(0, Math.round((window.screen.availWidth - width) / 2));
-	const top = Math.max(0, Math.round((window.screen.availHeight - height) / 2));
+	const left = Math.max(
+		0,
+		Math.round((globalThis.screen.availWidth - width) / 2),
+	);
+	const top = Math.max(
+		0,
+		Math.round((globalThis.screen.availHeight - height) / 2),
+	);
 	return `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
 };
 
@@ -50,7 +56,7 @@ const openOAuthPopup = (
 	authorizationUrl: string,
 ): Promise<OAuthPopupResult> => {
 	return new Promise<OAuthPopupResult>((resolve) => {
-		const popup = window.open(
+		const popup = globalThis.open(
 			authorizationUrl,
 			"_blank",
 			computePopupFeatures(),
@@ -61,13 +67,13 @@ const openOAuthPopup = (
 			return;
 		}
 
-		const expectedOrigin = window.location.origin;
+		const expectedOrigin = globalThis.location.origin;
 		let settled = false;
 		let intervalId: ReturnType<typeof setInterval> | undefined;
 		let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
 		const cleanup = (): void => {
-			window.removeEventListener("message", handleMessage);
+			globalThis.removeEventListener("message", handleMessage);
 			if (intervalId !== undefined) {
 				clearInterval(intervalId);
 			}
@@ -102,7 +108,7 @@ const openOAuthPopup = (
 			});
 		}
 
-		window.addEventListener("message", handleMessage);
+		globalThis.addEventListener("message", handleMessage);
 
 		intervalId = setInterval(() => {
 			if (popup.closed) {
