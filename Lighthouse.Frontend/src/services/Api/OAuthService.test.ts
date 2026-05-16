@@ -56,6 +56,7 @@ describe("OAuthService", () => {
 			const mockResponse = {
 				totalOAuthConnections: 3,
 				disconnectedCount: 1,
+				firstDisconnectedConnectionId: 47,
 			};
 			mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -63,6 +64,7 @@ describe("OAuthService", () => {
 
 			expect(result.totalOAuthConnections).toBe(3);
 			expect(result.disconnectedCount).toBe(1);
+			expect(result.firstDisconnectedConnectionId).toBe(47);
 			expect(mockedAxios.get).toHaveBeenCalledWith(
 				"/oauth/health",
 				expect.objectContaining({ baseURL: expect.stringContaining("/api") }),

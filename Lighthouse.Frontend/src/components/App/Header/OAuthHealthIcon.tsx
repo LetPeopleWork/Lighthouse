@@ -10,8 +10,6 @@ import { useRbac } from "../../../hooks/useRbac";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOAuthHealthDto } from "../../../services/Api/OAuthService";
 
-const SETTINGS_CONNECTIONS_PATH = "/settings";
-
 const OAuthHealthIcon = () => {
 	const theme = useTheme();
 	const { isSystemAdmin } = useRbac();
@@ -54,13 +52,20 @@ const OAuthHealthIcon = () => {
 		? theme.palette.warning.main
 		: theme.palette.success.main;
 	const Icon = hasIssues ? CloudOffIcon : CloudDoneIcon;
+	const targetConnectionId = health.firstDisconnectedConnectionId;
+
+	const handleClick = () => {
+		if (targetConnectionId !== null) {
+			navigate(`/connections/${targetConnectionId}/edit`);
+		}
+	};
 
 	return (
 		<Tooltip title={tooltip} arrow>
 			<IconButton
 				size="large"
 				color="inherit"
-				onClick={() => navigate(SETTINGS_CONNECTIONS_PATH)}
+				onClick={handleClick}
 				aria-label={tooltip}
 				data-testid="oauth-health-icon"
 			>

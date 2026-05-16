@@ -76,6 +76,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(root.GetProperty("totalOAuthConnections").GetInt32(), Is.EqualTo(3), body);
                 Assert.That(root.GetProperty("disconnectedCount").GetInt32(), Is.EqualTo(2), body);
+                Assert.That(root.GetProperty("firstDisconnectedConnectionId").ValueKind, Is.EqualTo(JsonValueKind.Number), body);
             }
         }
 

@@ -1,4 +1,7 @@
 namespace Lighthouse.Backend.API.DTO
 {
-    public sealed record OAuthHealthDto(int TotalOAuthConnections, int DisconnectedCount);
+    public sealed record OAuthHealthDto(
+        int TotalOAuthConnections,
+        int DisconnectedCount,
+        int? FirstDisconnectedConnectionId);
 }

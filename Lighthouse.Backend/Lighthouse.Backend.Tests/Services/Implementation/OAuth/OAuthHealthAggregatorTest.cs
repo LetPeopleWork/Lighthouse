@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             {
                 Assert.That(result.TotalOAuthConnections, Is.Zero);
                 Assert.That(result.DisconnectedCount, Is.Zero);
+                Assert.That(result.FirstDisconnectedConnectionId, Is.Null);
             }
         }
 
@@ -42,7 +43,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             {
                 Assert.That(result.TotalOAuthConnections, Is.EqualTo(2));
                 Assert.That(result.DisconnectedCount, Is.Zero);
+                Assert.That(result.FirstDisconnectedConnectionId, Is.Null);
             }
+        }
+
+        [Test]
+        public async Task AggregateAsync_MultipleDisconnectedConnections_ReturnsConnectionIdOfMostRecentlyFailed()
+        {
+            var credentials = new List<OAuthCredential>
+            {
+                new() { Id = 1, WorkTrackingSystemConnectionId = 10, Status = OAuthCredentialStatus.Disconnected, UpdatedAt = FixedNow.AddDays(-3) },
+                new() { Id = 2, WorkTrackingSystemConnectionId = 11, Status = OAuthCredentialStatus.RefreshFailed, UpdatedAt = FixedNow.AddHours(-1) },
+                new() { Id = 3, WorkTrackingSystemConnectionId = 12, Status = OAuthCredentialStatus.Valid, UpdatedAt = FixedNow },
+            };
+
+            var aggregator = CreateAggregator(credentials);
+
+            var result = await aggregator.AggregateAsync(CancellationToken.None);
+
+            Assert.That(result.FirstDisconnectedConnectionId, Is.EqualTo(11));
         }
 
         [TestCase(OAuthCredentialStatus.RefreshFailed)]
@@ -63,6 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             {
                 Assert.That(result.TotalOAuthConnections, Is.EqualTo(2));
                 Assert.That(result.DisconnectedCount, Is.EqualTo(1));
+                Assert.That(result.FirstDisconnectedConnectionId, Is.EqualTo(11));
             }
         }
 

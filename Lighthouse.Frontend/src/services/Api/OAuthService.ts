@@ -8,6 +8,7 @@ export interface IOAuthInitiateResponse {
 export interface IOAuthHealthDto {
 	totalOAuthConnections: number;
 	disconnectedCount: number;
+	firstDisconnectedConnectionId: number | null;
 }
 
 export interface IOAuthService {

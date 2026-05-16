@@ -24,9 +24,14 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 .ToList();
 
             var totalOAuthConnections = latestPerConnection.Count;
-            var disconnectedCount = latestPerConnection.Count(c => c.Status != OAuthCredentialStatus.Valid);
+            var disconnected = latestPerConnection.Where(c => c.Status != OAuthCredentialStatus.Valid).ToList();
+            var firstDisconnectedConnectionId = disconnected
+                .OrderByDescending(c => c.UpdatedAt)
+                .ThenBy(c => c.WorkTrackingSystemConnectionId)
+                .Select(c => (int?)c.WorkTrackingSystemConnectionId)
+                .FirstOrDefault();
 
-            return Task.FromResult(new OAuthHealthDto(totalOAuthConnections, disconnectedCount));
+            return Task.FromResult(new OAuthHealthDto(totalOAuthConnections, disconnected.Count, firstDisconnectedConnectionId));
         }
     }
 }

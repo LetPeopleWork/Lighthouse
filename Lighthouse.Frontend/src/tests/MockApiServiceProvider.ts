@@ -68,9 +68,11 @@ export const createMockOAuthService = (): IOAuthService => {
 	return {
 		initiateConnect: vi.fn(),
 		disconnect: vi.fn(),
-		getHealth: vi
-			.fn()
-			.mockResolvedValue({ totalOAuthConnections: 0, disconnectedCount: 0 }),
+		getHealth: vi.fn().mockResolvedValue({
+			totalOAuthConnections: 0,
+			disconnectedCount: 0,
+			firstDisconnectedConnectionId: null,
+		}),
 	};
 };
 
