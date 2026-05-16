@@ -5,7 +5,7 @@ nav_order: 4
 parent: Installation and Configuration
 ---
 
-This page covers `Lighthouse:BaseUrl` — a single server-side setting that controls the OAuth callback URL Lighthouse displays in the connection form and uses at runtime. If you are setting up OAuth for [Jira](../concepts/worktrackingsystems/oauth-jira.html) (or later, Azure DevOps), configure `Lighthouse:BaseUrl` before you register your OAuth app with the identity provider.
+This page covers `Lighthouse:BaseUrl` — a single server-side setting that controls the OAuth callback URL Lighthouse displays in the connection form and uses at runtime. If you are setting up OAuth for [Jira](../concepts/worktrackingsystems/oauth-jira.html) or [Azure DevOps](../concepts/worktrackingsystems/oauth-ado.html), configure `Lighthouse:BaseUrl` before you register your OAuth app with the identity provider.
 
 - TOC
 {:toc}
@@ -169,7 +169,7 @@ Traefik forwards the `Host` header by default. The `Lighthouse:BaseUrl` MUST sti
 # See also
 
 - [Setting up Jira OAuth](../concepts/worktrackingsystems/oauth-jira.html)
-- *Setting up Azure DevOps OAuth* — coming in Slice 03 (ADO provider).
+- [Setting up Azure DevOps OAuth](../concepts/worktrackingsystems/oauth-ado.html)
 - [ADR-009 — OAuth callback URL derived from a server-configured BaseUrl](../product/architecture/adr-009-oauth-baseurl-callback.md)
 - [Configuration](./configuration.html) — full list of server-side settings
 - [`ci-learnings.md` — environment-variable binding gotchas](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/ci-learnings.md)

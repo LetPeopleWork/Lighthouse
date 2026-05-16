@@ -101,6 +101,7 @@ For deeper issues, capture the failing callback URL from the browser address bar
 
 # See also
 
+- [Setting up Azure DevOps OAuth](./oauth-ado.html) — the sibling provider, same UX shape
 - [Configuring BaseUrl for OAuth callback registration](../../Installation/oauth-baseurl.html)
 - [Jira](./jira.html) — the original Jira connection page (covers JQL, projects, board wizard)
 - [ADR-006 — Connection-list payload shape](../../product/architecture/adr-006-connection-list-payload-shape.md) (the additive `requiresReconnect` field)
