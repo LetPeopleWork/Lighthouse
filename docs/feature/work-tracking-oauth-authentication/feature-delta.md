@@ -47,7 +47,7 @@ Job traceability: `job-oauth-work-tracking-credentials` (added to `docs/product/
 1. Given a Premium-licensed server-mode instance and a Jira connector form, **when** I select Authentication = "OAuth (Jira Cloud)", **then** the form shows `clientId` + `clientSecret` + a **read-only callback URL** that equals `{BaseUrl}/oauth/callback/jira` and the legacy `username` + `apiToken` fields are hidden.
 2. Given a non-Premium-licensed instance, **when** I open the same form, **then** the "OAuth (Jira Cloud)" option is visible in the dropdown but rendered with an "Upgrade to Premium" affordance and selecting it does not show the OAuth form fields.
 3. Given the form is filled and I click **Connect**, **when** the backend issues `POST /api/oauth/jira/connect`, **then** the response is HTTP 200 with `{ authorizationUrl }` and the browser redirects to that URL.
-4. Given the user has consented at Atlassian and the browser is redirected to `GET /api/oauth/callback?provider=jira&code=...&state=...`, **when** the backend exchanges the code, **then** an `OAuthCredential` row is persisted with `status = Valid`, the user is redirected back to the connection settings page, and the page shows `Status: Connected — OAuth (Jira Cloud)`.
+4. Given the user has consented at Atlassian and the browser is redirected to `GET /api/oauth/callback?provider=jira&code=...&state=...`, **when** the backend exchanges the code, **then** an `OAuthCredential` row is persisted with `status = Valid` and the connection settings surface shows `Status: Connected — OAuth (Jira Cloud)`. *(Amended 2026-05-16 per Story #5018 — see back-propagation note. The original mechanism-specific wording "the user is redirected back to the connection settings page" was replaced with the mechanism-agnostic "the connection settings surface shows" so both the slice-02 redirect implementation and the Story #5018 popup mechanism satisfy the AC.)*
 5. Given a Jira connection authenticated via OAuth, **when** Lighthouse next refreshes work items for a team using that connection, **then** the outbound HTTP request to Jira carries an `Authorization: Bearer {accessToken}` header (not Basic auth) and returns work items successfully.
 6. Given the server is configured with `BaseUrl=https://lighthouse.example.com`, **when** I open the form, **then** the displayed callback URL is exactly `https://lighthouse.example.com/oauth/callback/jira` regardless of the request `Host`/`Origin` header.
 7. Given `BaseUrl` is **not** configured, **when** I open the form, **then** a non-blocking validation warning is shown: *"Your callback URL may be incorrect. Set BaseUrl in your server configuration to guarantee OAuth registration works."*
@@ -1096,7 +1096,7 @@ Pattern: every overlapping component is EXTEND; only the landing page and the `u
 | `useOAuthPopup.ts` (FE, new) | `Lighthouse.Frontend/src/hooks/useOAuthPopup.ts` | CREATE NEW | Hook exposing `openOAuthPopup(authorizationUrl: string): Promise<OAuthPopupResult>`. Internals: opens centred ~600x700 popup; if `window.open` returns null → reject `{ kind: "popup_blocked" }`; subscribes to `message` events filtered by `event.origin === window.location.origin && event.data?.type === "oauth.complete"`; polls `popup.closed` every 500ms with a 90s guard; resolves on first `oauth.complete` message; cleans up listener + interval in `finally`. |
 | `ReconnectBanner.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx:29-43` | EXTEND | Replace `globalThis.location.assign(authorizationUrl)` with `await openOAuthPopup(authorizationUrl)`; on `status === "success"` call a new `onReconnected?: () => void` prop the parent uses to re-fetch the connection list (or re-fetch the connection in the edit dialog). On `status === "cancelled"` or `"error"` set local error state; the banner stays visible until a successful round trip. |
 | `OAuthAuthForm.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx:30-42` | EXTEND | Same pattern: `await openOAuthPopup(authorizationUrl)`; on success call existing `onConnect?.()`. Error surface mirrors `ReconnectBanner` (inline alert, button re-enabled). |
-| `CreateConnectionWizard.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:328-365` | EXTEND | `startOAuthHandshake` calls `openOAuthPopup` instead of `globalThis.location.assign`. On success, the wizard advances to step 3 inline (no remount, no URL-driven resume). Delete the `?oauth=success&connectionId=` resume branch in the mount-time `useEffect` (separate concern: the wizard's mount-time effect that reads `URLSearchParams` for OAuth resume is now dead code). |
+| `CreateConnectionWizard.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:328-365` | EXTEND | `startOAuthHandshake` calls `openOAuthPopup` instead of `globalThis.location.assign`. On `status === "success"` the wizard advances to step 3 inline (no remount, no URL-driven resume). On `status === "popup_blocked"`: step 2 stays mounted, form state (provider selection, name, etc.) preserved, inline `Alert severity="error"` rendered above the Connect button with the DDD-15 copy *"Your browser blocked the OAuth popup. Allow popups for this site and click Connect/Reconnect again."*, Connect button re-enabled, no step advance. On `status === "cancelled"`: step 2 stays mounted, form state preserved, inline `Alert severity="info"` *"OAuth was cancelled. Click Connect to try again."*, Connect button re-enabled, no step advance. On `status === "error"`: step 2 stays mounted, form state preserved, inline `Alert severity="error"` surfacing `result.reason` (the IdP/server error code propagated through the landing-page query string per DDD-14), Connect button re-enabled, no step advance. The error/notice alert is cleared on the next Connect click before `openOAuthPopup` is re-invoked. **Draft connection persistence on retry**: the draft `WorkTrackingSystemConnection` saved by the *first* `startOAuthHandshake` call (line 1049) is **kept and reused** on retry — `startOAuthHandshake` re-uses the existing `connectionId` instead of re-saving. Rationale: per Q2 (line 1055) the draft is a hard prerequisite for the `POST /api/oauth/{provider}/connect` controller call (it needs a DB row to resolve provider config and mint the state-token's `connectionId` claim), not a "survive-the-redirect" artifact, so it must exist by the time `openOAuthPopup` is called. Moving draft creation into step 3 was considered and rejected: it would either require a temporary in-memory provider config resolver (new code path) or a backend contract change to accept a draft-less `/connect` call (out of scope for this slice). Delete the `?oauth=success&connectionId=` resume branch in the mount-time `useEffect` (separate concern: the wizard's mount-time effect that reads `URLSearchParams` for OAuth resume is now dead code). |
 | `ModifyConnectionSettings.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx` (the file `ReconnectBanner` is rendered in for edit mode) | EXTEND | Pass an `onReconnected={() => reloadConnection()}` callback into `ReconnectBanner`. `reloadConnection` already exists for the edit dialog (or is a one-line `setConnection(await fetch(...))`). The badge flip is then automatic via the existing `requiresReconnect` derivation. |
 | `OverviewDashboard.tsx` | `Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx` (the system-admin connections section) | EXTEND | Pass `onReconnected={() => refetchConnections()}` to each `ReconnectBanner`. `refetchConnections` is the existing list-page fetcher. |
 | `WorkTrackingSystemConnectionsController.GetWorkTrackingSystemConnections` | `Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs:54-72` | EXTEND (simplify) | Replace `GroupBy(...).ToDictionary(g => g.Key, g => g.OrderByDescending(...).First())` with `ToDictionary(c => c.WorkTrackingSystemConnectionId)`. The DB-level UNIQUE index (next row) makes the defensive ordering vacuous. |
@@ -1106,7 +1106,48 @@ Pattern: every overlapping component is EXTEND; only the landing page and the `u
 | `OAuthPopupComplete.test.tsx` (FE, new test) | `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.test.tsx` | CREATE NEW | Vitest: posts the expected message shape; calls `window.close`; renders fallback text when `window.opener` is null. |
 | Existing `ReconnectBanner.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx` | EXTEND | Replace `expect(window.location.assign).toHaveBeenCalledWith(...)` with `expect(openOAuthPopup).toHaveBeenCalledWith(...)`. Add cancelled / popup-blocked branches. |
 | Existing `OAuthAuthForm.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx` | EXTEND | Same substitution. |
-| Existing `CreateConnectionWizard.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx` | EXTEND | Replace the `?oauth=success&connectionId=88` resume test with a popup-success test that asserts the wizard advances to step 3 inline. The old mount-with-resume-URL behaviour is deleted. |
+| Existing `CreateConnectionWizard.test.tsx` | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx` | EXTEND | Replace the `?oauth=success&connectionId=88` resume test with a popup-success test that asserts the wizard advances to step 3 inline. The old mount-with-resume-URL behaviour is deleted. See **Test updates (DDD-14)** below for the concrete shape. |
+
+### Test updates (DDD-14) — redirect-target contract drift
+
+DDD-14 changes the OAuth callback's 302 target from `/connections/new?oauth=success&connectionId={id}` to `/oauth/popup-complete?status=success&connectionId={id}`. Two existing assertions break on that contract; one existing test is dead. Each gets a concrete plan:
+
+**1. Backend integration test — rewrite assertion to the new target.**
+`Lighthouse.Backend.Tests/OAuthControllerIntegrationTest.cs:167` today asserts the 302 `Location` equals `/connections/new?oauth=success&connectionId={SeededConnectionId}`. Rewrite to:
+
+```csharp
+Assert.That(response.Headers.Location!.ToString(),
+    Is.EqualTo($"/oauth/popup-complete?status=success&connectionId={SeededConnectionId}"));
+```
+
+The error-branch sibling assertion (today `/settings/connections?oauth=error&...`) rewrites symmetrically to `/oauth/popup-complete?status=error&reason={code}`. The integration test is the contract guard for DDD-14's controller change; deleting it would leave the new redirect target unverified.
+
+**2. E2E test — assertion removed, not rewritten.**
+`Lighthouse.E2ETests/.../OAuthConnection.spec.ts:72` today asserts the callback `Location` contains `/connections/new?oauth=success&connectionId=...`. **Remove the assertion outright** (not rewrite to the new target). Justification: the StubOAuthProvider round-trip — the only thing this assertion actually exercises end-to-end — is already covered by the backend integration test above and by the higher-level Playwright scenarios that wait for the badge flip. The landing-page 302 is now a frontend-internal contract (controller → same-origin landing → postMessage); asserting on it from Playwright would couple the E2E to an implementation detail (the exact landing-page URL) that has zero observable effect on the user. The user-observable outcome — banner disappears, badge flips to Connected — is asserted by the popup-flow scenarios.
+
+**3. `CreateConnectionWizard.test.tsx` resume-URL test — replaced, not deleted; one non-success case added.**
+Lines 846–887 today contain *"resumes on step 3 with the persisted connection when mounted with `?oauth=success&connectionId=...`"*. After DDD-14 deletes the resume URL contract, that test is dead. Replacement = **two** new cases (one success, one popup-blocked):
+
+**3a. Success-path step advance.**
+
+- **Name**: *"advances to step 3 when the OAuth popup resolves with success"*.
+- **Mock**: `vi.mock('../../../hooks/useOAuthPopup', () => ({ useOAuthPopup: () => ({ openOAuthPopup: vi.fn().mockResolvedValue({ status: 'success', connectionId: 88 }) }) }))`. (Shape mirrors the hook's `Promise<OAuthPopupResult>` contract from DDD-14.)
+- **Arrange**: render the wizard at step 2 with a stub provider selected; do **not** seed any URL query string (the mount-time `?oauth=success` branch is deleted in this slice).
+- **Act**: click the "Connect" button that wires through `startOAuthHandshake`.
+- **Assert (step advance)**: `expect(await screen.findByText(/step 3/i)).toBeVisible()` (or whatever the existing step-3 anchor is); `expect(openOAuthPopup).toHaveBeenCalledWith(expect.stringContaining('/api/oauth/jira/connect'))`.
+- **Assert (`onReconnected`)**: not applicable to the wizard's create flow — `onReconnected` is the *edit*-dialog callback (`ReconnectBanner` → `ModifyConnectionSettings`). Verification of that callback lives in `ReconnectBanner.test.tsx`'s already-listed `EXTEND` row (cancelled / popup-blocked branches), where a new case asserts `onReconnected` is invoked exactly once on `status === "success"`.
+
+**3b. Popup-blocked inline error on step 2.**
+
+- **Name**: *"renders the popup-blocked alert on step 2 and re-enables Connect when the OAuth popup is blocked"*.
+- **Mock**: same `vi.mock` shape as 3a but `mockResolvedValue({ status: 'popup_blocked' })`.
+- **Arrange**: render the wizard at step 2 with a stub provider selected.
+- **Act**: click "Connect".
+- **Assert (no step advance)**: `expect(screen.queryByText(/step 3/i)).not.toBeInTheDocument()`; the step-2 form (provider selector, name field) remains rendered.
+- **Assert (inline error)**: `expect(await screen.findByRole('alert')).toHaveTextContent(/blocked the OAuth popup/i)` — copy match guards the DDD-15 contract.
+- **Assert (Connect button re-enabled)**: `expect(screen.getByRole('button', { name: /connect/i })).toBeEnabled()`.
+
+**Why one wizard-level case, not three (cancelled + popup_blocked + error).** The hook-level unit tests (`useOAuthPopup.test.ts` row above) already cover the *return contract* for all four statuses. What 3b protects is the **wizard's UX wiring** of a non-success status into a non-advancing render path with an inline alert and an enabled Connect button. That wiring is identical for `popup_blocked`, `cancelled`, and `error` (same render branch, only the alert severity/copy differs per the EXTEND row above), so one representative case is sufficient to detect drift; tripling it would be a copy-paste tax with no incremental coverage. `popup_blocked` is the chosen representative because its copy is DDD-15-locked and most likely to be edited by future copy work, making the test the highest-value drift guard. The `cancelled` and `error` copy variants are covered transitively (same branch) and are exercised end-to-end by the Playwright popup-flow scenarios where applicable.
 
 ## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Reuse Analysis
 
@@ -1199,7 +1240,10 @@ See `docs/product/architecture/adr-011-oauth-popup-flow.md` for the rationale an
 
 - **OQ-5018-1** — Should the landing page be a **React route** (registered in the existing router) or a **static HTML file** served from `wwwroot/` directly? The latter is more robust (no React-bootstrap dependency on the popup-close path) but introduces a second rendering pipeline. **Recommendation:** React route. The route is loaded only at the *end* of the OAuth dance; if React fails to mount, the user is already in a successful tokens-persisted state — the banner re-fetch is what flips the badge. The popup will time out (90s) and the opener will re-fetch on a manual refresh. The cost of a parallel HTML pipeline (no shared types, no shared Material UI for the "you may close this window" fallback message, two test setups) outweighs the marginal robustness gain. **Decide in DELIVER.**
 - **OQ-5018-2** — Should the `useOAuthPopup` hook **automatically re-fetch the connection** on success, or leave that to the caller? **Recommendation:** leave to caller (the existing `onConnect` / `onReconnected` callback pattern). The hook stays single-responsibility. **Confirmed in this design.**
-- **OQ-5018-3** — Behaviour on Safari < 16 / iOS Safari where `window.opener` is sometimes severed by ITP even on same-origin landings? **Investigation needed in DELIVER**: gold-test against the actual oldest supported Safari per `package.json` `browserslist`. If `window.opener` is null on the landing page, the popup cannot post back; the opener will time out (90s) and surface the popup-blocked error. **Mitigation if it materialises**: switch to `BroadcastChannel` (DDD-12 alternative). The change is local to `useOAuthPopup` + `OAuthPopupComplete`; no architectural ripple. *Earned Trust check:* this is the substrate-lie scenario the popup mechanism must survive; the design must include a Playwright gold-test against Safari (Webkit driver) at DELIVER time, not just Chromium.
+- **OQ-5018-3** — Behaviour on Safari < 16 / iOS Safari where `window.opener` is sometimes severed by ITP even on same-origin landings? **Investigation needed in DELIVER**: a Playwright Webkit gold-test against the oldest Safari supported by `Lighthouse.Frontend/package.json` `browserslist`. If `window.opener` is null on the landing page, the popup cannot post back; the opener will time out (90s) and surface the popup-blocked error. *Earned Trust check:* this is the substrate-lie scenario the popup mechanism must survive — a Webkit gold-test is mandatory at DELIVER time, not just Chromium. The criterion is falsifiable as follows:
+    - **Target version**: the Webkit Playwright project pins to the oldest Safari/iOS Safari version still listed by `Lighthouse.Frontend/package.json` `browserslist` at the time the gold-test is authored. If `browserslist` later widens the floor, the gold-test must follow; if it narrows, the gold-test is *kept at the old floor for one release* and then re-pinned (so we don't silently lose coverage on users mid-migration).
+    - **Pass criterion** (all four must hold within a 5 s wall-clock budget from the *Reconnect* click): (1) `window.open` returns a non-null handle; (2) after IdP round trip and same-origin landing, the opener's `message` listener receives exactly one event with `event.origin === window.location.origin` and `event.data.type === "oauth.complete"` and `event.data.status === "success"`; (3) the popup window closes (asserted via `page.waitForEvent('close')` on the popup `Page` handle); (4) the connection row's status badge flips from `Disconnected` to `Connected` in the opener — `await expect(opener.getByTestId('connection-status-badge')).toHaveText('Connected')`.
+    - **Failure response**: if the gold-test fails — specifically, criterion (2) does not fire within 5 s while criterion (1) holds (i.e. the popup opened but the handshake never reached the opener) — **this auto-triggers the pre-approved Option B swap (BroadcastChannel) from ADR-011 with no re-review**. ADR-011 has already evaluated Option B as same-shape (same `OAuthPopupResult` contract, same call sites, change local to `useOAuthPopup` + `OAuthPopupComplete`); the architectural decision has been made conditionally, and the gold-test is the conditional. Any other failure mode — popup blocked on the test runner (criterion 1), popup-never-closes (criterion 3), badge-never-flips on a successful handshake (criterion 4) — is a *test-environment or hook bug*, not a substrate lie, and routes back through normal triage (no architectural change). **Mitigation if Option B itself fails the same gold-test**: come back through DESIGN; ADR-011's residual options (C: `window.opener.location` polling, D: server-side polling) are documented but neither is pre-approved.
 - **OQ-5018-4** — Do we add a contract test against Atlassian/Entra ID to detect their consent-screen markup changes breaking popup centring or popup-blocker heuristics? **Recommendation:** no. The popup mechanism is opaque to the IdP markup; the existing `ci_e2e.yml` `oauth-smoke` job (gated on release tags) is the safety net. The IdPs don't expose a consent-screen contract test surface.
 
 ## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Earned Trust check
@@ -1237,9 +1281,340 @@ If any probe fails in DELIVER's gold-test phase, the design refuses to ship: the
 
 ## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Upstream changes (back-propagation)
 
-None to DISCUSS. Story #5018 is a follow-on slice that surfaces a UX defect; no DISCUSS AC is invalidated. US-01 AC #4 ("the user is redirected back to the connection settings page, and the page shows `Status: Connected — OAuth (Jira Cloud)`") is honoured *more strongly* by the popup: the user no longer leaves the connection settings page at all.
+**US-01 AC #4 amended (2026-05-16, PO-confirmed: behavioural interpretation).** The original wording locked a mechanism (page-level redirect) rather than the user-observable outcome. The AC at line 50 has been rewritten to drop *"the user is redirected back to the connection settings page, and the page shows"* in favour of *"the connection settings surface shows"*. Both the slice-02 redirect implementation (user lands on the connections list page showing `Status: Connected`) and the Story #5018 popup mechanism (user stays in the edit dialog with the badge flipping live to `Status: Connected`) satisfy the amended AC. No other DISCUSS AC is invalidated by Story #5018.
 
 The `?oauth=success&connectionId=` query-string contract is internal to the frontend wizard; no DISCUSS-locked decision depends on it. DDD-14's deletion is a pure simplification.
+
+---
+
+## Review: DESIGN (Story #5018 popup reconnect) — nw-solution-architect-reviewer
+
+**Reviewer**: Atlas (nw-solution-architect-reviewer, Haiku)
+**Date**: 2026-05-16
+**Iteration**: 1
+**Verdict**: NEEDS_REVISION (conditionally approved — 2 blocking findings, 4 medium, 2 low)
+
+### Praise
+
+- `praise:` Earned Trust framework is rigorous — four substrate dependencies (popup-blocker null-check, `popup.closed` polling, `window.opener` nullness fallback, postMessage origin+type filtering) are named with falsifiable probes, each tied to a unit test or an explicit gold-test commitment in DELIVER.
+- `praise:` Safari ITP threat model is explicitly named and correctly resolved. The handshake happens on opener-origin (same as Lighthouse), not a third-party origin — ITP does not sever same-origin popup→opener channels. Known Safari < 16 random severance is pre-approved for fallback to BroadcastChannel with no architectural ripple.
+- `praise:` DDD-13 (UNIQUE index) is correctly analysed as orthogonal to the popup mechanism and migration-safe — slice-02 has not GA-shipped, so zero production-deployed duplicates exist. The slice-02 `GroupBy/OrderByDescending` defensive read collapses cleanly to plain `ToDictionary`.
+- `praise:` postMessage `targetOrigin` enforcement is two-sided: landing page sends with `targetOrigin=BaseUrl`; opener filters on `event.origin === window.location.origin`. No `targetOrigin='*'` leaks. This strengthens ADR-009 (BaseUrl) rather than introducing new attack surface.
+- `praise:` Component decomposition is minimal and focused — two CREATE NEW entries (`useOAuthPopup` ~80 LOC, `OAuthPopupComplete` ~30 LOC) with clear justification that no existing surface owns popup orchestration. Three EXTEND substitutions cleanly migrate from `globalThis.location.assign` to the shared hook.
+
+### Blocking
+
+- `issue (blocking):` **Test contract drift on the redirect target.** `Lighthouse.Backend.Tests/OAuthControllerIntegrationTest.cs:167` asserts `Location` equals `/connections/new?oauth=success&connectionId={SeededConnectionId}`. After DDD-14 the controller redirects to `/oauth/popup-complete?status=success&connectionId=...`. Similarly `Lighthouse.E2ETests/.../OAuthConnection.spec.ts:72` asserts the same old callback target. The component-decomposition table (line 1109) calls the E2E test "deleted" without saying whether the whole callback-redirect assertion goes or just the URL changes. DELIVER cannot start cleanly without a plan.
+  - **Required edit**: add a row to DDD-14 (or a dedicated "test updates" subsection) spelling out: (1) backend integration test → reassert against `/oauth/popup-complete?status=success&connectionId={id}`; (2) E2E test → state explicitly whether the callback-redirect assertion is removed (IdP round-trip is still covered by StubOAuthProvider) or rewritten to the new target.
+
+- `issue (blocking):` **Dead resume-URL test has no documented replacement.** `Lighthouse.Frontend/src/.../CreateConnectionWizard.test.tsx` lines 846–887 contain the test "resumes on step 3 with the persisted connection when mounted with `?oauth=success&connectionId=...`". DDD-14 deletes the resume contract, so this test is dead code. Feature-delta line 1109 says it is "replaced", but the replacement scenario (mock shape for `useOAuthPopup`, what step-advance assertion looks like, whether `onReconnected` is verified) is not spelled out.
+  - **Required edit**: in DDD-14, add the replacement test outline — e.g. "mocks `useOAuthPopup` to resolve `{ status: 'success', connectionId: 88 }`; asserts wizard advances to step 3 inline; asserts `onReconnected` callback is invoked when provided."
+
+### Suggestions (non-blocking, approval conditions)
+
+- `suggestion (non-blocking):` **AC #4 wording vs. observable behaviour.** Back-propagation note (lines 1238–1242) claims no DISCUSS AC is invalidated, but US-01 AC #4 reads literally: *"the user is redirected back to the connection settings page"*. The popup mechanism means the user is **not** redirected at all — the edit dialog stays mounted and the badge flips live. This is behaviourally stronger but textually divergent. Confirm with the product owner whether AC #4 is literal (needs amendment) or behavioural (already satisfied). The current "honoured *more strongly*" phrasing papers over the gap; make it explicit.
+
+- `suggestion (non-blocking):` **OQ-5018-3 Safari gold-test needs a pass/fail criterion.** ADR-011 Earned Trust row and feature-delta OQ-5018-3 commit to a Playwright Webkit probe but do not state: (a) which Safari version (tie it to `package.json` `browserslist`), (b) what "passes" means (e.g. "postMessage received and badge flips within 5 s"), (c) whether failure auto-triggers the pre-approved BroadcastChannel swap or requires re-review. Without (a)/(b)/(c) the probe is not falsifiable.
+
+- `suggestion (non-blocking):` **State-token TTL coupling.** The 90 s opener-side timeout (DDD-15, line 1084) is justified by the 15-min state-token TTL but has no code-level link to it. If state-token TTL is shortened for security in the future, the 90 s constant becomes stale and silently wrong. In DELIVER, name the constant in `useOAuthPopup.ts` with a comment referencing the state-token TTL invariant (this is one of the rare "WHY" comments CLAUDE.md allows).
+
+- `suggestion (non-blocking):` **`OAuthPopupComplete` fallback copy is silent about the auto-close race.** Fallback message "OAuth complete — you may close this window" assumes the popup *will* auto-close. If `window.opener === null` and the auto-close also fails (some browsers refuse `window.close()` on windows they didn't open), the user sees a contradictory message. Reword to something like "OAuth completed successfully. You may close this window — if it doesn't close automatically, close it manually."
+
+### Nitpick / Thought
+
+- `nitpick (non-blocking):` ADR-011 Option B (BroadcastChannel) rejection uses "recognisability cost" as the deciding factor over Option A. The technical dominance matrix (compat, testability, coupling) already decides it; the recognisability argument is team-specific and slightly weakens an otherwise data-driven ADR. Either drop it or scope it ("on this codebase, the existing OAuth surface already uses postMessage idioms — keeping Option B would force a divergent pattern").
+
+- `thought (non-blocking):` The same-origin `event.data?.type === "oauth.complete"` filter is convention-based, not a security boundary. Acceptable here because opener+popup are same-origin and trusted, but worth a one-line code comment in `useOAuthPopup` so a future reader doesn't mistake the type-check for a cryptographic guard. Pair with a Vitest case asserting an unrelated same-origin postMessage is ignored.
+
+### Priority validation (PROPOSE-mode gate)
+
+- **Q1 — Is this the largest bottleneck?** Yes. Story #5018 surfaces two real defects from manual testing of slice-02 (full-page redirect drops the user, half-baked credential rows survive as a redirect workaround). Both are evidence-cited with file/line references.
+- **Q2 — Were simpler alternatives considered?** Adequate. ADR-011 evaluates four alternatives (postMessage / BroadcastChannel / window.opener.location / server-side polling) with rejection rationales. BroadcastChannel is pre-approved as a same-shape swap, not just listed.
+- **Q3 — Constraint prioritization correct?** Yes. Safari ITP, Playwright testability, and ADR-007 (no server-side session store) frame the decision; options C and D each violate at least one.
+- **Q4 — Data-justified technology choice?** Justified. Browser-compat matrix is provided; performance is not a relevant axis here.
+
+### Approval
+
+**NEEDS_REVISION** — Architecture is sound; ADR-011 is rigorous; popup mechanism is appropriately minimal. The two blocking issues are both test-plan gaps inside DDD-14 (redirect-target test updates and the replacement for the dead resume-URL test). Resolve both inline in this file and the design is APPROVED to hand off to DISTILL.
+
+The four medium suggestions are approval conditions, not blockers — they can be addressed before DELIVER kickoff or rolled into the first DISTILL pass (PO confirmation of AC #4, falsifiable OQ-5018-3 criterion, named timeout constant, fallback copy).
+
+### Revision Response (Iteration 2)
+
+**Author**: Morgan (nw-solution-architect)
+**Date**: 2026-05-16
+
+**Addressed**:
+
+- **Blocker #1 — Test contract drift on the redirect target.** Added subsection *"Test updates (DDD-14) — redirect-target contract drift"* immediately after the component-decomposition table (see heading `### Test updates (DDD-14)`). Items 1 and 2 cover backend integration and E2E respectively:
+  - Backend integration test (`OAuthControllerIntegrationTest.cs:167`): rewritten assertion quoted verbatim — `Location` equals `/oauth/popup-complete?status=success&connectionId={SeededConnectionId}`; error-branch sibling rewritten symmetrically.
+  - E2E test (`OAuthConnection.spec.ts:72`): assertion **removed outright**, not rewritten. Justified in one line: the StubOAuthProvider round-trip is already covered by the backend integration test plus the higher-level popup-flow scenarios that observe the badge flip; the landing-page 302 is a frontend-internal contract.
+
+- **Blocker #2 — Dead resume-URL test has no documented replacement.** Same subsection, item 3 spells out the replacement test for `CreateConnectionWizard.test.tsx` lines 846–887: mock shape for `useOAuthPopup` (`vi.mock` returning `Promise<{ status: 'success', connectionId: 88 }>`), step-advance assertion via `findByText(/step 3/i)`, and an explicit note that `onReconnected` verification belongs to `ReconnectBanner.test.tsx` (already an EXTEND row in the component-decomposition table), not the wizard create-flow test.
+
+- **Medium — OQ-5018-3 falsifiability.** Expanded OQ-5018-3 in the *Open questions* section with a four-criterion pass test (popup handle non-null, single same-origin `oauth.complete` message with `status === "success"`, popup `close` event observed, badge flips to `Connected`), a 5 s wall-clock budget, an explicit Safari version pin (oldest in `Lighthouse.Frontend/package.json` `browserslist` with a one-release grace rule when the floor narrows), and an explicit failure-response decision tree: the *handshake-never-reaches-opener* criterion auto-triggers the pre-approved Option B (BroadcastChannel) swap with no re-review; other failure modes are test/hook bugs that don't escalate. Mirrored the same criterion (compactly) into ADR-011's Earned Trust table row for `window.opener` retention, so future readers of the ADR see the falsifiable contract without chasing the feature-delta.
+
+**Explicitly deferred per user instruction (out of scope for this revision — should NOT be re-flagged as ignored in any subsequent reviewer pass)**:
+
+- **Medium — AC #4 wording reconciliation** (literal "redirected back to the connection settings page" vs. behavioural). **RESOLVED 2026-05-16**: PO confirmed behavioural interpretation (Option A). US-01 AC #4 amended in place at line 50 (mechanism-specific phrasing dropped in favour of "the connection settings surface shows…"); the back-propagation note under the *Upstream changes (back-propagation)* heading rewritten to record the formal amendment. Both slice-02 (redirect) and Story #5018 (popup) now satisfy the same AC text.
+- **Medium — State-token TTL coupling / named constant for the 90 s timeout.** Deferred to DELIVER; will be captured in roadmap notes as a "name the constant in `useOAuthPopup.ts` with a one-line WHY comment referencing state-token TTL" instruction. No architectural change required.
+- **Medium — `OAuthPopupComplete` fallback copy rewording.** Also DELIVER-only copy work; no architectural change required.
+
+**Not addressed (Nitpick / Thought)**: ADR-011 Option B "recognisability cost" wording and the same-origin `oauth.complete` filter code-comment note are flagged non-blocking nitpicks; both can be picked up opportunistically during DELIVER refactor passes. No edits this iteration.
+
+**Architecture changes**: none. ADR-011's structural decisions are unchanged; the additive edit to its Earned Trust table is documentation tightening only (mirror of the OQ-5018-3 falsifiable criterion). No new ADRs, no new components, no contract shape changes.
+
+---
+
+### Re-review (Iteration 2) — nw-solution-architect-reviewer
+
+**Reviewer**: Atlas (nw-solution-architect-reviewer, Haiku)
+**Date**: 2026-05-16
+**Scope**: delta re-review only — verifies the three Iteration-1 findings Morgan addressed plus the integrity of the deferral block. Untouched DESIGN sections were already accepted in Iteration 1 and were not re-evaluated.
+**Verdict**: **APPROVED** — all blocking findings resolved; deferral boundaries respected; handoff to DISTILL unblocked.
+
+**Findings verdict (per Iteration-1 item)**:
+
+- `praise:` **Blocker #1 — CLEARED.** Backend integration test rewrite is concrete with the exact assertion code quoted (success branch + symmetrical error sibling). E2E test removal is justified with clear rationale (StubOAuthProvider round-trip already covered; landing-page 302 is frontend-internal and asserting on it would couple the E2E to an implementation detail). Forward-pointer at line 1109 connects the component-decomposition row to the new *Test updates (DDD-14)* subsection.
+- `praise:` **Blocker #2 — CLEARED.** Replacement test is fully specified, not just listed: `vi.mock` shape with `Promise<{ status, connectionId }>` return, arrange/act/assert breakdown, step-advance assertion via `findByText(/step 3/i)`, and a correct test-boundary delegation pushing `onReconnected` verification into `ReconnectBanner.test.tsx`'s already-listed EXTEND row rather than the wizard create-flow test.
+- `praise:` **Medium (OQ-5018-3) — CLEARED.** Now falsifiable on every axis: version target pinned to `Lighthouse.Frontend/package.json` `browserslist` with a one-release grace rule when the floor narrows; four observable pass criteria (popup handle non-null; single same-origin `oauth.complete` message with `status === "success"`; popup close event; badge flips to Connected) within a 5 s wall-clock budget; pre-approved failure response (handshake-never-reaches-opener auto-triggers Option B BroadcastChannel swap, no re-review); escalation path stated if Option B itself fails the same gold-test (return through DESIGN). Criterion mirrored compactly into ADR-011 Earned Trust row so the ADR is independently complete.
+
+**Deferral block integrity**: sound. The three deferred items (AC #4 → PO confirmation; 90 s constant → DELIVER; fallback copy → DELIVER) are unambiguously scoped, each assigned a target wave/owner, and protected against re-flagging with explicit "should NOT be re-flagged as ignored" language. The two Iteration-1 nitpicks (ADR-011 "recognisability cost" wording, same-origin filter code-comment) are correctly flagged as DELIVER-pickup with no structural implications.
+
+**No new architectural issues** were detected in the revised sections. ADR-011's structural decisions are unchanged; the additive Earned Trust edit is documentation tightening only.
+
+---
+
+### Iteration 3 response — wizard non-success UX symmetry (Morgan)
+
+**Trigger**: PO verification pass after Atlas's Iteration-2 approval flagged one residual gap — the `CreateConnectionWizard` EXTEND row spelled out only the success path, even though the sibling `ReconnectBanner` and `OAuthAuthForm` rows both spell out the non-success UX. Risk: drift between the three call sites during DELIVER, because the wizard's non-success UX is implicit rather than canonical.
+
+**Changes (documentation tightening only — no architectural changes)**:
+
+- `## Wave: DESIGN (Story #5018 popup reconnect) / [REF] Component decomposition (delta only)` table, `CreateConnectionWizard.tsx` EXTEND row (line ~1099): extended the change summary to spell out the wizard's UX response for `status === "popup_blocked"` (inline error, DDD-15 copy, step 2 mounted, form state preserved, Connect re-enabled), `status === "cancelled"` (inline notice, *"OAuth was cancelled. Click Connect to try again."*, same shape), and `status === "error"` (inline error surfacing `result.reason`, same shape). Added an explicit decision on the slice-02 draft `WorkTrackingSystemConnection`: **kept and reused on retry** (the draft is a hard prerequisite for the `POST /api/oauth/{provider}/connect` controller per Q2 line 1055, not a survive-the-redirect artifact, so it cannot move to step 3 without a backend contract change that is out of scope for this slice).
+- `### Test updates (DDD-14) — redirect-target contract drift`, item 3 (lines ~1128–1138): split into **3a** (success-path step advance — unchanged from Iteration 2) and **3b** (new popup-blocked wizard-level case). 3b mocks `useOAuthPopup` to resolve `{ status: 'popup_blocked' }`, asserts step 2 stays mounted, asserts the inline `role="alert"` text matches the DDD-15 copy, asserts Connect is re-enabled. Added a one-paragraph justification for why one wizard-level non-success case is sufficient (same render branch covers `cancelled` / `popup_blocked` / `error`; the hook-level unit tests already cover the return contract; `popup_blocked` is the highest-drift-risk representative because its copy is DDD-15-locked).
+
+**No changes**:
+
+- DDD-14 row at line 1083 — the row is the decision (controller redirect target migration + hook migration). Non-success UX is downstream of that decision and lives in the wizard's EXTEND row, which is now canonical.
+- ADR-011 — no structural change. The `popup_blocked` / `cancelled` / `error` branches were already part of `OAuthPopupResult` per DDD-15; the wizard's UX response to them is a component-level concern, not an architectural one.
+- US-01 AC #4 (line 50), back-propagation note (line ~1272), Iteration-1 and Iteration-2 review blocks — preserved verbatim per the revision-scope instruction.
+- Out-of-scope items from the Iteration-2 deferral block (90 s timeout constant naming, `OAuthPopupComplete` fallback copy, ADR-011 nitpicks) — still deferred to DELIVER.
+
+**Architecture changes**: none. This iteration is pure documentation tightening to bring the wizard row to parity with its two siblings (`ReconnectBanner`, `OAuthAuthForm`) and add one drift-guard test case.
+
+---
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Scope
+
+**Story:** ADO #5018 — popup-mediated OAuth reconnect (follow-on slice for `work-tracking-oauth-authentication`).
+**Acceptance Designer:** Sentinel (nw-acceptance-designer)
+**Date:** 2026-05-16
+**Density:** lean + ask-intelligent (default per `.nwave/des-config.json`).
+
+This DISTILL pass turns DDD-11..DDD-16 + ADR-011 (Option A locked, Option B pre-approved fallback) into executable RED tests against the actual Lighthouse stack (NUnit + Vitest + Playwright — pytest-bdd is not used in this repository). The slice introduces no new walking skeleton; the popup-happy-path Playwright scenario migrates the existing slice-02 walking skeleton onto the new transport.
+
+Behaviour scope:
+
+- Frontend hook contract (`useOAuthPopup`) — 7 scenarios (popup_blocked, success, wrong-origin filter, wrong-type filter, cancelled-after-close-grace, error+reason propagation, listener+interval cleanup).
+- Frontend landing page (`OAuthPopupComplete`) — 3 scenarios (success postMessage with correct `targetOrigin`, error postMessage carries `reason`, fallback render when `window.opener === null`).
+- `ReconnectBanner` migration — 5 new scenarios (popup substitution; `onReconnected` invoked exactly once on success; popup_blocked / cancelled / error inline surfaces; banner stays visible on non-success).
+- `OAuthAuthForm` migration — 4 new scenarios (popup substitution; `onConnect` invoked exactly once on success; popup_blocked / cancelled / error inline surfaces).
+- `CreateConnectionWizard` — 3a (advance to step 3 on popup success), 3b (popup_blocked alert on step 2, Connect re-enabled). Dead `?oauth=success&connectionId=` resume tests deleted (DDD-14).
+- Backend `OAuthController.Callback` — success 302 target rewrite to `/oauth/popup-complete?status=success&connectionId={id}`, symmetric error 302 target rewrite to `/oauth/popup-complete?status=error&reason={code}`.
+- Backend `OAuthCredential` UNIQUE index — additive integration test asserting that a second `INSERT` for the same `WorkTrackingSystemConnectionId` raises a DB exception (the test currently fails RED because the EF migration is DELIVER-owned; DDD-13).
+- Playwright E2E — one walking-skeleton-migration scenario (popup happy-path) and one deferral marker (OQ-5018-3 Safari Webkit gold-test → DELIVER-owned). The slice-02 callback-location assertion at `OAuthConnection.spec.ts:72` was **removed**, not rewritten (justified by DDD-14 test-updates).
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Scenario list with tags
+
+**Backend integration (NUnit, `Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs`)**
+
+| Scenario | Tags | Tier | RED? |
+|---|---|---|---|
+| `Callback_WithValidState_Redirects302ToSuccessPageAndPersistsValidCredential` (rewritten target) | `@driving_port @US-01 @Story-5018 @DDD-14` | happy | YES — actual `/connections/new?oauth=success&...`, expected `/oauth/popup-complete?status=success&...` |
+| `Callback_WhenProviderReportsError_Redirects302ToPopupCompleteErrorWithReason` (new) | `@driving_port @US-01 @Story-5018 @DDD-14 @error` | error | YES — error 302 target rewrite |
+| `OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex` (new) | `@driven_port @Story-5018 @DDD-13 @adapter-integration @real-io` | boundary | YES — UNIQUE index not yet created (EF migration DELIVER-owned) |
+
+**Frontend hook (Vitest, `Lighthouse.Frontend/src/hooks/useOAuthPopup.test.ts`) — NEW FILE**
+
+| Scenario | Tags | Tier | RED? |
+|---|---|---|---|
+| resolves with popup_blocked when window.open returns null | `@driving_port @Story-5018 @DDD-15 @error` | error | YES (scaffold throws) |
+| resolves with success when the landing page posts an oauth.complete message from the opener's origin | `@driving_port @Story-5018 @DDD-12` | happy | YES |
+| ignores messages whose origin does not match the opener origin | `@driving_port @Story-5018 @DDD-12 @DDD-16 @property` | security/property | YES |
+| ignores same-origin messages whose event.data.type is not oauth.complete | `@driving_port @Story-5018 @DDD-12 @property` | property | YES |
+| resolves with cancelled when the popup is closed by the user without sending a message | `@driving_port @Story-5018 @DDD-15 @error` | error | YES |
+| propagates error status and reason when the landing page reports an IdP error | `@driving_port @Story-5018 @error` | error | YES |
+| removes the message listener and stops polling popup.closed after resolution | `@driving_port @Story-5018 @DDD-15` | boundary (cleanup) | YES |
+
+**Frontend landing (Vitest, `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.test.tsx`) — NEW FILE**
+
+| Scenario | Tags | Tier | RED? |
+|---|---|---|---|
+| posts an oauth.complete success message to the opener with the configured target origin and closes the popup | `@US-01 @Story-5018 @DDD-12 @DDD-16` | happy | YES (scaffold throws) |
+| posts an oauth.complete error message with the reason code when the callback failed | `@Story-5018 @DDD-12 @error` | error | YES |
+| renders the fallback message and does not attempt to post when the popup has no opener | `@Story-5018 @DDD-16 @error` | error/fallback | YES |
+
+**Frontend `ReconnectBanner` (Vitest, EXTEND)**
+
+| Scenario | Tags | Tier | RED? |
+|---|---|---|---|
+| on Reconnect click, calls disconnect THEN initiateConnect with the provider key + connection id, then opens the OAuth popup with the authorization URL (rewritten) | `@US-02 @Story-5018 @DDD-14` | happy | YES — banner not yet wired to hook |
+| invokes `onReconnected` exactly once after the OAuth popup resolves with success (new) | `@US-02 @Story-5018` | happy | YES |
+| keeps the banner visible and surfaces an inline alert when the OAuth popup is blocked by the browser (new) | `@US-02 @Story-5018 @DDD-15 @error` | error | YES |
+| keeps the banner visible and surfaces an inline notice when the user cancels the OAuth popup (new) | `@US-02 @Story-5018 @DDD-15 @error` | error | YES |
+| surfaces the IdP error reason inline when the OAuth popup resolves with error (new) | `@US-02 @Story-5018 @error` | error | YES |
+
+**Frontend `OAuthAuthForm` (Vitest, EXTEND)**
+
+| Scenario | Tags | Tier | RED? |
+|---|---|---|---|
+| calls initiateConnect with prop values and opens the OAuth popup with the authorization URL on Connect click (rewritten) | `@US-01 @Story-5018 @DDD-14` | happy | YES |
+| invokes `onConnect` exactly once after the OAuth popup resolves with success (new) | `@US-01 @Story-5018` | happy | YES |
+| surfaces the popup-blocked alert and re-enables Connect when the browser blocks the OAuth popup (new) | `@US-01 @Story-5018 @DDD-15 @error` | error | YES |
+| surfaces a cancellation notice inline and re-enables Connect when the user closes the OAuth popup (new) | `@US-01 @Story-5018 @DDD-15 @error` | error | YES |
+| surfaces the IdP error reason inline when the OAuth popup resolves with error (new) | `@US-01 @Story-5018 @error` | error | YES |
+
+**Frontend `CreateConnectionWizard` (Vitest, EXTEND)**
+
+| Scenario | Tags | Tier | RED? |
+|---|---|---|---|
+| advances to step 3 when the OAuth popup resolves with success (3a, replaces resume-URL test) | `@US-01 @Story-5018 @DDD-14` | happy | YES |
+| renders the popup-blocked alert on step 2 and re-enables Connect when the OAuth popup is blocked (3b) | `@US-01 @Story-5018 @DDD-15 @error` | error | YES |
+| ~~resumes on step 3 with the persisted connection when mounted with `?oauth=success&connectionId=...`~~ | DELETED | — | dead per DDD-14 |
+| ~~deletes the draft connection when Cancel is clicked after an OAuth handshake resumes the wizard~~ | DELETED | — | dead per DDD-14 (depended on the same resume URL) |
+
+**E2E (Playwright, `Lighthouse.E2ETests/.../OAuthConnection.spec.ts`)**
+
+| Scenario | Tags | Status |
+|---|---|---|
+| Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation | `@walking_skeleton @popup-migration @driving_adapter @real-io @in-memory @US-01 @Story-5018` | `testWithAuth.skip` — RED scaffold for DELIVER |
+| Webkit gold-test for `window.opener` retention across same-origin landing | `@deferred @Story-5018 @OQ-5018-3` | `testWithAuth.skip` — explicitly deferred to DELIVER |
+| Slice-02 callback-location assertion (`/connections/new?oauth=success&...`) | — | **REMOVED** (DDD-14 test-updates item 2) |
+
+**Error-path ratio**: 13 of 23 newly-authored scenarios (across hook, landing, banner, form, wizard, backend) are error/boundary scenarios — 57%. Exceeds the 40% gate.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] WS strategy
+
+**Declaration:** *Migration of the existing slice-02 walking skeleton — no new WS scenario authored in this slice.*
+
+Slice 02 shipped a walking skeleton via `OAuthConnection.spec.ts` (Slice 01 describe block) — the full-page-redirect happy path against `StubOAuthProvider`. Story #5018 changes the transport (full-page redirect → popup) without changing the user goal (a Disconnected OAuth connection becomes Connected after consent). The DISTILL-authored `@walking_skeleton @popup-migration` scenario in `OAuthConnection.spec.ts` is the same user goal, re-expressed against the new transport; the slice-02 WS becomes obsolete once the migration completes in DELIVER (both can co-exist during the migration window).
+
+Strategy carry-over: **Strategy D (Configurable per DEVOPS env matrix)** is preserved from slice-02 — `StubOAuthProvider` for PR/main CI; real Atlassian/Entra ID in the gated `oauth-smoke` job (pre-release only). The popup mechanism is a frontend concern and does not change the env-strategy decision.
+
+WS framing complies with Dimension 5: title describes the user goal ("Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation"), not a technical layer flow. The observable outcome (badge flip without navigation) is what the stakeholder confirms.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Adapter coverage table (Mandate 6)
+
+The popup slice introduces no new driven adapter. Every driven adapter relevant to this slice already has real-I/O integration test coverage from slices 01–03 (`OAuthControllerIntegrationTest`, `OAuthCallbackCsrfIntegrationTest`, `OAuthProviderAbstractionIntegrationTest`, `JiraOAuthProviderTest`, `OAuthRefreshSingleFlightTest`). The only adapter-shaped surface this slice **touches** is the EF persistence adapter — and the new DB-level UNIQUE index gets its own real-I/O integration test (`OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex`, NUnit + InMemory EF fails RED until DELIVER adds the migration; the same test executes against real SQLite and Postgres via `ci_verifysqlite.yml` + `ci_verifypostgres.yml` once the migration lands).
+
+| Driven adapter | New real-I/O test in this slice? | Existing coverage |
+|---|---|---|
+| `LighthouseAppContext.OAuthCredentials` (EF) | YES — UNIQUE-index test (`@real-io @adapter-integration`) | Slice-02 `OAuthControllerIntegrationTest.Callback_WithValidState_...` (already exists, rewritten this slice for the 302 target) |
+| `IOAuthProvider` outbound HTTP | NO change (slice-02 adapter, untouched by this slice) | `JiraOAuthProviderTest`, `OAuthProviderRegistryTest` |
+| `IOAuthStateTokenIssuer` | NO change | `OAuthStateTokenIssuerTest`, `OAuthCallbackCsrfIntegrationTest` |
+| `ICryptoService` | NO change (existing adapter, unchanged) | Existing AES integration tests |
+
+No popup-mechanism-specific driven adapter exists. The popup's "adapter" surface (browser `window.open`, `window.opener`, `postMessage`) is browser substrate, not a Lighthouse-owned adapter. The substrate is covered by:
+- Vitest unit tests for the hook (real-jsdom-substrate; covers null `window.open`, origin filter, type filter, listener/interval cleanup).
+- The deferred Playwright Webkit gold-test (OQ-5018-3) in DELIVER for the real-Safari-ITP substrate case.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Scaffolds
+
+Two new TypeScript modules are created as RED scaffolds with the correct exported signatures and `throw new Error("Not yet implemented — RED scaffold (Story #5018 DISTILL)")` bodies. Each carries the `// SCAFFOLD: true — remove after Story #5018 DELIVER` marker for grep-driven detection at DELIVER cleanup time.
+
+| Scaffold | Path | Exports | Status |
+|---|---|---|---|
+| `useOAuthPopup` hook | `Lighthouse.Frontend/src/hooks/useOAuthPopup.ts` | `useOAuthPopup(): UseOAuthPopup`, type `OAuthPopupResult`, type `OAuthPopupStatus`, type `UseOAuthPopup` | RED scaffold |
+| `OAuthPopupComplete` landing page | `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.tsx` | `default OAuthPopupComplete` | RED scaffold |
+
+No C# scaffolds — the backend slice is additive modification of existing files (`OAuthController.Callback` redirect target update + EF migration). The integration tests fail RED against the existing production code; DELIVER's backend work is to satisfy them.
+
+Additive non-scaffold production change: `ReconnectBanner.tsx` gains a typed `onReconnected?: () => void` prop (signature-only — no behavioural change). This is required for the test file to compile against `tsc` strict mode; the prop is wired up in DELIVER. The `// SCAFFOLD: true` marker is **not** added here because the change is a permanent prop addition, not a throwaway scaffold body.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Test placement
+
+| Test type | Path | Framework | Tag pattern |
+|---|---|---|---|
+| Backend integration | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs` | NUnit 4.6 + Moq + `WebApplicationFactory<Program>` + EF InMemory | `@Story-5018 @DDD-13 / @DDD-14` (recorded in this DISTILL section; NUnit lacks native scenario tags — categories or string-match are the available conventions; the existing OAuth tests use the file/class name as the implicit category) |
+| Hook unit | `Lighthouse.Frontend/src/hooks/useOAuthPopup.test.ts` | Vitest + `renderHook` | Tags in `describe`/`it` titles where helpful; canonical tag list in this DISTILL section |
+| Landing-page unit | `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.test.tsx` | Vitest + React Testing Library + `MemoryRouter` | Same |
+| Banner extension | `Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx` | Vitest + RTL + `userEvent` | Same |
+| OAuth-form extension | `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx` | Vitest + RTL + `userEvent` | Same |
+| Wizard extension | `Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx` | Vitest + RTL + `userEvent` + `MemoryRouter` + `QueryClientProvider` | Same |
+| E2E walking-skeleton migration | `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts` (extended) | Playwright + `testWithAuth` + existing `StubOAuthProvider` env | Tags inside `test.describe` / `test(...)` title strings (existing pattern) |
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Driving Adapter coverage
+
+| Driving adapter | Surface | Coverage in this slice |
+|---|---|---|
+| `OAuthController.Callback` (HTTP, backend) | `GET /api/oauth/callback?code=...&state=...` | `OAuthControllerIntegrationTest` — success-target and error-target redirects verified via `WebApplicationFactory`; CSRF / tampered-state / missing-provider branches remain covered by slice-01/02 tests |
+| `useOAuthPopup` hook (frontend orchestrator — internal driving port for the popup transport, per DESIGN section 1181) | `openOAuthPopup(authorizationUrl): Promise<OAuthPopupResult>` | `useOAuthPopup.test.ts` — 7 scenarios covering the full `OAuthPopupResult` discriminated-union contract |
+| `OAuthPopupComplete` route component (frontend — terminal page in the popup lifecycle) | `/oauth/popup-complete?status=...&connectionId=...&reason=...` query-string contract | `OAuthPopupComplete.test.tsx` — 3 scenarios covering both success/error postMessage shapes plus the no-opener fallback |
+| `ReconnectBanner` / `OAuthAuthForm` / `CreateConnectionWizard` (frontend — three call sites that invoke the popup hook) | User click → `openOAuthPopup(...)` → branched UX response per `OAuthPopupResult.status` | Three extended Vitest test files — each call site tested for all 4 status branches it can encounter |
+
+The tests enter through driving adapters only; no internal component (e.g. the postMessage event handler internals, the `setInterval` polling timer) is asserted directly. The hook's externally-observable contract is `Promise<OAuthPopupResult>`; the production code is free to refactor internals without breaking the test suite. Mandate 1 (Hexagonal Boundary Enforcement) complies.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Pre-requisites
+
+- ADR-011 is **Accepted** (Option A locked; Option B pre-approved fallback if OQ-5018-3 fires). Confirmed.
+- DDD-11..DDD-16 are all Accepted per Iteration-3 review block; PO-amended US-01 AC #4 at line 50 makes the popup mechanism AC-equivalent to the slice-02 redirect. Confirmed.
+- `/storage/repos/Lighthouse/docs/feature/work-tracking-oauth-authentication/environments.yaml` exists and is unchanged from slice-02 (the popup slice does not require a new environment).
+- `Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts` already exports `createMockOAuthService` + `createMockApiServiceContext` — both reused. No new test factory introduced.
+- `Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory<Program>` already supports `WithTestAuthentication`; reused in `OAuthControllerIntegrationTest`. No new fixture introduced.
+- `StubOAuthProvider` test infrastructure (the env-driven test IDP) is in place from slice-02 for the Playwright walking-skeleton migration scenario. The DELIVER unskip of that scenario will need a small POM addition (a connection-edit-dialog page object) — flagged as a DELIVER task, not a DISTILL gap.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Wave decisions summary
+
+- **WS strategy**: migration of existing slice-02 walking skeleton; no new WS authored in this slice.
+- **Scenarios authored**: 23 new (13 error/boundary, 10 happy) across 7 test files (2 new Vitest test files, 3 extended Vitest test files, 1 NUnit test class extended with 2 tests, 1 Playwright spec extended with 1 WS + 1 deferral marker).
+- **Tests deleted**: 2 (`?oauth=success&connectionId=` resume-URL test in `CreateConnectionWizard.test.tsx`; sibling cancel-after-resume test that depended on the same URL contract) + 1 assertion removed from Playwright (`OAuthConnection.spec.ts:72`).
+- **Production scaffolds created**: 2 (`useOAuthPopup.ts`, `OAuthPopupComplete.tsx`) — both throw `Not yet implemented — RED scaffold (Story #5018 DISTILL)` with the `// SCAFFOLD: true` marker.
+- **Production additive change**: 1 (`ReconnectBanner` gains typed `onReconnected?: () => void` prop). Permanent — not a scaffold.
+- **RED state**: 21 failing Vitest tests, 3 failing NUnit tests; all RED for assertion-mismatch reasons (not import/compile errors). `pnpm exec tsc -b` and `pnpm biome check` both pass on the new and modified files.
+- **Deferrals**: OQ-5018-3 Safari Webkit gold-test is DELIVER-owned (one explicit `testWithAuth.skip` marker placed in `OAuthConnection.spec.ts` under `@deferred`).
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Upstream changes (back-propagation)
+
+None. The amended US-01 AC #4 at line 50 (mechanism-agnostic copy) was settled by Morgan during Iteration 2 of the DESIGN review. The back-propagation note at line ~1284 records the amendment. DISTILL does not need to revisit any upstream artifact: the scenario list above traces cleanly to DDD-11..DDD-16 + AC #4 (amended) + US-02 AC #3 (reconnect-required banner copy, preserved). No DDD entry is contradicted; no AC is left without a covering scenario.
+
+## Wave: DISTILL (Story #5018 popup reconnect) / [REF] Final review gate — verdicts and action items
+
+**Reviewers dispatched**: Sentinel (nw-acceptance-designer-reviewer, Haiku) — DISTILL artifact quality; Atlas (nw-solution-architect-reviewer, Haiku) — cross-wave DDD coverage. Eclipse (PO) and Forge (DEVOPS) skipped: this is a follow-on slice with no DISCUSS revision and no infra work, both per lean reviewer-scope decision (2026-05-16).
+
+### Sentinel — DISTILL artifact review
+
+**Verdict**: **APPROVED**. Zero blockers. Scores 9-10/10 across all eight critique dimensions (happy-path bias 9, GWT format 10, business language 10, coverage completeness 9, walking-skeleton centricity 10, priority validation 8, observable behavior 10, traceability coverage 10, walking-skeleton boundary 10). All four mandates (CM-A hexagonal boundary, CM-B business language, CM-C user journey completeness, CM-D pure-function extraction) PASS.
+
+Highlights:
+- `praise:` Error-path coverage at 57% exceeds the 40% gate; all four `OAuthPopupResult` discriminants (`success`/`error`/`cancelled`/`popup_blocked`) tested at hook level and at each call-site.
+- `praise:` Observable-behaviour assertions throughout — zero internal-state or implementation-detail assertions. Tests survive refactor.
+- `praise:` Walking-skeleton migration scenario framed on user goal ("status badge flips without page navigation"), not technical layer.
+- `praise:` Driving-port discipline clean across all test tiers; comments are clean (no banners, no Arrange/Act/Assert labels, no provenance markers).
+- `praise:` RED scaffolds correctly shaped — tests fail on assertion mismatch, not on import/compile errors. Confirmed by Vitest run: 10 failures from the new files, all `"Not yet implemented — RED scaffold"` style.
+
+### Atlas — cross-wave DDD coverage
+
+**Verdict**: **APPROVED**. Every DDD locked in DESIGN has at least one RED test that would catch a regression of that decision.
+
+| DDD | Status | Covering test(s) |
+|---|---|---|
+| DDD-11 (same-origin postMessage handshake) | **CLEARED** | Hook test (success path on opener-origin message); landing-page test (sends `oauth.complete` to opener with configured `targetOrigin`) |
+| DDD-12 (origin + message-type filter) | **CLEARED** | Hook tests — wrong-origin ignored; right-origin + wrong-type ignored. Both branches present |
+| DDD-13 (UNIQUE index + GroupBy collapse) | **CLEARED** | Backend test `OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex` — RED, will turn GREEN when DELIVER writes the EF migration |
+| DDD-14 (resume URL deleted, redirect target rewritten) | **CLEARED** | Backend integration test rewritten (success + symmetric error branches); E2E callback-location assertion REMOVED; wizard resume-URL test REPLACED with popup-success test (3a + 3b for popup-blocked) |
+| DDD-15 (popup-blocked / cancelled / 90 s guard) | **CLEARED** | Hook tests for all four statuses; wizard 3b asserts the locked DDD-15 popup-blocked copy verbatim; banner and form tests cover the same statuses at call-site level |
+| DDD-16 (fallback when `window.opener === null`) | **CLEARED** | Landing-page test asserts "you may close this window" render and that no postMessage is attempted |
+| Wizard non-success UX (Iteration-3 tightening) | **CLEARED** | 3a (success → step 3 advance) + 3b (popup-blocked → step 2 mounted, inline alert with DDD-15 copy, Connect re-enabled) |
+
+**Deferrals respected**:
+- OQ-5018-3 Webkit gold-test — marked `.skip` with `@deferred` tag in `OAuthConnection.spec.ts`. DELIVER-owned.
+- 90 s timeout constant naming — DELIVER-owned (not in DISTILL scope).
+- `OAuthPopupComplete` fallback copy refinement — DELIVER-owned.
+
+### Combined verdict
+
+**APPROVED for handoff to DELIVER.** No blockers, no follow-up DISTILL revisions required. RED-state evidence: Vitest 21F/35P across the five frontend test files; NUnit 3F/7P in `OAuthControllerIntegrationTest`; `tsc -b` zero errors; `biome check` zero issues; `dotnet build` zero warnings. All failures are assertion-style RED, not BROKEN.
 
 ---
 

@@ -5,6 +5,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface ReconnectBannerProps {
 	connection: IWorkTrackingSystemConnection;
+	onReconnected?: () => void;
 }
 
 const RECONNECT_COPY =

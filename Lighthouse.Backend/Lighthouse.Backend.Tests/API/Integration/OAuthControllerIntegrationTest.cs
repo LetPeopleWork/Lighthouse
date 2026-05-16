@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
                 Assert.That(response.Headers.Location, Is.Not.Null);
                 Assert.That(response.Headers.Location!.ToString(),
-                    Is.EqualTo($"/connections/new?oauth=success&connectionId={SeededConnectionId}"));
+                    Is.EqualTo($"/oauth/popup-complete?status=success&connectionId={SeededConnectionId}"));
             }
 
             using var verificationScope = factory.Services.CreateScope();
@@ -217,6 +217,53 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var credentialRepo = verificationScope.ServiceProvider.GetRequiredService<IRepository<OAuthCredential>>();
             var credential = credentialRepo.GetByPredicate(c => c.WorkTrackingSystemConnectionId == SeededConnectionId);
             Assert.That(credential, Is.Null);
+        }
+
+        [Test]
+        public async Task Callback_WhenProviderReportsError_Redirects302ToPopupCompleteErrorWithReason()
+        {
+            providerMock
+                .Setup(p => p.ExchangeCodeAsync("auth-code-err", It.IsAny<OAuthFlowContext>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OAuthProviderResponseException(ProviderKey, 400, "invalid_grant", "The grant has expired."));
+
+            var validState = IssueStateToken(SeededConnectionId, ProviderKey);
+
+            using var noRedirectClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+            });
+
+            var response = await noRedirectClient.GetAsync(
+                $"/api/oauth/callback?provider={ProviderKey}&code=auth-code-err&state={Uri.EscapeDataString(validState)}");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
+                Assert.That(response.Headers.Location, Is.Not.Null);
+                Assert.That(response.Headers.Location!.ToString(),
+                    Is.EqualTo("/oauth/popup-complete?status=error&reason=invalid_grant"));
+            }
+        }
+
+        [Test]
+        public void OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex()
+        {
+            SeedOAuthCredential(SeededConnectionId);
+
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            dbContext.OAuthCredentials.Add(new OAuthCredential
+            {
+                WorkTrackingSystemConnectionId = SeededConnectionId,
+                AccessToken = "duplicate-at",
+                RefreshToken = "duplicate-rt",
+                ExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            });
+
+            Assert.That(() => dbContext.SaveChanges(), Throws.Exception);
         }
 
         [Test]

@@ -10,7 +10,11 @@ import type { IOAuthService } from "../../../services/Api/OAuthService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import ReconnectBanner from "./ReconnectBanner";
 
-const originalAssign = window.location.assign;
+const openOAuthPopupMock = vi.fn();
+
+vi.mock("../../../hooks/useOAuthPopup", () => ({
+	useOAuthPopup: () => ({ openOAuthPopup: openOAuthPopupMock }),
+}));
 
 const createMockOAuthService = (): IOAuthService => ({
 	initiateConnect: vi.fn(),
@@ -34,6 +38,7 @@ const getMockConnection = (
 const renderBanner = (props: {
 	connection: IWorkTrackingSystemConnection;
 	oauthService?: IOAuthService;
+	onReconnected?: () => void;
 }) => {
 	const oauthService = props.oauthService ?? createMockOAuthService();
 	const mockApiServiceContext = createMockApiServiceContext({ oauthService });
@@ -42,7 +47,10 @@ const renderBanner = (props: {
 		oauthService,
 		...render(
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
-				<ReconnectBanner connection={props.connection} />
+				<ReconnectBanner
+					connection={props.connection}
+					onReconnected={props.onReconnected}
+				/>
 			</ApiServiceContext.Provider>,
 		),
 	};
@@ -50,21 +58,11 @@ const renderBanner = (props: {
 
 describe("ReconnectBanner", () => {
 	beforeEach(() => {
-		Object.defineProperty(window, "location", {
-			value: {
-				origin: "https://fallback.example.com",
-				assign: vi.fn(),
-			},
-			writable: true,
-		});
+		openOAuthPopupMock.mockReset();
 	});
 
 	afterEach(() => {
 		vi.clearAllMocks();
-		Object.defineProperty(window, "location", {
-			value: { ...window.location, assign: originalAssign },
-			writable: true,
-		});
 	});
 
 	it("renders the warning Alert with the required US-02 AC #3 copy when requiresReconnect is true", () => {
@@ -102,7 +100,7 @@ describe("ReconnectBanner", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("on Reconnect click, calls disconnect THEN initiateConnect with the provider key + connection id, then redirects to authorizationUrl", async () => {
+	it("on Reconnect click, calls disconnect THEN initiateConnect with the provider key + connection id, then opens the OAuth popup with the authorization URL", async () => {
 		const user = userEvent.setup();
 		const oauthService = createMockOAuthService();
 		const callOrder: string[] = [];
@@ -114,6 +112,10 @@ describe("ReconnectBanner", () => {
 			return {
 				authorizationUrl: "https://auth.atlassian.com/authorize?state=z",
 			};
+		});
+		openOAuthPopupMock.mockResolvedValue({
+			status: "success",
+			connectionId: 42,
 		});
 
 		renderBanner({
@@ -138,10 +140,121 @@ describe("ReconnectBanner", () => {
 		expect(callOrder).toEqual(["disconnect", "initiateConnect"]);
 
 		await waitFor(() => {
-			expect(window.location.assign).toHaveBeenCalledWith(
+			expect(openOAuthPopupMock).toHaveBeenCalledWith(
 				"https://auth.atlassian.com/authorize?state=z",
 			);
 		});
+	});
+
+	it("invokes onReconnected exactly once after the OAuth popup resolves with success", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.disconnect).mockResolvedValue(undefined);
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=z",
+		});
+		openOAuthPopupMock.mockResolvedValue({
+			status: "success",
+			connectionId: 42,
+		});
+		const onReconnected = vi.fn();
+
+		renderBanner({
+			connection: getMockConnection({ requiresReconnect: true }),
+			oauthService,
+			onReconnected,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Reconnect/i }));
+
+		await waitFor(() => {
+			expect(onReconnected).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	it("keeps the banner visible and surfaces an inline alert when the OAuth popup is blocked by the browser", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.disconnect).mockResolvedValue(undefined);
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=z",
+		});
+		openOAuthPopupMock.mockResolvedValue({ status: "popup_blocked" });
+		const onReconnected = vi.fn();
+
+		renderBanner({
+			connection: getMockConnection({ requiresReconnect: true }),
+			oauthService,
+			onReconnected,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Reconnect/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/blocked the OAuth popup/i)).toBeInTheDocument();
+		});
+
+		expect(onReconnected).not.toHaveBeenCalled();
+		expect(
+			screen.getByText(
+				/Reconnect required — the OAuth refresh token is no longer valid/i,
+			),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Reconnect/i })).toBeEnabled();
+	});
+
+	it("keeps the banner visible and surfaces an inline notice when the user cancels the OAuth popup", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.disconnect).mockResolvedValue(undefined);
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=z",
+		});
+		openOAuthPopupMock.mockResolvedValue({ status: "cancelled" });
+		const onReconnected = vi.fn();
+
+		renderBanner({
+			connection: getMockConnection({ requiresReconnect: true }),
+			oauthService,
+			onReconnected,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Reconnect/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/cancelled/i)).toBeInTheDocument();
+		});
+
+		expect(onReconnected).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: /Reconnect/i })).toBeEnabled();
+	});
+
+	it("surfaces the IdP error reason inline when the OAuth popup resolves with error", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.disconnect).mockResolvedValue(undefined);
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=z",
+		});
+		openOAuthPopupMock.mockResolvedValue({
+			status: "error",
+			reason: "invalid_grant",
+		});
+		const onReconnected = vi.fn();
+
+		renderBanner({
+			connection: getMockConnection({ requiresReconnect: true }),
+			oauthService,
+			onReconnected,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Reconnect/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/invalid_grant/i)).toBeInTheDocument();
+		});
+
+		expect(onReconnected).not.toHaveBeenCalled();
 	});
 
 	it("disables the Reconnect button while the disconnect-then-reconnect flow is in flight", async () => {

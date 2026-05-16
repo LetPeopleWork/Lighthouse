@@ -68,9 +68,6 @@ test.describe("Slice 01 — Jira OAuth", () => {
 
 			expect(callback.status).toBeGreaterThanOrEqual(300);
 			expect(callback.status).toBeLessThan(400);
-			expect(callback.location).toContain(
-				`/connections/new?oauth=success&connectionId=${connection.id}`,
-			);
 
 			await request.delete(
 				`/api/latest/worktrackingsystemconnections/${connection.id}`,
@@ -163,4 +160,28 @@ test.describe("Pre-release smoke (real IdPs)", () => {
 		// OAUTH_SMOKE_BASE_URL. Runs ONLY in ci_oauth_integration_smoke.yml.
 		throw new Error("Not yet implemented — RED scaffold");
 	});
+});
+
+test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking skeleton)", () => {
+	testWithAuth.skip(
+		"[@walking_skeleton @popup-migration @driving_adapter @real-io @in-memory @US-01 @Story-5018] Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation",
+		async () => {
+			// TODO(DELIVER Story #5018): open the connection edit dialog for a Disconnected
+			// OAuth connection; click Reconnect; complete the StubOAuthProvider dance inside
+			// the popup window; assert the popup closes; assert the opener's status badge
+			// flips from Disconnected to Connected without a page navigation.
+			throw new Error("Not yet implemented — RED scaffold (Story #5018 DISTILL)");
+		},
+	);
+
+	testWithAuth.skip(
+		"[@deferred @Story-5018 @OQ-5018-3] Webkit gold-test for window.opener retention across same-origin landing (Safari ITP) — DELIVER-owned",
+		async () => {
+			// DEFERRED to DELIVER per Story #5018 OQ-5018-3:
+			// the Safari/iOS Safari Webkit project is configured in DELIVER; failure on
+			// the handshake-never-reaches-opener criterion auto-triggers the pre-approved
+			// Option B (BroadcastChannel) swap from ADR-011. NOT in this DISTILL pass.
+			throw new Error("Deferred to DELIVER — see feature-delta OQ-5018-3");
+		},
+	);
 });

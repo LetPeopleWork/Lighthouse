@@ -6,7 +6,11 @@ import type { IOAuthService } from "../../../services/Api/OAuthService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import OAuthAuthForm from "./OAuthAuthForm";
 
-const originalAssign = window.location.assign;
+const openOAuthPopupMock = vi.fn();
+
+vi.mock("../../../hooks/useOAuthPopup", () => ({
+	useOAuthPopup: () => ({ openOAuthPopup: openOAuthPopupMock }),
+}));
 
 const createMockOAuthService = (): IOAuthService => ({
 	initiateConnect: vi.fn(),
@@ -19,6 +23,7 @@ const renderForm = (props: {
 	providerKey: string;
 	baseUrl: string | null;
 	oauthService: IOAuthService;
+	onConnect?: () => void;
 }) => {
 	const mockApiServiceContext = createMockApiServiceContext({
 		oauthService: props.oauthService,
@@ -30,6 +35,7 @@ const renderForm = (props: {
 				connectionId={props.connectionId}
 				providerKey={props.providerKey}
 				baseUrl={props.baseUrl}
+				onConnect={props.onConnect}
 			/>
 		</ApiServiceContext.Provider>,
 	);
@@ -37,6 +43,7 @@ const renderForm = (props: {
 
 describe("OAuthAuthForm", () => {
 	beforeEach(() => {
+		openOAuthPopupMock.mockReset();
 		Object.defineProperty(window, "location", {
 			value: {
 				origin: "https://fallback.example.com",
@@ -48,10 +55,6 @@ describe("OAuthAuthForm", () => {
 
 	afterEach(() => {
 		vi.clearAllMocks();
-		Object.defineProperty(window, "location", {
-			value: { ...window.location, assign: originalAssign },
-			writable: true,
-		});
 	});
 
 	it("renders a read-only callback URL and a Connect button when baseUrl is set", () => {
@@ -98,11 +101,15 @@ describe("OAuthAuthForm", () => {
 		);
 	});
 
-	it("calls initiateConnect with prop values and redirects via window.location.assign on Connect click", async () => {
+	it("calls initiateConnect with prop values and opens the OAuth popup with the authorization URL on Connect click", async () => {
 		const user = userEvent.setup();
 		const oauthService = createMockOAuthService();
 		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
 			authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+		});
+		openOAuthPopupMock.mockResolvedValue({
+			status: "success",
+			connectionId: 42,
 		});
 
 		renderForm({
@@ -122,10 +129,119 @@ describe("OAuthAuthForm", () => {
 		});
 
 		await waitFor(() => {
-			expect(window.location.assign).toHaveBeenCalledWith(
+			expect(openOAuthPopupMock).toHaveBeenCalledWith(
 				"https://auth.atlassian.com/authorize?state=xyz",
 			);
 		});
+	});
+
+	it("invokes onConnect exactly once after the OAuth popup resolves with success", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+		});
+		openOAuthPopupMock.mockResolvedValue({
+			status: "success",
+			connectionId: 42,
+		});
+		const onConnect = vi.fn();
+
+		renderForm({
+			connectionId: 42,
+			providerKey: "jira.oauth",
+			baseUrl: "https://lighthouse.example.com",
+			oauthService,
+			onConnect,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Connect/i }));
+
+		await waitFor(() => {
+			expect(onConnect).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	it("surfaces the popup-blocked alert and re-enables Connect when the browser blocks the OAuth popup", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+		});
+		openOAuthPopupMock.mockResolvedValue({ status: "popup_blocked" });
+		const onConnect = vi.fn();
+
+		renderForm({
+			connectionId: 42,
+			providerKey: "jira.oauth",
+			baseUrl: "https://lighthouse.example.com",
+			oauthService,
+			onConnect,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Connect/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/blocked the OAuth popup/i)).toBeInTheDocument();
+		});
+
+		expect(onConnect).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: /Connect/i })).toBeEnabled();
+	});
+
+	it("surfaces a cancellation notice inline and re-enables Connect when the user closes the OAuth popup", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+		});
+		openOAuthPopupMock.mockResolvedValue({ status: "cancelled" });
+		const onConnect = vi.fn();
+
+		renderForm({
+			connectionId: 42,
+			providerKey: "jira.oauth",
+			baseUrl: "https://lighthouse.example.com",
+			oauthService,
+			onConnect,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Connect/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/cancelled/i)).toBeInTheDocument();
+		});
+
+		expect(onConnect).not.toHaveBeenCalled();
+	});
+
+	it("surfaces the IdP error reason inline when the OAuth popup resolves with error", async () => {
+		const user = userEvent.setup();
+		const oauthService = createMockOAuthService();
+		vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+			authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+		});
+		openOAuthPopupMock.mockResolvedValue({
+			status: "error",
+			reason: "invalid_grant",
+		});
+		const onConnect = vi.fn();
+
+		renderForm({
+			connectionId: 42,
+			providerKey: "jira.oauth",
+			baseUrl: "https://lighthouse.example.com",
+			oauthService,
+			onConnect,
+		});
+
+		await user.click(screen.getByRole("button", { name: /Connect/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/invalid_grant/i)).toBeInTheDocument();
+		});
+
+		expect(onConnect).not.toHaveBeenCalled();
 	});
 
 	it("disables Connect button while initiateConnect is in flight", async () => {

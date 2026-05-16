@@ -143,7 +143,7 @@ Each new substrate dependency has an explicit probe:
 |---|---|---|
 | `window.open` returns a usable popup handle | Popup blocker returns null silently | `useOAuthPopup` checks for null → surfaces `popup_blocked`. Unit-tested. |
 | Popup actually closes after consent | User closes manually mid-flow; IdP error page | `setInterval(() => popup.closed, 500)` with a 90s guard → surfaces `cancelled`. Unit-tested. |
-| `window.opener` retained across same-origin landing | Safari ITP severs reference | `OAuthPopupComplete` falls back to "you may close this window" if `window.opener` is null; opener-side timeout surfaces `popup_blocked`. **Playwright Webkit gold-test required in DELIVER (OQ-5018-3).** |
+| `window.opener` retained across same-origin landing | Safari ITP severs reference | `OAuthPopupComplete` falls back to "you may close this window" if `window.opener` is null; opener-side timeout surfaces `popup_blocked`. **Playwright Webkit gold-test required in DELIVER (OQ-5018-3)** — targets the oldest Safari per `Lighthouse.Frontend/package.json` `browserslist`; passes when the opener receives `oauth.complete` with `status === "success"` and the connection badge flips to `Connected` within 5 s of the *Reconnect* click; failure on that specific handshake-never-reaches-opener criterion auto-triggers the Option B swap below (no re-review). |
 | `postMessage` target-origin enforcement | Wrong `targetOrigin` leaks to malicious frame | Landing page uses BaseUrl as `targetOrigin`; opener filters `event.origin === window.location.origin`. Wrong-origin and wrong-type messages dropped. Unit-tested. |
 
 If the Webkit gold-test fails, Option B (BroadcastChannel) is the pre-approved swap — change is local to the hook + landing page.
