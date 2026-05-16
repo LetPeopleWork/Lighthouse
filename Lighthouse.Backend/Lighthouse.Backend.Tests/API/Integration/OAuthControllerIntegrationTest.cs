@@ -61,6 +61,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     {
                         services.RemoveAll<IOAuthProvider>();
                         services.AddSingleton(providerMock.Object);
+                        services.AddSingleton(CreateInertProvider(AuthenticationMethodKeys.AzureDevOpsOAuth));
 
                         services.RemoveAll<ICryptoService>();
                         services.AddSingleton<ICryptoService, FakeCryptoService>();
@@ -358,6 +359,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ? (payload[0] == 'A' ? 'B' : 'A') + payload[1..]
                 : "A";
             return $"{tamperedPayload}.{hash}";
+        }
+
+        private static IOAuthProvider CreateInertProvider(string providerKey)
+        {
+            var inert = new Mock<IOAuthProvider>();
+            inert.SetupGet(p => p.ProviderKey).Returns(providerKey);
+            inert.SetupGet(p => p.DefaultScopes).Returns(Array.Empty<string>());
+            return inert.Object;
         }
     }
 }

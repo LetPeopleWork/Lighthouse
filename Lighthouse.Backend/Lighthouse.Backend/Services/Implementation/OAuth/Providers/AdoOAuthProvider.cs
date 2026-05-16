@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,6 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
     {
         public const string HttpClientName = "AdoOAuth";
 
-        private const string ProviderKeyValue = "ado.oauth";
         private const string MicrosoftAuthorizeEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
         private const string MicrosoftTokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
         private const string ResponseTypeCode = "code";
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
             this.logger = logger;
         }
 
-        public string ProviderKey => ProviderKeyValue;
+        public string ProviderKey => AuthenticationMethodKeys.AzureDevOpsOAuth;
 
         public IReadOnlyList<string> DefaultScopes => AzureDevOpsDefaultScopes;
 

@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class AuthenticationMethodSchemaTest
     {
         [Test]
-        [TestCase(WorkTrackingSystems.AzureDevOps, 1)]
+        [TestCase(WorkTrackingSystems.AzureDevOps, 2)]
         [TestCase(WorkTrackingSystems.Jira, 4)]
         [TestCase(WorkTrackingSystems.Linear, 1)]
         [TestCase(WorkTrackingSystems.Csv, 1)]
@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [Test]
         [TestCase(WorkTrackingSystems.AzureDevOps, AuthenticationMethodKeys.AzureDevOpsPat, "Personal Access Token")]
+        [TestCase(WorkTrackingSystems.AzureDevOps, "ado.oauth", "Azure DevOps (OAuth)")]
         [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraCloud, "Jira Cloud (API Token)")]
         [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraDataCenter, "Jira Data Center (Personal Access Token)")]
         [TestCase(WorkTrackingSystems.Jira, AuthenticationMethodKeys.JiraScopedToken, "Jira Cloud (Scoped Access Token)")]
@@ -152,6 +153,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var oauthKeys = AuthenticationMethodSchema.GetOAuthProviderKeys();
 
             Assert.That(oauthKeys, Contains.Item(AuthenticationMethodKeys.JiraOAuth));
+        }
+
+        [Test]
+        [TestCase(AuthenticationMethodKeys.AzureDevOpsPat, false)]
+        [TestCase("ado.oauth", true)]
+        public void GetMethodByKey_AzureDevOps_HasExpectedIsPremiumFlag(string methodKey, bool expectedIsPremium)
+        {
+            var method = AuthenticationMethodSchema.GetMethodByKey(WorkTrackingSystems.AzureDevOps, methodKey);
+
+            Assert.That(method, Is.Not.Null);
+            Assert.That(method!.IsPremium, Is.EqualTo(expectedIsPremium));
+        }
+
+        [Test]
+        public void GetMethodByKey_AdoOAuth_HasUrlClientIdAndClientSecretOptions()
+        {
+            var method = AuthenticationMethodSchema.GetMethodByKey(WorkTrackingSystems.AzureDevOps, "ado.oauth");
+
+            Assert.That(method, Is.Not.Null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(method!.Options, Has.Count.EqualTo(3));
+
+                var url = method.Options.Single(o => o.Key == Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url);
+                Assert.That(url.DisplayName, Is.EqualTo("Organization URL"));
+                Assert.That(url.IsSecret, Is.False);
+
+                var clientId = method.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientId);
+                Assert.That(clientId.DisplayName, Is.EqualTo("Client ID"));
+                Assert.That(clientId.IsSecret, Is.False);
+
+                var clientSecret = method.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientSecret);
+                Assert.That(clientSecret.DisplayName, Is.EqualTo("Client Secret"));
+                Assert.That(clientSecret.IsSecret, Is.True);
+            }
+        }
+
+        [Test]
+        public void GetOAuthProviderKeys_AfterAdoOAuthEntryAdded_ContainsAdoOAuth()
+        {
+            var oauthKeys = AuthenticationMethodSchema.GetOAuthProviderKeys();
+
+            Assert.That(oauthKeys, Contains.Item("ado.oauth"));
         }
     }
 }

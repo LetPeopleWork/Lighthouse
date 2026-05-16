@@ -49,6 +49,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
                             new AuthenticationMethodOption { Key = AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url, DisplayName = "Organization URL", IsSecret = false },
                             new AuthenticationMethodOption { Key = AzureDevOps.AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, DisplayName = "Personal Access Token", IsSecret = true }
                         ]
+                    },
+                    new AuthenticationMethod
+                    {
+                        Key = AuthenticationMethodKeys.AzureDevOpsOAuth,
+                        DisplayName = "Azure DevOps (OAuth)",
+                        IsPremium = true,
+                        Options =
+                        [
+                            new AuthenticationMethodOption { Key = AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url, DisplayName = "Organization URL", IsSecret = false },
+                            new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientId, DisplayName = "Client ID", IsSecret = false },
+                            new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientSecret, DisplayName = "Client Secret", IsSecret = true }
+                        ]
                     }
                 ]
             },

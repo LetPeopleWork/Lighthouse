@@ -5,6 +5,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
         // Azure DevOps
         public const string AzureDevOpsPat = "ado.pat";
 
+        public const string AzureDevOpsOAuth = "ado.oauth";
+
         // Jira
         public const string JiraCloud = "jira.cloud";
 
