@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.API
             try
             {
                 var result = await oauthService.CompleteAsync(code, state, cancellationToken);
-                return Redirect($"/connections/new?oauth=success&connectionId={result.ConnectionId}");
+                return Redirect($"/oauth/popup-complete?status=success&connectionId={result.ConnectionId}");
             }
             catch (OAuthStateTokenInvalidException ex)
             {
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.API
             catch (OAuthProviderResponseException ex)
             {
                 logger.LogWarning(ex, "oauth.flow.failed {ProviderKey} {IdpErrorCode}", ex.ProviderKey, ex.IdpErrorCode);
-                return Redirect($"/settings/connections?oauth=error&reason={Uri.EscapeDataString(ex.IdpErrorCode)}");
+                return Redirect($"/oauth/popup-complete?status=error&reason={Uri.EscapeDataString(ex.IdpErrorCode)}");
             }
         }
 
