@@ -15,8 +15,6 @@
 #       → Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs
 #   - "Concurrent syncs trigger at most one refresh (single-flight)" (Slice 02, re-layered 2026-05-14)
 #       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs
-#   - "Standalone exposes no /api/oauth/* route" (Slice 04, re-layered 2026-05-14)
-#       → Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs
 #   - "Access token is refreshed silently before its expiry" (Slice 02, re-layered 2026-05-15)
 #       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs (5 unit tests for cached-path / refresh-window / double-check / semaphore-timeout / log event)
 #         + Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs (BI-3, 32-concurrent load proves "exactly once")
@@ -148,24 +146,6 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
       Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.tsx (label only)
       """
     And no diff in OAuthController, OAuthService, OAuthCredential, OAuthTokenRefreshService, or the EF context
-
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # Slice 04 — Standalone-mode guard (US-04, frontend-only)
-  # ─────────────────────────────────────────────────────────────────────────
-
-  @real-io @in-memory @US-04
-  Scenario: Standalone (Tauri) mode renders the OAuth dropdown option disabled with explanatory tooltip
-    Given the app is running in standalone (Tauri) mode
-    When the SystemAdmin opens any work-tracking-system connector form
-    Then every "OAuth (...)" entry in the authentication-method dropdown is rendered with the disabled attribute set
-    And hovering a disabled OAuth entry shows the tooltip "OAuth authentication requires the server version of Lighthouse. Learn more →"
-    And the "Learn more" link points to the docs page "/docs/server-vs-standalone"
-
-  # Note: "Standalone exposes no /api/oauth/* route" is an implementation invariant
-  # (route-table absence) moved to Lighthouse.Backend.Tests/API/Integration/
-  # OAuthStandaloneModeRouteRejectionIntegrationTest.cs. The user-facing scenario
-  # above (disabled dropdown + tooltip) is the user-observable acceptance coverage.
 
 
   # ─────────────────────────────────────────────────────────────────────────

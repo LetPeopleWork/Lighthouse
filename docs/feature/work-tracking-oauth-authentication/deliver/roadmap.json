@@ -11,8 +11,8 @@
       "slice-01-jira-oauth": "phase-01 (16 steps, +1 for the 2026-05-14 IOAuthProvider.RefreshTokenAsync signature correction)",
       "slice-02-token-refresh": "phase-02 (9 steps, OAuth Health tile folded in per OQ-DV1 resolution 2026-05-14)",
       "slice-03-ado-oauth": "phase-03 (6 steps)",
-      "slice-04-standalone-guard": "phase-04 (4 steps)",
-      "release-readiness": "phase-05 (4 steps, cross-slice CI + docs + OAuthStateSecret persistence)"
+      "release-readiness": "phase-05 (4 steps, cross-slice CI + docs + OAuthStateSecret persistence)",
+      "_removed_slices_": "slice-04-standalone-guard removed 2026-05-16 — see feature-delta.md post-DELIVER section"
     }
   },
   "validation": {
@@ -28,14 +28,12 @@
     "backend_integration_tests": [
       "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs",
       "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs",
-      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs",
-      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs"
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs"
     ],
     "slice_briefs": [
       "docs/feature/work-tracking-oauth-authentication/slices/slice-01-jira-oauth.md",
       "docs/feature/work-tracking-oauth-authentication/slices/slice-02-token-refresh.md",
-      "docs/feature/work-tracking-oauth-authentication/slices/slice-03-ado-oauth.md",
-      "docs/feature/work-tracking-oauth-authentication/slices/slice-04-standalone-guard.md"
+      "docs/feature/work-tracking-oauth-authentication/slices/slice-03-ado-oauth.md"
     ],
     "adrs": [
       "docs/product/architecture/adr-007-oauth-provider-registry.md",
@@ -51,7 +49,6 @@
     "Per-user OAuth (DISCUSS D9 \u2014 connection-level only).",
     "OAuth for the Lighthouse app login (handled by the existing OIDC feature).",
     "OAuth for Linear, GitHub, or any third future provider (abstraction is built and proven by BI-1, but no third concrete provider ships in this feature).",
-    "Standalone-mode OAuth backend support (DISCUSS D2 + US-04 \u2014 frontend guard only).",
     "OAuth-app registration automation (admin always registers in Atlassian/Microsoft first).",
     "Token introspection / proactive revocation endpoints.",
     "Bespoke audit-log events beyond what LighthouseAppContext change-tracking already provides plus the 8 structured ILogger events.",
@@ -1059,117 +1056,6 @@
           "estimated_hours": 1.0,
           "deliverables": [
             "docs/integrations/oauth-ado.md (new)"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "04",
-      "name": "Slice 04 \u2014 Standalone-mode guard",
-      "description": "Frontend-only (US-04) \u2014 disables OAuth dropdown options in standalone (Tauri) mode with explanatory tooltip + Learn more link. Also lands the BI-4 invariant (zero /api/oauth/* routes in standalone-mode backend).",
-      "steps": [
-        {
-          "id": "04-01",
-          "name": "AuthMethodDropdown standalone-mode disabled state + tooltip + Learn more link",
-          "description": "RED: extend AuthMethodDropdown.test.tsx to assert: when runtime-mode is 'standalone', every entry with key.endsWith('.oauth') is rendered with disabled attribute set + tooltip 'OAuth authentication requires the server version of Lighthouse. Learn more \u2192' + the Learn-more link points to /docs/server-vs-standalone. GREEN: extend AuthMethodDropdown.tsx to read the existing standalone-vs-server runtime flag (per brief.md rbac-enhancements OIDC precedent) and render OAuth entries as disabled-with-tooltip in standalone mode. COMMIT: `feat(oauth): disable OAuth entries in standalone mode with explanatory tooltip`.",
-          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.test.tsx",
-          "scenario_name": "Standalone-mode OAuth dropdown is disabled with tooltip (US-04 AC #1-2)",
-          "red_to_green_tests": [
-            "Every *.oauth entry is disabled in standalone mode",
-            "Hover tooltip text matches US-04 AC #2 wording",
-            "Learn more link points to /docs/server-vs-standalone"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.test.tsx"
-          ],
-          "dependencies": [],
-          "criteria": [
-            "Disabled state + tooltip + Learn-more link rendered in standalone mode.",
-            "No backend code touched (US-04 AC #3 invariant \u2014 verified at diff review)."
-          ],
-          "estimated_hours": 1.0,
-          "deliverables": [
-            "AuthMethodDropdown.tsx + .test.tsx (modified)"
-          ]
-        },
-        {
-          "id": "04-02",
-          "name": "StandaloneModeTestWebApplicationFactory + Lighthouse:Mode runtime flag (skip OAuth controller registration)",
-          "description": "RED: BI-4 (OAuthStandaloneModeRouteRejectionIntegrationTest) is the consumer \u2014 its two tests assert POST /api/oauth/jira.oauth/connect and GET /api/oauth/callback both return 404 when the WAF is configured for standalone mode. GREEN: implement StandaloneModeTestWebApplicationFactory.ConfigureWebHost to set Lighthouse:Mode=Standalone via UseSetting. Add a check in Program.cs that skips OAuthController registration (and related DI) when Lighthouse:Mode==Standalone. Verify the legitimate server-mode WAF still registers everything correctly. COMMIT: `feat(oauth): skip OAuth controller registration in standalone mode`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs",
-          "scenario_name": "Standalone mode does not register OAuth controller (US-04 AC #3 invariant \u2014 implementation)",
-          "red_to_green_tests": [
-            "In standalone mode, POST /api/oauth/jira.oauth/connect returns 404 (route absent, not 405 from guard)",
-            "In standalone mode, GET /api/oauth/callback returns 404",
-            "In server mode, both routes are reachable (regression)"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs"
-          ],
-          "dependencies": [
-            "01-10"
-          ],
-          "criteria": [
-            "Lighthouse:Mode runtime flag respected by Program.cs.",
-            "Server-mode regression-pass."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "Program.cs (modified \u2014 +standalone-mode skip path)",
-            "OAuthStandaloneModeRouteRejectionIntegrationTest.cs (modified \u2014 WAF factory body filled in)"
-          ]
-        },
-        {
-          "id": "04-03",
-          "name": "Drive BI-4 to green (unignore both standalone route rejection tests)",
-          "description": "RED: BI-4 already has two [Ignore]'d tests. Remove [Ignore] on both. Verify they pass against the implementation from step 04-02. GREEN: drive any gaps. COMMIT: `test(oauth): drive BI-4 standalone route rejection tests to green`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs",
-          "scenario_name": "BI-4: zero /api/oauth/* routes in standalone-mode backend",
-          "red_to_green_tests": [
-            "Both BI-4 [Ignore]'d tests now green"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs"
-          ],
-          "dependencies": [
-            "04-02"
-          ],
-          "criteria": [
-            "Both [Ignore] removed; both tests green.",
-            "Confirms US-04 AC #3 invariant via integration test."
-          ],
-          "estimated_hours": 0.5,
-          "deliverables": [
-            "OAuthStandaloneModeRouteRejectionIntegrationTest.cs (modified \u2014 fully unignored)"
-          ]
-        },
-        {
-          "id": "04-04",
-          "name": "Drive Playwright scenario 10 to green + docs/server-vs-standalone page",
-          "description": "RED: unskip Playwright scenario 10 (standalone disabled dropdown). Implement body per TODO. GREEN: drive any gaps. Write `docs/server-vs-standalone.md` explaining the difference + why OAuth is server-only. COMMIT: `test(oauth): unskip Playwright scenario 10 + add server-vs-standalone docs`.",
-          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
-          "scenario_name": "Playwright 10: standalone OAuth dropdown disabled + tooltip",
-          "red_to_green_tests": [
-            "Scenario 10 green against the standalone Tauri build"
-          ],
-          "files_to_modify": [
-            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
-            "docs/server-vs-standalone.md"
-          ],
-          "dependencies": [
-            "04-01",
-            "04-03"
-          ],
-          "criteria": [
-            "Scenario 10 green in ci_e2e.yml AND ci_verifymacos.yml / ci_verifywindows.yml standalone packaging workflows (Forge medium #3 follow-through).",
-            "Docs page links from the standalone-mode tooltip's Learn-more URL."
-          ],
-          "estimated_hours": 1.0,
-          "deliverables": [
-            "OAuthConnection.spec.ts (modified \u2014 scenario 10)",
-            "docs/server-vs-standalone.md (new)"
           ]
         }
       ]

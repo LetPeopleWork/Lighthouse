@@ -1,8 +1,8 @@
 # Feature Delta — work-tracking-oauth-authentication
 
 **Source**: Azure DevOps Epic [#2438 — Work Tracking System OAuth Authentication](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/2438)
-**Child stories**: #4967 (Jira OAuth), #4968 (token refresh), #4969 (ADO OAuth), #4970 (standalone guard), #4971 (provider-agnostic refactor), #4972 (callback BaseUrl)
-**License gate**: **Premium-only** for both Jira and Azure DevOps OAuth; **server-mode only** (standalone Tauri builds show the option disabled per US-04).
+**Child stories**: #4967 (Jira OAuth), #4968 (token refresh), #4969 (ADO OAuth), #4971 (provider-agnostic refactor), #4972 (callback BaseUrl). _#4970 (standalone guard) was removed 2026-05-16 — see the post-DELIVER note at the bottom of this file._
+**License gate**: **Premium-only** for both Jira and Azure DevOps OAuth.
 **Density**: lean + ask-intelligent (`~/.nwave/global-config.json`)
 
 ---
@@ -22,7 +22,7 @@ Job traceability: `job-oauth-work-tracking-credentials` (added to `docs/product/
 | ID | Decision | Verdict | Source |
 |---|---|---|---|
 | D1 | OAuth is **premium-license-gated** for both Jira and ADO connectors | Locked | Epic 2438 body: "OAuth for Jira/ADO (or in general) should only be available with Premium License" |
-| D2 | OAuth is **server-mode only**; standalone (Tauri desktop) shows the option disabled with explanatory tooltip | Locked | Epic 2438 body + Story 4970 |
+| D2 | ~~OAuth is **server-mode only**; standalone (Tauri desktop) shows the option disabled with explanatory tooltip~~ | **Reversed 2026-05-16** — see post-DELIVER note. Standalone users may attempt OAuth at their own risk; no UI guard. | Originally: Epic 2438 body + Story 4970 |
 | D3 | OAuth is **provider-agnostic**: `IOAuthProvider` port, DI-registered, configuration + credential keyed by **provider name string** (not enum) so new providers add zero migrations | Locked | Story 4971 |
 | D4 | Callback URL displayed in the form is derived from a server-configured **`BaseUrl`** setting, NOT from the request origin. Validation warning when `BaseUrl` is unset | Locked | Story 4972 |
 | D5 | Refresh tokens are stored and rotated automatically on a **pre-request expiry check** (refresh if expiry within 5 minutes). Failed refresh marks credential `RefreshFailed` and surfaces a reconnect banner | Locked | Story 4968 |
@@ -96,19 +96,7 @@ AC #5 ("Bearer header on outbound Jira call, returns work items successfully") i
 
 ---
 
-### US-04 — Standalone mode explains why OAuth is unavailable (ADO #4970)
-
-> As a `connector-admin` running the **standalone** (Tauri desktop) build of Lighthouse, I want the connector auth-type dropdown to show OAuth as a disabled option with an explanation so that I understand the constraint and either accept the PAT path or switch to the server build.
-
-#### Elevator Pitch
-- **Before**: a standalone-mode user opens the connector form, sees no OAuth option, and either thinks Lighthouse doesn't support OAuth at all or files a support ticket.
-- **After**: standalone users see the OAuth option in the dropdown rendered **disabled**, with hover-tooltip text *"OAuth authentication requires the server version of Lighthouse — the OAuth provider must reach a stable callback URL"* and a **Learn more** link to the docs page that explains standalone vs. server.
-- **Decision enabled**: the standalone user decides — informed — whether to (a) stick with PAT, (b) switch to the server build, or (c) wait for a future feature. No silent confusion.
-
-#### Acceptance criteria
-1. Given the app is running in standalone (Tauri) mode, **when** I open any work-tracking-system connector form, **then** every OAuth authentication-method entry in the dropdown is rendered disabled.
-2. Given a disabled OAuth dropdown entry, **when** I hover it, **then** the tooltip *"OAuth authentication requires the server version of Lighthouse. Learn more →"* is shown and the link target is `/docs/{path-to-server-vs-standalone}`.
-3. **Implementation invariant**: this story changes only frontend code. No backend route, no DB migration, no DI registration is touched. (Verified by diff review at PR time.)
+_US-04 (Standalone mode explains why OAuth is unavailable) was removed 2026-05-16 — see post-DELIVER note at the bottom of this file._
 
 ---
 
@@ -130,7 +118,6 @@ AC #5 ("Bearer header on outbound Jira call, returns work items successfully") i
 - **Per-user OAuth** — every Lighthouse user authenticating to Jira/ADO as themselves (per D9 — connection-level only).
 - **OAuth for the Lighthouse app login** — that is OIDC, owned by the existing auth feature; this feature is exclusively about outbound work-tracking-system credentials.
 - **OAuth for Linear, GitHub, or any other future connector** — the abstraction (D3) is built honestly, but no third concrete provider ships in this feature.
-- **Standalone-mode OAuth support** (per D2) — the standalone user-story (US-04) is purely a guard with explanation, not an implementation.
 - **OAuth app *registration automation*** — Lighthouse never registers an OAuth app on the user's behalf; the user always registers in Atlassian/Microsoft first and pastes the credentials.
 - **Token introspection / revocation endpoints** — refresh handles the happy path and `RefreshFailed` handles the unhappy one; no proactive revocation.
 - **Audit log entries for OAuth credential changes** — captured in the existing audit log already (token persistence goes through `ICryptoService` + `LighthouseDbContext`); no bespoke audit event needed.
@@ -174,7 +161,7 @@ Inbound surfaces introduced by this feature:
 - Feature type: **cross-cutting** (UI + HTTP + persistence + background services + license enforcement + docs).
 - Primary persona: **`connector-admin`** (existing).
 - Walking skeleton: **none** (brownfield extension of `AuthenticationMethodSchema`).
-- Slice plan: **4 user-visible slices** (Slice 01 Jira + abstraction + BaseUrl, Slice 02 refresh, Slice 03 ADO, Slice 04 standalone guard); **zero** infrastructure-only slices; slice-composition hard gate **PASS**.
+- Slice plan: **3 user-visible slices** (Slice 01 Jira + abstraction + BaseUrl, Slice 02 refresh, Slice 03 ADO); **zero** infrastructure-only slices; slice-composition hard gate **PASS**. _(Originally 4 — Slice 04 standalone guard reversed 2026-05-16.)_
 - Outcome KPIs:
   - **OAuth connection setup success rate** ≥ 90% (rate of `POST /connect → GET /callback` completing with `status = Valid` per started flow, measured over the first month). *Why:* validates the docs and form UX are clear enough.
   - **Time-to-first-sync after OAuth connect** ≤ 60 seconds (p95). *Why:* OAuth's promise is "as easy as PAT"; if first sync is slow, users will revert.
@@ -456,7 +443,6 @@ These events are emitted from `OAuthService` (the new inbound port), `OAuthContr
 - Slice 01 ships the events `oauth.flow.initiated/completed/failed`, `oauth.callback.invalid_state`.
 - Slice 02 ships the events `oauth.token.refreshed/refresh_failed`, `oauth.credential.status_changed`.
 - Slice 03 ships nothing new (events are provider-agnostic; ADO emits the same events with `providerKey = "ado.oauth"`).
-- Slice 04 ships nothing new.
 - **OAuth Health tile** is a new slice (Slice 05) **OR** folds into Slice 02 since Slice 02 already touches the connection-list payload (`requiresReconnect`). RECOMMENDATION: fold into Slice 02 with a minimal tile scope (the three KPIs whose data Slice 02 already produces); add the time-to-first-sync field in a follow-up. This is captured as OQ-DV1 below.
 
 ## Wave: DEVOPS / [REF] Deployment strategy
@@ -587,7 +573,6 @@ Executable form: `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spe
 | 7 | OAuth Health tile renders KPIs (setup-success, refresh-success, stale-RefreshFailed) gated by SystemAdmin + Premium *(re-layered 2026-05-15 → `OAuthHealthControllerTest` + `OAuthHealthTile.test.tsx` + `OverviewDashboard.test.tsx`)* | `@driving_adapter @real-io @in-memory @US-02 @kpi-OUT-oauth-setup-success-rate @kpi-OUT-oauth-refresh-success-rate` | 02 (folded per OQ-DV1 resolution 2026-05-14) |
 | 8 | Azure DevOps OAuth connection is configured end-to-end | `@driving_adapter @real-io @in-memory @US-03 @adapter-integration` | 03 |
 | 9 | ADO OAuth form warns when BaseUrl is HTTP | `@driving_adapter @real-io @in-memory @US-03 @error` | 03 |
-| 10 | Standalone (Tauri) renders OAuth dropdown disabled with tooltip | `@real-io @in-memory @US-04` | 04 |
 | 11 | (smoke) Real Atlassian Cloud sandbox 3LO flow completes | `@driving_adapter @real-io @requires_external @US-01 @smoke` | 01 release |
 | 12 | (smoke) Real Entra ID / Azure DevOps OAuth flow completes | `@driving_adapter @real-io @requires_external @US-03 @smoke` | 03 release |
 
@@ -600,9 +585,8 @@ Executable form: `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spe
 | BI-1 | `OAuthProviderAbstractionIntegrationTest` | `Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs` | A new `IOAuthProvider` added via test DI alone produces a working `/connect → callback → credential persisted` flow without modifying `OAuthController`, `OAuthService`, `OAuthCredential`, or persistence. Replaces Playwright "Provider-agnostic abstraction" (US-01 AC #8). | 01 |
 | BI-2 | `OAuthCallbackCsrfIntegrationTest` | `Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs` | `GET /api/oauth/callback` with a tampered state token returns HTTP 400, persists no `OAuthCredential`, and emits the `oauth.callback.invalid_state` log event. Replaces Playwright "Invalid state token rejected (CSRF)". | 01 |
 | BI-3 | `OAuthRefreshSingleFlightTest` | `Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs` | 32 concurrent `EnsureFreshTokenAsync` calls against an expiry-imminent credential trigger the stub's `RefreshTokenAsync` exactly once and return identical tokens. Replaces Playwright "Concurrent single-flight refresh" (per ADR-010 DDD-7 SemaphoreSlim invariant). | 02 |
-| BI-4 | `OAuthStandaloneModeRouteRejectionIntegrationTest` | `Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs` | When the WAF is configured for standalone mode, `POST /api/oauth/jira.oauth/connect` and `GET /api/oauth/callback` both return HTTP 404 (route not registered, not "route registered but handler failed"). Replaces Playwright "Standalone has no /api/oauth/* route" (US-04 AC #3). | 04 |
 
-**Layering rationale**: each of the 4 backend tests asserts an implementation invariant (DI shape, HMAC verification, concurrency, route-table membership) rather than a user-observable end-to-end outcome. Backend integration tests run in seconds against `TestWebApplicationFactory<Program>` (in-process WAF, in-memory SQLite, no browser), are deterministic under concurrency stress, and won't false-flag on Playwright flakiness. The corresponding user-observable behaviour (e.g. for BI-2: the user sees the connect form return a generic error; for BI-3: the user sees no banner during a refresh storm) is already covered by adjacent Playwright scenarios.
+**Layering rationale**: each of the 3 backend tests asserts an implementation invariant (DI shape, HMAC verification, concurrency) rather than a user-observable end-to-end outcome. Backend integration tests run in seconds against `TestWebApplicationFactory<Program>` (in-process WAF, in-memory SQLite, no browser), are deterministic under concurrency stress, and won't false-flag on Playwright flakiness. The corresponding user-observable behaviour (e.g. for BI-2: the user sees the connect form return a generic error; for BI-3: the user sees no banner during a refresh storm) is already covered by adjacent Playwright scenarios.
 
 **Structural assertions verified by PR diff review (not by any executable test)**:
 - Slice 03 AC #5 — diff between Slice 01 main and Slice 03 PR shows changes ONLY in `AdoOAuthProvider.cs`, `AuthenticationMethodSchema.cs`, `Program.cs` (DI registration only), docs, and `AuthMethodDropdown.tsx` (label only). Tracked as a checkbox in the Slice 03 PR template. (Note: BI-1 `OAuthProviderAbstractionIntegrationTest` complements this — it proves the abstraction *works* via a new provider, while the diff review proves no *unintended* drift across slices.)
@@ -1007,3 +991,27 @@ Step 02-08 was originally scoped to unskip Playwright scenarios 4-7 (silent refr
 
 Estimated hours: 0.5 (down from 3.0).
 
+---
+
+## Wave: Post-DELIVER / [WHY] Slice 04 (standalone guard, US-04 / #4970) reversed
+
+**Date:** 2026-05-16
+**Decision:** D2 reversed. Standalone-mode users may attempt OAuth at their own risk; Lighthouse no longer presents a disabled-with-tooltip dropdown nor refuses to register OAuth routes in standalone builds.
+
+**Reason:** Implementing the guard is non-trivial (frontend runtime-flag plumbing, conditional controller registration in `Program.cs`, two backend integration tests, one Playwright scenario, docs page) for negligible user value: the failure mode if a standalone user *does* attempt OAuth is at worst a non-functional callback URL, which the user can self-diagnose and resolve by switching to PAT. The cost/benefit ratio doesn't justify the work compared with other backlog items (e.g. story #5018 popup OAuth, story #5019 generalised connection health).
+
+**Removed in commit (this commit):**
+- ADO Story #4970 — unlinked from Epic #2438, state set to `Removed`.
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs` (BI-4, 2 `[Ignore]`'d tests).
+- `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts` — Slice 04 describe block + its `test.skip(...)` removed; header migration list adjusted.
+- `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.feature` — Slice 04 scenario + the BI-4 migration-list bullet removed.
+- `docs/feature/work-tracking-oauth-authentication/slices/slice-04-standalone-guard.md` — entire slice spec.
+- `docs/feature/work-tracking-oauth-authentication/deliver/roadmap.json` — Slice 04 phase + its references removed.
+- This feature-delta — references to US-04 / Slice 04 / BI-4 / Scenario #10 / D2 redacted or annotated as reversed.
+
+**Not removed (broader infrastructure, still used by other features):**
+- `PlatformService.IsStandalone` (referenced by OIDC + general platform code).
+- `AuthModeResolver` standalone-mode auth-disable path (covers all auth methods, not OAuth-specific).
+- `Program.cs` standalone-mode wiring for CORS, HTTPS, startup.
+
+**Forward rule:** if standalone-OAuth turns out to be a real support burden, reopen as a new story — don't try to retrofit the original guard pattern. The right answer at that point is likely a docs/runbook entry, not a UI guard.

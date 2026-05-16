@@ -10,7 +10,6 @@
  *   Slice 01 (US-01): walking_skeleton → non-premium → BaseUrl warning → stub provider → invalid state
  *   Slice 02 (US-02): silent refresh → refresh-fail banner → single-flight → reconnect clears
  *   Slice 03 (US-03): ADO happy path → HTTPS warning (Slice 03 AC #5 verified by PR diff review, not Playwright)
- *   Slice 04 (US-04): standalone disabled dropdown → standalone no backend route
  *   Pre-release smoke (@requires_external): real Atlassian + real Entra ID (gated to ci_oauth_integration_smoke.yml only)
  *
  * Tagging convention matches the .feature file. Tags appear in the test() title
@@ -145,23 +144,6 @@ test.describe("Slice 03 — Azure DevOps OAuth", () => {
 	// NOTE: "Adding the ADO provider did not require changes to the controller or persistence"
 	// (Slice 03 AC #5) is verified by PR diff review, not by Playwright. Tracked as a checkbox
 	// in the Slice 03 PR template — not implemented as a Playwright test.
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Slice 04 — Standalone-mode guard (US-04, frontend-only)
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe("Slice 04 — Standalone-mode guard", () => {
-	test.skip("[@real-io @in-memory @US-04] Standalone (Tauri) mode renders the OAuth dropdown option disabled with explanatory tooltip", async () => {
-		// TODO(DELIVER Slice 04): launch standalone build; open any connector form; assert
-		// every OAuth dropdown entry has the disabled attribute; hover one; assert tooltip
-		// text + "Learn more" link target.
-		throw new Error("Not yet implemented — RED scaffold");
-	});
-
-	// Re-layered on 2026-05-14 — "Standalone exposes no /api/oauth/* route" is a
-	// route-table invariant. Backend integration test at:
-	//   Lighthouse.Backend.Tests/API/Integration/OAuthStandaloneModeRouteRejectionIntegrationTest.cs
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
