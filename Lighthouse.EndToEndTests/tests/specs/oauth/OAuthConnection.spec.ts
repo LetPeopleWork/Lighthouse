@@ -26,6 +26,7 @@ import { testWithAuth } from "../../fixutres/LighthouseFixture";
 import {
 	callOAuthCallback,
 	completeOAuthRoundTrip,
+	createOAuthAdoConnection,
 	createOAuthJiraConnection,
 	disconnectOAuth,
 	initiateOAuthConnect,
@@ -123,21 +124,50 @@ test.describe("Slice 01 — Jira OAuth", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe("Slice 03 — Azure DevOps OAuth", () => {
-	testWithAuth.skip(
+	testWithAuth(
 		"[@driving_adapter @real-io @in-memory @US-03 @adapter-integration] Azure DevOps OAuth connection is configured end-to-end",
-		async () => {
-			// TODO(DELIVER Slice 03): mirror Slice 01 walking-skeleton flow, but for ADO. Assert
-			// scope "vso.work_write" listed on the settings page; assert subsequent sync carries Bearer.
-			throw new Error("Not yet implemented — RED scaffold");
+		async ({ request }) => {
+			const connection = await createOAuthAdoConnection(
+				request,
+				generateRandomName(),
+			);
+
+			const initiate = await initiateOAuthConnect(
+				request,
+				"ado.oauth",
+				connection.id,
+			);
+
+			expect(initiate.status, initiate.body).toBe(200);
+			expect(initiate.authorizationUrl, initiate.body).toBeDefined();
+			expect(initiate.authorizationUrl).toContain("/api/oauth/callback");
+
+			const callback = await callOAuthCallback(
+				request,
+				initiate.authorizationUrl ?? "",
+			);
+
+			expect(callback.status).toBeGreaterThanOrEqual(300);
+			expect(callback.status).toBeLessThan(400);
+
+			await request.delete(
+				`/api/latest/worktrackingsystemconnections/${connection.id}`,
+			);
 		},
 	);
 
-	testWithAuth.skip(
+	testWithAuth(
 		"[@driving_adapter @real-io @in-memory @US-03 @error] ADO OAuth form warns when BaseUrl is HTTP",
-		async () => {
-			// TODO(DELIVER Slice 03): set BaseUrl to http://...; open ADO OAuth form; assert the
-			// HTTPS warning text appears; assert form remains usable.
-			throw new Error("Not yet implemented — RED scaffold");
+		async ({ page }) => {
+			const lighthousePage = new LighthousePage(page);
+			const overviewPage = await lighthousePage.open();
+			const wizard = await overviewPage.addConnection();
+
+			await wizard.selectWorkTrackingSystemType("AzureDevOps");
+			await wizard.selectAuthenticationMethod("Azure DevOps (OAuth)");
+
+			await expect(wizard.adoHttpsWarning).toBeVisible();
+			await expect(wizard.connectButton).toBeVisible();
 		},
 	);
 

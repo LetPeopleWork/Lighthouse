@@ -40,6 +40,40 @@ export async function createOAuthJiraConnection(
 	return response.json();
 }
 
+export async function createOAuthAdoConnection(
+	api: APIRequestContext,
+	connectionName: string,
+	options: {
+		clientId?: string;
+		clientSecret?: string;
+		azureDevOpsUrl?: string;
+	} = {},
+): Promise<{ id: number; name: string }> {
+	const clientId = options.clientId ?? "test-ado-client";
+	const clientSecret = options.clientSecret ?? "test-ado-secret";
+	const azureDevOpsUrl =
+		options.azureDevOpsUrl ?? "https://dev.azure.com/letpeoplework";
+
+	const connectionOptions: WorkTrackingSystemOption[] = [
+		{ key: "Azure DevOps Url", value: azureDevOpsUrl, isSecret: false },
+		{ key: "oauth.clientId", value: clientId, isSecret: false },
+		{ key: "oauth.clientSecret", value: clientSecret, isSecret: true },
+	];
+
+	const response = await api.post("/api/latest/worktrackingsystemconnections", {
+		data: {
+			id: 0,
+			name: connectionName,
+			workTrackingSystem: "AzureDevOps",
+			authenticationMethodKey: "ado.oauth",
+			options: connectionOptions,
+			additionalFieldDefinitions: [],
+		},
+	});
+
+	return response.json();
+}
+
 export async function initiateOAuthConnect(
 	api: APIRequestContext,
 	providerKey: string,
