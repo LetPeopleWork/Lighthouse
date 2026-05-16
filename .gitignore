@@ -437,3 +437,5 @@ reports/mutation/
 Lighthouse.Frontend/reports/mutation/*
 Lighthouse.Frontend/.stryker-*
 social-posts/*
+
+*.lscache
