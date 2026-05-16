@@ -26,15 +26,15 @@ You need an Entra ID app registration in the same tenant that owns the Azure Dev
 3. Give the app a name (e.g. *Lighthouse — `<org>`*).
 4. Pick a supported account type:
 
-    - **Accounts in this organizational directory only (single tenant)** — the safe default for a self-hosted Lighthouse that serves one Entra tenant. The consent dance stays inside your tenant; users from other tenants cannot sign in.
-    - **Accounts in any organizational directory (multi-tenant)** — choose this only if a single Lighthouse instance serves Azure DevOps organisations across multiple Entra tenants. Multi-tenant adds a verified-publisher requirement for the consent UX and broadens the surface area of who can sign in.
+    - **Accounts in this organizational directory only (single tenant)** — the recommended default for a self-hosted Lighthouse that serves one Entra tenant. The consent dance stays inside your tenant; users from other tenants cannot sign in. When you pick this, you MUST paste the **Directory (tenant) ID** (copied below) into the Lighthouse connection form so Lighthouse targets the per-tenant Microsoft endpoint (`login.microsoftonline.com/{tenant}/...`). The `/common/` endpoint rejects single-tenant clients with `unauthorized_client: The client does not exist or is not enabled for consumers`.
+    - **Accounts in any organizational directory (multi-tenant)** — choose this only if a single Lighthouse instance serves Azure DevOps organisations across multiple Entra tenants. Multi-tenant adds a verified-publisher requirement for the consent UX and broadens the surface area of who can sign in. For multi-tenant apps, leave the **Directory (Tenant) ID** field empty in Lighthouse — the connection will hit `login.microsoftonline.com/common/`.
 
 5. Leave **Redirect URI** blank for now — you will set it after copying the canonical Lighthouse callback shape in the next section.
 6. Click **Register**.
 7. On the app's **Overview** page, copy:
 
     - **Application (client) ID**
-    - **Directory (tenant) ID**
+    - **Directory (tenant) ID** — required for single-tenant apps; safe to copy even for multi-tenant in case you switch later.
 
     You will paste both into Lighthouse later.
 
@@ -55,10 +55,12 @@ You need an Entra ID app registration in the same tenant that owns the Azure Dev
 ## Add API permissions
 
 1. In the app registration, open **API permissions** → **Add a permission** → **APIs my organization uses** → search for **Azure DevOps** → select it.
-2. Pick **Delegated permissions** and request the following scopes (exact strings, case-sensitive):
+2. Pick **Delegated permissions** and request the following scope (exact string, case-sensitive):
 
     - `vso.work_write` — read and write work items, queries, boards, and area/iteration paths in the Azure DevOps organisation.
-    - `offline_access` — required to receive a `refresh_token` alongside the access token. Without this, Lighthouse can complete the first sync but the access token expires after roughly an hour and the connection drops.
+
+    {: .note}
+    Lighthouse automatically requests `offline_access` at the protocol level (via the `scope=` query parameter on the authorize/token requests) to obtain a refresh token. You do **not** need to add it as a delegated permission under **API permissions** — it is a Microsoft identity platform protocol scope, not an Azure DevOps API scope.
 
 3. Back on the **API permissions** page, click **Grant admin consent for `<tenant>`**. Tenant-wide admin consent is required so the connector-admin (who may not themselves be a tenant admin) does not get blocked at the consent dance with `AADSTS65001`.
 
@@ -73,11 +75,12 @@ You need an Entra ID app registration in the same tenant that owns the Azure Dev
 
 1. In Lighthouse, open **Settings → Connections** and click **New Azure DevOps connection** (or **Edit** on an existing one if you are migrating off a PAT).
 2. Set **Authentication** to **Azure DevOps (OAuth)**. This option is hidden if your instance does not have a Premium licence — see [Licensing](../../licensing/licensing.html).
-3. Paste:
+3. Fill in the fields (in this order):
 
-    - **Application (client) ID** — from the Entra ID app **Overview** page.
-    - **Directory (tenant) ID** — from the same **Overview** page.
-    - **Client secret** — the **Value** you copied from **Certificates & secrets**.
+    - **Organization URL** — the Azure DevOps organisation URL, e.g. `https://dev.azure.com/<org>`.
+    - **Client ID** — the **Application (client) ID** copied from the Entra ID app **Overview** page.
+    - **Directory (Tenant) ID** — the **Directory (tenant) ID** copied from the same **Overview** page. Required for single-tenant Entra apps; leave empty for multi-tenant apps (Lighthouse will hit `login.microsoftonline.com/common/`).
+    - **Client Secret** — the **Value** you copied from **Certificates & secrets**.
 
 4. Verify the **Callback URL** field. It is read-only and is computed server-side from `Lighthouse:BaseUrl`. It MUST match exactly what you registered in the Entra ID app's **Authentication** blade — including scheme (`https://`), host, and the `/api/oauth/callback` path.
 
@@ -100,12 +103,13 @@ The OAuth surface for Azure DevOps reuses the same refresh, reconnect, and healt
 |---|---|---|
 | `AADSTS50011: Reply URL mismatch` after consent | Redirect URI registered in the Entra ID app does not exactly match `{BaseUrl}/api/oauth/callback`. | Confirm `Lighthouse:BaseUrl`. Entra ID compares scheme + host + port + path **exactly** — a trailing slash or wrong scheme breaks the match. |
 | `AADSTS65001: The user or administrator has not consented` | The Azure DevOps API permission is missing **admin consent** on the app registration, or the connector-admin lacks consent rights. | Re-open the app, **API permissions** → **Grant admin consent for `<tenant>`**, retry **Connect**. |
-| `AADSTS70011: invalid scope` | The `vso.work_write` or `offline_access` permission is missing or mistyped on the app registration. | Re-open the app, **API permissions**, add the missing delegated permission, grant admin consent, retry. |
+| `AADSTS70011: invalid scope` | The `vso.work_write` permission is missing or mistyped on the app registration. (`offline_access` is requested by Lighthouse at the protocol level and does not need to be added under API permissions.) | Re-open the app, **API permissions**, confirm `vso.work_write` is present under **Azure DevOps → Delegated permissions**, grant admin consent, retry. |
+| `unauthorized_client: The client does not exist or is not enabled for consumers` | The Entra app is single-tenant but Lighthouse hit the `/common/` endpoint because the **Directory (Tenant) ID** field on the connection is empty. The `/common/` endpoint only accepts multi-tenant clients. | Paste the **Directory (tenant) ID** from the app's **Overview** page into Lighthouse's **Directory (Tenant) ID** field on the connection, save, and retry **Connect**. (Or switch the app to multi-tenant under **Authentication → Supported account types** and accept the verified-publisher implications.) |
 | Popup blocked when clicking **Connect** | The browser blocked the popup against `login.microsoftonline.com`. | Allow popups for the Lighthouse origin and retry. See [ADR-011](../../product/architecture/adr-011-oauth-popup-flow.md) for the popup-flow rationale. |
 | Lighthouse banner: *Invalid state token* | The state cookie expired, was blocked by a third-party cookie policy, or the admin took longer than the consent window. | Retry the **Connect** flow in a single browser session. Ensure third-party cookies are allowed for the `login.microsoftonline.com` and Lighthouse origins for the duration of the dance. |
 | Auth-type dropdown does not show **Azure DevOps (OAuth)** | The instance has no Premium licence, or the licence has lapsed. | Confirm the licence status in **Settings → Licensing**. |
 | Yellow *"Reconnect required — the OAuth refresh token is no longer valid"* banner on a previously-syncing connection | Silent refresh attempted and failed (client secret expired, refresh grant revoked, scope tightened, IdP-side rotation, persistent network timeout). The credential is now in `RefreshFailed`. | If the client secret expired, mint a new one in **Certificates & secrets** and paste the new **Value** into the connection. Otherwise click **Reconnect** on the banner and complete the Microsoft consent flow again. |
-| Reconnect banner reappears immediately after a successful reconnect | The Entra ID app no longer grants `offline_access`, so no refresh token is being issued — Microsoft only returned a short-lived access token. | Re-open the app in the Azure portal, confirm `offline_access` is present under **API permissions** with admin consent, save, and retry the reconnect. |
+| Reconnect banner reappears immediately after a successful reconnect | Microsoft did not issue a `refresh_token` — typically because admin consent was withdrawn from the tenant, the user revoked consent, or the conditional-access policy blocks the `offline_access` protocol scope. | Re-open the app in the Azure portal, confirm admin consent is still granted under **API permissions**, and check tenant conditional-access policies for restrictions on `offline_access` / refresh tokens. Retry the reconnect once consent is back in place. |
 
 For deeper issues, capture the failing callback URL from the browser address bar (it contains the OAuth `error=` / `error_description=` parameters along with an AADSTS code) and include it when reporting the problem.
 
