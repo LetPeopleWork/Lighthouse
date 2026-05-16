@@ -22,6 +22,7 @@ import { useAuthGuard } from "./hooks/useAuthGuard";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
+import OAuthPopupComplete from "./components/Common/Connections/OAuthPopupComplete";
 import EditConnection from "./pages/Connections/Edit/EditConnection";
 import PortfolioDetail from "./pages/Portfolios/Detail/PortfolioDetail";
 import EditPortfolio from "./pages/Portfolios/Edit/EditPortfolio";
@@ -182,6 +183,10 @@ const App: React.FC = () => {
 							>
 								<Routes>
 									<Route path="/" element={<OverviewDashboard />} />
+									<Route
+										path="/oauth/popup-complete"
+										element={<OAuthPopupComplete />}
+									/>
 									<Route path="/connections">
 										<Route path="new" element={<EditConnection />} />
 										<Route path=":id/edit" element={<EditConnection />} />
