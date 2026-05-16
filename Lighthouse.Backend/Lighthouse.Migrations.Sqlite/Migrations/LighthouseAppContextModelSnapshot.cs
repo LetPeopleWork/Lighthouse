@@ -526,7 +526,8 @@ namespace Lighthouse.Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WorkTrackingSystemConnectionId");
+                    b.HasIndex("WorkTrackingSystemConnectionId")
+                        .IsUnique();
 
                     b.ToTable("OAuthCredentials");
                 });

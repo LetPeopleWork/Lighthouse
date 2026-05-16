@@ -213,7 +213,8 @@ namespace Lighthouse.Backend.Data
                       .WithMany()
                       .HasForeignKey(c => c.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
-                entity.HasIndex(c => c.WorkTrackingSystemConnectionId);
+                entity.HasIndex(c => c.WorkTrackingSystemConnectionId)
+                      .IsUnique();
             });
 
             modelBuilder.Entity<WriteBackMappingDefinition>(entity =>
