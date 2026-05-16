@@ -41,7 +41,7 @@ export class WorkTrackingSystemEditPage {
 	}
 
 	get reconnectButton(): Locator {
-		return this.page.getByRole("button", { name: "Reconnect" });
+		return this.page.getByRole("button", { name: "Reconnect", exact: true });
 	}
 
 	async clickReconnectAndWaitForPopup(): Promise<Page> {
