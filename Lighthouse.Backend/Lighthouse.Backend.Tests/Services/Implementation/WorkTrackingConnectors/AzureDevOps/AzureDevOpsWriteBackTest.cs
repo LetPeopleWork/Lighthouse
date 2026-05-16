@@ -442,7 +442,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static AzureDevOpsWorkTrackingConnector CreateSubject()
         {
-            return new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService());
+            return new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService()));
         }
     }
 }

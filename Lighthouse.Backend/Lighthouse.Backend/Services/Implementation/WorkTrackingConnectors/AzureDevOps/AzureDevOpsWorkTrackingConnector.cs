@@ -1,17 +1,19 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.OAuth;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
@@ -24,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 {
     public class AzureDevOpsWorkTrackingConnector(
         ILogger<AzureDevOpsWorkTrackingConnector> logger,
-        ICryptoService cryptoService)
+        IWorkTrackingAuthStrategyFactory authStrategyFactory)
         : IAzureDevOpsWorkTrackingConnector
     {
         private const int MaxChunkSize = 200;
@@ -98,7 +100,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             try
             {
-                var witClient = GetWorkItemTrackingHttpClient(connection);
+                var witClient = await GetWorkItemTrackingHttpClientAsync(connection);
 
                 await VerifyConnection(witClient);
 
@@ -168,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
                 var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
-                var witClient = GetWorkItemTrackingHttpClient(team.WorkTrackingSystemConnection);
+                var witClient = await GetWorkItemTrackingHttpClientAsync(team.WorkTrackingSystemConnection);
                 var workItems = await GetWorkItemReferencesByQuery(witClient, query);
 
                 var workItemCount = workItems.Count();
@@ -265,7 +267,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 logger.LogInformation("Getting Board Information for Board {BoardId} in Project {ProjectId}", boardReference, projectId);
 
-                var workClient = GetClient<WorkHttpClient>(workTrackingSystemConnection);
+                var workClient = await GetClientAsync<WorkHttpClient>(workTrackingSystemConnection);
                 var board = await GetBoardForProject(projectId, boardReference, workClient);
 
                 var teamId = ExtractTeamIdFromBoard(board);
@@ -299,7 +301,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var url = connection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
-            var witClient = GetWorkItemTrackingHttpClient(connection);
+            var witClient = await GetWorkItemTrackingHttpClientAsync(connection);
             var results = await UpdateItemsInChunks(updates, url, witClient);
 
             return new WriteBackResult { ItemResults = results };
@@ -426,7 +428,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<IEnumerable<Board>> GetBoardsForProjects(IEnumerable<TeamProjectReference> projects,
             WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            var workClient = GetClient<WorkHttpClient>(workTrackingSystemConnection);
+            var workClient = await GetClientAsync<WorkHttpClient>(workTrackingSystemConnection);
 
             var tasks = projects.Select(async project => await GetBoardsForProject(project, workClient));
 
@@ -457,7 +459,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<IEnumerable<TeamProjectReference>> GetAllProjects(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            var projectClient = GetClient<ProjectHttpClient>(workTrackingSystemConnection);
+            var projectClient = await GetClientAsync<ProjectHttpClient>(workTrackingSystemConnection);
             var allProjects = new List<TeamProjectReference>();
             string? continuationToken = null;
 
@@ -548,7 +550,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             try
             {
-                var witClient = GetWorkItemTrackingHttpClient(workItemQueryOwner.WorkTrackingSystemConnection);
+                var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
                 var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
                 if (!workItemReferences.Any())
@@ -655,7 +657,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             logger.LogDebug("Getting Work Item with IDs {ItemIds}", string.Join(",", workItemIds));
 
-            var witClient = GetWorkItemTrackingHttpClient(workItemQueryOwner.WorkTrackingSystemConnection);
+            var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var fields = new List<string>
             {
@@ -719,7 +721,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)
         {
-            var witClient = GetWorkItemTrackingHttpClient(workItemQueryOwner.WorkTrackingSystemConnection);
+            var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var rawDoingStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoingStates);
             var rawDoneStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoneStates);
@@ -812,7 +814,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 parentReferences.Add($"{id}", string.Empty);
             }
 
-            var witClient = GetWorkItemTrackingHttpClient(workTrackingSystemOptionOwner.WorkTrackingSystemConnection);
+            var witClient = await GetWorkItemTrackingHttpClientAsync(workTrackingSystemOptionOwner.WorkTrackingSystemConnection);
             var workItemsWithParentRelation = await GetWorkItemsInChunks(itemIds, witClient, WorkItemExpand.Relations, []);
 
             foreach (var adoWorkItem in workItemsWithParentRelation)
@@ -956,33 +958,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return query;
         }
 
-        private WorkItemTrackingHttpClient GetWorkItemTrackingHttpClient(WorkTrackingSystemConnection workTrackingSystemConnection)
+        private Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            return GetClient<WorkItemTrackingHttpClient>(workTrackingSystemConnection);
+            return GetClientAsync<WorkItemTrackingHttpClient>(workTrackingSystemConnection);
         }
 
-        private TClient GetClient<TClient>(WorkTrackingSystemConnection workTrackingSystemConnection) where TClient : IVssHttpClient
+        private async Task<TClient> GetClientAsync<TClient>(WorkTrackingSystemConnection workTrackingSystemConnection) where TClient : IVssHttpClient
         {
-            var (connection, key) = GetConnectionForWorkTrackingSystem(workTrackingSystemConnection);
+            var (connection, key) = await GetConnectionForWorkTrackingSystemAsync(workTrackingSystemConnection);
             var cacheKey = $"{typeof(TClient).FullName}_{key}";
 
             return (TClient)ClientCache.GetOrAdd(cacheKey, _ => connection.GetClient<TClient>());
         }
 
-        private (VssConnection connection, string key) GetConnectionForWorkTrackingSystem(
+        private async Task<(VssConnection connection, string key)> GetConnectionForWorkTrackingSystemAsync(
             WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var url = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
-            var encryptedPersonalAccessToken = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
-            var personalAccessToken = cryptoService.Decrypt(encryptedPersonalAccessToken);
-            var key = $"{url}|{personalAccessToken}";
+            var credentials = await BuildVssCredentialsAsync(workTrackingSystemConnection);
+            var key = $"{url}|{workTrackingSystemConnection.AuthenticationMethodKey}|conn:{workTrackingSystemConnection.Id}";
 
             var requestTimeoutInSeconds =
                 workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey<int>(AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
 
             var connection = ConnectionCache.GetOrAdd(key, _ =>
             {
-                var c = CreateConnection(url, personalAccessToken);
+                var c = new VssConnection(new Uri(url), credentials);
                 c.Settings.SendTimeout = TimeSpan.FromSeconds(requestTimeoutInSeconds);
                 return c;
             });
@@ -990,11 +991,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (connection, key);
         }
 
-        private static VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)
+        private async Task<VssCredentials> BuildVssCredentialsAsync(WorkTrackingSystemConnection connection)
         {
-            var azureDevOpsUri = new Uri(azureDevOpsUrl);
-            var credentials = new VssBasicCredential(personalAccessToken, string.Empty);
-            return new VssConnection(azureDevOpsUri, credentials);
+            using var probeRequest = new HttpRequestMessage();
+            var strategy = authStrategyFactory.Resolve(connection.AuthenticationMethodKey);
+            await strategy.ApplyAsync(probeRequest, connection, CancellationToken.None);
+
+            var header = probeRequest.Headers.Authorization
+                ?? throw new InvalidOperationException(
+                    $"Authentication strategy for '{connection.AuthenticationMethodKey}' did not set an Authorization header.");
+
+            return ConvertAuthorizationHeaderToVssCredentials(header);
+        }
+
+        private static VssCredentials ConvertAuthorizationHeaderToVssCredentials(AuthenticationHeaderValue header)
+        {
+            if (string.Equals(header.Scheme, "Basic", StringComparison.OrdinalIgnoreCase))
+            {
+                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(header.Parameter ?? string.Empty));
+                var separatorIndex = decoded.IndexOf(':');
+                var username = separatorIndex >= 0 ? decoded[..separatorIndex] : string.Empty;
+                var password = separatorIndex >= 0 ? decoded[(separatorIndex + 1)..] : decoded;
+                return new VssBasicCredential(username, password);
+            }
+
+            if (string.Equals(header.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase))
+            {
+                return new VssCredentials(new VssOAuthAccessTokenCredential(header.Parameter ?? string.Empty));
+            }
+
+            throw new NotSupportedException(
+                $"Authorization scheme '{header.Scheme}' produced by the auth strategy is not supported by the Azure DevOps connector.");
         }
     }
 }

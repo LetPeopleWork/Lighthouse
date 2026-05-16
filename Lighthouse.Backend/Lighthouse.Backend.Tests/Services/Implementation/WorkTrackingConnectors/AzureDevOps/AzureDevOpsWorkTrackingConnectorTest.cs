@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -1013,9 +1014,92 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return connectionSetting;
         }
 
+        [Test]
+        public async Task ValidateConnection_PatKeyedConnection_DelegatesAuthorizationToResolvedStrategy()
+        {
+            var strategyMock = new Mock<IWorkTrackingAuthStrategy>();
+            strategyMock
+                .Setup(s => s.ApplyAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, WorkTrackingSystemConnection, CancellationToken>((request, _, _) =>
+                {
+                    var encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(":fake-pat"));
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", encoded);
+                })
+                .Returns(Task.CompletedTask);
+
+            var factoryMock = new Mock<IWorkTrackingAuthStrategyFactory>();
+            factoryMock
+                .Setup(f => f.Resolve(AuthenticationMethodKeys.AzureDevOpsPat))
+                .Returns(strategyMock.Object);
+
+            var connection = CreateConnection(AuthenticationMethodKeys.AzureDevOpsPat);
+            var subject = CreateSubjectWithFactory(factoryMock.Object);
+
+            await subject.ValidateConnection(connection);
+
+            factoryMock.Verify(f => f.Resolve(AuthenticationMethodKeys.AzureDevOpsPat), Times.AtLeastOnce);
+            strategyMock.Verify(
+                s => s.ApplyAsync(It.IsAny<HttpRequestMessage>(), It.Is<WorkTrackingSystemConnection>(c => c == connection), It.IsAny<CancellationToken>()),
+                Times.AtLeastOnce);
+        }
+
+        [Test]
+        public async Task ValidateConnection_AdoOAuthKeyedConnection_DelegatesAuthorizationToResolvedStrategy()
+        {
+            var strategyMock = new Mock<IWorkTrackingAuthStrategy>();
+            strategyMock
+                .Setup(s => s.ApplyAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, WorkTrackingSystemConnection, CancellationToken>((request, _, _) =>
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "fake-access-token");
+                })
+                .Returns(Task.CompletedTask);
+
+            var factoryMock = new Mock<IWorkTrackingAuthStrategyFactory>();
+            factoryMock
+                .Setup(f => f.Resolve(AuthenticationMethodKeys.AzureDevOpsOAuth))
+                .Returns(strategyMock.Object);
+
+            var connection = CreateConnection(AuthenticationMethodKeys.AzureDevOpsOAuth);
+            var subject = CreateSubjectWithFactory(factoryMock.Object);
+
+            await subject.ValidateConnection(connection);
+
+            factoryMock.Verify(f => f.Resolve(AuthenticationMethodKeys.AzureDevOpsOAuth), Times.AtLeastOnce);
+            strategyMock.Verify(
+                s => s.ApplyAsync(It.IsAny<HttpRequestMessage>(), It.Is<WorkTrackingSystemConnection>(c => c == connection), It.IsAny<CancellationToken>()),
+                Times.AtLeastOnce);
+        }
+
+        private static WorkTrackingSystemConnection CreateConnection(string authenticationMethodKey)
+        {
+            var connection = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+                Name = "Delegation Test",
+                AuthenticationMethodKey = authenticationMethodKey
+            };
+            connection.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = "http://127.0.0.1:1/", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = "encrypted-token", IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "1", IsSecret = false },
+            ]);
+            return connection;
+        }
+
         private static AzureDevOpsWorkTrackingConnector CreateSubject()
         {
-            return new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService());
+            var cryptoService = new FakeCryptoService();
+            return new AzureDevOpsWorkTrackingConnector(
+                Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
+                TestAuthStrategyFactory.CreateRealFactory(cryptoService));
+        }
+
+        private static AzureDevOpsWorkTrackingConnector CreateSubjectWithFactory(IWorkTrackingAuthStrategyFactory factory)
+        {
+            return new AzureDevOpsWorkTrackingConnector(
+                Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
+                factory);
         }
     }
 }
