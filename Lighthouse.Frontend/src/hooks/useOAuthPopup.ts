@@ -101,10 +101,10 @@ const openOAuthPopup = (
 			const payload = event.data;
 			settle({
 				status: payload.status,
-				...(payload.connectionId !== undefined
-					? { connectionId: payload.connectionId }
-					: {}),
-				...(payload.reason !== undefined ? { reason: payload.reason } : {}),
+				...(payload.connectionId === undefined
+					? {}
+					: { connectionId: payload.connectionId }),
+				...(payload.reason === undefined ? {} : { reason: payload.reason }),
 			});
 		}
 
