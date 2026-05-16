@@ -10,6 +10,15 @@ import { useRbac } from "../../../hooks/useRbac";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOAuthHealthDto } from "../../../services/Api/OAuthService";
 
+const buildTooltip = (disconnectedCount: number): string => {
+	if (disconnectedCount === 0) {
+		return "All OAuth connections healthy";
+	}
+	const noun = disconnectedCount === 1 ? "connection" : "connections";
+	const verb = disconnectedCount === 1 ? "needs" : "need";
+	return `${disconnectedCount} OAuth ${noun} ${verb} reconnect`;
+};
+
 const OAuthHealthIcon = () => {
 	const theme = useTheme();
 	const { isSystemAdmin } = useRbac();
@@ -45,9 +54,7 @@ const OAuthHealthIcon = () => {
 	}
 
 	const hasIssues = health.disconnectedCount > 0;
-	const tooltip = hasIssues
-		? `${health.disconnectedCount} OAuth connection${health.disconnectedCount === 1 ? "" : "s"} need${health.disconnectedCount === 1 ? "s" : ""} reconnect`
-		: "All OAuth connections healthy";
+	const tooltip = buildTooltip(health.disconnectedCount);
 	const iconColor = hasIssues
 		? theme.palette.warning.main
 		: theme.palette.success.main;

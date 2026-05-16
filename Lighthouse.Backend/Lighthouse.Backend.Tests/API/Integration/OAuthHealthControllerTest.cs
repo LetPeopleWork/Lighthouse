@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     public class OAuthHealthControllerTest
     {
         private const string ProviderKey = "jira.oauth";
+        private static readonly string[] DefaultProviderScopes = ["read:jira-work"];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
@@ -29,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             providerMock = new Mock<IOAuthProvider>();
             providerMock.SetupGet(p => p.ProviderKey).Returns(ProviderKey);
-            providerMock.SetupGet(p => p.DefaultScopes).Returns(new[] { "read:jira-work" });
+            providerMock.SetupGet(p => p.DefaultScopes).Returns(DefaultProviderScopes);
 
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory)
                 .WithWebHostBuilder(builder =>

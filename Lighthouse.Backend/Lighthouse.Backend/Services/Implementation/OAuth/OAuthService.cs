@@ -10,9 +10,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Lighthouse.Backend.Services.Implementation.OAuth
 {
-#pragma warning disable S107 // OAuth flow legitimately needs 9 collaborators plus refresh options (ADR-010 single-flight refresh window/timeout). Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
     public class OAuthService : IOAuthService
-#pragma warning restore S107
     {
         private const string CallbackPath = "/api/oauth/callback";
         private static readonly TimeSpan RefreshWindow = TimeSpan.FromMinutes(5);
@@ -53,6 +51,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
         {
         }
 
+#pragma warning disable S107 // OAuth flow legitimately needs 9 collaborators plus refresh options (ADR-010 single-flight refresh window/timeout). Splitting them into an aggregate just to dodge the threshold would add indirection without a domain rationale.
         public OAuthService(
             IOAuthProviderRegistry providerRegistry,
             IRepository<WorkTrackingSystemConnection> connectionRepository,
@@ -64,6 +63,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             ILogger<OAuthService> logger,
             IHttpContextAccessor httpContextAccessor,
             OAuthRefreshOptions refreshOptions)
+#pragma warning restore S107
         {
             this.providerRegistry = providerRegistry;
             this.connectionRepository = connectionRepository;
