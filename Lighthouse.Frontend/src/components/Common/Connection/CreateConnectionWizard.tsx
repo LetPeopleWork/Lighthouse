@@ -11,9 +11,10 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import { useOAuthPopup } from "../../../hooks/useOAuthPopup";
 import type {
 	IAuthenticationMethod,
 	IWorkTrackingSystemConnection,
@@ -26,6 +27,16 @@ import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
+
+const POPUP_BLOCKED_COPY =
+	"Your browser blocked the OAuth popup. Allow popups for this site and click Connect/Reconnect again.";
+
+const CANCELLED_COPY = "OAuth was cancelled. Click Connect to try again.";
+
+interface InlineMessage {
+	severity: "error" | "info";
+	text: string;
+}
 
 const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
 	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
@@ -85,10 +96,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const [draftConnectionId, setDraftConnectionId] = useState<number | null>(
 		null,
 	);
+	const [inlineMessage, setInlineMessage] = useState<InlineMessage | null>(
+		null,
+	);
 
 	const { oauthService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
-	const [searchParams] = useSearchParams();
+	const { openOAuthPopup } = useOAuthPopup();
 
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
@@ -111,88 +125,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		[],
 	);
 
-	const readOAuthResumeParams = useCallback((): {
-		outcome: string;
-		connectionId: number;
-	} | null => {
-		const oauthOutcome = searchParams.get("oauth");
-		const connectionIdParam = searchParams.get("connectionId");
-		if (!oauthOutcome || !connectionIdParam) {
-			return null;
-		}
-		const connectionId = Number.parseInt(connectionIdParam, 10);
-		if (Number.isNaN(connectionId)) {
-			return null;
-		}
-		return { outcome: oauthOutcome, connectionId };
-	}, [searchParams]);
-
-	const reseedAuthOptionsFromPersisted = (
-		method: IAuthenticationMethod | null,
-		persistedOptions: readonly IWorkTrackingSystemOption[],
-	): IWorkTrackingSystemOption[] =>
-		method?.options.map((opt) => ({
-			key: opt.key,
-			value: persistedOptions.find((p) => p.key === opt.key)?.value ?? "",
-			isSecret: opt.isSecret,
-			isOptional: opt.isOptional,
-		})) ?? [];
-
-	const applyOAuthResume = (
-		systems: IWorkTrackingSystemConnection[],
-		persisted: IWorkTrackingSystemConnection,
-		outcome: string,
-	) => {
-		const matchingSystem =
-			systems.find(
-				(s) => s.workTrackingSystem === persisted.workTrackingSystem,
-			) ?? null;
-		const matchingMethod =
-			matchingSystem?.availableAuthenticationMethods?.find(
-				(m) => m.key === persisted.authenticationMethodKey,
-			) ?? null;
-
-		if (matchingSystem) {
-			setSelectedSystem(matchingSystem);
-		}
-		setSelectedAuthMethod(matchingMethod);
-		setAuthOptions(
-			reseedAuthOptionsFromPersisted(matchingMethod, persisted.options),
-		);
-		setConnectionName(persisted.name);
-		setDraftConnectionId(persisted.id ?? null);
-
-		if (outcome === "success") {
-			setActiveStep(2);
-		} else {
-			setActiveStep(1);
-			setValidationError(
-				"OAuth connect did not complete. Check your Client ID / Client Secret and try again.",
-			);
-		}
-	};
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: resume-from-OAuth must read searchParams exactly once on mount; re-running on dep changes would replay the resume flow with stale data after the user navigates further.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: supported systems are fetched once on mount; refetching on dep changes would re-run while the user is mid-flow.
 	useEffect(() => {
 		const fetchSystems = async () => {
 			setLoading(true);
 			try {
 				const systems = await getSupportedSystems();
 				setSupportedSystems(systems);
-
-				const resume = readOAuthResumeParams();
-				if (!resume) {
-					return;
-				}
-
-				const persisted =
-					await workTrackingSystemService.getConfiguredWorkTrackingSystems();
-				const matching = persisted.find((c) => c.id === resume.connectionId);
-				if (!matching) {
-					return;
-				}
-
-				applyOAuthResume(systems, matching, resume.outcome);
 			} finally {
 				setLoading(false);
 			}
@@ -325,31 +264,63 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		}
 	};
 
+	const ensureDraftConnectionId = async (): Promise<number | null> => {
+		if (draftConnectionId !== null) {
+			return draftConnectionId;
+		}
+		const dto = buildConnectionDto();
+		if (!dto) {
+			return null;
+		}
+		const saved = await saveConnection(dto);
+		if (saved.id === null) {
+			return null;
+		}
+		setDraftConnectionId(saved.id);
+		return saved.id;
+	};
+
 	const startOAuthHandshake = async () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
+		setInlineMessage(null);
 		setValidating(true);
 		try {
-			const dto = buildConnectionDto();
-			if (!dto || !selectedAuthMethod) {
+			if (!selectedAuthMethod) {
 				setValidationError(
 					"Cannot start OAuth connect: missing system or auth method.",
 				);
 				return;
 			}
-			const saved = await saveConnection(dto);
-			if (saved.id === null) {
+			const connectionId = await ensureDraftConnectionId();
+			if (connectionId === null) {
 				setValidationError(
 					"Could not save the connection before starting OAuth connect.",
 				);
 				return;
 			}
-			setDraftConnectionId(saved.id);
 			const { authorizationUrl } = await oauthService.initiateConnect(
 				selectedAuthMethod.key,
-				saved.id,
+				connectionId,
 			);
-			globalThis.location.assign(authorizationUrl);
+			const result = await openOAuthPopup(authorizationUrl);
+			switch (result.status) {
+				case "success":
+					setActiveStep(2);
+					return;
+				case "popup_blocked":
+					setInlineMessage({ severity: "error", text: POPUP_BLOCKED_COPY });
+					return;
+				case "cancelled":
+					setInlineMessage({ severity: "info", text: CANCELLED_COPY });
+					return;
+				case "error":
+					setInlineMessage({
+						severity: "error",
+						text: result.reason ?? "OAuth failed.",
+					});
+					return;
+			}
 		} catch (error) {
 			const message =
 				error instanceof ApiError
@@ -527,6 +498,16 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 								{validationTechnicalDetails}
 							</Typography>
 						)}
+					</Alert>
+				)}
+
+				{inlineMessage !== null && (
+					<Alert
+						severity={inlineMessage.severity}
+						sx={{ width: "100%" }}
+						data-testid="create-wizard-oauth-inline-message"
+					>
+						{inlineMessage.text}
 					</Alert>
 				)}
 			</Box>
