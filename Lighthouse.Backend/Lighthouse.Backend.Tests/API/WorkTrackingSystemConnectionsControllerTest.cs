@@ -483,6 +483,38 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetWorkTrackingSystemConnections_MultipleCredentialsForSameConnection_DoesNotThrowAndUsesLatestByUpdatedAt()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 47 };
+            repositoryMock.Setup(x => x.GetAll()).Returns(new[] { connection });
+            oAuthCredentialRepositoryMock
+                .Setup(x => x.GetAll())
+                .Returns(new[]
+                {
+                    new OAuthCredential
+                    {
+                        WorkTrackingSystemConnectionId = 47,
+                        Status = OAuthCredentialStatus.Disconnected,
+                        UpdatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                    },
+                    new OAuthCredential
+                    {
+                        WorkTrackingSystemConnectionId = 47,
+                        Status = OAuthCredentialStatus.Valid,
+                        UpdatedAt = new DateTimeOffset(2026, 5, 16, 0, 0, 0, TimeSpan.Zero),
+                    },
+                });
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemConnections();
+
+            var okResult = result.Result as OkObjectResult;
+            var connections = okResult!.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
+            Assert.That(connections!.Single().RequiresReconnect, Is.False);
+        }
+
+        [Test]
         public void GetWorkTrackingSystemConnections_NoOAuthCredentialForConnection_SetsRequiresReconnectFalse()
         {
             var connection = new WorkTrackingSystemConnection { Id = 41 };

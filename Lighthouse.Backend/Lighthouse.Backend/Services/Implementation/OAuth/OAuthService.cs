@@ -105,16 +105,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             var tokens = await provider.ExchangeCodeAsync(code, flowContext, cancellationToken);
             var durationMs = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 
-            var credential = new OAuthCredential
-            {
-                WorkTrackingSystemConnectionId = connection.Id,
-                AccessToken = tokens.AccessToken,
-                RefreshToken = tokens.RefreshToken,
-                ExpiresAt = tokens.ExpiresAt,
-                Status = OAuthCredentialStatus.Valid,
-                UpdatedAt = timeProvider.GetUtcNow(),
-            };
-            credentialRepository.Add(credential);
+            UpsertValidCredential(connection.Id, tokens);
             await credentialRepository.Save();
 
             logger.LogInformation(
@@ -125,6 +116,33 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 provider.DefaultScopes);
 
             return new OAuthCompleteResult(connection.Id, OAuthCredentialStatus.Valid, null);
+        }
+
+        private void UpsertValidCredential(int connectionId, OAuthTokens tokens)
+        {
+            var existing = credentialRepository.GetByPredicate(c => c.WorkTrackingSystemConnectionId == connectionId);
+            var now = timeProvider.GetUtcNow();
+
+            if (existing is not null)
+            {
+                existing.AccessToken = tokens.AccessToken;
+                existing.RefreshToken = tokens.RefreshToken;
+                existing.ExpiresAt = tokens.ExpiresAt;
+                existing.Status = OAuthCredentialStatus.Valid;
+                existing.UpdatedAt = now;
+                credentialRepository.Update(existing);
+                return;
+            }
+
+            credentialRepository.Add(new OAuthCredential
+            {
+                WorkTrackingSystemConnectionId = connectionId,
+                AccessToken = tokens.AccessToken,
+                RefreshToken = tokens.RefreshToken,
+                ExpiresAt = tokens.ExpiresAt,
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = now,
+            });
         }
 
         public async Task DisconnectAsync(int connectionId, CancellationToken cancellationToken)

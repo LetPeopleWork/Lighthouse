@@ -196,6 +196,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
+        public async Task CompleteAsync_ExistingCredentialForConnection_UpdatesInPlaceAndDoesNotAdd()
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+            stateTokenIssuerMock
+                .Setup(i => i.Verify(ValidStateToken))
+                .Returns(new OAuthStateClaims
+                {
+                    ConnectionId = ConnectionId,
+                    ProviderKey = ProviderKey,
+                    Nonce = "nonce",
+                    ExpiresAt = timeProvider.GetUtcNow().AddMinutes(10),
+                });
+            var existing = new OAuthCredential
+            {
+                Id = 99,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = "old-at",
+                RefreshToken = "old-rt",
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(-10),
+                Status = OAuthCredentialStatus.Disconnected,
+                UpdatedAt = timeProvider.GetUtcNow().AddDays(-1),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(existing) ? existing : null);
+            var newExpiresAt = timeProvider.GetUtcNow().AddHours(1);
+            providerMock
+                .Setup(p => p.ExchangeCodeAsync("auth-code-456", It.IsAny<OAuthFlowContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OAuthTokens("new-at", "new-rt", newExpiresAt));
+
+            var sut = CreateService();
+
+            var result = await sut.CompleteAsync("auth-code-456", ValidStateToken, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(OAuthCredentialStatus.Valid));
+                Assert.That(existing.AccessToken, Is.EqualTo("new-at"));
+                Assert.That(existing.RefreshToken, Is.EqualTo("new-rt"));
+                Assert.That(existing.ExpiresAt, Is.EqualTo(newExpiresAt));
+                Assert.That(existing.Status, Is.EqualTo(OAuthCredentialStatus.Valid));
+                Assert.That(existing.UpdatedAt, Is.EqualTo(timeProvider.GetUtcNow()));
+            }
+            credentialRepositoryMock.Verify(r => r.Update(existing), Times.Once);
+            credentialRepositoryMock.Verify(r => r.Add(It.IsAny<OAuthCredential>()), Times.Never);
+            credentialRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        [Test]
         public void CompleteAsync_InvalidStateToken_PropagatesAndDoesNotPersistCredential()
         {
             stateTokenIssuerMock
