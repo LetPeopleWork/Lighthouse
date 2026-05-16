@@ -181,6 +181,23 @@ describe("useOAuthPopup", () => {
 		expect(resolved).toEqual({ status: "error", reason: "invalid_grant" });
 	});
 
+	it("resolves with error and reason 'timeout' when the popup never reports completion within 90 seconds", async () => {
+		const fakePopup = makeFakePopup();
+		openSpy.mockReturnValue(fakePopup as unknown as Window);
+
+		const { result } = renderHook(() => useOAuthPopup());
+
+		const pending = result.current.openOAuthPopup(AUTH_URL);
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(90_000);
+		});
+
+		const resolved = await pending;
+
+		expect(resolved).toEqual({ status: "error", reason: "timeout" });
+	});
+
 	it("removes the message listener and stops polling popup.closed after resolution", async () => {
 		const fakePopup = makeFakePopup();
 		openSpy.mockReturnValue(fakePopup as unknown as Window);
