@@ -1,0 +1,157 @@
+using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Services.Interfaces.OAuth;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
+{
+    public class AdoOAuthProvider : IOAuthProvider
+    {
+        public const string HttpClientName = "AdoOAuth";
+
+        private const string ProviderKeyValue = "ado.oauth";
+        private const string MicrosoftAuthorizeEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+        private const string MicrosoftTokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+        private const string ResponseTypeCode = "code";
+        private const string ResponseModeQuery = "query";
+        private const string PromptConsent = "consent";
+
+        private static readonly IReadOnlyList<string> AzureDevOpsDefaultScopes =
+        [
+            "vso.work_write",
+            "offline_access",
+        ];
+
+        private static readonly JsonSerializerOptions TokenResponseJsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        };
+
+        private readonly HttpClient httpClient;
+        private readonly TimeProvider timeProvider;
+        private readonly ILogger<AdoOAuthProvider> logger;
+
+        public AdoOAuthProvider(HttpClient httpClient, TimeProvider timeProvider, ILogger<AdoOAuthProvider> logger)
+        {
+            this.httpClient = httpClient;
+            this.timeProvider = timeProvider;
+            this.logger = logger;
+        }
+
+        public string ProviderKey => ProviderKeyValue;
+
+        public IReadOnlyList<string> DefaultScopes => AzureDevOpsDefaultScopes;
+
+        public Uri BuildAuthorizationUrl(OAuthFlowContext context)
+        {
+            var queryParameters = new Dictionary<string, string?>
+            {
+                ["client_id"] = context.ClientId,
+                ["response_type"] = ResponseTypeCode,
+                ["redirect_uri"] = context.RedirectUri.ToString(),
+                ["scope"] = string.Join(' ', context.Scopes),
+                ["state"] = context.State,
+                ["response_mode"] = ResponseModeQuery,
+                ["prompt"] = PromptConsent,
+            };
+
+            var url = QueryHelpers.AddQueryString(MicrosoftAuthorizeEndpoint, queryParameters);
+            return new Uri(url);
+        }
+
+        public Task<OAuthTokens> ExchangeCodeAsync(string code, OAuthFlowContext context, CancellationToken cancellationToken)
+        {
+            var formParameters = new Dictionary<string, string>
+            {
+                ["grant_type"] = "authorization_code",
+                ["client_id"] = context.ClientId,
+                ["client_secret"] = context.ClientSecret,
+                ["code"] = code,
+                ["redirect_uri"] = context.RedirectUri.ToString(),
+                ["scope"] = string.Join(' ', context.Scopes),
+            };
+
+            return PostTokenRequestAsync(formParameters, cancellationToken);
+        }
+
+        public Task<OAuthTokens> RefreshTokenAsync(OAuthRefreshContext context, CancellationToken cancellationToken)
+        {
+            var formParameters = new Dictionary<string, string>
+            {
+                ["grant_type"] = "refresh_token",
+                ["refresh_token"] = context.RefreshToken,
+                ["client_id"] = context.ClientId,
+                ["client_secret"] = context.ClientSecret,
+            };
+
+            return PostTokenRequestAsync(formParameters, cancellationToken);
+        }
+
+        private async Task<OAuthTokens> PostTokenRequestAsync(
+            IDictionary<string, string> formParameters,
+            CancellationToken cancellationToken)
+        {
+            using var content = new FormUrlEncodedContent(formParameters);
+            using var response = await httpClient.PostAsync(MicrosoftTokenEndpoint, content, cancellationToken);
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw BuildErrorException((int)response.StatusCode, responseBody);
+            }
+
+            var tokenResponse = JsonSerializer.Deserialize<MicrosoftTokenResponse>(responseBody, TokenResponseJsonOptions)
+                ?? throw new OAuthProviderResponseException(
+                    ProviderKey,
+                    (int)response.StatusCode,
+                    "empty_response",
+                    "Microsoft identity token endpoint returned an empty body.");
+
+            logger.LogInformation(
+                "ado.oauth.token granted scope from Microsoft identity platform: {GrantedScope}",
+                tokenResponse.Scope);
+
+            var expiresAt = timeProvider.GetUtcNow().AddSeconds(tokenResponse.ExpiresIn);
+            return new OAuthTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt);
+        }
+
+        private OAuthProviderResponseException BuildErrorException(int httpStatus, string responseBody)
+        {
+            var errorCode = "unknown_error";
+            var errorDescription = responseBody;
+
+            if (!string.IsNullOrWhiteSpace(responseBody))
+            {
+                try
+                {
+                    var errorResponse = JsonSerializer.Deserialize<MicrosoftErrorResponse>(responseBody, TokenResponseJsonOptions);
+                    if (errorResponse is not null)
+                    {
+                        errorCode = errorResponse.Error ?? errorCode;
+                        errorDescription = errorResponse.ErrorDescription ?? errorDescription;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Non-JSON error body — keep raw body as the description.
+                }
+            }
+
+            return new OAuthProviderResponseException(ProviderKey, httpStatus, errorCode, errorDescription);
+        }
+
+        private sealed record MicrosoftTokenResponse(
+            [property: JsonPropertyName("access_token")] string AccessToken,
+            [property: JsonPropertyName("refresh_token")] string RefreshToken,
+            [property: JsonPropertyName("expires_in")] int ExpiresIn,
+            [property: JsonPropertyName("token_type")] string TokenType,
+            [property: JsonPropertyName("scope")] string Scope);
+
+        private sealed record MicrosoftErrorResponse(
+            [property: JsonPropertyName("error")] string? Error,
+            [property: JsonPropertyName("error_description")] string? ErrorDescription);
+    }
+}
