@@ -89,7 +89,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 Assert.That(capturedContext.ClientSecret, Is.EqualTo(PlaintextClientSecret));
                 Assert.That(capturedContext.RedirectUri, Is.EqualTo(new Uri($"{BaseUrl}/api/oauth/callback")));
                 Assert.That(capturedContext.State, Is.EqualTo(ValidStateToken));
+                Assert.That(capturedContext.TenantId, Is.Null);
             }
+        }
+
+        [Test]
+        public async Task InitiateAsync_WhenTenantIdOptionPresent_PassesPlainTextTenantIdInFlowContext()
+        {
+            const string tenantId = "1f3d4c2b-0e7a-4d6f-9b8a-2c5e7f9a1b3d";
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            {
+                Key = OAuthWorkTrackingOptionNames.TenantId,
+                Value = tenantId,
+                IsSecret = false,
+            });
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+            stateTokenIssuerMock.Setup(i => i.Issue(ConnectionId, ProviderKey)).Returns(ValidStateToken);
+
+            OAuthFlowContext? capturedContext = null;
+            providerMock
+                .Setup(p => p.BuildAuthorizationUrl(It.IsAny<OAuthFlowContext>()))
+                .Callback<OAuthFlowContext>(ctx => capturedContext = ctx)
+                .Returns(new Uri("https://login.microsoftonline.com/"));
+
+            var sut = CreateService();
+
+            await sut.InitiateAsync(ConnectionId, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(capturedContext, Is.Not.Null);
+                Assert.That(capturedContext!.TenantId, Is.EqualTo(tenantId));
+            }
+            cryptoServiceMock.Verify(c => c.Decrypt(tenantId), Times.Never);
         }
 
         [Test]

@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetMethodByKey_AdoOAuth_HasUrlClientIdAndClientSecretOptions()
+        public void GetMethodByKey_AdoOAuth_HasUrlClientIdTenantIdAndClientSecretOptions()
         {
             var method = AuthenticationMethodSchema.GetMethodByKey(WorkTrackingSystems.AzureDevOps, "ado.oauth");
 
@@ -175,7 +175,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(method!.Options, Has.Count.EqualTo(3));
+                Assert.That(method!.Options, Has.Count.EqualTo(4));
 
                 var url = method.Options.Single(o => o.Key == Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url);
                 Assert.That(url.DisplayName, Is.EqualTo("Organization URL"));
@@ -184,6 +184,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 var clientId = method.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientId);
                 Assert.That(clientId.DisplayName, Is.EqualTo("Client ID"));
                 Assert.That(clientId.IsSecret, Is.False);
+
+                var tenantId = method.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.TenantId);
+                Assert.That(tenantId.DisplayName, Is.EqualTo("Directory (Tenant) ID"));
+                Assert.That(tenantId.IsSecret, Is.False);
 
                 var clientSecret = method.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientSecret);
                 Assert.That(clientSecret.DisplayName, Is.EqualTo("Client Secret"));

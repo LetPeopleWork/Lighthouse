@@ -17,6 +17,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
         private const string TokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
         private const string AuthorizeEndpointHost = "login.microsoftonline.com";
         private const string AuthorizeEndpointPath = "/common/oauth2/v2.0/authorize";
+        private const string TenantGuid = "1f3d4c2b-0e7a-4d6f-9b8a-2c5e7f9a1b3d";
+        private const string PerTenantAuthorizeEndpointPath = $"/{TenantGuid}/oauth2/v2.0/authorize";
+        private const string PerTenantTokenEndpoint = $"https://login.microsoftonline.com/{TenantGuid}/oauth2/v2.0/token";
 
         private static readonly DateTimeOffset FixedNow = new(2026, 5, 16, 12, 0, 0, TimeSpan.Zero);
 
@@ -68,6 +71,76 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
                 Assert.That(queryParameters["response_mode"], Is.EqualTo("query"));
                 Assert.That(queryParameters["prompt"], Is.EqualTo("consent"));
             }
+        }
+
+        [Test]
+        public void BuildAuthorizationUrl_WhenTenantIdSet_TargetsPerTenantEndpoint()
+        {
+            var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
+            var context = CreateFlowContext(tenantId: TenantGuid);
+
+            var url = provider.BuildAuthorizationUrl(context);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(url.Host, Is.EqualTo(AuthorizeEndpointHost));
+                Assert.That(url.AbsolutePath, Is.EqualTo(PerTenantAuthorizeEndpointPath));
+                Assert.That(url.AbsolutePath, Does.Not.Contain("/common/"));
+            }
+        }
+
+        [Test]
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("   ")]
+        public void BuildAuthorizationUrl_WhenTenantIdNullOrBlank_TargetsCommonEndpoint(string? tenantId)
+        {
+            var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
+            var context = CreateFlowContext(tenantId: tenantId);
+
+            var url = provider.BuildAuthorizationUrl(context);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(url.Host, Is.EqualTo(AuthorizeEndpointHost));
+                Assert.That(url.AbsolutePath, Is.EqualTo(AuthorizeEndpointPath));
+            }
+        }
+
+        [Test]
+        public async Task ExchangeCodeAsync_WhenTenantIdSet_PostsToPerTenantTokenEndpoint()
+        {
+            HttpRequestMessage? capturedRequest = null;
+            var handler = CreateHandler((request, _) =>
+            {
+                capturedRequest = request;
+                return Task.FromResult(SuccessTokenResponse("a", "r", 3600));
+            });
+
+            var provider = CreateProvider(handler);
+            var context = CreateFlowContext(tenantId: TenantGuid);
+
+            await provider.ExchangeCodeAsync("code", context, CancellationToken.None);
+
+            Assert.That(capturedRequest!.RequestUri!.ToString(), Is.EqualTo(PerTenantTokenEndpoint));
+        }
+
+        [Test]
+        public async Task RefreshTokenAsync_WhenTenantIdSet_PostsToPerTenantTokenEndpoint()
+        {
+            HttpRequestMessage? capturedRequest = null;
+            var handler = CreateHandler((request, _) =>
+            {
+                capturedRequest = request;
+                return Task.FromResult(SuccessTokenResponse("a", "r", 3600));
+            });
+
+            var provider = CreateProvider(handler);
+            var refreshContext = new OAuthRefreshContext("old-refresh", "ado-client-id", "ado-client-secret", TenantGuid);
+
+            await provider.RefreshTokenAsync(refreshContext, CancellationToken.None);
+
+            Assert.That(capturedRequest!.RequestUri!.ToString(), Is.EqualTo(PerTenantTokenEndpoint));
         }
 
         [Test]
@@ -261,7 +334,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             "offline_access",
         ];
 
-        private static OAuthFlowContext CreateFlowContext()
+        private static OAuthFlowContext CreateFlowContext(string? tenantId = null)
         {
             return new OAuthFlowContext(
                 ConnectionId: 42,
@@ -270,7 +343,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
                 ClientSecret: "ado-client-secret",
                 RedirectUri: new Uri("https://lighthouse.example.com/api/oauth/callback"),
                 State: "signed-state-token",
-                Scopes: FlowContextScopes);
+                Scopes: FlowContextScopes,
+                TenantId: tenantId);
         }
     }
 }

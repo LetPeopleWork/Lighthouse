@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAut
     {
         public const string ClientId = "oauth.clientId";
 
+        public const string TenantId = "oauth.tenantId";
+
         public const string ClientSecret = "oauth.clientSecret";
     }
 }

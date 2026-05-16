@@ -245,8 +245,10 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             var clientId = cryptoService.Decrypt(encryptedClientId);
             var clientSecret = cryptoService.Decrypt(encryptedClientSecret);
             var refreshToken = cryptoService.Decrypt(credential.RefreshToken);
+            var tenantId = connection.Options
+                .SingleOrDefault(o => o.Key == OAuthWorkTrackingOptionNames.TenantId)?.Value;
 
-            var refreshContext = new OAuthRefreshContext(refreshToken, clientId, clientSecret);
+            var refreshContext = new OAuthRefreshContext(refreshToken, clientId, clientSecret, tenantId);
             OAuthTokens refreshed;
             try
             {
@@ -329,6 +331,8 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             var clientId = cryptoService.Decrypt(encryptedClientId);
             var clientSecret = cryptoService.Decrypt(encryptedClientSecret);
             var redirectUri = new Uri(new Uri(ResolveBaseUrl()), CallbackPath);
+            var tenantId = connection.Options
+                .SingleOrDefault(o => o.Key == OAuthWorkTrackingOptionNames.TenantId)?.Value;
 
             return new OAuthFlowContext(
                 connection.Id,
@@ -337,7 +341,8 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 clientSecret,
                 redirectUri,
                 stateToken,
-                provider.DefaultScopes);
+                provider.DefaultScopes,
+                tenantId);
         }
 
         private string ResolveBaseUrl()

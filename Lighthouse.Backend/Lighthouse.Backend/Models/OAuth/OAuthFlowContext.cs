@@ -7,5 +7,6 @@ namespace Lighthouse.Backend.Models.OAuth
         string ClientSecret,
         Uri RedirectUri,
         string State,
-        IReadOnlyList<string> Scopes);
+        IReadOnlyList<string> Scopes,
+        string? TenantId = null);
 }

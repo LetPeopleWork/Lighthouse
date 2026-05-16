@@ -12,8 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
     {
         public const string HttpClientName = "AdoOAuth";
 
-        private const string MicrosoftAuthorizeEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-        private const string MicrosoftTokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+        private const string MicrosoftEndpointTemplate = "https://login.microsoftonline.com/{0}/oauth2/v2.0/{1}";
+        private const string CommonTenantSegment = "common";
         private const string ResponseTypeCode = "code";
         private const string ResponseModeQuery = "query";
         private const string PromptConsent = "consent";
@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
                 ["prompt"] = PromptConsent,
             };
 
-            var url = QueryHelpers.AddQueryString(MicrosoftAuthorizeEndpoint, queryParameters);
+            var url = QueryHelpers.AddQueryString(BuildAuthorizeEndpoint(context.TenantId), queryParameters);
             return new Uri(url);
         }
 
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
                 ["scope"] = string.Join(' ', context.Scopes),
             };
 
-            return PostTokenRequestAsync(formParameters, cancellationToken);
+            return PostTokenRequestAsync(BuildTokenEndpoint(context.TenantId), formParameters, cancellationToken);
         }
 
         public Task<OAuthTokens> RefreshTokenAsync(OAuthRefreshContext context, CancellationToken cancellationToken)
@@ -86,15 +86,31 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
                 ["client_secret"] = context.ClientSecret,
             };
 
-            return PostTokenRequestAsync(formParameters, cancellationToken);
+            return PostTokenRequestAsync(BuildTokenEndpoint(context.TenantId), formParameters, cancellationToken);
+        }
+
+        private static string BuildAuthorizeEndpoint(string? tenantId)
+        {
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, MicrosoftEndpointTemplate, ResolveTenantSegment(tenantId), "authorize");
+        }
+
+        private static string BuildTokenEndpoint(string? tenantId)
+        {
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, MicrosoftEndpointTemplate, ResolveTenantSegment(tenantId), "token");
+        }
+
+        private static string ResolveTenantSegment(string? tenantId)
+        {
+            return string.IsNullOrWhiteSpace(tenantId) ? CommonTenantSegment : tenantId;
         }
 
         private async Task<OAuthTokens> PostTokenRequestAsync(
+            string tokenEndpoint,
             IDictionary<string, string> formParameters,
             CancellationToken cancellationToken)
         {
             using var content = new FormUrlEncodedContent(formParameters);
-            using var response = await httpClient.PostAsync(MicrosoftTokenEndpoint, content, cancellationToken);
+            using var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken);
 
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
