@@ -140,7 +140,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             var subject = CreateSubject();
 
+            var tcs = new TaskCompletionSource<bool>();
+            writeBackTriggerServiceMock.Setup(x => x.TriggerWriteBackForTeam(It.IsAny<Team>()))
+                .Callback(() => tcs.TrySetResult(true))
+                .Returns(Task.CompletedTask);
+
             await subject.StartAsync(CancellationToken.None);
+
+            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
+            Assert.That(completedTask, Is.EqualTo(tcs.Task), "TriggerWriteBackForTeam was not called within timeout");
 
             writeBackTriggerServiceMock.Verify(x => x.TriggerWriteBackForTeam(team), Times.Once);
         }
