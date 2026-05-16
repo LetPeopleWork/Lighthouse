@@ -1,7 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
-using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +10,6 @@ namespace Lighthouse.Backend.API
     [Route("api/oauth/health")]
     [ApiController]
     [Authorize]
-    [LicenseGuard(RequirePremium = true)]
     [RbacGuard(RbacGuardRequirement.SystemAdmin)]
     public sealed class OAuthHealthController : ControllerBase
     {

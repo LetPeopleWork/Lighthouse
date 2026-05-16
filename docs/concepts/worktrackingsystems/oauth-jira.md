@@ -74,18 +74,16 @@ A refresh attempt can fail for reasons Lighthouse cannot recover from on its own
 
 The admin's job is to click **Reconnect** and complete the Atlassian consent dance again. On success the credential's `Status` returns to `Valid`, the banner disappears, `requiresReconnect` drops to `false`, and the next scheduled sync resumes normally.
 
-## OAuth Health tile
+## OAuth health indicator
 
-A SystemAdmin operating a Premium-licensed Lighthouse instance also sees an **OAuth Health** tile above the connections grid on the Connections settings page. The tile is hidden for non-SystemAdmin users entirely; SystemAdmin users on non-Premium instances see an Upgrade-to-Premium affordance in its place. The tile reports:
+When at least one OAuth connection exists, system admins see a small **cloud icon** in the application header that reports the health of OAuth connections at a glance.
 
-| KPI | Meaning |
-|---|---|
-| `Stale Refresh-Failed (24h)` | Count of OAuth connections currently in `RefreshFailed` status whose last status change was more than 24 hours ago. Answers: "have any connections been stuck in RefreshFailed for over a day?" |
-| `Stale Refresh-Failed (7d)` | Same as above, extended to a 7-day window. Answers: "is anyone systematically missing reconnect prompts?" |
-| `Setup Success Rate (30d)` | Rendered as **Pending**. Requires the in-instance OAuth event store. |
-| `Refresh Success Rate (7d, per connection)` | Rendered as **Pending**. Requires the in-instance OAuth event store. |
+| State | Icon | Tooltip |
+|---|---|---|
+| All OAuth connections healthy | Cloud (success colour) | *"All OAuth connections healthy"* |
+| One or more connections need reconnect | Cloud-off (warning colour, with badge count) | *"N OAuth connection(s) need reconnect"* |
 
-The two **Pending** KPIs depend on a per-instance OAuth event store that does not exist yet. They are tracked separately as [Epic #5017 — OAuth Event Store and Health KPI Completeness](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5017). The deferred KPIs render with a tooltip pointing at that Epic; the tile ships in this slice with the available subset.
+Clicking the icon navigates to **System Settings**, where the affected connection's edit dialog will show the orange reconnect banner. The icon is hidden when no OAuth connections exist on the instance.
 
 # Troubleshooting
 
@@ -110,4 +108,3 @@ For deeper issues, capture the failing callback URL from the browser address bar
 - [ADR-008 — OAuth credential separation](../../product/architecture/adr-008-oauth-credential-separation.md)
 - [ADR-009 — OAuth BaseUrl callback](../../product/architecture/adr-009-oauth-baseurl-callback.md)
 - [ADR-010 — OAuth single-flight refresh](../../product/architecture/adr-010-oauth-single-flight-refresh.md)
-- [Epic #5017 — OAuth Event Store and Health KPI Completeness](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5017) (the two Pending Health KPIs)

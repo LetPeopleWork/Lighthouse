@@ -11,47 +11,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
     {
         private static readonly DateTimeOffset FixedNow = new(2026, 5, 15, 12, 0, 0, TimeSpan.Zero);
 
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(5)]
-        public async Task AggregateAsync_CountsStaleRefreshFailedCredentialsOver7dWindow(int refreshFailedOlderThan7d)
+        [Test]
+        public async Task AggregateAsync_NoCredentials_ReturnsZeroTotals()
         {
-            var credentials = new List<OAuthCredential>();
-            for (var index = 0; index < refreshFailedOlderThan7d; index++)
+            var aggregator = CreateAggregator([]);
+
+            var result = await aggregator.AggregateAsync(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
             {
-                credentials.Add(new OAuthCredential
-                {
-                    Id = index + 1,
-                    Status = OAuthCredentialStatus.RefreshFailed,
-                    UpdatedAt = FixedNow.AddDays(-8),
-                });
+                Assert.That(result.TotalOAuthConnections, Is.Zero);
+                Assert.That(result.DisconnectedCount, Is.Zero);
             }
+        }
+
+        [Test]
+        public async Task AggregateAsync_OnlyValidCredentials_ReturnsTotalAndZeroDisconnected()
+        {
+            var credentials = new List<OAuthCredential>
+            {
+                new() { Id = 1, WorkTrackingSystemConnectionId = 10, Status = OAuthCredentialStatus.Valid, UpdatedAt = FixedNow },
+                new() { Id = 2, WorkTrackingSystemConnectionId = 11, Status = OAuthCredentialStatus.Valid, UpdatedAt = FixedNow },
+            };
 
             var aggregator = CreateAggregator(credentials);
 
             var result = await aggregator.AggregateAsync(CancellationToken.None);
 
-            Assert.That(result.StaleRefreshFailedCount7d, Is.EqualTo(refreshFailedOlderThan7d));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.TotalOAuthConnections, Is.EqualTo(2));
+                Assert.That(result.DisconnectedCount, Is.Zero);
+            }
         }
 
-        [TestCase(OAuthCredentialStatus.Valid)]
+        [TestCase(OAuthCredentialStatus.RefreshFailed)]
         [TestCase(OAuthCredentialStatus.Disconnected)]
-        public async Task AggregateAsync_ExcludesNonRefreshFailedCredentialsFromStaleCount(OAuthCredentialStatus nonFailedStatus)
+        public async Task AggregateAsync_NonValidCredential_IncrementsDisconnectedCount(OAuthCredentialStatus status)
         {
             var credentials = new List<OAuthCredential>
             {
-                new()
-                {
-                    Id = 1,
-                    Status = nonFailedStatus,
-                    UpdatedAt = FixedNow.AddDays(-30),
-                },
-                new()
-                {
-                    Id = 2,
-                    Status = OAuthCredentialStatus.RefreshFailed,
-                    UpdatedAt = FixedNow.AddDays(-2),
-                },
+                new() { Id = 1, WorkTrackingSystemConnectionId = 10, Status = OAuthCredentialStatus.Valid, UpdatedAt = FixedNow },
+                new() { Id = 2, WorkTrackingSystemConnectionId = 11, Status = status, UpdatedAt = FixedNow },
             };
 
             var aggregator = CreateAggregator(credentials);
@@ -60,34 +61,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.StaleRefreshFailedCount24h, Is.EqualTo(1));
-                Assert.That(result.StaleRefreshFailedCount7d, Is.EqualTo(0));
+                Assert.That(result.TotalOAuthConnections, Is.EqualTo(2));
+                Assert.That(result.DisconnectedCount, Is.EqualTo(1));
             }
         }
 
         [Test]
-        public async Task AggregateAsync_StaleCount24hIsSupersetOfStaleCount7d()
+        public async Task AggregateAsync_MultipleCredentialsForSameConnection_CountsConnectionOnce()
         {
             var credentials = new List<OAuthCredential>
             {
-                new()
-                {
-                    Id = 1,
-                    Status = OAuthCredentialStatus.RefreshFailed,
-                    UpdatedAt = FixedNow.AddHours(-25),
-                },
-                new()
-                {
-                    Id = 2,
-                    Status = OAuthCredentialStatus.RefreshFailed,
-                    UpdatedAt = FixedNow.AddDays(-8),
-                },
-                new()
-                {
-                    Id = 3,
-                    Status = OAuthCredentialStatus.RefreshFailed,
-                    UpdatedAt = FixedNow.AddDays(-10),
-                },
+                new() { Id = 1, WorkTrackingSystemConnectionId = 10, Status = OAuthCredentialStatus.Disconnected, UpdatedAt = FixedNow.AddDays(-1) },
+                new() { Id = 2, WorkTrackingSystemConnectionId = 10, Status = OAuthCredentialStatus.Valid, UpdatedAt = FixedNow },
             };
 
             var aggregator = CreateAggregator(credentials);
@@ -96,25 +81,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.StaleRefreshFailedCount24h, Is.EqualTo(3), "all three rows are stale > 24h");
-                Assert.That(result.StaleRefreshFailedCount7d, Is.EqualTo(2), "only two rows are stale > 7d");
-                Assert.That(result.StaleRefreshFailedCount24h, Is.GreaterThanOrEqualTo(result.StaleRefreshFailedCount7d));
-            }
-        }
-
-        [Test]
-        public async Task AggregateAsync_ReportsEventStorePendingForUnavailableKpis()
-        {
-            var aggregator = CreateAggregator(new List<OAuthCredential>());
-
-            var result = await aggregator.AggregateAsync(CancellationToken.None);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.SetupSuccessRate30d.Value, Is.Null);
-                Assert.That(result.SetupSuccessRate30d.UnavailableReason, Is.EqualTo("event_store_pending"));
-                Assert.That(result.RefreshSuccessRate7d.Value, Is.Null);
-                Assert.That(result.RefreshSuccessRate7d.UnavailableReason, Is.EqualTo("event_store_pending"));
+                Assert.That(result.TotalOAuthConnections, Is.EqualTo(1));
+                Assert.That(result.DisconnectedCount, Is.Zero, "latest credential is Valid, so connection is healthy");
             }
         }
 
@@ -123,9 +91,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             var timeProvider = new FakeTimeProvider(FixedNow);
 
             var repositoryMock = new Mock<IRepository<OAuthCredential>>();
-            repositoryMock
-                .Setup(repository => repository.GetAll())
-                .Returns(credentials);
+            repositoryMock.Setup(repository => repository.GetAll()).Returns(credentials);
 
             return new OAuthHealthAggregator(repositoryMock.Object, timeProvider);
         }

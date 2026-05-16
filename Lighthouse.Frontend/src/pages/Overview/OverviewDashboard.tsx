@@ -18,7 +18,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
-import OAuthHealthTile from "../../components/Common/Connections/OAuthHealthTile";
 import ReconnectBanner from "../../components/Common/Connections/ReconnectBanner";
 import DataGridBase from "../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../components/Common/DataGrid/types";
@@ -567,8 +566,6 @@ const OverviewDashboard: React.FC = () => {
 									</Alert>
 								</Fade>
 							)}
-
-							<OAuthHealthTile />
 
 							{filteredConnections
 								.filter((c) => c.requiresReconnect === true)

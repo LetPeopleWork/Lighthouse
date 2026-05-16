@@ -23,6 +23,7 @@ import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
 import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
+import OAuthHealthIcon from "./OAuthHealthIcon";
 import UpdateAllButton from "./UpdateAllButton";
 
 interface HeaderProps {
@@ -115,6 +116,7 @@ const Header: React.FC<HeaderProps> = ({
 				{isMobile ? (
 					<>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
+							<OAuthHealthIcon />
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<IconButton
@@ -151,6 +153,7 @@ const Header: React.FC<HeaderProps> = ({
 						</Box>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
 							{rbac.isSystemAdmin && <UpdateAllButton />}
+							<OAuthHealthIcon />
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<ExternalLinkButton

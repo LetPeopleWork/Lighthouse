@@ -1,0 +1,79 @@
+import CloudDoneIcon from "@mui/icons-material/CloudDone";
+import CloudOffIcon from "@mui/icons-material/CloudOff";
+import Badge from "@mui/material/Badge";
+import IconButton from "@mui/material/IconButton";
+import { useTheme } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useRbac } from "../../../hooks/useRbac";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IOAuthHealthDto } from "../../../services/Api/OAuthService";
+
+const SETTINGS_CONNECTIONS_PATH = "/settings";
+
+const OAuthHealthIcon = () => {
+	const theme = useTheme();
+	const { isSystemAdmin } = useRbac();
+	const { oauthService } = useContext(ApiServiceContext);
+	const navigate = useNavigate();
+
+	const [health, setHealth] = useState<IOAuthHealthDto | null>(null);
+
+	useEffect(() => {
+		if (!isSystemAdmin) {
+			return;
+		}
+		let cancelled = false;
+		oauthService
+			.getHealth()
+			.then((dto) => {
+				if (!cancelled) {
+					setHealth(dto);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setHealth(null);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [isSystemAdmin, oauthService]);
+
+	if (!isSystemAdmin || health === null || health.totalOAuthConnections === 0) {
+		return null;
+	}
+
+	const hasIssues = health.disconnectedCount > 0;
+	const tooltip = hasIssues
+		? `${health.disconnectedCount} OAuth connection${health.disconnectedCount === 1 ? "" : "s"} need${health.disconnectedCount === 1 ? "s" : ""} reconnect`
+		: "All OAuth connections healthy";
+	const iconColor = hasIssues
+		? theme.palette.warning.main
+		: theme.palette.success.main;
+	const Icon = hasIssues ? CloudOffIcon : CloudDoneIcon;
+
+	return (
+		<Tooltip title={tooltip} arrow>
+			<IconButton
+				size="large"
+				color="inherit"
+				onClick={() => navigate(SETTINGS_CONNECTIONS_PATH)}
+				aria-label={tooltip}
+				data-testid="oauth-health-icon"
+			>
+				<Badge
+					badgeContent={hasIssues ? health.disconnectedCount : 0}
+					color="warning"
+					overlap="circular"
+				>
+					<Icon style={{ color: iconColor }} />
+				</Badge>
+			</IconButton>
+		</Tooltip>
+	);
+};
+
+export default OAuthHealthIcon;

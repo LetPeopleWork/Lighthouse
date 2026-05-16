@@ -5,16 +5,9 @@ export interface IOAuthInitiateResponse {
 	authorizationUrl: string;
 }
 
-export interface IOAuthHealthMetric {
-	value: number | null;
-	unavailableReason: string | null;
-}
-
 export interface IOAuthHealthDto {
-	setupSuccessRate30d: IOAuthHealthMetric;
-	refreshSuccessRate7d: IOAuthHealthMetric;
-	staleRefreshFailedCount24h: number;
-	staleRefreshFailedCount7d: number;
+	totalOAuthConnections: number;
+	disconnectedCount: number;
 }
 
 export interface IOAuthService {

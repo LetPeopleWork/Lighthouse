@@ -654,45 +654,6 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	it("renders the OAuth health tile for a Premium system admin and omits it for a non-system-admin viewer", async () => {
-		const mockSystemAdminRbac = createMockRbacService();
-		mockSystemAdminRbac.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: true,
-			canCreateTeam: true,
-			canCreatePortfolio: true,
-		});
-
-		const { unmount } = renderWithProviders(<OverviewDashboard />, {
-			rbacService: mockSystemAdminRbac,
-		});
-
-		await waitFor(() => {
-			expect(screen.getByTestId("oauth-health-tile")).toBeInTheDocument();
-		});
-		unmount();
-
-		const mockViewerRbac = createMockRbacService();
-		mockViewerRbac.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: false,
-			canCreateTeam: false,
-			canCreatePortfolio: false,
-			systemAdminDisplayNames: ["Admin User"],
-		});
-
-		renderWithProviders(
-			<OverviewDashboard />,
-			{ rbacService: mockViewerRbac },
-			{ connections: [], teams: [], portfolios: [] },
-		);
-
-		await waitFor(() => {
-			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
-		});
-		expect(screen.queryByTestId("oauth-health-tile")).not.toBeInTheDocument();
-	});
-
 	it("shows enabled Add Team for non-system-admin Team Admin even when no connections exist", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
