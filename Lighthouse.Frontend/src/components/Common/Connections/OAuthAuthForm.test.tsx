@@ -244,6 +244,68 @@ describe("OAuthAuthForm", () => {
 		expect(onConnect).not.toHaveBeenCalled();
 	});
 
+	it("renders the ADO HTTPS warning when providerKey is ado.oauth and baseUrl is http", () => {
+		renderForm({
+			connectionId: 7,
+			providerKey: "ado.oauth",
+			baseUrl: "http://lighthouse.example.com",
+			oauthService: createMockOAuthService(),
+		});
+
+		expect(
+			screen.getByText(
+				/Azure DevOps requires HTTPS callback URLs in production/i,
+			),
+		).toBeInTheDocument();
+
+		expect(
+			screen.queryByText(/Your callback URL may be incorrect/i),
+		).not.toBeInTheDocument();
+	});
+
+	it("renders the BaseUrl warning regardless of OAuth provider when baseUrl is empty (regression)", () => {
+		renderForm({
+			connectionId: 7,
+			providerKey: "ado.oauth",
+			baseUrl: null,
+			oauthService: createMockOAuthService(),
+		});
+
+		expect(
+			screen.getByText(/Your callback URL may be incorrect/i),
+		).toBeInTheDocument();
+	});
+
+	it("does NOT render the ADO HTTPS warning when providerKey is ado.oauth and baseUrl is https", () => {
+		renderForm({
+			connectionId: 7,
+			providerKey: "ado.oauth",
+			baseUrl: "https://lighthouse.example.com",
+			oauthService: createMockOAuthService(),
+		});
+
+		expect(
+			screen.queryByText(
+				/Azure DevOps requires HTTPS callback URLs in production/i,
+			),
+		).not.toBeInTheDocument();
+	});
+
+	it("does NOT render the ADO HTTPS warning when providerKey is jira.oauth even with an http baseUrl", () => {
+		renderForm({
+			connectionId: 7,
+			providerKey: "jira.oauth",
+			baseUrl: "http://lighthouse.example.com",
+			oauthService: createMockOAuthService(),
+		});
+
+		expect(
+			screen.queryByText(
+				/Azure DevOps requires HTTPS callback URLs in production/i,
+			),
+		).not.toBeInTheDocument();
+	});
+
 	it("disables Connect button while initiateConnect is in flight", async () => {
 		const user = userEvent.setup();
 		const oauthService = createMockOAuthService();

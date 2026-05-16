@@ -26,6 +26,14 @@ const buildCallbackUrl = (baseUrl: string | null): string => {
 	return `${root}/api/oauth/callback`;
 };
 
+const isAdoOauthOverHttp = (
+	providerKey: string,
+	baseUrl: string | null,
+): boolean =>
+	providerKey === "ado.oauth" &&
+	baseUrl !== null &&
+	baseUrl.startsWith("http://");
+
 const OAuthAuthForm = ({
 	connectionId,
 	providerKey,
@@ -41,6 +49,7 @@ const OAuthAuthForm = ({
 
 	const callbackUrl = buildCallbackUrl(baseUrl);
 	const hasBaseUrl = Boolean(baseUrl && baseUrl.length > 0);
+	const showAdoHttpsWarning = isAdoOauthOverHttp(providerKey, baseUrl);
 
 	const handleConnect = async () => {
 		setIsConnecting(true);
@@ -80,6 +89,13 @@ const OAuthAuthForm = ({
 				<Alert severity="warning">
 					Your callback URL may be incorrect. Set Lighthouse:BaseUrl in your
 					server configuration to guarantee OAuth registration works.
+				</Alert>
+			)}
+
+			{showAdoHttpsWarning && (
+				<Alert severity="warning">
+					Azure DevOps requires HTTPS callback URLs in production. Configure
+					Lighthouse:BaseUrl with https:// before registering the OAuth app.
 				</Alert>
 			)}
 

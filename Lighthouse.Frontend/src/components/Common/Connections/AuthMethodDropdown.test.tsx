@@ -99,6 +99,38 @@ describe("AuthMethodDropdown", () => {
 		expect(patOption).not.toHaveAttribute("aria-disabled", "true");
 	});
 
+	it("renders an ado.oauth method as a selectable option when included in methods (data-driven)", async () => {
+		const adoOauthMethod: IAuthenticationMethod = {
+			key: "ado.oauth",
+			displayName: "Azure DevOps OAuth",
+			options: [],
+			isPremium: true,
+		};
+		const adoPatMethod: IAuthenticationMethod = {
+			key: "ado.pat",
+			displayName: "Azure DevOps Personal Access Token",
+			options: [],
+		};
+		const user = userEvent.setup();
+		const handleChange = vi.fn();
+		renderDropdown({
+			canUsePremiumFeatures: true,
+			selectedKey: adoPatMethod.key,
+			methods: [adoPatMethod, adoOauthMethod],
+			onChange: handleChange,
+		});
+
+		await openDropdown(user);
+		const listbox = await screen.findByRole("listbox");
+		const adoOauthOption = within(listbox).getByRole("option", {
+			name: /Azure DevOps OAuth/,
+		});
+		expect(adoOauthOption).toBeInTheDocument();
+
+		await user.click(adoOauthOption);
+		expect(handleChange).toHaveBeenCalledWith("ado.oauth");
+	});
+
 	it("invokes onChange with the selected key when the user picks an option", async () => {
 		const user = userEvent.setup();
 		const handleChange = vi.fn();
