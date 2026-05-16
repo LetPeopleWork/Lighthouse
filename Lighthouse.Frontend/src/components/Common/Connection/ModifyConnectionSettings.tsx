@@ -251,6 +251,13 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		[authOptions, otherOptions],
 	);
 
+	const reloadConnection = useCallback(async () => {
+		const refreshed = await getConnectionSettings();
+		if (refreshed !== null) {
+			setSelectedWorkTrackingSystem(refreshed);
+		}
+	}, [getConnectionSettings]);
+
 	useEffect(() => {
 		const authMethodChanged =
 			isEditMode &&
@@ -411,7 +418,10 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					{isEditMode &&
 						selectedWorkTrackingSystem?.requiresReconnect === true && (
 							<Grid size={{ xs: 12 }}>
-								<ReconnectBanner connection={selectedWorkTrackingSystem} />
+								<ReconnectBanner
+									connection={selectedWorkTrackingSystem}
+									onReconnected={reloadConnection}
+								/>
 							</Grid>
 						)}
 

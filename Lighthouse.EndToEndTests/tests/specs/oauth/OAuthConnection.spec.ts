@@ -25,10 +25,13 @@ import test, { expect } from "@playwright/test";
 import { testWithAuth } from "../../fixutres/LighthouseFixture";
 import {
 	callOAuthCallback,
+	completeOAuthRoundTrip,
 	createOAuthJiraConnection,
+	disconnectOAuth,
 	initiateOAuthConnect,
 } from "../../helpers/api/oauthConnections";
 import { generateRandomName } from "../../helpers/names";
+import { LighthousePage } from "../../models/app/LighthousePage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Slice 01 — Jira OAuth (US-01, includes #4971 abstraction + #4972 BaseUrl)
@@ -163,14 +166,48 @@ test.describe("Pre-release smoke (real IdPs)", () => {
 });
 
 test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking skeleton)", () => {
-	testWithAuth.skip(
+	testWithAuth(
 		"[@walking_skeleton @popup-migration @driving_adapter @real-io @in-memory @US-01 @Story-5018] Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation",
-		async () => {
-			// TODO(DELIVER Story #5018): open the connection edit dialog for a Disconnected
-			// OAuth connection; click Reconnect; complete the StubOAuthProvider dance inside
-			// the popup window; assert the popup closes; assert the opener's status badge
-			// flips from Disconnected to Connected without a page navigation.
-			throw new Error("Not yet implemented — RED scaffold (Story #5018 DISTILL)");
+		async ({ page, request }) => {
+			const connectionName = generateRandomName();
+			const connection = await createOAuthJiraConnection(
+				request,
+				connectionName,
+			);
+			await completeOAuthRoundTrip(request, "jira.oauth", connection.id);
+			await disconnectOAuth(request, "jira.oauth", connection.id);
+
+			const lighthousePage = new LighthousePage(page);
+			const overviewPage = await lighthousePage.open();
+			const editPage = await overviewPage.editConnection(connectionName);
+
+			await expect(editPage.reconnectBanner).toBeVisible();
+
+			const editUrlBeforeReconnect = page.url();
+			const openerNavigations: string[] = [];
+			const onFrameNavigated = (frame: {
+				parentFrame: () => unknown;
+				url: () => string;
+			}): void => {
+				if (frame.parentFrame() === null) {
+					openerNavigations.push(frame.url());
+				}
+			};
+			page.on("framenavigated", onFrameNavigated);
+
+			try {
+				const popup = await editPage.clickReconnectAndWaitForPopup();
+				await popup.waitForEvent("close", { timeout: 15_000 });
+
+				await expect(editPage.reconnectBanner).toBeHidden();
+				expect(page.url()).toBe(editUrlBeforeReconnect);
+				expect(openerNavigations).toEqual([]);
+			} finally {
+				page.off("framenavigated", onFrameNavigated);
+				await request.delete(
+					`/api/latest/worktrackingsystemconnections/${connection.id}`,
+				);
+			}
 		},
 	);
 

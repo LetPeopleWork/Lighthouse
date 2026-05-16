@@ -74,3 +74,27 @@ export async function callOAuthCallback(
 	const location = response.headers().location ?? null;
 	return { status: response.status(), location };
 }
+
+export async function disconnectOAuth(
+	api: APIRequestContext,
+	providerKey: string,
+	connectionId: number,
+): Promise<void> {
+	await api.post(`/api/oauth/${providerKey}/disconnect`, {
+		data: { connectionId },
+	});
+}
+
+export async function completeOAuthRoundTrip(
+	api: APIRequestContext,
+	providerKey: string,
+	connectionId: number,
+): Promise<void> {
+	const initiate = await initiateOAuthConnect(api, providerKey, connectionId);
+	if (!initiate.authorizationUrl) {
+		throw new Error(
+			`Failed to initiate OAuth for connection ${connectionId}: ${initiate.body}`,
+		);
+	}
+	await callOAuthCallback(api, initiate.authorizationUrl);
+}

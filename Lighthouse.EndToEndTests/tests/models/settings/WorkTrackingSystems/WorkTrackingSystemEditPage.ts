@@ -33,4 +33,22 @@ export class WorkTrackingSystemEditPage {
 	get createButton(): Locator {
 		return this.page.getByRole("button", { name: "Save" });
 	}
+
+	get reconnectBanner(): Locator {
+		return this.page.getByText(
+			"Reconnect required — the OAuth refresh token is no longer valid",
+		);
+	}
+
+	get reconnectButton(): Locator {
+		return this.page.getByRole("button", { name: "Reconnect" });
+	}
+
+	async clickReconnectAndWaitForPopup(): Promise<Page> {
+		const popupPromise = this.page.context().waitForEvent("page");
+		await this.reconnectButton.click();
+		const popup = await popupPromise;
+		await popup.waitForLoadState("domcontentloaded");
+		return popup;
+	}
 }
