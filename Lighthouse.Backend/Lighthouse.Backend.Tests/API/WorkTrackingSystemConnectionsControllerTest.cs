@@ -431,7 +431,9 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkTrackingSystemConnections_OAuthCredentialStatusRefreshFailed_SetsRequiresReconnectTrue()
+        [TestCase(OAuthCredentialStatus.RefreshFailed)]
+        [TestCase(OAuthCredentialStatus.Disconnected)]
+        public void GetWorkTrackingSystemConnections_OAuthCredentialRequiresReconnectState_SetsRequiresReconnectTrue(OAuthCredentialStatus status)
         {
             var connection = new WorkTrackingSystemConnection { Id = 17 };
             repositoryMock.Setup(x => x.GetAll()).Returns(new[] { connection });
@@ -442,7 +444,7 @@ namespace Lighthouse.Backend.Tests.API
                     new OAuthCredential
                     {
                         WorkTrackingSystemConnectionId = 17,
-                        Status = OAuthCredentialStatus.RefreshFailed,
+                        Status = status,
                     },
                 });
 
@@ -456,9 +458,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [TestCase(OAuthCredentialStatus.Valid)]
-        [TestCase(OAuthCredentialStatus.Disconnected)]
-        public void GetWorkTrackingSystemConnections_OAuthCredentialNotRefreshFailed_SetsRequiresReconnectFalse(OAuthCredentialStatus status)
+        public void GetWorkTrackingSystemConnections_OAuthCredentialValid_SetsRequiresReconnectFalse()
         {
             var connection = new WorkTrackingSystemConnection { Id = 23 };
             repositoryMock.Setup(x => x.GetAll()).Returns(new[] { connection });
@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Tests.API
                     new OAuthCredential
                     {
                         WorkTrackingSystemConnectionId = 23,
-                        Status = status,
+                        Status = OAuthCredentialStatus.Valid,
                     },
                 });
 

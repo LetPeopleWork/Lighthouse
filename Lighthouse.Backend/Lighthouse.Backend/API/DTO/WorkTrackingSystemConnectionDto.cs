@@ -38,7 +38,10 @@ namespace Lighthouse.Backend.API.DTO
             WriteBackMappingDefinitions.AddRange(
                 workTrackingSystemConnection.WriteBackMappingDefinitions.Select(m => new WriteBackMappingDefinitionDto(m)));
 
-            RequiresReconnect = oAuthCredential?.Status == OAuthCredentialStatus.RefreshFailed;
+            RequiresReconnect = oAuthCredential is
+            {
+                Status: OAuthCredentialStatus.RefreshFailed or OAuthCredentialStatus.Disconnected
+            };
         }
 
         [JsonRequired]
