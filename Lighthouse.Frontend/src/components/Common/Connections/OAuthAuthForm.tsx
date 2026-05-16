@@ -1,5 +1,6 @@
 import { Alert, Box, Button, Stack, TextField } from "@mui/material";
 import { useContext, useState } from "react";
+import { useOAuthPopup } from "../../../hooks/useOAuthPopup";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface OAuthAuthFormProps {
@@ -8,6 +9,16 @@ interface OAuthAuthFormProps {
 	baseUrl: string | null;
 	onConnect?: () => void;
 }
+
+interface InlineMessage {
+	severity: "error" | "info";
+	text: string;
+}
+
+const POPUP_BLOCKED_COPY =
+	"Your browser blocked the OAuth popup. Allow popups for this site and click Connect/Reconnect again.";
+
+const CANCELLED_COPY = "OAuth was cancelled. Click Connect to try again.";
 
 const buildCallbackUrl = (baseUrl: string | null): string => {
 	const root =
@@ -22,20 +33,42 @@ const OAuthAuthForm = ({
 	onConnect,
 }: OAuthAuthFormProps) => {
 	const { oauthService } = useContext(ApiServiceContext);
+	const { openOAuthPopup } = useOAuthPopup();
 	const [isConnecting, setIsConnecting] = useState(false);
+	const [inlineMessage, setInlineMessage] = useState<InlineMessage | null>(
+		null,
+	);
 
 	const callbackUrl = buildCallbackUrl(baseUrl);
 	const hasBaseUrl = Boolean(baseUrl && baseUrl.length > 0);
 
 	const handleConnect = async () => {
 		setIsConnecting(true);
+		setInlineMessage(null);
 		try {
-			const result = await oauthService.initiateConnect(
+			const { authorizationUrl } = await oauthService.initiateConnect(
 				providerKey,
 				connectionId,
 			);
-			onConnect?.();
-			globalThis.location.assign(result.authorizationUrl);
+			const result = await openOAuthPopup(authorizationUrl);
+			switch (result.status) {
+				case "success":
+					setInlineMessage(null);
+					onConnect?.();
+					break;
+				case "popup_blocked":
+					setInlineMessage({ severity: "error", text: POPUP_BLOCKED_COPY });
+					break;
+				case "cancelled":
+					setInlineMessage({ severity: "info", text: CANCELLED_COPY });
+					break;
+				case "error":
+					setInlineMessage({
+						severity: "error",
+						text: result.reason ?? "OAuth failed.",
+					});
+					break;
+			}
 		} finally {
 			setIsConnecting(false);
 		}
@@ -56,6 +89,15 @@ const OAuthAuthForm = ({
 				slotProps={{ input: { readOnly: true } }}
 				fullWidth
 			/>
+
+			{inlineMessage !== null && (
+				<Alert
+					severity={inlineMessage.severity}
+					data-testid="oauth-auth-form-inline-message"
+				>
+					{inlineMessage.text}
+				</Alert>
+			)}
 
 			<Box>
 				<Button
