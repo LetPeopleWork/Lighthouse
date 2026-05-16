@@ -2,24 +2,25 @@
   "roadmap": {
     "project_id": "work-tracking-oauth-authentication",
     "created_at": "2026-05-14",
-    "total_steps": 39,
+    "total_steps": 44,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "goal": "Ship OAuth-authenticated work-tracking connections (Jira 3LO + Azure DevOps Entra ID OAuth) as the canonical Premium-licensed alternative to PAT/API-token authentication, plus an admin-visible OAuth Health tile surfacing setup-success and refresh-success KPIs. Source: ADO Epic #2438 with 6 child stories (#4967\u20134972). The implementation extends the established AuthenticationMethodSchema + WorkTrackingSystemConnectionOption + ICryptoService surfaces (per DESIGN reuse analysis) and introduces a single new entity (OAuthCredential), a single new outbound port (IOAuthProvider), and a single new controller (OAuthController). 4 slices of crafter dispatch: Slice 01 Jira OAuth foundation, Slice 02 refresh + Health tile, Slice 03 ADO OAuth, Slice 04 standalone-mode guard. Plus a release-readiness phase wiring the oauth-smoke JOB into ci_e2e.yml.",
-    "overview": "Five phases. Phase 01 (Slice 01) is the foundation: it lands the new entity, the IOAuthProvider abstraction with its first concrete user (JiraOAuthProvider), the controller, the auth-strategy refactor (DDD-9), the premium gate (DDD-6), the HMAC state token (DDD-8), and the Jira-side UI. Phase 01 step 14 is the walking-skeleton moment \u2014 Playwright scenario 1 goes green end-to-end against the StubOAuthProvider. Phase 02 adds silent token refresh (DDD-7 single-flight via ConcurrentDictionary<int, SemaphoreSlim>) plus the OAuth Health tile folded in per OQ-DV1. Phase 03 ships AdoOAuthProvider \u2014 by design, the diff touches only the new provider + DI + auth-method schema entry + docs (Slice 03 AC #5 invariant). Phase 04 is frontend-only: standalone-mode dropdown guard + the BI-4 route-rejection invariant. Phase 05 wires the release-gated oauth-smoke JOB into the existing ci_e2e.yml (workflow consolidation per maintainer principle) + ci-learnings + observability docs. Test placement is symmetric: every Playwright scenario in OAuthConnection.spec.ts has a corresponding production step; every backend integration test (BI-1..BI-4) has its own unignore step in the slice that owns it.",
+    "goal": "Ship OAuth-authenticated work-tracking connections (Jira 3LO + Azure DevOps Entra ID OAuth) as the canonical Premium-licensed alternative to PAT/API-token authentication, plus an admin-visible OAuth Health tile surfacing setup-success and refresh-success KPIs. Source: ADO Epic #2438 with 6 child stories (#4967\u20134972) plus follow-on Story #5018 (popup reconnect). The implementation extends the established AuthenticationMethodSchema + WorkTrackingSystemConnectionOption + ICryptoService surfaces (per DESIGN reuse analysis) and introduces a single new entity (OAuthCredential), a single new outbound port (IOAuthProvider), and a single new controller (OAuthController). 4 slices of crafter dispatch: Slice 01 Jira OAuth foundation, Slice 02 refresh + Health tile, Slice 03 ADO OAuth, Slice 04 popup-mediated reconnect (Story #5018, ADR-011). Plus a release-readiness phase wiring the oauth-smoke JOB into ci_e2e.yml.",
+    "overview": "Six phases. Phase 01 (Slice 01) is the foundation: it lands the new entity, the IOAuthProvider abstraction with its first concrete user (JiraOAuthProvider), the controller, the auth-strategy refactor (DDD-9), the premium gate (DDD-6), the HMAC state token (DDD-8), and the Jira-side UI. Phase 01 step 14 is the walking-skeleton moment \u2014 Playwright scenario 1 goes green end-to-end against the StubOAuthProvider. Phase 02 adds silent token refresh (DDD-7 single-flight via ConcurrentDictionary<int, SemaphoreSlim>) plus the OAuth Health tile folded in per OQ-DV1. Phase 03 ships AdoOAuthProvider \u2014 by design, the diff touches only the new provider + DI + auth-method schema entry + docs (Slice 03 AC #5 invariant). Phase 05 wires the release-gated oauth-smoke JOB into the existing ci_e2e.yml (workflow consolidation per maintainer principle) + ci-learnings + observability docs. Phase 06 (Slice 04, added 2026-05-16 for Story #5018) migrates the OAuth handshake from a full-page redirect to a popup window mediated by a same-origin landing page (ADR-011 Option A, postMessage). The popup phase consists of: an additive DB-level UNIQUE index on OAuthCredential (DDD-13), a 2-line redirect target change in OAuthController.Callback (DDD-14), a new useOAuthPopup hook + OAuthPopupComplete landing page (DDD-11/12/15/16), three call-site migrations (ReconnectBanner, OAuthAuthForm, CreateConnectionWizard), and one Playwright walking-skeleton-migration scenario. Phase 06 step 06-09 is the slice-04 walking-skeleton moment \u2014 the Playwright popup-migration scenario goes green end-to-end. Test placement is symmetric: every Playwright scenario in OAuthConnection.spec.ts has a corresponding production step; every backend integration test (BI-1..BI-4 plus the Story #5018 redirect-target and UNIQUE-index tests) has its own unignore / drive-to-green step in the slice that owns it.",
     "slice_to_phase": {
       "slice-01-jira-oauth": "phase-01 (16 steps, +1 for the 2026-05-14 IOAuthProvider.RefreshTokenAsync signature correction)",
       "slice-02-token-refresh": "phase-02 (9 steps, OAuth Health tile folded in per OQ-DV1 resolution 2026-05-14)",
       "slice-03-ado-oauth": "phase-03 (6 steps)",
+      "slice-04-popup-reconnect": "phase-06 (9 steps, Story #5018 popup reconnect added 2026-05-16 — ADR-011 Option A locked; Option B (BroadcastChannel) pre-approved fallback if the OQ-5018-3 Webkit gold-test fires in a future slice)",
       "release-readiness": "phase-05 (4 steps, cross-slice CI + docs + OAuthStateSecret persistence)",
-      "_removed_slices_": "slice-04-standalone-guard removed 2026-05-16 — see feature-delta.md post-DELIVER section"
+      "_removed_slices_": "slice-04-standalone-guard removed 2026-05-16 — see feature-delta.md post-DELIVER section. The slice-04 identifier is re-used 2026-05-16 for Story #5018 (popup reconnect) because it is the actual fourth shipped slice on this feature."
     }
   },
   "validation": {
     "status": "approved",
     "reviewer": "self-review against automated quality gate (Phase 1.c) \u2014 Eclipse + Architect + Forge + Sentinel already reviewed DISCUSS/DESIGN/DEVOPS/DISTILL in the consolidated final review gate on 2026-05-14",
     "reviewed_at": "2026-05-14",
-    "notes": "Self-review against the 6-check automated gate: (1) AC coupling \u2014 every criteria references public APIs (HTTP endpoints, public service methods, persisted entity columns, DOM-observable UI); no private-method references. (2) Decomposition ratio \u2014 37 steps across ~50 files-to-modify = 0.74, well under 2.5 gate. (3) Identical patterns \u2014 Phase 01 unique-per-step (entity \u2192 ports \u2192 strategies \u2192 service \u2192 provider \u2192 controller \u2192 DI \u2192 connector refactor \u2192 FE adapter \u2192 FE form \u2192 integration \u2192 backend integration tests \u2192 Playwright \u2192 docs); Phase 02 unique-per-step; Phase 03 mirrors Phase 01 structure but at half the depth (provider + schema + connector refactor + FE + tests + docs) \u2014 intentional parallelism, not duplication, justified by the provider-agnostic abstraction (DDD-3); Phase 04 + Phase 05 are short and distinct. (4) Validation-only \u2014 zero steps with empty files_to_modify. (5) Step-ID format \u2014 all match ^\\d{2}-\\d{2}$. (6) DISTILL linkage \u2014 every step lists test_file + scenario_name (Playwright .spec.ts + .feature file path, plus the corresponding BI-N integration test for steps that drive those tests). All 12 main+smoke Playwright scenarios mapped (3 to Phase 01, 4 to Phase 02, 2 to Phase 03, 1 to Phase 04, 2 smoke to Phase 05). All 4 backend integration tests (BI-1..BI-4) mapped (BI-1+BI-2 to Phase 01 step 13, BI-3 to Phase 02 step 07, BI-4 to Phase 04 step 03). Walking skeleton scenario 1 (Slice 01 Jira OAuth happy path) goes green at step 01-14, the last green-driving step of Phase 01 before docs. Zero blockers."
+    "notes": "Self-review against the 6-check automated gate: (1) AC coupling \u2014 every criteria references public APIs (HTTP endpoints, public service methods, persisted entity columns, DOM-observable UI); no private-method references. (2) Decomposition ratio \u2014 37 steps across ~50 files-to-modify = 0.74, well under 2.5 gate. (3) Identical patterns \u2014 Phase 01 unique-per-step (entity \u2192 ports \u2192 strategies \u2192 service \u2192 provider \u2192 controller \u2192 DI \u2192 connector refactor \u2192 FE adapter \u2192 FE form \u2192 integration \u2192 backend integration tests \u2192 Playwright \u2192 docs); Phase 02 unique-per-step; Phase 03 mirrors Phase 01 structure but at half the depth (provider + schema + connector refactor + FE + tests + docs) \u2014 intentional parallelism, not duplication, justified by the provider-agnostic abstraction (DDD-3); Phase 04 + Phase 05 are short and distinct. (4) Validation-only \u2014 zero steps with empty files_to_modify. (5) Step-ID format \u2014 all match ^\\d{2}-\\d{2}$. (6) DISTILL linkage \u2014 every step lists test_file + scenario_name (Playwright .spec.ts + .feature file path, plus the corresponding BI-N integration test for steps that drive those tests). All 12 main+smoke Playwright scenarios mapped (3 to Phase 01, 4 to Phase 02, 2 to Phase 03, 1 to Phase 04, 2 smoke to Phase 05). All 4 backend integration tests (BI-1..BI-4) mapped (BI-1+BI-2 to Phase 01 step 13, BI-3 to Phase 02 step 07, BI-4 to Phase 04 step 03). Walking skeleton scenario 1 (Slice 01 Jira OAuth happy path) goes green at step 01-14, the last green-driving step of Phase 01 before docs. Zero blockers.\n\nPhase 06 self-review (added 2026-05-16 by Morgan, nw-solution-architect) against the same 6-check automated gate: (1) AC coupling \u2014 every Phase 06 criteria references public APIs (HTTP redirect targets, DOM-observable UI behaviour, hook return contracts as exported by the new module, persisted entity invariants enforced by DB-level UNIQUE); zero private-method references; the `useOAuthPopup` hook is tested through its sole exported function `openOAuthPopup` and the discriminated-union `OAuthPopupResult` it returns. (2) Decomposition ratio \u2014 9 Phase-06 steps across 14 distinct files-to-modify (incl. the EF migration directories as one logical artifact each) = 1.56 average, well under the 2.5 gate. (3) Identical patterns \u2014 Phase 06 steps are unique-per-step (EF migration \u2192 controller redirect rewrite \u2192 hook \u2192 landing page + router \u2192 three call-site migrations each with their own concerns \u2192 ModifyConnectionSettings wiring + Playwright + optional docs). The three call-site migration steps (06-06 ReconnectBanner, 06-07 OAuthAuthForm, 06-08 CreateConnectionWizard) follow the same `globalThis.location.assign \u2192 openOAuthPopup` substitution shape; this is intentional parallelism (same DDD-14 substitution at three sites with different UX wiring per call site), not duplication \u2014 the wizard's draft-connection-reuse-on-retry logic (per Iteration-3 Q2-grounded decision) and the inline-alert vs. banner-stays-visible vs. step-stays-mounted differences make each step's UX wiring distinct. Justified explicitly per feature-delta line 1097\u20131099. (4) Validation-only \u2014 zero Phase-06 steps with empty files_to_modify. (5) Step-ID format \u2014 06-01..06-09 all match ^\\d{2}-\\d{2}$. (6) DISTILL linkage \u2014 every Phase-06 step lists test_file + scenario_name traced to a specific RED-state test from the DISTILL commit 07875566. The walking-skeleton-migration Playwright scenario (Slice 04 demo) goes green at step 06-09. The OQ-5018-3 Webkit gold-test remains explicitly deferred (per DISTILL commit's `.skip @deferred` marker preserved at step 06-09); not in scope for this DELIVER pass. Reviewer for Phase 06: self-review against the automated gate; reviewed_at 2026-05-16. Earlier reviewer line + reviewed_at preserved for phases 01\u201305."
   },
   "ssot_inputs": {
     "feature_delta": "docs/feature/work-tracking-oauth-authentication/feature-delta.md",
@@ -39,7 +40,8 @@
       "docs/product/architecture/adr-007-oauth-provider-registry.md",
       "docs/product/architecture/adr-008-oauth-credential-separation.md",
       "docs/product/architecture/adr-009-oauth-baseurl-callback.md",
-      "docs/product/architecture/adr-010-oauth-single-flight-refresh.md"
+      "docs/product/architecture/adr-010-oauth-single-flight-refresh.md",
+      "docs/product/architecture/adr-011-oauth-popup-flow.md"
     ],
     "environments": "docs/feature/work-tracking-oauth-authentication/environments.yaml",
     "kpi_contracts": "docs/product/kpi-contracts.yaml"
@@ -1171,6 +1173,309 @@
           "deferral_history": {
             "reason": "Step 01-02 crafter found no existing persistent-secret precedent in the codebase, took the in-memory deferral path under the prompt's 'make the reasonable call' clause, and flagged it transparently in the commit body. PO accepted the deferral (2026-05-14) and added this step to track the persistence fix as release-readiness work \u2014 v1 is shippable with in-memory regeneration (15-min token lifetime caps the user impact); GA should not ship without persistence."
           }
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Slice 04 \u2014 OAuth popup reconnect (Story #5018)",
+      "description": "Added 2026-05-16. Migrates the OAuth handshake from a full-page redirect to a popup window mediated by a same-origin landing page, per ADR-011 (Option A locked: postMessage from /oauth/popup-complete; Option B BroadcastChannel pre-approved as a same-shape fallback if the OQ-5018-3 Webkit gold-test ever fires \u2014 the gold-test itself remains deferred to a future slice). The slice is intentionally minimal: 1 EF migration (DDD-13 UNIQUE index), 1 LINQ simplification co-traveller (DDD-13 GroupBy collapse), 1 controller redirect-target rewrite (DDD-14, 2 lines), 1 new frontend hook (DDD-11/12/15), 1 new frontend landing page + router wiring (DDD-14/16), 3 call-site migrations (ReconnectBanner / OAuthAuthForm / CreateConnectionWizard) that swap globalThis.location.assign for openOAuthPopup, 1 ModifyConnectionSettings wiring + Playwright walking-skeleton-migration scenario. Backend deltas are tiny by design; the slice surface is mostly frontend. Test RED scaffolds already exist in the repo from DISTILL commit 07875566 (test(oauth): RED scaffolds + acceptance tests for Story #5018 popup reconnect). The OQ-5018-3 Webkit gold-test (Safari window.opener retention probe) is explicitly DEFERRED \u2014 the `.skip @deferred` marker on that Playwright test is preserved in step 06-09, not removed; deferral resolution is a separate future DELIVER follow-up.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "EF migration \u2014 UNIQUE index on OAuthCredential.WorkTrackingSystemConnectionId (SQLite + PostgreSQL)",
+          "description": "RED: the test `OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex` in `Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs` is already on disk in RED state from DISTILL commit 07875566 \u2014 it seeds an `OAuthCredential` for a given `WorkTrackingSystemConnectionId`, then attempts to insert a second row for the same connection id and asserts `DbUpdateException` (or equivalent EF-provider-specific UNIQUE-violation exception). It fails RED today because no UNIQUE constraint exists at the DB level. GREEN: extend `LighthouseAppContext.OnModelCreating` to declare the UNIQUE index on `OAuthCredential.WorkTrackingSystemConnectionId` (the relationship is already 1:1 per ADR-008; this step adds the DB-level enforcement DDD-13 requires). Run the existing `CreateMigration` PowerShell script (per CLAUDE.md \u2014 do NOT invoke `dotnet ef migrations add` directly) to generate the additive migration files under `Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/` and `Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/`. The migration is idempotent and data-safe: slice-02 has not GA-shipped, so zero customer instances carry duplicate `OAuthCredential` rows (per feature-delta line 1103). COMMIT: `feat(oauth): add UNIQUE index on OAuthCredential.WorkTrackingSystemConnectionId (DDD-13)`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs",
+          "scenario_name": "OAuthCredential rejects a second row for the same connection at the DB layer (DDD-13 UNIQUE index)",
+          "red_to_green_tests": [
+            "OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/*",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/*",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "UNIQUE index declared in OnModelCreating on OAuthCredential.WorkTrackingSystemConnectionId.",
+            "EF migrations for SQLite AND PostgreSQL generated via the existing CreateMigration PowerShell script (per CLAUDE.md).",
+            "The RED integration test from DISTILL commit 07875566 turns GREEN against InMemory EF (the simulated unique-constraint violation surfaces as DbUpdateException).",
+            "ci_verifysqlite.yml + ci_verifypostgres.yml regression-pass against the real providers (the additive migration applies cleanly on top of slice-02 migrations).",
+            "Pre-existing OAuthControllerIntegrationTest cases still GREEN (regression).",
+            "dotnet build clean (zero warnings, TreatWarningsAsErrors)."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "LighthouseAppContext.cs (modified \u2014 +UNIQUE index declaration)",
+            "Lighthouse.Migrations.Sqlite/Migrations/* (new \u2014 generated)",
+            "Lighthouse.Migrations.Postgres/Migrations/* (new \u2014 generated)",
+            "OAuthControllerIntegrationTest.cs (no body change \u2014 the RED test is already on disk; this step makes it GREEN)"
+          ]
+        },
+        {
+          "id": "06-02",
+          "name": "Collapse GroupBy/OrderByDescending defensive read in WorkTrackingSystemConnectionsController to plain ToDictionary",
+          "description": "RED: no new test. This is a behaviour-preserving refactor protected by the DB-level UNIQUE index landed in step 06-01 \u2014 the existing controller test suite (`WorkTrackingSystemConnectionsControllerTest.cs`) must stay GREEN throughout. GREEN: in `Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs` lines 59\u201365, replace the slice-02 defensive read `GroupBy(c => c.WorkTrackingSystemConnectionId).ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.UpdatedAt).First())` with the plain `ToDictionary(c => c.WorkTrackingSystemConnectionId)`. Per feature-delta line 1102 + DDD-13 part (b): once the UNIQUE index is in place (06-01), the defensive ordering is vacuous; duplicates are now impossible at the DB level. COMMIT: `refactor(oauth): collapse defensive GroupBy/OrderByDescending in WorkTrackingSystemConnectionsController (DDD-13)`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+          "scenario_name": "Connection-list payload still correctly carries requiresReconnect for OAuth credentials after the GroupBy collapse (regression invariant)",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs"
+          ],
+          "dependencies": [
+            "06-01"
+          ],
+          "criteria": [
+            "GroupBy/OrderByDescending replaced with plain ToDictionary(c => c.WorkTrackingSystemConnectionId).",
+            "Pre-existing WorkTrackingSystemConnectionsControllerTest suite stays GREEN (regression invariant; the test coverage on requiresReconnect from slice-02 step 02-03 is the protection).",
+            "dotnet build clean.",
+            "SonarCloud: no new cognitive-complexity or duplication issues introduced (this step REDUCES complexity)."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "WorkTrackingSystemConnectionsController.cs (modified \u2014 LINQ simplification, ~5 lines)"
+          ]
+        },
+        {
+          "id": "06-03",
+          "name": "OAuthController.Callback \u2014 rewrite success + error 302 targets to /oauth/popup-complete (DDD-14)",
+          "description": "RED: two assertions in `Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs` are already in the repo from DISTILL commit 07875566 in RED state \u2014 the success assertion at lines 145\u2013167 expects `Location` to equal `/oauth/popup-complete?status=success&connectionId={SeededConnectionId}`; the symmetric error assertion at lines 223\u2013246 expects `/oauth/popup-complete?status=error&reason={code}`. Both fail RED today because the controller still emits the slice-02 targets (`/connections/new?oauth=success&connectionId=...` and `/settings/connections?oauth=error&reason=...`). GREEN: in `Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs` lines 29\u201356 (the `Callback` action body), change the success-branch `Redirect(...)` argument from `\"/connections/new?oauth=success&connectionId={id}\"` to `\"/oauth/popup-complete?status=success&connectionId={id}\"`, and change the error-branch sibling from `\"/settings/connections?oauth=error&reason={code}\"` to `\"/oauth/popup-complete?status=error&reason={code}\"`. No other change to the action \u2014 no auth-attribute change, no new action, no new DI. Per DDD-14, the slice-02 query-string contract is intentionally deleted; the new landing-page route is a frontend route (step 06-04). COMMIT: `feat(oauth): redirect OAuth callback to /oauth/popup-complete landing page (DDD-14)`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs",
+          "scenario_name": "OAuth callback 302s to the same-origin /oauth/popup-complete landing page on both success and error (DDD-14)",
+          "red_to_green_tests": [
+            "Callback_WithValidState_Redirects302ToSuccessPageAndPersistsValidCredential",
+            "Callback_WhenProviderReportsError_Redirects302ToPopupCompleteErrorWithReason"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Success 302 target equals /oauth/popup-complete?status=success&connectionId={id}.",
+            "Error 302 target equals /oauth/popup-complete?status=error&reason={code}.",
+            "No other behavioural change to OAuthController.Callback (auth attributes, OAuthService call sequence, state-token verification \u2014 all unchanged).",
+            "Both RED assertions from DISTILL commit 07875566 turn GREEN.",
+            "Pre-existing OAuthControllerIntegrationTest cases (CSRF rejection, premium gating, RBAC gating) stay GREEN (regression)."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "OAuthController.cs (modified \u2014 2 redirect-target strings)",
+            "OAuthControllerIntegrationTest.cs (no body change \u2014 RED assertions already on disk; this step makes them GREEN)"
+          ]
+        },
+        {
+          "id": "06-04",
+          "name": "useOAuthPopup hook \u2014 implement against the RED scaffold (DDD-11/12/15/16)",
+          "description": "RED: `Lighthouse.Frontend/src/hooks/useOAuthPopup.ts` is on disk as a scaffold from DISTILL commit 07875566 \u2014 the exported function `openOAuthPopup` and the types `OAuthPopupResult` / `OAuthPopupStatus` / `UseOAuthPopup` exist with the correct signatures; the body throws `Not yet implemented \u2014 RED scaffold (Story #5018 DISTILL)`. Seven Vitest tests in `useOAuthPopup.test.ts` are RED. GREEN: implement `openOAuthPopup(authorizationUrl: string): Promise<OAuthPopupResult>`. Internals (per feature-delta line 1096 + DDD-15): (a) call `window.open(authorizationUrl, '_blank', 'popup=yes,width=600,height=700,left=...,top=...')` with centred geometry; (b) if the call returns `null`, resolve with `{ status: 'popup_blocked' }` immediately; (c) subscribe to `window.addEventListener('message', handler)` with `handler` filtering by `event.origin === window.location.origin && event.data?.type === 'oauth.complete'` (DDD-12 + DDD-16 \u2014 same-origin only, message-type-filtered); (d) start a `setInterval(() => popup.closed, 500)` poller with a 90 s wall-clock guard (DDD-15; per Iteration-2 deferral resolution, name this 90 s constant with a single one-line WHY comment referencing the state-token TTL invariant \u2014 this is one of the rare 'WHY' comments CLAUDE.md allows); (e) resolve with `{ status, connectionId?, reason? }` parsed from the first matching `oauth.complete` message; resolve with `{ status: 'cancelled' }` if the popup closes without a message inside the 90 s window; resolve with `{ status: 'error', reason: 'timeout' }` if the 90 s elapses with neither close nor message; (f) always remove the listener and clear the interval in a `finally` block. Add a one-line code comment noting the `event.data?.type === 'oauth.complete'` filter is convention-based, not a security boundary (per Iteration-1 nitpick). COMMIT: `feat(oauth): implement useOAuthPopup hook with postMessage handshake (DDD-11/12/15/16)`.",
+          "test_file": "Lighthouse.Frontend/src/hooks/useOAuthPopup.test.ts",
+          "scenario_name": "useOAuthPopup hook returns OAuthPopupResult for all four discriminants (success / error / cancelled / popup_blocked) with origin + message-type filtering",
+          "red_to_green_tests": [
+            "resolves with popup_blocked when window.open returns null",
+            "resolves with success when the landing page posts an oauth.complete message from the opener's origin",
+            "ignores messages whose origin does not match the opener origin",
+            "ignores same-origin messages whose event.data.type is not oauth.complete",
+            "resolves with cancelled when the popup is closed by the user without sending a message",
+            "propagates error status and reason when the landing page reports an IdP error",
+            "removes the message listener and stops polling popup.closed after resolution"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useOAuthPopup.ts",
+            "Lighthouse.Frontend/src/hooks/useOAuthPopup.test.ts"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "openOAuthPopup returns Promise<OAuthPopupResult> covering all four discriminants (success | error | cancelled | popup_blocked).",
+            "All 7 RED Vitest tests from DISTILL commit 07875566 turn GREEN.",
+            "Listener + interval cleanup verified by the dedicated test (the leak case is observable via the test's spy on removeEventListener + clearInterval).",
+            "90 s constant named with a one-line WHY comment referencing the state-token TTL invariant (rare 'WHY' comment per CLAUDE.md; resolves Iteration-2 review item).",
+            "// SCAFFOLD: true \u2014 remove after Story #5018 DELIVER marker is REMOVED from the file at GREEN.",
+            "pnpm build clean (tsc strict + Biome zero warnings).",
+            "Stryker (frontend) kill rate \u2265 80% on useOAuthPopup.ts (per CLAUDE.md per-feature gate)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "useOAuthPopup.ts (modified \u2014 scaffold body replaced with implementation; ~80 LOC)",
+            "useOAuthPopup.test.ts (no test-body change \u2014 RED tests on disk turn GREEN)"
+          ]
+        },
+        {
+          "id": "06-05",
+          "name": "OAuthPopupComplete landing page \u2014 implementation + router wiring",
+          "description": "RED: `Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.tsx` is on disk as a scaffold from DISTILL commit 07875566 with the correct default export shape and a throwing body. Three Vitest tests in `OAuthPopupComplete.test.tsx` are RED. GREEN: implement the component. Parse `status`, `connectionId`, `reason` from `useSearchParams()` (react-router-dom). If `window.opener !== null`: call `window.opener.postMessage({ type: 'oauth.complete', status, connectionId, reason }, BaseUrl)` where `BaseUrl` is the system-info `baseUrl` (already exposed by slice-02 step 02-03 via `GET /api/v1/systeminfo`); then call `window.close()`. If `window.opener === null`: render the Iteration-1-refined fallback copy verbatim \u2014 `\"OAuth completed successfully. You may close this window \u2014 if it doesn't close automatically, close it manually.\"` (the no-auto-close-race wording resolves Iteration-1 suggestion 4). The component is route-only \u2014 no auth guard \u2014 because it holds no secrets per DDD-16 (the query-string carries only status / connectionId / reason). Router wiring: in `Lighthouse.Frontend/src/App.tsx` register `<Route path=\"/oauth/popup-complete\" element={<OAuthPopupComplete />} />` at the top level (sibling of the existing `/connections` route at line 185). No new test at the route level \u2014 the routing is exercised transitively by `OAuthPopupComplete.test.tsx` via `MemoryRouter`. COMMIT: `feat(oauth): add OAuthPopupComplete landing page + register /oauth/popup-complete route (DDD-14/16)`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.test.tsx",
+          "scenario_name": "OAuthPopupComplete posts an oauth.complete message to the opener with the configured targetOrigin and closes, or renders the fallback copy when window.opener is null",
+          "red_to_green_tests": [
+            "posts an oauth.complete success message to the opener with the configured target origin and closes the popup",
+            "posts an oauth.complete error message with the reason code when the callback failed",
+            "renders the fallback message and does not attempt to post when the popup has no opener"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthPopupComplete.test.tsx",
+            "Lighthouse.Frontend/src/App.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Three RED Vitest tests from DISTILL commit 07875566 turn GREEN.",
+            "postMessage targetOrigin is the configured Lighthouse:BaseUrl (NEVER '*') \u2014 satisfies DDD-16 security invariant.",
+            "Fallback copy matches Iteration-1 refined wording verbatim (drift-guarded by the test).",
+            "/oauth/popup-complete route registered in App.tsx; reachable by direct navigation (Playwright walking-skeleton scenario in step 06-09 verifies this end-to-end).",
+            "// SCAFFOLD: true marker REMOVED from OAuthPopupComplete.tsx at GREEN.",
+            "pnpm build clean (tsc strict + Biome zero warnings).",
+            "Stryker (frontend) kill rate \u2265 80% on OAuthPopupComplete.tsx."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "OAuthPopupComplete.tsx (modified \u2014 scaffold body replaced with implementation; ~30 LOC)",
+            "App.tsx (modified \u2014 +1 Route line)",
+            "OAuthPopupComplete.test.tsx (no test-body change \u2014 RED tests on disk turn GREEN)"
+          ]
+        },
+        {
+          "id": "06-06",
+          "name": "ReconnectBanner migration \u2014 replace globalThis.location.assign with openOAuthPopup",
+          "description": "RED: `ReconnectBanner.test.tsx` already carries five new test cases from DISTILL commit 07875566, all RED: the rewritten happy path (`on Reconnect click, calls disconnect THEN initiateConnect ..., then opens the OAuth popup with the authorization URL`), the new `invokes onReconnected exactly once after the OAuth popup resolves with success` case, plus three non-success branches (popup_blocked / cancelled / error). The component has the typed `onReconnected?: () => void` prop already on disk (DISTILL additive change, not a scaffold). GREEN: in `ReconnectBanner.tsx`, replace `globalThis.location.assign(authorizationUrl)` with `const result = await openOAuthPopup(authorizationUrl);`. On `result.status === 'success'`: call `onReconnected?.()` and clear any inline error state. On `result.status === 'popup_blocked'`: set inline error state with the DDD-15 locked copy (`Your browser blocked the OAuth popup. Allow popups for this site and click Connect/Reconnect again.`). On `result.status === 'cancelled'`: set inline notice with `OAuth was cancelled. Click Reconnect to try again.`. On `result.status === 'error'`: set inline error state with `result.reason` propagated through (DDD-15 + Iteration-1 suggestion). The banner stays visible until a successful round trip (feature-delta line 1097 + DISTILL scenario list). COMMIT: `feat(oauth): migrate ReconnectBanner to useOAuthPopup with non-success inline surfaces (DDD-14/15)`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx",
+          "scenario_name": "ReconnectBanner uses the popup hook and surfaces all four OAuthPopupResult statuses inline",
+          "red_to_green_tests": [
+            "on Reconnect click, calls disconnect THEN initiateConnect with the provider key + connection id, then opens the OAuth popup with the authorization URL",
+            "invokes onReconnected exactly once after the OAuth popup resolves with success",
+            "keeps the banner visible and surfaces an inline alert when the OAuth popup is blocked by the browser",
+            "keeps the banner visible and surfaces an inline notice when the user cancels the OAuth popup",
+            "surfaces the IdP error reason inline when the OAuth popup resolves with error"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx"
+          ],
+          "dependencies": [
+            "06-04"
+          ],
+          "criteria": [
+            "globalThis.location.assign removed from ReconnectBanner.tsx (verified by Biome no-unused-imports / grep).",
+            "All 5 RED Vitest tests from DISTILL commit 07875566 turn GREEN.",
+            "onReconnected invoked exactly once on success (regression-guard test from DISTILL).",
+            "Banner stays visible across non-success statuses (popup_blocked / cancelled / error).",
+            "DDD-15 popup_blocked copy matches verbatim (drift-guarded by the test).",
+            "pnpm build clean (tsc strict + Biome zero warnings).",
+            "Stryker (frontend) kill rate \u2265 80% on ReconnectBanner.tsx (the new branches expand the mutation surface)."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "ReconnectBanner.tsx (modified \u2014 hook substitution + inline-error state + 4 status branches)",
+            "ReconnectBanner.test.tsx (no test-body change \u2014 RED tests on disk turn GREEN)"
+          ]
+        },
+        {
+          "id": "06-07",
+          "name": "OAuthAuthForm migration \u2014 mirror ReconnectBanner pattern at the Connect call site",
+          "description": "RED: `OAuthAuthForm.test.tsx` carries four new test cases from DISTILL commit 07875566, all RED: the rewritten happy path (`calls initiateConnect with prop values and opens the OAuth popup with the authorization URL on Connect click`), `invokes onConnect exactly once after the OAuth popup resolves with success`, plus popup_blocked / cancelled / error inline surfaces. GREEN: in `OAuthAuthForm.tsx`, mirror the substitution pattern from step 06-06 \u2014 replace `globalThis.location.assign(authorizationUrl)` with `await openOAuthPopup(authorizationUrl)`; on success call existing `onConnect?.()` callback; non-success branches set the same DDD-15 inline alerts and re-enable the Connect button (feature-delta line 1098). The existing connect-button-disabled-while-loading UX is preserved. COMMIT: `feat(oauth): migrate OAuthAuthForm to useOAuthPopup with non-success inline surfaces (DDD-14/15)`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx",
+          "scenario_name": "OAuthAuthForm uses the popup hook on Connect and surfaces all four OAuthPopupResult statuses inline",
+          "red_to_green_tests": [
+            "calls initiateConnect with prop values and opens the OAuth popup with the authorization URL on Connect click",
+            "invokes onConnect exactly once after the OAuth popup resolves with success",
+            "surfaces the popup-blocked alert and re-enables Connect when the browser blocks the OAuth popup",
+            "surfaces a cancellation notice inline and re-enables Connect when the user closes the OAuth popup",
+            "surfaces the IdP error reason inline when the OAuth popup resolves with error"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.test.tsx"
+          ],
+          "dependencies": [
+            "06-04"
+          ],
+          "criteria": [
+            "globalThis.location.assign removed from OAuthAuthForm.tsx.",
+            "All 5 RED Vitest tests (1 rewritten + 4 new) from DISTILL commit 07875566 turn GREEN.",
+            "Pre-existing OAuthAuthForm test cases stay GREEN (regression \u2014 form render, BaseUrl warning, ADO HTTPS warning).",
+            "onConnect invoked exactly once on success.",
+            "Connect button re-enabled on every non-success status (popup_blocked / cancelled / error).",
+            "pnpm build clean.",
+            "Stryker kill rate \u2265 80% on OAuthAuthForm.tsx."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "OAuthAuthForm.tsx (modified \u2014 hook substitution + inline-alert state + 4 status branches)",
+            "OAuthAuthForm.test.tsx (no test-body change \u2014 RED tests on disk turn GREEN)"
+          ]
+        },
+        {
+          "id": "06-08",
+          "name": "CreateConnectionWizard migration \u2014 startOAuthHandshake uses popup; delete ?oauth=success resume branch; reuse draft on retry",
+          "description": "RED: `CreateConnectionWizard.test.tsx` carries two new cases from DISTILL commit 07875566, both RED: (3a) `advances to step 3 when the OAuth popup resolves with success`, (3b) `renders the popup-blocked alert on step 2 and re-enables Connect when the OAuth popup is blocked`. The old `?oauth=success&connectionId=` resume-URL test (lines 846\u2013887) and its sibling cancel-after-resume test were DELETED in DISTILL per DDD-14 (feature-delta lines 1484\u20131485). GREEN: in `CreateConnectionWizard.tsx`, modify `startOAuthHandshake` (lines 328\u2013365) to: (a) save the draft `WorkTrackingSystemConnection` if not already saved (first call); (b) call `await openOAuthPopup(authorizationUrl)` instead of `globalThis.location.assign(authorizationUrl)`; (c) on `status === 'success'` advance the wizard to step 3 inline \u2014 no remount, no URL-driven resume; (d) on `status === 'popup_blocked'` keep step 2 mounted, preserve form state, render an inline `Alert severity=\"error\"` with the DDD-15 locked copy, and re-enable the Connect button; (e) on `status === 'cancelled'` keep step 2 mounted, render `Alert severity=\"info\"` with `OAuth was cancelled. Click Connect to try again.`, re-enable Connect; (f) on `status === 'error'` keep step 2 mounted, render `Alert severity=\"error\"` surfacing `result.reason`, re-enable Connect; (g) clear the inline alert on the next Connect click before re-invoking `openOAuthPopup`. **Draft connection retry semantics (Iteration-3 Q2-grounded decision, feature-delta line 1099)**: on every retry after a non-success status, **REUSE the existing draft `connectionId` from the first `startOAuthHandshake` call \u2014 do NOT re-create the draft**. Rationale: the draft is a hard prerequisite for the `POST /api/oauth/{provider}/connect` controller call (it needs a DB row to resolve provider config and mint the state-token's connectionId claim), not a survive-the-redirect artifact, so it must exist by the time `openOAuthPopup` is called. Moving draft creation into step 3 was considered and rejected during DESIGN. (h) DELETE the `?oauth=success&connectionId=` resume branch from the mount-time `useEffect` (dead per DDD-14). COMMIT: `feat(oauth): migrate CreateConnectionWizard.startOAuthHandshake to popup + delete dead resume-URL branch (DDD-14/15)`.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx",
+          "scenario_name": "CreateConnectionWizard advances inline on popup success; stays on step 2 with inline error on popup_blocked",
+          "red_to_green_tests": [
+            "advances to step 3 when the OAuth popup resolves with success",
+            "renders the popup-blocked alert on step 2 and re-enables Connect when the OAuth popup is blocked"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx"
+          ],
+          "dependencies": [
+            "06-04"
+          ],
+          "criteria": [
+            "globalThis.location.assign removed from CreateConnectionWizard.tsx; the mount-time ?oauth=success&connectionId= branch is removed (DDD-14 dead code).",
+            "Both RED Vitest tests (3a + 3b) from DISTILL commit 07875566 turn GREEN.",
+            "Pre-existing CreateConnectionWizard test cases stay GREEN (regression \u2014 provider selection, name validation, non-OAuth flows).",
+            "On retry after popup_blocked / cancelled / error: the existing draft connectionId is reused (no second POST /api/v1/worktrackingsystemconnections) \u2014 verified by the test asserting only one draft-creation call across multiple Connect clicks.",
+            "DDD-15 popup-blocked alert copy matches the locked DDD-15 wording verbatim (drift-guarded by 3b assertion).",
+            "Wizard never unmounts during the popup round trip (single render lifecycle from step 2 to step 3).",
+            "pnpm build clean.",
+            "Stryker kill rate \u2265 80% on CreateConnectionWizard.tsx (the four status branches are the new mutation surface)."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "CreateConnectionWizard.tsx (modified \u2014 startOAuthHandshake rewired to popup; mount-time resume effect deleted; ~20 LOC net reduction)",
+            "CreateConnectionWizard.test.tsx (no test-body change \u2014 RED tests on disk turn GREEN; deleted resume-URL tests stay deleted)"
+          ]
+        },
+        {
+          "id": "06-09",
+          "name": "ModifyConnectionSettings wiring + Playwright walking-skeleton-migration scenario + optional ci-learnings entry",
+          "description": "RED: the Playwright walking-skeleton-migration scenario in `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts` (`@walking_skeleton @popup-migration @driving_adapter @real-io @in-memory @US-01 @Story-5018`) is on disk from DISTILL commit 07875566 as `testWithAuth.skip` (RED scaffold). It currently cannot pass because the call-site migrations (steps 06-06 / 06-07 / 06-08) have not landed yet. The OQ-5018-3 Webkit gold-test scenario (`@deferred @Story-5018 @OQ-5018-3`) is also on disk with a `testWithAuth.skip` marker \u2014 KEEP IT SKIPPED, it is NOT in scope for this DELIVER pass. GREEN: (1) in `Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx` line 414, pass `onReconnected={() => reloadConnection()}` into `<ReconnectBanner connection={selectedWorkTrackingSystem} />`. If `reloadConnection` does not already exist in this component, add a one-line helper that re-fetches the current connection (e.g. via the existing fetcher used to populate `selectedWorkTrackingSystem`). The badge flip is then automatic via the existing `requiresReconnect` derivation. No new test at this layer \u2014 the `ReconnectBanner.test.tsx` `invokes onReconnected exactly once after the OAuth popup resolves with success` case from step 06-06 is the contract guard. (2) Remove the `testWithAuth.skip` from the walking-skeleton-migration Playwright scenario only (NOT from the @deferred Webkit gold-test). Implement the scenario body per the TODO comments left by DISTILL: navigate to the edit dialog of a connection in `RefreshFailed` state \u2192 click Reconnect \u2192 the popup opens against `StubOAuthProvider` \u2192 the popup completes the round trip \u2192 the status badge in the still-mounted edit dialog flips from `Disconnected` to `Connected` WITHOUT any page navigation \u2192 banner disappears. Add the necessary POM helpers under `Lighthouse.EndToEndTests/tests/models/oauth/` (extending the existing OAuth POMs from slice-01 step 01-15). (3) Optional: append a one-paragraph entry under the existing OAuth section of `docs/ci-learnings.md` with the durable lessons from this slice IF there are any \u2014 candidates: the `event.origin === window.location.origin` filter discipline, the 90 s constant's WHY-comment exemption from CLAUDE.md's no-comments default, the `// SCAFFOLD: true` grep-driven removal pattern. SKIP if nothing durable. COMMIT: `feat(oauth): wire ModifyConnectionSettings.onReconnected + unskip popup-migration walking-skeleton Playwright scenario (Story #5018)`. NOTE: the OQ-5018-3 Webkit gold-test `.skip @deferred` marker is preserved \u2014 do NOT remove it; deferral resolution is out of scope.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+          "scenario_name": "Slice 04 walking-skeleton migration \u2014 Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation",
+          "red_to_green_tests": [
+            "Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/oauth/*",
+            "docs/ci-learnings.md"
+          ],
+          "dependencies": [
+            "06-01",
+            "06-03",
+            "06-05",
+            "06-06",
+            "06-07",
+            "06-08"
+          ],
+          "criteria": [
+            "ModifyConnectionSettings passes onReconnected={() => reloadConnection()} into ReconnectBanner (the slice-04 wiring closure point).",
+            "The @walking_skeleton @popup-migration Playwright scenario goes from .skip to GREEN end-to-end against StubOAuthProvider (the slice-04 demo).",
+            "The OQ-5018-3 Webkit gold-test (@deferred) MUST REMAIN .skip \u2014 explicit non-goal of this DELIVER pass; deferral resolution is a future slice.",
+            "Status badge flip is observed in the same opener window (no navigation) \u2014 verified by Playwright assertions on the badge text + the absence of a navigation event (page.waitForEvent('framenavigated') NOT firing during the round trip).",
+            "ci-learnings entry added IF there are durable lessons; otherwise skip the docs change with a one-line note in the commit body (no empty docs entry).",
+            "ci_e2e.yml regression: all other slice-01/02/03 Playwright scenarios stay GREEN.",
+            "pnpm build clean.",
+            "dotnet build clean."
+          ],
+          "estimated_hours": 2.0,
+          "deliverables": [
+            "ModifyConnectionSettings.tsx (modified \u2014 +onReconnected wiring on the ReconnectBanner instance)",
+            "OAuthConnection.spec.ts (modified \u2014 walking-skeleton-migration .skip removed and body implemented; @deferred Webkit .skip PRESERVED)",
+            "Lighthouse.EndToEndTests/tests/models/oauth/* (new/extended POM helpers for the edit-dialog popup flow)",
+            "docs/ci-learnings.md (optionally modified \u2014 one paragraph IF durable lessons exist)"
+          ]
         }
       ]
     }
