@@ -79,6 +79,15 @@ Each entry follows:
 - **Fix**: Add `exact: true` to the name option: `this.page.getByRole("button", { name: "Reconnect", exact: true })`. The banner button's accessible name is exactly `"Reconnect"`; the header icon's is the longer tooltip — `exact: true` resolves only the banner button.
 - **Rule going forward**: In Playwright POM getters that target a button whose visible label is a single common verb (`Reconnect`, `Connect`, `Save`, `Delete`, `Edit`, `Cancel`, etc.), always pass `exact: true` to `getByRole`. The substring-matching default is a foot-gun whenever any other element on the page has an `aria-label` or accessible name that mentions the same verb in a longer phrase (tooltips, status badges, "needs X" sentences). The cross-job inconsistency (`e2etests` green, `verifypostgres` red) is a strong signal of seed-data-dependent locator ambiguity — fix the locator, not the seed data.
 
+## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
+
+### 2026-05-17 — typescript:S6582 collapse `x !== null && x.startsWith(...)` to an optional chain
+
+- **Symptom**: Frontend Sonar gate ERROR on `new_violations = 1` after the slice-03 ADO OAuth UI landed. The single violation: `typescript:S6582 — Prefer using an optional chain expression instead, as it's more concise and easier to read.` at `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx:34-35`.
+- **Root cause**: The `isAdoOauthOverHttp` predicate wrote `baseUrl !== null && baseUrl.startsWith("http://")`. Sonar's S6582 wants the null-guard collapsed into an optional chain when the next call is a method on the same value — both for readability and because the longer form encourages reaching for narrowed-type Else branches that aren't needed.
+- **Fix**: `baseUrl?.startsWith("http://") ?? false` — `?.` short-circuits on `null`/`undefined`, `?? false` keeps the predicate's `boolean` return type (the bare optional chain returns `boolean | undefined`, which violates the function signature). `OAuthAuthForm.tsx:33-34`.
+- **Rule going forward**: In TypeScript predicates that read like `x !== null && x.method(...)` or `x !== undefined && x.prop`, collapse to `x?.method(...)` or `x?.prop`. If the surrounding context expects a strict `boolean` (e.g. a `() => boolean` predicate or a JSX `&&` short-circuit where `undefined` would render `undefined` text), append `?? false`. Sonar runs S6582 at MAJOR severity and the project's gate is `new_violations = 0` on new code — any new violation fails the build immediately, even a single one.
+
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
 
 ### 2026-05-12 — Shared validate endpoints must not gate on a single workflow's permission

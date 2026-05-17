@@ -30,9 +30,7 @@ const isAdoOauthOverHttp = (
 	providerKey: string,
 	baseUrl: string | null,
 ): boolean =>
-	providerKey === "ado.oauth" &&
-	baseUrl !== null &&
-	baseUrl.startsWith("http://");
+	providerKey === "ado.oauth" && (baseUrl?.startsWith("http://") ?? false);
 
 const OAuthAuthForm = ({
 	connectionId,
