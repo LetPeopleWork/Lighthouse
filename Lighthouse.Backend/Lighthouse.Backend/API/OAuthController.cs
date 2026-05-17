@@ -32,12 +32,17 @@ namespace Lighthouse.Backend.API
             [FromQuery] string? code,
             [FromQuery] string? state,
             [FromQuery] string? error,
+            [FromQuery(Name = "error_description")] string? errorDescription,
             CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(code))
             {
                 if (!string.IsNullOrEmpty(error))
                 {
+                    logger.LogWarning(
+                        "oauth.callback.idp_error {Error} {ErrorDescription}",
+                        error,
+                        errorDescription ?? "(no description)");
                     return Redirect($"/oauth/popup-complete?status=error&reason={Uri.EscapeDataString(error)}");
                 }
 
