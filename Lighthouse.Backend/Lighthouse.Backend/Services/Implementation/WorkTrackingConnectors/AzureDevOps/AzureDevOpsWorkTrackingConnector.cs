@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -975,8 +976,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var url = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
-            var credentials = await BuildVssCredentialsAsync(workTrackingSystemConnection);
-            var key = $"{url}|{workTrackingSystemConnection.AuthenticationMethodKey}|conn:{workTrackingSystemConnection.Id}";
+            var (credentials, credentialFingerprint) = await BuildVssCredentialsAsync(workTrackingSystemConnection);
+
+            // Cache key MUST include a credential fingerprint, otherwise PAT rotation and OAuth token
+            // refresh produce a fresh VssCredentials object that the cache silently discards in favour
+            // of the originally-cached VssConnection — every subsequent ADO call then runs with the
+            // stale credential and surfaces as a 401 (OAuth) or auth-required (rotated PAT) failure
+            // until the process restarts.
+            var key = $"{url}|{workTrackingSystemConnection.AuthenticationMethodKey}|conn:{workTrackingSystemConnection.Id}|{credentialFingerprint}";
 
             var requestTimeoutInSeconds =
                 workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey<int>(AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds) ?? 100;
@@ -991,7 +998,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (connection, key);
         }
 
-        private async Task<VssCredentials> BuildVssCredentialsAsync(WorkTrackingSystemConnection connection)
+        private async Task<(VssCredentials credentials, string fingerprint)> BuildVssCredentialsAsync(WorkTrackingSystemConnection connection)
         {
             using var probeRequest = new HttpRequestMessage();
             var strategy = authStrategyFactory.Resolve(connection.AuthenticationMethodKey);
@@ -1001,7 +1008,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 ?? throw new InvalidOperationException(
                     $"Authentication strategy for '{connection.AuthenticationMethodKey}' did not set an Authorization header.");
 
-            return ConvertAuthorizationHeaderToVssCredentials(header);
+            return (ConvertAuthorizationHeaderToVssCredentials(header), ComputeCredentialFingerprint(header));
+        }
+
+        private static string ComputeCredentialFingerprint(AuthenticationHeaderValue header)
+        {
+            var input = $"{header.Scheme}:{header.Parameter}";
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+            return Convert.ToHexString(bytes);
         }
 
         private static VssCredentials ConvertAuthorizationHeaderToVssCredentials(AuthenticationHeaderValue header)
