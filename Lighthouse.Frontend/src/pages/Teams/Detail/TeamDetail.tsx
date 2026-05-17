@@ -307,9 +307,7 @@ const TeamDetail: React.FC = () => {
 	useEffect(() => {
 		if (!portfolioSubscriptionKey) return;
 
-		const portfolioIds = portfolioSubscriptionKey
-			.split(",")
-			.map((id) => Number(id));
+		const portfolioIds = portfolioSubscriptionKey.split(",").map(Number);
 
 		const handleForecastUpdate = async (update: IUpdateStatus) => {
 			if (
