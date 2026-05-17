@@ -1,8 +1,9 @@
 schema_version: 1
-updated: 2026-05-14
+updated: 2026-05-17
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
+  - test-speed-improvements
 
 jobs:
   - id: job-rbac-bootstrap
@@ -148,3 +149,59 @@ jobs:
         Important for premium/enterprise customers whose security policy disallows long-lived
         PATs; satisfaction-gap is moderate because PATs do work today, just at growing
         operational cost as orgs mature their IAM posture.
+
+  - id: job-dev-test-feedback-velocity
+    title: Get fast, trustworthy test feedback without giving up coverage
+    persona: lighthouse-developer
+    feature_context: test-speed-improvements
+    job_story: >
+      When I have a backend or frontend code change ready in Lighthouse,
+      I want to know within a minute locally and a few minutes on CI whether the change
+      broke anything,
+      so I can stay in flow and ship incremental commits instead of batching changes
+      behind a slow test signal.
+    dimensions:
+      functional: >
+        Run `dotnet test` and `pnpm test` locally on the inner TDD loop without
+        real-Jira/real-ADO/real-Linear traffic blocking each cycle; have CI gate PR
+        merges within a coffee-break wall-clock while still preserving the
+        "every public connector method verified at least once" invariant via some
+        mechanism (cadence-split, recorded cassettes, fixture-session sharing,
+        parallelism hardening — to be chosen against measured baseline data).
+      emotional: >
+        Move from quiet dread ("the test wait will kick me out of context") to
+        confidence ("the suite is fast AND I have a coverage map proving I didn't
+        sacrifice the safety net to get there").
+      social: >
+        Demonstrate to colleagues and community contributors that Lighthouse's
+        contribution loop respects their time — a fast, reliable PR signal is a form
+        of hospitality.
+    forces:
+      push: >
+        The test suite is the biggest hitter in CI; locally `dotnet test` is slow
+        enough that developers either skip running it or batch multiple commits.
+        Recent CI failures (2026-05-17 entries in docs/ci-learnings.md) show test
+        isolation and flakiness costs are already material.
+      pull: >
+        Separating per-PR unit feedback from release-cadence integration verification
+        cuts the inner loop dramatically without losing the API-drift safety net.
+        Per-test timing artifacts turn "I think test X is slow" into "test X takes
+        N seconds, here is the evidence."
+      anxiety: >
+        What if moving integration tests off the per-PR cadence lets an API drift
+        through? What if frontend slow-test fixes silently reduce coverage? What if
+        sharding E2E surfaces flakes we never saw single-shard?
+      habit: >
+        Developers are used to "all tests on every push" as the only quality bar,
+        even when the cost has grown to the point where running them locally is
+        skipped — the cure (skip the run) is worse than the disease (slow run).
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Test wait time is a per-day cost on every contributor; current satisfaction
+        is low because the suite has grown faster than its parallelisation strategy
+        and integration tests against three real systems amortise badly across
+        per-PR builds. The fix preserves coverage by re-tiering cadence, not by
+        deleting tests.
