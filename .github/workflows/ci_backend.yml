@@ -70,6 +70,35 @@ jobs:
       run: |
         dotnet test ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover RunConfiguration.MaxCpuCount=0
 
+    - name: Extract backend per-test timings
+      if: always()
+      run: |
+        shopt -s globstar nullglob
+        TRX_FILES=(Lighthouse.Backend/**/TestResults/*.trx)
+        if [ ${#TRX_FILES[@]} -eq 0 ]; then
+          echo "No TRX files found; skipping timings extraction."
+          exit 0
+        fi
+        TRX_ARGS=()
+        for f in "${TRX_FILES[@]}"; do TRX_ARGS+=(--trx "$f"); done
+        python3 Scripts/test-timings/trx_to_csv.py \
+          "${TRX_ARGS[@]}" \
+          --source-root Lighthouse.Backend/Lighthouse.Backend.Tests \
+          --output test-timings-backend.csv
+        echo "--- top 20 slowest backend tests ---"
+        python3 Scripts/test-timings/summarise.py \
+          --top 20 \
+          --source-root Lighthouse.Backend/Lighthouse.Backend.Tests \
+          "${TRX_FILES[@]}"
+
+    - name: Upload backend per-test timings
+      if: always()
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: test-timings-backend
+        path: test-timings-backend.csv
+        if-no-files-found: warn
+
     - name: End SonarCloud analysis
       run: |
         dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

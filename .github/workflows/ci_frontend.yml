@@ -23,6 +23,29 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      - name: Extract frontend per-test timings
+        if: always()
+        run: |
+          VITEST_JSON=./Lighthouse.Frontend/test-results.json
+          if [ ! -f "$VITEST_JSON" ]; then
+            echo "Vitest JSON reporter output not found at $VITEST_JSON; skipping."
+            exit 0
+          fi
+          python3 Scripts/test-timings/vitest_to_csv.py \
+            --input "$VITEST_JSON" \
+            --source-root "$(pwd)/Lighthouse.Frontend" \
+            --output test-timings-frontend.csv
+          echo "--- top 20 slowest frontend tests ---"
+          python3 Scripts/test-timings/summarise.py --top 20 "$VITEST_JSON"
+
+      - name: Upload frontend per-test timings
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: test-timings-frontend
+          path: test-timings-frontend.csv
+          if-no-files-found: warn
+
       - name: Upload Sonar report metadata
         uses: actions/upload-artifact@v7.0.1
         with:

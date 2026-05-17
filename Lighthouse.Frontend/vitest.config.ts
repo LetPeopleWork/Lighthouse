@@ -25,6 +25,7 @@ export default defineConfig({
 		reporters: [
 			"default",
 			["vitest-sonar-reporter", { outputFile: "sonar-report.xml" }],
+			["json", { outputFile: "test-results.json" }],
 		],
 		server: {
 			deps: {

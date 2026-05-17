@@ -404,6 +404,9 @@ FodyWeavers.xsd
 /Lighthouse.Backend/Lighthouse.Backend/wwwroot/assets/*
 Lighthouse.Frontend/sonar-report.xml
 Lighthouse.Frontend/coverage/*
+Lighthouse.Frontend/test-results.json
+test-timings-backend.csv
+test-timings-frontend.csv
 /Lighthouse.Backend/Lighthouse.Backend/wwwroot/index.html
 .idea/*
 
