@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpPost("update/{id:int}")]
-        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "id")]
         public ActionResult UpdateForecastForProject(int id)
         {
             forecastUpdater.TriggerUpdate(id);

@@ -49,6 +49,23 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void UpdateForecastForProject_HasPortfolioWriteRbacGuardAttributeScopedById()
+        {
+            var method = typeof(ForecastController).GetMethod(nameof(ForecastController.UpdateForecastForProject));
+            var attribute = method?
+                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                .Cast<RbacGuardAttribute>()
+                .SingleOrDefault();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attribute, Is.Not.Null);
+                Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
+                Assert.That(attribute.ScopeIdRouteKey, Is.EqualTo("id"));
+            }
+        }
+
+        [Test]
         public void RunManualForecastAsync_HasTeamReadRbacGuardAttribute()
         {
             var method = typeof(ForecastController).GetMethod(nameof(ForecastController.RunManualForecastAsync));
