@@ -196,11 +196,7 @@ namespace Lighthouse.Backend.Tests.Cache
             {
                 for (var snapshot = 0; snapshot < snapshotCount; snapshot++)
                 {
-                    var keys = cache.Keys.Where(k => k.StartsWith("churn-", StringComparison.Ordinal)).ToList();
-                    foreach (var key in keys)
-                    {
-                        Assert.That(key, Does.StartWith("churn-"));
-                    }
+                    _ = cache.Keys.Where(k => k.StartsWith("churn-", StringComparison.Ordinal)).ToList();
                 }
             }
             catch (Exception ex)
