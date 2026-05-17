@@ -29,13 +29,24 @@ namespace Lighthouse.Backend.API
         [HttpGet("callback")]
         [AllowAnonymous]
         public async Task<IActionResult> Callback(
-            [FromQuery] string code,
-            [FromQuery] string state,
+            [FromQuery] string? code,
+            [FromQuery] string? state,
+            [FromQuery] string? error,
             CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(code))
+            {
+                if (!string.IsNullOrEmpty(error))
+                {
+                    return Redirect($"/oauth/popup-complete?status=error&reason={Uri.EscapeDataString(error)}");
+                }
+
+                return BadRequest(new { error = "missing_code", message = "OAuth callback received without a code or error parameter." });
+            }
+
             try
             {
-                var result = await oauthService.CompleteAsync(code, state, cancellationToken);
+                var result = await oauthService.CompleteAsync(code, state ?? string.Empty, cancellationToken);
                 return Redirect($"/oauth/popup-complete?status=success&connectionId={result.ConnectionId}");
             }
             catch (OAuthStateTokenInvalidException ex)

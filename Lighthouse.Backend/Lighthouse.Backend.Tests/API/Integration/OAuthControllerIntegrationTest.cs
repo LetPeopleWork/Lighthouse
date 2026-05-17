@@ -247,6 +247,44 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task Callback_WhenIdpReturnsErrorWithoutCode_Redirects302ToPopupCompleteErrorWithReason()
+        {
+            var validState = IssueStateToken(SeededConnectionId, ProviderKey);
+
+            using var noRedirectClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+            });
+
+            var response = await noRedirectClient.GetAsync(
+                $"/api/oauth/callback?error=access_denied&state={Uri.EscapeDataString(validState)}");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
+                Assert.That(response.Headers.Location, Is.Not.Null);
+                Assert.That(response.Headers.Location!.ToString(),
+                    Is.EqualTo("/oauth/popup-complete?status=error&reason=access_denied"));
+            }
+        }
+
+        [Test]
+        public async Task Callback_WhenCallbackHasNeitherCodeNorError_Returns400()
+        {
+            var validState = IssueStateToken(SeededConnectionId, ProviderKey);
+
+            using var noRedirectClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+            });
+
+            var response = await noRedirectClient.GetAsync(
+                $"/api/oauth/callback?state={Uri.EscapeDataString(validState)}");
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        }
+
+        [Test]
         public void OAuthCredential_AttemptingToInsertSecondRowForSameConnection_IsRejectedByUniqueIndex()
         {
             SeedOAuthCredential(SeededConnectionId);
