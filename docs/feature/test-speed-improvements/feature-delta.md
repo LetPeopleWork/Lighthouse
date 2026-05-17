@@ -2,8 +2,8 @@
 
 ADO source: [User Story #5020 — Improve speed of Frontend and Backend Tests](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5020) (state: `Active` as of 2026-05-17)
 Density: `lean` (resolved from `~/.nwave/global-config.json`) + one user-requested `[WHY] alternatives-considered` expansion
-Waves complete: DISCUSS
-Next wave: DESIGN (light-touch; gated on baseline + alternatives memo)
+Waves complete: DISCUSS, DELIVER Slice 01 (baseline), DELIVER Slice 02 (alternatives memo — written, recommendation PAUSED pending n≥3 CI runs)
+Next wave: DELIVER Slice 03A (CS-G cache concurrency test downscale) — held until 2-3 additional `Build And Deploy Lighthouse` runs accumulate so per-candidate impact has noise bounds. See `alternatives.md` PAUSED banner for the resume checklist.
 
 ---
 

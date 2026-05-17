@@ -4,6 +4,8 @@
 **Author**: Lighthouse maintainer.
 **Decision asked**: pick top-1 or top-2 candidate slices to open next; reject the rest with reason.
 
+> **PAUSED 2026-05-17** — recommendation NOT acted on yet. The maintainer chose to let the next few PR + `main` runs accumulate so the per-candidate impact estimates can be calibrated against n≥3 data points instead of n=1. CS-G is unlikely to lose its #1 position (its margin over alternatives is too large to be erased by ±20 % runner variance), but the CS-B effort estimate and the CS-A vs CS-B+CS-G trade-off both depend on cluster-level numbers that we don't yet have noise bounds for. **Reopen this memo and revise the ranking once 2-3 more `Build And Deploy Lighthouse` runs have landed** (target review date: when the next 3 PRs after `12528ae0` have produced a green run with both timing artifacts attached).
+
 ---
 
 ## Baseline
@@ -139,4 +141,10 @@ Everything else (CS-A, CS-C, CS-D, CS-F, and the other combos) stays HOLD or REJ
 
 ## Next action
 
-Open slice-03A for CS-G under the existing ADO Story #5020 (no new child Stories per D8). Brief lives at `docs/feature/test-speed-improvements/slices/slice-03a-cache-concurrency-downscale.md` (to be written when slice-03A starts).
+**Paused until n≥3 CI baseline runs exist** (see status banner at top). When resuming:
+
+1. Re-download `test-timings-backend` + `test-timings-frontend` artifacts from the latest 2-3 runs on `main`.
+2. For each cluster (Cache concurrency, Integration), report mean ± stdev across runs. If any cluster's variance is >30 % of mean, capture more runs before deciding.
+3. Re-score CS-G effort (still expected ½ day) and CS-B gain estimate against the new numbers.
+4. If the ranking holds, open slice-03A for CS-G under the existing ADO Story #5020 (no new child Stories per D8). Brief at `docs/feature/test-speed-improvements/slices/slice-03a-cache-concurrency-downscale.md`.
+5. If a new candidate emerges from the multi-run data (e.g. a different test cluster shows up), back-prop to `feature-delta.md` first (same pattern as CS-G).
