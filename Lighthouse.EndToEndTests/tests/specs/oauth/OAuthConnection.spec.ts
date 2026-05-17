@@ -10,7 +10,6 @@
  *   Slice 01 (US-01): walking_skeleton → non-premium → BaseUrl warning → stub provider → invalid state
  *   Slice 02 (US-02): silent refresh → refresh-fail banner → single-flight → reconnect clears
  *   Slice 03 (US-03): ADO happy path → HTTPS warning (Slice 03 AC #5 verified by PR diff review, not Playwright)
- *   Pre-release smoke (@requires_external): real Atlassian + real Entra ID (gated to ci_oauth_integration_smoke.yml only)
  *
  * Tagging convention matches the .feature file. Tags appear in the test() title
  * string in square brackets so they're greppable from CI output, mirroring the
@@ -18,7 +17,6 @@
  *
  * Walking Skeleton Strategy: D (Configurable per DEVOPS env matrix).
  *   - PR / main CI: StubOAuthProvider injected via the test fixture.
- *   - Pre-release: real IdPs (gated by GITHUB_ENV oauth-smoke approval).
  */
 
 import test, { expect } from "@playwright/test";
@@ -174,25 +172,6 @@ test.describe("Slice 03 — Azure DevOps OAuth", () => {
 	// NOTE: "Adding the ADO provider did not require changes to the controller or persistence"
 	// (Slice 03 AC #5) is verified by PR diff review, not by Playwright. Tracked as a checkbox
 	// in the Slice 03 PR template — not implemented as a Playwright test.
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Pre-release smoke — real IdPs
-// (ci_oauth_integration_smoke.yml only; gated by oauth-smoke environment approval)
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe("Pre-release smoke (real IdPs)", () => {
-	test.skip("[@driving_adapter @real-io @requires_external @US-01 @smoke] Real Atlassian Cloud sandbox 3LO flow completes", async () => {
-		// TODO(DELIVER Slice 01 release-readiness): gated by JIRA_OAUTH_SANDBOX_* secrets +
-		// OAUTH_SMOKE_BASE_URL. Runs ONLY in ci_oauth_integration_smoke.yml.
-		throw new Error("Not yet implemented — RED scaffold");
-	});
-
-	test.skip("[@driving_adapter @real-io @requires_external @US-03 @smoke] Real Entra ID / Azure DevOps OAuth flow completes", async () => {
-		// TODO(DELIVER Slice 03 release-readiness): gated by ADO_OAUTH_SANDBOX_* secrets +
-		// OAUTH_SMOKE_BASE_URL. Runs ONLY in ci_oauth_integration_smoke.yml.
-		throw new Error("Not yet implemented — RED scaffold");
-	});
 });
 
 test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking skeleton)", () => {

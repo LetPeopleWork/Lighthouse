@@ -35,14 +35,12 @@
 #
 # Walking Skeleton Strategy: D (Configurable per environment matrix).
 #   - PR / main CI: scenarios run against StubOAuthProvider via test DI (no outbound HTTPS to real IdPs)
-#   - Pre-release smoke (ci_oauth_integration_smoke.yml): the @requires_external scenarios run against real Atlassian + Entra ID sandboxes
 #
 # Tag legend:
 #   @walking_skeleton      — the one e2e-thin-slice that proves the full pipeline (driving adapter → driven adapters → DB)
 #   @driving_adapter       — exercises the HTTP entry point via real network call (not a service-function invocation)
 #   @real-io               — uses real DB, real ICryptoService, real file system
 #   @in-memory             — uses StubOAuthProvider (no real IdP HTTPS)
-#   @requires_external     — needs real Atlassian / Entra ID sandbox credentials; skipped in PR CI
 #   @US-N                  — traceability to feature-delta.md user story N
 #   @kpi-OUT-N             — verifies the named outcome (links to docs/product/kpi-contracts.yaml)
 #   @error                 — error-path scenario
@@ -146,26 +144,3 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
       Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.tsx (label only)
       """
     And no diff in OAuthController, OAuthService, OAuthCredential, OAuthTokenRefreshService, or the EF context
-
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # Pre-release smoke — real IdPs (ci_e2e.yml `oauth-smoke` job only)
-  # ─────────────────────────────────────────────────────────────────────────
-
-  @driving_adapter @real-io @requires_external @US-01 @smoke
-  Scenario: Smoke — real Atlassian Cloud sandbox 3LO flow completes against the live IdP
-    Given the test environment has JIRA_OAUTH_SANDBOX_CLIENT_ID and JIRA_OAUTH_SANDBOX_CLIENT_SECRET set
-    And the Atlassian sandbox app is registered with redirect URI {OAUTH_SMOKE_BASE_URL}/api/oauth/callback
-    When the smoke harness completes the full 3LO dance against auth.atlassian.com
-    Then an OAuthCredential row exists with Status=Valid for the sandbox connection
-    And a subsequent Jira API call returns HTTP 200 carrying the issued bearer token
-    And at least one real Jira issue from the sandbox project is synced into Lighthouse
-
-  @driving_adapter @real-io @requires_external @US-03 @smoke
-  Scenario: Smoke — real Entra ID / Azure DevOps OAuth flow completes against the live IdP
-    Given the test environment has ADO_OAUTH_SANDBOX_CLIENT_ID and ADO_OAUTH_SANDBOX_CLIENT_SECRET set
-    And the Entra ID sandbox app is registered with redirect URI {OAUTH_SMOKE_BASE_URL}/api/oauth/callback
-    When the smoke harness completes the OAuth dance against login.microsoftonline.com
-    Then an OAuthCredential row exists with Status=Valid for the sandbox connection
-    And a subsequent dev.azure.com API call returns HTTP 200 carrying the issued bearer token
-    And at least one real ADO work item from the sandbox organisation is synced into Lighthouse
