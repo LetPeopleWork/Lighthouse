@@ -280,6 +280,19 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		return saved.id;
 	};
 
+	const discardDraftConnection = async (
+		connectionId: number,
+	): Promise<void> => {
+		try {
+			await workTrackingSystemService.deleteWorkTrackingSystemConnection(
+				connectionId,
+			);
+		} catch {
+			// If deletion fails the draft is left behind; the user can retry.
+		}
+		setDraftConnectionId(null);
+	};
+
 	const startOAuthHandshake = async () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
@@ -310,15 +323,18 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 					return;
 				case "popup_blocked":
 					setInlineMessage({ severity: "error", text: POPUP_BLOCKED_COPY });
+					await discardDraftConnection(connectionId);
 					return;
 				case "cancelled":
 					setInlineMessage({ severity: "info", text: CANCELLED_COPY });
+					await discardDraftConnection(connectionId);
 					return;
 				case "error":
 					setInlineMessage({
 						severity: "error",
 						text: result.reason ?? "OAuth failed.",
 					});
+					await discardDraftConnection(connectionId);
 					return;
 			}
 		} catch (error) {

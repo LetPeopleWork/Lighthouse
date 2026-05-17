@@ -260,6 +260,7 @@ interface RenderOptions {
 	oauthService?: IOAuthService;
 	configuredConnections?: WorkTrackingSystemConnection[];
 	initialUrl?: string;
+	deleteWorkTrackingSystemConnection?: (id: number) => Promise<void>;
 }
 
 const renderWizard = (options: RenderOptions = {}) => {
@@ -275,6 +276,7 @@ const renderWizard = (options: RenderOptions = {}) => {
 		oauthService = createMockOAuthService(),
 		configuredConnections = [],
 		initialUrl = "/settings/connections/new",
+		deleteWorkTrackingSystemConnection = vi.fn().mockResolvedValue(undefined),
 	} = options;
 
 	const getSupportedSystems = vi.fn().mockResolvedValue(supportedSystems);
@@ -313,6 +315,7 @@ const renderWizard = (options: RenderOptions = {}) => {
 		getConfiguredWorkTrackingSystems: vi
 			.fn()
 			.mockResolvedValue(configuredConnections),
+		deleteWorkTrackingSystemConnection,
 	} as unknown as IWorkTrackingSystemService;
 
 	const mockApiServiceContext = createMockApiServiceContext({
@@ -347,6 +350,7 @@ const renderWizard = (options: RenderOptions = {}) => {
 		validateConnection,
 		saveConnection,
 		onCancel,
+		deleteWorkTrackingSystemConnection,
 	};
 };
 
@@ -771,6 +775,9 @@ describe("CreateConnectionWizard", () => {
 			vi.mocked(oauthService.initiateConnect).mockResolvedValue({
 				authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
 			});
+			const deleteWorkTrackingSystemConnection = vi
+				.fn()
+				.mockResolvedValue(undefined);
 
 			openOAuthPopupMock.mockResolvedValue({ status: "popup_blocked" });
 
@@ -780,6 +787,7 @@ describe("CreateConnectionWizard", () => {
 				baseUrl: "https://lighthouse.example.com",
 				saveConnection,
 				oauthService,
+				deleteWorkTrackingSystemConnection,
 			});
 			await waitFor(() => {
 				expect(
@@ -815,6 +823,227 @@ describe("CreateConnectionWizard", () => {
 			).not.toBeInTheDocument();
 			expect(screen.getByLabelText("Jira URL")).toBeInTheDocument();
 			expect(screen.getByRole("button", { name: /Next/i })).toBeEnabled();
+
+			await waitFor(() => {
+				expect(deleteWorkTrackingSystemConnection).toHaveBeenCalledWith(88);
+			});
+		});
+
+		it("deletes the draft connection when the OAuth popup resolves with cancelled", async () => {
+			const user = userEvent.setup();
+			const savedDraft = new WorkTrackingSystemConnection({
+				id: 99,
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+			const saveConnection = vi.fn().mockResolvedValue(savedDraft);
+			const oauthService = createMockOAuthService();
+			vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+				authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+			});
+			const deleteWorkTrackingSystemConnection = vi
+				.fn()
+				.mockResolvedValue(undefined);
+
+			openOAuthPopupMock.mockResolvedValue({ status: "cancelled" });
+
+			renderWizard({
+				supportedSystems: [mockJiraSystemWithOAuth],
+				canUsePremiumFeatures: true,
+				baseUrl: "https://lighthouse.example.com",
+				saveConnection,
+				oauthService,
+				deleteWorkTrackingSystemConnection,
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Jira/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Jira/i }));
+			const select = await screen.findByRole("combobox");
+			await user.click(select);
+			await user.click(await screen.findByRole("option", { name: /OAuth/i }));
+
+			await user.type(
+				await screen.findByLabelText("Jira URL"),
+				"https://example.atlassian.net",
+			);
+			await user.type(
+				await screen.findByLabelText("Client ID"),
+				"stub-client-id",
+			);
+			await user.type(
+				await screen.findByLabelText("Client Secret"),
+				"stub-client-secret",
+			);
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			expect(await screen.findByRole("alert")).toHaveTextContent(
+				/OAuth was cancelled/i,
+			);
+
+			await waitFor(() => {
+				expect(deleteWorkTrackingSystemConnection).toHaveBeenCalledWith(99);
+			});
+		});
+
+		it("deletes the draft connection when the OAuth popup resolves with error", async () => {
+			const user = userEvent.setup();
+			const savedDraft = new WorkTrackingSystemConnection({
+				id: 77,
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+			const saveConnection = vi.fn().mockResolvedValue(savedDraft);
+			const oauthService = createMockOAuthService();
+			vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+				authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+			});
+			const deleteWorkTrackingSystemConnection = vi
+				.fn()
+				.mockResolvedValue(undefined);
+
+			openOAuthPopupMock.mockResolvedValue({
+				status: "error",
+				reason: "access_denied",
+			});
+
+			renderWizard({
+				supportedSystems: [mockJiraSystemWithOAuth],
+				canUsePremiumFeatures: true,
+				baseUrl: "https://lighthouse.example.com",
+				saveConnection,
+				oauthService,
+				deleteWorkTrackingSystemConnection,
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Jira/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Jira/i }));
+			const select = await screen.findByRole("combobox");
+			await user.click(select);
+			await user.click(await screen.findByRole("option", { name: /OAuth/i }));
+
+			await user.type(
+				await screen.findByLabelText("Jira URL"),
+				"https://example.atlassian.net",
+			);
+			await user.type(
+				await screen.findByLabelText("Client ID"),
+				"stub-client-id",
+			);
+			await user.type(
+				await screen.findByLabelText("Client Secret"),
+				"stub-client-secret",
+			);
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			await waitFor(() => {
+				expect(deleteWorkTrackingSystemConnection).toHaveBeenCalledWith(77);
+			});
+		});
+
+		it("creates a fresh draft on the next Connect click after a non-success popup result", async () => {
+			const user = userEvent.setup();
+			const firstDraft = new WorkTrackingSystemConnection({
+				id: 101,
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+			const secondDraft = new WorkTrackingSystemConnection({
+				id: 202,
+				name: "Jira",
+				workTrackingSystem: "Jira",
+				options: [],
+				availableAuthenticationMethods:
+					mockJiraSystemWithOAuth.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "jira.oauth",
+			});
+			const saveConnection = vi
+				.fn()
+				.mockResolvedValueOnce(firstDraft)
+				.mockResolvedValueOnce(secondDraft);
+			const oauthService = createMockOAuthService();
+			vi.mocked(oauthService.initiateConnect).mockResolvedValue({
+				authorizationUrl: "https://auth.atlassian.com/authorize?state=xyz",
+			});
+			const deleteWorkTrackingSystemConnection = vi
+				.fn()
+				.mockResolvedValue(undefined);
+
+			openOAuthPopupMock.mockResolvedValueOnce({ status: "cancelled" });
+			openOAuthPopupMock.mockResolvedValueOnce({
+				status: "success",
+				connectionId: 202,
+			});
+
+			renderWizard({
+				supportedSystems: [mockJiraSystemWithOAuth],
+				canUsePremiumFeatures: true,
+				baseUrl: "https://lighthouse.example.com",
+				saveConnection,
+				oauthService,
+				deleteWorkTrackingSystemConnection,
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Jira/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Jira/i }));
+			const select = await screen.findByRole("combobox");
+			await user.click(select);
+			await user.click(await screen.findByRole("option", { name: /OAuth/i }));
+
+			await user.type(
+				await screen.findByLabelText("Jira URL"),
+				"https://example.atlassian.net",
+			);
+			await user.type(
+				await screen.findByLabelText("Client ID"),
+				"stub-client-id",
+			);
+			await user.type(
+				await screen.findByLabelText("Client Secret"),
+				"stub-client-secret",
+			);
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			await waitFor(() => {
+				expect(deleteWorkTrackingSystemConnection).toHaveBeenCalledWith(101);
+			});
+
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+
+			await waitFor(() => {
+				expect(saveConnection).toHaveBeenCalledTimes(2);
+			});
+			expect(oauthService.initiateConnect).toHaveBeenLastCalledWith(
+				"jira.oauth",
+				202,
+			);
 		});
 
 		it("renders Upgrade affordance and hides Client ID / Secret when not Premium", async () => {
