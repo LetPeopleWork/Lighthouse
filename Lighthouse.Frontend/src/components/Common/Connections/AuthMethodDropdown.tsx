@@ -5,7 +5,7 @@ import {
 	Select,
 	type SelectChangeEvent,
 } from "@mui/material";
-import type React from "react";
+import { type FC, useId } from "react";
 import type { IAuthenticationMethod } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
 interface AuthMethodDropdownProps {
@@ -29,21 +29,28 @@ const renderLabel = (
 		? `${method.displayName} (Premium)`
 		: method.displayName;
 
-const AuthMethodDropdown: React.FC<AuthMethodDropdownProps> = ({
+const AuthMethodDropdown: FC<AuthMethodDropdownProps> = ({
 	methods,
 	selectedKey,
 	canUsePremiumFeatures,
 	onChange,
 	label = "Authentication Method",
 }) => {
+	const labelId = useId();
+
 	const handleChange = (event: SelectChangeEvent<string>) => {
 		onChange(event.target.value);
 	};
 
 	return (
 		<FormControl fullWidth>
-			<InputLabel>{label}</InputLabel>
-			<Select value={selectedKey} onChange={handleChange} label={label}>
+			<InputLabel id={labelId}>{label}</InputLabel>
+			<Select
+				labelId={labelId}
+				value={selectedKey}
+				onChange={handleChange}
+				label={label}
+			>
 				{methods.map((method) => {
 					const locked = isLocked(method, canUsePremiumFeatures);
 					return (
