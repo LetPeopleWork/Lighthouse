@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="test" name="sample" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult executionId="e1" testId="t1" testName="FastUnitTest" duration="00:00:00.0050000" outcome="Passed" />
+    <UnitTestResult executionId="e2" testId="t2" testName="SlowIntegrationTest" duration="00:00:02.5000000" outcome="Passed" />
+    <UnitTestResult executionId="e3" testId="t3" testName="FailingTest" duration="00:00:00.1234567" outcome="Failed" />
+    <UnitTestResult executionId="e4" testId="t4" testName="ParametrizedTest(&quot;arg&quot;,1)" duration="00:00:00.0001000" outcome="Passed" />
+    <UnitTestResult executionId="e5" testId="t5" testName="UnitOnlyMethod" duration="00:00:00.0010000" outcome="Passed" />
+    <UnitTestResult executionId="e6" testId="t6" testName="IntegrationMethod" duration="00:00:01.0000000" outcome="Passed" />
+    <UnitTestResult executionId="e7" testId="t7" testName="IntegrationParametrized(&quot;a&quot;)" duration="00:00:00.5000000" outcome="Passed" />
+    <UnitTestResult executionId="e8" testId="t8" testName="IntegrationParametrized(&quot;b&quot;)" duration="00:00:00.6000000" outcome="Passed" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="FastUnitTest" id="t1">
+      <TestMethod className="Lighthouse.Backend.Tests.Foo.FastUnitTestClass" name="FastUnitTest" />
+    </UnitTest>
+    <UnitTest name="SlowIntegrationTest" id="t2">
+      <TestMethod className="Lighthouse.Backend.Tests.Bar.JiraIntegrationTest" name="SlowIntegrationTest" />
+    </UnitTest>
+    <UnitTest name="FailingTest" id="t3">
+      <TestMethod className="Lighthouse.Backend.Tests.Foo.FastUnitTestClass" name="FailingTest" />
+    </UnitTest>
+    <UnitTest name="ParametrizedTest" id="t4">
+      <TestMethod className="Lighthouse.Backend.Tests.Bar.JiraIntegrationTest" name="ParametrizedTest" />
+    </UnitTest>
+    <UnitTest name="UnitOnlyMethod" id="t5">
+      <TestMethod className="Lighthouse.Backend.Tests.Mixed.MixedTest" name="UnitOnlyMethod" />
+    </UnitTest>
+    <UnitTest name="IntegrationMethod" id="t6">
+      <TestMethod className="Lighthouse.Backend.Tests.Mixed.MixedTest" name="IntegrationMethod" />
+    </UnitTest>
+    <UnitTest name="IntegrationParametrized" id="t7">
+      <TestMethod className="Lighthouse.Backend.Tests.Mixed.MixedTest" name="IntegrationParametrized" />
+    </UnitTest>
+    <UnitTest name="IntegrationParametrized" id="t8">
+      <TestMethod className="Lighthouse.Backend.Tests.Mixed.MixedTest" name="IntegrationParametrized" />
+    </UnitTest>
+  </TestDefinitions>
+</TestRun>
