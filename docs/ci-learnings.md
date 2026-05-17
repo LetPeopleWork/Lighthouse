@@ -179,6 +179,12 @@ Each entry follows:
 - **Fix**: Extracted a `buildTooltip(count: number): string` helper above the component using early-return `if` for the zero case and named locals (`noun`, `verb`) for the singular/plural choices. Zero ternaries remain.
 - **Rule going forward**: In TypeScript components, never inline pluralisation/branching ternaries inside template-literal interpolation when the template literal itself sits inside another conditional expression. Extract a named helper function with early returns. The general heuristic: if a single line contains two or more `?` operators (counting those inside `${}` slots), refactor before pushing.
 
+### 2026-05-17 — typescript:S7770: `.map((x) => Fn(x))` is redundant when `Fn` is a single-arg pure function — pass `Fn` directly
+- **Symptom**: Sonar gate failed with `new_violations = 1` on `LetPeopleWork_Lighthouse_Frontend` after the bug-5022 forecast-refresh fix landed. The single violation: `typescript:S7770 — arrow function is equivalent to Number. Use Number directly.` at `TeamDetail.tsx:312`. MINOR severity, but the gate condition is `new_violations = 0` so any new violation fails the build.
+- **Root cause**: The fix wrote `portfolioSubscriptionKey.split(",").map((id) => Number(id))` to convert the stringified portfolio-id key back to numbers. `(id) => Number(id)` is literally `Number` with extra boilerplate — same arity, same behaviour, no additional logic in the wrapper. Sonar's S7770 catches this for single-arg pure callbacks where the arrow function only forwards its argument unchanged.
+- **Fix**: `.map((id) => Number(id))` → `.map(Number)`. Pure rename; no behaviour change. Note the rule applies to ANY pure single-arg function — `Boolean`, `String`, `parseInt` (CAVEAT: `parseInt` takes a radix as its second arg, so `.map(parseInt)` is a well-known foot-gun — DON'T collapse arrows that pass an explicit radix; use `.map(s => parseInt(s, 10))` and accept the S7770 hit, or use `.map(Number)`).
+- **Rule going forward**: When `.map`/`.filter`/`.find`/`.forEach` callback is `(x) => Fn(x)` for a single-arg pure function, drop the arrow and pass `Fn` directly. Common safe collapses: `Number`, `String`, `Boolean`, `BigInt`, custom unary helpers. Unsafe: `parseInt` (radix), `Array.from` (mapFn signature), any function that takes additional positional args from the callback (`.map(Fn)` exposes the array index/array as 2nd/3rd args, which most APIs ignore but some surprise).
+
 ## EF migrations
 
 _None yet._
