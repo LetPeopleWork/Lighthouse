@@ -1121,27 +1121,27 @@
         },
         {
           "id": "05-03",
-          "name": "ci-learnings AllowedOrigins note + docs/oauth-observability.md",
-          "description": "GREEN: extend `docs/ci-learnings.md` under 'Runtime / startup' with a new entry documenting that the OAuth callback origin must be included in `Authentication:AllowedOrigins` for reverse-proxy deployments \u2014 extends the existing 2026-05-13 entry about list-typed env-var binding. Write `docs/operations/oauth-observability.md` documenting the 8 structured log event schemas (oauth.flow.initiated/completed/failed, oauth.callback.invalid_state, oauth.token.refreshed/refresh_failed, oauth.credential.status_changed, connection.sync.first_after_oauth) with field names, cardinality, and admin export procedure for the demo environment. Cross-link from oauth-jira.md and oauth-ado.md. COMMIT: `docs(oauth): ci-learnings AllowedOrigins note + observability schema reference`.",
+          "name": "ci-learnings AllowedOrigins note",
+          "description": "GREEN: extend `docs/ci-learnings.md` under 'Runtime / startup' with a new entry documenting that the OAuth callback origin must be included in `Authentication:AllowedOrigins` for reverse-proxy deployments \u2014 extends the existing 2026-05-13 entry about list-typed env-var binding. COMMIT: `docs(oauth): ci-learnings note on OAuth callback origin vs AllowedOrigins`.",
           "test_file": "n/a",
           "scenario_name": "Release-readiness documentation",
           "red_to_green_tests": [],
           "files_to_modify": [
-            "docs/ci-learnings.md",
-            "docs/operations/oauth-observability.md"
+            "docs/ci-learnings.md"
           ],
           "dependencies": [
             "05-02"
           ],
           "criteria": [
-            "AllowedOrigins ci-learnings note added.",
-            "Observability page documents all 8 log event schemas."
+            "AllowedOrigins ci-learnings note added."
           ],
-          "estimated_hours": 1.0,
+          "estimated_hours": 0.5,
           "deliverables": [
-            "docs/ci-learnings.md (modified)",
-            "docs/operations/oauth-observability.md (new)"
-          ]
+            "docs/ci-learnings.md (modified)"
+          ],
+          "scope_history": {
+            "2026-05-17": "Dropped the bundled `docs/operations/oauth-observability.md` deliverable (8 structured log event schemas + admin export procedure). Reason: no observability-consumer pipeline exists today \u2014 no Prometheus exporter, no Grafana dashboards, no aggregation. The structured log lines self-document for self-hosted operators (logger.LogXxx(\"oauth.flow.failed {ConnectionId} {ProviderKey} {ErrorType}\") is its own contract). A separate event-catalog doc would drift the moment a new log line is added. Revisit when Epic #5015 (opt-in product telemetry) lands and gives the events a real consumer."
+          }
         },
         {
           "id": "05-04",
