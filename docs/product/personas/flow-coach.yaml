@@ -1,0 +1,50 @@
+schema_version: 1
+id: flow-coach
+created: 2026-05-17
+created_in_feature: time-in-state-and-staleness
+
+display_name: Flow Coach
+aliases:
+  - team-lead
+  - agile-coach
+  - scrum-master
+  - rte
+
+short_description: >
+  Runs flow reviews, standups, retros, and ops reviews for one team or release train. Uses
+  Lighthouse as a flow diagnostic surface — sees the team's day-to-day work health, not just
+  the forecast.
+
+primary_jobs:
+  - job-flow-coach-spot-stuck-items
+
+goals:
+  - Spot work that's been sitting too long before it shows up as a missed forecast
+  - Have hard data (not gut feel) when starting "what's blocking this?" conversations
+  - Reduce time spent context-switching between Jira/ADO history tabs and Lighthouse
+
+frustrations:
+  - Source-system history tabs are slow to navigate one item at a time
+  - Existing Cycle Time / Work Item Age signals don't tell me where in the workflow time is being spent
+  - Aged blocked items get forgotten because the "blocked" indicator doesn't say how long
+
+mental_model:
+  - Work flows through named states (In Progress → Review → Test → Done); each state has an implicit "normal" duration
+  - "Stuck" means an item is in a state much longer than that team's normal — the threshold is team-specific
+  - "Stale" is a useful warning signal, similar to "blocked", that demands a conversation
+
+vocabulary:
+  - "stuck" — item sitting in a state longer than expected (term flow coaches use; staleness is the Lighthouse-internal term that drives the UI)
+  - "stale" — same idea, more formal
+  - "in state X" — the named workflow state, not the Lighthouse StateCategory enum
+  - "ageing" — well-known term from Daniel Vacanti / ActionableAgile; refers to time work has been in progress overall, related-but-different from time-in-current-state
+
+related_personas:
+  - team-admin (often the same person; admins the team's staleness threshold)
+  - portfolio-admin (counterpart at portfolio scope)
+  - product-owner (different job — single-item outlier deep-dive; see feature B2 in Epic 4144)
+  - delivery-lead-rte (different job — cumulative systemic analysis; see feature B3 in Epic 4144)
+
+not_this_persona:
+  - System admin (no flow-review responsibility)
+  - Viewer (read-only; sees the badge but cannot tune the threshold)

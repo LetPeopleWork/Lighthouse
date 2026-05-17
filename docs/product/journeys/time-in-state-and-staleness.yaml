@@ -1,0 +1,84 @@
+schema_version: 1
+feature_id: time-in-state-and-staleness
+updated: 2026-05-17
+
+journeys:
+
+  - name: spot-stuck-items-in-flow-review
+    goal: Flow coach identifies items that are sitting too long in their current state and starts a conversation about each one
+    persona: flow-coach (team lead, agile coach, scrum master, or RTE running a team's flow review)
+
+    emotional_arc:
+      start: Uncertain — "I suspect something's stuck in Review but I can't easily tell what"
+      middle: Focused — "I see exactly which items are over the threshold and how long they've been there"
+      end: Equipped — "I know what to ask about in standup; I have hard data, not gut feel"
+
+    design_decisions_resolved:
+      - id: D1
+        question: Should Lighthouse compute time-in-state itself or pull it from the source system?
+        decision: >
+          Pull from source-of-truth where the connector exposes transition history (Jira, ADO confirmed;
+          Linear pending investigation at DESIGN). For CSV or any connector that can't expose history,
+          fall back to a sync-side delta: compare current State to the last-known State on every sync
+          and append a synthetic transition row. Resolution = sync cadence (a few hours), documented in
+          the badge tooltip as approximate.
+      - id: D7
+        question: Should staleness thresholds be per-state or one value per Team/Portfolio?
+        decision: >
+          One integer per Team, one per Portfolio. No per-state thresholds in this feature. Validated
+          via OUT-staleness-threshold-tuning KPI; if customers ask for per-state within 4 weeks of
+          release, fold into a future "advanced staleness" feature rather than retrofit.
+      - id: D8
+        question: What's the default threshold value?
+        decision: >
+          7 days for newly-created Teams; 14 days for newly-created Portfolios. Revisable post-release
+          based on the proportion of teams that diverge from the default (OUT-staleness-threshold-tuning).
+
+    steps:
+
+      - id: step-open-team-view
+        action: Flow coach navigates to /teams/{teamId}
+        expected_output: Team detail page renders with the existing work-item table, now including a new "Time in State" column
+        emotional_state: Curious — "let's see what's currently in flight"
+        shared_artifacts:
+          - currentStateEnteredAt (added to /api/teams/{teamId}/work-items response by US-01)
+
+      - id: step-scan-time-in-state-column
+        action: Flow coach reads the Time in State column row by row
+        expected_output: Each row shows "<N>d in <stateName>" — e.g. "11d in Review", "2d in In Progress"
+        emotional_state: Engaged — "11 days in Review? that's a lot for us"
+        shared_artifacts:
+          - per-row badge component
+
+      - id: step-spot-stuck-items
+        action: Flow coach identifies items highlighted in red (above the team's staleness threshold)
+        expected_output: Items where days-in-state exceeds Team.StalenessThresholdDays render with red emphasis; others stay neutral
+        emotional_state: Equipped — "these three are the conversations I'm starting today"
+        shared_artifacts:
+          - Team.StalenessThresholdDays (set in US-03)
+          - badge visual treatment (US-02)
+
+      - id: step-tune-threshold-if-needed
+        action: Team admin (often the same person as the flow coach) decides default 7 days isn't right for this team and opens Settings → flow-signals
+        expected_output: Settings form shows "Staleness Threshold (days)" input, visible only to team-admin per useRbac().isTeamAdmin(teamId)
+        emotional_state: Empowered — "I can make this match how we actually work"
+        shared_artifacts:
+          - Team Settings form field
+        error_paths:
+          - viewer attempts to access: form field hidden; backend rejects PUT with 403
+
+      - id: step-confirm-update
+        action: Team admin enters new threshold (e.g. 5) and saves
+        expected_output: Persisted on Team entity; on next render of the work-item table, badges re-colour according to new threshold (no sync needed)
+        emotional_state: Validated — "the signal now matches my mental model"
+        shared_artifacts:
+          - PUT /api/teams/{teamId}/settings (existing route, extended with stalenessThresholdDays)
+
+    error_paths_summary:
+      - First-observation items: when no prior transition data exists, badge shows "—" until next sync establishes baseline
+      - CSV teams: badge tooltip indicates "Approximate — based on sync cadence" so users know the resolution
+      - Connectors with no history at all: same fallback as CSV; same tooltip
+
+    success_signal:
+      - The flow coach walks out of the flow review with a specific list of items to follow up on, rather than a vague "things feel slow"
+      - The team admin tunes the threshold once and rarely revisits — the signal stays useful without ongoing maintenance

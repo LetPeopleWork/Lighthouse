@@ -4,6 +4,7 @@ feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
   - test-speed-improvements
+  - time-in-state-and-staleness
 
 jobs:
   - id: job-rbac-bootstrap
@@ -205,3 +206,91 @@ jobs:
         and integration tests against three real systems amortise badly across
         per-PR builds. The fix preserves coverage by re-tiering cadence, not by
         deleting tests.
+
+  - id: job-flow-coach-spot-stuck-items
+    title: Spot work items that are stuck in their current state
+    persona: flow-coach
+    feature_context: time-in-state-and-staleness
+    job_story: >
+      When I am running a team's flow review and an item has been sitting unmoved for
+      a suspiciously long time,
+      I want to see at a glance how many days each item has been in its current state
+      and which items are past the team's staleness threshold,
+      so I can start the right "what's blocking this?" conversation before the team's
+      cycle-time distribution gets worse.
+    dimensions:
+      functional: >
+        See "<N>d in <stateName>" per work item on the team view; sort by longest;
+        identify items past the team's configurable staleness threshold visually (red badge).
+      emotional: >
+        Move from vague suspicion ("I think this PR has been stuck") to evidence-backed
+        conversation ("this has been In Review for 11 days — what's the unblocker?").
+      social: >
+        Be seen by my team as the person who notices flow problems BEFORE the retro,
+        not after.
+    forces:
+      push: >
+        Today, "how long has X been in state Y" requires opening each work item in
+        Jira/ADO and reading the history tab. High friction → people don't do it for
+        every item → bottlenecks fester until a missed forecast.
+      pull: >
+        One column on the work-item table that answers the question for every item
+        in one glance, plus a colour change that surfaces "this is past our normal".
+      anxiety: >
+        What if Lighthouse's number disagrees with what's in Jira/ADO? — trust gap
+        if our derived number drifts. (Mitigated by D1: pull from source where possible.)
+      habit: >
+        Coaches currently rely on cycle-time distributions / WorkItemAge for "ageing"
+        signal; time-in-current-state is finer-grained and they're not used to seeing it.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Community + Productboard tagged on Epic 4144 — direct customer signal that the
+        information is wanted. Current satisfaction is near zero (the data isn't surfaced
+        anywhere in Lighthouse today).
+
+  - id: job-team-admin-tune-staleness
+    title: Tune the "stuck" signal so it matches my team's normal cadence
+    persona: team-admin
+    feature_context: time-in-state-and-staleness
+    job_story: >
+      When my team's natural cycle time is faster (or slower) than Lighthouse's default
+      assumption,
+      I want to set a single number that tells Lighthouse what "too long in a state" means
+      for us,
+      so the staleness signal is useful for my team's actual pace rather than crying wolf
+      or staying silent.
+    dimensions:
+      functional: >
+        One integer setting per Team (and per Portfolio at portfolio scope). 0 disables
+        the signal entirely. RBAC-gated to team-admin / portfolio-admin.
+      emotional: >
+        Confident that the alert is calibrated — the red badge means something I
+        should actually act on.
+      social: >
+        Demonstrate to my team that the tool reflects how we actually work, not a
+        generic "industry default" they have to mentally re-interpret.
+    forces:
+      push: >
+        A fixed default threshold (whether 5 or 7 or 14 days) won't fit every team.
+        Without tunability the signal is either spammy or useless.
+      pull: >
+        One field, one save. Re-colour is instant on next render — no sync wait,
+        no admin escalation.
+      anxiety: >
+        What if I set it too low and everything turns red? What if I set it too high
+        and nothing turns red and I miss real problems? (Mitigated by the badge always
+        showing the raw number too, not just the colour.)
+      habit: >
+        Team admins are used to a "set it once and forget it" model for settings;
+        we expect a useful default so most teams don't have to touch this.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 0
+      gap: 3
+      rationale: >
+        Required to make the staleness signal useful per-team. Without this, the badge
+        colour is meaningless (no team-specific baseline). Satisfaction is zero today
+        because the setting doesn't exist.
