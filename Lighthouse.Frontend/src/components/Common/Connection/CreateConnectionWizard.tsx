@@ -110,6 +110,10 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const callbackUrl = buildOAuthCallbackUrl(baseUrl);
 	const isOAuthSelected = isOAuthMethod(selectedAuthMethod);
 	const hasBaseUrl = Boolean(baseUrl && baseUrl.length > 0);
+	const showAdoHttpsWarning =
+		isOAuthSelected &&
+		selectedAuthMethod?.key === "ado.oauth" &&
+		(baseUrl?.startsWith("http://") ?? false);
 
 	const getAllAuthOptionKeys = useCallback(
 		(connection: IWorkTrackingSystemConnection | null): Set<string> => {
@@ -447,6 +451,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 					<Alert severity="warning">
 						Your callback URL may be incorrect. Set Lighthouse:BaseUrl in your
 						server configuration to guarantee OAuth registration works.
+					</Alert>
+				)}
+
+				{showOAuthFields && showAdoHttpsWarning && (
+					<Alert severity="warning">
+						Azure DevOps requires HTTPS callback URLs in production. Configure
+						Lighthouse:BaseUrl with https:// before registering the OAuth app.
 					</Alert>
 				)}
 
