@@ -22,7 +22,12 @@ Each entry follows:
 
 ## Build & compile
 
-_None yet._
+### 2026-05-16 — ASP.NET Core [FromQuery] params are required by default under nullable-enabled C#
+
+- **Symptom**: `OAuthController.Callback` returned 400 `"The code field is required."` when the user cancelled at the Microsoft consent screen. Microsoft redirects to `/api/oauth/callback?error=access_denied&state=...` — WITHOUT a `code` param. The controller's try/catch around `oauthService.CompleteAsync` never gets to run because the model binder rejects the request first.
+- **Root cause**: Under `<Nullable>enable</Nullable>` (which the project enforces project-wide), non-nullable reference types on action parameters are treated as REQUIRED by ASP.NET's model binder. `[FromQuery] string code` ⇒ "must be present and non-null"; missing → 400 with `ValidationProblemDetails` before the action body runs. There's no exception to catch in the controller because the controller never runs.
+- **Fix**: Declare optional query params nullable explicitly: `[FromQuery] string? code`. Handle the missing-param case in the action body (redirect, BadRequest, etc., as the semantics require).
+- **Rule going forward**: For any `[FromQuery]` / `[FromRoute]` / `[FromHeader]` parameter that the controller wants to inspect-and-handle-when-missing (not just consume-or-fail), declare the parameter nullable (`string?`, `int?`, etc.) so the model binder doesn't 400 before your action body runs. The default required-by-default behaviour is correct for "must be present" params (e.g. `id` on a `GET /widgets/{id}` route), but wrong for OAuth callbacks where the spec allows either a `code` OR an `error` parameter.
 
 ## Runtime / startup
 
