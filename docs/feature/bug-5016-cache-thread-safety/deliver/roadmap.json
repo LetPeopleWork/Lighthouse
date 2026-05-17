@@ -1,0 +1,93 @@
+{
+  "roadmap": {
+    "project_id": "bug-5016-cache-thread-safety",
+    "created_at": "2026-05-17",
+    "total_steps": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Fix ADO Bug 5016 — Cache<TKey,TValue> in Lighthouse.Backend/Cache/Cache.cs uses a non-thread-safe Dictionary<,>, causing IndexOutOfRangeException in BaseMetricsService.MetricsCache under concurrent metric requests (836 occurrences in 15h in customer Liz's instance). Fix is a one-line swap of the backing store to ConcurrentDictionary<,> with TryGetValue/TryRemove in Get/Remove, preserving the public surface and lazy-expiry-on-read semantics. Acceptance: the 7 scenarios in docs/feature/bug-5016-cache-thread-safety/acceptance/bug-5016-cache-thread-safety.feature go GREEN; the full backend test suite continues to pass; Stryker mutation gate on Cache.cs is >=80%."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, given single-file surgical scope)",
+    "reviewed_at": "2026-05-17",
+    "notes": "Two-step roadmap reflects the actual scope: write RED regression tests, then make GREEN with ConcurrentDictionary swap. No architect dispatch — the design IS the one-line fix already prescribed in ADO 5016 repro steps and validated against existing ConcurrentDictionary precedent at docs/product/architecture/brief.md:222 (OAuth single-flight uses ConcurrentDictionary<int, SemaphoreSlim>). Sentinel approved the DISTILL artifacts upstream with zero blockers."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/bug-5016-cache-thread-safety/feature-delta.md",
+    "gherkin": [
+      "docs/feature/bug-5016-cache-thread-safety/acceptance/bug-5016-cache-thread-safety.feature"
+    ]
+  },
+  "out_of_scope": [
+    "Broader cache redesign (eviction policy, size cap, telemetry, distributed cache) — tracked under epic #4618.",
+    "Single-flight semantics (preventing two threads from recomputing the same expired metric simultaneously) — separate feature if desired; not in scope for crash fix.",
+    "Removing the BaseMetricsService.MetricsCache static lifetime — orthogonal to the thread-safety bug.",
+    "Changing the lazy-expiry-on-read behaviour of Get — preserved verbatim so non-concurrent callers see no behavioural drift."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Surgical thread-safety fix on Cache<,>",
+      "description": "Two-step RED -> GREEN: (01-01) author CacheTest.cs with 5 concurrency repros + 2 parity guards mapped 1:1 from the .feature scenarios; verify the concurrency tests fail RED on today's Dictionary-backed Cache (IndexOutOfRangeException / InvalidOperationException) and the parity tests already pass GREEN; (01-02) swap Cache.cs's backing store to ConcurrentDictionary and adjust Get/Remove to TryGetValue/TryRemove; verify all 7 CacheTest scenarios go GREEN and the full backend test suite remains green.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Author RED CacheTest.cs (NUnit, 7 scenarios mirroring the .feature)",
+          "description": "Create new directory Lighthouse.Backend/Lighthouse.Backend.Tests/Cache/ and new file CacheTest.cs inside it. Implement 7 NUnit [Test] methods mapping 1:1 onto the scenarios in docs/feature/bug-5016-cache-thread-safety/acceptance/bug-5016-cache-thread-safety.feature. Use Parallel.For / Task.WhenAll with a starting Barrier to maximise race probability on the concurrent scenarios (target reliable RED in < 2s on the standard CI runner; hard timeout 5s). Use Task.Delay or short Thread.Sleep past the expiry window for expiry-driven scenarios. Tests must exercise the *public* surface only: Store / Get / Remove / Keys.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Cache/CacheTest.cs",
+          "scenario_name": "All 7 scenarios from bug-5016-cache-thread-safety.feature",
+          "red_to_green_tests": [
+            "Cache concurrency :: ConcurrentInsertsOnUniqueKeys_DoNotThrow_AndAllValuesAreRetrievable",
+            "Cache concurrency :: ConcurrentReadersAndWriters_DoNotObserveCorruptedEntries",
+            "Cache concurrency :: ConcurrentGetOnExpiredKey_SerialisesLazyRemove_WithoutThrowing",
+            "Cache concurrency :: KeysEnumerationDuringMutation_DoesNotThrow_CollectionModified",
+            "Cache concurrency :: InvalidateMetricsStylePrefixRemoval_IsSafeUnderRacingMutations",
+            "Cache parity :: StoreGetRemoveGet_PreservesSingleThreadedSemantics",
+            "Cache parity :: ExpiryOnRead_StillRemovesEntry_SingleThreaded"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Cache/CacheTest.cs (new file)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "CacheTest.cs is a new file under a new Lighthouse.Backend.Tests/Cache/ directory mirroring the production layout Lighthouse.Backend/Cache/Cache.cs.",
+            "7 [Test] methods are present, each named after the scenario it implements (PascalCase, descriptive — never Test_X_Y).",
+            "Concurrency tests use Task.WhenAll or Parallel.For with a starting Barrier so threads launch simultaneously (maximise race window).",
+            "When run against the current Dictionary-backed Cache.cs, the 5 concurrency tests FAIL with IndexOutOfRangeException or InvalidOperationException (\"Collection was modified\"); the 2 parity tests PASS. Confirm by running `dotnet test --filter \"FullyQualifiedName~CacheTest\"` and capturing the output.",
+            "No banned comments (no // ===== dividers, no // Arrange / Act / Assert labels, no // Given/When/Then narration, no provenance comments). Test method names + helper names carry the meaning.",
+            "Each test has a hard timeout (NUnit [Timeout(5000)] or equivalent) to prevent CI hangs if the thread-safety guarantee regresses.",
+            "Commit message: `test(cache): add bug-5016 regression suite for Cache<,> thread-safety`."
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Swap Cache<,> backing store to ConcurrentDictionary",
+          "description": "Edit Lighthouse.Backend/Lighthouse.Backend/Cache/Cache.cs. Replace `Dictionary<TKey, CacheItem<TValue>>` with `ConcurrentDictionary<TKey, CacheItem<TValue>>` (using System.Collections.Concurrent). Rewrite Get to use TryGetValue + TryRemove on lazy-expiry. Rewrite Remove to use TryRemove. Store stays as `cache[key] = ...` (ConcurrentDictionary supports the indexer atomically). Keys getter unchanged (delegates to ConcurrentDictionary.Keys which returns a snapshot). Verify GREEN end-to-end with full backend test suite.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Cache/CacheTest.cs",
+          "scenario_name": "All 7 CacheTest scenarios + full backend suite",
+          "red_to_green_tests": [
+            "All 7 CacheTest scenarios go GREEN",
+            "Full backend test suite (`dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/`) stays GREEN"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Cache/Cache.cs (edit)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "Cache.cs uses `private readonly ConcurrentDictionary<TKey, CacheItem<TValue>> cache = new();` (no other backing store).",
+            "Get uses `cache.TryGetValue(key, out var cached)` and `cache.TryRemove(key, out _)` on expiry.",
+            "Remove uses `cache.TryRemove(key, out _)`.",
+            "Store keeps the indexer assignment (ConcurrentDictionary indexer is atomic).",
+            "Public surface unchanged — no signature edits to Store / Get / Remove / Keys; no new public method.",
+            "All 7 CacheTest scenarios pass. Confirm by running `dotnet test --filter \"FullyQualifiedName~CacheTest\"` and capturing the output.",
+            "Full `dotnet test` for Lighthouse.Backend.Tests still passes (no regression in BaseMetricsService / WorkTrackingConnectorFactory / GitHubService).",
+            "`dotnet build` runs warning-free (CLAUDE.md TreatWarningsAsErrors).",
+            "No banned comments added to Cache.cs.",
+            "Commit message: `fix(cache): use ConcurrentDictionary to prevent IndexOutOfRangeException under concurrent metric requests (ADO bug 5016)`."
+          ]
+        }
+      ]
+    }
+  ]
+}

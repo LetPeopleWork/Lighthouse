@@ -1,9 +1,11 @@
-﻿namespace Lighthouse.Backend.Cache
+using System.Collections.Concurrent;
+
+namespace Lighthouse.Backend.Cache
 {
     public class Cache<TKey, TValue>
         where TKey : notnull
     {
-        private readonly Dictionary<TKey, CacheItem<TValue>> cache = new Dictionary<TKey, CacheItem<TValue>>();
+        private readonly ConcurrentDictionary<TKey, CacheItem<TValue>> cache = new();
 
         public IEnumerable<TKey> Keys { get => cache.Keys; }
 
@@ -14,20 +16,19 @@
 
         public void Remove(TKey key)
         {
-            cache.Remove(key);
+            cache.TryRemove(key, out _);
         }
 
         public TValue? Get(TKey key)
         {
-            if (!cache.ContainsKey(key))
+            if (!cache.TryGetValue(key, out var cached))
             {
                 return default;
             }
 
-            var cached = cache[key];
             if (DateTimeOffset.Now - cached.Created >= cached.ExpiresAfter)
             {
-                cache.Remove(key);
+                cache.TryRemove(key, out _);
                 return default;
             }
 
