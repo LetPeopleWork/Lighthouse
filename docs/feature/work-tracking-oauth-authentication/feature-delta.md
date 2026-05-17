@@ -1691,3 +1691,58 @@ DESIGN locked decisions (DDD-11..DDD-16) + ADR-011 (Accepted) + amended US-01 AC
 
 ---
 
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Scope
+
+Post-DELIVER defect surfaced 2026-05-17 on slice-03 (ADO OAuth). Connection creation and the team-creation board picker succeed (those touch the OAuth credential exactly once on a serial path), but the first **team update** after wiring an OAuth-authenticated ADO connection fails. PAT-authenticated connections on the same team configuration continue to work — the divergence isolates the failure to the OAuth credential-load path, not to the ADO REST surface or the WIQL.
+
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Symptom
+
+`TeamUpdater` logs `An exception occurred while updating Team with ID …: A second operation was started on this context instance before a previous operation completed.` Repeated `ERROR - Query: An exception occurred while iterating over the results of a query for context type 'LighthouseAppContext'` precede the abort. The terminating stack threads through:
+
+```
+OAuthService.LoadValidCredentialOrThrow (OAuthService.cs:191)
+  ← OAuthService.EnsureFreshTokenAsync (OAuthService.cs:179)
+  ← OAuthBearerAuthStrategy.ApplyAsync (OAuthBearerAuthStrategy.cs:16)
+  ← AzureDevOpsWorkTrackingConnector.BuildVssCredentialsAsync (…:998)
+  ← AzureDevOpsWorkTrackingConnector.GetClientAsync<TClient> (…:968)
+  ← AzureDevOpsWorkTrackingConnector.GetStartedAndClosedDateForWorkItem (…:724)
+  ← ConvertAdoWorkItemToLighthouseWorkItem (…:697)
+  ← ConvertAdoWorkItemToLighthouseWorkItemBase (…:627) — Task.WhenAll over SemaphoreSlim(8)
+```
+
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Root cause
+
+`LighthouseAppContext` is registered scoped (`DatabaseConfigurator.AddDbContext`). `TeamUpdater.Update` resolves one scope per team and shares its single `LighthouseAppContext` instance across every collaborator in the team-data pipeline. `ConvertAdoWorkItemToLighthouseWorkItemBase` fans out work-item conversion onto up to 8 concurrent tasks (`SemaphoreSlim(8) + Task.WhenAll`). Each conversion calls `GetStartedAndClosedDateForWorkItem` → `GetClientAsync` → `GetConnectionForWorkTrackingSystemAsync` → `BuildVssCredentialsAsync`, which runs the resolved `OAuthBearerAuthStrategy.ApplyAsync` and ultimately `OAuthService.LoadValidCredentialOrThrow` — a synchronous `credentialRepository.GetByPredicate(...)` against the **same shared DbContext**. EF Core's `IConcurrencyDetector` fires on the second concurrent reader. The existing `OAuthRefreshSingleFlightTest` (32 concurrent callers) does not surface this because it uses `Mock<IRepository<OAuthCredential>>`; mocks are not instrumented with the concurrency detector. PAT auth never touches the DB at request time, hence remains green.
+
+Note: the `OAuthService.refreshLocks` semaphore protects the *refresh* path, not the *load* path — every caller reads the credential first to decide whether to refresh, so the race is on the read.
+
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Regression test
+
+| Path | Asserts | Status against current `main` |
+|---|---|---|
+| `Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthCredentialConcurrentLoadTest.cs` | 32 concurrent `EnsureFreshTokenAsync` callers sharing one real `LighthouseAppContext` + real `OAuthCredentialRepository` + real `WorkTrackingSystemConnectionRepository` all return the decrypted access token without raising `InvalidOperationException("…second operation was started…")`. Credential is seeded fresh (ExpiresAt > now + RefreshWindow) so the race lives purely on the read path. | **RED for the right reason** — fails with the exact production message (verified locally 2026-05-17). |
+
+The test uses `Microsoft.EntityFrameworkCore.InMemory` (the provider already used by `LighthouseAppContextUtcTest`), which is sufficient because `IConcurrencyDetector` is enforced provider-agnostically in EF Core 10. No SQLite/Postgres fixture is required to surface the defect.
+
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Fix direction (DELIVER scope — out of this DISTILL turn)
+
+Three options surfaced by the trace, presented for DELIVER triage; this DISTILL section does NOT pick one:
+
+1. **Pre-resolve the auth header once per team update.** `BuildVssCredentialsAsync` is invoked per-work-item even though the resulting `VssConnection` is cached. Hoisting the OAuth `EnsureFreshTokenAsync` call out of the parallel fan-out (e.g., resolve the bearer token before `ConvertAdoWorkItemToLighthouseWorkItemBase` and reuse the cached header) keeps the per-team scope intact and eliminates the race without touching DI lifetimes. Smallest blast radius.
+2. **Per-connection serialisation in `OAuthService`.** Wrap `LoadValidCredentialOrThrow` (and any other DB-touching helper) in a per-`connectionId` `SemaphoreSlim` analogous to `refreshLocks`. Cheap, local, but adds contention on a hot path and still serialises every reader through one DB call apiece.
+3. **`IDbContextFactory<LighthouseAppContext>` for `OAuthService`.** Inject a context factory and open a short-lived context per OAuth read/write. Cleanest separation but introduces a parallel access pattern alongside the rest of the codebase's scoped-context convention; needs a broader architectural decision.
+
+Option 1 has the highest chance of being a one-commit fix with no downstream impact; option 2 is the smallest behavioural change inside `OAuthService` itself; option 3 is the most "correct" but the most disruptive.
+
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Pre-requisites
+
+- Slice-03 ADO OAuth shipped (this feature, slice `slice-03-ado-oauth`).
+- ADO `WorkTrackingSystemConnection` configured with `ado.oauth` authentication; identity already materialised (the unrelated [first-API-call materialisation issue](../../troubleshooting/) does not apply once a board has been picked).
+- Team bound to that connection with a non-trivial backlog so the work-item fan-out exceeds the 8-way concurrency limit at least once.
+
+## Wave: DISTILL (Post-DELIVER bug — ADO OAuth team update) / [REF] Upstream changes (back-propagation)
+
+None to DISCUSS/DESIGN of the original epic — the bug is an emergent property of slice-03 meeting the existing parallel-conversion pipeline, not a contradiction of any locked decision. If DELIVER picks option 2 or 3, a new DDD entry should record the per-connection serialisation choice or the factory-based reading pattern.
+
+---
+

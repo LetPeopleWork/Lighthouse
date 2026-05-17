@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
         private readonly ILogger<OAuthService> logger;
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly OAuthRefreshOptions refreshOptions;
-        private readonly ConcurrentDictionary<int, SemaphoreSlim> refreshLocks = new();
+        private readonly ConcurrentDictionary<int, SemaphoreSlim> connectionLocks = new();
 
         public OAuthService(
             IOAuthProviderRegistry providerRegistry,
@@ -176,14 +176,33 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
 
         public async Task<string> EnsureFreshTokenAsync(int connectionId, CancellationToken cancellationToken)
         {
-            var credential = LoadValidCredentialOrThrow(connectionId);
-
-            if (IsTokenFresh(credential))
+            // Serialise all OAuth credential access per connection. Both the load (DB read) and the
+            // refresh (HTTP call + DB write) share the scoped LighthouseAppContext that the caller's
+            // service scope owns; without this lock, parallel callers (e.g. AzureDevOpsWorkTrackingConnector's
+            // 8-way work-item fan-out) race EF Core's IConcurrencyDetector on the shared DbContext.
+            var semaphore = connectionLocks.GetOrAdd(connectionId, _ => new SemaphoreSlim(1, 1));
+            var acquired = await semaphore.WaitAsync(refreshOptions.SemaphoreTimeout, cancellationToken);
+            if (!acquired)
             {
-                return cryptoService.Decrypt(credential.AccessToken);
+                throw new OAuthRefreshTimeoutException(
+                    $"Timed out waiting to access OAuth credential for connection {connectionId}.");
             }
 
-            return await RefreshUnderLockAsync(connectionId, credential.Id, cancellationToken);
+            try
+            {
+                var credential = LoadValidCredentialOrThrow(connectionId);
+
+                if (IsTokenFresh(credential))
+                {
+                    return cryptoService.Decrypt(credential.AccessToken);
+                }
+
+                return await PerformRefreshAsync(connectionId, credential, cancellationToken);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         private OAuthCredential LoadValidCredentialOrThrow(int connectionId)
@@ -207,32 +226,6 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
         private bool IsTokenFresh(OAuthCredential credential)
         {
             return credential.ExpiresAt - timeProvider.GetUtcNow() > RefreshWindow;
-        }
-
-        private async Task<string> RefreshUnderLockAsync(int connectionId, int credentialId, CancellationToken cancellationToken)
-        {
-            var semaphore = refreshLocks.GetOrAdd(credentialId, _ => new SemaphoreSlim(1, 1));
-            var acquired = await semaphore.WaitAsync(refreshOptions.SemaphoreTimeout, cancellationToken);
-            if (!acquired)
-            {
-                throw new OAuthRefreshTimeoutException(
-                    $"Timed out waiting to refresh OAuth credential {credentialId} for connection {connectionId}.");
-            }
-
-            try
-            {
-                var credential = LoadValidCredentialOrThrow(connectionId);
-                if (IsTokenFresh(credential))
-                {
-                    return cryptoService.Decrypt(credential.AccessToken);
-                }
-
-                return await PerformRefreshAsync(connectionId, credential, cancellationToken);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
         }
 
         private async Task<string> PerformRefreshAsync(int connectionId, OAuthCredential credential, CancellationToken cancellationToken)
