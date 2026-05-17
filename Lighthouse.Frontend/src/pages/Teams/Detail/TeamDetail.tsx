@@ -61,8 +61,6 @@ const TeamDetail: React.FC = () => {
 	const { canUpdateTeamData, maxTeamsWithoutPremium } =
 		useLicenseRestrictions();
 
-	let subscribedToUpdates = false;
-
 	const getInitialView = (
 		tabParam: string | undefined,
 		teamData: Team | undefined,
@@ -252,31 +250,36 @@ const TeamDetail: React.FC = () => {
 		await teamService.updateTeamData(team.id);
 	};
 
+	const fetchTeamRef = useRef(fetchTeam);
+	fetchTeamRef.current = fetchTeam;
+
 	useEffect(() => {
-		const setUpTeamUpdateSubscription = async () => {
-			const handleTeamUpdate = async (update: IUpdateStatus) => {
-				if (update.status === "Completed") {
-					setIsTeamUpdating(false);
-					if (activeViewRef.current === "settings") {
-						// Defer the reload until the user leaves the settings tab
-						setPendingTeamRefresh(true);
-					} else {
-						await fetchTeam();
-					}
+		fetchTeam();
+	}, [fetchTeam]);
+
+	useEffect(() => {
+		const handleTeamUpdate = async (update: IUpdateStatus) => {
+			if (update.status === "Completed") {
+				setIsTeamUpdating(false);
+				if (activeViewRef.current === "settings") {
+					setPendingTeamRefresh(true);
 				} else {
-					// Team Update is in progress - update Button
-					updateTeamRefreshButton(update);
+					await fetchTeamRef.current();
 				}
-			};
+			} else {
+				updateTeamRefreshButton(update);
+			}
+		};
 
-			const updateTeamRefreshButton = (update: IUpdateStatus | null) => {
-				if (update) {
-					const isUpdating =
-						update.status === "Queued" || update.status === "InProgress";
-					setIsTeamUpdating(isUpdating);
-				}
-			};
+		const updateTeamRefreshButton = (update: IUpdateStatus | null) => {
+			if (update) {
+				const isUpdating =
+					update.status === "Queued" || update.status === "InProgress";
+				setIsTeamUpdating(isUpdating);
+			}
+		};
 
+		const setUpTeamSubscription = async () => {
 			await updateSubscriptionService.subscribeToTeamUpdates(
 				teamId,
 				handleTeamUpdate,
@@ -289,17 +292,51 @@ const TeamDetail: React.FC = () => {
 			updateTeamRefreshButton(updateStatus);
 		};
 
-		if (team && !subscribedToUpdates) {
-			subscribedToUpdates = true;
-			setUpTeamUpdateSubscription();
-		} else {
-			fetchTeam();
-		}
+		setUpTeamSubscription();
 
 		return () => {
 			updateSubscriptionService.unsubscribeFromTeamUpdates(teamId);
 		};
-	}, [team, subscribedToUpdates, updateSubscriptionService, teamId, fetchTeam]);
+	}, [teamId, updateSubscriptionService]);
+
+	const portfolioSubscriptionKey = team?.portfolios
+		?.map((portfolio) => portfolio.id)
+		.sort((a, b) => a - b)
+		.join(",");
+
+	useEffect(() => {
+		if (!portfolioSubscriptionKey) return;
+
+		const portfolioIds = portfolioSubscriptionKey
+			.split(",")
+			.map((id) => Number(id));
+
+		const handleForecastUpdate = async (update: IUpdateStatus) => {
+			if (
+				update.status === "Completed" &&
+				activeViewRef.current !== "settings"
+			) {
+				await fetchTeamRef.current();
+			}
+		};
+
+		const subscribeAll = async () => {
+			for (const portfolioId of portfolioIds) {
+				await updateSubscriptionService.subscribeToForecastUpdates(
+					portfolioId,
+					handleForecastUpdate,
+				);
+			}
+		};
+
+		subscribeAll();
+
+		return () => {
+			for (const portfolioId of portfolioIds) {
+				updateSubscriptionService.unsubscribeFromForecastUpdates(portfolioId);
+			}
+		};
+	}, [portfolioSubscriptionKey, updateSubscriptionService]);
 
 	// Redirect to forecasts if on features tab but team has no features
 	useEffect(() => {

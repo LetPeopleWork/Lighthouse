@@ -527,6 +527,126 @@ describe("TeamDetail component", () => {
 			});
 		});
 	});
+
+	describe("Forecast refresh subscription contract (bug 5022)", () => {
+		beforeEach(() => {
+			mockParams = { id: "1", tab: "features" };
+		});
+
+		const buildTeamPageContext = () => {
+			const buildFreshTeam = () => ({
+				...mockTeam,
+				features: [{ id: 1, name: "Feature 1", key: "F-1" }],
+				portfolios: [{ id: 100, name: "Portfolio 100" }],
+			});
+
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeam = vi
+				.fn()
+				.mockImplementation(async () => buildFreshTeam());
+			mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+				id: 1,
+				name: "Test Team",
+				featureWIP: 1,
+				automaticallyAdjustFeatureWIP: false,
+				throughputHistory: 30,
+				useFixedDatesForThroughput: false,
+				throughputHistoryStartDate: new Date("2024-01-01"),
+				throughputHistoryEndDate: new Date("2024-01-31"),
+				serviceLevelExpectationProbability: 85,
+				serviceLevelExpectationRange: 10,
+				systemWIPLimit: 0,
+			});
+
+			let teamCallback: ((update: IUpdateStatus) => void) | null = null;
+			let forecastCallback: ((update: IUpdateStatus) => void) | null = null;
+			const mockUpdateService = createMockUpdateSubscriptionService();
+			mockUpdateService.subscribeToTeamUpdates = vi
+				.fn()
+				.mockImplementation(
+					async (_id: number, cb: (update: IUpdateStatus) => void) => {
+						teamCallback = cb;
+					},
+				);
+			mockUpdateService.subscribeToForecastUpdates = vi
+				.fn()
+				.mockImplementation(
+					async (_id: number, cb: (update: IUpdateStatus) => void) => {
+						forecastCallback = cb;
+					},
+				);
+			mockUpdateService.unsubscribeFromTeamUpdates = vi.fn();
+			mockUpdateService.unsubscribeFromForecastUpdates = vi.fn();
+			mockUpdateService.getUpdateStatus = vi.fn().mockResolvedValue(null);
+
+			const mockApiContext = createMockApiServiceContext({
+				teamService: mockTeamService,
+				updateSubscriptionService: mockUpdateService,
+			});
+
+			return {
+				mockTeamService,
+				mockUpdateService,
+				mockApiContext,
+				getTeamCallback: () => teamCallback,
+				getForecastCallback: () => forecastCallback,
+			};
+		};
+
+		const renderWith = (
+			mockApiContext: ReturnType<typeof createMockApiServiceContext>,
+		) =>
+			render(
+				<BrowserRouter>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TeamDetail />
+					</ApiServiceContext.Provider>
+				</BrowserRouter>,
+			);
+
+		it("subscribes to Team updates exactly once per mount across team refetches", async () => {
+			const ctx = buildTeamPageContext();
+			renderWith(ctx.mockApiContext);
+
+			await waitFor(() => expect(ctx.getTeamCallback()).not.toBeNull());
+
+			const initialFetchCount = (
+				ctx.mockTeamService.getTeam as ReturnType<typeof vi.fn>
+			).mock.calls.length;
+
+			await act(async () => {
+				await ctx.getTeamCallback()?.({
+					status: "Completed",
+					updateType: "Team",
+					id: 1,
+				});
+			});
+
+			await waitFor(() =>
+				expect(
+					(ctx.mockTeamService.getTeam as ReturnType<typeof vi.fn>).mock.calls
+						.length,
+				).toBeGreaterThan(initialFetchCount),
+			);
+			await new Promise((resolve) => setTimeout(resolve, 50));
+
+			expect(
+				ctx.mockUpdateService.subscribeToTeamUpdates,
+			).toHaveBeenCalledTimes(1);
+		});
+
+		it("subscribes to Forecasts updates so portfolio forecast completion can refresh team feature data", async () => {
+			const ctx = buildTeamPageContext();
+			renderWith(ctx.mockApiContext);
+
+			await waitFor(() => expect(ctx.getTeamCallback()).not.toBeNull());
+			await new Promise((resolve) => setTimeout(resolve, 50));
+
+			expect(
+				ctx.mockUpdateService.subscribeToForecastUpdates,
+			).toHaveBeenCalled();
+		});
+	});
 });
 
 describe("TeamDetail - RBAC Settings Tab Visibility", () => {

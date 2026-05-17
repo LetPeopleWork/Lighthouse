@@ -241,6 +241,82 @@ describe("PortfolioDetail component", () => {
 		});
 	});
 
+	describe("Forecasts subscription lifecycle (bug 5022)", () => {
+		let forecastsCallback: ((update: IUpdateStatus) => void) | null;
+		let featuresCallback: ((update: IUpdateStatus) => void) | null;
+
+		beforeEach(() => {
+			forecastsCallback = null;
+			featuresCallback = null;
+			mockSubscribeToFeatureUpdates.mockImplementation(
+				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+					featuresCallback = callback;
+				},
+			);
+			mockSubscribeToForecastUpdates.mockImplementation(
+				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+					forecastsCallback = callback;
+				},
+			);
+		});
+
+		afterEach(() => {
+			mockSubscribeToFeatureUpdates.mockReset();
+			mockSubscribeToForecastUpdates.mockReset();
+		});
+
+		it("subscribes to Forecasts exactly once per mount across portfolio refetches", async () => {
+			const buildPortfolioWithFeatures = () => {
+				const portfolio = new Portfolio();
+				portfolio.id = 2;
+				portfolio.name = "Release Codename Daniel";
+
+				const feature1 = new Feature();
+				feature1.id = 0;
+				feature1.name = "Feature 1";
+				feature1.referenceId = "FTR-1";
+
+				const feature2 = new Feature();
+				feature2.id = 1;
+				feature2.name = "Feature 2";
+				feature2.referenceId = "FTR-2";
+
+				portfolio.features = [feature1, feature2];
+				return portfolio;
+			};
+
+			mockGetPortfolio.mockImplementation(async () =>
+				buildPortfolioWithFeatures(),
+			);
+
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(featuresCallback).not.toBeNull();
+				expect(forecastsCallback).not.toBeNull();
+			});
+
+			const initialFetchCount = mockGetPortfolio.mock.calls.length;
+
+			await act(async () => {
+				await featuresCallback?.({
+					status: "Completed",
+					updateType: "Features",
+					id: 2,
+				});
+			});
+
+			await waitFor(() =>
+				expect(mockGetPortfolio.mock.calls.length).toBeGreaterThan(
+					initialFetchCount,
+				),
+			);
+			await new Promise((resolve) => setTimeout(resolve, 50));
+
+			expect(mockSubscribeToForecastUpdates).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	it("should set Refresh Button to Enabled if Feature Update Completed", async () => {
 		mockGetUpdateStatus.mockResolvedValueOnce({
 			status: "Completed",

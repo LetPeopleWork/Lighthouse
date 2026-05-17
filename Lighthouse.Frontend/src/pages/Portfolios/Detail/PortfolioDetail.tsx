@@ -55,8 +55,6 @@ const PortfolioDetail: React.FC = () => {
 	const { id, tab } = useParams<{ id: string; tab?: string }>();
 	const portfolioId = Number(id);
 
-	let subscribedToUpdates = false;
-
 	const [portfolio, setPortfolio] = useState<Portfolio>();
 	const [hasNoAccess, setHasNoAccess] = useState(false);
 
@@ -305,33 +303,38 @@ const PortfolioDetail: React.FC = () => {
 		navigate(`/portfolios/${id}/${tabPath}`, { replace: true });
 	};
 
+	const fetchPortfolioRef = useRef(fetchPortfolio);
+	fetchPortfolioRef.current = fetchPortfolio;
+
 	useEffect(() => {
-		const setUpPortfolioUpdateSubscription = async () => {
-			const handlePortfolioUpdate = async (update: IUpdateStatus) => {
-				if (update.status === "Completed") {
-					if (activeViewRef.current === "settings") {
-						// Defer the reload until the user leaves the settings tab
-						setPendingPortfolioRefresh(true);
-					} else {
-						await fetchPortfolio();
-					}
+		fetchPortfolio();
+	}, [fetchPortfolio]);
+
+	useEffect(() => {
+		const handlePortfolioUpdate = async (update: IUpdateStatus) => {
+			if (update.status === "Completed") {
+				if (activeViewRef.current === "settings") {
+					setPendingPortfolioRefresh(true);
+				} else {
+					await fetchPortfolioRef.current();
 				}
+			}
 
-				updatePortfolioRefreshButton(update);
-			};
+			updatePortfolioRefreshButton(update);
+		};
 
-			const updatePortfolioRefreshButton = (update: IUpdateStatus | null) => {
-				const isFeatureUpdate =
-					update?.updateType === "Features" ||
-					update?.updateType === "Forecasts";
+		const updatePortfolioRefreshButton = (update: IUpdateStatus | null) => {
+			const isFeatureUpdate =
+				update?.updateType === "Features" || update?.updateType === "Forecasts";
 
-				if (isFeatureUpdate) {
-					const isUpdating =
-						update?.status === "Queued" || update?.status === "InProgress";
-					setIsPortfolioUpdating(isUpdating);
-				}
-			};
+			if (isFeatureUpdate) {
+				const isUpdating =
+					update?.status === "Queued" || update?.status === "InProgress";
+				setIsPortfolioUpdating(isUpdating);
+			}
+		};
 
+		const setUpSubscriptions = async () => {
 			await updateSubscriptionService.subscribeToFeatureUpdates(
 				portfolioId,
 				handlePortfolioUpdate,
@@ -356,24 +359,13 @@ const PortfolioDetail: React.FC = () => {
 			updatePortfolioRefreshButton(forecastUpdateStatus);
 		};
 
-		if (portfolio && !subscribedToUpdates) {
-			subscribedToUpdates = true;
-			setUpPortfolioUpdateSubscription();
-		} else {
-			fetchPortfolio();
-		}
+		setUpSubscriptions();
 
 		return () => {
 			updateSubscriptionService.unsubscribeFromFeatureUpdates(portfolioId);
 			updateSubscriptionService.unsubscribeFromForecastUpdates(portfolioId);
 		};
-	}, [
-		portfolio,
-		portfolioId,
-		fetchPortfolio,
-		updateSubscriptionService,
-		subscribedToUpdates,
-	]);
+	}, [portfolioId, updateSubscriptionService]);
 
 	// Flush any pending background refresh as soon as the user leaves the settings tab
 	useEffect(() => {
