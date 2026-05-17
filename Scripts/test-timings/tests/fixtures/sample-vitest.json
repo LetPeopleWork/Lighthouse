@@ -1,0 +1,51 @@
+{
+  "numTotalTests": 4,
+  "testResults": [
+    {
+      "name": "/abs/repo/Lighthouse.Frontend/src/components/Foo.test.tsx",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Foo"],
+          "fullName": "Foo renders the heading",
+          "title": "renders the heading",
+          "status": "passed",
+          "duration": 12.345,
+          "failureMessages": [],
+          "tags": []
+        },
+        {
+          "ancestorTitles": ["Foo"],
+          "fullName": "Foo handles click",
+          "title": "handles click",
+          "status": "failed",
+          "duration": 234.5,
+          "failureMessages": ["expected true to be false"],
+          "tags": []
+        }
+      ]
+    },
+    {
+      "name": "/abs/repo/Lighthouse.Frontend/src/services/Bar.test.ts",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Bar service", "when slow"],
+          "fullName": "Bar service when slow takes ages",
+          "title": "takes ages",
+          "status": "passed",
+          "duration": 1500.0,
+          "failureMessages": [],
+          "tags": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "top-level pending",
+          "title": "top-level pending",
+          "status": "skipped",
+          "duration": null,
+          "failureMessages": [],
+          "tags": []
+        }
+      ]
+    }
+  ]
+}
