@@ -35,9 +35,7 @@ export class WorkTrackingSystemCreateWizard {
 	}
 
 	async selectAuthenticationMethod(displayName: string): Promise<void> {
-		await this.page
-			.getByRole("combobox", { name: "Authentication Method" })
-			.click();
+		await this.page.getByLabel("Authentication Method").click();
 		const listbox = this.page.getByRole("listbox");
 		await listbox.getByRole("option", { name: displayName }).click();
 	}

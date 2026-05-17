@@ -1090,34 +1090,38 @@
           "estimated_hours": 1.0,
           "deliverables": [
             "ci_e2e.yml (modified \u2014 +oauth-smoke job)"
-          ]
+          ],
+          "scope_history": {
+            "2026-05-17": "Dropped entirely. Original plan added a release-gated `oauth-smoke` job to `ci_e2e.yml` against real Atlassian + Entra ID sandboxes, behind a dedicated `oauth-smoke` GitHub environment with required-reviewer protection and 5 sandbox secrets. Per user decision today, OAuth smoke validation stays on the StubOAuthProvider: the existing `ci_verifysqlite.yml` + `ci_verifypostgres.yml` workflows already spin up a Lighthouse instance with `Lighthouse__OAuth__UseStubProvider: true` on `http://localhost:5000` and run the full Playwright suite on every PR / push to main / workflow_dispatch. The OAuth code path (controller, service, provider registry, state-token issuer, auth strategy refactor, credential persistence, UI) is fully exercised end-to-end against the stub. We lose real-IdP contract-drift detection (Atlassian / Microsoft API changes); that is an acknowledged trade-off captured in feature-delta.md back-propagation. The 5 sandbox secrets, the `oauth-smoke` GitHub Actions environment, and the required-reviewer protection are no longer required. No CI workflow edits ship in 05-01."
+          }
         },
         {
           "id": "05-02",
-          "name": "Wire Playwright smoke scenarios 11-12 + manual-smoke runbook",
-          "description": "GREEN: unskip Playwright scenarios 11 (real Atlassian Cloud 3LO) + 12 (real Entra ID OAuth). These scenarios only execute in the oauth-smoke job. They require the GitHub environment secrets + the demo Lighthouse instance to be reachable + the sandbox Atlassian/ADO apps to be pre-configured. Write a short `docs/release/oauth-smoke-runbook.md` documenting the manual approval flow, what success looks like, and what to do if the smoke fails on a release tag. COMMIT: `test(oauth): unskip Playwright smoke scenarios 11-12 + add manual-smoke runbook`.",
+          "name": "Delete redundant smoke scaffolds (scenarios 11-12) + drop @requires_external",
+          "description": "GREEN: delete the two RED scaffolds in `Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts` for scenarios 11 (Real Atlassian Cloud sandbox 3LO) + 12 (Real Entra ID OAuth) and their containing `test.describe(\"Pre-release smoke (real IdPs)\", ...)` block. Reason: with 05-01 dropped, the smoke tests stay against the stub provider, where they would be exact duplicates of scenario 1 (Jira walking skeleton happy path, stub) and scenario 8 (ADO walking skeleton happy path, stub). Delete-not-fill is the correct call to avoid dead code. Update the spec-header comment block (lines ~1-15) and the `Pre-release smoke` section comment (lines ~179-182) to remove references to `ci_oauth_integration_smoke.yml` and the oauth-smoke environment. COMMIT: `test(oauth): drop redundant @requires_external smoke scaffolds (scenarios 11-12)`.",
           "test_file": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
-          "scenario_name": "Playwright smoke 11 (Atlassian real) + 12 (Entra ID real) \u2014 runs in oauth-smoke job only",
-          "red_to_green_tests": [
-            "Scenario 11 passes when run against real Atlassian sandbox with valid secrets",
-            "Scenario 12 passes when run against real Entra ID sandbox with valid secrets"
-          ],
+          "scenario_name": "Smoke scaffolds removed; stub-mode walking-skeleton scenarios remain the smoke coverage",
+          "red_to_green_tests": [],
           "files_to_modify": [
             "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
-            "docs/release/oauth-smoke-runbook.md"
+            "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.feature"
           ],
-          "dependencies": [
-            "05-01"
-          ],
+          "dependencies": [],
           "criteria": [
-            "Scenarios 11-12 [test.skip()] removed; they execute in the oauth-smoke job.",
-            "Manual-smoke runbook documents the manual approval flow."
+            "Scenarios 11-12 deleted from OAuthConnection.spec.ts (no longer test.skip()'d; gone).",
+            "The `Pre-release smoke (real IdPs)` describe block is removed.",
+            "Header comment block updated: no references to `ci_oauth_integration_smoke.yml`, `oauth-smoke` environment, or `@requires_external` tag.",
+            "OAuthConnection.feature (Gherkin doc form) trimmed to match.",
+            "Full Playwright suite green in ci_verifysqlite + ci_verifypostgres."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 0.5,
           "deliverables": [
-            "OAuthConnection.spec.ts (modified \u2014 smoke scenarios)",
-            "docs/release/oauth-smoke-runbook.md (new)"
-          ]
+            "OAuthConnection.spec.ts (modified \u2014 two scenarios deleted, headers trimmed)",
+            "OAuthConnection.feature (modified \u2014 matching Gherkin entries deleted)"
+          ],
+          "scope_history": {
+            "2026-05-17": "Scope inverted. Original plan: unskip scenarios 11 + 12 against real IdPs + write `docs/release/oauth-smoke-runbook.md` for the manual approval flow. New plan after 05-01 was dropped: scenarios 11 + 12 are RED scaffolds whose only purpose was real-IdP smoke; against the stub they would duplicate scenarios 1 + 8. Delete them. The runbook is also dropped because there is no manual approval flow to document. Acceptance pre-existing for the stub-mode happy paths (scenarios 1 + 8) covers what remains."
+          }
         },
         {
           "id": "05-03",

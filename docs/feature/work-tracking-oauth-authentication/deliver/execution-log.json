@@ -666,6 +666,972 @@
       "s": "SKIPPED",
       "d": "APPROVED_SKIP: production behaviour shipped in slice 01 \u2014 DTO mapping at WorkTrackingSystemConnectionDto.cs:41, controller join at WorkTrackingSystemConnectionsController.cs:56-69, SystemInfo.BaseUrl at SystemInfo.cs + SystemInfoService.cs:46. No production code change required for step 02-03",
       "t": "2026-05-15T10:59:34Z"
+    },
+    {
+      "sid": "06-01",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:17:29Z"
+    },
+    {
+      "sid": "06-01",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:17:32Z"
+    },
+    {
+      "sid": "06-01",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: EF migration adapter; integration test in API/Integration tier covers the DB-level contract",
+      "t": "2026-05-16T09:17:37Z"
+    },
+    {
+      "sid": "06-01",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:43:41Z"
+    },
+    {
+      "sid": "06-01",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:44:03Z"
+    },
+    {
+      "sid": "06-02",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:45:51Z"
+    },
+    {
+      "sid": "06-02",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: behaviour-preserving refactor protected by DDD-13 (06-01) and the existing test suite as regression guard",
+      "t": "2026-05-16T09:45:53Z"
+    },
+    {
+      "sid": "06-02",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: behaviour-preserving refactor; the existing WorkTrackingSystemConnectionsControllerTest cases (requiresReconnect derivation, basic list shape) cover the invariant",
+      "t": "2026-05-16T09:45:54Z"
+    },
+    {
+      "sid": "06-02",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:57:36Z"
+    },
+    {
+      "sid": "06-02",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:57:53Z"
+    },
+    {
+      "sid": "06-03",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:59:43Z"
+    },
+    {
+      "sid": "06-03",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T09:59:47Z"
+    },
+    {
+      "sid": "06-03",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: controller redirect-target rewrite is exercised end-to-end by integration tests; no separate unit-test layer adds coverage",
+      "t": "2026-05-16T09:59:53Z"
+    },
+    {
+      "sid": "06-03",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:06:12Z"
+    },
+    {
+      "sid": "06-03",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:06:23Z"
+    },
+    {
+      "sid": "06-04",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:08:03Z"
+    },
+    {
+      "sid": "06-04",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:08:04Z"
+    },
+    {
+      "sid": "06-04",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: hook is the unit; useOAuthPopup.test.ts is the unit-test surface",
+      "t": "2026-05-16T10:08:09Z"
+    },
+    {
+      "sid": "06-04",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:12:21Z"
+    },
+    {
+      "sid": "06-04",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:12:42Z"
+    },
+    {
+      "sid": "06-05",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:14:39Z"
+    },
+    {
+      "sid": "06-05",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:14:43Z"
+    },
+    {
+      "sid": "06-05",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: component is the unit; OAuthPopupComplete.test.tsx is the unit-test surface",
+      "t": "2026-05-16T10:14:46Z"
+    },
+    {
+      "sid": "06-05",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:20:10Z"
+    },
+    {
+      "sid": "06-05",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:20:21Z"
+    },
+    {
+      "sid": "06-06",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:22:03Z"
+    },
+    {
+      "sid": "06-06",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:22:04Z"
+    },
+    {
+      "sid": "06-06",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: component is the unit; ReconnectBanner.test.tsx is the unit-test surface",
+      "t": "2026-05-16T10:22:06Z"
+    },
+    {
+      "sid": "06-06",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:58:15Z"
+    },
+    {
+      "sid": "06-06",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T10:58:28Z"
+    },
+    {
+      "sid": "06-07",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:00:11Z"
+    },
+    {
+      "sid": "06-07",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:00:16Z"
+    },
+    {
+      "sid": "06-07",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: component is the unit; OAuthAuthForm.test.tsx is the unit-test surface",
+      "t": "2026-05-16T11:00:22Z"
+    },
+    {
+      "sid": "06-07",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:03:02Z"
+    },
+    {
+      "sid": "06-07",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:03:15Z"
+    },
+    {
+      "sid": "06-08",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:05:06Z"
+    },
+    {
+      "sid": "06-08",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:05:10Z"
+    },
+    {
+      "sid": "06-08",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: component is the unit; CreateConnectionWizard.test.tsx is the unit-test surface",
+      "t": "2026-05-16T11:05:10Z"
+    },
+    {
+      "sid": "06-08",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:08:37Z"
+    },
+    {
+      "sid": "06-08",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:08:48Z"
+    },
+    {
+      "sid": "06-09",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:12:44Z"
+    },
+    {
+      "sid": "06-09",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:12:50Z"
+    },
+    {
+      "sid": "06-09",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: e2e walking-skeleton scenario; per-component unit coverage lives in 06-04..06-08",
+      "t": "2026-05-16T11:12:54Z"
+    },
+    {
+      "sid": "06-09",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:16:09Z"
+    },
+    {
+      "sid": "06-09",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T11:16:26Z"
+    },
+    {
+      "sid": "03-01",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T13:55:37Z"
+    },
+    {
+      "sid": "03-01",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T13:56:51Z"
+    },
+    {
+      "sid": "03-01",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: provider is the unit; AdoOAuthProviderTest.cs IS the unit-test surface",
+      "t": "2026-05-16T13:56:52Z"
+    },
+    {
+      "sid": "03-01",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:03:22Z"
+    },
+    {
+      "sid": "03-01",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:04:01Z"
+    },
+    {
+      "sid": "03-02",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:06:04Z"
+    },
+    {
+      "sid": "03-02",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:07:12Z"
+    },
+    {
+      "sid": "03-02",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: schema test IS the unit-test surface",
+      "t": "2026-05-16T14:07:13Z"
+    },
+    {
+      "sid": "03-02",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:35:43Z"
+    },
+    {
+      "sid": "03-02",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:36:17Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:42:42Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T14:43:37Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: connector test IS the unit-test surface (mirrors the slice-01 step 01-10 pattern)",
+      "t": "2026-05-16T14:43:42Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T15:53:06Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T15:53:17Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: connector test IS the unit-test surface",
+      "t": "2026-05-16T15:53:19Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T15:59:55Z"
+    },
+    {
+      "sid": "03-03",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:00:38Z"
+    },
+    {
+      "sid": "03-04",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:02:27Z"
+    },
+    {
+      "sid": "03-04",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:03:13Z"
+    },
+    {
+      "sid": "03-04",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: component is the unit; OAuthAuthForm.test.tsx is the unit-test surface",
+      "t": "2026-05-16T16:03:15Z"
+    },
+    {
+      "sid": "03-04",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:05:50Z"
+    },
+    {
+      "sid": "03-04",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:06:15Z"
+    },
+    {
+      "sid": "03-05",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:10:09Z"
+    },
+    {
+      "sid": "03-05",
+      "p": "RED_ACCEPTANCE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:10:14Z"
+    },
+    {
+      "sid": "03-05",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: e2e walking-skeleton; unit coverage in 03-01..03-04",
+      "t": "2026-05-16T16:10:18Z"
+    },
+    {
+      "sid": "03-05",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:13:32Z"
+    },
+    {
+      "sid": "03-05",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:13:55Z"
+    },
+    {
+      "sid": "03-06",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:15:39Z"
+    },
+    {
+      "sid": "03-06",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: docs-only step; no acceptance test layer",
+      "t": "2026-05-16T16:15:40Z"
+    },
+    {
+      "sid": "03-06",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: docs-only step; no unit test layer",
+      "t": "2026-05-16T16:15:42Z"
+    },
+    {
+      "sid": "03-06",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:16:59Z"
+    },
+    {
+      "sid": "03-06",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-16T16:17:15Z"
+    },
+    {
+      "sid": "02-03",
+      "p": "COMMIT",
+      "s": "SKIPPED",
+      "d": "APPROVED_SKIP: no commit \u2014 production behaviour shipped in slice 01 (no diff required for 02-03)",
+      "t": "2026-05-17T09:44:55Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "BACKFILL: shipped via commit b537fec9 prior to DES instrumentation; ReconnectBanner.test.tsx RED scaffolds + page-test extensions completed before implementation",
+      "t": "2026-05-17T09:45:03Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: re-layered to backend integration per commit a0dafcec; Playwright scenarios 4-7 do not drive 02-04. Backfill for commit b537fec9",
+      "t": "2026-05-17T09:45:13Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "RED_UNIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: ReconnectBanner.test.tsx RED state established in commit b537fec9",
+      "t": "2026-05-17T09:45:13Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: ReconnectBanner.tsx + integration with ConnectionsList/EditConnection (commit b537fec9)",
+      "t": "2026-05-17T09:45:13Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: git commit b537fec9 feat(oauth): add ReconnectBanner with disconnect-then-reconnect flow",
+      "t": "2026-05-17T09:45:13Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "BACKFILL: pre-DES tracking; OAuthHealthControllerTest.cs + OAuthHealthAggregatorTest.cs RED scaffolds prepared before implementation (commit 2f56ebb0)",
+      "t": "2026-05-17T09:45:23Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: acceptance coverage for scenario 7 (OAuth Health tile) driven at 02-08 \u2014 re-layered per a0dafcec",
+      "t": "2026-05-17T09:45:23Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "RED_UNIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: OAuthHealthControllerTest + OAuthHealthAggregatorTest RED state (commit 2f56ebb0)",
+      "t": "2026-05-17T09:45:23Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: OAuthHealthController + OAuthHealthAggregator + IOAuthHealthAggregator (commit 2f56ebb0). Event-store KPIs deferred to Epic #5017 per d077c9d0",
+      "t": "2026-05-17T09:45:23Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: git commit 2f56ebb0 feat(oauth): add GET /api/oauth/health endpoint with stale-count KPIs",
+      "t": "2026-05-17T09:45:24Z"
+    },
+    {
+      "sid": "02-06",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "BACKFILL: OAuthHealthTile.test.tsx RED scaffold prepared (commit e8693958)",
+      "t": "2026-05-17T09:45:31Z"
+    },
+    {
+      "sid": "02-06",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: scenario 7 driven at 02-08; re-layered per a0dafcec",
+      "t": "2026-05-17T09:45:31Z"
+    },
+    {
+      "sid": "02-06",
+      "p": "RED_UNIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: OAuthHealthTile.test.tsx RED state (commit e8693958)",
+      "t": "2026-05-17T09:45:31Z"
+    },
+    {
+      "sid": "02-06",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: OAuthHealthTile.tsx + ConnectionsList integration + OAuthService.getHealth() (commit e8693958). Subsequent refactor 801eee1d collapsed Health tile to header status icon and dropped Pending KPIs",
+      "t": "2026-05-17T09:45:32Z"
+    },
+    {
+      "sid": "02-06",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: git commit e8693958 feat(oauth): add OAuthHealthTile component surfacing KPIs (folded into Slice 02 per OQ-DV1)",
+      "t": "2026-05-17T09:45:32Z"
+    },
+    {
+      "sid": "02-07",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "BACKFILL: BI-3 scaffold [Ignore]'d on disk pre-step; CountingStubOAuthProvider planned (commit b8206ca5)",
+      "t": "2026-05-17T09:45:42Z"
+    },
+    {
+      "sid": "02-07",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: BI-3 IS the integration-test surface; no separate acceptance layer",
+      "t": "2026-05-17T09:45:42Z"
+    },
+    {
+      "sid": "02-07",
+      "p": "RED_UNIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: BI-3 unignored and failing under 32 concurrent callers prior to single-flight wiring",
+      "t": "2026-05-17T09:45:42Z"
+    },
+    {
+      "sid": "02-07",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: single-flight invariant proven by BI-3 \u2014 32 concurrent EnsureFreshTokenAsync \u2192 1 refresh invocation, identical tokens, single DB write (commits 1af2eb0d single-flight impl + b8206ca5 BI-3 green)",
+      "t": "2026-05-17T09:45:42Z"
+    },
+    {
+      "sid": "02-07",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: git commit b8206ca5 test(oauth): drive BI-3 OAuthRefreshSingleFlightTest to green",
+      "t": "2026-05-17T09:45:42Z"
+    },
+    {
+      "sid": "02-08",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "BACKFILL: scenario inventory re-evaluated; 02-08 scope changed from 'unskip 4 Playwright scenarios' to 're-layer 4 Playwright scenarios to the layers that cover them' (commit a0dafcec, slice-02 precedent extension)",
+      "t": "2026-05-17T09:45:53Z"
+    },
+    {
+      "sid": "02-08",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: re-layering moved error-path scenarios to backend integration tests where they execute deterministically; original Playwright scenarios 4-7 removed from spec",
+      "t": "2026-05-17T09:45:53Z"
+    },
+    {
+      "sid": "02-08",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: integration tests at the new layer already in scope under 02-05/02-06/02-07",
+      "t": "2026-05-17T09:45:53Z"
+    },
+    {
+      "sid": "02-08",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: OAuthConnection.spec.ts updated, error-path layer moved to backend integration per maintainer principle (commit a0dafcec)",
+      "t": "2026-05-17T09:45:53Z"
+    },
+    {
+      "sid": "02-08",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: git commit a0dafcec test(oauth): re-layer Playwright scenarios 4-7 to the layers that cover them",
+      "t": "2026-05-17T09:45:53Z"
+    },
+    {
+      "sid": "02-09",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "BACKFILL: docs-only step; existing oauth-jira.md inspected for insertion points",
+      "t": "2026-05-17T09:46:04Z"
+    },
+    {
+      "sid": "02-09",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: docs-only step, no executable acceptance criterion",
+      "t": "2026-05-17T09:46:05Z"
+    },
+    {
+      "sid": "02-09",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: docs-only step, no unit test",
+      "t": "2026-05-17T09:46:05Z"
+    },
+    {
+      "sid": "02-09",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: oauth-jira.md extended with refresh + reconnect + Health-tile-now-header-icon sections (commit 017dcc1e)",
+      "t": "2026-05-17T09:46:05Z"
+    },
+    {
+      "sid": "02-09",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "BACKFILL PASS: git commit 017dcc1e docs(oauth): add refresh/reconnect/Health-tile sections to oauth-jira.md",
+      "t": "2026-05-17T09:46:05Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "Read ci_e2e.yml (41 lines \u2014 build-only, no Playwright run step), ci.yml (e2e job calls ci_e2e.yml via workflow_call with e2e input), feature-delta.md lines 372-402 (canonical CI/CD contract), playwright.config.ts, OAuthConnection.spec.ts lines 185/191 (@requires_external @smoke tags on test.skip). Confirmed gate strategy: ci.yml on: includes push/PR/workflow_dispatch \u2014 workflow_dispatch must trigger oauth-smoke; release events are not currently a trigger of ci.yml. Decision: extend ci_e2e.yml workflow_call inputs with oauth_smoke flag + add new oauth-smoke job declaring environment: oauth-smoke; require an additional minimal ci.yml edit to pass the flag (oauth_smoke: github.event_name == 'workflow_dispatch').",
+      "t": "2026-05-17T09:49:23Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: workflow YAML configuration; no application-layer acceptance test. Roadmap explicitly sets red_to_green_tests=[] for this step. Gate validation via actionlint + manual workflow_dispatch smoke at release.",
+      "t": "2026-05-17T09:49:27Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: workflow YAML configuration; actionlint is the gate. No application code is modified.",
+      "t": "2026-05-17T09:49:32Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "PREPARE",
+      "s": "SKIPPED",
+      "d": "APPROVED_SKIP: step dropped entirely per scope_history 2026-05-17 \u2014 existing ci_verifysqlite.yml + ci_verifypostgres.yml workflows already run the full Playwright suite against the StubOAuthProvider on every PR/push; no new CI job needed",
+      "t": "2026-05-17T09:56:03Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "APPROVED_SKIP: step dropped (see scope_history 2026-05-17)",
+      "t": "2026-05-17T09:56:03Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "APPROVED_SKIP: step dropped (see scope_history 2026-05-17)",
+      "t": "2026-05-17T09:56:03Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "GREEN",
+      "s": "SKIPPED",
+      "d": "APPROVED_SKIP: step dropped (see scope_history 2026-05-17); no files modified, no oauth-smoke job introduced",
+      "t": "2026-05-17T09:56:03Z"
+    },
+    {
+      "sid": "05-01",
+      "p": "COMMIT",
+      "s": "SKIPPED",
+      "d": "APPROVED_SKIP: step dropped (see scope_history 2026-05-17); scope_history will land alongside step 05-02 commit",
+      "t": "2026-05-17T09:56:03Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS: read OAuthConnection.spec.ts (255 lines) + OAuthConnection.feature (172 lines); confirmed scaffolds at spec.ts lines 184-196 (test.describe Pre-release smoke + 2 test.skip with throw stubs) and feature lines 151-171 (section header + 2 @requires_external Scenario blocks) plus tag-legend line 45 + bullet line 38. grep '@requires_external' = 4 hits in target files only (no production code; .github/workflows/ci_e2e.yml uses the tag inside a grep pattern for the leftover oauth-smoke job \u2014 out of scope per boundary rules). grep '@smoke' E2E = 4 hits in the same two scaffolds only. ci_e2e.yml leftover oauth-smoke job is uncommitted local change (working-tree modification) outside step boundary \u2014 will not touch.",
+      "t": "2026-05-17T09:58:49Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: deletion-only step; existing Playwright suite (scenarios 1 + 8) is the regression net for the stub-mode happy paths that the deleted scaffolds would have duplicated",
+      "t": "2026-05-17T09:58:54Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: deletion-only step; no new code paths introduced",
+      "t": "2026-05-17T09:58:55Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS: deleted Pre-release smoke describe block + 2 test.skip scaffolds + inline separator comments from OAuthConnection.spec.ts; deleted matching @requires_external Scenario blocks + section header + tag-legend entry + bullet from OAuthConnection.feature. Header doc-comment trimmed in spec.ts. Diff: 2 files / 46 deletions / 0 additions / 0 collateral changes. Gates: git grep '@requires_external' Lighthouse.EndToEndTests/ = NO_MATCHES; git grep '@smoke' Lighthouse.EndToEndTests/ = NO_MATCHES; git grep 'oauth-smoke|ci_oauth_integration_smoke|OAUTH_SMOKE_BASE_URL|JIRA_OAUTH_SANDBOX|ADO_OAUTH_SANDBOX' in Lighthouse.EndToEndTests/+Backend/+Frontend = NO_MATCHES (docs hits acceptable per orchestrator). playwright --list parses cleanly (62 tests, OAuth scenarios listed). Backend dotnet build green: 0 warnings 0 errors. Frontend OAuth-related tests green: 60/60 across 8 files. NOTE: a pre-existing failure exists in .stryker-tmp-ado-oauth/sandbox-fiYpSb/.../LetPeopleWorkLogo.test.tsx \u2014 confirmed unrelated (reproduces on pristine HEAD with git stash; the dir is gitignored and predates this step). The roadmap gate is 'Full Playwright suite green in ci_verifysqlite + ci_verifypostgres' \u2014 CI does not carry the stale sandbox.",
+      "t": "2026-05-17T10:06:38Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS: commit 8ad36543 'test(oauth): drop redundant @requires_external smoke scaffolds (scenarios 11-12)'. 2 files changed, 46 deletions. Step-ID: 05-02 trailer present. Not pushed (slice-boundary push happens after Phase 05 completes). Pre-existing local-only modifications (ci_e2e.yml leftover oauth-smoke job, roadmap.json, the DES audit file staging) intentionally not staged \u2014 outside step boundary.",
+      "t": "2026-05-17T10:07:03Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:07:37Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:07:38Z"
+    },
+    {
+      "sid": "05-02",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:07:39Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS: read docs/ci-learnings.md, confirmed entry shape from 2026-05-13 entry (lines 48-52), identified insertion point under ## Runtime / startup after 2026-05-13 entry and before ## Tests section starting line 54",
+      "t": "2026-05-17T10:09:10Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: docs-only step; no executable acceptance criterion",
+      "t": "2026-05-17T10:09:14Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "RED_UNIT",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: docs-only step; no unit test",
+      "t": "2026-05-17T10:09:15Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS: added 2026-05-17 OAuth callback origin entry to docs/ci-learnings.md under ## Runtime / startup section, immediately after the 2026-05-13 AllowedOrigins entry. Entry follows the canonical 4-bullet shape (Symptom/Root cause/Fix/Rule going forward) and cross-links the 2026-05-13 entry. dotnet build clean (0 warnings/errors). Frontend vitest noise from stale .stryker-tmp-ado-oauth/ sandbox (gitignored, 16. Mai leftover) \u2014 unrelated to markdown-only change. No oauth-observability.md created (out of scope per scope_history).",
+      "t": "2026-05-17T10:16:20Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS: committed as 2c2f4fb4 with Step-ID: 05-03 trailer. docs(oauth): ci-learnings note on OAuth callback origin vs AllowedOrigins. 1 file changed, 6 insertions. No push (per finalize gating).",
+      "t": "2026-05-17T10:16:33Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:17:20Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:17:21Z"
+    },
+    {
+      "sid": "05-03",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:17:22Z"
+    },
+    {
+      "sid": "05-04",
+      "p": "PREPARE",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:20:15Z"
+    },
+    {
+      "sid": "05-04",
+      "p": "RED_ACCEPTANCE",
+      "s": "SKIPPED",
+      "d": "NOT_APPLICABLE: backend persistence invariant; integration test at unit/integration layer IS the acceptance surface; no Playwright scenario at this layer",
+      "t": "2026-05-17T10:20:20Z"
+    },
+    {
+      "sid": "05-04",
+      "p": "RED_UNIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:21:04Z"
+    },
+    {
+      "sid": "05-04",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:31:03Z"
+    },
+    {
+      "sid": "05-04",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-05-17T10:31:37Z"
     }
   ]
 }

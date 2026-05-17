@@ -431,6 +431,8 @@ StrykerOutput/
 **/StrykerOutput/
 .stryker-tmp/
 **/.stryker-tmp/
+.stryker-tmp-*/
+**/.stryker-tmp-*/
 reports/mutation/
 
 .claude/scheduled_tasks.lock
@@ -439,3 +441,6 @@ Lighthouse.Frontend/.stryker-*
 social-posts/*
 
 *.lscache
+
+# ASP.NET Core DataProtection key store + protected blobs (runtime state)
+**/data-protection-keys/
