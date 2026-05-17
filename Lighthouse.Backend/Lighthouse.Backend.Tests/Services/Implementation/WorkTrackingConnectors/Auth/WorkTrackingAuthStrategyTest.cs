@@ -169,7 +169,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             oauthServiceMock
                 .Setup(s => s.EnsureFreshTokenAsync(connectionId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(freshToken);
-            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object, NullLogger<OAuthBearerAuthStrategy>.Instance);
+            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object);
             var connection = CreateOAuthConnection(connectionId);
             var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
 
@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             oauthServiceMock
                 .Setup(s => s.EnsureFreshTokenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OAuthCredentialNotValidException("reconnect required"));
-            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object, NullLogger<OAuthBearerAuthStrategy>.Instance);
+            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object);
             var connection = CreateOAuthConnection(7);
             var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
 
@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             oauthServiceMock
                 .Setup(s => s.EnsureFreshTokenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OAuthRefreshFailedException("refresh failed"));
-            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object, NullLogger<OAuthBearerAuthStrategy>.Instance);
+            var strategy = new OAuthBearerAuthStrategy(oauthServiceMock.Object);
             var connection = CreateOAuthConnection(7);
             var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
 
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new JiraCloudBasicAuthStrategy(cryptoServiceMock.Object),
                 new LinearApiKeyAuthStrategy(cryptoServiceMock.Object),
                 new NoOpAuthStrategy(),
-                new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>(), NullLogger<OAuthBearerAuthStrategy>.Instance));
+                new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>()));
         }
 
         private static WorkTrackingSystemConnection CreateOAuthConnection(int id)

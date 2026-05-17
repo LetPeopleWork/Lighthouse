@@ -2,7 +2,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -16,7 +15,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new JiraCloudBasicAuthStrategy(cryptoService),
                 new LinearApiKeyAuthStrategy(cryptoService),
                 new NoOpAuthStrategy(),
-                new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>(), NullLogger<OAuthBearerAuthStrategy>.Instance));
+                new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>()));
         }
     }
 }
