@@ -425,8 +425,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
 
             cryptoServiceMock.Setup(c => c.Decrypt("enc-rt-old")).Returns("plain-rt-old");
-            cryptoServiceMock.Setup(c => c.Encrypt("plain-at-new")).Returns("enc-at-new");
-            cryptoServiceMock.Setup(c => c.Encrypt("plain-rt-new")).Returns("enc-rt-new");
 
             var credential = new OAuthCredential
             {
@@ -459,8 +457,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(token, Is.EqualTo("plain-at-new"));
-                Assert.That(credential.AccessToken, Is.EqualTo("enc-at-new"));
-                Assert.That(credential.RefreshToken, Is.EqualTo("enc-rt-new"));
+                Assert.That(credential.AccessToken, Is.EqualTo("plain-at-new"));
+                Assert.That(credential.RefreshToken, Is.EqualTo("plain-rt-new"));
                 Assert.That(credential.ExpiresAt, Is.EqualTo(newExpiry));
                 Assert.That(credential.UpdatedAt, Is.EqualTo(timeProvider.GetUtcNow()));
             }
@@ -478,9 +476,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
 
             cryptoServiceMock.Setup(c => c.Decrypt("enc-rt-old")).Returns("plain-rt-old");
-            cryptoServiceMock.Setup(c => c.Decrypt("enc-at-new")).Returns("plain-at-new");
-            cryptoServiceMock.Setup(c => c.Encrypt("plain-at-new")).Returns("enc-at-new");
-            cryptoServiceMock.Setup(c => c.Encrypt("plain-rt-new")).Returns("enc-rt-new");
+            cryptoServiceMock.Setup(c => c.Decrypt("plain-at-new")).Returns("plain-at-new");
 
             var credential = new OAuthCredential
             {

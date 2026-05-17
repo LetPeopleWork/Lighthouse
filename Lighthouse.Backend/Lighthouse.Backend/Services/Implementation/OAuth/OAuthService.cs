@@ -254,8 +254,12 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
                 throw; // unreachable — MarkRefreshFailedAndThrowAsync always throws
             }
 
-            credential.AccessToken = cryptoService.Encrypt(refreshed.AccessToken);
-            credential.RefreshToken = cryptoService.Encrypt(refreshed.RefreshToken);
+            // Assign plaintext and let LighthouseAppContext.EncryptSecrets encrypt on save —
+            // the same contract CompleteAsync/UpsertValidCredential rely on. Encrypting here
+            // would double-encrypt because EncryptSecrets runs on every Modified credential
+            // (see ADO #5023).
+            credential.AccessToken = refreshed.AccessToken;
+            credential.RefreshToken = refreshed.RefreshToken;
             credential.ExpiresAt = refreshed.ExpiresAt;
             credential.UpdatedAt = timeProvider.GetUtcNow();
             credentialRepository.Update(credential);

@@ -34,8 +34,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         private const string PlaintextRefreshTokenOld = "plain-rt-old";
         private const string PlaintextAccessTokenNew = "plain-at-new";
         private const string PlaintextRefreshTokenNew = "plain-rt-new";
-        private const string EncryptedAccessTokenNew = "enc-at-new";
-        private const string EncryptedRefreshTokenNew = "enc-rt-new";
         private const int ConcurrentCallers = 32;
 
         [Test]
@@ -67,9 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             cryptoServiceMock.Setup(c => c.Decrypt(EncryptedClientId)).Returns(PlaintextClientId);
             cryptoServiceMock.Setup(c => c.Decrypt(EncryptedClientSecret)).Returns(PlaintextClientSecret);
             cryptoServiceMock.Setup(c => c.Decrypt(EncryptedRefreshTokenOld)).Returns(PlaintextRefreshTokenOld);
-            cryptoServiceMock.Setup(c => c.Encrypt(PlaintextAccessTokenNew)).Returns(EncryptedAccessTokenNew);
-            cryptoServiceMock.Setup(c => c.Encrypt(PlaintextRefreshTokenNew)).Returns(EncryptedRefreshTokenNew);
-            cryptoServiceMock.Setup(c => c.Decrypt(EncryptedAccessTokenNew)).Returns(PlaintextAccessTokenNew);
+            cryptoServiceMock.Setup(c => c.Decrypt(PlaintextAccessTokenNew)).Returns(PlaintextAccessTokenNew);
 
             var serviceConfigMock = new Mock<IServiceConfig>();
             serviceConfigMock.SetupGet(c => c.BaseUrl).Returns("https://lighthouse.example.com");
