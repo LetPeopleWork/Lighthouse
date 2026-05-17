@@ -59,6 +59,12 @@ Each entry follows:
 
 ## Tests
 
+### 2026-05-17 — Per-test timing CSVs are published as PR build artifacts (Slice 01 of test-speed-improvements)
+
+- **Artifact location**: every `Build And Deploy Lighthouse` run now uploads `test-timings-backend` (TRX → CSV, columns `fully_qualified_name,category,duration_ms,outcome`) and `test-timings-frontend` (Vitest JSON → CSV, columns `file,test_name,duration_ms,outcome`). Download with `gh run download <runId> --name test-timings-backend` (or `--name test-timings-frontend`). Rows are sorted slowest-first; the Backend CSV's `category` is `Integration` or `Unit`, classified by scanning C# source for class-level OR method-level `[Category("Integration")]` — NUnit's TRX adapter does not surface NUnit categories, so the source scan is the cheapest honest signal.
+- **Local equivalent**: `Scripts/test-timings/summarise.sh path/to/TestResults --source-root Lighthouse.Backend/Lighthouse.Backend.Tests` (or `.ps1` on Windows) prints the top-20 slowest tests with a Backend/Frontend wall-clock + integration breakdown. Runs in ~250 ms against a full local test corpus.
+- **Rule going forward**: Before claiming "test X is the slow one" or "the suite is slow because Y" in a PR description, commit comment, or chat — point at a CSV row or a `summarise.sh` line. The data is one `gh run download` away; "I think it's the integration tests" is not evidence and should not drive a refactor.
+
 ### 2026-05-12 — RBAC E2E bootstrap assertion contradicted the team-existence portfolio gate
 - **Symptom**: `Verify Authentication / verifyauth` failed at step 25 ("Run RBAC Playwright tests"). The failing assertion in `Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:108-110` expected the "Add Portfolio" button to be visible during the first-user bootstrap step, where ZERO teams exist in the system.
 - **Root cause**: Under R2 (`team-portfolio-creation-rights` feature delta), `rbac.canCreatePortfolio` is `false` whenever `LighthouseAppContext.Teams` is empty — even for System Admin, even in bootstrap mode. The frontend Add Portfolio button is gated by `rbac.canCreatePortfolio`, so it is intentionally hidden during bootstrap-with-zero-teams. The E2E test was pinning the R1 contract that gave SysAdmin unconditional portfolio creation.
