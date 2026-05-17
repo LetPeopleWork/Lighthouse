@@ -22,12 +22,82 @@ To create a connection to an Azure DevOps system, you need two things:
 The URL will look something like this: `https://dev.azure.com/letpeoplework` where *letpeoplework* would be your organization name. You don't need to specify any Team Project, this should be part of the [Query](#query).
 
 # Authentication
-Currently you can only authenticate using a *Personal Access Token* to Azure DevOps.
 
-You can find more information on how to create a Personal Access Token in the [Microsoft Documentation](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows/)
+Lighthouse supports two authentication methods against Azure DevOps. OAuth (against an Entra ID app registration) is the recommended path because it removes per-user token rotation; Personal Access Tokens are simpler to set up but pin the connection to one human's credential.
+
+## Azure DevOps (OAuth)
+
+OAuth lets you authorise Lighthouse as an Entra ID application in the same tenant that owns your Azure DevOps organisation — no shared PAT to rotate, no service account to manage. OAuth is a **Premium** feature and applies to **Azure DevOps Services** (`dev.azure.com`); on-premises Azure DevOps Server continues to use PATs.
+
+### Register an Entra ID app
+
+You need an Entra ID app registration in the same tenant that owns the Azure DevOps organisation you want to connect.
+
+1. Sign in to the [Azure portal](https://portal.azure.com) with an account that can create app registrations in the tenant (typically *Application Developer* or higher).
+2. **Microsoft Entra ID** → **App registrations** → **New registration**.
+3. Name the app (e.g. *Lighthouse — `<org>`*).
+4. Pick a supported account type:
+
+    - **Single tenant** (recommended for a self-hosted Lighthouse serving one tenant). You MUST paste the **Directory (tenant) ID** into Lighthouse later so it targets the per-tenant Microsoft endpoint — the `/common/` endpoint rejects single-tenant clients with `unauthorized_client`.
+    - **Multi-tenant**: only if a single Lighthouse instance serves Azure DevOps organisations across multiple Entra tenants. Adds a verified-publisher requirement and broadens consent surface. Leave **Directory (Tenant) ID** empty in Lighthouse.
+
+5. Leave **Redirect URI** blank for now; click **Register**.
+6. On the app's **Overview** page, copy the **Application (client) ID** and the **Directory (tenant) ID**.
+
+### Set the redirect URI
+
+1. In the app registration: **Authentication** → **Add a platform** → **Web**.
+2. **Redirect URI**: `{your-lighthouse-base-url}/api/oauth/callback`. The host must match what your operators have configured as `Lighthouse:BaseUrl` (see [OAuth Callback Base URL](../../Installation/configuration.html#oauth-callback-base-url)).
+3. The redirect URI MUST be `https://` in any production deployment. Entra ID accepts `http://localhost` for local development only — every other host must use HTTPS.
+
+### Add the API permission
+
+1. **API permissions** → **Add a permission** → **APIs my organization uses** → search for **Azure DevOps** → select it.
+2. Pick **Delegated permissions** and tick `vso.work_write` (read-and-write to work items, queries, boards, and area/iteration paths). Lighthouse handles the Microsoft v2.0 resource-prefixing transparently — you do not need to add the GUID prefix manually.
+3. `offline_access` is requested as an OIDC protocol scope; do not add it under **API permissions**.
+4. Click **Grant admin consent for `<tenant>`**. Tenant-wide admin consent is required so the connector-admin (who may not be a tenant admin) does not get blocked with `AADSTS65001`.
+
+### Create a client secret
+
+1. **Certificates & secrets** → **Client secrets** → **New client secret**.
+2. Description (e.g. *Lighthouse — production*), pick an expiry (Microsoft caps at 24 months).
+3. Click **Add** and copy the secret's **Value** immediately — the portal only shows it once.
+4. Record the expiry. Lighthouse does **not** auto-rotate Entra ID client secrets; when the secret expires the connection moves to `RefreshFailed` and an admin must mint a new one and paste it back into the connection form.
+
+### Configure the connection in Lighthouse
+
+1. **Settings → Connections** → **New Azure DevOps connection** (or **Edit** an existing one if you are migrating off a PAT).
+2. Set **Authentication** to **Azure DevOps (OAuth)**. Hidden if your instance has no Premium licence.
+3. Fill in: **Organization URL** (`https://dev.azure.com/<org>`), **Client ID**, **Directory (Tenant) ID** (single-tenant) or leave empty (multi-tenant), **Client Secret**.
+4. Verify the read-only **Callback URL** matches exactly what you registered in the Entra app. If it shows a warning, set `Lighthouse:BaseUrl` on the server to the public `https://` URL first and reload the page — Entra rejects non-HTTPS redirect URIs for every host except `localhost`.
+5. Click **Connect**. A browser popup opens against `login.microsoftonline.com`; sign in, **Accept**, and the popup closes when consent succeeds.
+
+### Silent refresh and reconnect
+
+Microsoft access tokens expire after roughly an hour. Lighthouse refreshes them silently before they expire; the admin sees nothing. If a refresh fails (revoked grant, expired client secret, scope tightened, network timeout) the connection's `Status` transitions to `RefreshFailed`, a yellow *Reconnect required* banner appears on the connection card, background syncs against that connection stop, and you have to click **Reconnect** and complete the Microsoft consent flow again — or, if the client secret has expired, mint a new one in **Certificates & secrets** and paste the new value into the connection.
+
+When at least one OAuth connection exists, system admins see a cloud icon in the application header that reports OAuth health at a glance.
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `AADSTS50011: Reply URL mismatch` after consent | Redirect URI registered in the Entra app does not match `{Lighthouse:BaseUrl}/api/oauth/callback` exactly. | Confirm `Lighthouse:BaseUrl`. Entra compares scheme + host + port + path exactly — a trailing slash or wrong scheme breaks the match. |
+| `AADSTS65001: not consented` | The Azure DevOps API permission is missing admin consent, or the connector-admin lacks consent rights. | App → **API permissions** → **Grant admin consent for `<tenant>`** → retry **Connect**. |
+| `AADSTS650053: scope … doesn't exist on the resource '00000003-…'` | `vso.work_write` is missing from the app's API permissions. The `00000003-…` resource in the error is Microsoft Graph — the v2.0 endpoints default to Graph when no resource prefix is supplied, which fires when no Azure DevOps permission is granted yet. | Add the **Azure DevOps → Delegated → `vso.work_write`** permission, grant admin consent, retry. |
+| `unauthorized_client: client does not exist or is not enabled for consumers` | The Entra app is single-tenant but Lighthouse hit `/common/` because the **Directory (Tenant) ID** field is empty. | Paste the tenant ID from the app's Overview page into Lighthouse, save, retry — or switch the app to multi-tenant. |
+| Popup blocked when clicking **Connect** | The browser blocked the popup against `login.microsoftonline.com`. | Allow popups for the Lighthouse origin and retry. |
+| Yellow *"Reconnect required"* banner on a previously-syncing connection | Silent refresh failed — expired client secret, revoked grant, scope tightened. | If the secret expired, mint a new one in **Certificates & secrets** and paste it into the connection. Otherwise click **Reconnect** and complete consent again. |
+| `VssServiceException: Identity {guid} has not been materialized, please use interactive login over the browser first.` on the first API call after connecting | The Entra account you OAuth'd with has never signed into the target Azure DevOps organisation interactively. Azure DevOps maintains its own user table separate from Entra and refuses to recognise Entra identities until a browser sign-in materialises them. OAuth itself worked; the token is valid; ADO just doesn't know the principal yet. | Open `https://dev.azure.com/{your-org}` in a fresh browser tab, sign in with the same Microsoft account, accept any "request access" prompt, wait for the ADO home page to load. That one interactive sign-in materialises the identity. Then retry the failing Lighthouse operation. No need to re-do OAuth consent. |
+
+For deeper issues, capture the failing callback URL from the browser's address bar (it contains the `error=` / `error_description=` parameters along with the AADSTS code) and include it when reporting the problem.
+
+## Personal Access Token
+
+If you cannot use OAuth (on-premises Azure DevOps Server, or no Premium licence), authenticate with a PAT. See the [Microsoft documentation](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows/) for how to mint one.
 
 {: .important}
-The Personal Access Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+The Personal Access Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse stores it encrypted in its database (see [Encryption Key](../../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 # Additional Fields
 
 Lighthouse allows you to configure **Additional Fields** for Azure DevOps connections. These fields are used to retrieve and display extra information from your work items, such as custom properties or metadata that are not part of the default set.

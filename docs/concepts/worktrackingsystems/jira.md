@@ -24,6 +24,53 @@ The URL will look something like this: `https://letpeoplework.atlassian.net` whe
 ## Authentication
 Depending on whether you use Jira Cloud or Jira Data Center, you have different Authentication Options.
 
+### Jira Cloud (OAuth)
+
+OAuth lets you authorise Lighthouse as an application in your Atlassian tenant, governed centrally in the Atlassian developer console — no shared token to rotate, no service account to manage. OAuth is a **Premium** feature and applies to **Jira Cloud only**.
+
+#### Register an OAuth 2.0 (3LO) app
+
+1. Sign in to [`developer.atlassian.com`](https://developer.atlassian.com) with an Atlassian account that has admin access to the Jira Cloud tenant you want to connect.
+2. **My apps** → **Create** → **OAuth 2.0 integration**. Give the app a name (e.g. *Lighthouse — `<tenant>`*).
+3. **Authorization** → **Callback URL**: paste `{your-lighthouse-base-url}/api/oauth/callback`. The host must match what your operators have configured as `Lighthouse:BaseUrl` (see [OAuth Callback Base URL](../../Installation/configuration.html#oauth-callback-base-url)); the path `/api/oauth/callback` is fixed.
+4. **Permissions** → **Jira API**. The console splits scopes across two tabs — add the ones from each tab as listed below, then add `offline_access` alongside (it sits next to the Jira API permission card, not inside it).
+
+    **Classic scopes**: `read:jira-work`, `read:jira-user`
+
+    **Granular scopes**: `read:project:jira`, `read:issue:jira-software`, `read:board-scope:jira-software`, `read:sprint:jira-software`
+
+    **OIDC protocol scope**: `offline_access`
+
+    All seven must be granted. `offline_access` is what lets Atlassian return a `refresh_token` so Lighthouse can keep the connection alive after the access token expires; without it the consent dance succeeds once and then the connection breaks at the first refresh.
+
+5. Copy the **Client ID** and **Client Secret** from the **Settings** page. Treat the Client Secret like a password.
+
+#### Configure the connection in Lighthouse
+
+1. In Lighthouse, open **Settings → Connections** and click **New Jira connection** (or **Edit** on an existing one if you are migrating off an API token).
+2. Set **Authentication** to **Jira Cloud (OAuth)**. This option is hidden if your instance has no Premium licence.
+3. Paste the **Client ID** and **Client Secret** from the Atlassian developer console.
+4. Verify the read-only **Callback URL** field. It MUST match exactly what you registered with Atlassian — scheme, host, and `/api/oauth/callback` path. If it shows a warning, set `Lighthouse:BaseUrl` on the server first and reload the page.
+5. Click **Connect**. You are redirected to Atlassian; sign in, **Accept** the requested scopes, and you are sent back to Lighthouse. On success the connection's status moves to **Connected**.
+
+#### Silent refresh and reconnect
+
+Atlassian access tokens expire after roughly an hour. Lighthouse refreshes them silently before they expire; the admin sees nothing. If a refresh fails (revoked grant, scope change, network timeout) the connection's `Status` transitions to `RefreshFailed`, a yellow *Reconnect required* banner appears on the connection card, background syncs against that connection stop, and you have to click **Reconnect** and complete the Atlassian consent flow again to restore service.
+
+When at least one OAuth connection exists, system admins see a cloud icon in the application header that reports OAuth health at a glance and links to the affected connection's edit dialog when something needs attention.
+
+#### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| HTTP 400 *invalid_redirect_uri* after consent | Callback URL registered with Atlassian doesn't match `{Lighthouse:BaseUrl}/api/oauth/callback` exactly. | Confirm `Lighthouse:BaseUrl` and re-copy the URL into Atlassian. Scheme + host + port + path must match character-for-character. |
+| HTTP 400 *invalid_scope* | One of the seven scopes is missing from the app permissions. The most common cause is forgetting to check the **Granular scopes** tab separately from **Classic scopes**. | Re-open the app under **Permissions → Jira API**, check both tabs, confirm `offline_access` is also ticked, retry. |
+| Auth-type dropdown does not show **Jira Cloud (OAuth)** | The instance has no Premium licence, or it has lapsed. | Confirm the licence status in **Settings → Licensing**. |
+| Yellow *"Reconnect required"* banner appears on a connection that was syncing fine | A silent refresh attempt failed — most often a revoked grant or `offline_access` removed from the app. | Click **Reconnect** on the banner and complete the consent flow again. If the banner reappears immediately, re-check that `offline_access` is granted on the Atlassian app. |
+| Connection shows **Connected** but the board wizard is empty | Boards endpoint does not support OAuth (3LO) — Atlassian limitation, same as scoped API tokens. | Configure teams and portfolios manually. See the [scoped-token](#scopes) caveat above for the same restriction. |
+
+For deeper issues, capture the failing callback URL from the browser's address bar (it contains the `error=` / `error_description=` parameters) and include it when reporting the problem.
+
 ### Jira Cloud (API Token)
 You can find more information on how to create an Access Token in the [Atlassian Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
 

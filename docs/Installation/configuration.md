@@ -227,3 +227,23 @@ Lighthouse supports OpenID Connect (OIDC) authentication to protect your instanc
 If `Enabled` is `true` but `Authority` is missing or misconfigured, Lighthouse will **not** start and will show an error. Authentication is fail-closed by design.
 
 For full provider-specific setup guides (Keycloak, Microsoft Entra ID, Google, Auth0), see the [Authentication](./authentication.html) page.
+
+## OAuth Callback Base URL
+
+`Lighthouse:BaseUrl` is the public origin Lighthouse uses to compute the OAuth callback URL displayed in the connection form (and sent as `redirect_uri` to Jira / Azure DevOps at runtime). You need to set it when Lighthouse runs **behind a reverse proxy** — the host ASP.NET Core observes internally (e.g. `http://lighthouse:8080` inside the container) is not the public host the user's browser sees (e.g. `https://lighthouse.example.com`). Without `BaseUrl`, the callback URL displayed in the OAuth form is derived from `Request.Host`, which is usually wrong behind a proxy and will cause the IdP to reject the redirect.
+
+**Default Value:** unset. When unset, Lighthouse falls back to `{Request.Scheme}://{Request.Host}` and shows a yellow warning on the OAuth form ("Your callback URL may be incorrect…"). For local development without a proxy, the fallback is usually fine; for any reverse-proxied or production deployment, set `BaseUrl` explicitly.
+
+**Override Options:**
+- Command Line: `--Lighthouse:BaseUrl`
+- Environment Variable: `Lighthouse__BaseUrl`
+
+**Example:**
+
+```bash
+docker run -e "Lighthouse__BaseUrl=https://lighthouse.example.com" ghcr.io/letpeoplework/lighthouse:latest
+```
+
+The value MUST be an absolute URL (scheme + host, optional port). Omit any trailing slash — Lighthouse appends `/api/oauth/callback` itself. The full callback URL the admin pastes into the Atlassian Developer Console or the Entra ID app registration is therefore `{BaseUrl}/api/oauth/callback`.
+
+For the end-to-end Jira and Azure DevOps OAuth setup flows that consume this setting, see the OAuth section under [Jira](../concepts/worktrackingsystems/jira.html#jira-cloud-oauth) or [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#azure-devops-oauth).
