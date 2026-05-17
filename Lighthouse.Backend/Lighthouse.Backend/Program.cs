@@ -30,6 +30,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -318,6 +319,9 @@ namespace Lighthouse.Backend
         }
 
         private const string OAuthStateSecretConfigKey = "Lighthouse:OAuth:StateSecret";
+        private const string DataProtectionKeyStorePathConfigKey = "Lighthouse:DataProtection:KeyStorePath";
+        private const string OAuthStateSecretProtectorPurpose = "Lighthouse.OAuth.StateSecret.v1";
+        private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
 
         private static void EnsureOAuthStateSecret(WebApplicationBuilder builder)
@@ -328,13 +332,55 @@ namespace Lighthouse.Backend
                 return;
             }
 
-            var generated = Convert.ToBase64String(
-                System.Security.Cryptography.RandomNumberGenerator.GetBytes(OAuthStateSecretByteLength));
+            var keyStoreDir = ResolveDataProtectionKeyStoreDir(builder);
+            Directory.CreateDirectory(keyStoreDir);
+
+            var resolvedSecret = ResolveOrCreateProtectedOAuthStateSecret(keyStoreDir);
 
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [OAuthStateSecretConfigKey] = generated,
+                [OAuthStateSecretConfigKey] = resolvedSecret,
             });
+        }
+
+        private static string ResolveDataProtectionKeyStoreDir(WebApplicationBuilder builder)
+        {
+            var configured = builder.Configuration[DataProtectionKeyStorePathConfigKey];
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                return configured;
+            }
+
+            return Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
+        }
+
+        private static string ResolveOrCreateProtectedOAuthStateSecret(string keyStoreDir)
+        {
+            // EnsureOAuthStateSecret runs at builder-time, BEFORE builder.Build(), so no app-wide
+            // DI container exists yet. Build a transient mini-host that pins the data-protection
+            // key ring to the same on-disk location every boot will use, so the protector is
+            // deterministic across restarts.
+            using var transientServices = new ServiceCollection()
+                .AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(keyStoreDir))
+                .Services
+                .BuildServiceProvider();
+
+            var dataProtectionProvider = transientServices.GetRequiredService<IDataProtectionProvider>();
+            var protector = dataProtectionProvider.CreateProtector(OAuthStateSecretProtectorPurpose);
+            var blobPath = Path.Combine(keyStoreDir, OAuthStateSecretBlobFileName);
+
+            if (File.Exists(blobPath))
+            {
+                var protectedBytes = File.ReadAllBytes(blobPath);
+                var unprotected = protector.Unprotect(protectedBytes);
+                return Convert.ToBase64String(unprotected);
+            }
+
+            var freshSecret = System.Security.Cryptography.RandomNumberGenerator.GetBytes(OAuthStateSecretByteLength);
+            var protectedSecret = protector.Protect(freshSecret);
+            File.WriteAllBytes(blobPath, protectedSecret);
+            return Convert.ToBase64String(freshSecret);
         }
 
         private const string UseStubOAuthProviderConfigKey = "Lighthouse:OAuth:UseStubProvider";
