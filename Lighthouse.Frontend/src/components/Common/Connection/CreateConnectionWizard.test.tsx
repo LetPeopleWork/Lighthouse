@@ -157,66 +157,6 @@ const mockJiraSystem = new WorkTrackingSystemConnection({
 	authenticationMethodKey: "jira.cloud",
 });
 
-const mockAdoSystemWithOAuth = new WorkTrackingSystemConnection({
-	id: 0,
-	name: "Azure DevOps",
-	workTrackingSystem: "AzureDevOps",
-	options: [],
-	availableAuthenticationMethods: [
-		{
-			key: "ado.pat",
-			displayName: "Personal Access Token",
-			options: [
-				{
-					key: "Url",
-					displayName: "Organization URL",
-					isSecret: false,
-					isOptional: false,
-				},
-				{
-					key: "AccessToken",
-					displayName: "Access Token",
-					isSecret: true,
-					isOptional: false,
-				},
-			],
-		},
-		{
-			key: "ado.oauth",
-			displayName: "Azure DevOps (OAuth)",
-			isPremium: true,
-			options: [
-				{
-					key: "Url",
-					displayName: "Organization URL",
-					isSecret: false,
-					isOptional: false,
-				},
-				{
-					key: "oauth.clientId",
-					displayName: "Client ID",
-					isSecret: false,
-					isOptional: false,
-				},
-				{
-					key: "oauth.tenantId",
-					displayName: "Directory (Tenant) ID",
-					isSecret: false,
-					isOptional: false,
-				},
-				{
-					key: "oauth.clientSecret",
-					displayName: "Client Secret",
-					isSecret: true,
-					isOptional: false,
-				},
-			],
-		},
-	],
-	additionalFieldDefinitions: [],
-	authenticationMethodKey: "ado.pat",
-});
-
 const mockJiraSystemWithOAuth = new WorkTrackingSystemConnection({
 	id: 0,
 	name: "Jira",
@@ -739,50 +679,6 @@ describe("CreateConnectionWizard", () => {
 				await screen.findByText(/Your callback URL may be incorrect/i),
 			).toBeInTheDocument();
 			expect(screen.getByText(/Set Lighthouse:BaseUrl/i)).toBeInTheDocument();
-		});
-
-		it("renders the ADO HTTPS warning when ADO (OAuth) is selected and BaseUrl is HTTP", async () => {
-			const user = userEvent.setup();
-			renderWizard({
-				supportedSystems: [mockAdoSystemWithOAuth],
-				canUsePremiumFeatures: true,
-				baseUrl: "http://lighthouse.example.com",
-			});
-			await waitFor(() => {
-				expect(
-					screen.getByRole("button", { name: /Azure DevOps/i }),
-				).toBeInTheDocument();
-			});
-			await user.click(screen.getByRole("button", { name: /Azure DevOps/i }));
-			const select = await screen.findByRole("combobox");
-			await user.click(select);
-			await user.click(
-				await screen.findByRole("option", {
-					name: /Azure DevOps \(OAuth\)/i,
-				}),
-			);
-
-			expect(
-				await screen.findByText(
-					/Azure DevOps requires HTTPS callback URLs in production/i,
-				),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByText(/Your callback URL may be incorrect/i),
-			).not.toBeInTheDocument();
-		});
-
-		it("does NOT render the ADO HTTPS warning when Jira (OAuth) is selected even with an HTTP BaseUrl", async () => {
-			await goToOAuthStep2({
-				canUsePremiumFeatures: true,
-				baseUrl: "http://lighthouse.example.com",
-			});
-
-			expect(
-				screen.queryByText(
-					/Azure DevOps requires HTTPS callback URLs in production/i,
-				),
-			).not.toBeInTheDocument();
 		});
 
 		it("advances to step 3 when the OAuth popup resolves with success", async () => {

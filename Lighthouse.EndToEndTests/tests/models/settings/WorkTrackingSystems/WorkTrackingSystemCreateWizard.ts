@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { LighthousePage } from "../../app/LighthousePage";
 import { OverviewPage } from "../../overview/OverviewPage";
 
@@ -40,15 +40,5 @@ export class WorkTrackingSystemCreateWizard {
 			.click();
 		const listbox = this.page.getByRole("listbox");
 		await listbox.getByRole("option", { name: displayName }).click();
-	}
-
-	get adoHttpsWarning(): Locator {
-		return this.page.getByText(
-			/Azure DevOps requires HTTPS callback URLs in production/i,
-		);
-	}
-
-	get connectButton(): Locator {
-		return this.page.getByRole("button", { name: "Connect", exact: true });
 	}
 }

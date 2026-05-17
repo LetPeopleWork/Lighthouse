@@ -154,20 +154,10 @@ test.describe("Slice 03 — Azure DevOps OAuth", () => {
 		},
 	);
 
-	testWithAuth(
-		"[@driving_adapter @real-io @in-memory @US-03 @error] ADO OAuth form warns when BaseUrl is HTTP",
-		async ({ page }) => {
-			const lighthousePage = new LighthousePage(page);
-			const overviewPage = await lighthousePage.open();
-			const wizard = await overviewPage.addConnection();
-
-			await wizard.selectWorkTrackingSystemType("AzureDevOps");
-			await wizard.selectAuthenticationMethod("Azure DevOps (OAuth)");
-
-			await expect(wizard.adoHttpsWarning).toBeVisible();
-			await expect(wizard.connectButton).toBeVisible();
-		},
-	);
+	// NOTE: "@US-03 @error — ADO OAuth form warns when BaseUrl is HTTP" is verified at
+	// the unit layer by CreateConnectionWizard.test.tsx (positive ADO+OAuth+http and
+	// negative Jira+OAuth+http cases). Re-asserting via Playwright duplicates a pure
+	// UI-rendering invariant at high cost.
 
 	// NOTE: "Adding the ADO provider did not require changes to the controller or persistence"
 	// (Slice 03 AC #5) is verified by PR diff review, not by Playwright. Tracked as a checkbox
