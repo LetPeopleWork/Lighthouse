@@ -18,9 +18,11 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
         private const string ResponseModeQuery = "query";
         private const string PromptConsent = "consent";
 
+        private const string AzureDevOpsResourceId = "499b84ac-1321-427f-aa17-267ca6975798";
+
         private static readonly IReadOnlyList<string> AzureDevOpsDefaultScopes =
         [
-            "vso.work_write",
+            AzureDevOpsResourceId + "/vso.work_write",
             "offline_access",
         ];
 

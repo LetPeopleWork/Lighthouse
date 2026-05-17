@@ -31,14 +31,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             Assert.That(provider.ProviderKey, Is.EqualTo("ado.oauth"));
         }
 
+        private const string AzureDevOpsResourceScopedWorkWrite =
+            "499b84ac-1321-427f-aa17-267ca6975798/vso.work_write";
+
         private static readonly string[] ExpectedDefaultScopes =
         [
-            "vso.work_write",
+            AzureDevOpsResourceScopedWorkWrite,
             "offline_access",
         ];
 
         [Test]
-        public void DefaultScopes_ContainsAzureDevOpsWorkWriteAndOfflineAccess()
+        public void DefaultScopes_ContainsAzureDevOpsResourceScopedWorkWriteAndOfflineAccess()
         {
             var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
 
@@ -66,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
                 Assert.That(queryParameters["client_id"], Is.EqualTo("ado-client-id"));
                 Assert.That(queryParameters["response_type"], Is.EqualTo("code"));
                 Assert.That(queryParameters["redirect_uri"], Is.EqualTo("https://lighthouse.example.com/api/oauth/callback"));
-                Assert.That(queryParameters["scope"], Is.EqualTo("vso.work_write offline_access"));
+                Assert.That(queryParameters["scope"], Is.EqualTo($"{AzureDevOpsResourceScopedWorkWrite} offline_access"));
                 Assert.That(queryParameters["state"], Is.EqualTo("signed-state-token"));
                 Assert.That(queryParameters["response_mode"], Is.EqualTo("query"));
                 Assert.That(queryParameters["prompt"], Is.EqualTo("consent"));
@@ -181,7 +184,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
                 Assert.That(formParameters["client_secret"].ToString(), Is.EqualTo("ado-client-secret"));
                 Assert.That(formParameters["code"].ToString(), Is.EqualTo("ado-auth-code"));
                 Assert.That(formParameters["redirect_uri"].ToString(), Is.EqualTo("https://lighthouse.example.com/api/oauth/callback"));
-                Assert.That(formParameters["scope"].ToString(), Is.EqualTo("vso.work_write offline_access"));
+                Assert.That(formParameters["scope"].ToString(), Is.EqualTo($"{AzureDevOpsResourceScopedWorkWrite} offline_access"));
             }
 
             using (Assert.EnterMultipleScope())
@@ -312,7 +315,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
                 + $"\"refresh_token\":\"{refreshToken}\","
                 + $"\"expires_in\":{expiresInSeconds},"
                 + "\"token_type\":\"Bearer\","
-                + "\"scope\":\"vso.work_write offline_access\""
+                + $"\"scope\":\"{AzureDevOpsResourceScopedWorkWrite} offline_access\""
                 + "}";
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -330,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
 
         private static readonly string[] FlowContextScopes =
         [
-            "vso.work_write",
+            AzureDevOpsResourceScopedWorkWrite,
             "offline_access",
         ];
 
