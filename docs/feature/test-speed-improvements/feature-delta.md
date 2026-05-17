@@ -107,11 +107,13 @@ Each row is a candidate evaluated AGAINST a hypothesis and scored AFTER Slice-01
 | CS-D | **Per-spec fixes**: identify top-N slowest Vitest specs from Slice-01 and apply standard speed-ups (fake timers, smaller fixtures, fewer DOM mounts). | "A small handful of specs account for the FE bulk; standard refactor patterns win." | Low-medium (1-2 days, scoped per spec). | None — coverage unchanged when test names preserved. |
 | CS-E | **Vitest config tuning**: increase worker count, switch isolation mode, prune cold-start cost. | "FE slowness is config, not test content." | Low (a few hours of experiments). | None directly — but config changes can mask flake; needs back-to-back green runs to validate. |
 | CS-F | **Backend parallel/isolation hardening**: fix the static-cache collision class (per 2026-05-17 CI learning) so `MaxCpuCount=0` is genuinely safe, then raise the parallelism budget. | "Static state in connectors and shared cache keys is silently capping the parallelism we already configured." | Medium (2 days) — change the cache key shape, add credential fingerprinting (cf. ci-learnings 2026-05-17 entries). | None — coverage unchanged; isolation is strictly improved. |
+| CS-G | **Cache concurrency test downscaling**: reduce thread counts and time budgets in `CacheTest` concurrency tests so they prove the invariant without spawning 64 tasks that serialise on constrained CI runners. Added 2026-05-17 from Slice-01 evidence — the catalog at DISCUSS time assumed real-API traffic and FE specs were the dominant cost; the data revealed a single test suite (`Cache.CacheTest.Concurrent*`) consuming 133.7 s = 25 % of BE wall-clock on CI. | "A small number of intentionally-thread-heavy unit tests scale poorly on CI's limited cores and dominate BE wall-clock." | Low (½ day) — reduce thread counts (32+32 → 8+8 or similar), shorten the time-bounded loop, keep the same correctness assertions. Could combine with property-based testing later. | None — same invariants asserted (no torn reads, no exceptions, all values retrievable). Stress dimension changes; correctness coverage does not. |
 
 Combinations to consider in the memo:
 - **CS-B + CS-A** (rewrite first to make per-PR feasible, then split if still needed)
 - **CS-F + CS-D** (lift the FE+BE parallelism ceiling before any rewrites or cadence changes — cheapest learning if it works)
 - **CS-C alone** (highest setup cost, biggest payoff if real-API latency is the dominant variable)
+- **CS-G + CS-B** (ship the cheap cache-test downscale first, then evaluate CS-B's gain on the remaining 80 % of BE wall-clock)
 
 The memo (US-02) MUST score each row and combination against the Slice-01 numbers and recommend.
 
