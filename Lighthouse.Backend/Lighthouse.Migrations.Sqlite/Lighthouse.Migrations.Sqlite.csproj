@@ -8,11 +8,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Build" Version="18.4.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
 		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
 		<PackageReference Include="System.Drawing.Common" Version="10.0.7" />
 	</ItemGroup>
