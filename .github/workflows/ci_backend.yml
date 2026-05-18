@@ -6,6 +6,22 @@ on:
       backend:
         required: true
         type: string
+      jira_connector:
+        required: false
+        type: string
+        default: 'false'
+      ado_connector:
+        required: false
+        type: string
+        default: 'false'
+      linear_connector:
+        required: false
+        type: string
+        default: 'false'
+      connector_shared:
+        required: false
+        type: string
+        default: 'false'
 
 concurrency:
   group: backend-integration-tests

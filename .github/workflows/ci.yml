@@ -35,6 +35,10 @@ jobs:
     name: Verify Backend
     with:
       backend: ${{ needs.changes.outputs.backend }}
+      jira_connector: ${{ needs.changes.outputs.jira_connector }}
+      ado_connector: ${{ needs.changes.outputs.ado_connector }}
+      linear_connector: ${{ needs.changes.outputs.linear_connector }}
+      connector_shared: ${{ needs.changes.outputs.connector_shared }}
     secrets: inherit
 
   frontend:
