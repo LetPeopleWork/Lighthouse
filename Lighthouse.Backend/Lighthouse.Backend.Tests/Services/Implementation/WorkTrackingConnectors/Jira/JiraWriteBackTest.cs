@@ -10,6 +10,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
+    [Category("JiraIntegration")]
     public class JiraWriteBackTest
     {
         private const string DescriptionField = "description";

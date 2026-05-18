@@ -8,6 +8,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Linear
 {
     [Category("Integration")]
+    [Category("LinearIntegration")]
     public class LinearWorkTrackingConnectorTest
     {
         [Test]

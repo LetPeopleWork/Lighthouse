@@ -10,6 +10,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
     [Category("Integration")]
+    [Category("JiraIntegration")]
     public class JiraScopedTokenIntegrationTest
     {
         private const string EpicId = "LGHTHSDMO-1";

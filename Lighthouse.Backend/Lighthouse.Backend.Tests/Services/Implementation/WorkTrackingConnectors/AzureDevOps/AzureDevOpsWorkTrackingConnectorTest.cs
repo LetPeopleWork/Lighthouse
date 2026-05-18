@@ -9,6 +9,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
     [Category("Integration")]
+    [Category("AdoIntegration")]
     public class AzureDevOpsWorkTrackingConnectorTest
     {
         [Test]

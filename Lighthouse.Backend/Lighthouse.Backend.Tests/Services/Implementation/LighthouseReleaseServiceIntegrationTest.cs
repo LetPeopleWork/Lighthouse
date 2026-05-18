@@ -10,6 +10,7 @@ using Moq.Protected;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [Category("Integration")]
+    [Category("GithubIntegration")]
     [NonParallelizable]
     public class LighthouseReleaseServiceIntegrationTest
     {

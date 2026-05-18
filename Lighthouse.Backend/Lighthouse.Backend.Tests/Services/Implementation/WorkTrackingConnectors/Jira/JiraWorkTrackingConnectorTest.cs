@@ -10,6 +10,7 @@ using NUnit.Framework.Constraints;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
     [Category("Integration")]
+    [Category("JiraIntegration")]
     public class JiraWorkTrackingConnectorTest
     {
         [Test]

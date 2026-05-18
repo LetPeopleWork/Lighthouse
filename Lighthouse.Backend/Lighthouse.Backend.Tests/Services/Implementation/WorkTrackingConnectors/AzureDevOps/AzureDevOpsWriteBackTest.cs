@@ -9,6 +9,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
+    [Category("AdoIntegration")]
     public class AzureDevOpsWriteBackTest
     {
         private const string TargetDateField = "Microsoft.VSTS.Scheduling.TargetDate";

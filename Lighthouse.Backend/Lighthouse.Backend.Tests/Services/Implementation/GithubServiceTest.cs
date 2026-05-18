@@ -3,6 +3,7 @@
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [Category("Integration")]
+    [Category("GithubIntegration")]
     public class GithubServiceTest
     {
         [Test]
