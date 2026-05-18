@@ -88,12 +88,14 @@ jobs:
         # Always include every non-integration test (unit, WAF, security, etc.)
         parts=("Category!=Integration")
 
-        # Force-full on any non-PR trigger or when a shared connector path changed.
-        # `push: main` always runs everything (post-merge safety net per slice-03b).
+        # Force-full only when the diff touched a path on the shared-connector
+        # whitelist (Auth/OAuth subfolders, top-level schema, interfaces,
+        # Program.cs, csproj, .sln, etc.) — see Scripts/test-selection/path-
+        # classifier.sh. Every other trigger (push to main, PR, workflow_dispatch)
+        # respects the per-connector inputs; on main the ci_changes.yml diff
+        # spans from the last successful run, so any connector change in that
+        # window will flip the matching input to true.
         force_full="false"
-        if [ "${{ github.event_name }}" != "pull_request" ]; then
-          force_full="true"
-        fi
         if [ "${{ inputs.connector_shared }}" == "true" ]; then
           force_full="true"
         fi

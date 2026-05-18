@@ -74,11 +74,8 @@ Replace the current `Test Backend` step's `dotnet test ./Lighthouse.Backend ...`
     # Always run everything that isn't an integration test (unit + WAF + arch tests)
     parts=("Category!=Integration")
 
-    # Force-full when not a PR (push to main, release tag, manual dispatch)
+    # Force-full only when shared connector paths changed (Auth/, OAuth/, Program.cs, csproj, ...)
     force_full="false"
-    if [ "${{ github.event_name }}" != "pull_request" ]; then
-      force_full="true"
-    fi
     if [ "${{ inputs.connector_shared }}" == "true" ]; then
       force_full="true"
     fi

@@ -10,12 +10,12 @@ set -u
 
 build_filter() {
   # Inputs (env vars):
-  #   EVENT_NAME, JIRA_CONNECTOR, ADO_CONNECTOR, LINEAR_CONNECTOR, CONNECTOR_SHARED
+  #   JIRA_CONNECTOR, ADO_CONNECTOR, LINEAR_CONNECTOR, CONNECTOR_SHARED
+  # Note: this project pushes directly to main; there is no PR-vs-push split.
+  # Every trigger respects the per-connector inputs. Only CONNECTOR_SHARED=true
+  # forces a full run (because shared paths can affect every connector).
   local parts=("Category!=Integration")
   local force_full="false"
-  if [ "${EVENT_NAME:-}" != "pull_request" ]; then
-    force_full="true"
-  fi
   if [ "${CONNECTOR_SHARED:-false}" == "true" ]; then
     force_full="true"
   fi
@@ -50,37 +50,37 @@ run_case() {
   assert "$desc" "$actual" "$expected"
 }
 
-# Scenario 1: PR touches nothing relevant -> unit + Github only
-EVENT_NAME=pull_request JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
-run_case "PR + nothing relevant" "Category!=Integration|Category=GithubIntegration"
+# Scenario 1: nothing relevant changed -> unit + Github only
+JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
+run_case "nothing relevant" "Category!=Integration|Category=GithubIntegration"
 
-# Scenario 2: PR touches Jira only
-EVENT_NAME=pull_request JIRA_CONNECTOR=true  ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
-run_case "PR + Jira only" "Category!=Integration|Category=JiraIntegration|Category=GithubIntegration"
+# Scenario 2: Jira only
+JIRA_CONNECTOR=true  ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
+run_case "Jira only" "Category!=Integration|Category=JiraIntegration|Category=GithubIntegration"
 
-# Scenario 3: PR touches ADO only
-EVENT_NAME=pull_request JIRA_CONNECTOR=false ADO_CONNECTOR=true  LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
-run_case "PR + ADO only" "Category!=Integration|Category=AdoIntegration|Category=GithubIntegration"
+# Scenario 3: ADO only
+JIRA_CONNECTOR=false ADO_CONNECTOR=true  LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
+run_case "ADO only" "Category!=Integration|Category=AdoIntegration|Category=GithubIntegration"
 
-# Scenario 4: PR touches Linear only
-EVENT_NAME=pull_request JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=true  CONNECTOR_SHARED=false
-run_case "PR + Linear only" "Category!=Integration|Category=LinearIntegration|Category=GithubIntegration"
+# Scenario 4: Linear only
+JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=true  CONNECTOR_SHARED=false
+run_case "Linear only" "Category!=Integration|Category=LinearIntegration|Category=GithubIntegration"
 
-# Scenario 5: PR touches Jira + ADO
-EVENT_NAME=pull_request JIRA_CONNECTOR=true  ADO_CONNECTOR=true  LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
-run_case "PR + Jira + ADO" "Category!=Integration|Category=JiraIntegration|Category=AdoIntegration|Category=GithubIntegration"
+# Scenario 5: Jira + ADO
+JIRA_CONNECTOR=true  ADO_CONNECTOR=true  LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
+run_case "Jira + ADO" "Category!=Integration|Category=JiraIntegration|Category=AdoIntegration|Category=GithubIntegration"
 
-# Scenario 6: PR + shared base touched -> forced full
-EVENT_NAME=pull_request JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=true
-run_case "PR + shared -> forced full" "Category!=Integration|Category=Integration"
+# Scenario 6: shared base touched -> forced full
+JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=true
+run_case "shared -> forced full" "Category!=Integration|Category=Integration"
 
-# Scenario 7: push event (main / release tag) -> forced full regardless of inputs
-EVENT_NAME=push JIRA_CONNECTOR=false ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
-run_case "push event -> forced full" "Category!=Integration|Category=Integration"
+# Scenario 7: shared touched + per-connector inputs ignored when shared is true
+JIRA_CONNECTOR=true  ADO_CONNECTOR=true  LINEAR_CONNECTOR=true  CONNECTOR_SHARED=true
+run_case "shared overrides per-connector" "Category!=Integration|Category=Integration"
 
-# Scenario 8: workflow_dispatch -> forced full
-EVENT_NAME=workflow_dispatch JIRA_CONNECTOR=true ADO_CONNECTOR=false LINEAR_CONNECTOR=false CONNECTOR_SHARED=false
-run_case "workflow_dispatch -> forced full" "Category!=Integration|Category=Integration"
+# Scenario 8: all three connectors touched, no shared -> all three sub-categories
+JIRA_CONNECTOR=true  ADO_CONNECTOR=true  LINEAR_CONNECTOR=true  CONNECTOR_SHARED=false
+run_case "all three connectors" "Category!=Integration|Category=JiraIntegration|Category=AdoIntegration|Category=LinearIntegration|Category=GithubIntegration"
 
 echo
 echo "passed: $pass"
