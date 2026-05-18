@@ -1,9 +1,9 @@
 # Feature Delta — test-speed-improvements
 
-ADO source: [User Story #5020 — Improve speed of Frontend and Backend Tests](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5020) (state: `Active` as of 2026-05-17)
+ADO source: [User Story #5020 — Improve speed of Frontend and Backend Tests](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5020) (state: `Active` as of 2026-05-18)
 Density: `lean` (resolved from `~/.nwave/global-config.json`) + one user-requested `[WHY] alternatives-considered` expansion
-Waves complete: DISCUSS, DELIVER Slice 01 (baseline), DELIVER Slice 02 (alternatives memo — written, recommendation PAUSED pending n≥3 CI runs)
-Next wave: DELIVER Slice 03A (CS-G cache concurrency test downscale) — held until 2-3 additional `Build And Deploy Lighthouse` runs accumulate so per-candidate impact has noise bounds. See `alternatives.md` PAUSED banner for the resume checklist.
+Waves complete: DISCUSS, DELIVER Slice 01 (baseline), DELIVER Slice 02 (alternatives memo — **RESUMED 2026-05-18**, multi-run validation n=11 BE / n=15 FE confirms ranking)
+Next wave: DELIVER slice-pre (integration labelling fix) → DELIVER Slice 03A (CS-G cache concurrency downscale) → DELIVER Slice 03B (CS-H path-scoped integrations). Two spikes (`spike-fe-profile`, `spike-cs-b-setup-split`) gate the next-tier FE and BE slices. CS-I (Vitest sharding) rejected per user feedback (prior attempt: effort exceeded gain). See `alternatives.md` RESUMED banner for the full plan.
 
 ---
 
@@ -108,14 +108,16 @@ Each row is a candidate evaluated AGAINST a hypothesis and scored AFTER Slice-01
 | CS-E | **Vitest config tuning**: increase worker count, switch isolation mode, prune cold-start cost. | "FE slowness is config, not test content." | Low (a few hours of experiments). | None directly — but config changes can mask flake; needs back-to-back green runs to validate. |
 | CS-F | **Backend parallel/isolation hardening**: fix the static-cache collision class (per 2026-05-17 CI learning) so `MaxCpuCount=0` is genuinely safe, then raise the parallelism budget. | "Static state in connectors and shared cache keys is silently capping the parallelism we already configured." | Medium (2 days) — change the cache key shape, add credential fingerprinting (cf. ci-learnings 2026-05-17 entries). | None — coverage unchanged; isolation is strictly improved. |
 | CS-G | **Cache concurrency test downscaling**: reduce thread counts and time budgets in `CacheTest` concurrency tests so they prove the invariant without spawning 64 tasks that serialise on constrained CI runners. Added 2026-05-17 from Slice-01 evidence — the catalog at DISCUSS time assumed real-API traffic and FE specs were the dominant cost; the data revealed a single test suite (`Cache.CacheTest.Concurrent*`) consuming 133.7 s = 25 % of BE wall-clock on CI. | "A small number of intentionally-thread-heavy unit tests scale poorly on CI's limited cores and dominate BE wall-clock." | Low (½ day) — reduce thread counts (32+32 → 8+8 or similar), shorten the time-bounded loop, keep the same correctness assertions. Could combine with property-based testing later. | None — same invariants asserted (no torn reads, no exceptions, all values retrievable). Stress dimension changes; correctness coverage does not. |
+| CS-H | **Path-scoped integration test selection**: per-connector category sub-tags (`JiraIntegration`, `AdoIntegration`, `LinearIntegration`, `GithubIntegration`); a resolver script reads `git diff --name-only` and emits a `dotnet test --filter` string; default local UX is "skip all integrations", `--full` is the opt-in, and `main`-cadence forces full coverage post-merge. Added 2026-05-18 from Slice-02 multi-run analysis + user feedback. **The Integration cluster is 88 % Jira** (350 s of 397 s); empirical commit-pattern weighting across 585 recent commits shows 88 % of PRs touch neither connector folder nor shared base — those PRs would skip all integration tests entirely. | "Integration tests must run on every PR; we can't safely scope them by changed-files." | Medium (2 days) — sub-category sweep + resolver script + GHA workflow rewrite + Stryker config sweep + 2-3 PR validation cycles. | D5 preserved via forced-full `main` cadence (every merge exercises every connector). Per-PR detection latency relaxes for unchanged connectors — at most one merge of delay. |
+| LBL-FIX | **Integration test labelling fix** (prerequisite for CS-H): `AzureDevOpsWorkTrackingConnectorTest.cs` (85 methods, mean 29.5 s) and `LinearWorkTrackingConnectorTest.cs` (19 methods, mean 8.9 s) both hit real APIs via env-var tokens but carry no `[Category("Integration")]` attribute. Slice-02 multi-run analysis found ~38 s of real-API traffic silently counted as Unit/Other. Discovered 2026-05-18 during memo resume. | "The existing `[Category('Integration')]` taxonomy is truthful." | Trivial (½ day) — attribute additions on 2 files + verification on next CI artifact. | None — same tests run, same assertions, only the taxonomy becomes truthful. Local `dotnet test --filter "Category!=Integration"` becomes accurate. |
 
-Combinations to consider in the memo:
-- **CS-B + CS-A** (rewrite first to make per-PR feasible, then split if still needed)
-- **CS-F + CS-D** (lift the FE+BE parallelism ceiling before any rewrites or cadence changes — cheapest learning if it works)
-- **CS-C alone** (highest setup cost, biggest payoff if real-API latency is the dominant variable)
-- **CS-G + CS-B** (ship the cheap cache-test downscale first, then evaluate CS-B's gain on the remaining 80 % of BE wall-clock)
-
-The memo (US-02) MUST score each row and combination against the Slice-01 numbers and recommend.
+Combinations to consider (revised post-Slice-02 resume):
+- **slice-pre → CS-G → CS-H** (current top recommendation) — labelling, then cheapest BE win, then biggest per-PR win. Cumulative −75 % BE on the average PR; no cadence change, no cassette debt, no coverage regression.
+- **SPIKE-FE-profile → CS-D refined** (parallel FE pipeline) — local-first FE wins driven by profiling data, not pattern-matching.
+- **SPIKE-CS-B → maybe CS-B** (post-BE-pipeline) — gate the 2-3 d investment behind a ½-d setup-vs-body measurement.
+- **CS-A** (cadence-split all integrations) — held as fallback if CS-H proves too aggressive.
+- **CS-C, CS-E, CS-F** — rejected (see `alternatives.md` for reasons).
+- **CS-I** (Vitest sharding) — rejected up front per user feedback (prior attempt: effort > gain).
 
 ---
 
@@ -204,9 +206,17 @@ Backbone (left-to-right developer journey):
 Firm slices in DISCUSS (full briefs at `docs/feature/test-speed-improvements/slices/`):
 
 1. **slice-01-baseline-instrumentation** — measure BE + FE per-test timings, publish CI artifacts, ship local summary helper. Disproves "we already know what's slow."
-2. **slice-02-alternatives-memo** — read Slice-01 data, score each candidate (CS-A…CS-F + combinations) against actual numbers, recommend top-1 or top-2 for the next slice opening. Disproves "splitting CI jobs is obviously the right answer."
+2. **slice-02-alternatives-memo** — read Slice-01 data, score each candidate (CS-A…CS-F + combinations) against actual numbers, recommend top-1 or top-2 for the next slice opening. Disproves "splitting CI jobs is obviously the right answer." **RESUMED 2026-05-18** with multi-run validation; back-propagated CS-H and the LBL-FIX prerequisite.
 
-Subsequent slices are NOT pre-committed. They open after US-02's memo is reviewed.
+Slices opened by the resumed memo (2026-05-18):
+
+3. **slice-pre-integration-labelling** — tag the 2 mistagged real-API test classes so the taxonomy is truthful. ½ d. Prerequisite for CS-H.
+4. **slice-03a-cache-concurrency-downscale** — CS-G. ½ d. Local + CI BE −22 %.
+5. **slice-03b-path-scoped-integrations** — CS-H. 2 d. Local-default-fast + CI BE −56 % weighted average.
+6. **spike-fe-profile** — diagnose root causes of the 3 slowest FE files. ½ d. Gates the FE refactor slice.
+7. **spike-cs-b-setup-split** — measure setup-vs-body in `JiraWriteBackTest`. ½ d. Gates CS-B's 2-3 d slice.
+
+Slices 8+ depend on the spike outcomes and are deliberately TBD.
 
 Each firm slice contains at least one user-visible value story — the developer-as-user observes new CI artifacts (Slice-01) or a written memo (Slice-02). No slice is purely `@infrastructure`.
 
