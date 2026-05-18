@@ -82,9 +82,40 @@ jobs:
       with:
         publish: 'false'
 
+    - name: Compute Test Backend filter
+      id: filter
+      run: |
+        # Always include every non-integration test (unit, WAF, security, etc.)
+        parts=("Category!=Integration")
+
+        # Force-full on any non-PR trigger or when a shared connector path changed.
+        # `push: main` always runs everything (post-merge safety net per slice-03b).
+        force_full="false"
+        if [ "${{ github.event_name }}" != "pull_request" ]; then
+          force_full="true"
+        fi
+        if [ "${{ inputs.connector_shared }}" == "true" ]; then
+          force_full="true"
+        fi
+
+        if [ "$force_full" == "true" ]; then
+          parts+=("Category=Integration")
+        else
+          [ "${{ inputs.jira_connector }}"   == "true" ] && parts+=("Category=JiraIntegration")
+          [ "${{ inputs.ado_connector }}"    == "true" ] && parts+=("Category=AdoIntegration")
+          [ "${{ inputs.linear_connector }}" == "true" ] && parts+=("Category=LinearIntegration")
+          # GitHub-side integration tests are tiny (~2 s combined) and always run.
+          parts+=("Category=GithubIntegration")
+        fi
+
+        filter=$(IFS='|'; echo "${parts[*]}")
+        echo "force_full=$force_full"
+        echo "filter=$filter"
+        echo "filter=$filter" >> $GITHUB_OUTPUT
+
     - name: Test Backend
       run: |
-        dotnet test ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover RunConfiguration.MaxCpuCount=0
+        dotnet test ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover RunConfiguration.MaxCpuCount=0
 
     - name: Extract backend per-test timings
       if: always()
