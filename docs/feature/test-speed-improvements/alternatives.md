@@ -209,14 +209,14 @@ Open the spike after CS-G + CS-H have landed and the new baseline is captured. I
 
 | Order | Item | Status | Effort | Why this order |
 |---|---|---|---|---|
-| 1 ✅ | **slice-pre — integration labelling fix** | shipped (`eb6fe68d`) | ½ d | Prerequisite for CS-H; immediate local clarity win |
-| 2 ✅ | **slice-03A — CS-G cache concurrency downscale** | shipped (`e1cbb4a3`) | ½ d | Cheapest, lowest-risk, local + CI gain |
-| 3 | **spike-be-parallelism — CS-P** | NEXT | ½ d (+0–2 d if green) | Discovered 2026-05-18: tests are 100 % serial. Single biggest lever; lifts CI and local in the same proportion. |
-| 4 | **slice-be-parallel-enable** | gated by spike | 0–2 d | Apply `[assembly: Parallelizable(ParallelScope.Fixtures)]`, fix the residual collisions surfaced by the spike. |
-| 5 | **slice-03B — CS-H path-scoped integrations** | queued | 2 d | Still worth doing: skips real-API tests by default locally; saves CI on PRs that don't touch connectors. Smaller marginal win once CS-P lands. |
-| 6 | **spike-fe-profile** | queued | ½ d | Reveals local-friendly FE root causes |
+| 1 ✅ | **slice-pre — integration labelling fix** | shipped (`b404eb07`) | ½ d | Prerequisite for CS-H; immediate local clarity win |
+| 2 ✅ | **slice-03A — CS-G cache concurrency downscale** | shipped (`e2589815`) | ½ d | Cheapest, lowest-risk, local + CI gain |
+| 3 ✅ | **spike-be-parallelism — CS-P** | shipped (`a4550e0b`) | ½ d | Findings: parallel viable with one production-code fix (AuthenticationMethodSchema static collision). |
+| 4 ✅ | **slice-be-parallel-enable** | shipped (`602df3c6` + `10903bb6` + `9a50b16f`) | 1 d | Schema refactor + [NonParallelizable] on 4 fixtures + assembly attribute. Local 6:04 → 3:12; CI 11:30 → 8:44. |
+| 5 ✅ | **slice-03B — CS-H path-scoped integrations** | shipped locally (`2f25bc11` → `7cb26849`, awaiting push) | 1 d | Per-connector sub-categories + dynamic --filter; expected −3 min BE wall-clock on the ~70 % of PRs that don't touch a connector. |
+| 6 | **spike-fe-profile** | queued (optional) | ½ d | Open only if FE becomes the new bottleneck on non-connector PRs after CS-H confirms in CI. |
 | 7 | **slice-fe-root-cause-refactor** | gated by spike | TBD | Driven by spike findings |
-| 8 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate; cheap risk-reduction |
+| 8 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate on Jira-touching PRs (where CS-H doesn't help). |
 | 9 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | gated by spike | TBD | Whichever the spike opens |
 
 CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above. CS-P moves to #1 because the spike is cheap (½ day), the risk is *isolation* not *coverage*, and a successful outcome dwarfs every other candidate's gain.

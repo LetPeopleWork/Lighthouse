@@ -2,8 +2,8 @@
 
 ADO source: [User Story #5020 — Improve speed of Frontend and Backend Tests](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5020) (state: `Active` as of 2026-05-18)
 Density: `lean` (resolved from `~/.nwave/global-config.json`) + one user-requested `[WHY] alternatives-considered` expansion
-Waves complete: DISCUSS, DELIVER Slice 01 (baseline), DELIVER Slice 02 (alternatives memo — **RESUMED 2026-05-18**, multi-run validation n=11 BE / n=15 FE confirms ranking), DELIVER slice-pre (integration labelling fix, `eb6fe68d`), DELIVER Slice 03A (CS-G cache concurrency downscale, `e1cbb4a3`)
-Next wave: DELIVER **spike-be-parallelism** (CS-P discovered 2026-05-18 — NUnit runs serially; this is now the biggest lever) → DELIVER **slice-be-parallel-enable** (gated by spike) → DELIVER Slice 03B (CS-H path-scoped integrations). Two spikes (`spike-fe-profile`, `spike-cs-b-setup-split`) gate the next-tier FE and BE slices. CS-I (Vitest sharding) rejected per user feedback (prior attempt: effort exceeded gain). See `alternatives.md` Measurement note + RESUMED banner for the full plan and the wall-clock vs test-sum correction.
+Waves complete: DISCUSS, DELIVER Slice 01 (baseline), DELIVER Slice 02 (alternatives memo — **RESUMED 2026-05-18**, multi-run validation n=11 BE / n=15 FE confirms ranking), DELIVER slice-pre (integration labelling fix, `b404eb07`), DELIVER Slice 03A (CS-G cache concurrency downscale, `e2589815`), DELIVER spike-be-parallelism (`a4550e0b`), DELIVER slice-be-parallel-enable / CS-P (`602df3c6` + `10903bb6` + `9a50b16f`), DELIVER **slice-03B / CS-H path-scoped integrations** (`2f25bc11` + `49825b48` + `5b73742c` + `a9a98b37` + `7cb26849`; awaiting push + CI green)
+Next wave: optional. After CS-H lands and CI confirms BE drops to ~3–4 min on non-connector PRs, FE becomes the new constraint per theory-of-constraints — open `spike-fe-profile` if FE matters enough. Otherwise the feature is effectively done (BE wall-clock no longer the bottleneck for the typical PR). CS-I (Vitest sharding) rejected per user feedback. See `alternatives.md` for the full ranking + multi-run baseline.
 
 ---
 
