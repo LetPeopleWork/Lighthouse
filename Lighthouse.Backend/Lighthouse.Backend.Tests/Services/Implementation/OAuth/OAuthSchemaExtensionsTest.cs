@@ -5,16 +5,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
     [TestFixture]
     public class OAuthSchemaExtensionsTest
     {
+        private static readonly string[] FirstKeys = ["first.oauth"];
+        private static readonly string[] SecondKeys = ["second.oauth"];
+
         [Test]
         public void TwoInstances_HoldDisjointExtraKeys_WithoutBleed()
         {
-            var first = new OAuthSchemaExtensions(new[] { "first.oauth" });
-            var second = new OAuthSchemaExtensions(new[] { "second.oauth" });
+            var first = new OAuthSchemaExtensions(FirstKeys);
+            var second = new OAuthSchemaExtensions(SecondKeys);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(first.ExtraOAuthKeys, Is.EquivalentTo(new[] { "first.oauth" }));
-                Assert.That(second.ExtraOAuthKeys, Is.EquivalentTo(new[] { "second.oauth" }));
+                Assert.That(first.ExtraOAuthKeys, Is.EquivalentTo(FirstKeys));
+                Assert.That(second.ExtraOAuthKeys, Is.EquivalentTo(SecondKeys));
             }
         }
 
