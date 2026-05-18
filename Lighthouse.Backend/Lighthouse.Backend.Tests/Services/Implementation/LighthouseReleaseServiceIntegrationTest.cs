@@ -10,6 +10,7 @@ using Moq.Protected;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [Category("Integration")]
+    [NonParallelizable]
     public class LighthouseReleaseServiceIntegrationTest
     {
         // Use static service to work around rate limits
