@@ -59,6 +59,13 @@ Each entry follows:
 
 ## Tests
 
+### 2026-05-18 — `IntegrationTestBase` is `[NonParallelizable]` (SQLite file-DB race in `EnsureDeleted` + `EnsureCreated`)
+
+- **Symptom**: `Verify Backend` job on run 26051082940 failed with 1 / 2537 tests: `ProjectsControllerAuthorizationTests.UpdateProject_AsNonPremiumUser_AboveLimit_Returns403` — `SetUp : Microsoft.Data.Sqlite.SqliteException : SQLite Error 1: 'table "AppSettings" already exists'` thrown from `IntegrationTestBase.Init()` at the `DatabaseContext.Database.EnsureCreated()` call.
+- **Root cause**: Every fixture derived from `IntegrationTestBase` uses its own `TestWebApplicationFactory<Program>` with a per-instance random SQLite file name. But the SQLite connection pool is process-wide. Under `[assembly: Parallelizable(ParallelScope.Fixtures)]`, two fixtures' `[SetUp]`/`[TearDown]` cycles run concurrently. Their `EnsureDeleted()` can silently fail when another connection in the pool still holds a file handle; the next `EnsureCreated()` then sees the existing tables and throws. Local in-isolation runs always pass — the race only manifests when fixtures interleave.
+- **Fix**: `[NonParallelizable]` on `IntegrationTestBase` (abstract base class). NUnit inherits the attribute on every derived fixture (currently 10 controllers + integration tests), so they all serialise together. Other fixtures keep running in parallel.
+- **Rule going forward**: Any test fixture that builds its own `WebApplicationFactory` AND mutates a process-wide resource (SQLite connection pool, static schema, in-memory DB, Environment variable) MUST either: (a) declare `[NonParallelizable]`, or (b) make the resource per-fixture-instance with no process-wide sharing. Bare `Path.GetRandomFileName()`-style per-instance random keys are NOT sufficient under SQLite connection pooling; the pool reuses file handles across instances. When in doubt, put `[NonParallelizable]` on the abstract base class.
+
 ### 2026-05-18 — Per-connector path-scoped integration tests (slice-03b / CS-H)
 
 - **Mechanism**: `.github/workflows/ci_changes.yml` emits four sub-discriminators alongside the existing `backend`/`frontend`/`e2e` outputs — `jira_connector`, `ado_connector`, `linear_connector`, `connector_shared` — computed from `git diff --name-only` against the same base ref. The patterns live in a shared library at `Scripts/test-selection/path-classifier.sh` (sourced by the workflow + the dev-test scripts so the regex is defined once). `.github/workflows/ci.yml` forwards the four new outputs to `ci_backend.yml`; ci_backend's `Compute Test Backend filter` step builds a dynamic `dotnet test --filter` from the inputs and the trigger context.

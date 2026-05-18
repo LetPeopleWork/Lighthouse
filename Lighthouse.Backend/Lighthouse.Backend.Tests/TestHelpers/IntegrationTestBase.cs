@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     [TestFixture]
+    [NonParallelizable]
     public abstract class IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory)
     {
         private IServiceScope serviceScope;
