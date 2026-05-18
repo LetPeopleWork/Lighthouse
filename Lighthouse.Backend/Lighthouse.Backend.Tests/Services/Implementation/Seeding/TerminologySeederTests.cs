@@ -6,6 +6,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 {
+    [NonParallelizable]
     public class TerminologySeederTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
         [Test]

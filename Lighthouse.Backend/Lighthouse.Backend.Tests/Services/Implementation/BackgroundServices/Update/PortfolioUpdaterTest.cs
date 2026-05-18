@@ -13,6 +13,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
+    [NonParallelizable]
     public class PortfolioUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IRepository<Portfolio>> projectRepoMock;

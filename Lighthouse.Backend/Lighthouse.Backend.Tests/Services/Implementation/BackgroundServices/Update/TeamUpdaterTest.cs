@@ -12,6 +12,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
+    [NonParallelizable]
     public class TeamUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IAppSettingService> appSettingServiceMock;
