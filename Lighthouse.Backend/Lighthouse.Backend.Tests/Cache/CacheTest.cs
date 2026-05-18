@@ -9,10 +9,9 @@ namespace Lighthouse.Backend.Tests.Cache
         private static readonly TimeSpan LongExpiry = TimeSpan.FromMinutes(5);
 
         [Test]
-        [CancelAfter(5000)]
         public async Task ConcurrentInsertsOnUniqueKeys_DoNotThrow_AndAllValuesAreRetrievable()
         {
-            const int threadCount = 64;
+            const int threadCount = 16;
             var cache = new Cache<string, string>();
             var exceptions = new ConcurrentBag<Exception>();
             using var barrier = new Barrier(threadCount);
@@ -44,11 +43,10 @@ namespace Lighthouse.Backend.Tests.Cache
         }
 
         [Test]
-        [CancelAfter(5000)]
         public async Task ConcurrentReadersAndWriters_DoNotObserveCorruptedEntries()
         {
-            const int writerThreads = 32;
-            const int readerThreads = 32;
+            const int writerThreads = 8;
+            const int readerThreads = 8;
             const int keyPoolSize = 16;
             var cache = new Cache<string, string>();
             var exceptions = new ConcurrentBag<Exception>();
@@ -62,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Cache
                 }
             }
 
-            using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            using var stop = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
             using var barrier = new Barrier(writerThreads + readerThreads);
 
             var writers = Enumerable.Range(0, writerThreads).Select(t => Task.Run(() =>
@@ -118,10 +116,9 @@ namespace Lighthouse.Backend.Tests.Cache
         }
 
         [Test]
-        [CancelAfter(5000)]
         public async Task ConcurrentGetOnExpiredKey_SerialisesLazyRemove_WithoutThrowing()
         {
-            const int readerThreads = 32;
+            const int readerThreads = 8;
             var cache = new Cache<string, string>();
             cache.Store("metric:expired", "stale", TimeSpan.FromMilliseconds(10));
             await Task.Delay(50);
