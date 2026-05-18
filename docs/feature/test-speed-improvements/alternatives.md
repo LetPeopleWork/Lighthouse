@@ -1,8 +1,21 @@
 # Alternatives Memo — test-speed-improvements (Slice 02, US-02)
 
-**Status**: **RESUMED 2026-05-18** — data-grounded ranking calibrated against 11 BE / 15 FE runs since the Slice-01 baseline. Earlier (n=1) PAUSED state lifted; the ranking holds with the multi-run numbers, and one new candidate (CS-H) plus one labelling-bug discovery have been back-propagated to `feature-delta.md`'s catalog.
+**Status**: **RESUMED 2026-05-18** — data-grounded ranking calibrated against 11 BE / 15 FE runs since the Slice-01 baseline. Earlier (n=1) PAUSED state lifted; one new candidate (CS-H, path-scoped integrations) plus the LBL-FIX prerequisite back-propagated to `feature-delta.md`. **Revised 2026-05-18 (later)** after slice-pre + CS-G shipped: discovered NUnit runs the suite **serially** (no `[assembly: Parallelizable]` is set), so both CI (11–12 min) and local (~6 min) are paying full per-test serial cost. CI is not parallelized despite `MaxCpuCount=0`. Adding a new top-priority candidate **CS-P** (NUnit fixture parallelization) — single biggest lever for both environments.
 **Author**: Lighthouse maintainer.
 **Decision asked**: pick the slices to open next; reject the rest with reason.
+
+---
+
+## Measurement note (added 2026-05-18 to correct earlier framing)
+
+The TRX-derived numbers in this memo (e.g. "BE 575.8 s", "Cache.Concurrent 142.2 s", "Jira 350 s") are **sums of per-test `duration_ms`** — they describe how long the tests would take laid end-to-end. They are **not wall-clock**. Earlier drafts of this memo implied CI somehow ran the sum in much less wall-clock time; that was wrong. The actual wall-clock picture:
+
+| Environment | Test step wall-clock | Test SUM | Overhead |
+|---|---|---|---|
+| CI `Verify Backend` | ~11–12 min (e.g. 11:02, 12:28) | ~575 s | ~2–3 min (build, restore, coverage) |
+| Local `dotnet test` | ~6 min | ~575 s | ~30–60 s (test discovery, JIT) |
+
+Local is **faster than CI** in wall-clock, not slower. Both are essentially serial. Proportional savings translate roughly 1:1 from sum to wall-clock — e.g. CS-G's −22 % of the test-sum maps to a similar fraction of wall-clock — but absolute "X seconds saved" numbers are sum-based, not wall-clock.
 
 ---
 
@@ -143,6 +156,21 @@ Honest caveats now (vs the n=1 caveat in the prior version):
 - **Local benefit**: `dotnet test` (no args) finishes ~5 minutes faster on a clean checkout with no API tokens — and no longer throws `NotSupportedException`.
 - **Recommendation**: **OPEN as slice-03B** after slice-pre (labelling) and slice-03A (CS-G) land. The single biggest win in the catalog.
 
+### CS-P — NUnit fixture parallelization (NEW, top priority; OPEN as `spike-be-parallelism` then slice)
+
+- **Disproves**: "BE test slowness is per-test cost we can only attack by making individual tests faster."
+- **Reality observed 2026-05-18**: `grep -r "Parallelizable" Lighthouse.Backend.Tests/` finds only `[NonParallelizable]` declarations on a handful of security tests — meaning the codebase explicitly opted *out* of a parallel default that doesn't exist. NUnit 4 default is `ParallelScope.None`. CI's `RunConfiguration.MaxCpuCount=0` only enables parallel test *assemblies*, and Lighthouse has a single test assembly, so this setting does nothing today. Both CI and local are paying full serial cost: CI 11–12 min wall-clock, local ~6 min, sum ~575 s.
+- **Effort**: ½ day spike + 0–2 d to fix whatever falls over.
+  - Spike (`spike-be-parallelism.md`): add `[assembly: Parallelizable(ParallelScope.Fixtures)]` to `GlobalUsings.cs`, run the full suite locally, capture every test that fails or flakes, report.
+  - Decision gate: if breakage list is ≤ 10 tests and each fix is well-scoped (per-fixture isolation, unique IDs per ci-learnings 2026-05-17, etc.), open `slice-be-parallel-enable` as a follow-up. If breakage is broader, switch to `[Parallelizable(ParallelScope.Self)]` per-fixture as an incremental opt-in and back-prop.
+- **Coverage**: None — assertions unchanged. Risk is *test isolation*, not coverage.
+- **Expected gain**: 4–8× wall-clock on a multi-core machine when fixtures don't share state. Conservative projection:
+  - CI 11–12 min → **~2–3 min** (4× on the 4-core GitHub-hosted runner; some fixtures may stay serial via `[NonParallelizable]` or shared global state).
+  - Local 6 min → **~1–2 min** (8× on a developer box with 8+ cores).
+  - Compound with CS-G + slice-pre already in flight: local could drop to **under a minute**.
+- **Risk**: real and well-documented in this codebase. The 2026-05-17 CI learning about `VssConnection` cache collisions is exactly the class of bug parallel execution surfaces. The mitigation pattern (unique fixture `Id` per credential; cache key including credential fingerprint) is already known. The spike's job is to enumerate the residual.
+- **Recommendation**: **OPEN `spike-be-parallelism` immediately as the next move.** Gated slice after the spike report.
+
 ### CS-I — Vitest CI sharding (REJECTED before opening)
 
 - **Disproves**: nothing yet — prior experience.
@@ -177,19 +205,21 @@ Open the spike after CS-G + CS-H have landed and the new baseline is captured. I
 
 ---
 
-## Ranking — top picks to open
+## Ranking — top picks to open (revised 2026-05-18 after CS-P discovery)
 
-| Order | Item | Effort | Why this order |
-|---|---|---|---|
-| 1 | **slice-pre — integration labelling fix** | ½ d | Prerequisite for CS-H; immediate local clarity win |
-| 2 | **slice-03A — CS-G cache concurrency downscale** | ½ d | Cheapest, lowest-risk, local + CI gain |
-| 3 | **slice-03B — CS-H path-scoped integrations** | 2 d | Biggest single saving; preserves coverage via main cadence |
-| 4 | **spike-fe-profile** | ½ d | Reveals local-friendly FE root causes |
-| 5 | **slice-fe-root-cause-refactor** | TBD | Driven by spike findings |
-| 6 | **spike-cs-b-setup-split** | ½ d | Decides CS-B fate; cheap risk-reduction |
-| 7 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | TBD | Whichever the spike opens |
+| Order | Item | Status | Effort | Why this order |
+|---|---|---|---|---|
+| 1 ✅ | **slice-pre — integration labelling fix** | shipped (`eb6fe68d`) | ½ d | Prerequisite for CS-H; immediate local clarity win |
+| 2 ✅ | **slice-03A — CS-G cache concurrency downscale** | shipped (`e1cbb4a3`) | ½ d | Cheapest, lowest-risk, local + CI gain |
+| 3 | **spike-be-parallelism — CS-P** | NEXT | ½ d (+0–2 d if green) | Discovered 2026-05-18: tests are 100 % serial. Single biggest lever; lifts CI and local in the same proportion. |
+| 4 | **slice-be-parallel-enable** | gated by spike | 0–2 d | Apply `[assembly: Parallelizable(ParallelScope.Fixtures)]`, fix the residual collisions surfaced by the spike. |
+| 5 | **slice-03B — CS-H path-scoped integrations** | queued | 2 d | Still worth doing: skips real-API tests by default locally; saves CI on PRs that don't touch connectors. Smaller marginal win once CS-P lands. |
+| 6 | **spike-fe-profile** | queued | ½ d | Reveals local-friendly FE root causes |
+| 7 | **slice-fe-root-cause-refactor** | gated by spike | TBD | Driven by spike findings |
+| 8 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate; cheap risk-reduction |
+| 9 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | gated by spike | TBD | Whichever the spike opens |
 
-CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above.
+CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above. CS-P moves to #1 because the spike is cheap (½ day), the risk is *isolation* not *coverage*, and a successful outcome dwarfs every other candidate's gain.
 
 ---
 
