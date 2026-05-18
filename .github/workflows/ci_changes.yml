@@ -8,6 +8,14 @@ on:
         value: ${{ jobs.changes.outputs.frontend }}
       e2e:
         value: ${{ jobs.changes.outputs.e2e }}
+      jira_connector:
+        value: ${{ jobs.changes.outputs.jira_connector }}
+      ado_connector:
+        value: ${{ jobs.changes.outputs.ado_connector }}
+      linear_connector:
+        value: ${{ jobs.changes.outputs.linear_connector }}
+      connector_shared:
+        value: ${{ jobs.changes.outputs.connector_shared }}
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -15,6 +23,10 @@ jobs:
       backend: ${{ steps.check.outputs.backend }}
       frontend: ${{ steps.check.outputs.frontend }}
       e2e: ${{ steps.check.outputs.e2e }}
+      jira_connector: ${{ steps.check.outputs.jira_connector }}
+      ado_connector: ${{ steps.check.outputs.ado_connector }}
+      linear_connector: ${{ steps.check.outputs.linear_connector }}
+      connector_shared: ${{ steps.check.outputs.connector_shared }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
@@ -140,11 +152,34 @@ jobs:
           backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
           frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
           e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-          
+
+          # Per-connector path detection (slice-03b / CS-H). Workflow file changes
+          # propagate to every output so a ci.*.yml edit reruns everything.
+          . Scripts/test-selection/path-classifier.sh
+          diff_list=$(git diff --name-only $base_ref HEAD)
+          jira_connector=$(classify_jira "$diff_list")
+          ado_connector=$(classify_ado "$diff_list")
+          linear_connector=$(classify_linear "$diff_list")
+          connector_shared=$(classify_shared "$diff_list")
+          if [ "$github_changes" == "true" ]; then
+            jira_connector="true"
+            ado_connector="true"
+            linear_connector="true"
+            connector_shared="true"
+          fi
+
           echo "backend=$backend"
           echo "frontend=$frontend"
           echo "e2e=$e2e"
-          
+          echo "jira_connector=$jira_connector"
+          echo "ado_connector=$ado_connector"
+          echo "linear_connector=$linear_connector"
+          echo "connector_shared=$connector_shared"
+
           echo "backend=$backend" >> $GITHUB_OUTPUT
           echo "frontend=$frontend" >> $GITHUB_OUTPUT
+          echo "jira_connector=$jira_connector" >> $GITHUB_OUTPUT
+          echo "ado_connector=$ado_connector" >> $GITHUB_OUTPUT
+          echo "linear_connector=$linear_connector" >> $GITHUB_OUTPUT
+          echo "connector_shared=$connector_shared" >> $GITHUB_OUTPUT
           echo "e2e=$e2e" >> $GITHUB_OUTPUT
