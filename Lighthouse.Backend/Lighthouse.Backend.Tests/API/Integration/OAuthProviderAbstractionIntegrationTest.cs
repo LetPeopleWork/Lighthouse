@@ -37,8 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
-            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(new[] { StubProviderKey });
-
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory)
                 .WithWebHostBuilder(builder =>
                 {
@@ -52,6 +50,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
                     builder.ConfigureServices(services =>
                     {
+                        services.AddSingleton<IOAuthSchemaExtensions>(
+                            new OAuthSchemaExtensions(new[] { StubProviderKey }));
+
                         services.RemoveAll<ICryptoService>();
                         services.AddSingleton<ICryptoService, FakeCryptoService>();
 
@@ -77,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             client.Dispose();
             factory.Dispose();
             rootFactory.Dispose();
-            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(Array.Empty<string>());
         }
 
         [Test]

@@ -33,8 +33,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
         private const string OAuthKeySuffix = ".oauth";
         private const string JiraUrlDisplayName = "Jira URL";
 
-        private static IReadOnlyList<string> extraOAuthKeysForTesting = Array.Empty<string>();
-
         private static readonly Dictionary<WorkTrackingSystems, List<AuthenticationMethod>> MethodsBySystem = new()
         {
             {
@@ -161,18 +159,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
 
         public static IEnumerable<string> GetOAuthProviderKeys()
         {
-            var schemaKeys = MethodsBySystem.Values
+            return MethodsBySystem.Values
                 .SelectMany(methods => methods)
                 .Select(method => method.Key)
-                .Where(key => key.EndsWith(OAuthKeySuffix, StringComparison.Ordinal));
-
-            return schemaKeys.Concat(extraOAuthKeysForTesting).Distinct(StringComparer.Ordinal);
-        }
-
-        internal static void SetExtraOAuthKeysForTesting(IReadOnlyList<string> extras)
-        {
-            ArgumentNullException.ThrowIfNull(extras);
-            extraOAuthKeysForTesting = extras;
+                .Where(key => key.EndsWith(OAuthKeySuffix, StringComparison.Ordinal))
+                .Distinct(StringComparer.Ordinal);
         }
     }
 }

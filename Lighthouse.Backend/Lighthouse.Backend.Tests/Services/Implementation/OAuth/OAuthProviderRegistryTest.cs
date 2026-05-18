@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Services.Implementation.OAuth;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
@@ -14,12 +14,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
     {
         private const string FakeProviderKey = "fake.oauth";
         private const string OtherProviderKey = "other.oauth";
-
-        [TearDown]
-        public void ClearSchemaTestHooks()
-        {
-            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(Array.Empty<string>());
-        }
 
         [Test]
         public void GetByKey_RegisteredProvider_ReturnsThatProvider()
@@ -58,10 +52,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         [Test]
         public void StartupSelfCheck_SchemaAndProvidersMatch_AppStarts()
         {
-            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(new[] { OtherProviderKey });
-
             using var factory = new TestWebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-                builder.ConfigureServices(services => services.AddSingleton(CreateProvider(OtherProviderKey))));
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<IOAuthSchemaExtensions>(
+                        new OAuthSchemaExtensions(new[] { OtherProviderKey }));
+                    services.AddSingleton(CreateProvider(OtherProviderKey));
+                }));
 
             using var client = factory.CreateClient();
 
@@ -72,10 +69,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         [Test]
         public void StartupSelfCheck_SchemaHasUnmatchedOAuthKey_AppFailsToStart()
         {
-            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(new[] { OtherProviderKey });
-
             using var factory = new TestWebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-                builder.ConfigureServices(services => services.RemoveAll<IOAuthProvider>()));
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<IOAuthSchemaExtensions>(
+                        new OAuthSchemaExtensions(new[] { OtherProviderKey }));
+                    services.RemoveAll<IOAuthProvider>();
+                }));
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
             {

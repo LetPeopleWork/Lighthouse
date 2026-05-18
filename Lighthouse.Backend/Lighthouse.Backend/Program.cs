@@ -19,6 +19,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
@@ -401,14 +402,13 @@ namespace Lighthouse.Backend
                 var timeProvider = sp.GetRequiredService<TimeProvider>();
                 return new StubOAuthProvider(serviceConfig, timeProvider, AuthenticationMethodKeys.StubOAuth);
             });
-            AuthenticationMethodSchema.SetExtraOAuthKeysForTesting(new[] { AuthenticationMethodKeys.StubOAuth });
+            builder.Services.AddSingleton<IOAuthSchemaExtensions>(
+                new OAuthSchemaExtensions(new[] { AuthenticationMethodKeys.StubOAuth }));
 
             // Substitute the stub for every real *.oauth method declared in the schema so Playwright
             // walking-skeleton scenarios can drive jira.oauth (and future ado.oauth) connections
             // without contacting external identity providers.
-            var realOAuthKeys = AuthenticationMethodSchema.GetOAuthProviderKeys()
-                .Where(k => k != AuthenticationMethodKeys.StubOAuth)
-                .ToList();
+            var realOAuthKeys = AuthenticationMethodSchema.GetOAuthProviderKeys().ToList();
             foreach (var key in realOAuthKeys)
             {
                 builder.Services.AddSingleton<IOAuthProvider>(sp =>
@@ -424,7 +424,10 @@ namespace Lighthouse.Backend
             var registry = app.Services.GetRequiredService<IOAuthProviderRegistry>();
             var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("OAuthProvidersStartupCheck");
 
+            var extras = app.Services.GetService<IOAuthSchemaExtensions>()?.ExtraOAuthKeys
+                ?? Array.Empty<string>();
             var missingKeys = AuthenticationMethodSchema.GetOAuthProviderKeys()
+                .Concat(extras)
                 .Where(key => !TryResolveProvider(registry, key))
                 .ToList();
 
