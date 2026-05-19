@@ -17,9 +17,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     public class JiraWorkTrackingConnector(
         IIssueFactory issueFactory,
         ILogger<JiraWorkTrackingConnector> logger,
-        IWorkTrackingAuthStrategyFactory authStrategyFactory)
+        IWorkTrackingAuthStrategyFactory authStrategyFactory,
+        HttpMessageHandler? httpMessageHandlerForTesting = null)
         : IJiraWorkTrackingConnector
     {
+        private readonly HttpMessageHandler? _httpMessageHandlerForTesting = httpMessageHandlerForTesting;
+
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
 
         private static readonly Dictionary<int, Dictionary<string, string>> FieldNames = new();
@@ -1062,7 +1065,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var issues = new List<Issue>();
             var startAt = 0;
-            var maxResults = maxResultsOverride ?? 1000;
+            var maxResults = maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
             var isLast = false;
             var encodedJqlQuery = Uri.EscapeDataString(jqlQuery);
 
@@ -1098,7 +1101,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var issues = new List<Issue>();
             string? nextPageToken = null;
-            var pageLimit = maxResultsOverride ?? 1000;
+            var pageLimit = maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
             var pageCount = 0;
 
             do
@@ -1195,6 +1198,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             authenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken
             || authenticationMethodKey == AuthenticationMethodKeys.JiraOAuth;
 
+        private const int DefaultIssuesPerRequest = 1000;
+
+        private static int ResolveIssuesPerRequest(WorkTrackingSystemConnection connection)
+        {
+            var configured = connection.GetWorkTrackingSystemConnectionOptionByKey<int>(JiraWorkTrackingOptionNames.IssuesPerRequest);
+            return configured is > 0 ? configured.Value : DefaultIssuesPerRequest;
+        }
+
         private async Task<HttpClient> GetJiraRestClientAsync(WorkTrackingSystemConnection connection)
         {
             var requestTimeoutInSeconds =
@@ -1255,6 +1266,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private HttpClient GetOrCreateClient(string cacheKey, string baseUrl, int timeoutInSeconds)
         {
+            if (_httpMessageHandlerForTesting is not null)
+            {
+                return new HttpClient(_httpMessageHandlerForTesting, disposeHandler: false)
+                {
+                    BaseAddress = new Uri(baseUrl),
+                    Timeout = TimeSpan.FromSeconds(timeoutInSeconds)
+                };
+            }
+
             return ClientCache.GetOrAdd(cacheKey, _ => new HttpClient(SharedHandler)
             {
                 BaseAddress = new Uri(baseUrl),

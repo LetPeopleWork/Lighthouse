@@ -9,5 +9,7 @@
         public static string ApiToken => "Api Token";
 
         public static string RequestTimeoutInSeconds => "Request Timeout In Seconds";
+
+        public static string IssuesPerRequest => "Issues Per Request";
     }
 }

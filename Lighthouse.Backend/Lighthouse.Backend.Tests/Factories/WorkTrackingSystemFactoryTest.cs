@@ -70,13 +70,15 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(connection.Options, Has.Count.EqualTo(4));
+                Assert.That(connection.Options, Has.Count.EqualTo(5));
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, false, true), Is.True);
+                Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.IssuesPerRequest, false, true), Is.True);
 
                 Assert.That(GetOptionValue(connection.Options, JiraWorkTrackingOptionNames.RequestTimeoutInSeconds), Is.EqualTo("100"));
+                Assert.That(GetOptionValue(connection.Options, JiraWorkTrackingOptionNames.IssuesPerRequest), Is.EqualTo("1000"));
             }
         }
 

@@ -108,6 +108,12 @@ const mockJiraSystem = new WorkTrackingSystemConnection({
 			isSecret: false,
 			isOptional: true,
 		},
+		{
+			key: "IssuesPerRequest",
+			value: "1000",
+			isSecret: false,
+			isOptional: true,
+		},
 	],
 	availableAuthenticationMethods: [
 		{

@@ -179,6 +179,14 @@ namespace Lighthouse.Backend.Factories
                     Value = "100",
                     IsSecret = false,
                     IsOptional = true,
+                },
+
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraWorkTrackingOptionNames.IssuesPerRequest,
+                    Value = "1000",
+                    IsSecret = false,
+                    IsOptional = true,
                 }
             ];
         }
