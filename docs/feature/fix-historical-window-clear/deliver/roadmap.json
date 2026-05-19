@@ -1,0 +1,80 @@
+{
+  "roadmap": {
+    "project_id": "fix-historical-window-clear",
+    "created_at": "2026-05-19",
+    "total_steps": 2,
+    "phases": 1
+  },
+  "feature_description": "Bug-fix: Forecast Backtesting Historical Window (Days) input forces a leading '1' on clear because the onChange handler clamps Number('') === 0 to Math.max(1, 0) === 1 and writes it back into controlled state. Fix: allow transient empty draft, clamp on blur, fall back to 30 if empty.",
+  "ado_work_item": 5039,
+  "scope": "bug-fix",
+  "rca_document": "docs/feature/fix-historical-window-clear/deliver/rca.md",
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator",
+    "reviewed_at": "2026-05-19",
+    "method": "Inline by orchestrator — RCA fully designed (root cause + acceptance criteria + concrete fix); single-file change; architect dispatch skipped per nw-bugfix convention."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression test + fix",
+      "description": "Add the failing regression test that proves the bug exists, then implement the clamp-on-blur fix and rewrite the two legacy clamp-on-change tests.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add regression test for clear-and-retype behaviour",
+          "description": "Add a Vitest test in BacktestForecaster.test.tsx that proves the bug exists: when the Historical Window (Days) input is cleared and then a digit is typed, the input must display the typed digit alone — not '1' prepended. With the current implementation this test FAILS because state snaps to 1 on the empty change.",
+          "criteria": [
+            "New test added to BacktestForecaster.test.tsx that simulates clearing the field and typing a single digit (e.g. '5').",
+            "Test asserts the input value is '5' after the sequence (number, not string '15').",
+            "Test FAILS against current HEAD code (proves the bug).",
+            "Test name clearly describes the bug scenario.",
+            "No production code changes in this step — test-only."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.test.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.test.tsx",
+          "scenario_name": "allows the user to clear the field and type a new value without prepending the minimum",
+          "quality_gates": [
+            "pnpm vitest run src/pages/Teams/Detail/BacktestForecaster.test.tsx — new test FAILS, others pass"
+          ],
+          "implementation_notes": "Use userEvent.clear + userEvent.type to faithfully reproduce keystroke behaviour (fireEvent.change overwrites and would mask the bug). Assert toHaveValue(5).",
+          "dependencies": [],
+          "estimated_hours": 0.25,
+          "deliverables": ["Failing regression test"]
+        },
+        {
+          "id": "01-02",
+          "name": "Implement clamp-on-blur fix and rewrite legacy clamp-on-change tests",
+          "description": "Change state type to number | '' to allow a transient empty draft. Replace per-keystroke clamp with raw parsing in onChange. Add onBlur handler that clamps to [1, 365], falling back to 30 when empty. Guard handleRunBacktest. Rewrite the two existing clamp-on-change tests to assert clamping on BLUR.",
+          "criteria": [
+            "BacktestForecaster.tsx: state historicalWindowDays typed as number | '' with default 30.",
+            "BacktestForecaster.tsx: onChange stores raw parsed value ('' stays '', other strings → Number).",
+            "BacktestForecaster.tsx: new onBlur handler clamps to [1, 365] and falls back to 30 if empty.",
+            "BacktestForecaster.tsx: handleRunBacktest treats '' / non-finite as 30 before computing historicalStartDate.",
+            "BacktestForecaster.test.tsx: the two legacy clamp tests are rewritten to fire blur and assert clamped value on blur.",
+            "BacktestForecaster.test.tsx: regression test from step 01-01 now PASSES.",
+            "pnpm test green; pnpm build green (Biome + tsc + vite, zero warnings)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.test.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.test.tsx",
+          "scenario_name": "clamps historical window days on blur",
+          "quality_gates": [
+            "pnpm vitest run src/pages/Teams/Detail/BacktestForecaster.test.tsx — all green",
+            "pnpm --filter Lighthouse.Frontend test — full suite green",
+            "pnpm --filter Lighthouse.Frontend build — zero warnings"
+          ],
+          "implementation_notes": "Reference fix sketch in rca.md. Keep slotProps.htmlInput.min/max as final safety net. Do NOT introduce a wrapper component or refactor other numeric inputs.",
+          "dependencies": ["01-01"],
+          "estimated_hours": 0.5,
+          "deliverables": ["Working fix", "Updated tests", "All quality gates green"]
+        }
+      ]
+    }
+  ]
+}
