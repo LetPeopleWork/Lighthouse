@@ -1,0 +1,169 @@
+<script>
+  (function () {
+    var STORAGE_KEY = 'lighthouse-docs-color-scheme';
+    var STYLESHEET_SELECTOR = 'link[rel="stylesheet"][href*="just-the-docs-"]';
+    var HREF_PATTERN = /just-the-docs-(default|light|dark)\.css/;
+
+    function readStored() {
+      try {
+        var value = window.localStorage.getItem(STORAGE_KEY);
+        return value === 'light' || value === 'dark' ? value : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function writeStored(value) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, value);
+      } catch (e) {
+        /* Quota exceeded or private window: persistence is best-effort. */
+      }
+    }
+
+    function osPreference() {
+      try {
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+          return 'light';
+        }
+      } catch (e) {
+        /* matchMedia missing: fall through to default. */
+      }
+      return 'dark';
+    }
+
+    function resolveInitial() {
+      var stored = readStored();
+      return stored !== null ? stored : osPreference();
+    }
+
+    function syncToggle(theme) {
+      var toggle = document.querySelector('[data-color-scheme-toggle]');
+      if (!toggle) {
+        return;
+      }
+      var nextTheme = theme === 'dark' ? 'light' : 'dark';
+      toggle.setAttribute('aria-label', 'Switch to ' + nextTheme + ' mode');
+      toggle.setAttribute('data-current-theme', theme);
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      var stylesheet = document.querySelector(STYLESHEET_SELECTOR);
+      if (stylesheet) {
+        var current = stylesheet.getAttribute('href') || '';
+        var swapped = current.replace(HREF_PATTERN, 'just-the-docs-' + theme + '.css');
+        if (swapped !== current) {
+          stylesheet.setAttribute('href', swapped);
+        }
+      }
+      syncToggle(theme);
+    }
+
+    function toggleTheme() {
+      var current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      var next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      writeStored(next);
+    }
+
+    function buildToggleButton(initialTheme) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'color-scheme-toggle';
+      btn.setAttribute('data-color-scheme-toggle', '');
+      btn.setAttribute('data-current-theme', initialTheme);
+      btn.setAttribute('aria-label', 'Switch to ' + (initialTheme === 'dark' ? 'light' : 'dark') + ' mode');
+      btn.innerHTML =
+        '<svg class="color-scheme-toggle__icon color-scheme-toggle__icon--sun" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="12" cy="12" r="4"></circle>' +
+        '<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>' +
+        '</svg>' +
+        '<svg class="color-scheme-toggle__icon color-scheme-toggle__icon--moon" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>' +
+        '</svg>';
+      btn.addEventListener('click', toggleTheme);
+      return btn;
+    }
+
+    function injectToggle() {
+      if (document.querySelector('[data-color-scheme-toggle]')) {
+        return;
+      }
+      var siteHeader = document.querySelector('.side-bar .site-header');
+      if (!siteHeader) {
+        return;
+      }
+      var theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      var btn = buildToggleButton(theme);
+      var menuButton = siteHeader.querySelector('#menu-button');
+      if (menuButton) {
+        siteHeader.insertBefore(btn, menuButton);
+      } else {
+        siteHeader.appendChild(btn);
+      }
+    }
+
+    applyTheme(resolveInitial());
+
+    window.lighthouseDocs = window.lighthouseDocs || {};
+    window.lighthouseDocs.toggleColorScheme = toggleTheme;
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        injectToggle();
+        syncToggle(document.documentElement.getAttribute('data-theme') || 'dark');
+      });
+    } else {
+      injectToggle();
+      syncToggle(document.documentElement.getAttribute('data-theme') || 'dark');
+    }
+  })();
+</script>
+
+<style>
+  .color-scheme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 0.25rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    line-height: 1;
+    box-sizing: border-box;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .color-scheme-toggle:hover {
+    background-color: rgba(127, 127, 127, 0.2);
+  }
+  .color-scheme-toggle:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .color-scheme-toggle__icon {
+    display: none;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  html[data-theme="light"] .color-scheme-toggle__icon--moon { display: inline-block; }
+  html:not([data-theme="light"]) .color-scheme-toggle__icon--sun { display: inline-block; }
+
+  .side-bar .site-header {
+    display: flex;
+    align-items: center;
+  }
+  .side-bar .site-header .site-title {
+    flex-grow: 1;
+    min-width: 0;
+  }
+
+  html:not([data-theme="light"]) .site-logo {
+    filter: invert(1) hue-rotate(180deg);
+  }
+</style>
