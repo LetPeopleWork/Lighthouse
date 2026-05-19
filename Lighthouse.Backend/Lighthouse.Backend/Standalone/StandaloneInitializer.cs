@@ -21,13 +21,15 @@ namespace Lighthouse.Backend.Standalone
             var appDataDir = GetAppDataDirectory();
             var logPath = Path.Combine(appDataDir, "logs", "log-.txt");
             var dbPath = Path.Combine(appDataDir, "LighthouseAppContext.db");
+            var dataProtectionKeysDir = Path.Combine(appDataDir, "data-protection-keys");
 
             Directory.CreateDirectory(appDataDir);
             Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+            Directory.CreateDirectory(dataProtectionKeysDir);
 
             builder.Configuration["Serilog:WriteTo:0:Args:path"] = logPath;
             builder.Configuration["Database:ConnectionString"] = $"Data Source={dbPath}";
-            builder.Configuration["Serilog:WriteTo:0:Args:path"] = logPath;
+            builder.Configuration["Lighthouse:DataProtection:KeyStorePath"] = dataProtectionKeysDir;
         }
 
         private static void SetWorkingDirectory(WebApplicationBuilder builder, string workingDir)

@@ -72,8 +72,6 @@ namespace Lighthouse.Backend
 
             EnsureCorsFailsClosed(builder, isStandalone);
 
-            EnsureOAuthStateSecret(builder);
-
             try
             {
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
@@ -83,6 +81,8 @@ namespace Lighthouse.Backend
                 {
                     StandaloneInitializer.InitializePaths(builder);
                 }
+
+                EnsureOAuthStateSecret(builder);
 
                 ConfigureLogging(builder);
                 Log.Information("Starting up Lighthouse!");
