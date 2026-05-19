@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v26.5.18.19
+# Lighthouse v26.5.19.1
 
 ## OAuth Authentication for Work Tracking Systems
 Lighthouse can now connect to **Jira** and **Azure DevOps** through OAuth, alongside the existing Personal Access Token flow. OAuth is a Premium feature: pick *OAuth* in the connection wizard, register a client on the IdP side, and Lighthouse drives the rest — token exchange, refresh, and reconnect.
