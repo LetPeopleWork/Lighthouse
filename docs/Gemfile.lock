@@ -11,6 +11,7 @@ GEM
     em-websocket (0.5.3)
       eventmachine (>= 0.12.9)
       http_parser.rb (~> 0)
+    erb (6.0.4)
     eventmachine (1.2.7)
     ffi (1.17.1-aarch64-linux-gnu)
     ffi (1.17.1-arm64-darwin)
@@ -98,6 +99,7 @@ DEPENDENCIES
   base64
   bigdecimal
   csv
+  erb
   google-protobuf (~> 4.0)
   jekyll (~> 4.3.4)
   just-the-docs (= 0.10.1)
