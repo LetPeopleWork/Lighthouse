@@ -70,7 +70,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(
 		dayjs().subtract(1, "day"),
 	);
-	const [historicalWindowDays, setHistoricalWindowDays] = useState<number>(30);
+	const [historicalWindowDays, setHistoricalWindowDays] = useState<number | "">(
+		30,
+	);
 	const [historicalMode, setHistoricalMode] =
 		useState<HistoricalMode>("rolling");
 	const [historicalFixedStartDate, setHistoricalFixedStartDate] =
@@ -191,9 +193,14 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 			effectiveHistoricalStartDate = historicalFixedStartDate.toDate();
 			effectiveHistoricalEndDate = historicalFixedEndDate.toDate();
 		} else {
+			const effectiveWindow =
+				typeof historicalWindowDays === "number" &&
+				Number.isFinite(historicalWindowDays)
+					? historicalWindowDays
+					: 30;
 			effectiveHistoricalEndDate = startDate.subtract(1, "day").toDate();
 			effectiveHistoricalStartDate = startDate
-				.subtract(historicalWindowDays, "day")
+				.subtract(effectiveWindow, "day")
 				.toDate();
 		}
 
@@ -276,11 +283,19 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 									type="number"
 									fullWidth
 									value={historicalWindowDays}
-									onChange={(e) =>
+									onChange={(e) => {
+										const raw = e.target.value;
+										setHistoricalWindowDays(raw === "" ? "" : Number(raw));
+									}}
+									onBlur={() => {
+										const n =
+											typeof historicalWindowDays === "number"
+												? historicalWindowDays
+												: 30;
 										setHistoricalWindowDays(
-											Math.max(1, Math.min(365, Number(e.target.value))),
-										)
-									}
+											Math.max(1, Math.min(365, Number.isFinite(n) ? n : 30)),
+										);
+									}}
 									slotProps={{
 										htmlInput: { min: 1, max: 365 },
 									}}

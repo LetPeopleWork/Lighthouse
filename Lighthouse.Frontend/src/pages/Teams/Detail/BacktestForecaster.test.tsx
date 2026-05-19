@@ -202,26 +202,40 @@ describe("BacktestForecaster component", () => {
 		expect(historicalWindowInput).toHaveValue(60);
 	});
 
-	it("should clamp historical window days to minimum of 1", async () => {
+	it("should clamp historical window days to minimum of 1 on blur", async () => {
 		renderWithContext();
 
 		const historicalWindowInput = screen.getByLabelText(
 			/Historical Window \(Days\)/i,
 		);
 		fireEvent.change(historicalWindowInput, { target: { value: "-5" } });
+		fireEvent.blur(historicalWindowInput);
 
 		expect(historicalWindowInput).toHaveValue(1);
 	});
 
-	it("should clamp historical window days to maximum of 365", async () => {
+	it("should clamp historical window days to maximum of 365 on blur", async () => {
 		renderWithContext();
 
 		const historicalWindowInput = screen.getByLabelText(
 			/Historical Window \(Days\)/i,
 		);
 		fireEvent.change(historicalWindowInput, { target: { value: "500" } });
+		fireEvent.blur(historicalWindowInput);
 
 		expect(historicalWindowInput).toHaveValue(365);
+	});
+
+	it("should fall back to 30 when the field is cleared and loses focus", async () => {
+		renderWithContext();
+
+		const historicalWindowInput = screen.getByLabelText(
+			/Historical Window \(Days\)/i,
+		);
+		fireEvent.change(historicalWindowInput, { target: { value: "" } });
+		fireEvent.blur(historicalWindowInput);
+
+		expect(historicalWindowInput).toHaveValue(30);
 	});
 
 	it("allows the user to clear the field and type a new value without prepending the minimum", async () => {
