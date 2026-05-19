@@ -4,6 +4,35 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.5.18.19
+
+## OAuth Authentication for Work Tracking Systems
+Lighthouse can now connect to **Jira** and **Azure DevOps** through OAuth, alongside the existing Personal Access Token flow. OAuth is a Premium feature: pick *OAuth* in the connection wizard, register a client on the IdP side, and Lighthouse drives the rest — token exchange, refresh, and reconnect.
+
+- **Jira** via Atlassian 3LO, with Jira Software granular scopes.
+- **Azure DevOps** via Microsoft Entra ID, with `vso.work_write` and per-tenant configuration.
+- **Automatic token refresh** with single-flight serialization, so concurrent requests can't double-refresh and burn rate limits.
+- **Disconnected-state surfacing** — a status icon on the connection list flags connections that need attention, and a *Reconnect* banner walks you through the popup-based OAuth handshake without leaving the connection edit dialog.
+
+IdP-side setup is documented under the existing work-tracking-system pages: [Jira](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html) and [Azure DevOps](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/azuredevops.html).
+
+## API Key Scopes on the Listing
+The [API Keys](https://docs.lighthouse.letpeople.work/settings/apikeys.html) settings page now shows each key's **scope set** in place of the *Created By* column. The scope column makes it obvious at a glance which Teams and Portfolios a given key can act on. The Scopes column is shown only when RBAC is enabled.
+
+## Bugfixes and Improvements
+- **Cache thread-safety under concurrent metric requests** — `Cache<TKey,TValue>` was backed by a plain `Dictionary<,>`; under concurrent metric load (multiple teams, background services racing user requests) the dictionary could corrupt and start throwing `IndexOutOfRangeException` on every subsequent call to the affected key, until process restart. Switched to `ConcurrentDictionary`. Reported by Liz with a detailed diagnosis and reproduction.
+- **Setting Feature WIP from a Portfolio** — the Portfolio → Team feature-WIP update returned HTTP 500 because the RBAC scope check on `ForecastController.UpdateForecastForProject` ran against the wrong entity. The update did persist, but the error was disruptive. Fixed.
+- **Forecasts refresh in place after Feature WIP changes** — previously you had to navigate away and back for the new forecast dates to show up. Forecasts now update immediately, so the impact of a WIP change is visible without losing your place.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.14.2...v26.5.18.19)
+
+
 # Lighthouse v26.5.14.2
 
 ## Role-Based Access Control
