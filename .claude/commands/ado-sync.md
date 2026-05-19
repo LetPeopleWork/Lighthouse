@@ -1,6 +1,6 @@
 ---
 description: Keep Azure DevOps work items in sync with the nWave flow — onboard an Epic into DISCUSS, mirror slices as Stories, auto-transition states (New→Active→Resolved→Done), pause for review before push, and gate ad-hoc Story/Bug creation behind explicit confirmation.
-allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion, mcp__azure-devops__wit_get_work_item, mcp__azure-devops__wit_get_work_items_batch_by_ids, mcp__azure-devops__wit_get_work_item_type, mcp__azure-devops__wit_query_by_wiql, mcp__azure-devops__wit_create_work_item, mcp__azure-devops__wit_update_work_item, mcp__azure-devops__wit_update_work_items_batch, mcp__azure-devops__wit_add_child_work_items, mcp__azure-devops__wit_add_work_item_comment, mcp__azure-devops__wit_list_work_item_comments, mcp__azure-devops__wit_add_artifact_link, mcp__azure-devops__wit_link_work_item_to_pull_request, mcp__azure-devops__wit_work_item_unlink, mcp__azure-devops__wit_work_items_link
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion
 ---
 
 # /ado-sync — keep ADO and the nWave flow aligned
@@ -20,6 +20,54 @@ This skill is invocable (`/ado-sync ...`) but the rules also apply **proactively
 - **Release notes tag**: `Release Notes`. The existing `/release-notes` skill picks up `Closed`-state items with this tag. Suggest adding it when the user-visible change merits it; never add it silently.
 - **Community reporter field**: `Custom.ReportedBy` — plain string (often HTML-wrapped), used only when a community member raised the work. Not your job to populate unless the user explicitly tells you.
 
+## Tooling: `az` CLI (not the ADO MCP)
+
+All ADO interactions go through the Azure CLI `azure-devops` extension via `Bash`. The MCP server is **not** in use anymore — do not assume `mcp__azure-devops__*` tools exist.
+
+**Preflight (run once per session, silently):**
+
+```bash
+az devops configure -l
+# Expect: organization = https://dev.azure.com/letpeoplework
+#         project      = Lighthouse
+```
+
+If either default is missing, set them before the first call:
+
+```bash
+az devops configure -d organization=https://dev.azure.com/letpeoplework project=Lighthouse
+```
+
+If `az account show` fails (not logged in), stop and ask the user to run `az login` themselves — never attempt an interactive login from a tool call.
+
+### Command cookbook
+
+Always pass `-o json` and parse with `jq` (or `--query` for simple projections). Quote WIQL with single quotes; escape inner single quotes by doubling them (`''`) per the WIQL spec.
+
+| Need | Command |
+| --- | --- |
+| Fetch one item with fields | `az boards work-item show --id <id> --expand all -o json` |
+| Fetch with a field subset | `az boards work-item show --id <id> --fields "System.Id,System.Title,System.State,System.Tags" -o json` |
+| Run a WIQL query (flat) | `az boards query --wiql "SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.TeamProject] = 'Lighthouse' AND [System.Parent] = <id>" -o json` |
+| Create a Story / Bug | `az boards work-item create --type "User Story" --title "<title>" --description "<desc>" -o json` |
+| Link new item to parent Epic | `az boards work-item relation add --id <new-id> --relation-type parent --target-id <epic-id>` |
+| State transition | `az boards work-item update --id <id> --state Active` |
+| State transition with reason | `az boards work-item update --id <id> --state Resolved --reason "Fixed and verified"` |
+| Add a discussion comment | `az boards work-item update --id <id> --discussion "Pushed abc1234..def5678 on branch feat/foo"` |
+| Set tags (overwrites!) | `az boards work-item update --id <id> --fields "System.Tags=Release Notes; community"` |
+| Re-title / re-describe | `az boards work-item update --id <id> --title "<new>" --description "<new>"` |
+| Mark slice as cancelled | `az boards work-item update --id <id> --state Removed --discussion "Slice merged into #N during DISCUSS re-slicing"` |
+
+### CLI quirks to remember
+
+- **`System.Reason` is read-only after a state change.** Always pass `--reason` in the same call as `--state`, never as a follow-up.
+- **`az boards query` is flat-only.** It returns the fields you SELECT directly — no separate "batch get by ID" step is needed. Project only what you need.
+- **Tags are a single semicolon-separated string.** To *append* a tag, read `System.Tags` first, then write the merged value back: `existing=$(az boards work-item show --id <id> --fields System.Tags --query "fields.\"System.Tags\"" -o tsv); az boards work-item update --id <id> --fields "System.Tags=${existing}; Release Notes"`. Trim leading `; ` if `existing` was empty.
+- **Parent linking is two calls.** `az boards work-item create` does not accept `System.Parent` as a settable field — create first, then `relation add --relation-type parent --target-id <epic>`.
+- **No batch update endpoint.** When transitioning >1 item, loop sequentially. Don't fan out in parallel — ADO rate-limits silently and you'll see half-completed batches.
+- **State name "Done" vs "Closed".** For User Stories and Bugs this project uses `Closed` as the wire value for the visual "Done" column. For Epics use `Done`. If a transition is rejected for an unknown state, retry with the other name once and report whichever stuck.
+- **Quoting.** WIQL strings inside `--wiql` use single quotes; field names inside `--fields` use the literal name without quotes (`System.Tags=foo; bar`, not `"System.Tags"=...`). When values contain `;` you cannot escape them — use the description field instead.
+
 ## Triggers (apply proactively, not just on slash invocation)
 
 Apply this skill's rules whenever any of the following happen — whether or not the user typed `/ado-sync`:
@@ -37,7 +85,7 @@ If you're unsure which op applies, do **Op 8** first to ground yourself in curre
 ## Confirmation discipline (non-negotiable)
 
 - **Create** (any new Epic / Story / Bug): always `AskUserQuestion` first, showing the proposed Title, Type, Parent, and a one-line description. Single confirm = one item; if creating multiple, present them as a multi-select list so the user can drop any.
-- **Delete / Remove**: ADO doesn't hard-delete from this MCP. The closest equivalent is transitioning to `Removed`. Always confirm before doing so, and show the title + ID of the item being removed.
+- **Delete / Remove**: ADO doesn't hard-delete from this CLI flow. The closest equivalent is transitioning to `Removed`. Always confirm before doing so, and show the title + ID of the item being removed.
 - **Title / description edits**: confirm before overwriting fields the user has authored. State edits do not need confirmation.
 - **State transitions**: do them automatically and report in one line ("Story #1234 → Active"). No need to ask.
 - **Release Notes tag**: confirm before adding. Default to suggesting it for user-visible features and externally-reported bugs; default to *not* suggesting for refactors, test-only changes, internal infra, or documentation.
@@ -48,17 +96,26 @@ Inputs: an Epic URL (e.g. `https://dev.azure.com/letpeoplework/Lighthouse/_worki
 
 Steps:
 
-1. Parse the ID from the URL. Fetch the Epic via `mcp__azure-devops__wit_get_work_item` with fields `["System.Id", "System.Title", "System.State", "System.Description", "System.Tags", "System.AreaPath", "System.IterationPath"]`.
+1. Parse the ID from the URL. Fetch the Epic:
+   ```bash
+   az boards work-item show --id <epic-id> \
+     --fields "System.Id,System.Title,System.State,System.Description,System.Tags,System.AreaPath,System.IterationPath" -o json
+   ```
 2. List existing child Stories/Bugs via WIQL:
-   ```sql
-   SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State], [System.Tags]
-   FROM WorkItems
-   WHERE [System.TeamProject] = 'Lighthouse'
-     AND [System.Parent] = <epic-id>
-   ORDER BY [System.Id] ASC
+   ```bash
+   az boards query --wiql "
+     SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State], [System.Tags]
+     FROM WorkItems
+     WHERE [System.TeamProject] = 'Lighthouse'
+       AND [System.Parent] = <epic-id>
+     ORDER BY [System.Id] ASC
+   " -o json
    ```
 3. Report a 4-line summary to the user: Epic title + state, child item count by state, any items already in `Active`/`Resolved` (warn loudly — work is in flight), and the proposed transition.
 4. If the Epic state is `Planned`, transition it to `Active` once DISCUSS actually begins (i.e., the user has confirmed they want to start, or you're already inside `nw-discuss`). Do not pre-emptively activate just from a status lookup.
+   ```bash
+   az boards work-item update --id <epic-id> --state Active
+   ```
 5. Hand the Epic context (title, description, tags, child list) back to whatever wave is running. The slicing step in DISCUSS will consume the description.
 
 ## Op 2 — Mirror slices ↔ Stories
@@ -78,10 +135,23 @@ Steps:
    - **To remove**: existing Stories that don't map to any slice **and are still `New`** (haven't been started). Active/Resolved/Done stories are *never* auto-removed — flag them and ask.
    - **To re-title / re-describe**: matched stories whose title/description has drifted from the slice. Show the diff, confirm before overwriting.
 4. For each list, run `AskUserQuestion` once with a multi-select so the user can drop entries. Do not loop one question per item.
-5. Execute the approved batch:
-   - Create via `mcp__azure-devops__wit_create_work_item` (type `User Story` or `Bug`; set `System.Parent` via the parent param or follow up with `wit_work_items_link` if needed).
-   - Remove via `wit_update_work_item` setting `System.State` = `Removed` with a comment explaining the reason ("Slice merged into #N during DISCUSS re-slicing").
-   - Re-title/re-describe via `wit_update_work_item`.
+5. Execute the approved batch — loop sequentially, one CLI call per item:
+   - Create:
+     ```bash
+     new_id=$(az boards work-item create --type "User Story" \
+       --title "<slice title>" --description "<slice summary>" -o tsv --query id)
+     az boards work-item relation add --id "$new_id" --relation-type parent --target-id <epic-id>
+     ```
+     (Use `--type Bug` instead for regression-fix slices.)
+   - Remove:
+     ```bash
+     az boards work-item update --id <story-id> --state Removed \
+       --discussion "Slice merged into #N during DISCUSS re-slicing"
+     ```
+   - Re-title / re-describe:
+     ```bash
+     az boards work-item update --id <story-id> --title "<new>" --description "<new>"
+     ```
 6. Final report: `+N created / ~M updated / -K removed`. Include the new Story IDs so subsequent ops can reference them.
 
 ## Op 3 — Activate a Story (before starting work)
@@ -91,8 +161,15 @@ Trigger: about to start implementing a slice (typically when DELIVER picks up th
 Steps:
 
 1. Identify the Story ID. Map slice → Story from Op 2's mapping, or ask the user once if you can't.
-2. Fetch its current state. If already `Active`, do nothing and report. If `Resolved`/`Done`, ask the user whether to reopen (don't silently reopen — it usually means the slice has been duplicated by mistake).
-3. Transition `New` → `Active` via `wit_update_work_item` setting `System.State` = `Active`.
+2. Fetch its current state:
+   ```bash
+   az boards work-item show --id <story-id> --fields "System.State" -o tsv --query "fields.\"System.State\""
+   ```
+   If already `Active`, do nothing and report. If `Resolved`/`Done`, ask the user whether to reopen (don't silently reopen — it usually means the slice has been duplicated by mistake).
+3. Transition `New` → `Active`:
+   ```bash
+   az boards work-item update --id <story-id> --state Active
+   ```
 4. Report: `Story #<id> → Active. Starting <slice-name>.`
 
 ## Op 4 — Pause + Resolve a Story (before push)
@@ -107,9 +184,18 @@ Steps:
    - **Hold** — exit the op; user wants to keep iterating. Leave the Story `Active`.
    - **Push with edits** — let the user describe what to change; loop back to implementation.
 3. On Push now: run `git push` (or `git push -u origin <branch>` if no upstream). After it succeeds:
-   - Transition Story `Active` → `Resolved`.
-   - Add a comment on the Story via `wit_add_work_item_comment` with the commit range and branch name: `Pushed commits abc1234..def5678 on branch <name>.`
-   - If the Story looks user-visible and isn't already tagged `Release Notes`, ask once whether to add the tag.
+   - Transition Story `Active` → `Resolved` and post the commit range in the same call:
+     ```bash
+     az boards work-item update --id <story-id> --state Resolved \
+       --discussion "Pushed commits <base-sha>..<head-sha> on branch <name>."
+     ```
+   - If the Story looks user-visible and isn't already tagged `Release Notes`, ask once whether to add the tag. To append safely:
+     ```bash
+     existing=$(az boards work-item show --id <story-id> \
+       --fields System.Tags --query "fields.\"System.Tags\"" -o tsv)
+     new_tags="${existing:+${existing}; }Release Notes"
+     az boards work-item update --id <story-id> --fields "System.Tags=${new_tags}"
+     ```
 4. Report: `Story #<id> → Resolved. Pushed N commits. Awaiting CI on main.`
 
 ## Op 5 — Mark Story Done (CI green)
@@ -119,9 +205,13 @@ Trigger: CI on `main` has gone green for a build that includes this Story's comm
 Steps:
 
 1. Verify the green run includes the Story's commit SHA(s). Use `git merge-base --is-ancestor <sha> origin/main` and confirm the latest CI run on `main` is `success` (see `/clean-ci` Step 1).
-2. Transition Story `Resolved` → `Done` (state name in ADO: `Closed` for Bugs, `Closed`/`Done` for User Stories depending on the process template — try `Closed` first; if the MCP rejects it, try `Done`; report whichever stuck).
+2. Transition Story `Resolved` → `Closed`:
+   ```bash
+   az boards work-item update --id <story-id> --state Closed
+   ```
+   If ADO rejects `Closed` for this work-item type, retry once with `Done`. Report whichever stuck.
 3. Re-evaluate the parent Epic — see **Op 6**.
-4. Report: `Story #<id> → Done.` and any cascading Epic state change.
+4. Report: `Story #<id> → Closed.` and any cascading Epic state change.
 
 ## Op 6 — Auto-transition the Epic
 
@@ -130,11 +220,22 @@ Run this whenever a child Story transitions, especially in **Op 5**.
 Logic:
 
 - If **any** child is `Active`: Epic should be `Active`. (Move `Planned` → `Active` if needed.)
-- If **all** children are `Resolved` or `Done` and **at least one** is still `Resolved`: Epic → `Resolved`.
-- If **all** children are `Done`: Epic → `Done`.
+- If **all** children are `Resolved` or `Closed`/`Done` and **at least one** is still `Resolved`: Epic → `Resolved`.
+- If **all** children are `Closed`/`Done`: Epic → `Done`.
 - If **no** children exist yet: leave the Epic as the user set it.
 
 Apply transitions automatically and report. If a transition would skip a state (e.g. `Planned` → `Resolved` because all children were already `Done` when added), still apply it but flag the oddity to the user.
+
+To compute the rollup, query in one shot:
+
+```bash
+az boards query --wiql "
+  SELECT [System.Id], [System.State]
+  FROM WorkItems
+  WHERE [System.TeamProject] = 'Lighthouse'
+    AND [System.Parent] = <epic-id>
+" -o json | jq '[.[] | .fields."System.State"] | group_by(.) | map({state: .[0], count: length})'
+```
 
 ## Op 7 — Ad-hoc Story or Bug
 
@@ -150,7 +251,17 @@ Steps:
    - Title (suggest one based on the user's request; let them edit).
    - Whether to parent under an existing Epic (offer the current feature's Epic if known; otherwise no parent).
    - Whether to tag `Release Notes`.
-3. Create via `wit_create_work_item`. Transition `New` → `Active` immediately (the user is starting the work now).
+3. Create and immediately activate:
+   ```bash
+   new_id=$(az boards work-item create --type "<User Story|Bug>" \
+     --title "<title>" --description "<desc>" -o tsv --query id)
+   # Optional parent:
+   az boards work-item relation add --id "$new_id" --relation-type parent --target-id <epic-id>
+   # Optional tags (start fresh since item is new):
+   az boards work-item update --id "$new_id" --fields "System.Tags=Release Notes"
+   # Begin work:
+   az boards work-item update --id "$new_id" --state Active
+   ```
 4. From here on the item follows **Op 4 / Op 5** like any planned Story.
 
 ## Op 8 — Status report
@@ -159,30 +270,34 @@ Trigger: user asks for board state, or you need to ground yourself before anothe
 
 Run two WIQL queries in parallel:
 
-```sql
--- Active Epic(s) and their hierarchy
-SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State], [System.Parent], [System.Tags]
-FROM WorkItems
-WHERE [System.TeamProject] = 'Lighthouse'
-  AND [System.WorkItemType] IN ('Epic', 'User Story', 'Bug')
-  AND [System.State] IN ('Active', 'Resolved')
-ORDER BY [System.WorkItemType] ASC, [System.Id] ASC
+```bash
+# Active Epic(s) and their hierarchy
+az boards query --wiql "
+  SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State], [System.Parent], [System.Tags]
+  FROM WorkItems
+  WHERE [System.TeamProject] = 'Lighthouse'
+    AND [System.WorkItemType] IN ('Epic', 'User Story', 'Bug')
+    AND [System.State] IN ('Active', 'Resolved')
+  ORDER BY [System.WorkItemType] ASC, [System.Id] ASC
+" -o json
 ```
 
-```sql
--- Anything assigned to the current user but not yet started
-SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State]
-FROM WorkItems
-WHERE [System.TeamProject] = 'Lighthouse'
-  AND [System.State] = 'New'
-  AND [System.AssignedTo] = @Me
+```bash
+# Anything assigned to the current user but not yet started
+az boards query --wiql "
+  SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State]
+  FROM WorkItems
+  WHERE [System.TeamProject] = 'Lighthouse'
+    AND [System.State] = 'New'
+    AND [System.AssignedTo] = @Me
+" -o json
 ```
 
 Render as a compact tree:
 
 ```
 Epic #1200 "Replace API key created-by with scopes" (Active)
-├── Story #1201 "Backend DTO change"       (Done)
+├── Story #1201 "Backend DTO change"       (Closed)
 ├── Story #1202 "Frontend column"          (Resolved)
 └── Story #1203 "Audit log entries"        (Active)   ← in flight
 ```
@@ -195,11 +310,11 @@ Five lines max in the summary. Don't dump every field.
 - All open work tagged for release notes: `WHERE [System.Tags] CONTAINS 'Release Notes' AND [System.State] NOT IN ('Closed','Done','Removed')`
 - Recently closed for release-notes anchor: `WHERE [System.State] = 'Closed' AND [Microsoft.VSTS.Common.ClosedDate] >= '<iso-date>'`
 
-The MCP's WIQL endpoint returns IDs only — always follow with `wit_get_work_items_batch_by_ids` for fields.
+`az boards query` returns the full selected fields inline — no separate batch fetch is required, unlike the older MCP path.
 
 ## State-name quirks
 
-- The ADO MCP accepts `Active`, `Resolved`, `Removed` consistently. For "Done" the wire value depends on the project's process template; this project uses **`Closed`** for Bugs and User Stories. If a transition with `Done` fails, retry with `Closed`. For Epics, `Done` is the wire value.
+- The CLI accepts `Active`, `Resolved`, `Removed` consistently. For the visual "Done" column the wire value depends on the project's process template; this project uses **`Closed`** for User Stories and Bugs. For Epics, `Done` is the wire value. If a transition with one name fails, retry with the other and report whichever stuck.
 - If a transition fails because the target state isn't reachable from the current state (ADO enforces some transitions), do **not** force a workaround — report the failure with the from/to states and ask the user how to proceed.
 
 ## Guardrails
@@ -211,7 +326,8 @@ The MCP's WIQL endpoint returns IDs only — always follow with `wit_get_work_it
 - **Never invent IDs.** If an Epic ID isn't given or discoverable from the workspace, ask once.
 - **Never edit work items in `Lighthouse Demo`** — that project exists in the same org and is not where this work tracks. Always assert `System.TeamProject = 'Lighthouse'` in WIQL.
 - **Respect the user's authored prose.** When updating a Story's description because the slice text drifted, prefer appending a `## DISCUSS slice` section over overwriting an existing description.
-- **One MCP call per item for bulk transitions.** Use `wit_update_work_items_batch` when transitioning >3 items together; this avoids rate-limit noise and keeps the report clean.
+- **Loop, don't fan out.** `az boards` has no batch update; when transitioning multiple items, run the calls sequentially in a single Bash block so the report stays ordered and rate limits don't bite.
+- **`--state` and `--reason` go together.** Setting `System.Reason` after a state change is rejected by ADO — pass `--reason` in the same `az boards work-item update --state ...` call.
 
 ## End-of-op report format
 
