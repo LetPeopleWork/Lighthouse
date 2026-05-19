@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import dayjs from "dayjs";
 import { describe, expect, it, vi } from "vitest";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
@@ -221,6 +222,19 @@ describe("BacktestForecaster component", () => {
 		fireEvent.change(historicalWindowInput, { target: { value: "500" } });
 
 		expect(historicalWindowInput).toHaveValue(365);
+	});
+
+	it("allows the user to clear the field and type a new value without prepending the minimum", async () => {
+		const user = userEvent.setup();
+		renderWithContext();
+
+		const historicalWindowInput = screen.getByLabelText(
+			/Historical Window \(Days\)/i,
+		);
+		await user.clear(historicalWindowInput);
+		await user.type(historicalWindowInput, "5");
+
+		expect(historicalWindowInput).toHaveValue(5);
 	});
 
 	it("should display tabs when backtestResult is provided", async () => {
