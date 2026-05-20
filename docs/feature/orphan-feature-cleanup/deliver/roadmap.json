@@ -1,0 +1,86 @@
+{
+  "roadmap": {
+    "project_id": "orphan-feature-cleanup",
+    "created_at": "2026-05-20",
+    "total_steps": 2,
+    "phases": 1
+  },
+  "feature_description": "Restore orphaned-Feature cleanup that was lost when we removed RemoveOrphanedFeatures from PreprocessDataBeforeSave in commit 994ac67b (fix-portfolio-refresh-race). New IOrphanedFeatureCleanupService runs a bulk DELETE in a fresh scope, invoked (a) at the tail of PortfolioUpdater.Update so cleanup cadence = refresh cadence, and (b) once at host startup. Race-free because: fresh scope (no ChangeTracker bleed), ExecuteDeleteAsync (no SaveChanges interception), queue serialisation (no concurrent cleanup), DB-level FK cascade for FeatureWork/Forecasts/SimulationResults/Portfolios/Deliveries.",
+  "ado_work_item": null,
+  "scope": "feature-followup",
+  "design_document": "docs/feature/orphan-feature-cleanup/deliver/design.md",
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator",
+    "reviewed_at": "2026-05-20",
+    "method": "Inline by orchestrator — design.md captures three-option comparison and chosen approach; user approved option C + /nw-deliver directly; cascade FK behaviour verified against InitialCreate.cs migration; solution-architect dispatch skipped per /nw-deliver-direct convention."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Orphaned Feature cleanup service + integration",
+      "description": "Add the IOrphanedFeatureCleanupService with bulk-DELETE implementation, wire it into PortfolioUpdater's tail, and add a one-shot startup invocation.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add IOrphanedFeatureCleanupService + impl + unit tests",
+          "description": "Create the interface and a single implementation that opens a fresh IServiceScope, resolves a fresh LighthouseAppContext, and issues a bulk `ExecuteDeleteAsync` for Features where `!IsParentFeature && !Portfolios.Any()`. Write unit tests covering: (a) orphan with no Portfolios is deleted, (b) Feature linked to a Portfolio is preserved, (c) parent Feature with empty Portfolios is preserved, (d) cascade behaviour deletes dependent FeatureWork/Forecast rows.",
+          "criteria": [
+            "NEW file `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IOrphanedFeatureCleanupService.cs` with single method `Task<int> CleanupAsync(CancellationToken cancellationToken = default)` returning the deleted count.",
+            "NEW file `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs` implementing the interface. Constructor takes `IServiceScopeFactory scopeFactory` + `ILogger<OrphanedFeatureCleanupService> logger`. Body: `using var scope = scopeFactory.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>(); var deleted = await db.Features.Where(f => !f.IsParentFeature && !f.Portfolios.Any()).ExecuteDeleteAsync(cancellationToken); if (deleted > 0) { logger.LogInformation('Cleaned up {Count} orphaned features', deleted); } return deleted;`",
+            "NEW test file `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs` with 4 tests covering the acceptance criteria points. Use SQLite in-memory (`UseSqlite('DataSource=:memory:')`) so `ExecuteDeleteAsync` actually executes — EF InMemory provider has limited support for raw delete SQL. Seed data via direct DbSet.Add + SaveChanges, then invoke `CleanupAsync` and assert against the DB state.",
+            "Tests follow project conventions: NUnit [TestFixture], factory-style data via local helpers, no shared mutable state across tests beyond what [SetUp] provides, no comments inside tests.",
+            "Service is NOT yet wired into DI or called from PortfolioUpdater — step 01-02 handles that.",
+            "`dotnet build /warnaserror` passes with zero warnings.",
+            "All 4 new tests pass; full backend suite (excluding external connector categories) still green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IOrphanedFeatureCleanupService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs",
+          "scenario_name": "OrphanedFeatureCleanupService deletes Features with no Portfolio refs, preserves linked + parent Features, cascades dependents",
+          "quality_gates": [
+            "cd Lighthouse.Backend && dotnet build /warnaserror — zero warnings",
+            "cd Lighthouse.Backend && dotnet test --filter 'FullyQualifiedName~OrphanedFeatureCleanupService' — 4 tests pass",
+            "cd Lighthouse.Backend && dotnet test --filter 'Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration' — full non-external suite still green (2323 + 4 = 2327 tests)"
+          ],
+          "implementation_notes": "Use SQLite in-memory connection that stays open for the duration of the test fixture (`var connection = new SqliteConnection('DataSource=:memory:'); connection.Open(); var options = new DbContextOptionsBuilder<LighthouseAppContext>().UseSqlite(connection).Options;`). Call `db.Database.EnsureCreated()` to create the schema. The Feature constructor signature is `new Feature(Team team, int defaultWorkItems)`. Order is NOT NULL — set `Order = '1'` on every constructed Feature in tests. To create a linked Feature, add the Portfolio to `feature.Portfolios` (List<Portfolio>) AND the Feature to `portfolio.Features` — relationship fixup handles the join. SaveChanges before invoking CleanupAsync to commit to DB.",
+          "dependencies": [],
+          "estimated_hours": 1.0,
+          "deliverables": ["Service interface + implementation", "4 passing unit tests", "Clean backend build"]
+        },
+        {
+          "id": "01-02",
+          "name": "Wire IOrphanedFeatureCleanupService into PortfolioUpdater tail + Program.cs startup",
+          "description": "Register the service in DI. Invoke it at the tail of PortfolioUpdater.Update (after the existing try/finally, so cleanup failures don't affect refresh state). Invoke it once during host startup (in Program.cs, before app.Run() or via an `IHostedService` that runs once on start). Update PortfolioUpdaterTest to verify cleanup is called.",
+          "criteria": [
+            "`Lighthouse.Backend/Lighthouse.Backend/Program.cs`: register `builder.Services.AddSingleton<IOrphanedFeatureCleanupService, OrphanedFeatureCleanupService>();` next to the other Services registrations.",
+            "`Lighthouse.Backend/Lighthouse.Backend/Program.cs`: after `var app = builder.Build();` and before `app.Run();`, invoke cleanup once: resolve `IOrphanedFeatureCleanupService` from `app.Services` and call `await CleanupAsync()`. Log the count via `app.Logger`. Wrap in try/catch — startup cleanup failure must not block boot.",
+            "`Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs`: inject `IOrphanedFeatureCleanupService` via constructor. At the END of `Update(int id, IServiceProvider serviceProvider)`, after the try/finally block, call `await cleanupService.CleanupAsync();`. Wrap in try/catch and log on failure — cleanup failure must not affect refresh outcome (the refresh has already been logged in the finally).",
+            "`Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs`: add a Mock<IOrphanedFeatureCleanupService> to the test fixture, pass it through the constructor, and verify `CleanupAsync` is called exactly once per Update invocation. The mock returns 0 by default.",
+            "All existing PortfolioUpdaterTest tests continue to pass after the constructor signature change.",
+            "Build clean, full backend suite green, no DeliveriesControllerIntegrationTest regression."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+          "scenario_name": "PortfolioUpdater invokes IOrphanedFeatureCleanupService.CleanupAsync after each Update; startup cleanup runs once during host build-up",
+          "quality_gates": [
+            "cd Lighthouse.Backend && dotnet build /warnaserror — zero warnings",
+            "cd Lighthouse.Backend && dotnet test --filter 'FullyQualifiedName~PortfolioUpdaterTest' — all pass",
+            "cd Lighthouse.Backend && dotnet test --filter 'Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration' — full non-external suite green"
+          ],
+          "implementation_notes": "PortfolioUpdater currently has a primary-constructor signature inheriting from UpdateServiceBase<Portfolio>. Adding a new constructor param requires updating both the primary constructor declaration AND PortfolioUpdaterTest's instantiation (look for `new PortfolioUpdater(...)` or DI resolution). The Mock for IOrphanedFeatureCleanupService should be passed last in the primary-constructor argument order. The startup invocation in Program.cs should resolve via `using var scope = app.Services.CreateScope(); var cleanup = scope.ServiceProvider.GetRequiredService<IOrphanedFeatureCleanupService>(); await cleanup.CleanupAsync();` to avoid lifetime-mismatch issues with the singleton service taking IServiceScopeFactory.",
+          "dependencies": ["01-01"],
+          "estimated_hours": 0.75,
+          "deliverables": ["DI registration", "PortfolioUpdater integration", "Program.cs startup hook", "PortfolioUpdaterTest verifying cleanup invocation", "Clean backend build + green suite"]
+        }
+      ]
+    }
+  ]
+}
