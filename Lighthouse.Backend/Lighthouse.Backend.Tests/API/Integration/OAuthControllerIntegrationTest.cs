@@ -28,14 +28,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static readonly string[] DefaultProviderScopes = ["read:jira-work"];
 
-        private TestWebApplicationFactory<Program> rootFactory = null!;
-        private WebApplicationFactory<Program> factory = null!;
-        private HttpClient client = null!;
-        private Mock<IOAuthProvider> providerMock = null!;
-        private Mock<ILicenseService> licenseServiceMock = null!;
+        private readonly TestWebApplicationFactory<Program> rootFactory;
+        private readonly WebApplicationFactory<Program> factory;
+        private readonly HttpClient client;
+        private readonly Mock<IOAuthProvider> providerMock;
+        private readonly Mock<ILicenseService> licenseServiceMock;
 
-        [SetUp]
-        public void SetUp()
+        public OAuthControllerIntegrationTest()
         {
             rootFactory = new TestWebApplicationFactory<Program>();
 
@@ -72,11 +71,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 });
 
             client = factory.CreateClient();
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            providerMock.Reset();
+            providerMock.SetupGet(p => p.ProviderKey).Returns(ProviderKey);
+            providerMock.SetupGet(p => p.DefaultScopes).Returns(DefaultProviderScopes);
+
+            licenseServiceMock.Reset();
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
             SeedConnection();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             client.Dispose();
             factory.Dispose();

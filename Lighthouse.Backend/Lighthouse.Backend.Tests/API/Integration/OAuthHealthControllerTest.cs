@@ -18,13 +18,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string ProviderKey = "jira.oauth";
         private static readonly string[] DefaultProviderScopes = ["read:jira-work"];
 
-        private TestWebApplicationFactory<Program> rootFactory = null!;
-        private WebApplicationFactory<Program> factory = null!;
-        private HttpClient client = null!;
-        private Mock<IOAuthProvider> providerMock = null!;
+        private readonly TestWebApplicationFactory<Program> rootFactory;
+        private readonly WebApplicationFactory<Program> factory;
+        private readonly HttpClient client;
+        private readonly Mock<IOAuthProvider> providerMock;
 
-        [SetUp]
-        public void SetUp()
+        public OAuthHealthControllerTest()
         {
             rootFactory = new TestWebApplicationFactory<Program>();
 
@@ -47,11 +46,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 });
 
             client = factory.CreateClient();
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
             ResetDatabase();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             client.Dispose();
             factory.Dispose();

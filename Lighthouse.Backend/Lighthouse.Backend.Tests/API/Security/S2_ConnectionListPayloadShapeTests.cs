@@ -19,12 +19,11 @@ namespace Lighthouse.Backend.Tests.API.Security
         private const int TeamScopeId = 11;
         private const int PortfolioScopeId = 22;
 
-        private TestWebApplicationFactory<Program> rootFactory = null!;
-        private WebApplicationFactory<Program> factory = null!;
-        private HttpClient client = null!;
+        private readonly TestWebApplicationFactory<Program> rootFactory;
+        private readonly WebApplicationFactory<Program> factory;
+        private readonly HttpClient client;
 
-        [SetUp]
-        public void SetUp()
+        public S2_ConnectionListPayloadShapeTests()
         {
             rootFactory = new TestWebApplicationFactory<Program>();
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
@@ -32,8 +31,8 @@ namespace Lighthouse.Backend.Tests.API.Security
             SeedConnection();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             client.Dispose();
             factory.Dispose();
