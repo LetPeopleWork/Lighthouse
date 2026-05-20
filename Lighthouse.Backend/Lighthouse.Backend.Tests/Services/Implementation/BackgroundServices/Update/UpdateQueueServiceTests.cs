@@ -68,6 +68,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public async Task EnqueueUpdate_ConcurrentSameKey_OnlyOneQueued()
+        {
+            var updateType = UpdateType.Features;
+            var id = 42;
+            var updateKey = new UpdateKey(updateType, id);
+
+            var gateSource = new TaskCompletionSource();
+            var executionCount = 0;
+
+            var subject = CreateSubject();
+
+            Parallel.For(0, 128, _ =>
+            {
+                subject.EnqueueUpdate(updateType, id, async _ =>
+                {
+                    Interlocked.Increment(ref executionCount);
+                    await gateSource.Task;
+                });
+            });
+
+            Assert.That(updateStatuses, Has.Count.EqualTo(1), "Concurrent EnqueueUpdate for same key must dedupe to a single status entry");
+
+            gateSource.SetResult();
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < deadline && !updateStatuses.IsEmpty)
+            {
+                await Task.Delay(20);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(updateStatuses.ContainsKey(updateKey), Is.False, "Update key should be cleared after the single task completes");
+                Assert.That(executionCount, Is.EqualTo(1), "Exactly one task should have executed; concurrent dedupe must prevent double-execution");
+            }
+        }
+
+        [Test]
         public async Task EnqueueUpdate_ExecutesUpdateEventually()
         {
             var updateStatus = new UpdateStatus { UpdateType = UpdateType.Team, Id = 1, Status = UpdateProgress.Queued };
