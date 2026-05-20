@@ -117,3 +117,44 @@ If the background `UpdateAll()` tick (`UpdateServiceBase.cs:81`) and the HTTP `P
 - Generalised concurrency-token (`xmin` / `RowVersion`) wiring across `Feature` / `Portfolio`. That's a separate design decision (see Epic backlog).
 - The frontend "Active updates: N" banner UX (it shows `2` because both queue entries pass the check pre-fix — once `TryAdd` closes the race, the banner will read `1` and the test will not even hit the slow path).
 - The `test-speed-improvements` parallelization work (paused — see [[project_test_speed_improvements_paused]]).
+
+## 2026-05-20 — Rollback note on the orphan-sweep guard
+
+The orphan-sweep guard in `LighthouseAppContext.RemoveOrphanedFeatures` (commit `55033d62`, later `d0c0b299` pre-rebase) was **reverted** on the same day because it regressed five `DeliveriesControllerIntegrationTest` cases (run [26153057516](https://github.com/LetPeopleWork/Lighthouse/actions/runs/26153057516)).
+
+### Why the guard backfired
+
+The guard used `entry.Collection(f => f.Portfolios).IsLoaded` to distinguish "Portfolios is genuinely empty after fixup" from "Portfolios was never loaded." `IsLoaded` is the wrong signal:
+
+- `IsLoaded` is set to `true` only by `Include`, `Load`, or `LoadAsync`. **Relationship fixup does NOT set it.**
+- So a Feature whose link to Portfolio was removed via `Features.Clear()` + fixup ends up with `Portfolios.Count == 0` AND `IsLoaded == false` — indistinguishable from a Modified feature that was never loaded with Include.
+- The test helpers `AddPortfolio` + `AddFeatures` create a Feature `F0` inline, then `portfolio.UpdateFeatures(features)` clears that link. With the guard, `F0` survives the sweep at AddFeatures save time. Later in the controller flow, `DeliveryRepository.GetFeaturesByIds(...).Include(f => f.Portfolios)` re-loads `F0` with `IsLoaded == true` and empty Portfolios → the guard now permits the sweep → `F0` gets deleted mid-Delivery-save → FK breaks → HTTP 404 on the next request.
+
+### What survived the rollback
+
+The `UpdateQueueService.EnqueueUpdate` TryAdd change (Bug C) stays. Its regression test `EnqueueUpdate_ConcurrentSameKey_OnlyOneQueued` stays. TryAdd alone removes the "Active updates: 2" symptom by preventing the second queue entry, which collapses the most common race window in practice (background periodic tick + HTTP refresh on same UpdateKey). The original E2E flake should occur much less often, though the latent orphan-sweep race in concurrent SaveChanges across separate scopes can still in principle fire.
+
+### Path forward — deferred to a follow-up slice
+
+The correct orphan-detection signal is **whether the join-table link to Portfolios was deleted in this scope**, not the in-memory state of the navigation collection. Implementation sketch:
+
+```csharp
+// Iterate Dictionary<string, object> entries (EF's representation of the implicit join entity
+// for many-to-many in EF Core 5+) whose State == Deleted and whose Metadata is the
+// Feature↔Portfolio join. Extract the FeatureId from the join row.
+var unlinkedFeatureIds = ChangeTracker.Entries()
+    .Where(e => e.State == EntityState.Deleted)
+    .Where(e => e.Metadata.IsImplicitlyCreatedJoinEntityType /* and points at Feature↔Portfolio */)
+    .Select(e => /* extract Feature FK column */)
+    .ToHashSet();
+
+var orphanedFeatures = ChangeTracker.Entries<Feature>()
+    .Where(e => unlinkedFeatureIds.Contains(e.Entity.Id))
+    .Select(e => e.Entity)
+    .Where(f => !f.IsParentFeature && f.Portfolios.Count == 0)
+    .ToList();
+```
+
+This precisely targets features whose link to a Portfolio was just removed (the intent of the sweep) without misfiring on features whose navigation collection happens to be empty for unrelated reasons. The implementation needs a small spike to confirm the EF Core join-entity API surface; that's the work of the next slice.
+
+Until then, the production code keeps the original (heuristic, occasionally race-prone) orphan sweep.

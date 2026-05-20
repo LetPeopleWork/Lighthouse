@@ -370,8 +370,7 @@ namespace Lighthouse.Backend.Data
             logger.LogDebug("Removing orphaned features");
 
             var orphanedFeatures = ChangeTracker.Entries<Feature>()
-                .Where(e => e.State == EntityState.Modified || e.State == EntityState.Unchanged)
-                .Where(e => e.Collection(f => f.Portfolios).IsLoaded)
+                .Where(e => e.State != EntityState.Deleted && e.State != EntityState.Detached)
                 .Select(e => e.Entity)
                 .Where(f => !f.IsParentFeature && f.Portfolios.Count == 0)
                 .ToList();
