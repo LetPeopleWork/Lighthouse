@@ -1,0 +1,108 @@
+{
+  "roadmap": {
+    "project_id": "portfolio-delete-serialise",
+    "created_at": "2026-05-20",
+    "total_steps": 2,
+    "phases": 1
+  },
+  "feature_description": "Route HTTP DELETE /api/latest/portfolios/{id} through the UpdateQueueService so the delete cannot race with an in-flight queued update on the same portfolio. The race surfaces as DbUpdateConcurrencyException in WorkItemService/RefreshLogService saves, causing the update task to spin in SaveWithRetry retries for 2-3 minutes, leaving the Refresh Features button stuck and Playwright timing out (verifypostgres flake on PortfolioDetail.spec.ts:50:37). Adds Task EnqueueAndAwaitAsync to IUpdateQueueService (TaskCompletionSource-backed completion), a new UpdateType.PortfolioDelete enum value, and rewires the controller. Adapter coverage + driving-port coverage + walking-skeleton documented in distill/acceptance-tests.md.",
+  "ado_work_item": null,
+  "scope": "bug-fix-followup",
+  "rca_document": "docs/feature/portfolio-delete-serialise/discuss/rca.md",
+  "distill_document": "docs/feature/portfolio-delete-serialise/distill/acceptance-tests.md",
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator + user (DISTILL gate)",
+    "reviewed_at": "2026-05-20",
+    "method": "RCA + acceptance specs reviewed inline; user approved the 8-scenario set and the 7 wave decisions; per DWD-03 the 4-reviewer ceremony is intentionally skipped for this bug-fix-followup."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Route portfolio delete through the update queue",
+      "description": "Introduce a queue-await primitive on IUpdateQueueService, add the PortfolioDelete update type, and rewire PortfolioController.DeletePortfolio to use them. Acceptance scenarios from distill/acceptance-tests.md drive both steps.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add EnqueueAndAwaitAsync to IUpdateQueueService + PortfolioDelete UpdateType + unit tests",
+          "description": "Extend the queue with a primitive that enqueues a task AND returns a Task that completes when the work runs to its natural success/failure outcome. Add a new UpdateType.PortfolioDelete enum value. Cover the new primitive with unit tests in UpdateQueueServiceTests: (a) returned Task completes after the inner work runs, (b) two concurrent calls with the same UpdateKey share the SAME returned Task (TryAdd dedupe propagates), (c) inner work exception causes the returned Task to FAULT (not silently swallow). PortfolioController is NOT touched in this step.",
+          "criteria": [
+            "Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateType.cs has a new enum value `PortfolioDelete` appended to the end of the enum (so existing serialized values don't shift).",
+            "Lighthouse.Backend/Services/Interfaces/Update/IUpdateQueueService.cs declares: `Task EnqueueAndAwaitAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, CancellationToken cancellationToken = default);`",
+            "Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs implements EnqueueAndAwaitAsync. Internally: build the UpdateStatus, TryAdd to updateStatuses; on failure-to-add return the existing inflight task's awaiter via a parallel ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>>; on success enqueue a wrapped task that runs the work, sets TCS.SetResult(true) on success or TCS.SetException(...) on failure, then removes the TCS slot. Existing EnqueueUpdate (fire-and-forget) keeps working unchanged.",
+            "DatabaseMaintenanceGate early-return is preserved (if maintenanceGate.ActiveOperationId != null then return a completed Task with a logged skip).",
+            "NotifyListeners is still invoked on Queued/InProgress/Completed/Failed transitions for awaited tasks (parity with fire-and-forget).",
+            "Unit tests added to Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests.cs:",
+            "  - EnqueueAndAwaitAsync_ReturnedTaskCompletesAfterWorkRuns: the returned Task completes only after the inner Func executes; assert ordering via a TaskCompletionSource gate in the work.",
+            "  - EnqueueAndAwaitAsync_SameKeyConcurrent_BothAwaitersShareSameTask: two concurrent calls with the same UpdateKey return Tasks that complete at the same time; the inner work runs exactly ONCE (assert via Interlocked.Increment counter).",
+            "  - EnqueueAndAwaitAsync_WorkThrows_ReturnedTaskFaults: when the inner Func throws, the returned Task transitions to Faulted with that exception (assert via Assert.ThrowsAsync on the await).",
+            "All three new tests use Is.Zero / Is.EqualTo per the project's NUnit conventions (per ci-learnings 2026-05-20 entry — Is.Zero for zero comparisons). No Assert.Multiple lambdas — only Assert.EnterMultipleScope. No comments inside tests.",
+            "All existing UpdateQueueServiceTests tests continue to pass.",
+            "dotnet build /warnaserror returns zero warnings.",
+            "PortfolioController.cs is NOT modified in this step (boundary)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateType.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IUpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests.cs",
+          "scenario_name": "EnqueueAndAwaitAsync — returned Task semantics, dedupe coalescing, work-exception propagation",
+          "quality_gates": [
+            "cd Lighthouse.Backend && dotnet build /warnaserror — zero warnings",
+            "cd Lighthouse.Backend && dotnet test --no-build --no-restore --filter 'FullyQualifiedName~UpdateQueueServiceTests' — all pass including 3 new",
+            "cd Lighthouse.Backend && dotnet test --no-build --no-restore --filter 'Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration' — full non-external suite green"
+          ],
+          "implementation_notes": "Use a private `ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>>` for awaiters (in addition to updateStatuses). On dedupe (TryAdd false), look up the existing TCS and return its Task. On work completion in the channel reader, after status transitions, TryRemove the TCS and set Result/Exception. If both EnqueueUpdate and EnqueueAndAwaitAsync get called for the same key, the first writer wins TryAdd; the second caller (whichever pattern) waits or returns silently as appropriate. Cancellation token: registered on the TCS so a cancelled HTTP request returns a cancelled Task while the queue work itself proceeds (per DWD-07 — half-deleted is worse than late-completion).",
+          "dependencies": [],
+          "estimated_hours": 1.5,
+          "deliverables": ["New UpdateType value", "New IUpdateQueueService.EnqueueAndAwaitAsync method + impl", "3 new unit tests for the primitive", "Zero-warning backend build"]
+        },
+        {
+          "id": "01-02",
+          "name": "Rewire PortfolioController.DeletePortfolio through the queue + acceptance integration tests",
+          "description": "Refactor PortfolioController.DeletePortfolio to await EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, portfolioId, sp => …). Wrap the existing delete work (portfolioRepository.Remove + Save + refreshLogService.RemoveRefreshLogsForEntity) in the Func<IServiceProvider, Task>. Keep the 404 short-circuit BEFORE enqueue (no work for nonexistent portfolios). Add the full 8-scenario PortfolioDeleteSerialisationTests integration test file. M-06, M-07 are existing tests that must remain green.",
+          "criteria": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs: DeletePortfolio is now `await updateQueueService.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, portfolioId, async sp => { sp.GetRequiredService<IRepository<Portfolio>>().Remove(portfolioId); await sp.GetRequiredService<IRepository<Portfolio>>().Save(); await sp.GetRequiredService<IRefreshLogService>().RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId); }, HttpContext?.RequestAborted ?? default);`. Existing 404 short-circuit (`portfolioRepository.Exists(portfolioId)` or equivalent — check current shape) stays BEFORE the enqueue.",
+            "PortfolioController constructor injects IUpdateQueueService (already in the project's DI container — just add the parameter).",
+            "NEW file Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs derived from IntegrationTestBase. Contains the 8 [Test] methods listed in distill/acceptance-tests.md:",
+            "  - WS-01 DeletePortfolio_WhileQueueTaskInFlight_AwaitsQueueDrain_Returns200_NoConcurrencyException",
+            "  - M-01 DeletePortfolio_NoOtherActivity_DeletesPortfolioAndOrphanFeatures",
+            "  - M-02 DeletePortfolio_NonExistentId_Returns404_NoQueueWork",
+            "  - M-03 DeletePortfolio_TwoConcurrentRequestsSamePortfolio_BothSucceedOrSecondIs404_NoException",
+            "  - M-04 DeletePortfolio_DifferentPortfolioInFlight_DoesNotBlock",
+            "  - M-05 RefreshAfterDelete_Serialised_RefreshShortCircuitsOnMissingPortfolio",
+            "  - M-08 DeleteDuringInFlightUpdate_QueueDrainsWithoutConcurrencyException_StatusEndpointReturnsClean",
+            "  - (M-06 lives in PortfolioUpdaterTest already — verify still green; do NOT duplicate)",
+            "  - (M-07 is DeliveriesControllerIntegrationTest — verify still green; do NOT duplicate)",
+            "The slow-update-task gate uses an `IWorkItemService` test double registered via TestWebApplicationFactory's WithWebHostBuilder.ConfigureTestServices, replacing the real one for the duration of the test fixture. The double exposes a TaskCompletionSource the test can release to let the slow update finish.",
+            "All 8 new tests pass against the SQLite-backed IntegrationTestBase locally.",
+            "All 10 existing DeliveriesControllerIntegrationTest tests still pass.",
+            "All 14 existing PortfolioUpdaterTest tests still pass.",
+            "dotnet build /warnaserror — zero warnings.",
+            "Full non-external suite green: 2329 (current) + 8 new = 2337 tests pass.",
+            "Test file uses Is.Zero / Assert.EnterMultipleScope per project conventions. No comments inside tests."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs",
+          "scenario_name": "PortfolioController.DeletePortfolio routes through the update queue; full 8-scenario acceptance suite green; existing delivery + updater suites stay green",
+          "quality_gates": [
+            "cd Lighthouse.Backend && dotnet build /warnaserror — zero warnings",
+            "cd Lighthouse.Backend && dotnet test --no-build --no-restore --filter 'FullyQualifiedName~PortfolioDeleteSerialisationTests' — 8 new tests pass",
+            "cd Lighthouse.Backend && dotnet test --no-build --no-restore --filter 'FullyQualifiedName~DeliveriesControllerIntegrationTest' — 10 tests still pass",
+            "cd Lighthouse.Backend && dotnet test --no-build --no-restore --filter 'FullyQualifiedName~PortfolioUpdaterTest' — 14 tests still pass",
+            "cd Lighthouse.Backend && dotnet test --no-build --no-restore --filter 'Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration' — full non-external suite green"
+          ],
+          "implementation_notes": "PortfolioController currently uses primary-constructor syntax. Add IUpdateQueueService as the LAST parameter. For the integration test, the IWorkItemService gate-double pattern is similar to existing TestWebApplicationFactory overrides — look at how other Lighthouse.Backend.Tests/API/Integration tests inject test doubles (e.g. ApiKeyControllerHttpSmokeTests, OAuthCallbackCsrfIntegrationTest). The gate-double's UpdateFeaturesForPortfolio implementation: `await _gate.Task.WaitAsync(cancellationToken)` then return. Test releases the gate via _gate.SetResult(true). For M-08 status endpoint check: poll /api/latest/update/status until hasActiveUpdates == false, with a 10s timeout. Use PostgreSQL-capable test fixture (IntegrationTestBase already supports this via the test host's appsettings) for verisimilitude with CI — but the race is reproducible on SQLite too because the gate makes timing deterministic.",
+          "dependencies": ["01-01"],
+          "estimated_hours": 2.5,
+          "deliverables": ["PortfolioController routing through queue", "PortfolioDeleteSerialisationTests with 8 acceptance scenarios", "All existing PortfolioUpdater + Deliveries tests still green", "Zero-warning backend build", "Full non-external suite + 8 new tests passing"]
+        }
+      ]
+    }
+  ]
+}
