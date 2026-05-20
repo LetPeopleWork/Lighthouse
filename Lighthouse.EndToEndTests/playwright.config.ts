@@ -87,10 +87,14 @@ export default defineConfig({
 		video: "retain-on-failure",
 	},
 
-	/* Set longer timeouts as we depend for some tests on 3rd party software we don't have control over (ADO/Jira) */
+	/* Set longer timeouts as we depend for some tests on 3rd party software we don't have control over (ADO/Jira).
+	   expect.timeout was 30s and sat exactly on the edge of real Jira/ADO refresh latency (25-35s on a warm run,
+	   longer under runner load), producing chronic flake on PortfolioDetail / ado / TeamsDetail specs.
+	   60s gives 2x headroom for the default; specs that wait on external-IO completion can still raise individually
+	   (see {{ timeout: 90_000 }} call-sites). */
 	timeout: 120000,
 	expect: {
-		timeout: 30000,
+		timeout: 60000,
 	},
 
 	/* Configure projects for major browsers */
