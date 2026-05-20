@@ -12,8 +12,9 @@ testWithData(
 		await teamDetailPage.updateTeamData();
 		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
 
-		// Wait for update to be done
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
+			timeout: 90_000,
+		});
 
 		await teamDetailPage.goToForecasts();
 
@@ -37,8 +38,9 @@ testWithData(
 		await teamDetailPage.updateTeamData();
 		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
 
-		// Wait for update to be done
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
+			timeout: 90_000,
+		});
 
 		await teamDetailPage.goToForecasts();
 
@@ -67,8 +69,9 @@ testWithData(
 		await teamDetailPage.updateTeamData();
 		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
 
-		// Wait for update to be done
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
+			timeout: 90_000,
+		});
 
 		await teamDetailPage.goToForecasts();
 

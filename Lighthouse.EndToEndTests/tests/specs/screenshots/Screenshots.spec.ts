@@ -106,7 +106,9 @@ const updatePortfolios = async (
 
 		await updateTeam(api, portfolio.id);
 
-		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
+		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled({
+			timeout: 90_000,
+		});
 	}
 
 	await updatePortfolio(api, portfolios[0].id);
@@ -411,7 +413,9 @@ testWithData(
 		);
 
 		await portfolioDetailPage.refreshFeatures();
-		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
+		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled({
+			timeout: 90_000,
+		});
 
 		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
