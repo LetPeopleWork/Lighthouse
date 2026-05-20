@@ -5,5 +5,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
     public interface IUpdateQueueService
     {
         void EnqueueUpdate(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask);
+
+        Task EnqueueAndAwaitAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, CancellationToken cancellationToken = default);
     }
 }

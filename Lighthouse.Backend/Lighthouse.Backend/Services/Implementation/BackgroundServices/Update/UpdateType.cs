@@ -7,5 +7,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         Features,
 
         Forecasts,
+
+        PortfolioDelete,
     }
 }

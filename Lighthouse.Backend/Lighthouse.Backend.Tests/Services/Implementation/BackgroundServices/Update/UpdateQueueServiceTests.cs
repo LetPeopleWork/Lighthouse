@@ -323,6 +323,78 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             Assert.That(updateStatuses.ContainsKey(new UpdateKey(UpdateType.Team, 1)), Is.True);
         }
 
+        [Test]
+        public async Task EnqueueAndAwaitAsync_ReturnedTaskCompletesAfterWorkRuns()
+        {
+            var counter = 0;
+
+            var subject = CreateSubject();
+
+            var completion = subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 7, _ =>
+            {
+                Interlocked.Increment(ref counter);
+                return Task.CompletedTask;
+            });
+
+            await completion;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(counter, Is.EqualTo(1));
+                Assert.That(completion.IsCompletedSuccessfully, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task EnqueueAndAwaitAsync_SameKeyConcurrent_BothAwaitersShareSameTask()
+        {
+            var gateSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var executionCount = 0;
+
+            var subject = CreateSubject();
+
+            var first = subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 11, async _ =>
+            {
+                Interlocked.Increment(ref executionCount);
+                await gateSource.Task;
+            });
+
+            var deadline = DateTime.UtcNow.AddSeconds(2);
+            while (DateTime.UtcNow < deadline && executionCount == 0)
+            {
+                await Task.Delay(10);
+            }
+
+            var second = subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 11, _ =>
+            {
+                Interlocked.Increment(ref executionCount);
+                return Task.CompletedTask;
+            });
+
+            Assert.That(second.IsCompleted, Is.False, "Second awaiter must not complete while first work is still gated");
+
+            gateSource.SetResult(true);
+
+            await Task.WhenAll(first, second);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(executionCount, Is.EqualTo(1), "Inner work must run exactly once for two concurrent same-key calls");
+                Assert.That(first.IsCompletedSuccessfully, Is.True);
+                Assert.That(second.IsCompletedSuccessfully, Is.True);
+            }
+        }
+
+        [Test]
+        public void EnqueueAndAwaitAsync_WorkThrows_ReturnedTaskFaults()
+        {
+            var subject = CreateSubject();
+
+            Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 13, _ =>
+                    throw new InvalidOperationException("boom")));
+        }
+
         private UpdateQueueService CreateSubject()
         {
             return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, updateStatuses, serviceScopeFactoryMock.Object, gate);
