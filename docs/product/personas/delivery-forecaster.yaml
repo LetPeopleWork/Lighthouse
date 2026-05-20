@@ -1,0 +1,50 @@
+schema_version: 1
+id: delivery-forecaster
+created: 2026-05-20
+created_in_feature: filter-forecast-throughput
+
+display_name: Delivery Forecaster
+aliases:
+  - delivery-lead
+  - release-train-engineer
+  - team-lead-forecasting
+  - product-delivery-manager
+
+short_description: >
+  Owns the conversation with leadership about WHEN features will ship and HOW MUCH the team
+  will deliver. Uses Lighthouse Monte Carlo forecasts as the evidence base. Cares less about
+  the throughput chart's aesthetics and more about whether the percentile dates it produces
+  are HONEST — i.e. defensible to stakeholders who will hold them to the number.
+
+primary_jobs:
+  - job-forecast-throughput-tune
+
+goals:
+  - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work
+  - Explain to leadership why total throughput and feature-delivery throughput aren't the same number
+  - Avoid maintaining an offline Monte Carlo spreadsheet to filter what Lighthouse won't filter
+
+frustrations:
+  - The team's throughput counts bugs, ad-hoc work and orphan items that don't move the upcoming feature backlog
+  - Forecasts therefore bias optimistic; stakeholders are surprised when features slip
+  - Manually filtering historical data into a spreadsheet to run Monte Carlo defeats the point of the integrated tool
+
+mental_model:
+  - Throughput is a property of the historical work; the forecast is a property of the upcoming work
+  - The forecast should sample from items that resemble what's coming, not from every closed item indiscriminately
+  - The throughput CHART (what we got done) and the forecast THROUGHPUT (what we'll deliver against this backlog) can legitimately be different numbers, and both have value
+
+vocabulary:
+  - "feature throughput" — closed items that map to a feature/epic, distinct from "ad-hoc throughput"
+  - "noise" — bug-fixes, maintenance, orphan items in the closed history that aren't features
+  - "honest forecast" — a forecast whose throughput sample matches the kind of work the backlog represents
+  - "filter" — exclusion of certain work-item types or orphan items from the forecast-throughput sample
+
+related_personas:
+  - team-admin (often the same person; admins the team's filter settings)
+  - flow-coach (different job — flow-review focus; uses Lighthouse for stuck-item diagnosis, not forecast tuning)
+  - portfolio-admin (counterpart at portfolio scope, though portfolio-level filter is OUT of scope for this feature)
+
+not_this_persona:
+  - System admin (no forecast ownership)
+  - Viewer (read-only; sees the forecast but cannot configure the filter)

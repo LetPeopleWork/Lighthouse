@@ -256,3 +256,113 @@ sequenceDiagram
     WTS->>Connector: work items
 ```
 
+---
+
+# C4 Architecture Diagrams — filter-forecast-throughput
+
+Feature: filter-forecast-throughput (Epic 4896)
+Wave: DESIGN
+Date: 2026-05-20
+Architect: Morgan (Solution Architect)
+
+---
+
+## C4 Level 1 — System Context (delta)
+
+The Lighthouse system context (RBAC baseline) is unchanged. This feature adds **no** new external actors and **no** new external systems. It introduces a new internal persona — `Delivery Forecaster` — and tightens the conversation between the existing Team Admin and the existing Premium License gate.
+
+```mermaid
+C4Context
+    title System Context — Filter Forecast Throughput
+
+    Person(forecaster, "Delivery Forecaster", "Owns the WHEN / HOW MUCH conversation with leadership. Needs honest percentile dates.")
+    Person(teamAdmin, "Team Admin", "Configures the team's forecast-throughput filter rule set. Often the same person as the Delivery Forecaster.")
+    Person(viewer, "Viewer", "Sees forecasts + chip indicating filter active; can flip per-view toggles read-only; cannot edit rules.")
+
+    System(lighthouse, "Lighthouse", "Software delivery forecasting tool. New: per-team forecast-throughput filter, premium-gated. Reuses the existing DeliveryRuleSet rule-engine; new field schema operates on WorkItem fields. Affects forecast surfaces and (opt-in) throughput charts.")
+
+    System_Ext(wts, "Work-Tracking System", "Jira / Azure DevOps / Linear. Source of WorkItems whose closed-history feeds Monte Carlo throughput sampling.")
+
+    Rel(forecaster, lighthouse, "Reviews forecasts; flips per-view / per-run filter toggles via")
+    Rel(teamAdmin, lighthouse, "Configures forecast-throughput rule set via")
+    Rel(viewer, lighthouse, "Reads forecasts with filtered/raw chip annotation via")
+    Rel(lighthouse, wts, "Reads closed WorkItems for throughput sampling from")
+```
+
+---
+
+## C4 Level 2 — Container (delta)
+
+No new containers. The existing Frontend SPA, Backend API, Database, and E2E Test Runner all gain additive responsibilities — they exchange one new DTO shape (`forecastFilterRuleSetJson` on the team-settings round trip) and one new endpoint path (`/forecast-filter/schema`). The Backend API's persistence container gains one nullable JSON column on the `Teams` table.
+
+```mermaid
+C4Container
+    title Container Diagram — Filter Forecast Throughput
+
+    Person(user, "Authenticated User", "Delivery Forecaster / Team Admin / Viewer")
+
+    Container(spa, "Frontend SPA", "React 18 + TypeScript + Material UI", "Renders new Forecast Filter (Premium) section embedding the existing DeliveryRuleBuilder. Renders Filtered Throughput chip on five surfaces. Per-view toggle on Run Chart (client-side filter) and PBC chart (sends ?view=filtered).")
+    Container(api, "Backend API", "C# .NET 8 ASP.NET Core Web API", "Persists Team.ForecastFilterRuleSetJson. Applies filter inside ITeamMetricsService at two seams (DDD-4). Returns filter schema (D9 WorkItem fields). Surfaces filterApplied + excludedSummary on forecast / backtest responses.")
+    ContainerDb(db, "Database", "SQLite (dev/test) / PostgreSQL (prod) via EF Core", "Teams table gains nullable ForecastFilterRuleSetJson column. No other schema changes.")
+    Container(e2e, "E2E Test Runner", "Playwright + TypeScript", "One @premium E2E covers the full journey: configure rule → see chip on feature forecast → flip chart toggle → flip team-forecast toggle → flip backtest toggle.")
+
+    System_Ext(wts, "Work-Tracking System")
+
+    Rel(user, spa, "Navigates application via", "HTTPS")
+    Rel(spa, api, "GET /api/team/{id}/forecast-filter/schema, PUT /api/team/{id}, POST /api/forecast/manual/{id}, POST /api/forecast/backtest/{id}, GET /api/teamMetrics/{id}/throughput, GET /api/teamMetrics/{id}/throughput/pbc?view=", "HTTPS / JSON")
+    Rel(api, db, "Reads/writes Team entity (incl. new JSON column) via", "EF Core")
+    Rel(api, wts, "Polls WorkItems via existing connector path (unchanged)", "HTTPS")
+    Rel(e2e, spa, "Drives browser interactions against", "Playwright CDP")
+    Rel(e2e, api, "Calls API helpers for test setup against", "HTTPS / JSON")
+```
+
+---
+
+## C4 Level 3 — Component: Rule-Engine and Forecast-Filter Domain
+
+The rule-engine generalisation (ADR-012) is the architecturally significant subsystem of this feature. This diagram makes the new ports / adapters and the delegation paths explicit, and shows the single-seam filter application inside `TeamMetricsService` (DDD-4).
+
+```mermaid
+C4Component
+    title Component Diagram — Rule-Engine and Forecast-Filter Domain (Backend)
+
+    Container_Boundary(api, "Backend API") {
+        Component(teamCtrl, "TeamController (existing, EXTENDED)", "ASP.NET Core ApiController", "PUT /api/team/{id} accepts forecastFilterRuleSetJson; GET /api/team/{id}/forecast-filter/schema is new. Both gated by [RbacGuard].")
+        Component(metricsCtrl, "TeamMetricsController (existing, EXTENDED)", "ASP.NET Core ApiController", "GET /throughput unchanged; GET /throughput/pbc gains ?view=raw|filtered.")
+        Component(forecastCtrl, "ForecastController (existing, EXTENDED)", "ASP.NET Core ApiController", "RunManualForecastAsync + RunBacktest accept optional applyFilterOverride; responses gain filterApplied + excludedSummary.")
+
+        Component(filterSvc, "ForecastFilterRuleService : IForecastFilterRuleService", "C# class (NEW)", "GetSchema(team); GetEffectiveRuleSet(team) returns null on free tenant / null JSON / zero conditions (DDD-8 + DDD-9); Filter(items, ruleSet) excludes matched (D8); ValidateRuleSet(ruleSet, team).")
+        Component(deliverySvc, "DeliveryRuleService : IDeliveryRuleService (existing, REFACTORED)", "C# class", "Public surface preserved (GetRuleSchema, GetMatchingFeaturesForRuleset, RecomputeRuleBasedDeliveries). Internals now delegate to RuleEvaluator<Feature>.")
+
+        Component(evaluator, "RuleEvaluator<T> : IRuleEvaluator<T>", "C# generic class (NEW)", "Pure function. Match(ruleSet, items, fieldProvider) → matched items. IsValid(ruleSet, schema) → bool. NO I/O dependencies (enforced by ArchUnitNET).")
+        Component(featureProv, "FeatureFieldProvider : IRuleFieldProvider<Feature>", "C# class (NEW)", "Field keys: feature.type / feature.state / feature.name / feature.referenceid / feature.parentreferenceid / feature.tags / additionalField.{id}.")
+        Component(workItemProv, "WorkItemFieldProvider : IRuleFieldProvider<WorkItem>", "C# class (NEW)", "Field keys: workitem.type / workitem.state / workitem.name / workitem.referenceid / workitem.parentreferenceid / workitem.tags / additionalField.{id}.")
+
+        Component(metricsSvc, "TeamMetricsService : ITeamMetricsService (existing, EXTENDED)", "C# class", "GetCurrentThroughputForTeamForecast(team, mode) AND GetBlackoutAwareThroughputForTeam(team, start, end, mode) apply the filter when mode demands it. Single seam (DDD-4). Cache key includes mode.")
+
+        Component(licenseSvc, "LicenseService : ILicenseService (existing)", "C# class", "CanUsePremiumFeatures() consulted by ForecastFilterRuleService.GetEffectiveRuleSet.")
+        Component(efCtx, "LighthouseAppContext (existing, EXTENDED)", "EF Core DbContext", "Team entity adds nullable ForecastFilterRuleSetJson column. Migration generated via CreateMigration PowerShell (Sqlite + Postgres in lockstep).")
+    }
+
+    Rel(teamCtrl, filterSvc, "validates rule set / fetches schema via")
+    Rel(metricsCtrl, metricsSvc, "queries throughput PBC via (passes mode)")
+    Rel(forecastCtrl, metricsSvc, "fetches throughput vector via (passes mode)")
+
+    Rel(filterSvc, evaluator, "matches WorkItems via")
+    Rel(filterSvc, workItemProv, "uses for field access")
+    Rel(filterSvc, licenseSvc, "checks premium gate via (DDD-9)")
+    Rel(filterSvc, efCtx, "reads Team.ForecastFilterRuleSetJson via")
+
+    Rel(deliverySvc, evaluator, "matches Features via")
+    Rel(deliverySvc, featureProv, "uses for field access")
+
+    Rel(metricsSvc, filterSvc, "applies filter at the two seams (DDD-4)")
+    Rel(metricsSvc, efCtx, "reads closed WorkItems via")
+```
+
+The diagram makes three architectural commitments visible:
+
+1. **Single shared evaluator** (`RuleEvaluator<T>`) — the same algorithmic code path handles both Feature and WorkItem rule evaluation; bug fixes / operator additions land in one place (ADR-012).
+2. **Single filter seam** (`TeamMetricsService` — and nothing else — calls `IForecastFilterRuleService.Filter`); enforced by ArchUnitNET (DDD-4).
+3. **Single license gate for this feature** (`ForecastFilterRuleService.GetEffectiveRuleSet`); enforced by ArchUnitNET (DDD-9).
+

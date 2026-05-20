@@ -1,10 +1,11 @@
 schema_version: 1
-updated: 2026-05-17
+updated: 2026-05-20
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
   - test-speed-improvements
   - time-in-state-and-staleness
+  - filter-forecast-throughput
 
 jobs:
   - id: job-rbac-bootstrap
@@ -250,6 +251,86 @@ jobs:
         Community + Productboard tagged on Epic 4144 — direct customer signal that the
         information is wanted. Current satisfaction is near zero (the data isn't surfaced
         anywhere in Lighthouse today).
+
+  - id: job-forecast-throughput-tune
+    title: Tune the throughput that feeds my forecasts so projections match the kind of work that's actually coming
+    persona: delivery-forecaster
+    feature_context: filter-forecast-throughput
+    job_story: >
+      When I am forecasting feature delivery dates for my team and the historical throughput
+      that Lighthouse samples from contains ad-hoc work (bugs, maintenance, orphan items, things
+      tagged "spike", custom-field categories that aren't features) that won't repeat against my
+      upcoming feature backlog,
+      I want to express what counts as "noise" using a flexible rule set (the same one I already
+      know from rule-based deliveries) and have every forecast surface — feature forecasts,
+      team forecasts, backtests, and the throughput charts — let me see both the filtered and
+      raw views,
+      so I can give leadership honest delivery dates AND still tell the team's total-work story
+      from the same screens, without maintaining an offline spreadsheet that breaks the
+      integrated forecast trail.
+    dimensions:
+      functional: >
+        Per-team configuration: a `forecastFilterRuleSet` using the existing DeliveryRuleSet
+        rule engine (reused and generalised to operate on WorkItem fields). Available fields:
+        Type, State, Name, Reference ID, Parent Reference ID, Tags, and connector-defined
+        additional fields. Operators: equals, notEquals, contains. Match semantics: matching
+        items are EXCLUDED from forecast throughput. Surfaces that USE the filter: Feature
+        Forecasts (always, no toggle), Team Forecasts (per-run toggle), Backtests (per-run
+        toggle), Throughput Run Chart and Throughput PBC (per-view toggle, default Raw).
+        Premium-gated.
+      emotional: >
+        Move from "I have to apologise for the forecast and mentally subtract noise" / "the
+        offline spreadsheet is fragile" / "I can't easily switch between the two stories" to
+        "the same rule set powers every surface; I flip a toggle to switch the story I'm
+        telling; both numbers are defensible."
+      social: >
+        Demonstrate to leadership that "yes, total throughput was 50 (see the Raw chart),
+        but only 20 of those are feature-bearing (see the Filtered chart), so we should
+        expect ~20 next quarter, not 50" — without context-switching to a spreadsheet to
+        prove the math.
+    forces:
+      push: >
+        Without filtering, feature forecasts pull from a throughput distribution inflated by
+        bugs, ad-hoc work, orphan items, and any other category that isn't part of the upcoming
+        feature backlog. Stakeholders see "P85 = 12 weeks" and are surprised when feature
+        delivery slips because the team also has to handle bug intake. Customers (Liz / JLP)
+        have explicitly asked for this — Epic 4896. The same problem exists on backtest
+        accuracy ("my backtest says the model is great, but it's modelling a different
+        throughput series than my forward forecasts use — apples to oranges").
+      pull: >
+        A single per-team rule set, expressed in the same editor users already use for
+        rule-based deliveries, with arbitrary filter dimensions (type, parent presence, tags,
+        custom fields) — set once, every forecast surface for the team respects it. Every
+        surface that USES the throughput offers a way to see both stories (filtered vs. raw)
+        without re-configuring.
+      anxiety: >
+        What if I filter so aggressively that the throughput window has too few samples and
+        the forecast becomes unreliable? (Mitigated by D5: fall back to unfiltered with a
+        warning chip on empty-filtered-sample.)
+        What if I forget the filter is on and wonder why the forecast dates don't match the
+        throughput chart? (Mitigated by US-03: every filtered surface shows a chip listing the
+        active rules.)
+        What if I configure rules wrong and the rule set silently includes items I expected
+        to exclude (or vice versa)? (Mitigated by reuse of the existing rule editor pattern
+        users already trust; tooltip enumerates rules in plain English.)
+      habit: >
+        Forecasters either accept the biased dates and mentally discount them, or export the
+        throughput history to a spreadsheet and run Monte Carlo offline against a manually
+        filtered series — defeating the purpose of having an integrated forecasting tool. For
+        rule-based deliveries, the same forecasters ALREADY use the Lighthouse rule editor —
+        so the editor pattern is familiar; this feature extends that familiarity to throughput.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Direct customer ask (Liz, JLP via Epic 4896). Cannot be done in Lighthouse today.
+        Important for premium/enterprise customers whose leadership conversations live or die
+        on the credibility of the P85 date. Satisfaction is near zero — workaround is an
+        offline spreadsheet that breaks the integrated forecast trail. The reuse-of-rule-engine
+        decision (D7) also pays architectural debt forward: future rule-based surfaces
+        (cycle-time exclusions, predictability-scope filters) become cheap once the engine is
+        generalised.
 
   - id: job-team-admin-tune-staleness
     title: Tune the "stuck" signal so it matches my team's normal cadence

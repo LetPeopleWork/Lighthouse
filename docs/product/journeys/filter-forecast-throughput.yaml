@@ -1,0 +1,172 @@
+schema_version: 1
+feature_id: filter-forecast-throughput
+updated: 2026-05-20
+
+journeys:
+
+  - name: tune-forecast-throughput-filter
+    goal: Delivery forecaster (often via team-admin) configures a rule-based forecast-throughput filter, sees honest feature-forecast dates as a result, and flips per-view / per-run toggles on charts, team forecasts, and backtests to switch between the "honest features" and "total work" stories on demand.
+    persona: delivery-forecaster (often the same person as team-admin for the team)
+
+    emotional_arc:
+      start: Quietly resigned — "the forecast is optimistic because of bugs/orphans/spike tickets in the throughput; I mentally subtract before quoting stakeholders"
+      middle: Cautiously curious — "let me express what counts as noise as rules — the same way I configure rule-based deliveries — and see whether the percentiles shift to something I'd defend"
+      end: Confident — "P85 now reflects feature delivery pace; the throughput chart still tells the team's total-work story when I flip the toggle; I can switch stories without leaving the page"
+
+    design_decisions_resolved:
+      - id: D1
+        question: Does the filter affect the throughput charts, or only the forecasts?
+        decision: >
+          Throughput Run Chart and Throughput PBC default to today's behaviour (Raw) but render
+          a per-view "Show: Raw / Filtered" toggle when the team has a non-empty filter
+          configured (premium tenants only). Rationale: two distinct conversations — "what we
+          got done" vs "what we forecast against this backlog" — should both be one click apart,
+          not buried in settings, but the default must not surprise existing users. Other charts
+          (cycle time, work item age, predictability) are NOT toggled by this feature.
+      - id: D2
+        question: At what scope is the filter configured?
+        decision: >
+          Per Team. Portfolio-level filter is OUT of scope (Liz's ask is team-level; the
+          Portfolio Forecaster reference in Epic 4896 was inspirational not prescriptive).
+          Feature forecasts that involve multiple teams apply each team's own filter
+          independently when sampling from that team's throughput.
+      - id: D3
+        question: Which surfaces expose a toggle, and which always use the filter?
+        decision: >
+          Surfaces with a toggle (visible only when the team has a filter configured):
+          Throughput Run Chart, Throughput PBC, Team Forecast (How Many / When), Backtest.
+          Surfaces that ALWAYS apply the filter (no toggle): Feature Forecasts. Rationale:
+          Epic 4896 directive — feature forecasts are the load-bearing premium output and
+          should always be honest. Default state asymmetry is intentional: chart toggles default
+          to Raw (preserve existing behaviour); forecast toggles default to ON (the new
+          opinionated behaviour).
+      - id: D4
+        question: What is the licensing gate?
+        decision: >
+          Premium-only. Rule editor and all toggles are hidden on non-premium tenants. Backend
+          silently no-ops the filter if license downgrades; persisted rule set is preserved on
+          downgrade for non-destructive re-upgrade.
+      - id: D5
+        question: What happens when the rule set matches every item (empty filtered throughput)?
+        decision: >
+          Forecast surfaces (Feature / Team / Backtest) fall back to UNFILTERED throughput and
+          surface a non-blocking warning chip ("Filter excluded all throughput; showing
+          unfiltered forecast"). Chart surfaces (Run Chart, PBC) in Filtered view show a
+          friendly empty-state message — no fallback (the user explicitly opted into Filtered).
+      - id: D7
+        question: Should we build dedicated controls (work-item-type checkboxes, orphan bool, tag bool, ...) or reuse the existing rule engine?
+        decision: >
+          REUSE the existing rule engine (DeliveryRuleSet / DeliveryRuleCondition /
+          IDeliveryRuleService) and generalise it. Rationale: orthogonal filter dimensions
+          (type, parent presence, tags, custom fields) compose naturally as rule expressions;
+          dedicated controls would multiply UI surface for every new dimension. The rule engine
+          is already familiar to users from rule-based deliveries — the editor component is
+          reused with a WorkItem field schema and `semantics: "exclude"` labelling. The
+          architectural cost is the engine generalisation (extract a generic evaluator with a
+          field-provider abstraction) — this is paid as Slice 01's refactor commit. Trade-off
+          accepted: a slightly larger Slice 01 (~1.5 days, past the carpaccio ≤1-day taste
+          test) in exchange for an architectural win that unlocks future rule-based surfaces
+          cheaply.
+      - id: D8
+        question: Does a rule match mean "include" or "exclude"?
+        decision: >
+          MATCH = EXCLUDE for forecast-throughput rules. Inverse of delivery rules where
+          match = include. Rationale: users naturally think "I want to filter out bugs," not
+          "I want to include only non-bugs." UI labelling makes the inversion explicit
+          ("Exclude items where…"). Implementation: an `RuleSetSemantics` value passed alongside
+          the rule set determines whether matches are kept or filtered out.
+      - id: D9
+        question: What fields does the rule editor expose for the forecast-throughput filter?
+        decision: >
+          Fixed fields: workitem.type, workitem.state, workitem.name, workitem.referenceid,
+          workitem.parentreferenceid, workitem.tags. Dynamic fields: additionalField.{id} for
+          every connector-defined additional field on the team's WorkTrackingSystemConnection
+          (same mechanism as delivery-rule additional fields).
+
+    steps:
+
+      - id: step-open-team-settings
+        action: Delivery forecaster (team-admin) navigates to /teams/{teamId}/settings on a premium tenant
+        expected_output: Existing Team Settings tabs render; a new "Forecast Filter (Premium)" section is visible containing the same rule-editor component used for rule-based deliveries, configured with the D9 WorkItem field schema and "Exclude items where…" labelling
+        emotional_state: curious — "this looks like the rule editor I already know"
+        shared_artifacts:
+          - teamId (route param) — single source: URL
+          - rbac.isTeamAdmin(teamId) — single source: useRbac() hook
+          - licenseStatus.isPremium — single source: useLicense() hook
+          - forecastFilterSchema — single source: GET /api/teams/{teamId}/forecast-filter/schema
+
+      - id: step-configure-filter-rules
+        action: Forecaster clicks "Add rule" twice — rule 1 sets Type equals Bug; rule 2 sets Parent Reference ID equals (empty) — then Save
+        expected_output: PUT /api/teams/{teamId} returns 200; "Saved" toast; rules persisted across refresh; the rule set serialises to the same JSON shape DeliveryRuleSet uses (D7 invariant)
+        emotional_state: cautious — "did this take effect everywhere it should?"
+        shared_artifacts:
+          - team.forecastFilterRuleSet (new) — single source: Team entity column, written via PUT /api/teams/{teamId}
+
+      - id: step-open-feature-forecast
+        action: Forecaster navigates to a Feature that involves this Team and views its forecast
+        expected_output: Forecast widget renders with chip "Filtered throughput" near the percentile dates; tooltip enumerates `Type = Bug; Parent Reference ID = (empty)`; percentile dates have shifted (typically later) compared to before the filter
+        emotional_state: focused — "are these dates I'd defend?"
+        shared_artifacts:
+          - featureForecast.percentiles, featureForecast.filterApplied, featureForecast.excludedSummary — single source: POST /api/forecast/feature/{id}/run response
+
+      - id: step-open-throughput-chart-raw
+        action: Forecaster opens the Team's Metrics view and looks at the Throughput Run Chart
+        expected_output: Chart shows the team's TOTAL throughput (today's behaviour). A new "Show: Raw / Filtered" toggle is visible in the chart header; chip is absent in this Raw view.
+        emotional_state: relieved — "the team's total-work story is preserved by default"
+        shared_artifacts:
+          - team.throughputDataset — single source: GET /api/teams/{teamId}/metrics (item-granular or extended for ?view= per DESIGN)
+
+      - id: step-toggle-throughput-chart-filtered
+        action: Forecaster flips the chart header toggle from Raw to Filtered
+        expected_output: Chart re-renders (instant, no spinner) showing only items not matched by the rule set; chip "Filtered throughput" appears next to chart title; counts shrink visibly
+        emotional_state: equipped — "I can tell either story from the same screen, one click apart"
+        shared_artifacts:
+          - chart.viewMode — per-component state, NOT persisted
+
+      - id: step-team-forecast-with-toggle-off
+        action: Forecaster opens the Team Forecast (How Many) page, sees toggle "Apply forecast-throughput filter" defaulted ON, flips it OFF, clicks Forecast
+        expected_output: Team Forecast result computed against UNFILTERED throughput for this single run; resulting N is larger than the filtered run; chip absent in this run's result
+        emotional_state: equipped — "I can answer 'what if we did everything' without reconfiguring"
+        shared_artifacts:
+          - teamForecast.applyFilterOverride — per-run form state
+          - teamForecast.filterApplied — single source: POST response
+
+      - id: step-backtest-with-toggle-on
+        action: Forecaster opens Backtest, picks a historical window, sees toggle defaulted ON, submits
+        expected_output: Backtest computes against historical FILTERED throughput; result DTO includes filterApplied: true; chip rendered on the backtest result view
+        emotional_state: confident — "the backtest validates the forecast I actually consume"
+        shared_artifacts:
+          - backtest.applyFilterOverride — per-run form state
+          - backtest.filterApplied — single source: POST /api/forecast/backtest/{teamId} response
+
+    error_paths:
+
+      - id: err-empty-filtered-throughput-forecast
+        trigger: Configured rule set matches ALL closed items in the throughput window (forecast surfaces — Feature Forecast / Team Forecast / Backtest)
+        recovery: Forecast falls back to UNFILTERED throughput; UI shows non-blocking warning chip "Filter excluded all throughput; showing unfiltered forecast"; the user can revise the rule set or accept the message
+        owner: backend forecast service (D5 forecast half)
+
+      - id: err-empty-filtered-throughput-chart
+        trigger: Same as above but on a chart surface (Run Chart / PBC) with toggle in Filtered view
+        recovery: Chart renders empty-state message "No items match the throughput filter in this window. Switch to Raw to see total throughput." — no fallback, since the user explicitly opted into Filtered
+        owner: frontend chart component (D5 chart half)
+
+      - id: err-license-downgrade
+        trigger: License is downgraded from premium → free while a team has a non-empty filter configured
+        recovery: Backend silently ignores the rule set (computes forecasts as unfiltered); UI hides the rule editor AND every toggle (chart / team forecast / backtest); persisted rule set is NOT erased (re-upgrade restores behaviour)
+        owner: backend forecast service + license service + each toggle's rendering condition (D4)
+
+      - id: err-non-team-admin-attempts-edit
+        trigger: A viewer or non-team-admin user navigates directly to /teams/{teamId}/settings and attempts to mutate the rule set
+        recovery: Rule editor renders read-only (so viewer understands why their forecasts are filtered); attempting to PUT the new field returns 403
+        owner: AuthorizationController + RBAC gating
+
+      - id: err-invalid-rule-key
+        trigger: User submits a rule with an unknown field key (e.g. via API directly with `additionalField.999999` referring to a non-existent additional field)
+        recovery: PUT /api/teams/{teamId} returns 400 with `{"field": "forecastFilterRuleSet", "error": "Unknown field key: additionalField.999999"}`; rule set is NOT persisted; existing rule set remains intact
+        owner: backend forecast filter rule service + API validation
+
+      - id: err-premium-tenant-no-filter-config
+        trigger: Team-admin on a premium tenant has not yet configured any filter
+        recovery: Forecasts compute as today (no filter applied); no chip; no toggles anywhere; the rule editor renders empty (ready to add rules); silent baseline
+        owner: backend forecast service (default empty rule set == no-op per D8)
