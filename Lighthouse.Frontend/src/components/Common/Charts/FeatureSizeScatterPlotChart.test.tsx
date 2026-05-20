@@ -1273,6 +1273,28 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
 
+		it("Closed Date X axis renders human-readable month/year labels", () => {
+			const marchFeature = createFeature(1, "F-Mar", 4, 10);
+			marchFeature.closedDate = new Date("2026-03-10");
+			const aprilFeature = createFeature(2, "F-Apr", 7, 12);
+			aprilFeature.closedDate = new Date("2026-04-15");
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={[marchFeature, aprilFeature]}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const sample = container.dataset.xFormatterSample;
+			expect(sample).toBeTruthy();
+			expect(sample).not.toMatch(/^\d{10,}$/);
+			expect(sample).toMatch(
+				/(\bMar(ch)?\b|\b03\b|\b3\b).*2026|2026.*?(\bMar(ch)?\b|\b03\b|\b3\b)/i,
+			);
+		});
+
 		it("All-unclosed dataset stacks every point at the today marker", () => {
 			const inProgress1 = createFeature(1, "F1", 3, 0);
 			inProgress1.stateCategory = "Doing";
