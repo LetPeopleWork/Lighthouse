@@ -40,7 +40,11 @@ vi.mock("@mui/x-charts", () => {
 	interface ChartContainerProps {
 		children: React.ReactNode;
 		height: number;
-		xAxis?: Array<{ max?: number; label?: string; valueFormatter?: (v: number) => string }>;
+		xAxis?: Array<{
+			max?: number;
+			label?: string;
+			valueFormatter?: (v: number) => string;
+		}>;
 		yAxis?: Array<{ max?: number; label?: string }>;
 		series?: Array<{ data?: unknown[] }>;
 	}
@@ -81,8 +85,7 @@ vi.mock("@mui/x-charts", () => {
 					data-series-count={
 						series
 							? series.reduce(
-									(acc, s) =>
-										acc + (Array.isArray(s.data) ? s.data.length : 0),
+									(acc, s) => acc + (Array.isArray(s.data) ? s.data.length : 0),
 									0,
 								)
 							: 0
@@ -1130,7 +1133,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(verticalP50).toHaveAttribute("data-axis", "x");
 			expect(verticalP85).toHaveAttribute("data-axis", "x");
 
-			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
 		});
 
 		it("Estimation mode keeps the existing X = Size / Y = Estimation layout including category formatter", () => {
@@ -1140,9 +1145,21 @@ describe("FeatureSizeScatterPlotChart", () => {
 				useNonNumericEstimation: true,
 				categoryValues: ["XS", "S", "M", "L", "XL"],
 				featureEstimations: [
-					{ featureId: 1, estimationNumericValue: 0, estimationDisplayValue: "XS" },
-					{ featureId: 2, estimationNumericValue: 2, estimationDisplayValue: "M" },
-					{ featureId: 3, estimationNumericValue: 4, estimationDisplayValue: "XL" },
+					{
+						featureId: 1,
+						estimationNumericValue: 0,
+						estimationDisplayValue: "XS",
+					},
+					{
+						featureId: 2,
+						estimationNumericValue: 2,
+						estimationDisplayValue: "M",
+					},
+					{
+						featureId: 3,
+						estimationNumericValue: 4,
+						estimationDisplayValue: "XL",
+					},
 				],
 			};
 
@@ -1171,7 +1188,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(yValues).toContain(2);
 			expect(yValues).toContain(4);
 
-			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
 		});
 
 		it("Toggle renders T-Shirt / Cycle Time / Closed Date when estimation unit configured", () => {
@@ -1181,7 +1200,11 @@ describe("FeatureSizeScatterPlotChart", () => {
 				useNonNumericEstimation: true,
 				categoryValues: ["XS", "S", "M", "L", "XL"],
 				featureEstimations: [
-					{ featureId: 1, estimationNumericValue: 0, estimationDisplayValue: "XS" },
+					{
+						featureId: 1,
+						estimationNumericValue: 0,
+						estimationDisplayValue: "XS",
+					},
 				],
 			};
 
@@ -1193,8 +1216,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			);
 
 			const tshirtButton = screen.getByRole("button", { name: /t-shirt/i });
-			const cycleTimeButton = screen.getByRole("button", { name: /cycle time/i });
-			const closedDateButton = screen.getByRole("button", { name: /closed date/i });
+			const cycleTimeButton = screen.getByRole("button", {
+				name: /cycle time/i,
+			});
+			const closedDateButton = screen.getByRole("button", {
+				name: /closed date/i,
+			});
 
 			expect(tshirtButton).toBeInTheDocument();
 			expect(cycleTimeButton).toBeInTheDocument();
@@ -1207,8 +1234,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("Toggle renders Cycle Time / Closed Date when estimation unit absent", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
-			const cycleTimeButton = screen.getByRole("button", { name: /cycle time/i });
-			const closedDateButton = screen.getByRole("button", { name: /closed date/i });
+			const cycleTimeButton = screen.getByRole("button", {
+				name: /cycle time/i,
+			});
+			const closedDateButton = screen.getByRole("button", {
+				name: /closed date/i,
+			});
 
 			expect(cycleTimeButton).toBeInTheDocument();
 			expect(closedDateButton).toBeInTheDocument();
@@ -1270,7 +1301,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 				"data-value",
 				"7",
 			);
-			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
 		});
 
 		it("Closed Date X axis renders human-readable month/year labels", () => {
@@ -1395,9 +1428,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			const todayLine = screen.getByTestId("reference-line-Today");
 			expect(todayLine).toHaveAttribute("data-axis", "x");
-			expect(Number(todayLine.getAttribute("data-value"))).toBeGreaterThanOrEqual(
-				beforeRender,
-			);
+			expect(
+				Number(todayLine.getAttribute("data-value")),
+			).toBeGreaterThanOrEqual(beforeRender);
 			expect(Number(todayLine.getAttribute("data-value"))).toBeLessThanOrEqual(
 				afterRender,
 			);
