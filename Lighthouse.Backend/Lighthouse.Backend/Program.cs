@@ -104,6 +104,8 @@ namespace Lighthouse.Backend
 
                 ConfigureApp(app);
 
+                await RunStartupOrphanedFeatureCleanupAsync(app);
+
                 if (isStandalone)
                 {
                     // Register the banner to print once the server is actually up
@@ -442,6 +444,23 @@ namespace Lighthouse.Backend
                 "Every '*.oauth' key in the schema must have a corresponding IOAuthProvider registration in DI.";
             logger.LogCritical("{Message}", message);
             throw new InvalidOperationException(message);
+        }
+
+        private static async Task RunStartupOrphanedFeatureCleanupAsync(WebApplication app)
+        {
+            using var startupScope = app.Services.CreateScope();
+            try
+            {
+                var cleanup = startupScope.ServiceProvider.GetRequiredService<IOrphanedFeatureCleanupService>();
+                var deleted = await cleanup.CleanupAsync();
+                app.Logger.LogInformation("Startup cleanup removed {Count} orphaned features", deleted);
+            }
+#pragma warning disable CA1031 // startup cleanup is non-fatal
+            catch (Exception ex)
+#pragma warning restore CA1031
+            {
+                app.Logger.LogWarning(ex, "Startup orphaned-feature cleanup failed (non-fatal)");
+            }
         }
 
         private static bool TryResolveProvider(IOAuthProviderRegistry registry, string key)
@@ -842,6 +861,8 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IPortfolioUpdater, PortfolioUpdater>();
 
             builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
+
+            builder.Services.AddSingleton<IOrphanedFeatureCleanupService, OrphanedFeatureCleanupService>();
 
             builder.Services.AddSingleton<ICryptoService, CryptoService>();
             builder.Services.AddSingleton<IServiceConfig, ServiceConfig>();

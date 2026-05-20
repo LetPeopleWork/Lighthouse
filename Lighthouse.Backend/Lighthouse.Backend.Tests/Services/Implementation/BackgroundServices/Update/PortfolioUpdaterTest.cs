@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
+        private Mock<IOrphanedFeatureCleanupService> cleanupServiceMock;
 
         private int idCounter;
 
@@ -42,6 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
+            cleanupServiceMock = new Mock<IOrphanedFeatureCleanupService>();
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
@@ -239,6 +241,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(project), Times.Once);
         }
 
+        [Test]
+        public void Update_AfterRefreshCompletes_InvokesOrphanedFeatureCleanup()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            cleanupServiceMock.Verify(c => c.CleanupAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public void Update_WhenRefreshThrows_StillInvokesCleanup()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            workItemServiceMock
+                .Setup(s => s.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
+                .ThrowsAsync(new InvalidOperationException("boom"));
+
+            var subject = CreateSubject();
+
+            try
+            {
+                subject.TriggerUpdate(project.Id);
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (AggregateException)
+            {
+            }
+
+            cleanupServiceMock.Verify(c => c.CleanupAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         private void SetupProjects(params Portfolio[] projects)
         {
             projectRepoMock.Setup(x => x.GetAll()).Returns(projects);
@@ -299,7 +341,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private PortfolioUpdater CreateSubject()
         {
-            return new PortfolioUpdater(Mock.Of<ILogger<PortfolioUpdater>>(), ServiceScopeFactory, UpdateQueueService);
+            return new PortfolioUpdater(Mock.Of<ILogger<PortfolioUpdater>>(), ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object);
         }
     }
 }

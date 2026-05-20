@@ -13,7 +13,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     public class PortfolioUpdater(
         ILogger<PortfolioUpdater> logger,
         IServiceScopeFactory serviceScopeFactory,
-        IUpdateQueueService updateQueueService)
+        IUpdateQueueService updateQueueService,
+        IOrphanedFeatureCleanupService cleanupService)
         : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Features),
             IPortfolioUpdater
     {
@@ -58,42 +59,58 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             try
             {
-                var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
-                var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
-                var projectMetricsService = serviceProvider.GetRequiredService<IPortfolioMetricsService>();
-                var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
-                var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
+                try
+                {
+                    var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
+                    var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
+                    var projectMetricsService = serviceProvider.GetRequiredService<IPortfolioMetricsService>();
+                    var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
+                    var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
 
-                await workItemService.UpdateFeaturesForPortfolio(project);
-                projectMetricsService.InvalidatePortfolioMetrics(project);
+                    await workItemService.UpdateFeaturesForPortfolio(project);
+                    projectMetricsService.InvalidatePortfolioMetrics(project);
 
-                var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
-                deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
-                await deliveryRepository.Save();
+                    var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
+                    deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
+                    await deliveryRepository.Save();
 
-                var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-                await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
+                    var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
+                    await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
 
-                await forecastUpdateService.UpdateForecastsForPortfolio(project);
+                    await forecastUpdateService.UpdateForecastsForPortfolio(project);
 
-                await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
+                    await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
 
-                itemCount = project.Features.Count;
-                success = true;
+                    itemCount = project.Features.Count;
+                    success = true;
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    await refreshLogService.LogRefreshAsync(new RefreshLog
+                    {
+                        Type = RefreshType.Portfolio,
+                        EntityId = project.Id,
+                        EntityName = project.Name,
+                        ItemCount = itemCount,
+                        DurationMs = stopwatch.ElapsedMilliseconds,
+                        ExecutedAt = DateTime.UtcNow,
+                        Success = success
+                    });
+                }
             }
             finally
             {
-                stopwatch.Stop();
-                await refreshLogService.LogRefreshAsync(new RefreshLog
+                try
                 {
-                    Type = RefreshType.Portfolio,
-                    EntityId = project.Id,
-                    EntityName = project.Name,
-                    ItemCount = itemCount,
-                    DurationMs = stopwatch.ElapsedMilliseconds,
-                    ExecutedAt = DateTime.UtcNow,
-                    Success = success
-                });
+                    await cleanupService.CleanupAsync();
+                }
+#pragma warning disable CA1031 // cleanup failures must not propagate to the refresh queue
+                catch (Exception ex)
+#pragma warning restore CA1031
+                {
+                    Logger.LogWarning(ex, "Orphaned-feature cleanup after portfolio update failed (non-fatal)");
+                }
             }
         }
     }
