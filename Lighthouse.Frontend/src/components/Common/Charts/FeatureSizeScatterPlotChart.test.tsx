@@ -1119,6 +1119,47 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
+
+		it("Estimation mode keeps the existing X = Size / Y = Estimation layout including category formatter", () => {
+			const tshirtEstimation: IFeatureSizeEstimationResponse = {
+				status: "Ready",
+				estimationUnit: "T-Shirt",
+				useNonNumericEstimation: true,
+				categoryValues: ["XS", "S", "M", "L", "XL"],
+				featureEstimations: [
+					{ featureId: 1, estimationNumericValue: 0, estimationDisplayValue: "XS" },
+					{ featureId: 2, estimationNumericValue: 2, estimationDisplayValue: "M" },
+					{ featureId: 3, estimationNumericValue: 4, estimationDisplayValue: "XL" },
+				],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={tshirtEstimation}
+				/>,
+			);
+
+			const tshirtButton = screen.getByRole("button", { name: /t-shirt/i });
+			expect(tshirtButton).toHaveAttribute("aria-pressed", "true");
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+			const xValues = allPoints.map((p: { x: number }) => p.x);
+			const yValues = allPoints.map((p: { y: number }) => p.y);
+			expect(xValues).toContain(3);
+			expect(xValues).toContain(8);
+			expect(xValues).toContain(15);
+			expect(yValues).toContain(0);
+			expect(yValues).toContain(2);
+			expect(yValues).toContain(4);
+
+			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
+		});
 	});
 
 	describe("estimation y-axis toggle", () => {
