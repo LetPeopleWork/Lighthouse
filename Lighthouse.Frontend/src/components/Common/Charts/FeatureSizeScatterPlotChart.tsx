@@ -634,6 +634,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 										id: "sizeAxis",
 										scaleType: "time" as const,
 										label: "Closed Date",
+										max: today,
 										valueFormatter: dateValueFormatter,
 									}
 								: {
@@ -702,19 +703,6 @@ const FeatureSizeScatterPlotChart: React.FC<
 								/>
 							);
 						})}
-						{isClosedDateMode ? (
-							<ChartsReferenceLine
-								key="today-marker"
-								x={today}
-								label="Today"
-								labelAlign="end"
-								lineStyle={{
-									stroke: theme.palette.text.primary,
-									strokeWidth: 1,
-									strokeDasharray: "3 3",
-								}}
-							/>
-						) : null}
 						<ChartsXAxis />
 						<ChartsYAxis />
 						<ScatterPlot

@@ -1364,9 +1364,6 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const yValues = allPoints.map((p: { y: number }) => p.y).sort();
 			expect(yValues).toEqual([3, 6]);
 
-			const todayLines = screen.getAllByTestId("reference-line-Today");
-			expect(todayLines).toHaveLength(1);
-
 			const yMaxAttr = container.dataset.yAxisMax;
 			expect(yMaxAttr).toBeTruthy();
 			expect(Number(yMaxAttr)).toBeCloseTo(6 * 1.1, 5);
@@ -1426,15 +1423,6 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(f3Point.x).toBeGreaterThanOrEqual(beforeRender);
 			expect(f3Point.x).toBeLessThanOrEqual(afterRender);
 
-			const todayLine = screen.getByTestId("reference-line-Today");
-			expect(todayLine).toHaveAttribute("data-axis", "x");
-			expect(
-				Number(todayLine.getAttribute("data-value")),
-			).toBeGreaterThanOrEqual(beforeRender);
-			expect(Number(todayLine.getAttribute("data-value"))).toBeLessThanOrEqual(
-				afterRender,
-			);
-
 			const p50 = screen.getByTestId("reference-line-50%");
 			const p85 = screen.getByTestId("reference-line-85%");
 			expect(p50).toHaveAttribute("data-axis", "y");
@@ -1455,6 +1443,54 @@ describe("FeatureSizeScatterPlotChart", () => {
 			).not.toBeInTheDocument();
 			expect(
 				screen.queryByRole("button", { name: /closed date/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("Closed Date X axis right edge stays at today even when only past-closed items are visible", () => {
+			const pastClosed1 = createFeature(1, "F-past-1", 4, 10);
+			pastClosed1.stateCategory = "Done";
+			pastClosed1.closedDate = new Date("2026-03-10");
+			const pastClosed2 = createFeature(2, "F-past-2", 7, 14);
+			pastClosed2.stateCategory = "Done";
+			pastClosed2.closedDate = new Date("2026-04-15");
+
+			const beforeRender = Date.now();
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={[pastClosed1, pastClosed2]}
+				/>,
+			);
+			const afterRender = Date.now();
+
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const xMaxAttr = container.dataset.xAxisMax;
+			expect(xMaxAttr).toBeTruthy();
+			expect(xMaxAttr).not.toBe("undefined");
+			const xMax = Number(xMaxAttr);
+			expect(xMax).toBeGreaterThanOrEqual(beforeRender);
+			expect(xMax).toBeLessThanOrEqual(afterRender);
+		});
+
+		it("Closed Date mode draws no Today reference line", () => {
+			const closed = createFeature(1, "F1", 4, 10);
+			closed.stateCategory = "Done";
+			closed.closedDate = new Date("2026-03-10");
+			const inProgress = createFeature(2, "F2", 5, 0);
+			inProgress.stateCategory = "Doing";
+			inProgress.workItemAge = 3;
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={[closed, inProgress]} />,
+			);
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			expect(
+				screen.queryByTestId("reference-line-Today"),
 			).not.toBeInTheDocument();
 		});
 	});
