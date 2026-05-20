@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deleted, Is.EqualTo(1));
-                Assert.That(await assertContext.Features.CountAsync(), Is.EqualTo(0));
+                Assert.That(await assertContext.Features.CountAsync(), Is.Zero);
             }
         }
 
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using var assertContext = createContext();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deleted, Is.EqualTo(0));
+                Assert.That(deleted, Is.Zero);
                 Assert.That(await assertContext.Features.CountAsync(), Is.EqualTo(1));
             }
         }
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using var assertContext = createContext();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deleted, Is.EqualTo(0));
+                Assert.That(deleted, Is.Zero);
                 Assert.That(await assertContext.Features.CountAsync(), Is.EqualTo(1));
             }
         }
@@ -135,8 +135,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 seedContext.Features.Add(orphan);
                 await seedContext.SaveChangesAsync();
 
-                Assert.That(await seedContext.Set<FeatureWork>().CountAsync(), Is.EqualTo(1), "precondition: FeatureWork seeded");
-                Assert.That(await seedContext.Set<WhenForecast>().CountAsync(), Is.EqualTo(1), "precondition: Forecast seeded");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(await seedContext.Set<FeatureWork>().CountAsync(), Is.EqualTo(1), "precondition: FeatureWork seeded");
+                    Assert.That(await seedContext.Set<WhenForecast>().CountAsync(), Is.EqualTo(1), "precondition: Forecast seeded");
+                }
             }
 
             var subject = new OrphanedFeatureCleanupService(buildScopeFactory(), serviceLoggerMock.Object);
@@ -146,9 +149,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deleted, Is.EqualTo(1));
-                Assert.That(await assertContext.Features.CountAsync(), Is.EqualTo(0));
-                Assert.That(await assertContext.Set<FeatureWork>().CountAsync(), Is.EqualTo(0));
-                Assert.That(await assertContext.Set<WhenForecast>().CountAsync(), Is.EqualTo(0));
+                Assert.That(await assertContext.Features.CountAsync(), Is.Zero);
+                Assert.That(await assertContext.Set<FeatureWork>().CountAsync(), Is.Zero);
+                Assert.That(await assertContext.Set<WhenForecast>().CountAsync(), Is.Zero);
             }
         }
 
