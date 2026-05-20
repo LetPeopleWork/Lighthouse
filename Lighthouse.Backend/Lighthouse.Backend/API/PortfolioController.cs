@@ -4,12 +4,14 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.API
 {
@@ -20,8 +22,8 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
-        IRefreshLogService refreshLogService,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        IUpdateQueueService updateQueueService)
         : ControllerBase
     {
         [HttpGet]
@@ -55,10 +57,24 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         public async Task<IActionResult> DeletePortfolio(int portfolioId)
         {
-            portfolioRepository.Remove(portfolioId);
-            await portfolioRepository.Save();
+            if (!portfolioRepository.Exists(portfolioId))
+            {
+                return NotFound();
+            }
 
-            await refreshLogService.RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId);
+            await updateQueueService.EnqueueAndAwaitAsync(
+                UpdateType.PortfolioDelete,
+                portfolioId,
+                async sp =>
+                {
+                    var portfolios = sp.GetRequiredService<IRepository<Portfolio>>();
+                    portfolios.Remove(portfolioId);
+                    await portfolios.Save();
+
+                    var logs = sp.GetRequiredService<IRefreshLogService>();
+                    await logs.RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId);
+                },
+                HttpContext?.RequestAborted ?? default);
 
             return NoContent();
         }

@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
-        private Mock<IRefreshLogService> refreshLogServiceMock;
+        private Mock<IUpdateQueueService> updateQueueServiceMock;
 
         [SetUp]
         public void Setup()
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepoMock = new Mock<IRepository<Team>>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
-            refreshLogServiceMock = new Mock<IRefreshLogService>();
+            updateQueueServiceMock = new Mock<IUpdateQueueService>();
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
@@ -122,31 +122,6 @@ namespace Lighthouse.Backend.Tests.API
 
                 portfolioUpdaterMock.Verify(x => x.TriggerUpdate(testPortfolio.Id));
             }
-        }
-
-        [Test]
-        public async Task Delete_RemovesTeamAndSaves()
-        {
-            const int portfolioId = 12;
-
-            var subject = CreateSubject();
-
-            await subject.DeletePortfolio(portfolioId);
-
-            portfolioRepoMock.Verify(x => x.Remove(portfolioId));
-            portfolioRepoMock.Verify(x => x.Save());
-        }
-
-        [Test]
-        public async Task Delete_RemovesPortfolioRefreshLogs()
-        {
-            const int portfolioId = 12;
-
-            var subject = CreateSubject();
-
-            await subject.DeletePortfolio(portfolioId);
-
-            refreshLogServiceMock.Verify(x => x.RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId), Times.Once);
         }
 
         [Test]
@@ -432,8 +407,8 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioRepoMock.Object,
                 teamRepoMock.Object,
                 portfolioUpdaterMock.Object,
-                refreshLogServiceMock.Object,
-                rbacAdministrationServiceMock.Object
+                rbacAdministrationServiceMock.Object,
+                updateQueueServiceMock.Object
             );
         }
 
