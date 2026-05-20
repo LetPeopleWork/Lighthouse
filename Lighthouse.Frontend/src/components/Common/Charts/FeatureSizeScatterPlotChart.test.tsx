@@ -1161,6 +1161,36 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
 
+		it("Toggle renders T-Shirt / Cycle Time / Closed Date when estimation unit configured", () => {
+			const tshirtEstimation: IFeatureSizeEstimationResponse = {
+				status: "Ready",
+				estimationUnit: "T-Shirt",
+				useNonNumericEstimation: true,
+				categoryValues: ["XS", "S", "M", "L", "XL"],
+				featureEstimations: [
+					{ featureId: 1, estimationNumericValue: 0, estimationDisplayValue: "XS" },
+				],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={tshirtEstimation}
+				/>,
+			);
+
+			const tshirtButton = screen.getByRole("button", { name: /t-shirt/i });
+			const cycleTimeButton = screen.getByRole("button", { name: /cycle time/i });
+			const closedDateButton = screen.getByRole("button", { name: /closed date/i });
+
+			expect(tshirtButton).toBeInTheDocument();
+			expect(cycleTimeButton).toBeInTheDocument();
+			expect(closedDateButton).toBeInTheDocument();
+			expect(tshirtButton).toHaveAttribute("aria-pressed", "true");
+			expect(cycleTimeButton).toHaveAttribute("aria-pressed", "false");
+			expect(closedDateButton).toHaveAttribute("aria-pressed", "false");
+		});
+
 		it("Toggle renders Cycle Time / Closed Date when estimation unit absent", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
