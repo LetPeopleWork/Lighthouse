@@ -1220,6 +1220,59 @@ describe("FeatureSizeScatterPlotChart", () => {
 			).not.toBeInTheDocument();
 		});
 
+		it("Round-trip through Closed Date mode preserves Cycle Time mode data and percentile orientation", () => {
+			const features = [
+				createFeature(1, "F1", 3, 5),
+				createFeature(2, "F2", 8, 12),
+				createFeature(3, "F3", 15, 20),
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={features}
+					sizePercentileValues={[
+						{ percentile: 50, value: 4 },
+						{ percentile: 85, value: 7 },
+					]}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			const initialSeries = JSON.parse(container.dataset.series ?? "[]");
+			const initialKeys = initialSeries
+				.flatMap((s: { data?: { groupKey?: string }[] }) => s.data ?? [])
+				.map((d: { groupKey?: string }) => d.groupKey)
+				.sort();
+
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+			fireEvent.click(screen.getByRole("button", { name: /cycle time/i }));
+
+			const finalSeries = JSON.parse(container.dataset.series ?? "[]");
+			const finalKeys = finalSeries
+				.flatMap((s: { data?: { groupKey?: string }[] }) => s.data ?? [])
+				.map((d: { groupKey?: string }) => d.groupKey)
+				.sort();
+			expect(finalKeys).toEqual(initialKeys);
+
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-axis",
+				"x",
+			);
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-value",
+				"4",
+			);
+			expect(screen.getByTestId("reference-line-85%")).toHaveAttribute(
+				"data-axis",
+				"x",
+			);
+			expect(screen.getByTestId("reference-line-85%")).toHaveAttribute(
+				"data-value",
+				"7",
+			);
+			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
+		});
+
 		it("Closed Date mode swaps axes, pins unclosed items at today, and flips percentile orientation", () => {
 			const closedF1 = createFeature(1, "F1", 4, 10);
 			closedF1.stateCategory = "Done";
