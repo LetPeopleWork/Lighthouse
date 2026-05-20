@@ -224,6 +224,20 @@ The 2026-05-20 coverlet collector vs msbuild vs no-coverage A/B (see [[spike-be-
 - **Why it works**: 24 redundant WAF bootstraps eliminated (running serially because of `[NonParallelizable]` on `IntegrationTestBase`).
 - **Recommendation**: **SHIPPED** (`e4a67b94`). Awaits CI confirmation that the −49 % holds on GitHub-hosted runners.
 
+### CS-T — `ForecastServiceTest` Monte-Carlo cluster downsize (DEFERRED follow-up)
+
+- **Disproves**: "`ForecastServiceTest`'s ~21 s of cluster time per run is intrinsic to the Monte-Carlo iteration count and can't be reduced without losing assertion power."
+- **Evidence** (2026-05-20, post-CS-R CI run, top per-test durations):
+  - Seven `ForecastServiceTest.F*` tests in the top 20: ~3734, 3249, 2728, 1990, 1874, 1430, 1116, 1051, 1042, 1039, 915 ms — cumulative **~21 s**.
+  - Pattern looks like full Monte-Carlo simulations (10k+ iterations) repeated across very similar fixture inputs (FeatureWIPOne/Two/Three, SingleTeam/MultiTeam variants).
+- **Investigation needed**:
+  - Profile a single `ForecastServiceTest.F*` test to identify hot path — likely iteration count + per-iteration work.
+  - Check whether multiple tests can share a computed forecast (e.g. compute one with FeatureWIP=Two once, assert from multiple tests against the same result if assertions are read-only).
+  - Identify tests that genuinely need real Monte-Carlo (non-determinism is an assertion target) vs tests that just need *any* forecast result (deterministic fixture would do).
+- **Theoretical gain**: 10–18 s if half the cluster collapses to deterministic fixtures or shared computations. Single-digit % of current ~221 s local wall-clock; meaningful on top of CS-R but not a step change.
+- **Risk**: low — tests already pass with Monte-Carlo variability tolerance (`Is.InRange(29, 31)` style assertions); converting to deterministic fixtures or shared computations doesn't reduce coverage.
+- **Recommendation**: **DEFERRED.** Open after CS-R proves stable in CI and after [[spike-fe-profile]] (FE is the new constraint per CS-H theory). When opened, treat as a ½-day spike (profile + categorise tests) followed by a ½–1 day slice (apply categorised fixes).
+
 ### CS-S — Drop `[NonParallelizable]` on `IntegrationTestBase` + per-test unique DB name (DEFERRED follow-up)
 
 - **Disproves**: "Even with a shared WAF, integration tests must run serially because they share an EF in-memory DB."
@@ -249,12 +263,13 @@ The 2026-05-20 coverlet collector vs msbuild vs no-coverage A/B (see [[spike-be-
 | 6 ✅ | **spike-be-fixture-setup — CS-Q** | shipped (`dc64dc5a`), verdict PARTIAL | ½ d | Disproved [SetUp] hypothesis; redirected to CS-R. |
 | 7 ✅ | **slice-cs-r — shared WAF** | shipped (`cd056e80` + `e4a67b94`) | ½ d | Local wall-clock −49.6 %; pending CI confirmation. |
 | 8 | **slice-cs-s — drop [NonParallelizable] + per-test unique DB** | deferred | 1–2 d | Marginal 50–100 s on top of CS-R; needs real isolation engineering. Revisit after CS-R proves stable in CI. |
-| 9 | **spike-fe-profile** | queued (optional) | ½ d | Open only if FE becomes the new bottleneck on non-connector PRs after CS-H confirms in CI. |
-| 10 | **slice-fe-root-cause-refactor** | gated by spike | TBD | Driven by spike findings |
-| 11 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate on Jira-touching PRs (where CS-H doesn't help). |
-| 12 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | gated by spike | TBD | Whichever the spike opens |
+| 9 | **slice-cs-t — ForecastServiceTest Monte-Carlo downsize** | deferred | 1 d | ~21 s cluster; collapse near-duplicate Monte-Carlo runs to shared/deterministic fixtures. Open after FE spike. |
+| 10 | **spike-fe-profile** | queued (optional) | ½ d | Open only if FE becomes the new bottleneck on non-connector PRs after CS-H confirms in CI. |
+| 11 | **slice-fe-root-cause-refactor** | gated by spike | TBD | Driven by spike findings |
+| 12 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate on Jira-touching PRs (where CS-H doesn't help). |
+| 13 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | gated by spike | TBD | Whichever the spike opens |
 
-CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above. CS-Q rejected after spike. CS-R shipped 2026-05-20 with −49.6 % local wall-clock; CS-S deferred pending CS-R CI confirmation.
+CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above. CS-Q rejected after spike. CS-R shipped 2026-05-20 with −49.6 % local wall-clock; CS-S + CS-T deferred pending CS-R CI confirmation.
 
 ---
 
