@@ -1161,6 +1161,22 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
 
+		it("Toggle renders Cycle Time / Closed Date when estimation unit absent", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			const cycleTimeButton = screen.getByRole("button", { name: /cycle time/i });
+			const closedDateButton = screen.getByRole("button", { name: /closed date/i });
+
+			expect(cycleTimeButton).toBeInTheDocument();
+			expect(closedDateButton).toBeInTheDocument();
+			expect(cycleTimeButton).toHaveAttribute("aria-pressed", "true");
+			expect(closedDateButton).toHaveAttribute("aria-pressed", "false");
+
+			expect(
+				screen.queryByRole("button", { name: /^estimation$/i }),
+			).not.toBeInTheDocument();
+		});
+
 		it("Empty data set renders no toggle and shows No data available", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
 
@@ -1202,14 +1218,17 @@ describe("FeatureSizeScatterPlotChart", () => {
 			],
 		};
 
-		it("should not show toggle when estimation data is not provided", () => {
+		it("should not show estimation-unit toggle button when estimation data is not provided", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
 			expect(
 				screen.queryByRole("button", { name: /estimation/i }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByRole("button", { name: /cycle time/i }),
+				screen.queryByRole("button", { name: /story points/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /t-shirt/i }),
 			).not.toBeInTheDocument();
 		});
 

@@ -289,8 +289,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const showEstimationToggle =
 		estimationData?.status === "Ready" && !!estimationData?.estimationUnit;
 
-	type YAxisMode = "cycleTime" | "estimation";
-	const [yAxisMode, setYAxisMode] = useState<YAxisMode>(
+	type ChartMode = "cycleTime" | "estimation" | "closedDate";
+	const [chartMode, setChartMode] = useState<ChartMode>(
 		showEstimationToggle ? "estimation" : "cycleTime",
 	);
 
@@ -306,7 +306,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 		return lookup;
 	}, [estimationData]);
 
-	const useEstimationYAxis = yAxisMode === "estimation" && showEstimationToggle;
+	const useEstimationYAxis = chartMode === "estimation" && showEstimationToggle;
 
 	const percentiles = sizePercentileValues ?? [];
 
@@ -502,80 +502,79 @@ const FeatureSizeScatterPlotChart: React.FC<
 					<Typography variant="h6">
 						{featuresTerm} {sizeTerm}
 					</Typography>
-					{(percentiles.length > 0 ||
-						stateCategories.length > 0 ||
-						showEstimationToggle) && (
-						<Stack
-							direction="row"
-							spacing={1}
+					<Stack
+						direction="row"
+						spacing={1}
+						sx={{
+							mb: 2,
+							flexWrap: "wrap",
+							gap: 1,
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
+						<PercentileLegend
+							percentiles={percentiles}
+							visiblePercentiles={visiblePercentiles}
+							onTogglePercentile={togglePercentileVisibility}
+						/>
+						<ToggleButtonGroup
+							value={chartMode}
+							exclusive
+							onChange={(_e, newMode) => {
+								if (newMode !== null) {
+									setChartMode(newMode as ChartMode);
+								}
+							}}
+							size="small"
+							aria-label="Y-axis mode"
 							sx={{
-								mb: 2,
-								flexWrap: "wrap",
-								gap: 1,
-								justifyContent: "space-between",
-								alignItems: "center",
+								height: 28,
+								"& .MuiToggleButton-root": {
+									fontSize: "0.75rem",
+									py: 0,
+									px: 1,
+									textTransform: "none",
+								},
 							}}
 						>
-							<PercentileLegend
-								percentiles={percentiles}
-								visiblePercentiles={visiblePercentiles}
-								onTogglePercentile={togglePercentileVisibility}
-							/>
-							{showEstimationToggle && (
-								<ToggleButtonGroup
-									value={yAxisMode}
-									exclusive
-									onChange={(_e, newMode) => {
-										if (newMode !== null) {
-											setYAxisMode(newMode as YAxisMode);
+							{showEstimationToggle ? (
+								<ToggleButton
+									value="estimation"
+									aria-label={estimationData?.estimationUnit ?? "Estimation"}
+								>
+									{estimationData?.estimationUnit ?? "Estimation"}
+								</ToggleButton>
+							) : null}
+							<ToggleButton value="cycleTime" aria-label={cycleTimeTerm}>
+								{cycleTimeTerm}
+							</ToggleButton>
+							<ToggleButton value="closedDate" aria-label="Closed Date">
+								Closed Date
+							</ToggleButton>
+						</ToggleButtonGroup>
+						{stateCategories.length > 0 && (
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ flexWrap: "wrap", gap: 1, ml: "auto" }}
+							>
+								{stateCategories.map((stateCategory) => (
+									<LegendChip
+										key={`legend-state-category-${stateCategory}`}
+										label={getStateCategoryDisplayName(stateCategory)}
+										color={
+											colorMap[stateCategory] ?? theme.palette.primary.main
 										}
-									}}
-									size="small"
-									aria-label="Y-axis mode"
-									sx={{
-										height: 28,
-										"& .MuiToggleButton-root": {
-											fontSize: "0.75rem",
-											py: 0,
-											px: 1,
-											textTransform: "none",
-										},
-									}}
-								>
-									<ToggleButton
-										value="estimation"
-										aria-label={estimationData?.estimationUnit ?? "Estimation"}
-									>
-										{estimationData?.estimationUnit ?? "Estimation"}
-									</ToggleButton>
-									<ToggleButton value="cycleTime" aria-label={cycleTimeTerm}>
-										{cycleTimeTerm}
-									</ToggleButton>
-								</ToggleButtonGroup>
-							)}
-							{stateCategories.length > 0 && (
-								<Stack
-									direction="row"
-									spacing={1}
-									sx={{ flexWrap: "wrap", gap: 1, ml: "auto" }}
-								>
-									{stateCategories.map((stateCategory) => (
-										<LegendChip
-											key={`legend-state-category-${stateCategory}`}
-											label={getStateCategoryDisplayName(stateCategory)}
-											color={
-												colorMap[stateCategory] ?? theme.palette.primary.main
-											}
-											visible={visibleStateCategories[stateCategory] !== false}
-											onToggle={() =>
-												toggleStateCategoryVisibility(stateCategory)
-											}
-										/>
-									))}
-								</Stack>
-							)}
-						</Stack>
-					)}
+										visible={visibleStateCategories[stateCategory] !== false}
+										onToggle={() =>
+											toggleStateCategoryVisibility(stateCategory)
+										}
+									/>
+								))}
+							</Stack>
+						)}
+					</Stack>
 					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
