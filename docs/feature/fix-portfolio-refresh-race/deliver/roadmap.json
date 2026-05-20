@@ -1,0 +1,80 @@
+{
+  "roadmap": {
+    "project_id": "fix-portfolio-refresh-race",
+    "created_at": "2026-05-20",
+    "total_steps": 2,
+    "phases": 1
+  },
+  "feature_description": "Bug-fix: E2E test `should show correct Features for {Azure DevOps|Jira} portfolio on refresh` alternates green/red between verifypostgres and verifysqlite on the same SHA. Refresh Features button stays Mui-disabled for 30s because the portfolio update task fails with DbUpdateConcurrencyException. Root cause: (A) LighthouseAppContext.RemoveOrphanedFeatures sweeps tracked features whose Portfolios navigation is not loaded, so f.Portfolios.Count == 0 returns 0 incorrectly and a Feature being updated gets marked Deleted in the same SaveChanges batch → 0 rows affected → DbUpdateConcurrencyException; (B) UpdateQueueService.EnqueueUpdate has a TOCTOU between ContainsKey check and indexer assignment, letting two concurrent refresh calls both pass the dedupe gate. Postgres MVCC vs SQLite global write-lock makes the race surface in either job depending on EF Core 10.0.8 save batching.",
+  "ado_work_item": null,
+  "scope": "bug-fix",
+  "rca_document": "docs/feature/fix-portfolio-refresh-race/deliver/rca.md",
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator",
+    "reviewed_at": "2026-05-20",
+    "method": "Inline by orchestrator — RCA fully designed (root cause + fix sketch + acceptance criteria); two-step bug-fix shape per nw-bugfix convention; solution-architect dispatch skipped."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression tests + fix for portfolio refresh race",
+      "description": "Add two failing regression tests that prove the orphan-sweep race and the EnqueueUpdate TOCTOU, then apply the minimal guards in LighthouseAppContext + UpdateQueueService.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add failing regression tests for orphan sweep + queue TOCTOU",
+          "description": "Write two NUnit tests that prove the bugs exist. Test A asserts that LighthouseAppContext.SaveChangesAsync does NOT delete a tracked Feature whose Portfolios navigation collection has not been loaded — the orphan sweep currently treats such a feature as `Portfolios.Count == 0` and removes it. Test B asserts that UpdateQueueService.EnqueueUpdate is idempotent under concurrent invocations on the same UpdateKey — currently the ContainsKey/indexer pair has a TOCTOU and lets two tasks slip in. Both tests must FAIL on current HEAD.",
+          "criteria": [
+            "New file Lighthouse.Backend.Tests/LighthouseAppContextOrphanSweepTest.cs with NUnit fixture using EF InMemory. Test seeds a Portfolio with one Feature, attaches a fresh DbContext, marks the Feature as Modified WITHOUT loading the Portfolios collection, calls SaveChangesAsync, then asserts the Feature still exists in the DB and is not Deleted in the change tracker.",
+            "Test in Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests.cs named EnqueueUpdate_ConcurrentSameKey_OnlyOneQueued: fires N (≥32) parallel EnqueueUpdate calls with the same UpdateKey using a TaskCompletionSource gate to keep the first in-flight; asserts updateStatuses.Count is exactly 1 and the wrapped task runs exactly once.",
+            "Both tests FAIL when run against current HEAD (proves the bugs).",
+            "No production code changes in this step — test-only.",
+            "Tests follow project conventions: NUnit 4.x, Moq, factory-style test data, no shared mutable state in [SetUp]; no comments inside tests."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/LighthouseAppContextOrphanSweepTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/LighthouseAppContextOrphanSweepTest.cs",
+          "scenario_name": "tracked feature with unloaded Portfolios collection is not deleted by orphan sweep; concurrent EnqueueUpdate calls for the same key produce exactly one queued task",
+          "quality_gates": [
+            "dotnet test --filter 'FullyQualifiedName~OrphanSweep|FullyQualifiedName~EnqueueUpdate_ConcurrentSameKey' — new tests FAIL, all other tests still PASS"
+          ],
+          "implementation_notes": "Reproduce Bug A: instantiate LighthouseAppContext directly with UseInMemoryDatabase, Add(portfolio) with one Feature linked, SaveChanges; then open a SECOND context against the same in-memory db, fetch the Feature WITHOUT .Include(f => f.Portfolios), mutate a scalar property (e.g. Name), SaveChangesAsync — Feature is silently Removed because RemoveOrphanedFeatures sees Portfolios.Count == 0. Reproduce Bug B: use ConcurrentDictionary captured by closure to inspect, fire Parallel.For(0, 32, ...) calls to EnqueueUpdate with a task that awaits TaskCompletionSource; assert Count == 1 then release the gate.",
+          "dependencies": [],
+          "estimated_hours": 0.5,
+          "deliverables": ["Failing regression test for orphan-sweep race", "Failing regression test for queue TOCTOU"]
+        },
+        {
+          "id": "01-02",
+          "name": "Fix orphan sweep + queue TOCTOU",
+          "description": "Apply the minimal guards: in LighthouseAppContext.RemoveOrphanedFeatures, skip Added entries and skip Modified/Unchanged entries whose Portfolios collection has not been loaded; in UpdateQueueService.EnqueueUpdate, replace the ContainsKey + indexer pattern with TryAdd and only proceed when TryAdd succeeded. Both regression tests from 01-01 must now PASS. No other behavioural changes.",
+          "criteria": [
+            "LighthouseAppContext.RemoveOrphanedFeatures: filters out entries where State == EntityState.Added; filters out entries whose Portfolios navigation Entry.Collection(f => f.Portfolios).IsLoaded is false; otherwise unchanged.",
+            "UpdateQueueService.EnqueueUpdate: uses updateStatuses.TryAdd(updateKey, updateStatus); only writes to the channel and notifies listeners when TryAdd returned true. Existing log lines preserved (the 'already queued' branch when TryAdd returns false).",
+            "Both regression tests from step 01-01 now PASS.",
+            "All existing backend tests still pass (dotnet test).",
+            "dotnet build succeeds with zero warnings (TreatWarningsAsErrors).",
+            "No frontend changes; no DB migration."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/LighthouseAppContextOrphanSweepTest.cs",
+          "scenario_name": "regression tests pass after fix",
+          "quality_gates": [
+            "dotnet test Lighthouse.Backend.sln — all tests PASS",
+            "dotnet build Lighthouse.Backend.sln /warnaserror — zero warnings",
+            "pnpm --filter Lighthouse.Frontend test — no regressions (frontend unchanged)"
+          ],
+          "implementation_notes": "RemoveOrphanedFeatures fix: change the source enumeration to ChangeTracker.Entries<Feature>().Where(e => e.State == EntityState.Modified || e.State == EntityState.Unchanged) and add a per-entry guard `if (!entry.Collection(f => f.Portfolios).IsLoaded) continue;` before evaluating Portfolios.Count. EnqueueUpdate fix: var updateStatus = new UpdateStatus { ... }; if (!updateStatuses.TryAdd(updateKey, updateStatus)) { logger.LogInformation('already queued'); return; } — then the existing NotifyListeners + queue.Writer.TryWrite. Keep the maintenanceGate.ActiveOperationId early return ahead of the TryAdd.",
+          "dependencies": ["01-01"],
+          "estimated_hours": 0.5,
+          "deliverables": ["Working fix", "Regression tests green", "Backend suite green", "Zero warnings"]
+        }
+      ]
+    }
+  ]
+}
