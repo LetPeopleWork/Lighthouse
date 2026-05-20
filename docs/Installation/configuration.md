@@ -92,11 +92,8 @@ By default, that file is next to the executable and called *LighthouseAppContext
 {: .note}
 The folder you specify must exist - if it's not existing, the startup will fail.
 
-### Postgres [Experimental]
+### Postgres
 Postgres is an open-source, relational database. It's widely used and very powerful.  
-
-{: .important}
-Please be aware that Postgres support right now is still experimental. While it should work, we have not a ton of experience with it. Please reach out to us if you experience any issues with Postgres.
 
 To configure Lighthouse to use postgres, set the *Database Provider* to *postgres*, an adjust the *Database ConnectionString* to a valid connection string for a postgres connection.
 
