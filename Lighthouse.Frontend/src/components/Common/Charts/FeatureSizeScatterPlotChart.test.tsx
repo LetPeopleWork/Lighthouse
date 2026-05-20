@@ -40,7 +40,8 @@ vi.mock("@mui/x-charts", () => {
 	interface ChartContainerProps {
 		children: React.ReactNode;
 		height: number;
-		xAxis?: Array<{ max?: number }>;
+		xAxis?: Array<{ max?: number; label?: string; valueFormatter?: (v: number) => string }>;
+		yAxis?: Array<{ max?: number; label?: string }>;
 		series?: Array<{ data?: unknown[] }>;
 	}
 
@@ -61,25 +62,37 @@ vi.mock("@mui/x-charts", () => {
 			children,
 			height,
 			xAxis,
+			yAxis,
 			series,
-		}: ChartContainerProps) => (
-			<div
-				data-testid="chart-container"
-				data-height={height}
-				data-x-axis-max={xAxis?.[0]?.max}
-				data-series-count={
-					series
-						? series.reduce(
-								(acc, s) => acc + (Array.isArray(s.data) ? s.data.length : 0),
-								0,
-							)
-						: 0
-				}
-				data-series={series ? JSON.stringify(series) : undefined}
-			>
-				{children}
-			</div>
-		),
+		}: ChartContainerProps) => {
+			const xFormatter = xAxis?.[0]?.valueFormatter;
+			const xFormatterSample = xFormatter
+				? xFormatter(new Date("2026-03-10T00:00:00Z").getTime())
+				: undefined;
+			return (
+				<div
+					data-testid="chart-container"
+					data-height={height}
+					data-x-axis-max={xAxis?.[0]?.max}
+					data-x-axis-label={xAxis?.[0]?.label}
+					data-y-axis-label={yAxis?.[0]?.label}
+					data-y-axis-max={yAxis?.[0]?.max}
+					data-x-formatter-sample={xFormatterSample}
+					data-series-count={
+						series
+							? series.reduce(
+									(acc, s) =>
+										acc + (Array.isArray(s.data) ? s.data.length : 0),
+									0,
+								)
+							: 0
+					}
+					data-series={series ? JSON.stringify(series) : undefined}
+				>
+					{children}
+				</div>
+			);
+		},
 		ScatterPlot: ({ slots }: ScatterPlotProps) => {
 			// Read the produced series data from the chart container DOM to simulate actual data ordering
 			const container =
@@ -1205,6 +1218,77 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(
 				screen.queryByRole("button", { name: /^estimation$/i }),
 			).not.toBeInTheDocument();
+		});
+
+		it("Closed Date mode swaps axes, pins unclosed items at today, and flips percentile orientation", () => {
+			const closedF1 = createFeature(1, "F1", 4, 10);
+			closedF1.stateCategory = "Done";
+			closedF1.closedDate = new Date("2026-03-10");
+			const closedF2 = createFeature(2, "F2", 7, 14);
+			closedF2.stateCategory = "Done";
+			closedF2.closedDate = new Date("2026-04-15");
+			const inProgress = createFeature(3, "F3", 5, 0);
+			inProgress.stateCategory = "Doing";
+			inProgress.workItemAge = 3;
+			const features = [closedF1, closedF2, inProgress];
+
+			const beforeRender = Date.now();
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={features}
+					sizePercentileValues={[
+						{ percentile: 50, value: 4 },
+						{ percentile: 85, value: 7 },
+					]}
+				/>,
+			);
+			const afterRender = Date.now();
+
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const xAxisLabel = container.dataset.xAxisLabel;
+			const yAxisLabel = container.dataset.yAxisLabel;
+			expect(xAxisLabel).toBe("Closed Date");
+			expect(yAxisLabel).toBe("Size (Child Items)");
+
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+
+			const f1Point = allPoints.find((p: { y: number }) => p.y === 4);
+			const f2Point = allPoints.find((p: { y: number }) => p.y === 7);
+			const f3Point = allPoints.find((p: { y: number }) => p.y === 5);
+
+			expect(f1Point).toBeTruthy();
+			expect(f2Point).toBeTruthy();
+			expect(f3Point).toBeTruthy();
+			expect(f1Point.x).toBe(closedF1.closedDate.getTime());
+			expect(f2Point.x).toBe(closedF2.closedDate.getTime());
+			expect(f3Point.x).toBeGreaterThanOrEqual(beforeRender);
+			expect(f3Point.x).toBeLessThanOrEqual(afterRender);
+
+			const todayLine = screen.getByTestId("reference-line-Today");
+			expect(todayLine).toHaveAttribute("data-axis", "x");
+			expect(Number(todayLine.getAttribute("data-value"))).toBeGreaterThanOrEqual(
+				beforeRender,
+			);
+			expect(Number(todayLine.getAttribute("data-value"))).toBeLessThanOrEqual(
+				afterRender,
+			);
+
+			const p50 = screen.getByTestId("reference-line-50%");
+			const p85 = screen.getByTestId("reference-line-85%");
+			expect(p50).toHaveAttribute("data-axis", "y");
+			expect(p85).toHaveAttribute("data-axis", "y");
+			expect(p50).toHaveAttribute("data-value", "4");
+			expect(p85).toHaveAttribute("data-value", "7");
 		});
 
 		it("Empty data set renders no toggle and shows No data available", () => {

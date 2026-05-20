@@ -28,6 +28,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { StateCategory } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
+	dateValueFormatter,
 	getMaxYAxisHeight,
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
@@ -213,6 +214,19 @@ interface FeatureSizeScatterPlotChartProps {
 	estimationData?: IFeatureSizeEstimationResponse;
 }
 
+type ChartMode = "cycleTime" | "estimation" | "closedDate";
+
+const getClosedTimestamp = (item: IFeature, fallbackToday: number): number => {
+	if (item.stateCategory !== "Done") {
+		return fallbackToday;
+	}
+	const closed = item.closedDate;
+	if (closed instanceof Date && !Number.isNaN(closed.getTime())) {
+		return closed.getTime();
+	}
+	return fallbackToday;
+};
+
 const createSeriesDataPoint = (
 	group: IGroupedFeature,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -220,7 +234,8 @@ const createSeriesDataPoint = (
 	stateCategory: StateCategory,
 	colorMap: Record<string, string>,
 	theme: Theme,
-	useEstimationY = false,
+	mode: ChartMode,
+	today: number,
 ) => {
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
 	const fillColor = hasBlockedItems
@@ -228,8 +243,23 @@ const createSeriesDataPoint = (
 		: colorMap[stateCategory] || theme.palette.primary.main;
 	const idx = allGroupedDataPoints.indexOf(group);
 
+	if (mode === "closedDate") {
+		const representativeItem = group.items[0];
+		const xValue = representativeItem
+			? getClosedTimestamp(representativeItem, today)
+			: today;
+		return {
+			x: xValue,
+			y: group.size,
+			groupIndex: idx,
+			groupKey: getGroupKey(group),
+			itemCount: group.items.length,
+			color: fillColor,
+		};
+	}
+
 	const yValue =
-		useEstimationY && group.estimationValue !== undefined
+		mode === "estimation" && group.estimationValue !== undefined
 			? group.estimationValue
 			: group.cycleTime;
 
@@ -289,10 +319,12 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const showEstimationToggle =
 		estimationData?.status === "Ready" && !!estimationData?.estimationUnit;
 
-	type ChartMode = "cycleTime" | "estimation" | "closedDate";
 	const [chartMode, setChartMode] = useState<ChartMode>(
 		showEstimationToggle ? "estimation" : "cycleTime",
 	);
+
+	const today = useMemo(() => Date.now(), []);
+	const isClosedDateMode = chartMode === "closedDate";
 
 	// Build estimation lookup: featureId → estimationNumericValue
 	const estimationLookup = useMemo(() => {
@@ -347,6 +379,17 @@ const FeatureSizeScatterPlotChart: React.FC<
 			return;
 		}
 
+		if (isClosedDateMode) {
+			setFixedXAxisMax(null);
+			const sizeMax = getMaxYAxisHeight({
+				percentiles,
+				dataPoints: sizeDataPoints,
+				getDataValue: (item) => item.size,
+			});
+			setFixedYAxisMax(sizeMax);
+			return;
+		}
+
 		const xMax = getMaxYAxisHeight({
 			percentiles,
 			dataPoints: sizeDataPoints,
@@ -373,7 +416,13 @@ const FeatureSizeScatterPlotChart: React.FC<
 			const maxCycleTime = Math.max(...cycleTimes, 0);
 			setFixedYAxisMax(maxCycleTime * 1.1);
 		}
-	}, [sizeDataPoints, percentiles, useEstimationYAxis, estimationLookup]);
+	}, [
+		sizeDataPoints,
+		percentiles,
+		useEstimationYAxis,
+		estimationLookup,
+		isClosedDateMode,
+	]);
 
 	const allGroupedDataPoints = useMemo(
 		() => groupFeatures(sizeDataPoints, estimationLookup),
@@ -449,7 +498,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 						stateCategory,
 						colorMap,
 						theme,
-						useEstimationYAxis,
+						chartMode,
+						today,
 					),
 				);
 
@@ -490,7 +540,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 		getGroupKey,
 		groupKeyMap,
 		featuresTerm,
-		useEstimationYAxis,
+		chartMode,
+		today,
 	]);
 
 	return sizeDataPoints.length > 0 ? (
@@ -578,31 +629,41 @@ const FeatureSizeScatterPlotChart: React.FC<
 					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
-							{
-								id: "sizeAxis",
-								scaleType: "linear",
-								label: `${sizeTerm} (Child Items)`,
-								min: 0,
-								max:
-									fixedXAxisMax ??
-									getMaxYAxisHeight({
-										percentiles,
-										dataPoints: sizeDataPoints,
-										getDataValue: (item) => item.size,
-									}),
-								valueFormatter: integerValueFormatter,
-							},
+							isClosedDateMode
+								? {
+										id: "sizeAxis",
+										scaleType: "time" as const,
+										label: "Closed Date",
+										valueFormatter: dateValueFormatter,
+									}
+								: {
+										id: "sizeAxis",
+										scaleType: "linear" as const,
+										label: `${sizeTerm} (Child Items)`,
+										min: 0,
+										max:
+											fixedXAxisMax ??
+											getMaxYAxisHeight({
+												percentiles,
+												dataPoints: sizeDataPoints,
+												getDataValue: (item) => item.size,
+											}),
+										valueFormatter: integerValueFormatter,
+									},
 						]}
 						yAxis={[
 							{
 								id: "timeAxis",
 								scaleType: "linear",
-								label: useEstimationYAxis
-									? `${estimationData?.estimationUnit ?? "Estimation"}`
-									: `${cycleTimeTerm} (days)`,
+								label: isClosedDateMode
+									? `${sizeTerm} (Child Items)`
+									: useEstimationYAxis
+										? `${estimationData?.estimationUnit ?? "Estimation"}`
+										: `${cycleTimeTerm} (days)`,
 								min: 0,
 								max: fixedYAxisMax ?? undefined,
 								valueFormatter:
+									!isClosedDateMode &&
 									useEstimationYAxis &&
 									estimationData?.useNonNumericEstimation &&
 									estimationData.categoryValues.length > 0
@@ -617,20 +678,43 @@ const FeatureSizeScatterPlotChart: React.FC<
 					>
 						{percentiles.map((p) => {
 							const forecastLevel = new ForecastLevel(p.percentile);
-							return visiblePercentiles[p.percentile] ? (
+							if (!visiblePercentiles[p.percentile]) return null;
+							const lineStyle = {
+								stroke: forecastLevel.color,
+								strokeWidth: 1,
+								strokeDasharray: "5 5",
+							};
+							return isClosedDateMode ? (
+								<ChartsReferenceLine
+									key={`percentile-${p.percentile}`}
+									y={p.value}
+									label={`${p.percentile}%`}
+									labelAlign="end"
+									lineStyle={lineStyle}
+								/>
+							) : (
 								<ChartsReferenceLine
 									key={`percentile-${p.percentile}`}
 									x={p.value}
 									label={`${p.percentile}%`}
 									labelAlign="end"
-									lineStyle={{
-										stroke: forecastLevel.color,
-										strokeWidth: 1,
-										strokeDasharray: "5 5",
-									}}
+									lineStyle={lineStyle}
 								/>
-							) : null;
+							);
 						})}
+						{isClosedDateMode ? (
+							<ChartsReferenceLine
+								key="today-marker"
+								x={today}
+								label="Today"
+								labelAlign="end"
+								lineStyle={{
+									stroke: theme.palette.text.primary,
+									strokeWidth: 1,
+									strokeDasharray: "3 3",
+								}}
+							/>
+						) : null}
 						<ChartsXAxis />
 						<ChartsYAxis />
 						<ScatterPlot
