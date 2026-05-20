@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
 {
-    public class LicensingIntegrationTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class LicensingIntegrationTest() : IntegrationTestBase
     {
         [Test]
         public async Task ValidLicenseLoaded_RemoveLicense_LoadNewLicense_IsValid()

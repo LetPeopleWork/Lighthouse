@@ -5,7 +5,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class ApiVersioningRoutingTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class ApiVersioningRoutingTests() : IntegrationTestBase
     {
         private const string V1UpdateSupportedPath = "/api/v1/version/updateSupported";
         private const string LatestUpdateSupportedPath = "/api/latest/version/updateSupported";

@@ -6,7 +6,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 {
-    public class OptionalFeatureSeederTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class OptionalFeatureSeederTests() : IntegrationTestBase
     {
         [Test]
         [TestCase(OptionalFeatureKeys.LighthouseChartKey)]

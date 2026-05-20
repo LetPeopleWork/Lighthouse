@@ -8,7 +8,7 @@ using System.Net;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class ProjectsControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class ProjectsControllerAuthorizationTests() : IntegrationTestBase
     {
         [Test]
         public async Task CreateProject_AsNonPremiumUser_AboveLimit_Returns403()

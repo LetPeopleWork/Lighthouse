@@ -9,7 +9,7 @@ using System.Net.Http.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class TeamsControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class TeamsControllerAuthorizationTests() : IntegrationTestBase
     {
         [Test]
         public async Task CreateTeam_AsNonPremiumUser_Returns403()

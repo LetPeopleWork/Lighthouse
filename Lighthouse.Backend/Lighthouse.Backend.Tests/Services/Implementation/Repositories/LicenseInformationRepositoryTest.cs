@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
     internal class LicenseInformationRepositoryTest : IntegrationTestBase
     {
-        public LicenseInformationRepositoryTest() : base(new TestWebApplicationFactory<Program>())
+        public LicenseInformationRepositoryTest() : base()
         {
         }
 

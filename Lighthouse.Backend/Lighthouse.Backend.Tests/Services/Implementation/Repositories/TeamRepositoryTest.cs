@@ -7,7 +7,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class TeamRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class TeamRepositoryTest() : IntegrationTestBase
     {
         [Test]
         public async Task GetTeamById_ExistingId_RetunrsCorrectTeam()

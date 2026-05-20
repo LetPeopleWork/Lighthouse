@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class TeamDeletionIntegrationTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class TeamDeletionIntegrationTest() : IntegrationTestBase
     {
         [Test]
         public async Task DeleteTeamAfterPortfolioDeletion_WithExistingForecasts_TeamDeletionSucceeds()

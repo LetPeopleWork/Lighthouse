@@ -3,7 +3,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class ForecastControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class ForecastControllerAuthorizationTests() : IntegrationTestBase
     {
         [Test]
         public async Task UpdateForecastForPortfolio_PortfolioRouteKey_DoesNotReturn500()

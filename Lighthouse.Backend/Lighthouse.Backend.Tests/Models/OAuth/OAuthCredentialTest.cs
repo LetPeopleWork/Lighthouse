@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Tests.Models.OAuth
 {
-    public class OAuthCredentialTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class OAuthCredentialTest() : IntegrationTestBase
     {
         [TestCase(OAuthCredentialStatus.Valid, 0)]
         [TestCase(OAuthCredentialStatus.RefreshFailed, 1)]

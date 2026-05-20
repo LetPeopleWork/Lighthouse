@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class RbacExceptionEndpointsAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class RbacExceptionEndpointsAuthorizationTests() : IntegrationTestBase
     {
         [Test]
         public async Task GetSystemInfo_AsNonPremiumUser_DoesNotReturn403()

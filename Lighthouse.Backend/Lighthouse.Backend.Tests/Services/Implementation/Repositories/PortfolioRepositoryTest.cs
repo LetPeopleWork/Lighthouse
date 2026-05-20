@@ -7,7 +7,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class PortfolioRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class PortfolioRepositoryTest() : IntegrationTestBase
     {
         [Test]
         public async Task GetProjectById_ProjectHasInvolvedTeams_LoadsCorrectlyFromDatabase()

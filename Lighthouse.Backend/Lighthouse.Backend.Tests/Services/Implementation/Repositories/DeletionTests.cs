@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class DeletionTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class DeletionTests() : IntegrationTestBase
     {
         private WorkTrackingSystemConnection workTrackingSystemConnection;
 

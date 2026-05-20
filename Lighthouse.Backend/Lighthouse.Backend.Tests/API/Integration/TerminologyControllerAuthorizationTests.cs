@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class TerminologyControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class TerminologyControllerAuthorizationTests() : IntegrationTestBase
     {
         [Test]
         public async Task UpdateTerminology_AsNonPremiumUser_Returns403()

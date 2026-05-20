@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// <c>ApiKeyServiceTest.cs</c> and <c>ApiKeyControllerTest.cs</c>; per-user HTTP
     /// integration is deferred pending a controllable test auth scheme.
     /// </summary>
-    public class ApiKeyControllerHttpSmokeTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class ApiKeyControllerHttpSmokeTests() : IntegrationTestBase
     {
         [Test]
         public async Task ApiKeyCrudRoundTrip_OverHttp_Succeeds()

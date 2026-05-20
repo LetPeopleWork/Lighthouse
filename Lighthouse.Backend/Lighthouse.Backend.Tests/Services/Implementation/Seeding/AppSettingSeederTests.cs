@@ -7,7 +7,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 {
-    public class AppSettingSeederTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class AppSettingSeederTests() : IntegrationTestBase
     {
         [Test]
         [TestCase(AppSettingKeys.TeamDataRefreshInterval, "60")]

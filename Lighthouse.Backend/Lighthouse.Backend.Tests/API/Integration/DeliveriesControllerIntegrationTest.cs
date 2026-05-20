@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class DeliveriesControllerIntegrationTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class DeliveriesControllerIntegrationTest() : IntegrationTestBase
     {
         private static readonly JsonSerializerOptions JsonSerializerOptions = new()
         {

@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Repository
 {
-    public class DeliveryRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class DeliveryRepositoryTest() : IntegrationTestBase
     {
         private WorkTrackingSystemConnection workTrackingSystemConnection;
 

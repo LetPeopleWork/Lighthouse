@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
     public class WorkItemRepositoryTest : IntegrationTestBase
     {
-        public WorkItemRepositoryTest() : base(new TestWebApplicationFactory<Program>())
+        public WorkItemRepositoryTest() : base()
         {
         }
 

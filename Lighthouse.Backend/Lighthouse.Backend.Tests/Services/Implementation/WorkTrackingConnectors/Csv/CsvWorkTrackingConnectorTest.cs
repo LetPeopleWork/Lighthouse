@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Csv
 {
-    public class CsvWorkTrackingConnectorTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class CsvWorkTrackingConnectorTest() : IntegrationTestBase
     {
         [Test]
         [TestCase("empty-file.txt", false)]

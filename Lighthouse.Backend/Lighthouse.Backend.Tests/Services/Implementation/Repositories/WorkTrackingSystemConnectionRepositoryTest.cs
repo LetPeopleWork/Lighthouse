@@ -8,8 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class WorkTrackingSystemConnectionRepositoryTest()
-        : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class WorkTrackingSystemConnectionRepositoryTest() : IntegrationTestBase
     {
         [Test]
         public async Task GetWorkTrackingSystemConnectionById_ExistingId_RetunrsCorrectTeam()

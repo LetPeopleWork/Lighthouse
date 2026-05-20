@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class BlackoutPeriodsControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
+    public class BlackoutPeriodsControllerAuthorizationTests() : IntegrationTestBase
     {
         [Test]
         public async Task GetAll_AsNonPremiumUser_DoesNotReturn403()
