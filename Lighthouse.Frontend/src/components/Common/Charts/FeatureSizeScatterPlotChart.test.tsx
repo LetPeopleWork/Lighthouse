@@ -189,20 +189,27 @@ vi.mock("@mui/x-charts", () => {
 		ChartsReferenceLine: ({
 			label,
 			x,
+			y,
 			lineStyle,
 		}: {
 			label: string;
-			x: number;
+			x?: number;
+			y?: number;
 			lineStyle?: { stroke: string };
-		}) => (
-			<div
-				data-testid={`reference-line-${label}`}
-				data-value={x}
-				data-color={lineStyle?.stroke}
-			>
-				{label}
-			</div>
-		),
+		}) => {
+			const axis = x !== undefined ? "x" : "y";
+			const value = x !== undefined ? x : y;
+			return (
+				<div
+					data-testid={`reference-line-${label}`}
+					data-value={value}
+					data-axis={axis}
+					data-color={lineStyle?.stroke}
+				>
+					{label}
+				</div>
+			);
+		},
 	};
 });
 
@@ -1072,6 +1079,45 @@ describe("FeatureSizeScatterPlotChart", () => {
 			); // The feature should be displayed at y=0
 			const container = screen.getByTestId("chart-container");
 			expect(container).toHaveAttribute("data-series-count", "1");
+		});
+	});
+
+	describe("chart mode regression guards", () => {
+		it("Cycle Time mode keeps the existing X = Size / Y = Cycle Time layout", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={[
+						{ percentile: 50, value: 4 },
+						{ percentile: 85, value: 7 },
+					]}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+
+			const xValues = allPoints.map((p: { x: number }) => p.x);
+			const yValues = allPoints.map((p: { y: number }) => p.y);
+			expect(xValues).toContain(3);
+			expect(xValues).toContain(8);
+			expect(xValues).toContain(15);
+			expect(yValues).toContain(5);
+			expect(yValues).toContain(12);
+			expect(yValues).toContain(20);
+
+			const verticalP50 = screen.getByTestId("reference-line-50%");
+			const verticalP85 = screen.getByTestId("reference-line-85%");
+			expect(verticalP50).toHaveAttribute("data-value", "4");
+			expect(verticalP85).toHaveAttribute("data-value", "7");
+			expect(verticalP50).toHaveAttribute("data-axis", "x");
+			expect(verticalP85).toHaveAttribute("data-axis", "x");
+
+			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
 	});
 
