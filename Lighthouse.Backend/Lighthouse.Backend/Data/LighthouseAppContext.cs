@@ -331,7 +331,6 @@ namespace Lighthouse.Backend.Data
         private void PreprocessDataBeforeSave()
         {
             logger.LogDebug("Preprocessing data before save");
-            RemoveOrphanedFeatures();
             EncryptSecrets();
         }
 
@@ -365,24 +364,5 @@ namespace Lighthouse.Backend.Data
             }
         }
 
-        private void RemoveOrphanedFeatures()
-        {
-            logger.LogDebug("Removing orphaned features");
-
-            var orphanedFeatures = ChangeTracker.Entries<Feature>()
-                .Where(e => e.State != EntityState.Deleted && e.State != EntityState.Detached)
-                .Select(e => e.Entity)
-                .Where(f => !f.IsParentFeature && f.Portfolios.Count == 0)
-                .ToList();
-
-            if (orphanedFeatures.Count != 0)
-            {
-                Features.RemoveRange(orphanedFeatures);
-                LogRemovedOrphanedFeatures(orphanedFeatures.Count);
-            }
-        }
-
-        [LoggerMessage(Level = LogLevel.Information, Message = "Removed {count} orphaned features")]
-        private partial void LogRemovedOrphanedFeatures(int count);
     }
 }

@@ -112,7 +112,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var feature = new Feature(team, 3)
             {
                 Name = "Feature",
-                ReferenceId = "FTR-1"
+                ReferenceId = "FTR-1",
+                Order = "1"
             };
 
             DatabaseContext.Features.Add(feature);

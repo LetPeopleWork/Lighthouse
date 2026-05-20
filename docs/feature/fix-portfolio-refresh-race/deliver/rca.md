@@ -158,3 +158,38 @@ var orphanedFeatures = ChangeTracker.Entries<Feature>()
 This precisely targets features whose link to a Portfolio was just removed (the intent of the sweep) without misfiring on features whose navigation collection happens to be empty for unrelated reasons. The implementation needs a small spike to confirm the EF Core join-entity API surface; that's the work of the next slice.
 
 Until then, the production code keeps the original (heuristic, occasionally race-prone) orphan sweep.
+
+## 2026-05-20 — Second iteration: removed `RemoveOrphanedFeatures` from the save pipeline entirely
+
+The next CI run after the rollback ([26154669070](https://github.com/LetPeopleWork/Lighthouse/actions/runs/26154669070)) still showed `2 flaky` Playwright retries — same `PortfolioDetail.spec.ts` `Refresh Features` test plus `ado.spec.ts` `team and portfolio defined in Azure DevOps`. The TryAdd fix was working (`Active updates: 1`, not `2`), but the single update task still hung ~3 minutes due to the orphan-sweep race.
+
+### Pinpointing the exact race site
+
+The exception stack from the new run:
+```
+at LighthouseAppContext.SaveWithRetry              :316
+at LighthouseAppContext.SaveChangesAsync           :303
+at RepositoryBase.Save                             :80
+at RefreshLogService.LogRefreshAsync               :18   ← unexpected call site
+at PortfolioUpdater.Update                         :87   ← the `finally` block
+```
+
+`PortfolioUpdater.Update` runs WorkItem updates, metrics invalidation, delivery rule recompute, write-back triggers, and forecast updates — each sequentially within the same scoped DbContext. At the very end, in a `finally` block, `RefreshLogService.LogRefreshAsync` writes a single `RefreshLog` row. *That* save was what triggered `PreprocessDataBeforeSave → RemoveOrphanedFeatures`, which iterated the change tracker holding **117+ entities accumulated across the whole update**, marked features with empty in-memory `Portfolios` collections as Deleted, and raced a concurrent `UPDATE` from elsewhere → `0 rows affected` → `DbUpdateConcurrencyException`.
+
+The fundamental design flaw: a janitorial cleanup pass had no business running on every `SaveChangesAsync`. It mutated the change tracker for every unrelated save (a one-row `RefreshLog` write triggered cleanup of a hundred other entities) and that's where the race surface lived.
+
+### The fix
+
+Removed `RemoveOrphanedFeatures` from `PreprocessDataBeforeSave` entirely, and deleted the method. `LighthouseAppContext.SaveChangesAsync` now only runs `EncryptSecrets` (the legitimate per-save concern) and otherwise behaves as a regular EF Core context.
+
+Orphaned Features (Features with no Portfolio references) now accumulate harmlessly in the DB. They take a few bytes of disk and don't appear in any UI list because no Portfolio references them. A follow-up slice will add a periodic cleanup job that runs in a quiet window without racing user-facing saves.
+
+### Test infrastructure side-effect
+
+`RbacExceptionEndpointsAuthorizationTests.SeedFeatureAsync` was creating a `Feature` directly via `DatabaseContext.Features.Add(feature)` without setting the `Order` column. Previously the orphan sweep silently detached the entity before save fired, so the `NOT NULL constraint failed: Features.Order` never surfaced. With the sweep gone, the `INSERT` actually runs and fails. Added the missing `Order = "1"` to the test seed.
+
+### Lessons
+
+1. **`Collection.IsLoaded` is not the right signal** for "this navigation reflects DB state." Relationship fixup populates the collection without setting `IsLoaded`.
+2. **Janitorial logic should not live in the save pipeline.** A cleanup pass that mutates entities scoped well beyond the save's purpose creates unbounded race surface.
+3. **A failing test that's silently masked by a sweep is an accident waiting to happen.** The `Order` NOT NULL violation existed before our change — the sweep was hiding it.
