@@ -1160,6 +1160,21 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
+
+		it("Empty data set renders no toggle and shows No data available", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
+
+			expect(screen.getByText("No data available")).toBeInTheDocument();
+			expect(
+				screen.queryByRole("group", { name: /axis mode/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /cycle time/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /closed date/i }),
+			).not.toBeInTheDocument();
+		});
 	});
 
 	describe("estimation y-axis toggle", () => {
