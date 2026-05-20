@@ -205,7 +205,39 @@ Open the spike after CS-G + CS-H have landed and the new baseline is captured. I
 
 ---
 
-## Ranking — top picks to open (revised 2026-05-18 after CS-P discovery)
+## Post-CS-P additions (2026-05-20, after coverlet A/B + fixture-setup spike)
+
+The 2026-05-20 coverlet collector vs msbuild vs no-coverage A/B (see [[spike-be-fixture-setup-findings]]) ruled out coverage as the bottleneck (428.5 / 434.0 / 439.5 s means — all within noise). The fixture-setup spike then redirected attention to `IntegrationTestBase` derivative WAF bootstrap costs. Two new candidates emerged; one shipped.
+
+### CS-Q — Lift `[SetUp]` → `[OneTimeSetUp]` (REJECTED, spike-disproved)
+
+- **Disproves**: "Per-test `[SetUp]` re-bootstrap costs ≥ 200 s of the wall-clock gap; converting heavy setups to one-time saves a corresponding amount."
+- **Spike result** (`spike-be-fixture-setup-findings.md`): Total `[SetUp]` across 117 fixtures was **31 s**, already inside the 149 s per-test TRX duration sum. The 293 s wall-clock gap lives in fixture **constructors** (where `IntegrationTestBase` derivatives bootstrap `TestWebApplicationFactory<Program>`), not in `[SetUp]`.
+- **Recommendation**: **REJECTED.** Maximum saving ≤ 30 s; not worth a slice. Three outlier fixtures (S2_, OAuthControllerIntegrationTest, OAuthHealthControllerTest) that *did* bootstrap WAF per-test were fixed in a separate quick-win commit (`cd056e80`) — ~15 s estimated saving, lost in noise.
+
+### CS-R — Share `TestWebApplicationFactory<Program>` across IntegrationTestBase derivatives (SHIPPED, −49 % local wall-clock)
+
+- **Disproves**: "Each `IntegrationTestBase` derivative needs its own WAF instance for isolation."
+- **Mechanism**: `IntegrationTestBase` gains a `Lazy<TestWebApplicationFactory<Program>>` shared singleton + a parameterless ctor that wires fixtures to it (`ownsFactory=false`). The original parameterized ctor remains for fixtures that customize the WAF via `WithWebHostBuilder` (S3_, S4_). Shared WAF is disposed at assembly-level `[OneTimeTearDown]` (in `FixtureTimingReporter`); per-fixture teardown only disposes WAFs it owns.
+- **Migration**: 24 plain derivatives converted from `: IntegrationTestBase(new TestWebApplicationFactory<Program>())` to parameterless via two regex sweeps. 2 customized fixtures (S3_/S4_) kept their own WAF. 3 outlier fixtures (S2_, OAuthCtrl, OAuthHealth) refactored separately in CS-R-prep commit.
+- **Measured wall-clock** (scoped filter, 2,339 passing): **442 s → 221.5 s mean (220, 223)** — **−220 s / −49.6 % local**. All tests pass.
+- **Why it works**: 24 redundant WAF bootstraps eliminated (running serially because of `[NonParallelizable]` on `IntegrationTestBase`).
+- **Recommendation**: **SHIPPED** (`e4a67b94`). Awaits CI confirmation that the −49 % holds on GitHub-hosted runners.
+
+### CS-S — Drop `[NonParallelizable]` on `IntegrationTestBase` + per-test unique DB name (DEFERRED follow-up)
+
+- **Disproves**: "Even with a shared WAF, integration tests must run serially because they share an EF in-memory DB."
+- **Theoretical gain**: 50–100 s on top of CS-R, depending on runner core count and how much fixture work is genuinely parallelizable.
+- **Risk**: shared WAF means a *shared* EF in-memory DB. With `[NonParallelizable]` removed, the per-test `EnsureDeleted()/EnsureCreated()` in `IntegrationTestBase.Init()` would race across parallel fixtures. Plus any other static / singleton state in the host (caches, in-memory DI registrations, etc.). The 2026-05-17 `ci-learnings.md` entry on `VssConnection` cache collisions is the cautionary tale.
+- **Mitigations required** (if attempted):
+  1. Per-fixture unique DB name (`UseInMemoryDatabase($"test-{Guid.NewGuid()}")`) — host-builder change in `TestWebApplicationFactory`, not just an attribute flip.
+  2. Audit all `[OneTimeSetUp]` / static state on the WAF for cross-fixture leakage.
+  3. Verify shared `IServiceProvider` is safe to invoke from multiple threads simultaneously — likely yes, but worth confirming.
+- **Recommendation**: **DEFERRED.** CS-R already halved local wall-clock; the marginal saving from CS-S requires real isolation engineering, not just an attribute change. Revisit after CI confirms the CS-R baseline at GitHub-hosted-runner scale and after a few weeks of running to confirm the shared WAF is genuinely safe in practice.
+
+---
+
+## Ranking — top picks to open (revised 2026-05-20 after CS-R)
 
 | Order | Item | Status | Effort | Why this order |
 |---|---|---|---|---|
@@ -213,13 +245,16 @@ Open the spike after CS-G + CS-H have landed and the new baseline is captured. I
 | 2 ✅ | **slice-03A — CS-G cache concurrency downscale** | shipped (`e2589815`) | ½ d | Cheapest, lowest-risk, local + CI gain |
 | 3 ✅ | **spike-be-parallelism — CS-P** | shipped (`a4550e0b`) | ½ d | Findings: parallel viable with one production-code fix (AuthenticationMethodSchema static collision). |
 | 4 ✅ | **slice-be-parallel-enable** | shipped (`602df3c6` + `10903bb6` + `9a50b16f`) | 1 d | Schema refactor + [NonParallelizable] on 4 fixtures + assembly attribute. Local 6:04 → 3:12; CI 11:30 → 8:44. |
-| 5 ✅ | **slice-03B — CS-H path-scoped integrations** | shipped locally (`2f25bc11` → `7cb26849`, awaiting push) | 1 d | Per-connector sub-categories + dynamic --filter; expected −3 min BE wall-clock on the ~70 % of PRs that don't touch a connector. |
-| 6 | **spike-fe-profile** | queued (optional) | ½ d | Open only if FE becomes the new bottleneck on non-connector PRs after CS-H confirms in CI. |
-| 7 | **slice-fe-root-cause-refactor** | gated by spike | TBD | Driven by spike findings |
-| 8 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate on Jira-touching PRs (where CS-H doesn't help). |
-| 9 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | gated by spike | TBD | Whichever the spike opens |
+| 5 ✅ | **slice-03B — CS-H path-scoped integrations** | shipped (`2f25bc11` → `7cb26849`) | 1 d | Per-connector sub-categories + dynamic --filter; expected −3 min BE wall-clock on the ~70 % of PRs that don't touch a connector. |
+| 6 ✅ | **spike-be-fixture-setup — CS-Q** | shipped (`dc64dc5a`), verdict PARTIAL | ½ d | Disproved [SetUp] hypothesis; redirected to CS-R. |
+| 7 ✅ | **slice-cs-r — shared WAF** | shipped (`cd056e80` + `e4a67b94`) | ½ d | Local wall-clock −49.6 %; pending CI confirmation. |
+| 8 | **slice-cs-s — drop [NonParallelizable] + per-test unique DB** | deferred | 1–2 d | Marginal 50–100 s on top of CS-R; needs real isolation engineering. Revisit after CS-R proves stable in CI. |
+| 9 | **spike-fe-profile** | queued (optional) | ½ d | Open only if FE becomes the new bottleneck on non-connector PRs after CS-H confirms in CI. |
+| 10 | **slice-fe-root-cause-refactor** | gated by spike | TBD | Driven by spike findings |
+| 11 | **spike-cs-b-setup-split** | queued | ½ d | Decides CS-B fate on Jira-touching PRs (where CS-H doesn't help). |
+| 12 | (post-spike) **slice-03C — CS-B** or **slice-03D — CS-A-Jira-only** | gated by spike | TBD | Whichever the spike opens |
 
-CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above. CS-P moves to #1 because the spike is cheap (½ day), the risk is *isolation* not *coverage*, and a successful outcome dwarfs every other candidate's gain.
+CS-A, CS-C, CS-E, CS-F, CS-I remain rejected / held with reasons above. CS-Q rejected after spike. CS-R shipped 2026-05-20 with −49.6 % local wall-clock; CS-S deferred pending CS-R CI confirmation.
 
 ---
 

@@ -93,3 +93,21 @@ The 80–200 s estimate for #1+#2 plus 30–60 s for #3+#4 brackets the observed
 - `feature-delta.md`: corresponding catalog entries.
 - ADO #5020: comment with the verdict + the CS-R proposal (pause before push per [[feedback-ado-workflow-rules]]).
 - Quick refactor (separate, not part of the slice): convert the 3 outlier fixtures (`S2_*`, `OAuthControllerIntegrationTest`, `OAuthHealthControllerTest`) to bootstrap WAF in the constructor.
+
+## Addendum — CS-R outcome (2026-05-20)
+
+CS-R was opened and shipped the same day. Only the **WAF-sharing half** was implemented (de-`[NonParallelizable]` was split off as deferred CS-S — see [[alternatives]]).
+
+- **Quick-win commit (`cd056e80`)**: 3 outlier fixtures (`S2_*`, `OAuthControllerIntegrationTest`, `OAuthHealthControllerTest`) refactored to bootstrap WAF in the constructor instead of `[SetUp]`. Wall-clock impact in noise (~+12 s); savings on paper ~15 s. Correctness preserved (22/22 tests pass locally).
+- **CS-R commit (`e4a67b94`)**: `IntegrationTestBase` now uses a `Lazy<TestWebApplicationFactory<Program>>` shared across all 24 plain derivatives via a new parameterless ctor. Parameterized ctor preserved for fixtures that customize the host (S3_/S4_). Assembly-level `[OneTimeTearDown]` disposes the shared WAF.
+
+**Measured wall-clock** (scoped filter `Category!=Integration|Category=GithubIntegration`, 2,339 passing, 2 confirmation runs):
+
+| | Run 1 | Run 2 | Mean |
+|---|---|---|---|
+| Before CS-R (this spike's baseline) | 442 s | — | 442 s |
+| After CS-R | **223 s** | **220 s** | **221.5 s** |
+
+**Saving: −220 s / −49.6 % local wall-clock.** Matches the upper end of the 80–270 s projection in this findings doc.
+
+CS-S (drop `[NonParallelizable]` + per-test unique DB) deferred — needs host-builder change for DB-name isolation, not just an attribute flip. Revisit after CS-R stabilises in CI.
