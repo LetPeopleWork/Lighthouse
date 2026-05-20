@@ -28,6 +28,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { StateCategory } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
+	dateValueFormatter,
 	getMaxYAxisHeight,
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
@@ -213,6 +214,19 @@ interface FeatureSizeScatterPlotChartProps {
 	estimationData?: IFeatureSizeEstimationResponse;
 }
 
+type ChartMode = "cycleTime" | "estimation" | "closedDate";
+
+const getClosedTimestamp = (item: IFeature, fallbackToday: number): number => {
+	if (item.stateCategory !== "Done") {
+		return fallbackToday;
+	}
+	const closed = item.closedDate;
+	if (closed instanceof Date && !Number.isNaN(closed.getTime())) {
+		return closed.getTime();
+	}
+	return fallbackToday;
+};
+
 const createSeriesDataPoint = (
 	group: IGroupedFeature,
 	allGroupedDataPoints: IGroupedFeature[],
@@ -220,7 +234,8 @@ const createSeriesDataPoint = (
 	stateCategory: StateCategory,
 	colorMap: Record<string, string>,
 	theme: Theme,
-	useEstimationY = false,
+	mode: ChartMode,
+	today: number,
 ) => {
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
 	const fillColor = hasBlockedItems
@@ -228,8 +243,23 @@ const createSeriesDataPoint = (
 		: colorMap[stateCategory] || theme.palette.primary.main;
 	const idx = allGroupedDataPoints.indexOf(group);
 
+	if (mode === "closedDate") {
+		const representativeItem = group.items[0];
+		const xValue = representativeItem
+			? getClosedTimestamp(representativeItem, today)
+			: today;
+		return {
+			x: xValue,
+			y: group.size,
+			groupIndex: idx,
+			groupKey: getGroupKey(group),
+			itemCount: group.items.length,
+			color: fillColor,
+		};
+	}
+
 	const yValue =
-		useEstimationY && group.estimationValue !== undefined
+		mode === "estimation" && group.estimationValue !== undefined
 			? group.estimationValue
 			: group.cycleTime;
 
@@ -289,10 +319,12 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const showEstimationToggle =
 		estimationData?.status === "Ready" && !!estimationData?.estimationUnit;
 
-	type YAxisMode = "cycleTime" | "estimation";
-	const [yAxisMode, setYAxisMode] = useState<YAxisMode>(
+	const [chartMode, setChartMode] = useState<ChartMode>(
 		showEstimationToggle ? "estimation" : "cycleTime",
 	);
+
+	const today = useMemo(() => Date.now(), []);
+	const isClosedDateMode = chartMode === "closedDate";
 
 	// Build estimation lookup: featureId → estimationNumericValue
 	const estimationLookup = useMemo(() => {
@@ -306,7 +338,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 		return lookup;
 	}, [estimationData]);
 
-	const useEstimationYAxis = yAxisMode === "estimation" && showEstimationToggle;
+	const useEstimationYAxis = chartMode === "estimation" && showEstimationToggle;
 
 	const percentiles = sizePercentileValues ?? [];
 
@@ -347,6 +379,17 @@ const FeatureSizeScatterPlotChart: React.FC<
 			return;
 		}
 
+		if (isClosedDateMode) {
+			setFixedXAxisMax(null);
+			const sizeMax = getMaxYAxisHeight({
+				percentiles,
+				dataPoints: sizeDataPoints,
+				getDataValue: (item) => item.size,
+			});
+			setFixedYAxisMax(sizeMax);
+			return;
+		}
+
 		const xMax = getMaxYAxisHeight({
 			percentiles,
 			dataPoints: sizeDataPoints,
@@ -373,7 +416,13 @@ const FeatureSizeScatterPlotChart: React.FC<
 			const maxCycleTime = Math.max(...cycleTimes, 0);
 			setFixedYAxisMax(maxCycleTime * 1.1);
 		}
-	}, [sizeDataPoints, percentiles, useEstimationYAxis, estimationLookup]);
+	}, [
+		sizeDataPoints,
+		percentiles,
+		useEstimationYAxis,
+		estimationLookup,
+		isClosedDateMode,
+	]);
 
 	const allGroupedDataPoints = useMemo(
 		() => groupFeatures(sizeDataPoints, estimationLookup),
@@ -449,7 +498,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 						stateCategory,
 						colorMap,
 						theme,
-						useEstimationYAxis,
+						chartMode,
+						today,
 					),
 				);
 
@@ -490,7 +540,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 		getGroupKey,
 		groupKeyMap,
 		featuresTerm,
-		useEstimationYAxis,
+		chartMode,
+		today,
 	]);
 
 	return sizeDataPoints.length > 0 ? (
@@ -502,108 +553,118 @@ const FeatureSizeScatterPlotChart: React.FC<
 					<Typography variant="h6">
 						{featuresTerm} {sizeTerm}
 					</Typography>
-					{(percentiles.length > 0 ||
-						stateCategories.length > 0 ||
-						showEstimationToggle) && (
-						<Stack
-							direction="row"
-							spacing={1}
+					<Stack
+						direction="row"
+						spacing={1}
+						sx={{
+							mb: 2,
+							flexWrap: "wrap",
+							gap: 1,
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
+						<PercentileLegend
+							percentiles={percentiles}
+							visiblePercentiles={visiblePercentiles}
+							onTogglePercentile={togglePercentileVisibility}
+						/>
+						<ToggleButtonGroup
+							value={chartMode}
+							exclusive
+							onChange={(_e, newMode) => {
+								if (newMode !== null) {
+									setChartMode(newMode as ChartMode);
+								}
+							}}
+							size="small"
+							aria-label="Y-axis mode"
 							sx={{
-								mb: 2,
-								flexWrap: "wrap",
-								gap: 1,
-								justifyContent: "space-between",
-								alignItems: "center",
+								height: 28,
+								"& .MuiToggleButton-root": {
+									fontSize: "0.75rem",
+									py: 0,
+									px: 1,
+									textTransform: "none",
+								},
 							}}
 						>
-							<PercentileLegend
-								percentiles={percentiles}
-								visiblePercentiles={visiblePercentiles}
-								onTogglePercentile={togglePercentileVisibility}
-							/>
-							{showEstimationToggle && (
-								<ToggleButtonGroup
-									value={yAxisMode}
-									exclusive
-									onChange={(_e, newMode) => {
-										if (newMode !== null) {
-											setYAxisMode(newMode as YAxisMode);
+							{showEstimationToggle ? (
+								<ToggleButton
+									value="estimation"
+									aria-label={estimationData?.estimationUnit ?? "Estimation"}
+								>
+									{estimationData?.estimationUnit ?? "Estimation"}
+								</ToggleButton>
+							) : null}
+							<ToggleButton value="cycleTime" aria-label={cycleTimeTerm}>
+								{cycleTimeTerm}
+							</ToggleButton>
+							<ToggleButton value="closedDate" aria-label="Closed Date">
+								Closed Date
+							</ToggleButton>
+						</ToggleButtonGroup>
+						{stateCategories.length > 0 && (
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ flexWrap: "wrap", gap: 1, ml: "auto" }}
+							>
+								{stateCategories.map((stateCategory) => (
+									<LegendChip
+										key={`legend-state-category-${stateCategory}`}
+										label={getStateCategoryDisplayName(stateCategory)}
+										color={
+											colorMap[stateCategory] ?? theme.palette.primary.main
 										}
-									}}
-									size="small"
-									aria-label="Y-axis mode"
-									sx={{
-										height: 28,
-										"& .MuiToggleButton-root": {
-											fontSize: "0.75rem",
-											py: 0,
-											px: 1,
-											textTransform: "none",
-										},
-									}}
-								>
-									<ToggleButton
-										value="estimation"
-										aria-label={estimationData?.estimationUnit ?? "Estimation"}
-									>
-										{estimationData?.estimationUnit ?? "Estimation"}
-									</ToggleButton>
-									<ToggleButton value="cycleTime" aria-label={cycleTimeTerm}>
-										{cycleTimeTerm}
-									</ToggleButton>
-								</ToggleButtonGroup>
-							)}
-							{stateCategories.length > 0 && (
-								<Stack
-									direction="row"
-									spacing={1}
-									sx={{ flexWrap: "wrap", gap: 1, ml: "auto" }}
-								>
-									{stateCategories.map((stateCategory) => (
-										<LegendChip
-											key={`legend-state-category-${stateCategory}`}
-											label={getStateCategoryDisplayName(stateCategory)}
-											color={
-												colorMap[stateCategory] ?? theme.palette.primary.main
-											}
-											visible={visibleStateCategories[stateCategory] !== false}
-											onToggle={() =>
-												toggleStateCategoryVisibility(stateCategory)
-											}
-										/>
-									))}
-								</Stack>
-							)}
-						</Stack>
-					)}
+										visible={visibleStateCategories[stateCategory] !== false}
+										onToggle={() =>
+											toggleStateCategoryVisibility(stateCategory)
+										}
+									/>
+								))}
+							</Stack>
+						)}
+					</Stack>
 					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
-							{
-								id: "sizeAxis",
-								scaleType: "linear",
-								label: `${sizeTerm} (Child Items)`,
-								min: 0,
-								max:
-									fixedXAxisMax ??
-									getMaxYAxisHeight({
-										percentiles,
-										dataPoints: sizeDataPoints,
-										getDataValue: (item) => item.size,
-									}),
-								valueFormatter: integerValueFormatter,
-							},
+							isClosedDateMode
+								? {
+										id: "sizeAxis",
+										scaleType: "time" as const,
+										label: "Closed Date",
+										max: today,
+										valueFormatter: dateValueFormatter,
+									}
+								: {
+										id: "sizeAxis",
+										scaleType: "linear" as const,
+										label: `${sizeTerm} (Child Items)`,
+										min: 0,
+										max:
+											fixedXAxisMax ??
+											getMaxYAxisHeight({
+												percentiles,
+												dataPoints: sizeDataPoints,
+												getDataValue: (item) => item.size,
+											}),
+										valueFormatter: integerValueFormatter,
+									},
 						]}
 						yAxis={[
 							{
 								id: "timeAxis",
 								scaleType: "linear",
-								label: useEstimationYAxis
-									? `${estimationData?.estimationUnit ?? "Estimation"}`
-									: `${cycleTimeTerm} (days)`,
+								label: isClosedDateMode
+									? `${sizeTerm} (Child Items)`
+									: useEstimationYAxis
+										? `${estimationData?.estimationUnit ?? "Estimation"}`
+										: `${cycleTimeTerm} (days)`,
 								min: 0,
 								max: fixedYAxisMax ?? undefined,
 								valueFormatter:
+									!isClosedDateMode &&
 									useEstimationYAxis &&
 									estimationData?.useNonNumericEstimation &&
 									estimationData.categoryValues.length > 0
@@ -618,19 +679,29 @@ const FeatureSizeScatterPlotChart: React.FC<
 					>
 						{percentiles.map((p) => {
 							const forecastLevel = new ForecastLevel(p.percentile);
-							return visiblePercentiles[p.percentile] ? (
+							if (!visiblePercentiles[p.percentile]) return null;
+							const lineStyle = {
+								stroke: forecastLevel.color,
+								strokeWidth: 1,
+								strokeDasharray: "5 5",
+							};
+							return isClosedDateMode ? (
+								<ChartsReferenceLine
+									key={`percentile-${p.percentile}`}
+									y={p.value}
+									label={`${p.percentile}%`}
+									labelAlign="end"
+									lineStyle={lineStyle}
+								/>
+							) : (
 								<ChartsReferenceLine
 									key={`percentile-${p.percentile}`}
 									x={p.value}
 									label={`${p.percentile}%`}
 									labelAlign="end"
-									lineStyle={{
-										stroke: forecastLevel.color,
-										strokeWidth: 1,
-										strokeDasharray: "5 5",
-									}}
+									lineStyle={lineStyle}
 								/>
-							) : null;
+							);
 						})}
 						<ChartsXAxis />
 						<ChartsYAxis />

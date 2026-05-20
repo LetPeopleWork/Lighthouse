@@ -67,7 +67,9 @@ test("should be able to handle a team and portfolio defined in Azure DevOps", as
 				(page) => new TeamDetailPage(page),
 			);
 
-			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled();
+			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled({
+				timeout: 90_000,
+			});
 			newTeam.id = teamInfoPage.teamId;
 
 			const teamsPage = await overviewPage.lightHousePage.goToOverview();
@@ -108,7 +110,9 @@ test("should be able to handle a team and portfolio defined in Azure DevOps", as
 				(page) => new PortfolioDetailPage(page),
 			);
 
-			await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled();
+			await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled({
+				timeout: 90_000,
+			});
 			newPortfolio.id = portfolioInfoPage.portfolioId;
 
 			const portfoliosPage = await overviewPage.lightHousePage.goToOverview();

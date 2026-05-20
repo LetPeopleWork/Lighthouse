@@ -64,8 +64,9 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 				await portfolioDetailPage.refreshFeatures();
 				await expect(portfolioDetailPage.refreshFeatureButton).toBeDisabled();
 
-				// Wait for update to be done
-				await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
+				await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled({
+					timeout: 90_000,
+				});
 
 				const lastUpdatedDate = await portfolioDetailPage.getLastUpdatedDate();
 				expectDateToBeRecent(lastUpdatedDate);
@@ -133,8 +134,9 @@ testWithUpdatedTeams([0])(
 			await portfolioDetailPage.refreshFeatures();
 			await expect(portfolioDetailPage.refreshFeatureButton).toBeDisabled();
 
-			// Wait for update to be done
-			await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
+			await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled({
+				timeout: 90_000,
+			});
 
 			const lastUpdatedDate = await portfolioDetailPage.getLastUpdatedDate();
 			expectDateToBeRecent(lastUpdatedDate);

@@ -40,7 +40,12 @@ vi.mock("@mui/x-charts", () => {
 	interface ChartContainerProps {
 		children: React.ReactNode;
 		height: number;
-		xAxis?: Array<{ max?: number }>;
+		xAxis?: Array<{
+			max?: number;
+			label?: string;
+			valueFormatter?: (v: number) => string;
+		}>;
+		yAxis?: Array<{ max?: number; label?: string }>;
 		series?: Array<{ data?: unknown[] }>;
 	}
 
@@ -61,25 +66,36 @@ vi.mock("@mui/x-charts", () => {
 			children,
 			height,
 			xAxis,
+			yAxis,
 			series,
-		}: ChartContainerProps) => (
-			<div
-				data-testid="chart-container"
-				data-height={height}
-				data-x-axis-max={xAxis?.[0]?.max}
-				data-series-count={
-					series
-						? series.reduce(
-								(acc, s) => acc + (Array.isArray(s.data) ? s.data.length : 0),
-								0,
-							)
-						: 0
-				}
-				data-series={series ? JSON.stringify(series) : undefined}
-			>
-				{children}
-			</div>
-		),
+		}: ChartContainerProps) => {
+			const xFormatter = xAxis?.[0]?.valueFormatter;
+			const xFormatterSample = xFormatter
+				? xFormatter(new Date("2026-03-10T00:00:00Z").getTime())
+				: undefined;
+			return (
+				<div
+					data-testid="chart-container"
+					data-height={height}
+					data-x-axis-max={xAxis?.[0]?.max}
+					data-x-axis-label={xAxis?.[0]?.label}
+					data-y-axis-label={yAxis?.[0]?.label}
+					data-y-axis-max={yAxis?.[0]?.max}
+					data-x-formatter-sample={xFormatterSample}
+					data-series-count={
+						series
+							? series.reduce(
+									(acc, s) => acc + (Array.isArray(s.data) ? s.data.length : 0),
+									0,
+								)
+							: 0
+					}
+					data-series={series ? JSON.stringify(series) : undefined}
+				>
+					{children}
+				</div>
+			);
+		},
 		ScatterPlot: ({ slots }: ScatterPlotProps) => {
 			// Read the produced series data from the chart container DOM to simulate actual data ordering
 			const container =
@@ -189,20 +205,27 @@ vi.mock("@mui/x-charts", () => {
 		ChartsReferenceLine: ({
 			label,
 			x,
+			y,
 			lineStyle,
 		}: {
 			label: string;
-			x: number;
+			x?: number;
+			y?: number;
 			lineStyle?: { stroke: string };
-		}) => (
-			<div
-				data-testid={`reference-line-${label}`}
-				data-value={x}
-				data-color={lineStyle?.stroke}
-			>
-				{label}
-			</div>
-		),
+		}) => {
+			const axis = x !== undefined ? "x" : "y";
+			const value = x !== undefined ? x : y;
+			return (
+				<div
+					data-testid={`reference-line-${label}`}
+					data-value={value}
+					data-axis={axis}
+					data-color={lineStyle?.stroke}
+				>
+					{label}
+				</div>
+			);
+		},
 	};
 });
 
@@ -1075,6 +1098,403 @@ describe("FeatureSizeScatterPlotChart", () => {
 		});
 	});
 
+	describe("chart mode regression guards", () => {
+		it("Cycle Time mode keeps the existing X = Size / Y = Cycle Time layout", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={[
+						{ percentile: 50, value: 4 },
+						{ percentile: 85, value: 7 },
+					]}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+
+			const xValues = allPoints.map((p: { x: number }) => p.x);
+			const yValues = allPoints.map((p: { y: number }) => p.y);
+			expect(xValues).toContain(3);
+			expect(xValues).toContain(8);
+			expect(xValues).toContain(15);
+			expect(yValues).toContain(5);
+			expect(yValues).toContain(12);
+			expect(yValues).toContain(20);
+
+			const verticalP50 = screen.getByTestId("reference-line-50%");
+			const verticalP85 = screen.getByTestId("reference-line-85%");
+			expect(verticalP50).toHaveAttribute("data-value", "4");
+			expect(verticalP85).toHaveAttribute("data-value", "7");
+			expect(verticalP50).toHaveAttribute("data-axis", "x");
+			expect(verticalP85).toHaveAttribute("data-axis", "x");
+
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
+		});
+
+		it("Estimation mode keeps the existing X = Size / Y = Estimation layout including category formatter", () => {
+			const tshirtEstimation: IFeatureSizeEstimationResponse = {
+				status: "Ready",
+				estimationUnit: "T-Shirt",
+				useNonNumericEstimation: true,
+				categoryValues: ["XS", "S", "M", "L", "XL"],
+				featureEstimations: [
+					{
+						featureId: 1,
+						estimationNumericValue: 0,
+						estimationDisplayValue: "XS",
+					},
+					{
+						featureId: 2,
+						estimationNumericValue: 2,
+						estimationDisplayValue: "M",
+					},
+					{
+						featureId: 3,
+						estimationNumericValue: 4,
+						estimationDisplayValue: "XL",
+					},
+				],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={tshirtEstimation}
+				/>,
+			);
+
+			const tshirtButton = screen.getByRole("button", { name: /t-shirt/i });
+			expect(tshirtButton).toHaveAttribute("aria-pressed", "true");
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+			const xValues = allPoints.map((p: { x: number }) => p.x);
+			const yValues = allPoints.map((p: { y: number }) => p.y);
+			expect(xValues).toContain(3);
+			expect(xValues).toContain(8);
+			expect(xValues).toContain(15);
+			expect(yValues).toContain(0);
+			expect(yValues).toContain(2);
+			expect(yValues).toContain(4);
+
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
+		});
+
+		it("Toggle renders T-Shirt / Cycle Time / Closed Date when estimation unit configured", () => {
+			const tshirtEstimation: IFeatureSizeEstimationResponse = {
+				status: "Ready",
+				estimationUnit: "T-Shirt",
+				useNonNumericEstimation: true,
+				categoryValues: ["XS", "S", "M", "L", "XL"],
+				featureEstimations: [
+					{
+						featureId: 1,
+						estimationNumericValue: 0,
+						estimationDisplayValue: "XS",
+					},
+				],
+			};
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					estimationData={tshirtEstimation}
+				/>,
+			);
+
+			const tshirtButton = screen.getByRole("button", { name: /t-shirt/i });
+			const cycleTimeButton = screen.getByRole("button", {
+				name: /cycle time/i,
+			});
+			const closedDateButton = screen.getByRole("button", {
+				name: /closed date/i,
+			});
+
+			expect(tshirtButton).toBeInTheDocument();
+			expect(cycleTimeButton).toBeInTheDocument();
+			expect(closedDateButton).toBeInTheDocument();
+			expect(tshirtButton).toHaveAttribute("aria-pressed", "true");
+			expect(cycleTimeButton).toHaveAttribute("aria-pressed", "false");
+			expect(closedDateButton).toHaveAttribute("aria-pressed", "false");
+		});
+
+		it("Toggle renders Cycle Time / Closed Date when estimation unit absent", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			const cycleTimeButton = screen.getByRole("button", {
+				name: /cycle time/i,
+			});
+			const closedDateButton = screen.getByRole("button", {
+				name: /closed date/i,
+			});
+
+			expect(cycleTimeButton).toBeInTheDocument();
+			expect(closedDateButton).toBeInTheDocument();
+			expect(cycleTimeButton).toHaveAttribute("aria-pressed", "true");
+			expect(closedDateButton).toHaveAttribute("aria-pressed", "false");
+
+			expect(
+				screen.queryByRole("button", { name: /^estimation$/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("Round-trip through Closed Date mode preserves Cycle Time mode data and percentile orientation", () => {
+			const features = [
+				createFeature(1, "F1", 3, 5),
+				createFeature(2, "F2", 8, 12),
+				createFeature(3, "F3", 15, 20),
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={features}
+					sizePercentileValues={[
+						{ percentile: 50, value: 4 },
+						{ percentile: 85, value: 7 },
+					]}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			const initialSeries = JSON.parse(container.dataset.series ?? "[]");
+			const initialKeys = initialSeries
+				.flatMap((s: { data?: { groupKey?: string }[] }) => s.data ?? [])
+				.map((d: { groupKey?: string }) => d.groupKey)
+				.sort();
+
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+			fireEvent.click(screen.getByRole("button", { name: /cycle time/i }));
+
+			const finalSeries = JSON.parse(container.dataset.series ?? "[]");
+			const finalKeys = finalSeries
+				.flatMap((s: { data?: { groupKey?: string }[] }) => s.data ?? [])
+				.map((d: { groupKey?: string }) => d.groupKey)
+				.sort();
+			expect(finalKeys).toEqual(initialKeys);
+
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-axis",
+				"x",
+			);
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-value",
+				"4",
+			);
+			expect(screen.getByTestId("reference-line-85%")).toHaveAttribute(
+				"data-axis",
+				"x",
+			);
+			expect(screen.getByTestId("reference-line-85%")).toHaveAttribute(
+				"data-value",
+				"7",
+			);
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
+		});
+
+		it("Closed Date X axis renders human-readable month/year labels", () => {
+			const marchFeature = createFeature(1, "F-Mar", 4, 10);
+			marchFeature.closedDate = new Date("2026-03-10");
+			const aprilFeature = createFeature(2, "F-Apr", 7, 12);
+			aprilFeature.closedDate = new Date("2026-04-15");
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={[marchFeature, aprilFeature]}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const sample = container.dataset.xFormatterSample;
+			expect(sample).toBeTruthy();
+			expect(sample).not.toMatch(/^\d{10,}$/);
+			expect(sample).toMatch(
+				/(\bMar(ch)?\b|\b03\b|\b3\b).*2026|2026.*?(\bMar(ch)?\b|\b03\b|\b3\b)/i,
+			);
+		});
+
+		it("All-unclosed dataset stacks every point at the today marker", () => {
+			const inProgress1 = createFeature(1, "F1", 3, 0);
+			inProgress1.stateCategory = "Doing";
+			inProgress1.workItemAge = 2;
+			const inProgress2 = createFeature(2, "F2", 6, 0);
+			inProgress2.stateCategory = "Doing";
+			inProgress2.workItemAge = 4;
+
+			const beforeRender = Date.now();
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={[inProgress1, inProgress2]}
+					sizePercentileValues={[]}
+				/>,
+			);
+			const afterRender = Date.now();
+
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const series = JSON.parse(container.dataset.series ?? "[]");
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+
+			expect(allPoints).toHaveLength(2);
+			for (const p of allPoints) {
+				expect(p.x).toBeGreaterThanOrEqual(beforeRender);
+				expect(p.x).toBeLessThanOrEqual(afterRender);
+			}
+			const yValues = allPoints.map((p: { y: number }) => p.y).sort();
+			expect(yValues).toEqual([3, 6]);
+
+			const yMaxAttr = container.dataset.yAxisMax;
+			expect(yMaxAttr).toBeTruthy();
+			expect(Number(yMaxAttr)).toBeCloseTo(6 * 1.1, 5);
+		});
+
+		it("Closed Date mode swaps axes, pins unclosed items at today, and flips percentile orientation", () => {
+			const closedF1 = createFeature(1, "F1", 4, 10);
+			closedF1.stateCategory = "Done";
+			closedF1.closedDate = new Date("2026-03-10");
+			const closedF2 = createFeature(2, "F2", 7, 14);
+			closedF2.stateCategory = "Done";
+			closedF2.closedDate = new Date("2026-04-15");
+			const inProgress = createFeature(3, "F3", 5, 0);
+			inProgress.stateCategory = "Doing";
+			inProgress.workItemAge = 3;
+			const features = [closedF1, closedF2, inProgress];
+
+			const beforeRender = Date.now();
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={features}
+					sizePercentileValues={[
+						{ percentile: 50, value: 4 },
+						{ percentile: 85, value: 7 },
+					]}
+				/>,
+			);
+			const afterRender = Date.now();
+
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const xAxisLabel = container.dataset.xAxisLabel;
+			const yAxisLabel = container.dataset.yAxisLabel;
+			expect(xAxisLabel).toBe("Closed Date");
+			expect(yAxisLabel).toBe("Size (Child Items)");
+
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+
+			const f1Point = allPoints.find((p: { y: number }) => p.y === 4);
+			const f2Point = allPoints.find((p: { y: number }) => p.y === 7);
+			const f3Point = allPoints.find((p: { y: number }) => p.y === 5);
+
+			expect(f1Point).toBeTruthy();
+			expect(f2Point).toBeTruthy();
+			expect(f3Point).toBeTruthy();
+			expect(f1Point.x).toBe(closedF1.closedDate.getTime());
+			expect(f2Point.x).toBe(closedF2.closedDate.getTime());
+			expect(f3Point.x).toBeGreaterThanOrEqual(beforeRender);
+			expect(f3Point.x).toBeLessThanOrEqual(afterRender);
+
+			const p50 = screen.getByTestId("reference-line-50%");
+			const p85 = screen.getByTestId("reference-line-85%");
+			expect(p50).toHaveAttribute("data-axis", "y");
+			expect(p85).toHaveAttribute("data-axis", "y");
+			expect(p50).toHaveAttribute("data-value", "4");
+			expect(p85).toHaveAttribute("data-value", "7");
+		});
+
+		it("Empty data set renders no toggle and shows No data available", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
+
+			expect(screen.getByText("No data available")).toBeInTheDocument();
+			expect(
+				screen.queryByRole("group", { name: /axis mode/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /cycle time/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /closed date/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("Closed Date X axis right edge stays at today even when only past-closed items are visible", () => {
+			const pastClosed1 = createFeature(1, "F-past-1", 4, 10);
+			pastClosed1.stateCategory = "Done";
+			pastClosed1.closedDate = new Date("2026-03-10");
+			const pastClosed2 = createFeature(2, "F-past-2", 7, 14);
+			pastClosed2.stateCategory = "Done";
+			pastClosed2.closedDate = new Date("2026-04-15");
+
+			const beforeRender = Date.now();
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={[pastClosed1, pastClosed2]}
+				/>,
+			);
+			const afterRender = Date.now();
+
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const xMaxAttr = container.dataset.xAxisMax;
+			expect(xMaxAttr).toBeTruthy();
+			expect(xMaxAttr).not.toBe("undefined");
+			const xMax = Number(xMaxAttr);
+			expect(xMax).toBeGreaterThanOrEqual(beforeRender);
+			expect(xMax).toBeLessThanOrEqual(afterRender);
+		});
+
+		it("Closed Date mode draws no Today reference line", () => {
+			const closed = createFeature(1, "F1", 4, 10);
+			closed.stateCategory = "Done";
+			closed.closedDate = new Date("2026-03-10");
+			const inProgress = createFeature(2, "F2", 5, 0);
+			inProgress.stateCategory = "Doing";
+			inProgress.workItemAge = 3;
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={[closed, inProgress]} />,
+			);
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			expect(
+				screen.queryByTestId("reference-line-Today"),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	describe("estimation y-axis toggle", () => {
 		const estimationData: IFeatureSizeEstimationResponse = {
 			status: "Ready",
@@ -1100,14 +1520,17 @@ describe("FeatureSizeScatterPlotChart", () => {
 			],
 		};
 
-		it("should not show toggle when estimation data is not provided", () => {
+		it("should not show estimation-unit toggle button when estimation data is not provided", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
 			expect(
 				screen.queryByRole("button", { name: /estimation/i }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByRole("button", { name: /cycle time/i }),
+				screen.queryByRole("button", { name: /story points/i }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /t-shirt/i }),
 			).not.toBeInTheDocument();
 		});
 

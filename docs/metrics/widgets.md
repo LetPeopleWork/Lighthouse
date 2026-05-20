@@ -727,12 +727,25 @@ This chart shows the size of your Features on a scatter plot, with the ability t
 
 ![Feature Size Scatterplot](../assets/features/metrics/featuresize.png)
 
-The chart displays features from your selected time range, with:
-- **X-axis**: Feature size (number of child work items)
-- **Y-axis**: Time metric (varies by state - see below)
+The chart displays features from your selected time range. A toggle above the chart lets you choose what gets plotted on which axis:
+
+| Mode | X-axis | Y-axis | Available when |
+|---|---|---|---|
+| **Cycle Time** (default when no estimation field) | Feature size (child items) | Cycle time / Work item age (see below) | Always |
+| **\<Estimation Unit\>** (default when an estimation field is configured) | Feature size (child items) | Estimation value | Estimation field configured |
+| **Closed Date** | Closed date | Feature size (child items) | Always |
 
 {: .note}
-When an estimation field is configured, the **Feature Size** chart includes a toggle that lets you switch the y-axis between estimation values and cycle time directly on the chart. If no estimation field is set, the chart continues to use cycle time as before.
+The toggle is shown whenever there is data to plot — you don't need an estimation field to switch into **Closed Date** mode. The previously-shipped behaviour of hiding the toggle when no estimation field is configured has been replaced by a permanent two-option toggle (**Cycle Time** / **Closed Date**) in that case.
+
+## Closed Date Mode
+
+In **Closed Date** mode the axes swap: feature size moves to the Y axis and the X axis becomes a timeline of close dates. This view is useful for spotting when oversized features are landing and how that distribution shifts over time.
+
+- **Closed features** are plotted at their `closedDate` on the X axis.
+- **In Progress** and **To Do** features have no closed date — they are pinned to **today** on the X axis so they remain visible alongside the closed work. They keep their state-category colour and chip-toggle behaviour.
+- The **right edge of the X axis is always today**, regardless of which state-category chips are active. Toggling **To Do** or **In Progress** off won't make today disappear off-screen.
+- The **size percentile reference lines** are drawn horizontally in this mode (they cut across the chart at the percentile size value), so a feature plotted above the 85% line is in the upper 15% by size.
 
 ## State Filtering
 
@@ -745,9 +758,9 @@ The chart includes three filter chips on the right side to show or hide features
 {: .note}
 Features in the To Do category with a size of 0 (no child work items) are automatically filtered out, as they represent features that haven't been broken down yet.
 
-## Time Metrics by State
+## Time Metrics by State (Cycle Time mode)
 
-The y-axis value differs based on the feature's state:
+In **Cycle Time** mode the y-axis value differs based on the feature's state:
 - **Done features**: Display their **cycle time** (how long they took from start to completion)
 - **In Progress features**: Display their **work item age** (how long they've been in progress)
 - **To Do features**: Appear at **y=0** (no time elapsed yet)
@@ -756,6 +769,8 @@ This allows you to see:
 - How feature size correlates with cycle time for completed features
 - How long current features have been in progress relative to their size
 - The size distribution of features in your backlog
+
+In **Closed Date** mode the y-axis is feature size and the state-by-state rules above no longer apply — see [Closed Date Mode](#closed-date-mode) above.
 
 ## Percentile Lines
 
