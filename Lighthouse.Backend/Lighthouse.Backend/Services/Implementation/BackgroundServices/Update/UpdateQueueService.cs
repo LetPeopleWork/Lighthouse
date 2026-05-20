@@ -41,15 +41,14 @@
                 return;
             }
 
-            if (updateStatuses.ContainsKey(updateKey))
+            var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
+            if (!updateStatuses.TryAdd(updateKey, updateStatus))
             {
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued or being processed.", updateType, id);
                 return;
             }
 
             logger.LogInformation("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
-            var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
-            updateStatuses[updateKey] = updateStatus;
 
             _ = NotifyListeners(updateKey, updateStatus);
 
