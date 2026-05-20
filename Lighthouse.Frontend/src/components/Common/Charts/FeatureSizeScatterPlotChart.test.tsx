@@ -1273,6 +1273,50 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.queryByTestId("reference-line-Today")).not.toBeInTheDocument();
 		});
 
+		it("All-unclosed dataset stacks every point at the today marker", () => {
+			const inProgress1 = createFeature(1, "F1", 3, 0);
+			inProgress1.stateCategory = "Doing";
+			inProgress1.workItemAge = 2;
+			const inProgress2 = createFeature(2, "F2", 6, 0);
+			inProgress2.stateCategory = "Doing";
+			inProgress2.workItemAge = 4;
+
+			const beforeRender = Date.now();
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={[inProgress1, inProgress2]}
+					sizePercentileValues={[]}
+				/>,
+			);
+			const afterRender = Date.now();
+
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /closed date/i }));
+
+			const container = screen.getByTestId("chart-container");
+			const series = JSON.parse(container.dataset.series ?? "[]");
+			const allPoints = series.flatMap(
+				(s: { data?: { x: number; y: number }[] }) => s.data ?? [],
+			);
+
+			expect(allPoints).toHaveLength(2);
+			for (const p of allPoints) {
+				expect(p.x).toBeGreaterThanOrEqual(beforeRender);
+				expect(p.x).toBeLessThanOrEqual(afterRender);
+			}
+			const yValues = allPoints.map((p: { y: number }) => p.y).sort();
+			expect(yValues).toEqual([3, 6]);
+
+			const todayLines = screen.getAllByTestId("reference-line-Today");
+			expect(todayLines).toHaveLength(1);
+
+			const yMaxAttr = container.dataset.yAxisMax;
+			expect(yMaxAttr).toBeTruthy();
+			expect(Number(yMaxAttr)).toBeCloseTo(6 * 1.1, 5);
+		});
+
 		it("Closed Date mode swaps axes, pins unclosed items at today, and flips percentile orientation", () => {
 			const closedF1 = createFeature(1, "F1", 4, 10);
 			closedF1.stateCategory = "Done";
