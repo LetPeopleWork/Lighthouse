@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         [OneTimeTearDown]
         public void GlobalTearDown()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
             webApplicationFactory.Dispose();
 
             Client.Dispose();
@@ -27,6 +28,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         [SetUp]
         protected void Init()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
             serviceScope = webApplicationFactory.Services.CreateScope();
             ServiceProvider = serviceScope.ServiceProvider;
 
@@ -40,6 +42,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         [TearDown]
         protected virtual void TearDown()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
             DatabaseContext.Database.EnsureDeleted();
             serviceScope.Dispose();
         }
