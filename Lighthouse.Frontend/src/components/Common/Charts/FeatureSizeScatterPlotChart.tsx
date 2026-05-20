@@ -227,16 +227,27 @@ const getClosedTimestamp = (item: IFeature, fallbackToday: number): number => {
 	return fallbackToday;
 };
 
-const createSeriesDataPoint = (
-	group: IGroupedFeature,
-	allGroupedDataPoints: IGroupedFeature[],
-	getGroupKey: (g: IGroupedFeature) => string,
-	stateCategory: StateCategory,
-	colorMap: Record<string, string>,
-	theme: Theme,
-	mode: ChartMode,
-	today: number,
-) => {
+type SeriesDataPointOptions = {
+	group: IGroupedFeature;
+	allGroupedDataPoints: IGroupedFeature[];
+	getGroupKey: (g: IGroupedFeature) => string;
+	stateCategory: StateCategory;
+	colorMap: Record<string, string>;
+	theme: Theme;
+	mode: ChartMode;
+	today: number;
+};
+
+const createSeriesDataPoint = ({
+	group,
+	allGroupedDataPoints,
+	getGroupKey,
+	stateCategory,
+	colorMap,
+	theme,
+	mode,
+	today,
+}: SeriesDataPointOptions) => {
 	const hasBlockedItems = group.items.some((i) => i.isBlocked);
 	const fillColor = hasBlockedItems
 		? errorColor
@@ -305,6 +316,30 @@ const formatSeriesValue = (
 	return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
 };
 
+type YAxisLabelOptions = {
+	isClosedDateMode: boolean;
+	useEstimationYAxis: boolean;
+	sizeTerm: string;
+	cycleTimeTerm: string;
+	estimationUnit: string | null | undefined;
+};
+
+const getYAxisLabel = ({
+	isClosedDateMode,
+	useEstimationYAxis,
+	sizeTerm,
+	cycleTimeTerm,
+	estimationUnit,
+}: YAxisLabelOptions): string => {
+	if (isClosedDateMode) {
+		return `${sizeTerm} (Child Items)`;
+	}
+	if (useEstimationYAxis) {
+		return estimationUnit ?? "Estimation";
+	}
+	return `${cycleTimeTerm} (days)`;
+};
+
 const FeatureSizeScatterPlotChart: React.FC<
 	FeatureSizeScatterPlotChartProps
 > = ({ sizeDataPoints, sizePercentileValues = [], estimationData }) => {
@@ -315,7 +350,6 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const sizeTerm = "Size";
 
-	// Determine if estimation toggle should be shown
 	const showEstimationToggle =
 		estimationData?.status === "Ready" && !!estimationData?.estimationUnit;
 
@@ -326,7 +360,6 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const today = useMemo(() => Date.now(), []);
 	const isClosedDateMode = chartMode === "closedDate";
 
-	// Build estimation lookup: featureId → estimationNumericValue
 	const estimationLookup = useMemo(() => {
 		if (estimationData?.status !== "Ready") {
 			return undefined;
@@ -491,16 +524,16 @@ const FeatureSizeScatterPlotChart: React.FC<
 				keyMapMap.set(String(seriesIndex), seriesKeyMap);
 
 				const seriesData = seriesGrouped.map((group) =>
-					createSeriesDataPoint(
+					createSeriesDataPoint({
 						group,
 						allGroupedDataPoints,
 						getGroupKey,
 						stateCategory,
 						colorMap,
 						theme,
-						chartMode,
+						mode: chartMode,
 						today,
-					),
+					}),
 				);
 
 				return {
@@ -543,6 +576,48 @@ const FeatureSizeScatterPlotChart: React.FC<
 		chartMode,
 		today,
 	]);
+
+	const xAxisConfig = isClosedDateMode
+		? {
+				id: "sizeAxis",
+				scaleType: "time" as const,
+				label: "Closed Date",
+				max: today,
+				valueFormatter: dateValueFormatter,
+			}
+		: {
+				id: "sizeAxis",
+				scaleType: "linear" as const,
+				label: `${sizeTerm} (Child Items)`,
+				min: 0,
+				max:
+					fixedXAxisMax ??
+					getMaxYAxisHeight({
+						percentiles,
+						dataPoints: sizeDataPoints,
+						getDataValue: (item) => item.size,
+					}),
+				valueFormatter: integerValueFormatter,
+			};
+
+	const yAxisLabel = getYAxisLabel({
+		isClosedDateMode,
+		useEstimationYAxis,
+		sizeTerm,
+		cycleTimeTerm,
+		estimationUnit: estimationData?.estimationUnit,
+	});
+
+	const yAxisValueFormatter =
+		!isClosedDateMode &&
+		useEstimationYAxis &&
+		estimationData?.useNonNumericEstimation &&
+		estimationData.categoryValues.length > 0
+			? (v: unknown) => {
+					const index = Math.round(v as number);
+					return estimationData.categoryValues[index] ?? "";
+				}
+			: integerValueFormatter;
 
 	return sizeDataPoints.length > 0 ? (
 		<>
@@ -628,51 +703,15 @@ const FeatureSizeScatterPlotChart: React.FC<
 					</Stack>
 					<ChartsContainer
 						sx={{ flex: 1, minHeight: 0, height: "100%" }}
-						xAxis={[
-							isClosedDateMode
-								? {
-										id: "sizeAxis",
-										scaleType: "time" as const,
-										label: "Closed Date",
-										max: today,
-										valueFormatter: dateValueFormatter,
-									}
-								: {
-										id: "sizeAxis",
-										scaleType: "linear" as const,
-										label: `${sizeTerm} (Child Items)`,
-										min: 0,
-										max:
-											fixedXAxisMax ??
-											getMaxYAxisHeight({
-												percentiles,
-												dataPoints: sizeDataPoints,
-												getDataValue: (item) => item.size,
-											}),
-										valueFormatter: integerValueFormatter,
-									},
-						]}
+						xAxis={[xAxisConfig]}
 						yAxis={[
 							{
 								id: "timeAxis",
 								scaleType: "linear",
-								label: isClosedDateMode
-									? `${sizeTerm} (Child Items)`
-									: useEstimationYAxis
-										? `${estimationData?.estimationUnit ?? "Estimation"}`
-										: `${cycleTimeTerm} (days)`,
+								label: yAxisLabel,
 								min: 0,
 								max: fixedYAxisMax ?? undefined,
-								valueFormatter:
-									!isClosedDateMode &&
-									useEstimationYAxis &&
-									estimationData?.useNonNumericEstimation &&
-									estimationData.categoryValues.length > 0
-										? (v: unknown) => {
-												const index = Math.round(v as number);
-												return estimationData.categoryValues[index] ?? "";
-											}
-										: integerValueFormatter,
+								valueFormatter: yAxisValueFormatter,
 							},
 						]}
 						series={series}
