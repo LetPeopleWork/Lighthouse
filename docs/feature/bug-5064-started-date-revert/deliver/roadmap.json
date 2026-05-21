@@ -1,0 +1,102 @@
+{
+  "roadmap": {
+    "project_id": "bug-5064-started-date-revert",
+    "created_at": "2026-05-21",
+    "total_steps": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Fix ADO Bug 5064 — when a work item follows the path ToDo → Doing(T1) → ToDo → Done(T3), StartedDate stays at T1 instead of clearing. Expectation: StartedDate == ClosedDate (item was never 'in progress' at the moment it closed). The direct ToDo → Done path already works thanks to the existing null-fallback (IssueFactory.cs:79-83 / AzureDevOpsWorkTrackingConnector.cs:743-746); the fix extends the same semantics to the revert-then-skip-Doing equivalence class by invalidating startedDate when a ToDo-revert post-dates it. Both connectors (Jira IssueFactory + ADO AzureDevOpsWorkTrackingConnector) carry duplicated copies of the algorithm — both must be fixed. Linear is OUT OF SCOPE (separate upstream-API-shaped problem). Acceptance: the new Jira regression test in IssueFactoryTest.cs passes (was RED on main); existing reversal tests at IssueFactoryTest.cs:284, :311, :343, :375 stay GREEN; full backend test suite stays GREEN; Stryker per-feature kill rate ≥ 80% on the two touched methods."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, given surgical scope identical to bug-5016 precedent)",
+    "reviewed_at": "2026-05-21",
+    "notes": "Two-step roadmap reflects the actual scope: write the Jira RED regression test, then make GREEN by applying the same semantic fix to both connector copies of the algorithm. No architect dispatch — Rex's RCA (Phase 1 of /nw-bugfix) is the design doc; the fix shape ('clear startedDate if the last ToDo-revert post-dates it, then let the existing null-fallback patch startedDate := closedDate') is fully prescribed and validated against existing reversal tests at IssueFactoryTest.cs:343 + :375 (Done-reopen path still resolves correctly). Architect dispatch would add cost without insight. ADO regression test is deferred (see implementation_notes on 01-02): the ADO test class provisions REAL work items in CMFTTestTeamProject and adding fixture 400 may not be feasible in this session; the Jira test verifies the shared semantic and the ADO code change is a direct mirror, so customer-instance self-heal on next sync provides the safety net for ADO."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/bug-5064-started-date-revert/feature-delta.md",
+    "rca_source": "Inline in /nw-bugfix Phase 1 (Rex / @nw-troubleshooter, 2026-05-21)",
+    "ado_bug": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5064"
+  },
+  "out_of_scope": [
+    "Linear connector — Linear's upstream startedAt is a single mutable field; recomputing from history requires a richer Linear API query (issueHistory). File a separate bug if customer evidence confirms.",
+    "Extracting a shared StateTransitionDateResolver from the duplicated ADO + Jira algorithms — CLAUDE.md mandates refactor commits separate from fix commits; track as a follow-up refactor.",
+    "Adding an invariant guard in WorkItemBase that asserts StartedDate <= ClosedDate — useful but orthogonal; covers a wider class of bugs than 5064.",
+    "Customer-data backfill — both connectors recompute StartedDate from history on every sync, so deployed instances self-heal automatically.",
+    "CycleTime/WorkItemAge formula changes — the fix moves affected items' StartedDate forward in time (T1→T3) which already produces the user-expected CycleTime of 1 day via the existing formulas."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Clear StartedDate on ToDo-revert before close",
+      "description": "Two-step RED -> GREEN: (01-01) author IssueInDone_MovedToDoingThenBackToToDoThenDirectlyToDone_StartedDateEqualsClosedDate in IssueFactoryTest.cs as a synthetic-JSON regression test; verify it FAILS RED on today's IssueFactory.cs; (01-02) add a ToDo-after-StartedDate invalidation step to BOTH IssueFactory.GetStartedAndClosedDate and AzureDevOpsWorkTrackingConnector.GetStartedAndClosedDateForWorkItem; verify the new test goes GREEN and every existing reversal test (IssueFactoryTest.cs:284, :311, :343, :375 + AzureDevOpsWorkTrackingConnectorTest.cs:243, :263, :287, :311) stays GREEN; verify the full backend suite stays GREEN.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Author RED Jira regression test (ToDo → Doing → ToDo → Done)",
+          "description": "Add ONE new [Test] method to Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs immediately after the existing IssueInDone_MovedToToDoAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone (line 375). Use the existing CreateJsonDocument + AddChangelogEntries + CreateChangelogEntry helpers (see lines 343-409 for the exact pattern). Final state in JSON: \"Closed\". Changelog (three entries, all UTC): Backlog → Implementation @ 2024-09-27; Implementation → Backlog @ 2024-09-28; Backlog → Closed @ 2024-09-30. Assert with Assert.EnterMultipleScope() that issue.StartedDate has a value AND issue.StartedDate?.Date == 2024-09-30 AND issue.StartedDate?.Kind == DateTimeKind.Utc AND issue.ClosedDate?.Date == 2024-09-30 AND issue.ClosedDate?.Kind == DateTimeKind.Utc. Test method name: IssueInDone_MovedToDoingThenBackToToDoThenDirectlyToDone_StartedDateEqualsClosedDate. Verify the test FAILS on today's main with the assertion StartedDate?.Date == 2024-09-30 — the actual value will be 2024-09-27 (the original Doing entry). Capture and log the RED output before proceeding.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+          "scenario_name": "Jira: ToDo → Doing → ToDo → Done produces StartedDate == ClosedDate (bug 5064 regression)",
+          "red_to_green_tests": [
+            "IssueFactoryTest :: IssueInDone_MovedToDoingThenBackToToDoThenDirectlyToDone_StartedDateEqualsClosedDate"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs (edit — append one [Test] method)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Exactly one [Test] method added; placement: immediately after IssueInDone_MovedToToDoAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone (line 375).",
+            "Test name matches the description exactly (PascalCase scenario name; never Test_X_Y).",
+            "Uses the file's existing helpers (CreateJsonDocument, AddChangelogEntries, CreateChangelogEntry, the static workItemQueryOwner fixture, CreateIssueFactory) — no new helpers or shared mutable state introduced.",
+            "Assertions are grouped under Assert.EnterMultipleScope() and assert ALL FOUR: StartedDate.HasValue, StartedDate.Value.Date == 2024-09-30, ClosedDate.HasValue, ClosedDate.Value.Date == 2024-09-30, plus both .Kind == DateTimeKind.Utc (mirror the assertion style at lines 365-371).",
+            "When run against the current (un-fixed) IssueFactory.cs via `dotnet test --filter \"FullyQualifiedName~IssueInDone_MovedToDoingThenBackToToDoThenDirectlyToDone\"`, the test FAILS with an assertion error showing the actual StartedDate is 2024-09-27 (not 2024-09-30). Capture exit code + assertion message in the execution log.",
+            "No banned comments added (no // ===== dividers, no // Arrange/Act/Assert labels, no // Given/When/Then narration, no provenance comments referencing bug 5064 or PR numbers — the test method name carries the meaning; the ADO bug ID belongs in the commit message only).",
+            "Boy-Scout rule applied: if any banned comment is encountered inside the touched region of IssueFactoryTest.cs (lines surrounding 375), delete it in the same change.",
+            "Commit message: `test(work-items): add regression for jira started date when item reverts to to-do before closing (bug 5064)`"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Invalidate StartedDate when a ToDo-revert post-dates it (Jira + ADO)",
+          "description": "Apply the same semantic fix to both connector copies of the history-walking algorithm. (a) In Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs:69-83, inside the StateCategories.Done branch, after computing closedDate and startedDate but BEFORE the existing null-fallback at line 79-83, do one more GetTransitionDate call with targetStates = rawToDoStates (computed via workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.ToDoStates)) and statesToIgnoreTransition = rawDoneStates. If the returned lastToDoEntryDate is not null AND startedDate is not null AND lastToDoEntryDate > startedDate, set startedDate = null. The existing fallback then patches startedDate = closedDate. (b) Mirror the same change in Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:733-746: compute rawToDoStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.ToDoStates) at the top alongside rawDoingStates/rawDoneStates; inside the StateCategories.Done branch after line 736 and before the existing null-fallback at line 743-746, do one more await GetStateTransitionDateThrottled(witClient, workItemId, rawToDoStates, rawDoneStates) call; if its return is not null AND startedDate is not null AND it is > startedDate, set startedDate = null. (c) Run the new IssueFactoryTest method from 01-01 — it must now PASS. (d) Run the full backend test suite — all existing reversal tests must continue to PASS, in particular IssueFactoryTest.cs:284 (Doing branch), :311, :343 (Done→Doing→Done), :375 (Done→ToDo→…→Doing→Done — the second Doing transition is later than the ToDo revert so the new invalidation does NOT fire here, which is the intended behaviour); and AzureDevOpsWorkTrackingConnectorTest.cs:243, :263, :287, :311.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+          "scenario_name": "All existing reversal tests + new bug-5064 regression go GREEN end-to-end",
+          "red_to_green_tests": [
+            "IssueFactoryTest :: IssueInDone_MovedToDoingThenBackToToDoThenDirectlyToDone_StartedDateEqualsClosedDate (NEW — goes GREEN)",
+            "IssueFactoryTest :: IssueInDoing_MovedToToDoAndBackInDoing (existing — stays GREEN, Doing branch)",
+            "IssueFactoryTest :: IssueInDone_MovedToDoingAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone (existing — stays GREEN, the implicit Done→Doing reopen is ignored by statesToIgnore = rawDoneStates)",
+            "IssueFactoryTest :: IssueInDone_MovedToToDoAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone (existing — stays GREEN; second Implementation entry on 2024-09-30 > Analysis/ToDo entry on 2024-09-28, so invalidation does NOT fire)",
+            "AzureDevOpsWorkTrackingConnectorTest :: SetStartedDate_ItemMovedFromDoingToToDoBackToDoing_UsesSecondTransitionToDoing (existing — stays GREEN)",
+            "AzureDevOpsWorkTrackingConnectorTest :: SetStartedAndClosedDate_ItemMovedFromDoneToDoingBackToDone_UsesSecondTransitionToSetDates (existing — stays GREEN)",
+            "AzureDevOpsWorkTrackingConnectorTest :: SetStartedAndClosedDate_ItemMovedFromUnknownStateToDoingToDone_SetsDatesCorrectly (existing — stays GREEN)",
+            "AzureDevOpsWorkTrackingConnectorTest :: SetStartedAndClosedDate_ItemMovedFromUnknownStateToDone_SetsDatesCorrectly (existing — stays GREEN, null-fallback path)",
+            "Full Lighthouse.Backend.Tests suite stays GREEN"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs (edit — Done branch only, lines 69-83)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs (edit — Done branch only, lines 727-746)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "Both production files acquire ToDo-states via workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.ToDoStates) — IWorkItemQueryOwner.ToDoStates is already on the interface (see IWorkItemQueryOwner.cs:13); no new interface member.",
+            "The new invalidation step lives INSIDE the StateCategories.Done branch only — the Doing branch and the Other branch are untouched (covered by existing tests at IssueFactoryTest.cs:284 and AzureDevOpsWorkTrackingConnectorTest.cs:243).",
+            "Invalidation predicate is exactly: `if (lastToDoEntryDate.HasValue && startedDate.HasValue && lastToDoEntryDate.Value > startedDate.Value) startedDate = null;` (or equivalent; > strict — equality means the ToDo revert and the Doing entry occurred at the same instant, which is impossible in practice and the existing semantic is to count the Doing).",
+            "The reused ToDo-history call uses statesToIgnoreTransition = rawDoneStates (Jira) / statesToIgnore = rawDoneStates (ADO) — this guarantees that a Done→ToDo reopen transition is IGNORED (the protective test at IssueFactoryTest.cs:343 must continue to pass).",
+            "Public surface unchanged — no signature edits to GetStartedAndClosedDate / GetStartedAndClosedDateForWorkItem; no new public method.",
+            "All 5 GREEN tests listed above pass. Confirm by running `dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/ --filter \"FullyQualifiedName~IssueFactoryTest|FullyQualifiedName~AzureDevOpsWorkTrackingConnectorTest\"` and capturing the output.",
+            "Full `dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/` stays GREEN end-to-end. Capture pass/fail counts.",
+            "`dotnet build Lighthouse.Backend/Lighthouse.Backend.sln` runs warning-free (CLAUDE.md TreatWarningsAsErrors + WarningLevel 5).",
+            "No banned comments added to either production file (no // ===== dividers, no restating-next-line, no provenance like '// Added for bug 5064' or '// see PR #NNNN', no // TODO/FIXME). The named variable lastToDoEntryDate carries the meaning.",
+            "Boy-Scout rule applied: if any banned comment is encountered inside the touched method body (Jira IssueFactory.GetStartedAndClosedDate or ADO AzureDevOpsWorkTrackingConnector.GetStartedAndClosedDateForWorkItem), delete it in this same change. The pre-existing comment at IssueFactory.cs:65 ('// If the StateCategory is To Do or Unknown...') and at :79 ('// It can happen that no started date is set...') restate the next line — by the Boy-Scout rule these are removable in this change. Apply judgment: removal is encouraged if the diff stays focused; if removal noticeably balloons the review surface, leave them and note in the commit body.",
+            "Commit message: `fix(work-items): clear started date when item reverts to to-do before closing (bug 5064)`"
+          ],
+          "implementation_notes": [
+            "ADO regression test deferral: The existing ADO test class (AzureDevOpsWorkTrackingConnectorTest.cs) is an integration test against a real Azure DevOps project (CMFTTestTeamProject) — tests query real work items by ID (396, 397, 398, 399). Adding a synthetic regression for bug 5064 would require provisioning a new work item (suggested ID 400) in that project with the ToDo → Doing → ToDo → Done history. If provisioning is not feasible in this session, the crafter SHOULD: (1) ship the Jira regression test as the per-semantic safety net (the algorithm is shared in shape across both connectors); (2) verify the ADO code change compiles, builds warning-free, and does not regress any existing ADO test; (3) document the deferred ADO test as a follow-up — append a `## Wave: DELIVER / [WHY] Upstream Issues` note to feature-delta.md referencing the need to add the ADO fixture, and surface the deferral in the final completion report so the user can decide whether to provision the fixture or accept the Jira-only regression net. Customer instances will self-heal on next sync, so the deferral is low-risk.",
+            "Boy-Scout-comment-removal recommendation: The two comments at IssueFactory.cs:65 and :79 restate what the code does. Per CLAUDE.md they are banned and should be removed in this same change since we are editing that exact method. The equivalent ADO file has no such comments inside the touched method.",
+            "Wiring check after GREEN: run a quick `grep -rn 'ToDoStates' Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs` and confirm the new accessor calls are present in both production files (not just in test code)."
+          ]
+        }
+      ]
+    }
+  ]
+}
