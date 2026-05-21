@@ -409,6 +409,36 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
+        public void IssueInDone_MovedToDoingThenBackToToDoThenDirectlyToDone_StartedDateEqualsClosedDate()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
+
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Backlog", "Implementation",
+                        new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Backlog",
+                        new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Backlog", "Closed",
+                        new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                ]);
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(issue.StartedDate.HasValue, Is.True);
+                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(issue.ClosedDate.HasValue, Is.True);
+                Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [Test]
         public void IssueInUnknownState_MovedToToDo_SetsStartedDate()
         {
             var jsonDocument = CreateJsonDocument(json =>
