@@ -724,6 +724,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
+            var rawToDoStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.ToDoStates);
             var rawDoingStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoingStates);
             var rawDoneStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoneStates);
 
@@ -734,6 +735,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates);
                 closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoneStates, []);
+
+                var lastToDoEntryDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawToDoStates, rawDoneStates);
+                if (lastToDoEntryDate.HasValue && startedDate.HasValue && lastToDoEntryDate.Value > startedDate.Value)
+                {
+                    startedDate = null;
+                }
             }
             else if (stateCategory == StateCategories.Doing)
             {
