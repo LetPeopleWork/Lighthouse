@@ -158,7 +158,7 @@ Decision enabled: trust the backtest's accuracy claim as representative of the f
 
 ### Elevator Pitch
 Before: on a non-premium tenant the feature is invisible; admins don't know to ask for it.
-After: open `/teams/{teamId}/settings` → see a single short row in the Forecast section: "Forecast Filter is a Premium feature. Learn more." → click → docs page explains it (with screenshots of the rule editor).
+After: open `/teams/edit/{teamId}` → inside the existing "Forecast Configuration" section (the one with Throughput History days), see a single short row: "Forecast Filter is a Premium feature. Learn more." → click → docs page explains it (with screenshots of the rule editor).
 Decision enabled: whether to evaluate a Premium upgrade.
 
 **AC**:
@@ -336,7 +336,7 @@ Handoff accepted by Morgan (nw-solution-architect) on entry to DESIGN wave.
 | `WorkItemFieldProvider` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryRules/WorkItemFieldProvider.cs` | NEW | Implements `IRuleFieldProvider<WorkItem>`; field keys `workitem.type` / `workitem.state` / `workitem.name` / `workitem.referenceid` / `workitem.parentreferenceid` / `workitem.tags` / `additionalField.{id}` per D9. |
 | `DeliveryRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryRuleService.cs` | EXTEND (refactor) | Public surface (`GetRuleSchema(Portfolio)`, `GetMatchingFeaturesForRuleset`, `RecomputeRuleBasedDeliveries`) unchanged. Internals now delegate to `RuleEvaluator<Feature>` with `FeatureFieldProvider`. Slice 01 refactor commit. |
 | `IDeliveryRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IDeliveryRuleService.cs` | NO CHANGE | Public interface unchanged. |
-| `IForecastFilterRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IForecastFilterRuleService.cs` | NEW | `DeliveryRuleSchema GetSchema(Team team)`; `DeliveryRuleSet? GetEffectiveRuleSet(Team team)` (returns null on free tenant, no rule set, or zero conditions — DDD-8 + DDD-9); `IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, DeliveryRuleSet ruleSet)` (D8 semantics: matched items are EXCLUDED — exclusion is built into this method, NOT into the generic evaluator per DDD-2); `bool ValidateRuleSet(DeliveryRuleSet, Team) → bool`. |
+| `IForecastFilterRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastFilterRuleService.cs` | NEW | `DeliveryRuleSchema GetSchema(Team team)`; `DeliveryRuleSet? GetEffectiveRuleSet(Team team)` (returns null on free tenant, no rule set, or zero conditions — DDD-8 + DDD-9); `IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, DeliveryRuleSet ruleSet)` (D8 semantics: matched items are EXCLUDED — exclusion is built into this method, NOT into the generic evaluator per DDD-2); `bool ValidateRuleSet(DeliveryRuleSet, Team) → bool`. |
 | `ForecastFilterRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ForecastFilterRuleService.cs` | NEW | Implementation; depends on `IRuleEvaluator<WorkItem>` + `WorkItemFieldProvider` + `ILicenseService`. |
 | `ITeamMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs` | EXTEND | Add optional `ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting` parameter to `GetCurrentThroughputForTeamForecast` and `GetBlackoutAwareThroughputForTeam` (DDD-4). |
 | `TeamMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs` | EXTEND | Inject `IForecastFilterRuleService`; apply `Filter` step on the closed-items source list when `mode == ApplyFilter` OR `mode == RespectTeamSetting && effectiveRuleSet != null`. Cache key includes the mode. |
@@ -356,7 +356,7 @@ Handoff accepted by Morgan (nw-solution-architect) on entry to DESIGN wave.
 | `ManualForecastDto` | (existing manual forecast DTO) | EXTEND | Add `bool FilterApplied`, `string? ExcludedSummary`. |
 | `DeliveryRuleBuilder` | `Lighthouse.Frontend/src/components/Common/DeliveryRuleBuilder/DeliveryRuleBuilder.tsx` | EXTEND | Add optional `title?: string` and `emptyStateMessage?: string` props (DDD-6); default to today's strings. No structural change. |
 | `ForecastFilterEditor` | `Lighthouse.Frontend/src/components/Teams/ForecastFilterEditor/ForecastFilterEditor.tsx` | NEW | Thin wrapper around `DeliveryRuleBuilder` configured with the WorkItem field schema (fetched from the new schema endpoint), `title="Exclude items where…"`, `emptyStateMessage="Add at least one rule to exclude work items from forecast throughput."`. Read-only when `!isTeamAdmin(teamId)`. |
-| `TeamSettings` (existing Team Settings page) | `Lighthouse.Frontend/src/pages/Teams/Settings/*.tsx` (existing) | EXTEND | Insert a new "Forecast Filter (Premium)" section embedding `ForecastFilterEditor`; gated by `useLicense().isPremium`; non-premium variant shows the teaser per US-07. |
+| `ForecastSettingsComponent` (existing "Forecast Configuration" InputGroup on the team Edit page) | `Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx` (existing) | EXTEND | Render `ForecastFilterEditor` **inside the existing "Forecast Configuration" InputGroup**, directly below the `throughputHistory` / fixed-dates fields. Gated by `useLicense().isPremium`; non-premium variant shows the teaser per US-07. The InputGroup title stays "Forecast Configuration"; the editor introduces a sub-heading "Forecast Filter (Premium)" within it. Page is composed via `Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx`; route is `/teams/edit/:id` (with redirect from `/teams/:id/settings`). |
 | `FilteredThroughputChip` | `Lighthouse.Frontend/src/components/Common/Forecasting/FilteredThroughputChip.tsx` | NEW | Displays "Filtered throughput" chip with rule-list tooltip; consumed by Feature Forecast widget, Team Forecast result, Backtest result, throughput Run Chart, and throughput PBC chart (US-03). |
 | Throughput Run Chart frontend widget | `Lighthouse.Frontend/src/components/Common/Charts/*Throughput*` (existing — to be located in DELIVER) | EXTEND | Add `Show: Raw \| Filtered` header toggle when `team.forecastFilterRuleSet != null` AND `isPremium`; client-side filter applies the rule set via a TypeScript port of `WorkItemFieldProvider` + `RuleEvaluator` minimal subset (DDD-5). |
 | Throughput PBC chart frontend widget | (existing) | EXTEND | Add `Show: Raw \| Filtered` header toggle; flipping issues a network round-trip with `?view=filtered` (DDD-5). |
@@ -537,3 +537,209 @@ None. All DISCUSS-wave decisions (D1..D9) honoured.
 7. License-downgrade non-destruction: enforced by DDD-9 (license is a read-path gate, not a write-path gate).
 8. Forecast determinism: filter is a pure predicate over closed items; preserves determinism.
 ```
+
+---
+
+## Wave: DISTILL / [REF] WS strategy
+
+Strategy B — Real local + faked WTS, per orchestrator decision 2026-05-22. Real WebApplicationFactory backend, real Sqlite, real Vitest. The work-tracking-system connector (Jira / ADO / Linear) is faked via the existing stub pattern at `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/`. The faked connector returns a mixed closed history of User Stories and Bugs so the filter has observable effect on the throughput sample.
+
+ONE Playwright `@walking_skeleton @premium @real-io` scenario drives the full user journey from team-admin configures a rule inside the existing Forecast Configuration InputGroup → flip throughput chart toggle → flip Team Forecast toggle → flip Backtest toggle. Implementation-invariant scenarios are routed to backend NUnit integration and frontend Vitest layers per the `feedback_ci_and_e2e_minimalism` memory.
+
+## Wave: DISTILL / [REF] Test placement
+
+Mirrors the `Lighthouse.EndToEndTests/tests/specs/oauth/` pattern: a `.feature` Gherkin documentation companion + a `.spec.ts` Playwright skeleton with `test.skip()` placeholders. Backend integration tests live under `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/` (HTTP-driven via WebApplicationFactory) and `…/Services/Implementation/Forecast/` (service-driven with real EF Sqlite + Moq for license boundaries). Frontend Vitest tests live next to their components under `Lighthouse.Frontend/src/`.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+The walking skeleton is ONE end-to-end scenario covering US-01 / US-02 / US-03 / US-04 / US-05 / US-06. Implementation-invariant scenarios are re-layered to backend NUnit and frontend Vitest. Tag legend matches the OAuth pattern: `@walking_skeleton`, `@premium`, `@driving_adapter`, `@real-io`, `@US-N`, `@kpi-OUT-N`.
+
+| # | Scenario title | Slice | Layer | Tags |
+|---|---|---|---|---|
+| 1 | Premium delivery-forecaster configures the filter and propagates it across every forecast surface | 01–04 | Playwright | `@walking_skeleton @premium @driving_adapter @real-io @US-01 @US-02 @US-03 @US-04 @US-05 @US-06 @kpi-OUT-filter-adoption` |
+| 2 | PutTeam premium tenant team admin with valid rule set persists rule set and returns 200 | 01 | Backend integration (HTTP) | `@US-01` |
+| 3 | GetTeam after rule set saved returns ForecastFilterRuleSetJson in payload | 01 | Backend integration (HTTP) | `@US-01` |
+| 4 | GetForecastFilterSchema premium tenant team reader returns WorkItem field schema | 01 | Backend integration (HTTP) | `@US-01` |
+| 5 | PutTeam premium tenant non-team-admin with rule set returns 403 | 01 | Backend integration (HTTP) | `@US-01 @error` |
+| 6 | PutTeam premium tenant unknown field key returns 400 with error message | 01 | Backend integration (HTTP) | `@US-01 @error` |
+| 7 | PutTeam premium tenant rule set exceeding MaxConditions returns 400 | 01 | Backend integration (HTTP) | `@US-01 @error` |
+| 8 | PutTeam premium tenant rule value exceeding MaxLength returns 400 | 01 | Backend integration (HTTP) | `@US-01 @error` |
+| 9 | PutTeam premium tenant zero conditions persists as cleared filter | 01 | Backend integration (HTTP) | `@US-01` |
+| 10 | PutTeam non-premium tenant with rule set persists for later re-upgrade | 01 | Backend integration (HTTP) | `@US-07 @error` |
+| 11 | GetEffectiveRuleSet free tenant with persisted rule set returns null | 01 | Backend integration (Service) | `@US-07 @real-io @adapter-integration` |
+| 12 | GetEffectiveRuleSet premium tenant null JSON returns null | 01 | Backend integration (Service) | `@US-01 @real-io` |
+| 13 | GetEffectiveRuleSet premium tenant zero conditions returns null | 01 | Backend integration (Service) | `@US-01 @real-io` |
+| 14 | GetEffectiveRuleSet premium tenant non-empty rule set returns deserialised rule set | 01 | Backend integration (Service) | `@US-01 @real-io` |
+| 15 | Filter matching rule excludes matched items | 01 | Backend integration (Service) | `@US-02 @real-io` |
+| 16 | Filter no matching rule returns all items unchanged | 01 | Backend integration (Service) | `@US-02 @real-io` |
+| 17 | Filter rule matches all items returns empty enumeration | 01 | Backend integration (Service) | `@US-02 @error` |
+| 18 | License downgrade preserves persisted rule set GetEffective returns null | 01 | Backend integration (Service) | `@US-07 @error @real-io` |
+| 19 | License re-upgrade after downgrade GetEffective returns original rule set | 01 | Backend integration (Service) | `@US-07 @real-io` |
+| 20 | Feature forecast team with Bug exclusion rule draws throughput from non-Bug closes only | 01 | Backend integration (Service) | `@US-02 @real-io @adapter-integration` |
+| 21 | Feature forecast response after filter applied includes filterApplied true and excludedSummary | 01 | Backend integration (Service) | `@US-02 @US-03 @real-io` |
+| 22 | Feature forecast team without rule set returns filterApplied false and identical dates to today | 01 | Backend integration (Service) | `@US-02 @real-io` |
+| 23 | Feature forecast multi-team feature applies each team's filter independently | 01 | Backend integration (Service) | `@US-02 @real-io @property` |
+| 24 | Feature forecast rule set excludes all throughput falls back to unfiltered with warning summary | 01 | Backend integration (Service) | `@US-02 @error @real-io` |
+| 25 | Feature forecast identical team state and rule set and seed produces identical percentiles | 01 | Backend integration (Service) | `@US-02 @property @real-io` |
+| 26 | Feature forecast request without applyFilterOverride still respects team setting via default mode | 01 | Backend integration (Service) | `@US-02 @real-io` |
+| 27 | HowMany premium tenant team with filter applyOverride=false returns unfiltered forecast | 02 | Backend integration (HTTP) | `@US-04` |
+| 28 | HowMany premium tenant team with filter applyOverride=true returns filtered forecast | 02 | Backend integration (HTTP) | `@US-04` |
+| 29 | HowMany premium tenant team with filter applyOverride omitted defaults to filtered via team setting | 02 | Backend integration (HTTP) | `@US-04` |
+| 30 | HowMany premium tenant team without filter ignores override and returns unfiltered forecast | 02 | Backend integration (HTTP) | `@US-04` |
+| 31 | HowMany response payload includes filterApplied and excludedSummary | 02 | Backend integration (HTTP) | `@US-03 @US-04` |
+| 32 | When premium tenant team with filter applyOverride=false returns unfiltered forecast | 02 | Backend integration (HTTP) | `@US-04` |
+| 33 | GetThroughputPbc premium tenant team with filter and view=filtered returns filtered counts | 03 | Backend integration (HTTP) | `@US-05` |
+| 34 | GetThroughputPbc premium tenant team with filter and view=raw returns unfiltered counts | 03 | Backend integration (HTTP) | `@US-05` |
+| 35 | GetThroughputPbc premium tenant team with filter and query param omitted defaults to raw | 03 | Backend integration (HTTP) | `@US-05 @kpi-OUT-filter-default-chart-regression` |
+| 36 | GetThroughputPbc non-premium tenant team with view=filtered silently returns raw | 03 | Backend integration (HTTP) | `@US-05 @US-07 @error` |
+| 37 | GetThroughput premium tenant team with filter returns per-item-granular payload for client-side filter | 03 | Backend integration (HTTP) | `@US-05 @kpi-OUT-filter-default-chart-regression` |
+| 38 | Backtest premium tenant team with filter applyOverride=false runs against unfiltered historical throughput | 04 | Backend integration (HTTP) | `@US-06` |
+| 39 | Backtest premium tenant team with filter applyOverride=true runs against filtered historical throughput | 04 | Backend integration (HTTP) | `@US-06` |
+| 40 | Backtest premium tenant team with filter applyOverride omitted defaults to filtered via team setting | 04 | Backend integration (HTTP) | `@US-06` |
+| 41 | Backtest result DTO includes filterApplied and excludedSummary for chip | 04 | Backend integration (HTTP) | `@US-03 @US-06` |
+| 42 | Backtest premium tenant team without filter ignores override and returns unfiltered result | 04 | Backend integration (HTTP) | `@US-06` |
+| 43 | RuleEngine canary: Type=Bug rule set deserialises identically across both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property` |
+| 44 | RuleEngine canary: Tags contains "maintenance" rule set deserialises identically across both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property` |
+| 45 | RuleEngine canary: ParentReferenceID=(empty) rule set deserialises identically across both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property` |
+| 46 | RuleEngine canary: multi-rule set deserialises identically across both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property` |
+| 47 | RuleEngine canary: additionalField rule set deserialises identically across both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property` |
+| 48 | RuleEngine canary: rule set exceeding MaxRules fails validation on both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property @error` |
+| 49 | RuleEngine canary: rule value exceeding MaxLength fails validation on both consumers | 01 | Backend unit | `@kpi-OUT-filter-rule-engine-regression @property @error` |
+| 50 | ForecastFilterEditor renders DeliveryRuleBuilder configured for exclusion semantics | 01 | Frontend Vitest | `@US-01` |
+| 51 | ForecastFilterEditor fetches WorkItem field schema on mount | 01 | Frontend Vitest | `@US-01` |
+| 52 | ForecastFilterEditor renders read-only when current user is not team admin | 01 | Frontend Vitest | `@US-01 @error` |
+| 53 | ForecastFilterEditor renders read-only when rule set is non-empty and user is viewer | 01 | Frontend Vitest | `@US-01 @error` |
+| 54 | ForecastFilterEditor does not render when tenant is non-premium | 01 | Frontend Vitest | `@US-07 @error` |
+| 55 | FilteredThroughputChip renders with "Filtered throughput" label when visible | 01 | Frontend Vitest | `@US-03` |
+| 56 | FilteredThroughputChip does not render anything when visible=false | 01 | Frontend Vitest | `@US-03` |
+| 57 | FilteredThroughputChip shows excluded summary in tooltip on hover | 01 | Frontend Vitest | `@US-03` |
+| 58 | FilteredThroughputChip renders D5 warning copy when summary indicates fallback | 01 | Frontend Vitest | `@US-03 @error` |
+| 59 | ForecastSettingsComponent renders ForecastFilterEditor inside the existing Forecast Configuration InputGroup on premium tenants | 01 | Frontend Vitest | `@US-01` |
+| 60 | ForecastSettingsComponent renders the upgrade teaser instead of the editor on non-premium tenants | 01 | Frontend Vitest | `@US-07 @error` |
+| 61 | ForecastSettingsComponent does not render Forecast Filter sub-section when team page is in default-settings mode | 01 | Frontend Vitest | `@US-01` |
+| 62 | ForecastSettingsComponent preserves today's throughputHistory and fixed-dates fields above the new sub-section | 01 | Frontend Vitest | `@US-01` |
+| 63 | ThroughputChartFilterToggle renders toggle only when team has filter on premium tenant | 03 | Frontend Vitest | `@US-05` |
+| 64 | ThroughputChartFilterToggle defaults to Raw on every render | 03 | Frontend Vitest | `@US-05 @kpi-OUT-filter-default-chart-regression` |
+| 65 | ThroughputChartFilterToggle Filtered re-renders Run Chart client-side without network round-trip | 03 | Frontend Vitest | `@US-05` |
+| 66 | ThroughputChartFilterToggle Filtered on PBC issues request with ?view=filtered | 03 | Frontend Vitest | `@US-05` |
+| 67 | ThroughputChartFilterToggle shows FilteredThroughputChip next to chart title when Filtered | 03 | Frontend Vitest | `@US-03 @US-05` |
+| 68 | ThroughputChartFilterToggle shows empty-state when filter excludes every item in window | 03 | Frontend Vitest | `@US-05 @error` |
+| 69 | ThroughputChartFilterToggle operator parity with C# evaluator on equals/notEquals/contains | 03 | Frontend Vitest | `@US-05 @property` |
+| 70 | TeamForecastForm renders toggle only on premium tenants where team has filter | 02 | Frontend Vitest | `@US-04` |
+| 71 | TeamForecastForm defaults toggle to On when visible | 02 | Frontend Vitest | `@US-04` |
+| 72 | TeamForecastForm with toggle Off sends applyFilterOverride=false | 02 | Frontend Vitest | `@US-04` |
+| 73 | TeamForecastForm with toggle On sends applyFilterOverride=true | 02 | Frontend Vitest | `@US-04` |
+| 74 | TeamForecastForm shows FilteredThroughputChip on result panel when filterApplied=true | 02 | Frontend Vitest | `@US-03 @US-04` |
+| 75 | BacktestForm renders toggle only on premium tenants where team has filter | 04 | Frontend Vitest | `@US-06` |
+| 76 | BacktestForm defaults toggle to On when visible | 04 | Frontend Vitest | `@US-06` |
+| 77 | BacktestForm with toggle Off sends applyFilterOverride=false | 04 | Frontend Vitest | `@US-06` |
+| 78 | BacktestForm shows FilteredThroughputChip on backtest result view when filterApplied=true | 04 | Frontend Vitest | `@US-03 @US-06` |
+
+Story coverage check (Dim 8 / Check A): US-01 → rows 2-10, 50-54, 59-62 | US-02 → rows 15-17, 20-26 | US-03 → rows 21, 31, 41, 55-58, 67, 74, 78 | US-04 → rows 27-32, 70-74 | US-05 → rows 33-37, 63-69 | US-06 → rows 38-42, 75-78 | US-07 → rows 10, 11, 18-19, 36, 54, 60. All 7 stories covered.
+
+Total scenarios: 78. Error / edge / fallback scenarios: 32 (`@error` tag or expressing fallback / 403 / 400 / empty-state / boundary path) = 41% error ratio. Mandate 1 (error coverage ≥ 40%) PASS.
+
+## Wave: DISTILL / [REF] Driving Adapter coverage
+
+Every driving port from the DESIGN-wave table has at least one scenario exercising it.
+
+| Driving port | Method + Route | Scenario IDs (from table above) | Layer |
+|---|---|---|---|
+| Team mutation w/ filter rule set | `PUT /api/team/{teamId}` | 1 (Playwright), 2, 5, 6, 7, 8, 9, 10 | Playwright + Backend HTTP |
+| Team read w/ filter rule set | `GET /api/team/{teamId}` | 1, 3 | Playwright + Backend HTTP |
+| Forecast filter schema | `GET /api/team/{teamId}/forecast-filter/schema` | 1, 4 | Playwright + Backend HTTP |
+| Manual / feature forecast | `POST /api/forecast/manual/{id}` (Feature Forecast surface) | 1, 20-26 | Playwright + Backend service (sits behind the controller — feature forecasts are computed via the IForecastUpdater seam per DESIGN OQ #3; the HTTP read shape is exercised indirectly via the integration tests) |
+| Team forecast How Many | `POST /api/forecast/team/{teamId}/howmany` | 1, 27-31 | Playwright + Backend HTTP |
+| Team forecast When | `POST /api/forecast/team/{teamId}/when` | 32 | Backend HTTP |
+| Backtest | `POST /api/forecast/backtest/{teamId}` | 1, 38-42 | Playwright + Backend HTTP |
+| Throughput Run Chart | `GET /api/teamMetrics/{teamId}/throughput` | 1, 37, 63-69 | Playwright + Backend HTTP + Vitest |
+| Throughput PBC chart | `GET /api/teamMetrics/{teamId}/throughput/pbc` | 1, 33-36, 66 | Playwright + Backend HTTP + Vitest |
+
+## Wave: DISTILL / [REF] Adapter coverage table
+
+Mandate 6 — every driven adapter has at least one real-I/O integration test.
+
+| Adapter | Type | Real-I/O scenario | Notes |
+|---|---|---|---|
+| `TeamRepository` (real EF Sqlite) | Driven (persistence) | Rows 2-3, 9-14, 18-19 | Real EF Sqlite via WebApplicationFactory; round-trips `Team.ForecastFilterRuleSetJson`. |
+| `LicenseService` (in-process, real) | Driven (license read gate) | Rows 11, 18-19, 36, 54, 60 | Real in-process check via `ILicenseService.CanUsePremiumFeatures()`; tenant license state mutated for downgrade scenarios. |
+| `WorkTrackingConnector` (faked Jira/ADO/Linear) | Driven (external) | Rows 1 (Playwright), 20, 23, 24, 25 | **Faked** per WS Strategy B — the existing stub pattern at `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/` is the contract smoke; full real-IdP traffic deferred to manual dogfood per Slice 01 production-data requirement. Acceptable because the connector returns closed-item history shape that the filter never inspects beyond `Type/State/Tags/ParentReferenceId/AdditionalFieldValues` — those properties are stable across real and faked connectors. |
+| `TeamMetricsService` cache layer (in-process, real) | Driven (cache) | Rows 20-26, 33-37 | Real in-process cache; cache key includes the new `ThroughputFilterMode` enum (DDD-4 — filtered and unfiltered series cache independently). |
+| `RuleEvaluator<WorkItem>` (pure function) | Driven (pure) | Rows 15-17, 43-49 | Pure function — no I/O; tested directly. Constructor-purity contract enforced by ArchUnitNET test. |
+| EF migration (`Sqlite + Postgres`) | Driven (schema) | Rows 1 (Playwright runs against real Sqlite), 2-3 | Real Sqlite migration applied at WebApplicationFactory startup. Postgres counterpart verified by the existing `ci_verifypostgres.yml` workflow (no new test needed — both providers in lockstep per CLAUDE.md). |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+All scaffold files tagged with `// SCAFFOLD: true` for the DELIVER agent to grep. Backend stubs throw `InvalidOperationException` so NUnit classifies them as RED test failures, not BROKEN builds. Frontend stubs `throw new Error` in test bodies and return `null` (or no-op) from component bodies. RED, not BROKEN.
+
+**Production-code scaffolds** (backend):
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastFilterRuleService.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastFilterRuleService.cs`
+
+**Production-code scaffolds** (frontend):
+- `Lighthouse.Frontend/src/components/Teams/ForecastFilterEditor/ForecastFilterEditor.tsx`
+- `Lighthouse.Frontend/src/components/Common/Forecasting/FilteredThroughputChip.tsx`
+
+**Test scaffolds** (Playwright):
+- `Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.feature`
+- `Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts`
+
+**Test scaffolds** (Backend NUnit):
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterTeamSettingsIntegrationTest.cs`
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterTeamForecastIntegrationTest.cs`
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterThroughputChartIntegrationTest.cs`
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterBacktestIntegrationTest.cs`
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastFilterRuleServiceIntegrationTest.cs`
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastFilterFeatureForecastIntegrationTest.cs`
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/Models/DeliveryRules/RuleEngineReuseCanaryTests.cs`
+
+**Test scaffolds** (Frontend Vitest):
+- `Lighthouse.Frontend/src/components/Teams/ForecastFilterEditor/ForecastFilterEditor.test.tsx`
+- `Lighthouse.Frontend/src/components/Common/Forecasting/FilteredThroughputChip.test.tsx`
+- `Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.test.tsx` (appended describe block — existing file extended)
+- `Lighthouse.Frontend/src/components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle.test.tsx`
+- `Lighthouse.Frontend/src/components/Teams/TeamForecastForm/TeamForecastForm.test.tsx`
+- `Lighthouse.Frontend/src/components/Teams/BacktestForm/BacktestForm.test.tsx`
+
+**EF migration placeholder**: per CLAUDE.md DOD item 7, the migration `AddForecastFilterRuleSetJsonToTeam` is NOT generated here. DELIVER wave runs the existing `CreateMigration` PowerShell script (Sqlite + Postgres in lockstep).
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+DESIGN / DEVOPS commitments the scenarios depend on:
+
+- **DDD-1** — `IRuleEvaluator<T>` + `IRuleFieldProvider<T>` ports extracted in the refactor commit before the feature commit; `ForecastFilterRuleService` depends on `IRuleEvaluator<WorkItem>`.
+- **DDD-3** — `Team.ForecastFilterRuleSetJson` nullable string column added via the existing `CreateMigration` PowerShell script (both Sqlite + Postgres in lockstep).
+- **DDD-4** — `ITeamMetricsService.GetCurrentThroughputForTeamForecast(team, mode)` + `GetBlackoutAwareThroughputForTeam(team, start, end, mode)` extended with optional `ThroughputFilterMode mode = RespectTeamSetting`.
+- **DDD-6** — `DeliveryRuleBuilder` extended with two optional props (`title`, `emptyStateMessage`); defaults preserve today's strings.
+- **DDD-9** — License gate enforced INSIDE `ForecastFilterRuleService.GetEffectiveRuleSet` (read-path gate); persisted column accepts writes regardless of license.
+- **DESIGN OQ #3** — Feature Forecast read-path DTO confirmed by DELIVER; `filterApplied` + `excludedSummary` carried on the projection returned by `GET /api/features/{id}` (current backing path; DESIGN open question left to DELIVER for exact placement).
+- **DEVOPS** — No new infrastructure (architecture brief lines 489-490). Existing `ci_verifysqlite.yml` + `ci_verifypostgres.yml` workflows cover the EF migration; existing Playwright job runs the new `@walking_skeleton @premium` scenario.
+
+## Wave: DISTILL / [REF] Outcomes registry note
+
+Outcomes registry (`docs/product/outcomes/`) is not yet bootstrapped in this project; the `nwave-ai` CLI is not installed locally. OUT-IDs in `docs/product/kpi-contracts.yaml` (now updated with six entries `OUT-filter-adoption`, `OUT-filter-forecast-shift`, `OUT-filter-default-chart-regression`, `OUT-filter-toggle-divergence`, `OUT-filter-rule-editor-reuse`, `OUT-filter-rule-engine-regression`) serve as the local SSOT until the registry is introduced. The DISCUSS-wave OUT-1…OUT-6 numbering maps 1:1 to those six contract entries.
+
+## Wave: DISTILL / [REF] Handoff to DELIVER
+
+**Handoff to**: `nw-software-crafter` (DELIVER wave) — full artifact set + RED-ready scaffolds.
+
+Slice ordering remains 01 → (02 / 03 / 04). Slice 01's refactor commit (rule-engine generalisation) lands FIRST per CLAUDE.md TDD discipline AND ADR-012; the feature commit follows. The walking-skeleton Playwright scenario stays `test.skip()` until end of Slice 04 wiring; intermediate slices unskip nothing in the Playwright spec but turn the corresponding backend / Vitest tests GREEN.
+
+DOD items 5 (`dotnet build` zero warnings, `pnpm build` clean, SonarCloud quality gate), 6 (Stryker.NET ≥80% kill rate), 7 (EF migration via PowerShell script), 8 (docs page after user confirmation), 9 (ADO Epic 4896 + child stories per `/ado-sync`), 10 (jobs.yaml feature_context) are DELIVER-wave responsibilities.
+
+### DELIVER pre-finalize checklist (consolidated from review gate)
+
+Per the project's `per-feature` mutation testing strategy (CLAUDE.md), the Stryker configs are intentionally feature-scoped and must be updated *during DELIVER finalize* before the ≥80% kill-rate gate is meaningful. Folded in from the platform-architect reviewer (2026-05-22):
+
+1. **Backend Stryker config** (`Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.json`): extend the `mutate` array to cover the new production paths before running Stryker.NET for this feature. Either explicit file list:
+   - `Lighthouse.Backend/Services/Implementation/DeliveryRules/RuleEvaluator.cs`
+   - `Lighthouse.Backend/Services/Implementation/DeliveryRules/FeatureFieldProvider.cs`
+   - `Lighthouse.Backend/Services/Implementation/DeliveryRules/WorkItemFieldProvider.cs`
+   - `Lighthouse.Backend/Services/Implementation/Forecast/ForecastFilterRuleService.cs`
+   - `Lighthouse.Backend/Models/Metrics/ThroughputFilterMode.cs` (if introduced under that namespace)
+   - plus the `IRuleEvaluator<T>` / `IRuleFieldProvider<T>` interface seams and any extensions to `TeamMetricsService`
+   - or switch to inclusive glob (`**/Services/Implementation/{DeliveryRules,Forecast}/**/*.cs`) and document the convention as a one-liner in the config.
+2. **Frontend Stryker harness**: create `Lighthouse.Frontend/vitest.stryker.filter-forecast.config.ts` mirroring the existing RBAC-scoped pattern, covering: `ForecastFilterEditor.test.tsx`, `FilteredThroughputChip.test.tsx`, `ThroughputChartFilterToggle.test.tsx`, `TeamForecastForm.test.tsx`, `BacktestForm.test.tsx`, and the appended describe block in `ForecastSettingsComponent.test.tsx`. Wire it into the per-feature mutation command parity with backend Stryker.NET.
+3. **Glob hygiene** (low): if the backend `mutate` field stays a hard-coded file list, document in a one-line config comment that adding a new file under `DeliveryRules/` or `Forecast/` requires manually extending the list. Globs avoid the foot-gun; choose deliberately.
+
+These three tasks are **not** DISTILL blockers — they relate to running mutation testing on production code that does not yet exist (RED scaffolds throw). They are pre-conditions for closing DOD item 6 at the end of DELIVER.

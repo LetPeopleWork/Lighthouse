@@ -18,7 +18,7 @@ Ship the rule-based filter end-to-end against Feature Forecasts. Validates Epic 
   - `PUT /api/teams/{teamId}` payload extended with `forecastFilterRuleSet` (DeliveryRuleSet-compatible JSON shape; validation: subset of D9 schema).
   - `GET /api/teams/{teamId}/forecast-filter/schema` returns the field schema for the rule editor.
   - Feature Forecast response extended with `filterApplied: bool` and `excludedSummary: string`.
-- Frontend Team Settings: new "Forecast Filter (Premium)" section embedding the **existing** rule-editor component (the one used today for rule-based deliveries) — same component, different field schema + the `semantics: "exclude"` configuration so labels read "Exclude items where…" (per D8). Hidden if `!isPremium`; editable only by team-admin; read-only for viewers if filter is set (so they understand why their forecasts are filtered).
+- Frontend Team Settings (`Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx`): extend the existing "Forecast Configuration" InputGroup — the one that already holds Throughput History (days) and the fixed-dates toggle — with a "Forecast Filter (Premium)" sub-section rendering the **existing** rule-editor component (the one used today for rule-based deliveries). Same component, different field schema + the `semantics: "exclude"` configuration so labels read "Exclude items where…" (per D8). Hidden if `!isPremium`; editable only by team-admin; read-only for viewers if filter is set (so they understand why their forecasts are filtered).
 - Frontend Feature Forecast widget: chip "Filtered throughput" with rule-list tooltip (per US-03), rendered when forecast response has `filterApplied: true`.
 - Docs page: new section on premium-feature catalogue page.
 

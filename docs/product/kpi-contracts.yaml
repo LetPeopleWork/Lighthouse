@@ -157,3 +157,132 @@ outcomes:
     alerting:
       - "Customer instance: in-app banner per connection (already covered by US-02)"
       - "Vendor demo: weekly digest, not paging"
+
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # filter-forecast-throughput (Epic 4896, customer ask Liz / JLP)
+  # Added by DISTILL wave 2026-05-22. Self-hosted telemetry gap (Epic 5015)
+  # means OUT-1, OUT-2, OUT-4, OUT-5 are community-feedback proxies; OUT-3
+  # and OUT-6 are CI-gated. Outcomes registry not yet bootstrapped in this
+  # project; OUT-N IDs below serve as the local SSOT until that registry is
+  # introduced.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - id: OUT-filter-adoption
+    feature: filter-forecast-throughput
+    title: Customer teams configure a non-empty filter rule set
+    target: ">= 3 distinct customer teams configure a non-empty filter within 30 days post-release"
+    measurement_scope: opt_in_telemetry_required
+    acceptance_scenarios:
+      - file: Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts
+        scenario: "Premium delivery-forecaster configures the filter and propagates it across every forecast surface"
+        tag: "@kpi-OUT-filter-adoption"
+        gate_type: soft
+    measurement_window: rolling 30 days post-release
+    rationale: >
+      Validates Epic 4896 demand AND the rule-engine reuse architectural bet.
+      If users complain the editor is confusing, the D7 reuse hypothesis is wrong.
+    measurement_plan:
+      data_collection:
+        - "Community feedback (Slack, GitHub) and direct customer follow-up with Liz / JLP."
+        - "NOT INSTRUMENTED. Self-hosted telemetry blocked on Epic 5015."
+      derivation: "N/A — proxy signals only."
+      surfacing:
+        - "docs/evolution/filter-forecast-throughput.md (post-release running notes)"
+    alerting: []
+    status: deferred-pending-telemetry-feature
+    blocked_by: "ADO Epic #5015 — Opt-in Product Telemetry."
+    interim_measurement: "Community / customer-follow-up only; document confirmations in docs/evolution/filter-forecast-throughput.md"
+
+  - id: OUT-filter-forecast-shift
+    feature: filter-forecast-throughput
+    title: Forecast-shift confirmation from at least one customer
+    target: "At least one customer reports percentile dates shifted in the expected direction within 60 days"
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      Validates the feature's job-to-be-done: 'honest delivery dates for the
+      stakeholder conversation'. If the shift is invisible or in the wrong
+      direction the JTBD is unsubstantiated.
+    measurement_plan:
+      data_collection:
+        - "Community feedback or interview note."
+      derivation: "N/A — proxy signals only."
+      surfacing:
+        - "docs/evolution/filter-forecast-throughput.md"
+    alerting: []
+    status: deferred-pending-telemetry-feature
+
+  - id: OUT-filter-default-chart-regression
+    feature: filter-forecast-throughput
+    title: Default chart behaviour regressions
+    target: "Zero regressions in default Throughput Run Chart / PBC behaviour after this feature lands"
+    measurement_scope: per_instance + vendor_demo_only
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterThroughputChartIntegrationTest.cs
+        scenario: "GetThroughputPbc_PremiumTenantTeamWithFilterAndQueryParamOmitted_DefaultsToRaw"
+        tag: "@kpi-OUT-filter-default-chart-regression"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterThroughputChartIntegrationTest.cs
+        scenario: "GetThroughput_PremiumTenantTeamWithFilter_ReturnsPerItemGranularPayloadForClientSideFilter"
+        tag: "@kpi-OUT-filter-default-chart-regression"
+        gate_type: hard
+    measurement_window: continuous (CI gate)
+    rationale: >
+      D1 / invariant #1 — default chart rendering must be byte-identical to today
+      for every team regardless of premium status or filter configuration.
+    alerting: []
+
+  - id: OUT-filter-toggle-divergence
+    feature: filter-forecast-throughput
+    title: Per-run / per-view toggle usage diverges from default
+    target: "At least one user reports flipping a toggle within the same session"
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      Slices 02 / 03 / 04 learning hypothesis. If toggles are never flipped,
+      the symmetry argument behind D3 is unsubstantiated.
+    measurement_plan:
+      data_collection: ["Community / interview note."]
+      derivation: "N/A — proxy signals only."
+      surfacing: ["docs/evolution/filter-forecast-throughput.md"]
+    alerting: []
+    status: deferred-pending-telemetry-feature
+
+  - id: OUT-filter-rule-editor-reuse
+    feature: filter-forecast-throughput
+    title: Rule-editor reuse satisfaction
+    target: "No customer feedback reporting the editor is confusing or that dedicated controls were expected"
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      D7 reuse-bet validation. Disconfirming signal would prompt re-evaluation
+      of the reuse strategy.
+    measurement_plan:
+      data_collection: ["Community / interview note."]
+      derivation: "N/A — proxy signals only."
+      surfacing: ["docs/evolution/filter-forecast-throughput.md"]
+    alerting: []
+    status: deferred-pending-telemetry-feature
+
+  - id: OUT-filter-rule-engine-regression
+    feature: filter-forecast-throughput
+    title: Rule-engine generalisation regression
+    target: "Zero regressions in existing rule-based deliveries; mutation kill rate >= pre-feature baseline on rule-engine code"
+    measurement_scope: per_instance + vendor_demo_only
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/Models/DeliveryRules/RuleEngineReuseCanaryTests.cs
+        scenario: "TypeEqualsBugRuleSet_DeserialisesIdenticallyAcrossBothConsumers"
+        tag: "@kpi-OUT-filter-rule-engine-regression"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/Models/DeliveryRules/RuleEngineReuseCanaryTests.cs
+        scenario: "MultiRuleSet_DeserialisesIdenticallyAcrossBothConsumers"
+        tag: "@kpi-OUT-filter-rule-engine-regression"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/Models/DeliveryRules/RuleEngineReuseCanaryTests.cs
+        scenario: "RuleSetExceedingMaxRules_FailsValidationOnBothConsumers"
+        tag: "@kpi-OUT-filter-rule-engine-regression"
+        gate_type: hard
+    measurement_window: continuous (CI gate + Stryker.NET per-feature)
+    rationale: >
+      DDD-7 canary protects the JSON-shape invariant; existing rule-based
+      deliveries test suite protects behaviour parity; Stryker kill rate
+      protects mutation regression. All three are hard CI gates.
+    alerting: []

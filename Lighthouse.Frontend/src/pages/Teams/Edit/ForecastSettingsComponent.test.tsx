@@ -159,3 +159,30 @@ describe("ForecastSettingsComponent", () => {
 		).not.toBeInTheDocument();
 	});
 });
+
+// SCAFFOLD: true — DISTILL RED scaffolds for filter-forecast-throughput (Epic 4896).
+describe("ForecastSettingsComponent — Forecast Filter sub-section (RED scaffold)", () => {
+	it("renders the ForecastFilterEditor inside the existing Forecast Configuration InputGroup on premium tenants", () => {
+		throw new Error(
+			"Not yet implemented — RED scaffold (US-01, feature-delta row 359, slice-01 line 21). DELIVER wave: the editor must render INSIDE the existing 'Forecast Configuration' InputGroup (below throughputHistory / fixed-dates fields), NOT in a new sibling section.",
+		);
+	});
+
+	it("renders the upgrade teaser instead of the editor on non-premium tenants", () => {
+		throw new Error(
+			"Not yet implemented — RED scaffold (US-07 AC). DELIVER wave: useLicenseRestrictions().isPremium==false renders a one-line teaser with a docs link.",
+		);
+	});
+
+	it("does not render the Forecast Filter sub-section at all when the team page is in default-settings mode", () => {
+		throw new Error(
+			"Not yet implemented — RED scaffold. DELIVER wave: the filter editor is team-scoped — default-team-settings page hides it.",
+		);
+	});
+
+	it("preserves today's throughputHistory and fixed-dates fields above the new sub-section", () => {
+		throw new Error(
+			"Not yet implemented — RED scaffold. DELIVER wave: regression-protect the existing fields' presence and order inside the InputGroup.",
+		);
+	});
+});
