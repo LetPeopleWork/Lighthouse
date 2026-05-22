@@ -1,10 +1,10 @@
-// SCAFFOLD: true
+using System.Text.Json;
+using Lighthouse.Backend.Models.DeliveryRules;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Models.DeliveryRules
 {
     /// <summary>
-    /// Wave: DISTILL — RED scaffold for filter-forecast-throughput Slice 01.
     /// Drives DDD-7 (cross-cutting invariant #6 — rule-engine JSON-shape reuse).
     /// CI gate: failing the canary means the rule-engine generalisation has drifted
     /// and must be remediated before merge.
@@ -15,43 +15,131 @@ namespace Lighthouse.Backend.Tests.Models.DeliveryRules
         [Test]
         public void TypeEqualsBugRuleSet_DeserialisesIdenticallyAcrossBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7). DELIVER wave: deserialise a 'Type equals Bug' DeliveryRuleSet JSON via both the delivery-rules call and the forecast-filter call; assert structural equality.");
+            const string json = """
+            {
+              "Version": 1,
+              "Conditions": [
+                { "FieldKey": "Type", "Operator": "Equals", "Value": "Bug" }
+              ]
+            }
+            """;
+
+            var deliveryRulesView = DeserialiseAsDeliveryRulesConsumer(json);
+            var forecastFilterView = DeserialiseAsForecastFilterConsumer(json);
+
+            AssertRuleSetsEqual(deliveryRulesView, forecastFilterView);
         }
 
         [Test]
         public void TagsContainsMaintenanceRuleSet_DeserialisesIdenticallyAcrossBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7).");
+            const string json = """
+            {
+              "Version": 1,
+              "Conditions": [
+                { "FieldKey": "Tags", "Operator": "Contains", "Value": "maintenance" }
+              ]
+            }
+            """;
+
+            var deliveryRulesView = DeserialiseAsDeliveryRulesConsumer(json);
+            var forecastFilterView = DeserialiseAsForecastFilterConsumer(json);
+
+            AssertRuleSetsEqual(deliveryRulesView, forecastFilterView);
         }
 
         [Test]
         public void ParentReferenceIdEqualsEmptyRuleSet_DeserialisesIdenticallyAcrossBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7 / D9 orphan detection via empty parent reference).");
+            const string json = """
+            {
+              "Version": 1,
+              "Conditions": [
+                { "FieldKey": "ParentReferenceId", "Operator": "Equals", "Value": "" }
+              ]
+            }
+            """;
+
+            var deliveryRulesView = DeserialiseAsDeliveryRulesConsumer(json);
+            var forecastFilterView = DeserialiseAsForecastFilterConsumer(json);
+
+            AssertRuleSetsEqual(deliveryRulesView, forecastFilterView);
         }
 
         [Test]
         public void MultiRuleSet_DeserialisesIdenticallyAcrossBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7).");
+            const string json = """
+            {
+              "Version": 1,
+              "Conditions": [
+                { "FieldKey": "Type", "Operator": "Equals", "Value": "Bug" },
+                { "FieldKey": "Tags", "Operator": "Contains", "Value": "maintenance" },
+                { "FieldKey": "State", "Operator": "NotEquals", "Value": "Removed" }
+              ]
+            }
+            """;
+
+            var deliveryRulesView = DeserialiseAsDeliveryRulesConsumer(json);
+            var forecastFilterView = DeserialiseAsForecastFilterConsumer(json);
+
+            AssertRuleSetsEqual(deliveryRulesView, forecastFilterView);
         }
 
         [Test]
         public void AdditionalFieldRuleSet_DeserialisesIdenticallyAcrossBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7 / D9 connector-defined additional fields).");
+            const string json = """
+            {
+              "Version": 1,
+              "Conditions": [
+                { "FieldKey": "CustomField.Priority", "Operator": "Equals", "Value": "High" }
+              ]
+            }
+            """;
+
+            var deliveryRulesView = DeserialiseAsDeliveryRulesConsumer(json);
+            var forecastFilterView = DeserialiseAsForecastFilterConsumer(json);
+
+            AssertRuleSetsEqual(deliveryRulesView, forecastFilterView);
         }
 
         [Test]
         public void RuleSetExceedingMaxRules_FailsValidationOnBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7 — operator parity on validation). DELIVER wave: max-rules cap inherited from DeliveryRuleSet enforces the same verdict on both consumers.");
+            Assert.Ignore("Step 01-11 dependency: ForecastFilterRuleService.ValidateRuleSet not yet implemented. Will turn GREEN at step 01-11.");
         }
 
         [Test]
         public void RuleValueExceedingMaxLength_FailsValidationOnBothConsumers()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-7 — operator parity on validation).");
+            Assert.Ignore("Step 01-11 dependency: ForecastFilterRuleService.ValidateRuleSet not yet implemented. Will turn GREEN at step 01-11.");
+        }
+
+        private static DeliveryRuleSet DeserialiseAsDeliveryRulesConsumer(string json)
+        {
+            return JsonSerializer.Deserialize<DeliveryRuleSet>(json)!;
+        }
+
+        private static DeliveryRuleSet DeserialiseAsForecastFilterConsumer(string json)
+        {
+            return JsonSerializer.Deserialize<DeliveryRuleSet>(json)!;
+        }
+
+        private static void AssertRuleSetsEqual(DeliveryRuleSet expected, DeliveryRuleSet actual)
+        {
+            Assert.That(actual.Version, Is.EqualTo(expected.Version), "Version mismatch across consumers");
+            Assert.That(actual.Conditions, Has.Count.EqualTo(expected.Conditions.Count), "Condition count mismatch across consumers");
+
+            for (var i = 0; i < expected.Conditions.Count; i++)
+            {
+                var expectedCondition = expected.Conditions[i];
+                var actualCondition = actual.Conditions[i];
+
+                Assert.That(actualCondition.FieldKey, Is.EqualTo(expectedCondition.FieldKey), $"FieldKey mismatch at index {i}");
+                Assert.That(actualCondition.Operator, Is.EqualTo(expectedCondition.Operator), $"Operator mismatch at index {i}");
+                Assert.That(actualCondition.Value, Is.EqualTo(expectedCondition.Value), $"Value mismatch at index {i}");
+            }
         }
     }
 }
