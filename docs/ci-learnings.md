@@ -254,6 +254,22 @@ Each entry follows:
 
 _None yet._
 
+## Dependency audit
+
+### 2026-05-23 — `sonar-gates` job runs `pnpm audit --audit-level=low` on main; transitive vulnerabilities fail the gate even when Sonar passes
+- **Symptom**: `Verify SonarCloud Quality Gates / sonar-gates` job FAILURE on main pushes, but the per-project Quality Gate steps both report SUCCESS. The failure is in a follow-on step named "Audit Frontend Dependencies" defined in `.github/workflows/ci_sonar_gates.yml:70-73`: `pnpm audit --audit-level=low` flagging GHSA-q8mj-m7cp-5q26 — a moderate DoS in `qs` 6.11.1-6.15.1 reachable from `@stryker-mutator/core` → `typed-rest-client` → `qs`. Lighthouse code does not call `qs.stringify` directly; the audit gate catches attack-surface arriving via the dep tree.
+- **Root cause**: The sonar-gates job has TWO gates — (a) the per-project Sonar quality gate, (b) `pnpm audit` at level=low on the Frontend, only on `main`. Both must pass for the job to be green. Earlier failures on slice pushes (the run linked here was `26339359438` job `77539016266`) frequently appear to be "Sonar gate" failures from the outside; in reality the underlying Sonar gate was green and the audit step is what's red. Distinguish via the `steps[]` array on the job — the failing step name is what tells you.
+- **Fix**: Add a scoped `pnpm.overrides` entry in `Lighthouse.Frontend/package.json` pinning the vulnerable package only over its vulnerable range:
+  ```json
+  "pnpm": {
+    "overrides": {
+      "qs@>=6.11.1 <=6.15.1": "^6.15.2"
+    }
+  }
+  ```
+  The range-scoped override (`pkg@range`) is preferable over a bare `"qs": "^6.15.2"` because the bare form pins the dep across ALL future trees, including ones that legitimately want a newer-than-6.15.1 resolution.
+- **Rule going forward**: Before pushing any Frontend dep change to main, run `pnpm audit --audit-level=low` in `Lighthouse.Frontend/` locally — the gate is per-push on main, and the audit catches transitive vulnerabilities that direct-dep updates wouldn't surface. For any moderate-or-higher vulnerability flagged, the fix shape is: (a) if a direct upgrade of the consumer dep (e.g. `@stryker-mutator/core`) is available with a patched transitive — prefer that; (b) otherwise add a scoped `pnpm.overrides` entry pinning the vulnerable subgraph to its first-patched version using the `pkg@vulnerable-range` form. Avoid bare `"qs": "version"` overrides — they're too broad. The job step is in `ci_sonar_gates.yml:70-73`; do NOT relax `--audit-level=low` to `--audit-level=high` to avoid the gate. The whole point is catching moderate-and-above attack surface before it lands on main.
+
 ## Infra & flakes
 
 ### 2026-05-20 — Resolved: `Refresh Features` flake was TWO cascading races, both fixed (3 slices over the day)
