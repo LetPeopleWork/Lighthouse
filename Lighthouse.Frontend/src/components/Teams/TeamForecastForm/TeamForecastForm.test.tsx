@@ -22,14 +22,24 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	}),
 }));
 
-const getMockForecastService = (): IForecastService => ({
-	runManualForecast: vi.fn().mockResolvedValue({
-		remainingItems: 5,
-		targetDate: new Date(),
-		whenForecasts: [],
-		howManyForecasts: [],
-		likelihood: 0,
-	}),
+const getMockManualForecastResponse = (
+	overrides: { filterApplied?: boolean; excludedSummary?: string } = {},
+) => ({
+	remainingItems: 5,
+	targetDate: new Date(),
+	whenForecasts: [],
+	howManyForecasts: [],
+	likelihood: 0,
+	filterApplied: overrides.filterApplied ?? false,
+	excludedSummary: overrides.excludedSummary,
+});
+
+const getMockForecastService = (
+	response: ReturnType<
+		typeof getMockManualForecastResponse
+	> = getMockManualForecastResponse(),
+): IForecastService => ({
+	runManualForecast: vi.fn().mockResolvedValue(response),
 	runItemPrediction: vi.fn(),
 	runBacktest: vi.fn(),
 });
@@ -121,5 +131,42 @@ describe("TeamForecastForm — Apply forecast-throughput filter toggle", () => {
 				true,
 			);
 		});
+	});
+});
+
+describe("TeamForecastForm — FilteredThroughputChip on result panel", () => {
+	afterEach(() => {
+		vi.clearAllMocks();
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+	});
+
+	it("renders the chip on the result panel when the forecast response has filterApplied=true", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const forecastService = getMockForecastService(
+			getMockManualForecastResponse({
+				filterApplied: true,
+				excludedSummary: 'Type = Bug; Tags contains "maintenance"',
+			}),
+		);
+		renderForm({ hasFilter: true, forecastService });
+
+		fireEvent.click(screen.getByRole("button", { name: /forecast/i }));
+
+		expect(await screen.findByText("Filtered throughput")).toBeInTheDocument();
+	});
+
+	it("does not render the chip when the forecast response has filterApplied=false", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const forecastService = getMockForecastService(
+			getMockManualForecastResponse({ filterApplied: false }),
+		);
+		renderForm({ hasFilter: true, forecastService });
+
+		fireEvent.click(screen.getByRole("button", { name: /forecast/i }));
+
+		await vi.waitFor(() => {
+			expect(forecastService.runManualForecast).toHaveBeenCalled();
+		});
+		expect(screen.queryByText("Filtered throughput")).not.toBeInTheDocument();
 	});
 });

@@ -28,6 +28,7 @@ const getMockManualForecast = (
 			new HowManyForecast(80, 20),
 		],
 		likelihood: 70,
+		filterApplied: false,
 	};
 
 	const merged = { ...defaults, ...overrides };
@@ -37,6 +38,8 @@ const getMockManualForecast = (
 		merged.whenForecasts,
 		merged.howManyForecasts,
 		merged.likelihood,
+		merged.filterApplied,
+		merged.excludedSummary,
 	);
 };
 

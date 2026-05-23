@@ -110,6 +110,8 @@ export class ForecastService
 			whenForecasts,
 			howManyForecasts,
 			manualForecastData.likelihood,
+			manualForecastData.filterApplied ?? false,
+			manualForecastData.excludedSummary,
 		);
 	}
 

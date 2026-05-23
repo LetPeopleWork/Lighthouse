@@ -7,6 +7,8 @@ export interface IManualForecast {
 	whenForecasts: IWhenForecast[];
 	howManyForecasts: IHowManyForecast[];
 	likelihood: number;
+	filterApplied: boolean;
+	excludedSummary?: string;
 }
 
 export class ManualForecast implements IManualForecast {
@@ -15,6 +17,8 @@ export class ManualForecast implements IManualForecast {
 	likelihood: number;
 	remainingItems: number;
 	targetDate: Date;
+	filterApplied: boolean;
+	excludedSummary?: string;
 
 	constructor(
 		remainingItems: number,
@@ -22,11 +26,15 @@ export class ManualForecast implements IManualForecast {
 		whenForecasts: IWhenForecast[],
 		howManyForecasts: IHowManyForecast[],
 		likelihood = 0,
+		filterApplied = false,
+		excludedSummary?: string,
 	) {
 		this.remainingItems = remainingItems;
 		this.targetDate = targetDate;
 		this.whenForecasts = whenForecasts;
 		this.howManyForecasts = howManyForecasts;
 		this.likelihood = likelihood;
+		this.filterApplied = filterApplied;
+		this.excludedSummary = excludedSummary;
 	}
 }
