@@ -161,13 +161,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public void LicenseDowngrade_PreservesPersistedRuleSet_GetEffectiveReturnsNull()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (US-07 / invariant #7 / DDD-9). DELIVER wave: write path keeps the column intact, GetEffectiveRuleSet silences via license read-path.");
+            var ruleSet = CreateNonEmptyRuleSet();
+            var team = CreateTeam(forecastFilterRuleSetJson: SerializeRuleSet(ruleSet));
+            var subject = CreateSubject();
+
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var beforeDowngrade = subject.GetEffectiveRuleSet(team);
+
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+            var afterDowngrade = subject.GetEffectiveRuleSet(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(beforeDowngrade, Is.Not.Null);
+                Assert.That(afterDowngrade, Is.Null);
+                Assert.That(team.ForecastFilterRuleSetJson, Is.Not.Null.And.Not.Empty);
+            }
         }
 
         [Test]
         public void LicenseReUpgrade_AfterDowngrade_GetEffectiveReturnsOriginalRuleSet()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (US-07 invariant). DELIVER wave: re-upgrading restores filtered behaviour without re-configuration.");
+            var ruleSet = CreateNonEmptyRuleSet();
+            var team = CreateTeam(forecastFilterRuleSetJson: SerializeRuleSet(ruleSet));
+            var subject = CreateSubject();
+
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+            var duringDowngrade = subject.GetEffectiveRuleSet(team);
+
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var afterReUpgrade = subject.GetEffectiveRuleSet(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(duringDowngrade, Is.Null);
+                Assert.That(afterReUpgrade, Is.Not.Null);
+                Assert.That(afterReUpgrade!.Conditions, Has.Count.EqualTo(1));
+                Assert.That(afterReUpgrade.Conditions[0].FieldKey, Is.EqualTo("workitem.type"));
+                Assert.That(afterReUpgrade.Conditions[0].Value, Is.EqualTo("Bug"));
+            }
         }
         
         [Test]
