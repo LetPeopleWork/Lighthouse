@@ -1,7 +1,7 @@
 import { Chip, Tooltip } from "@mui/material";
 import type React from "react";
 
-const D5_FALLBACK_SUMMARY =
+const FILTER_EXCLUDED_ALL_FALLBACK_SUMMARY =
 	"Filter excluded all throughput; showing unfiltered forecast";
 
 export interface FilteredThroughputChipProps {
@@ -17,7 +17,7 @@ const FilteredThroughputChip: React.FC<FilteredThroughputChipProps> = ({
 		return null;
 	}
 
-	const isFallback = excludedSummary === D5_FALLBACK_SUMMARY;
+	const isFallback = excludedSummary === FILTER_EXCLUDED_ALL_FALLBACK_SUMMARY;
 	const tooltipTitle = excludedSummary ?? "";
 
 	return (

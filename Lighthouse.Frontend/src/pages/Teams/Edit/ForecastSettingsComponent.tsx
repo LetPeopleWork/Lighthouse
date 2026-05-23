@@ -126,7 +126,6 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 						slotProps={{
 							inputLabel: { shrink: true },
 							htmlInput: {
-								// Max date is 10 days from today
 								max: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
 									.toISOString()
 									.slice(0, 10),
@@ -145,7 +144,6 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 						slotProps={{
 							inputLabel: { shrink: true },
 							htmlInput: {
-								// Min date should be 10 days after start date
 								min: new Date(
 									teamSettings.throughputHistoryStartDate.getTime() +
 										10 * 24 * 60 * 60 * 1000,
@@ -157,7 +155,7 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 						}}
 						defaultValue={teamSettings.throughputHistoryEndDate
 							.toISOString()
-							.slice(0, 10)} // Convert date to yyyy-MM-dd format
+							.slice(0, 10)}
 						onChange={(e) =>
 							handleDateChange("throughputHistoryEndDate", e.target.value)
 						}

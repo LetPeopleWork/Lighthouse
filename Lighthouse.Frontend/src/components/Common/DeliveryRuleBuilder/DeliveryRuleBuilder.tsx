@@ -144,7 +144,6 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 	const ruleIdsRef = useRef<Map<number, string>>(new Map());
 	const nextIdRef = useRef(0);
 
-	// Generate stable IDs for each rule based on their position
 	const getRuleId = (index: number): string => {
 		if (!ruleIdsRef.current.has(index)) {
 			ruleIdsRef.current.set(index, `rule-${nextIdRef.current++}`);
@@ -173,7 +172,6 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 	};
 
 	const handleDeleteRule = (index: number) => {
-		// Clear IDs for this and subsequent rules so they get regenerated
 		for (let i = index; i < rules.length; i++) {
 			ruleIdsRef.current.delete(i);
 		}

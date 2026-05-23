@@ -1,4 +1,5 @@
-// Operator semantics mirror Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs — keep in sync; backend canary RuleEngineReuseCanaryTests asserts JSON-shape parity but NOT operator semantics, so this file is the FE parity-guard.
+// Operator semantics here are the frontend parity-guard for the backend RuleEvaluator;
+// backend tests assert JSON-shape parity but not operator semantics — change both sides together.
 export type EvaluableWorkItem = {
 	type: string;
 	state: string;

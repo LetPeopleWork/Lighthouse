@@ -37,8 +37,6 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	additionalFetch?: () => Promise<void>;
 }
 
-// --- Helpers extracted to level 0 to prevent nesting ---
-
 const NULLABLE_FIELDS = new Set([
 	"sizeEstimateAdditionalFieldDefinitionId",
 	"featureOwnerAdditionalFieldDefinitionId",
@@ -49,7 +47,6 @@ const NULLABLE_FIELDS = new Set([
 	"forecastFilterRuleSetJson",
 ]);
 
-/** Pure helper to update a specific list within the settings object */
 function updateListField<T extends ModifySettingsBase>(
 	prev: T | null,
 	key: keyof T,
@@ -95,7 +92,6 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		string | null
 	>(null);
 
-	// --- Keep latest callback refs in sync without triggering re-fetches ---
 	const getSettingsRef = useRef(getSettings);
 	const getWorkTrackingSystemsRef = useRef(getWorkTrackingSystems);
 	const additionalFetchRef = useRef(additionalFetch);
@@ -103,7 +99,6 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
 	additionalFetchRef.current = additionalFetch;
 
-	// Flattening effects by moving logic to named functions
 	useEffect(() => {
 		if (settings) {
 			setFormValid(
@@ -211,7 +206,6 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		await saveSettings(updated as TSettings);
 	};
 
-	// Generic handler that consumes the level-0 helper
 	const getListHandlers = (
 		key: "workItemTypes" | "toDoStates" | "doingStates" | "doneStates",
 	) => ({
