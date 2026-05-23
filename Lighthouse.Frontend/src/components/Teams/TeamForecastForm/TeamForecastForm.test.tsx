@@ -21,9 +21,7 @@ describe("TeamForecastForm — Apply forecast-throughput filter toggle (RED scaf
 	});
 
 	it("submitting the form with toggle On sends applyFilterOverride=true", () => {
-		throw new Error(
-			"Not yet implemented — RED scaffold (US-04 AC).",
-		);
+		throw new Error("Not yet implemented — RED scaffold (US-04 AC).");
 	});
 
 	it("shows the FilteredThroughputChip on the result panel when the response says filterApplied=true", () => {
