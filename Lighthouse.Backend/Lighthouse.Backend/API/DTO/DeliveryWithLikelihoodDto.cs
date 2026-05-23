@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.API.DTO
         
         public DeliverySelectionMode SelectionMode { get; set; }
         
-        public List<DeliveryRuleCondition> Rules { get; set; } = [];
+        public List<WorkItemRuleCondition> Rules { get; set; } = [];
 
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
@@ -76,14 +76,14 @@ namespace Lighthouse.Backend.API.DTO
             };
         }
 
-        private static List<DeliveryRuleCondition> GetRules(string? ruleDefinitionJson)
+        private static List<WorkItemRuleCondition> GetRules(string? ruleDefinitionJson)
         {
             if (string.IsNullOrEmpty(ruleDefinitionJson))
             {
                 return [];
             }
             
-            var ruleSet = JsonSerializer.Deserialize<DeliveryRuleSet>(ruleDefinitionJson);
+            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleDefinitionJson);
             return ruleSet.Conditions;
         }
 

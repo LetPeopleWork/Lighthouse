@@ -1,8 +1,8 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
-using Lighthouse.Backend.Services.Interfaces.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
-namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
+namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 {
     public class FeatureFieldProvider : IRuleFieldProvider<Feature>
     {
@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
         private const string FeatureTagsKey = "feature.tags";
         private const string AdditionalFieldBaseKey = "additionalField.";
 
-        private static readonly IReadOnlyList<DeliveryRuleFieldDefinition> FixedFields =
+        private static readonly IReadOnlyList<WorkItemRuleFieldDefinition> FixedFields =
         [
             new() { FieldKey = FeatureTypeKey, DisplayName = "Type", IsMultiValue = false },
             new() { FieldKey = FeatureStateKey, DisplayName = "State", IsMultiValue = false },
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
             return item.Tags;
         }
 
-        public IReadOnlyList<DeliveryRuleFieldDefinition> GetFixedFields()
+        public IReadOnlyList<WorkItemRuleFieldDefinition> GetFixedFields()
         {
             return FixedFields;
         }

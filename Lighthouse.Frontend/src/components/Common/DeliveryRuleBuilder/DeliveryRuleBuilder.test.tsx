@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IDeliveryRuleCondition } from "../../../models/DeliveryRules";
+import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
 import { DeliveryRuleBuilder } from "./DeliveryRuleBuilder";
 
 const mockFields = [
@@ -29,7 +29,7 @@ describe("DeliveryRuleBuilder", () => {
 	});
 
 	it("renders rules", () => {
-		const rules: IDeliveryRuleCondition[] = [
+		const rules: IWorkItemRuleCondition[] = [
 			{ fieldKey: "feature.type", operator: "equals", value: "Epic" },
 		];
 
@@ -72,7 +72,7 @@ describe("DeliveryRuleBuilder", () => {
 
 	it("calls onChange when deleting a rule", () => {
 		const onChange = vi.fn();
-		const rules: IDeliveryRuleCondition[] = [
+		const rules: IWorkItemRuleCondition[] = [
 			{ fieldKey: "feature.type", operator: "equals", value: "Epic" },
 			{ fieldKey: "feature.state", operator: "equals", value: "New" },
 		];
@@ -96,7 +96,7 @@ describe("DeliveryRuleBuilder", () => {
 	});
 
 	it("disables add button when max rules reached", () => {
-		const rules: IDeliveryRuleCondition[] = [
+		const rules: IWorkItemRuleCondition[] = [
 			{ fieldKey: "feature.type", operator: "equals", value: "Epic" },
 			{ fieldKey: "feature.state", operator: "equals", value: "New" },
 		];
@@ -117,7 +117,7 @@ describe("DeliveryRuleBuilder", () => {
 	});
 
 	it("shows warning for incomplete rules", () => {
-		const rules: IDeliveryRuleCondition[] = [
+		const rules: IWorkItemRuleCondition[] = [
 			{ fieldKey: "feature.type", operator: "equals", value: "" },
 		];
 
@@ -138,7 +138,7 @@ describe("DeliveryRuleBuilder", () => {
 	});
 
 	it("shows AND between multiple rules", () => {
-		const rules: IDeliveryRuleCondition[] = [
+		const rules: IWorkItemRuleCondition[] = [
 			{ fieldKey: "feature.type", operator: "equals", value: "Epic" },
 			{ fieldKey: "feature.state", operator: "equals", value: "New" },
 		];
@@ -159,7 +159,7 @@ describe("DeliveryRuleBuilder", () => {
 	});
 
 	it("disables controls when disabled prop is true", () => {
-		const rules: IDeliveryRuleCondition[] = [
+		const rules: IWorkItemRuleCondition[] = [
 			{ fieldKey: "feature.type", operator: "equals", value: "Epic" },
 		];
 

@@ -19,14 +19,14 @@ import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
 import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { IDelivery } from "../../../../../models/Delivery";
-import {
-	DeliverySelectionMode,
-	type IDeliveryRuleCondition,
-	type IDeliveryRuleSchema,
-} from "../../../../../models/DeliveryRules";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
+import {
+	DeliverySelectionMode,
+	type IWorkItemRuleCondition,
+	type IWorkItemRuleSchema,
+} from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 
@@ -40,7 +40,7 @@ interface DeliveryCreateModalProps {
 		date: string;
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
-		rules?: IDeliveryRuleCondition[];
+		rules?: IWorkItemRuleCondition[];
 	}) => void;
 	onUpdate?: (deliveryData: {
 		id: number;
@@ -48,7 +48,7 @@ interface DeliveryCreateModalProps {
 		date: string;
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
-		rules?: IDeliveryRuleCondition[];
+		rules?: IWorkItemRuleCondition[];
 	}) => void;
 }
 
@@ -121,15 +121,15 @@ const MatchedFeaturesGrid: React.FC<{
 // Extracted component for rule-based content
 const RuleBasedContent: React.FC<{
 	loadingSchema: boolean;
-	ruleSchema: IDeliveryRuleSchema | null;
+	ruleSchema: IWorkItemRuleSchema | null;
 	errors: { rules?: string };
-	rules: IDeliveryRuleCondition[];
+	rules: IWorkItemRuleCondition[];
 	validatingRules: boolean;
 	rulesValidated: boolean;
 	matchedFeatures: IFeature[];
 	featuresTerm: string;
 	portfolioId: number;
-	onRulesChange: (rules: IDeliveryRuleCondition[]) => void;
+	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
 	onValidateRules: () => void;
 }> = ({
 	loadingSchema,
@@ -195,18 +195,18 @@ const SelectionModeContent: React.FC<{
 	selectionMode: DeliverySelectionMode;
 	isPremium: boolean;
 	loadingSchema: boolean;
-	ruleSchema: IDeliveryRuleSchema | null;
+	ruleSchema: IWorkItemRuleSchema | null;
 	errors: { features?: string; rules?: string };
 	allFeatures: IFeature[];
 	selectedFeatureIds: number[];
-	rules: IDeliveryRuleCondition[];
+	rules: IWorkItemRuleCondition[];
 	validatingRules: boolean;
 	rulesValidated: boolean;
 	matchedFeatures: IFeature[];
 	featuresTerm: string;
 	portfolioId: number;
 	onSelectedFeaturesChange: (ids: number[]) => void;
-	onRulesChange: (rules: IDeliveryRuleCondition[]) => void;
+	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
 	onValidateRules: () => void;
 }> = ({
 	selectionMode,
@@ -378,8 +378,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [selectionMode, setSelectionMode] = useState<DeliverySelectionMode>(
 		DeliverySelectionMode.Manual,
 	);
-	const [rules, setRules] = useState<IDeliveryRuleCondition[]>([]);
-	const [ruleSchema, setRuleSchema] = useState<IDeliveryRuleSchema | null>(
+	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
+	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
 		null,
 	);
 	const [loadingSchema, setLoadingSchema] = useState(false);
@@ -514,7 +514,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		}
 	};
 
-	const handleRulesChange = (newRules: IDeliveryRuleCondition[]) => {
+	const handleRulesChange = (newRules: IWorkItemRuleCondition[]) => {
 		setRules(newRules);
 		setRulesValidated(false);
 		setMatchedFeatures([]);

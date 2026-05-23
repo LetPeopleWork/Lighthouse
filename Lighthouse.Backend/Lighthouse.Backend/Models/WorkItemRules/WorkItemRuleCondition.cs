@@ -1,6 +1,6 @@
-namespace Lighthouse.Backend.Models.DeliveryRules
+namespace Lighthouse.Backend.Models.WorkItemRules
 {
-    public class DeliveryRuleCondition
+    public class WorkItemRuleCondition
     {
         public string FieldKey { get; set; } = string.Empty;
 

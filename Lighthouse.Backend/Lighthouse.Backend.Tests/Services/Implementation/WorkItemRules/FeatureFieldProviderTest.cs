@@ -1,8 +1,8 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
-using Lighthouse.Backend.Services.Implementation.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
 {
     [TestFixture]
     public class FeatureFieldProviderTest
@@ -126,12 +126,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(fields, Has.Count.EqualTo(6));
-                Assert.That(fields, Has.Some.Matches<DeliveryRuleFieldDefinition>(f => f is { FieldKey: "feature.type", DisplayName: "Type", IsMultiValue: false }));
-                Assert.That(fields, Has.Some.Matches<DeliveryRuleFieldDefinition>(f => f is { FieldKey: "feature.state", DisplayName: "State", IsMultiValue: false }));
-                Assert.That(fields, Has.Some.Matches<DeliveryRuleFieldDefinition>(f => f is { FieldKey: "feature.name", DisplayName: "Name", IsMultiValue: false }));
-                Assert.That(fields, Has.Some.Matches<DeliveryRuleFieldDefinition>(f => f is { FieldKey: "feature.referenceid", DisplayName: "Reference ID", IsMultiValue: false }));
-                Assert.That(fields, Has.Some.Matches<DeliveryRuleFieldDefinition>(f => f is { FieldKey: "feature.parentreferenceid", DisplayName: "Parent Reference ID", IsMultiValue: false }));
-                Assert.That(fields, Has.Some.Matches<DeliveryRuleFieldDefinition>(f => f is { FieldKey: "feature.tags", DisplayName: "Tags", IsMultiValue: true }));
+                Assert.That(fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "feature.type", DisplayName: "Type", IsMultiValue: false }));
+                Assert.That(fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "feature.state", DisplayName: "State", IsMultiValue: false }));
+                Assert.That(fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "feature.name", DisplayName: "Name", IsMultiValue: false }));
+                Assert.That(fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "feature.referenceid", DisplayName: "Reference ID", IsMultiValue: false }));
+                Assert.That(fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "feature.parentreferenceid", DisplayName: "Parent Reference ID", IsMultiValue: false }));
+                Assert.That(fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "feature.tags", DisplayName: "Tags", IsMultiValue: true }));
             }
         }
     }

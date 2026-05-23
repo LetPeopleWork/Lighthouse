@@ -44,13 +44,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public void PutTeam_PremiumTenantRuleSetExceedingMaxConditions_Returns400()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (US-01 AC, inherits DeliveryRuleSet.MaxRules cap). DELIVER wave validation rejects rule sets exceeding the cap.");
+            Assert.Fail("Not yet implemented — RED scaffold (US-01 AC, inherits WorkItemRuleSet.MaxRules cap). DELIVER wave validation rejects rule sets exceeding the cap.");
         }
 
         [Test]
         public void PutTeam_PremiumTenantRuleValueExceedingMaxLength_Returns400()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (US-01 AC, inherits DeliveryRuleSet.MaxValueLength cap). DELIVER wave validation rejects oversize values.");
+            Assert.Fail("Not yet implemented — RED scaffold (US-01 AC, inherits WorkItemRuleSet.MaxValueLength cap). DELIVER wave validation rejects oversize values.");
         }
 
         [Test]

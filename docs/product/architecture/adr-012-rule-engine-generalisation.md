@@ -115,3 +115,5 @@ Share the value-objects AND the evaluator algorithm; keep two thin service class
 | `DeliveryRuleSet` JSON shape is reused verbatim across both consumers | `RuleEngineReuseCanaryTests` parameterised over representative rule sets (see DDD-7). |
 
 These three enforcement points are the architectural net for ADR-012. Removing any one weakens the invariant the ADR exists to protect.
+
+> **Addendum (2026-05-23):** Value-object types renamed `DeliveryRule*` → `WorkItemRule*` (and their `Models.DeliveryRules` / `Services.{Interfaces,Implementation}.DeliveryRules` namespaces to `…WorkItemRules`) to reflect that they describe rules matching work items regardless of consumer. Same JSON wire format (property-name serialization, no type-name discriminator); same enforcement tests; `IDeliveryRuleService` / `DeliveryRuleService` / `DeliveryRulesController` / `DeliveryRulesDto` kept (use-case-specific to the delivery-rules feature). See the rename commit.

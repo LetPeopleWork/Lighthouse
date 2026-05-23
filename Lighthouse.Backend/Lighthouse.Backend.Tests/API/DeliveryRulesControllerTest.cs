@@ -2,7 +2,7 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -43,9 +43,9 @@ namespace Lighthouse.Backend.Tests.API
         public void GetSchema_ValidPortfolio_ReturnsSchema()
         {
             var portfolio = CreateTestPortfolio();
-            var schema = new DeliveryRuleSchema
+            var schema = new WorkItemRuleSchema
             {
-                Fields = [new DeliveryRuleFieldDefinition { FieldKey = "feature.type", DisplayName = "Type" }],
+                Fields = [new WorkItemRuleFieldDefinition { FieldKey = "feature.type", DisplayName = "Type" }],
                 Operators = ["equals", "notEquals", "contains"],
                 MaxRules = 20,
                 MaxValueLength = 500
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(r => r.GetById(1)).Returns(portfolio);
             
             deliveryRuleServiceMock
-                .Setup(s => s.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                .Setup(s => s.GetMatchingFeaturesForRuleset(It.IsAny<WorkItemRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns([]);
 
             var request = new ValidateDeliveryRulesRequest { Rules = [] };
@@ -106,12 +106,12 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(r => r.GetById(1)).Returns(portfolio);
             
             deliveryRuleServiceMock
-                .Setup(s => s.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                .Setup(s => s.GetMatchingFeaturesForRuleset(It.IsAny<WorkItemRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns([feature]);
 
             var request = new ValidateDeliveryRulesRequest
             {
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
             var result = subject.Validate(1, request);
 

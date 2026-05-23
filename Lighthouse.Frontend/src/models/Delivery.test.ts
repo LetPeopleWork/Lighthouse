@@ -1,6 +1,6 @@
 import type { IDelivery } from "./Delivery";
 import { Delivery } from "./Delivery";
-import { DeliverySelectionMode } from "./DeliveryRules";
+import { DeliverySelectionMode } from "./WorkItemRules";
 
 const buildBackendDelivery = (
 	overrides: Partial<IDelivery> = {},

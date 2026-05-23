@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 using NUnit.Framework;
 
-namespace Lighthouse.Backend.Tests.Models.DeliveryRules
+namespace Lighthouse.Backend.Tests.Models.WorkItemRules
 {
     /// <summary>
     /// Drives DDD-7 (cross-cutting invariant #6 — rule-engine JSON-shape reuse).
@@ -116,17 +116,17 @@ namespace Lighthouse.Backend.Tests.Models.DeliveryRules
             Assert.Ignore("Step 01-11 dependency: ForecastFilterRuleService.ValidateRuleSet not yet implemented. Will turn GREEN at step 01-11.");
         }
 
-        private static DeliveryRuleSet DeserialiseAsDeliveryRulesConsumer(string json)
+        private static WorkItemRuleSet DeserialiseAsDeliveryRulesConsumer(string json)
         {
-            return JsonSerializer.Deserialize<DeliveryRuleSet>(json)!;
+            return JsonSerializer.Deserialize<WorkItemRuleSet>(json)!;
         }
 
-        private static DeliveryRuleSet DeserialiseAsForecastFilterConsumer(string json)
+        private static WorkItemRuleSet DeserialiseAsForecastFilterConsumer(string json)
         {
-            return JsonSerializer.Deserialize<DeliveryRuleSet>(json)!;
+            return JsonSerializer.Deserialize<WorkItemRuleSet>(json)!;
         }
 
-        private static void AssertRuleSetsEqual(DeliveryRuleSet expected, DeliveryRuleSet actual)
+        private static void AssertRuleSetsEqual(WorkItemRuleSet expected, WorkItemRuleSet actual)
         {
             Assert.That(actual.Version, Is.EqualTo(expected.Version), "Version mismatch across consumers");
             Assert.That(actual.Conditions, Has.Count.EqualTo(expected.Conditions.Count), "Condition count mismatch across consumers");

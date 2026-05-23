@@ -2,7 +2,7 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.API
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
 
             deliveryRuleServiceMock.Setup(x =>
-                    x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                    x.GetMatchingFeaturesForRuleset(It.IsAny<WorkItemRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns([]);
 
             deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
@@ -659,7 +659,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
@@ -711,7 +711,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -747,7 +747,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -760,7 +760,7 @@ namespace Lighthouse.Backend.Tests.API
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolioId)).Returns(portfolio);
             deliveryRuleServiceMock.Setup(x =>
-                    x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                    x.GetMatchingFeaturesForRuleset(It.IsAny<WorkItemRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns(portfolio.Features);
 
             Delivery? savedDelivery = null;
@@ -794,7 +794,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -807,7 +807,7 @@ namespace Lighthouse.Backend.Tests.API
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolioId)).Returns(portfolio);
             deliveryRuleServiceMock.Setup(x =>
-                    x.GetMatchingFeaturesForRuleset(It.IsAny<DeliveryRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
+                    x.GetMatchingFeaturesForRuleset(It.IsAny<WorkItemRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
                 .Returns([]);
 
             Delivery? savedDelivery = null;
@@ -844,7 +844,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.Manual,
                 FeatureIds = featureIds,
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -883,7 +883,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
@@ -941,7 +941,7 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
-                Rules = [new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
             };
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -17,6 +17,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public DeliverySelectionMode SelectionMode { get; set; } = DeliverySelectionMode.Manual;
 
-        public List<DeliveryRuleCondition>? Rules { get; set; }
+        public List<WorkItemRuleCondition>? Rules { get; set; }
     }
 }

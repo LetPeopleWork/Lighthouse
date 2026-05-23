@@ -1,6 +1,6 @@
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliveryRules
+namespace Lighthouse.Backend.Services.Interfaces.WorkItemRules
 {
     /// <summary>
     /// Generic rule-engine port. <c>Match</c> returns the subset of <paramref name="items"/>
@@ -10,8 +10,8 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliveryRules
     /// </summary>
     public interface IRuleEvaluator<T> where T : class
     {
-        IEnumerable<T> Match(DeliveryRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider);
+        IEnumerable<T> Match(WorkItemRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider);
 
-        bool IsValid(DeliveryRuleSet ruleSet, DeliveryRuleSchema schema);
+        bool IsValid(WorkItemRuleSet ruleSet, WorkItemRuleSchema schema);
     }
 }

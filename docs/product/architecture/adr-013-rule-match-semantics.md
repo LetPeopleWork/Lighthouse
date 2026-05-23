@@ -110,3 +110,5 @@ Make `Match(ruleSet, items, fieldProvider, bool excludeMatched)` return either m
 | Persisted `DeliveryRuleSet` JSON shape carries no semantics field | `RuleEngineReuseCanaryTests` (DDD-7) asserts that a stored `forecastFilterRuleSetJson` deserialises into a `DeliveryRuleSet` with `Conditions` populated and no other top-level fields. |
 | `RuleEvaluator<T>.Match` does NOT take a semantics or exclude/include parameter | NUnit reflection test on the `IRuleEvaluator<T>` interface — fails if a `bool` or `RuleSetSemantics` parameter creeps in. |
 | `ForecastFilterRuleService.Filter` semantics is exactly D8 (matched items are excluded) | Targeted unit test: rule set matches Bug → output contains no Bugs AND contains all non-Bugs. |
+
+> **Addendum (2026-05-23):** Value-object types renamed `DeliveryRule*` → `WorkItemRule*` (same JSON shape; rename is wire-format invariant). All references above to `DeliveryRuleSet` now refer to `WorkItemRuleSet`. See the rename commit.

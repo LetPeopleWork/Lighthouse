@@ -1,7 +1,7 @@
-using Lighthouse.Backend.Models.DeliveryRules;
-using Lighthouse.Backend.Services.Interfaces.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
-namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
+namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 {
     public class RuleEvaluator<T> : IRuleEvaluator<T> where T : class
     {
@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
 
         private const string TagsFieldKey = "feature.tags";
 
-        public IEnumerable<T> Match(DeliveryRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider)
+        public IEnumerable<T> Match(WorkItemRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider)
         {
             if (RuleSetHasError(ruleSet, fieldProvider))
             {
@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
             return items.Where(item => MatchesAllConditions(item, ruleSet.Conditions, fieldProvider)).ToList();
         }
 
-        public bool IsValid(DeliveryRuleSet ruleSet, DeliveryRuleSchema schema)
+        public bool IsValid(WorkItemRuleSet ruleSet, WorkItemRuleSchema schema)
         {
             if (ruleSet.Conditions.Count == 0 || ruleSet.Conditions.Count > schema.MaxRules)
             {
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
         }
 
         private static bool IsConditionValid(
-            DeliveryRuleCondition condition,
+            WorkItemRuleCondition condition,
             HashSet<string> allowedFieldKeys,
             HashSet<string> allowedOperators,
             int maxValueLength)
@@ -58,9 +58,9 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
             return condition.Value.Length <= maxValueLength;
         }
 
-        private static bool RuleSetHasError(DeliveryRuleSet ruleSet, IRuleFieldProvider<T> fieldProvider)
+        private static bool RuleSetHasError(WorkItemRuleSet ruleSet, IRuleFieldProvider<T> fieldProvider)
         {
-            if (ruleSet.Conditions.Count is 0 or > DeliveryRuleSet.MaxRules)
+            if (ruleSet.Conditions.Count is 0 or > WorkItemRuleSet.MaxRules)
             {
                 return true;
             }
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
             return ruleSet.Conditions.Any(c => !IsConditionWellFormed(c, allowedFieldKeys));
         }
 
-        private static bool IsConditionWellFormed(DeliveryRuleCondition condition, HashSet<string> fixedFieldKeys)
+        private static bool IsConditionWellFormed(WorkItemRuleCondition condition, HashSet<string> fixedFieldKeys)
         {
             if (!IsKnownFieldKey(condition.FieldKey, fixedFieldKeys))
             {
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
                 return false;
             }
 
-            return condition.Value.Length <= DeliveryRuleSet.MaxValueLength;
+            return condition.Value.Length <= WorkItemRuleSet.MaxValueLength;
         }
 
         private static bool IsKnownFieldKey(string fieldKey, HashSet<string> fixedFieldKeys)
@@ -111,12 +111,12 @@ namespace Lighthouse.Backend.Services.Implementation.DeliveryRules
                    || string.Equals(op, ContainsOperator, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool MatchesAllConditions(T item, List<DeliveryRuleCondition> conditions, IRuleFieldProvider<T> fieldProvider)
+        private static bool MatchesAllConditions(T item, List<WorkItemRuleCondition> conditions, IRuleFieldProvider<T> fieldProvider)
         {
             return conditions.All(c => EvaluateCondition(item, c, fieldProvider));
         }
 
-        private static bool EvaluateCondition(T item, DeliveryRuleCondition condition, IRuleFieldProvider<T> fieldProvider)
+        private static bool EvaluateCondition(T item, WorkItemRuleCondition condition, IRuleFieldProvider<T> fieldProvider)
         {
             var op = condition.Operator.ToLowerInvariant();
 

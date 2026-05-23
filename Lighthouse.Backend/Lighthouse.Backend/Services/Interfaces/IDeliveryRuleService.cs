@@ -1,13 +1,13 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
     public interface IDeliveryRuleService
     {
-        DeliveryRuleSchema GetRuleSchema(Portfolio portfolio);
+        WorkItemRuleSchema GetRuleSchema(Portfolio portfolio);
 
-        IEnumerable<Feature> GetMatchingFeaturesForRuleset(DeliveryRuleSet ruleSet, IEnumerable<Feature> features);
+        IEnumerable<Feature> GetMatchingFeaturesForRuleset(WorkItemRuleSet ruleSet, IEnumerable<Feature> features);
 
         void RecomputeRuleBasedDeliveries(Portfolio portfolio, IEnumerable<Delivery> deliveries);
     }

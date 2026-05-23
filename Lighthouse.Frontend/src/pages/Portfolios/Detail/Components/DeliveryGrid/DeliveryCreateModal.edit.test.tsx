@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
-import { DeliverySelectionMode } from "../../../../../models/DeliveryRules";
 import type { IFeature } from "../../../../../models/Feature";
 import type { IPortfolio } from "../../../../../models/Portfolio/Portfolio";
+import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,

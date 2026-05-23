@@ -1,7 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.API
     {
         [HttpGet("schema")]
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
-        [ProducesResponseType<DeliveryRuleSchema>(StatusCodes.Status200OK)]
+        [ProducesResponseType<WorkItemRuleSchema>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetSchema(int portfolioId)
         {
@@ -62,11 +62,11 @@ namespace Lighthouse.Backend.API
             return Ok(matchingFeatures);
         }
 
-        private static DeliveryRuleSet ConvertToRuleSet(ValidateDeliveryRulesRequest request)
+        private static WorkItemRuleSet ConvertToRuleSet(ValidateDeliveryRulesRequest request)
         {
-            return new DeliveryRuleSet
+            return new WorkItemRuleSet
             {
-                Conditions = request.Rules.Select(r => new DeliveryRuleCondition
+                Conditions = request.Rules.Select(r => new WorkItemRuleCondition
                 {
                     FieldKey = r.FieldKey,
                     Operator = r.Operator,

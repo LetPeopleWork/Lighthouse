@@ -1,6 +1,6 @@
 using System.Reflection;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             AssertPublicMethodSignature(
                 methodName: "GetRuleSchema",
                 expectedParameterTypes: [typeof(Portfolio)],
-                expectedReturnType: typeof(DeliveryRuleSchema));
+                expectedReturnType: typeof(WorkItemRuleSchema));
         }
 
         [Test]
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             AssertPublicMethodSignature(
                 methodName: "GetMatchingFeaturesForRuleset",
-                expectedParameterTypes: [typeof(DeliveryRuleSet), typeof(IEnumerable<Feature>)],
+                expectedParameterTypes: [typeof(WorkItemRuleSet), typeof(IEnumerable<Feature>)],
                 expectedReturnType: typeof(IEnumerable<Feature>));
         }
 

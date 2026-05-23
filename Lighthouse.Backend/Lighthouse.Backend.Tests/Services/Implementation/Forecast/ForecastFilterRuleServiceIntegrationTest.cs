@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public void GetEffectiveRuleSet_PremiumTenantNonEmptyRuleSet_ReturnsDeserialisedRuleSet()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (US-01). DELIVER wave: deserialise JSON via the same call DeliveryRule uses.");
+            Assert.Fail("Not yet implemented — RED scaffold (US-01). DELIVER wave: deserialise JSON via the same call DeliveryRuleService uses.");
         }
 
         [Test]

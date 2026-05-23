@@ -8,13 +8,13 @@ import {
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
-import {
-	DeliverySelectionMode,
-	type IDeliveryRuleSchema,
-} from "../../../../../models/DeliveryRules";
 import type { IFeature } from "../../../../../models/Feature";
 import type { IPortfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
+import {
+	DeliverySelectionMode,
+	type IWorkItemRuleSchema,
+} from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -104,7 +104,7 @@ const createMockFeature = (
 	getTotalWorkForTeam: () => 0,
 });
 
-const mockRuleSchema: IDeliveryRuleSchema = {
+const mockRuleSchema: IWorkItemRuleSchema = {
 	fields: [
 		{ fieldKey: "feature.tags", displayName: "Tags", isMultiValue: true },
 		{ fieldKey: "feature.state", displayName: "State", isMultiValue: false },

@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useRef } from "react";
-import type { IDeliveryRuleCondition } from "../../../models/DeliveryRules";
+import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
 import type { DeliveryRuleBuilderProps, RuleRowProps } from "./types";
 
 const getOperatorLabel = (operator: string): string => {
@@ -152,7 +152,7 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 
 	const handleAddRule = () => {
 		if (rules.length < maxRules && safeFields.length > 0) {
-			const newRule: IDeliveryRuleCondition = {
+			const newRule: IWorkItemRuleCondition = {
 				fieldKey: safeFields[0].fieldKey,
 				operator: safeOperators[0] || "equals",
 				value: "",
@@ -163,7 +163,7 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 
 	const handleUpdateRule = (
 		index: number,
-		updatedRule: IDeliveryRuleCondition,
+		updatedRule: IWorkItemRuleCondition,
 	) => {
 		const newRules = [...rules];
 		newRules[index] = updatedRule;

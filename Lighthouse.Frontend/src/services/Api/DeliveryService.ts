@@ -1,10 +1,10 @@
 import { Delivery, type IDelivery } from "../../models/Delivery";
+import type { Feature } from "../../models/Feature";
 import {
 	DeliverySelectionMode,
-	type IDeliveryRuleCondition,
-	type IDeliveryRuleSchema,
-} from "../../models/DeliveryRules";
-import type { Feature } from "../../models/Feature";
+	type IWorkItemRuleCondition,
+	type IWorkItemRuleSchema,
+} from "../../models/WorkItemRules";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IDeliveryService {
@@ -15,7 +15,7 @@ export interface IDeliveryService {
 		date: Date,
 		featureIds: number[],
 		selectionMode?: DeliverySelectionMode,
-		rules?: IDeliveryRuleCondition[],
+		rules?: IWorkItemRuleCondition[],
 	): Promise<void>;
 	update(
 		deliveryId: number,
@@ -23,13 +23,13 @@ export interface IDeliveryService {
 		date: Date,
 		featureIds: number[],
 		selectionMode?: DeliverySelectionMode,
-		rules?: IDeliveryRuleCondition[],
+		rules?: IWorkItemRuleCondition[],
 	): Promise<void>;
 	delete(deliveryId: number): Promise<void>;
-	getRuleSchema(portfolioId: number): Promise<IDeliveryRuleSchema>;
+	getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema>;
 	validateRules(
 		portfolioId: number,
-		rules: IDeliveryRuleCondition[],
+		rules: IWorkItemRuleCondition[],
 	): Promise<Feature[]>;
 }
 
@@ -52,7 +52,7 @@ export class DeliveryService
 		date: Date,
 		featureIds: number[],
 		selectionMode: DeliverySelectionMode = DeliverySelectionMode.Manual,
-		rules?: IDeliveryRuleCondition[],
+		rules?: IWorkItemRuleCondition[],
 	): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/deliveries/portfolio/${portfolioId}`, {
@@ -71,7 +71,7 @@ export class DeliveryService
 		date: Date,
 		featureIds: number[],
 		selectionMode: DeliverySelectionMode = DeliverySelectionMode.Manual,
-		rules?: IDeliveryRuleCondition[],
+		rules?: IWorkItemRuleCondition[],
 	): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.put<void>(`/deliveries/${deliveryId}`, {
@@ -90,9 +90,9 @@ export class DeliveryService
 		});
 	}
 
-	async getRuleSchema(portfolioId: number): Promise<IDeliveryRuleSchema> {
+	async getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IDeliveryRuleSchema>(
+			const response = await this.apiService.get<IWorkItemRuleSchema>(
 				`/portfolios/${portfolioId}/delivery-rules/schema`,
 			);
 			return response.data;
@@ -101,7 +101,7 @@ export class DeliveryService
 
 	async validateRules(
 		portfolioId: number,
-		rules: IDeliveryRuleCondition[],
+		rules: IWorkItemRuleCondition[],
 	): Promise<Feature[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<Feature[]>(

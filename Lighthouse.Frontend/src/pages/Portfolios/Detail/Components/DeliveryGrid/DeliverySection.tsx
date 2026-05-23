@@ -30,11 +30,11 @@ import ProgressIndicator from "../../../../../components/Common/ProgressIndicato
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { Delivery } from "../../../../../models/Delivery";
-import { DeliverySelectionMode } from "../../../../../models/DeliveryRules";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../../../models/WorkItem";
+import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../utils/featureName";

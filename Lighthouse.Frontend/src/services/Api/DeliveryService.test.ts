@@ -1,7 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../models/Delivery";
-import { DeliverySelectionMode } from "../../models/DeliveryRules";
+import { DeliverySelectionMode } from "../../models/WorkItemRules";
 import { DeliveryService } from "./DeliveryService";
 
 vi.mock("axios");

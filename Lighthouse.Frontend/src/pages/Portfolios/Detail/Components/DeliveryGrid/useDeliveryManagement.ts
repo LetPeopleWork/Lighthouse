@@ -1,12 +1,12 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useErrorSnackbar } from "../../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { Delivery } from "../../../../../models/Delivery";
-import type {
-	DeliverySelectionMode,
-	IDeliveryRuleCondition,
-} from "../../../../../models/DeliveryRules";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
+import type {
+	DeliverySelectionMode,
+	IWorkItemRuleCondition,
+} from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 
 interface UseDeliveryManagementProps {
@@ -134,7 +134,7 @@ export const useDeliveryManagement = ({
 		date: string;
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
-		rules?: IDeliveryRuleCondition[];
+		rules?: IWorkItemRuleCondition[];
 	}) => {
 		try {
 			await deliveryService.create(
@@ -159,7 +159,7 @@ export const useDeliveryManagement = ({
 		date: string;
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
-		rules?: IDeliveryRuleCondition[];
+		rules?: IWorkItemRuleCondition[];
 	}) => {
 		try {
 			const wasExpanded = expandedDeliveries.has(deliveryData.id);

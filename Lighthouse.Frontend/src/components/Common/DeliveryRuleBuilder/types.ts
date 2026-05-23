@@ -1,8 +1,8 @@
-import type { IDeliveryRuleCondition } from "../../../models/DeliveryRules";
+import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
 
 export interface DeliveryRuleBuilderProps {
-	rules: IDeliveryRuleCondition[];
-	onChange: (rules: IDeliveryRuleCondition[]) => void;
+	rules: IWorkItemRuleCondition[];
+	onChange: (rules: IWorkItemRuleCondition[]) => void;
 	fields: { fieldKey: string; displayName: string; isMultiValue: boolean }[];
 	operators: string[];
 	maxRules: number;
@@ -11,12 +11,12 @@ export interface DeliveryRuleBuilderProps {
 }
 
 export interface RuleRowProps {
-	rule: IDeliveryRuleCondition;
+	rule: IWorkItemRuleCondition;
 	index: number;
 	fields: { fieldKey: string; displayName: string; isMultiValue: boolean }[];
 	operators: string[];
 	maxValueLength: number;
-	onChange: (index: number, rule: IDeliveryRuleCondition) => void;
+	onChange: (index: number, rule: IWorkItemRuleCondition) => void;
 	onDelete: (index: number) => void;
 	disabled?: boolean;
 	isLast: boolean;

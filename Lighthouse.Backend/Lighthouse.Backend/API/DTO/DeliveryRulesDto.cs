@@ -1,9 +1,9 @@
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.API.DTO
 {
     public class ValidateDeliveryRulesRequest
     {
-        public List<DeliveryRuleCondition> Rules { get; set; } = [];
+        public List<WorkItemRuleCondition> Rules { get; set; } = [];
     }
 }

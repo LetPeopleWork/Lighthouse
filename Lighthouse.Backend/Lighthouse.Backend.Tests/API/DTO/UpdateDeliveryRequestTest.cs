@@ -1,6 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Rules = 
                 [
-                    new DeliveryRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }
+                    new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }
                 ]
             };
             

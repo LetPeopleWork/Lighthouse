@@ -2,7 +2,7 @@ using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -207,10 +207,10 @@ namespace Lighthouse.Backend.API
 
         private void CreateRuleBasedDelivery(UpdateDeliveryRequest request, Delivery delivery)
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Version = DeliveryRuleSet.SchemaVersion,
-                Conditions = request.Rules!.Select(r => new DeliveryRuleCondition
+                Version = WorkItemRuleSet.SchemaVersion,
+                Conditions = request.Rules!.Select(r => new WorkItemRuleCondition
                 {
                     FieldKey = r.FieldKey,
                     Operator = r.Operator,
@@ -218,7 +218,7 @@ namespace Lighthouse.Backend.API
                 }).ToList()
             };
             delivery.RuleDefinitionJson = JsonSerializer.Serialize(ruleSet);
-            delivery.RuleSchemaVersion = DeliveryRuleSet.SchemaVersion;
+            delivery.RuleSchemaVersion = WorkItemRuleSet.SchemaVersion;
 
 
             delivery.Features.Clear();

@@ -1,10 +1,10 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
-using Lighthouse.Backend.Services.Implementation.DeliveryRules;
-using Lighthouse.Backend.Services.Interfaces.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
 {
     [TestFixture]
     public class RuleEvaluatorTest
@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
             fieldProvider = new Mock<IRuleFieldProvider<Feature>>();
             fieldProvider
                 .Setup(p => p.GetFixedFields())
-                .Returns(new List<DeliveryRuleFieldDefinition>
+                .Returns(new List<WorkItemRuleFieldDefinition>
                 {
                     new() { FieldKey = TypeFieldKey, DisplayName = "Type", IsMultiValue = false },
                     new() { FieldKey = NameFieldKey, DisplayName = "Name", IsMultiValue = false },
@@ -45,9 +45,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         public void Match_OperatorSemantics_MatchesItemsCaseInsensitively(
             string op, string conditionValue, string itemFieldValue, bool shouldMatch)
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = op, Value = conditionValue }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = op, Value = conditionValue }]
             };
             var feature = new Feature { Name = "F1" };
             fieldProvider.Setup(p => p.GetFieldValue(feature, TypeFieldKey)).Returns(itemFieldValue);
@@ -67,9 +67,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         public void Match_TagsField_DelegatesToTagsProviderCaseInsensitively(
             string op, string conditionValue, string[] tags, bool shouldMatch)
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = TagsFieldKey, Operator = op, Value = conditionValue }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = TagsFieldKey, Operator = op, Value = conditionValue }]
             };
             var feature = new Feature { Name = "F1" };
             fieldProvider.Setup(p => p.GetFieldValue(feature, TagsFieldKey)).Returns(string.Empty);
@@ -83,12 +83,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void Match_MultipleConditions_RequiresAllToMatch()
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
                 Conditions =
                 [
-                    new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" },
-                    new DeliveryRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Active" },
+                    new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" },
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Active" },
                 ]
             };
             var matching = new Feature { Name = "M" };
@@ -110,9 +110,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void Match_DoesNotMutateInputCollection()
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" }]
             };
             var feature = new Feature { Name = "F1" };
             fieldProvider.Setup(p => p.GetFieldValue(feature, TypeFieldKey)).Returns("Story");
@@ -126,9 +126,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void IsValid_HappyPathSingleCondition_ReturnsTrue()
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" }]
             };
 
             var valid = subject.IsValid(ruleSet, BuildSchema());
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void IsValid_ZeroConditions_ReturnsFalse()
         {
-            var ruleSet = new DeliveryRuleSet { Conditions = [] };
+            var ruleSet = new WorkItemRuleSet { Conditions = [] };
 
             var valid = subject.IsValid(ruleSet, BuildSchema());
 
@@ -149,10 +149,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void IsValid_ConditionCountExceedsCap_ReturnsFalse()
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = Enumerable.Range(1, DeliveryRuleSet.MaxRules + 1)
-                    .Select(_ => new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" })
+                Conditions = Enumerable.Range(1, WorkItemRuleSet.MaxRules + 1)
+                    .Select(_ => new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" })
                     .ToList()
             };
 
@@ -164,10 +164,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void IsValid_ValueExceedsLengthCap_ReturnsFalse()
         {
-            var oversized = new string('x', DeliveryRuleSet.MaxValueLength + 1);
-            var ruleSet = new DeliveryRuleSet
+            var oversized = new string('x', WorkItemRuleSet.MaxValueLength + 1);
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = oversized }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = oversized }]
             };
 
             var valid = subject.IsValid(ruleSet, BuildSchema());
@@ -178,9 +178,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void IsValid_UnknownFieldKey_ReturnsFalse()
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = "unknown.field", Operator = "equals", Value = "Epic" }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = "unknown.field", Operator = "equals", Value = "Epic" }]
             };
 
             var valid = subject.IsValid(ruleSet, BuildSchema());
@@ -191,9 +191,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void IsValid_UnknownOperator_ReturnsFalse()
         {
-            var ruleSet = new DeliveryRuleSet
+            var ruleSet = new WorkItemRuleSet
             {
-                Conditions = [new DeliveryRuleCondition { FieldKey = TypeFieldKey, Operator = "greaterThan", Value = "Epic" }]
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "greaterThan", Value = "Epic" }]
             };
 
             var valid = subject.IsValid(ruleSet, BuildSchema());
@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
         [Test]
         public void Match_RuleSetFailsValidation_ReturnsEmpty()
         {
-            var ruleSet = new DeliveryRuleSet { Conditions = [] };
+            var ruleSet = new WorkItemRuleSet { Conditions = [] };
             var feature = new Feature { Name = "F1" };
 
             var result = subject.Match(ruleSet, [feature], fieldProvider.Object);
@@ -212,20 +212,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliveryRules
             Assert.That(result, Is.Empty);
         }
 
-        private static DeliveryRuleSchema BuildSchema()
+        private static WorkItemRuleSchema BuildSchema()
         {
-            return new DeliveryRuleSchema
+            return new WorkItemRuleSchema
             {
                 Fields =
                 [
-                    new DeliveryRuleFieldDefinition { FieldKey = TypeFieldKey, DisplayName = "Type" },
-                    new DeliveryRuleFieldDefinition { FieldKey = NameFieldKey, DisplayName = "Name" },
-                    new DeliveryRuleFieldDefinition { FieldKey = StateFieldKey, DisplayName = "State" },
-                    new DeliveryRuleFieldDefinition { FieldKey = TagsFieldKey, DisplayName = "Tags", IsMultiValue = true },
+                    new WorkItemRuleFieldDefinition { FieldKey = TypeFieldKey, DisplayName = "Type" },
+                    new WorkItemRuleFieldDefinition { FieldKey = NameFieldKey, DisplayName = "Name" },
+                    new WorkItemRuleFieldDefinition { FieldKey = StateFieldKey, DisplayName = "State" },
+                    new WorkItemRuleFieldDefinition { FieldKey = TagsFieldKey, DisplayName = "Tags", IsMultiValue = true },
                 ],
                 Operators = ["equals", "notEquals", "contains"],
-                MaxRules = DeliveryRuleSet.MaxRules,
-                MaxValueLength = DeliveryRuleSet.MaxValueLength,
+                MaxRules = WorkItemRuleSet.MaxRules,
+                MaxValueLength = WorkItemRuleSet.MaxValueLength,
             };
         }
     }

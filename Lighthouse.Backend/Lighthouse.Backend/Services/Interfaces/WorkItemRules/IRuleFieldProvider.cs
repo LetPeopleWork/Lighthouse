@@ -1,6 +1,6 @@
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliveryRules
+namespace Lighthouse.Backend.Services.Interfaces.WorkItemRules
 {
     /// <summary>
     /// Field accessor for <see cref="IRuleEvaluator{T}"/>. Implementations map a typed item
@@ -15,6 +15,6 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliveryRules
 
         IReadOnlyList<string> GetTagsForField(T item, string fieldKey);
 
-        IReadOnlyList<DeliveryRuleFieldDefinition> GetFixedFields();
+        IReadOnlyList<WorkItemRuleFieldDefinition> GetFixedFields();
     }
 }

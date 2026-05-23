@@ -7,9 +7,9 @@ export enum DeliverySelectionMode {
 }
 
 /**
- * A single rule condition for matching features
+ * A single rule condition for matching work items
  */
-export interface IDeliveryRuleCondition {
+export interface IWorkItemRuleCondition {
 	fieldKey: string;
 	operator: string;
 	value: string;
@@ -18,7 +18,7 @@ export interface IDeliveryRuleCondition {
 /**
  * Field definition from the rule schema
  */
-export interface IDeliveryRuleFieldDefinition {
+export interface IWorkItemRuleFieldDefinition {
 	fieldKey: string;
 	displayName: string;
 	isMultiValue: boolean;
@@ -27,8 +27,8 @@ export interface IDeliveryRuleFieldDefinition {
 /**
  * Rule schema returned from the backend
  */
-export interface IDeliveryRuleSchema {
-	fields: IDeliveryRuleFieldDefinition[];
+export interface IWorkItemRuleSchema {
+	fields: IWorkItemRuleFieldDefinition[];
 	operators: string[];
 	maxRules: number;
 	maxValueLength: number;
@@ -39,13 +39,13 @@ export interface IDeliveryRuleSchema {
  */
 export interface IValidateDeliveryRulesRequest {
 	portfolioId: number;
-	rules: IDeliveryRuleCondition[];
+	rules: IWorkItemRuleCondition[];
 }
 
 /**
  * Helper class for working with rule conditions
  */
-export class DeliveryRuleCondition implements IDeliveryRuleCondition {
+export class WorkItemRuleCondition implements IWorkItemRuleCondition {
 	fieldKey: string;
 	operator: string;
 	value: string;
@@ -64,7 +64,7 @@ export class DeliveryRuleCondition implements IDeliveryRuleCondition {
 		);
 	}
 
-	static fromBackend(data: IDeliveryRuleCondition): DeliveryRuleCondition {
-		return new DeliveryRuleCondition(data.fieldKey, data.operator, data.value);
+	static fromBackend(data: IWorkItemRuleCondition): WorkItemRuleCondition {
+		return new WorkItemRuleCondition(data.fieldKey, data.operator, data.value);
 	}
 }

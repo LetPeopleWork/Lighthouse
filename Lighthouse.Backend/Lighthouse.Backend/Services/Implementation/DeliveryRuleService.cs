@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
-using Lighthouse.Backend.Services.Implementation.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.DeliveryRules;
+using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -27,13 +27,13 @@ namespace Lighthouse.Backend.Services.Implementation
             this.fieldProvider = fieldProvider;
         }
 
-        public DeliveryRuleSchema GetRuleSchema(Portfolio portfolio)
+        public WorkItemRuleSchema GetRuleSchema(Portfolio portfolio)
         {
             var fields = fieldProvider.GetFixedFields().ToList();
 
             foreach (var additionalField in portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
             {
-                fields.Add(new DeliveryRuleFieldDefinition
+                fields.Add(new WorkItemRuleFieldDefinition
                 {
                     FieldKey = $"additionalField.{additionalField.Id}",
                     DisplayName = additionalField.DisplayName,
@@ -41,16 +41,16 @@ namespace Lighthouse.Backend.Services.Implementation
                 });
             }
 
-            return new DeliveryRuleSchema
+            return new WorkItemRuleSchema
             {
                 Fields = fields,
                 Operators = [EqualsOperator, NotEqualsOperator, ContainsOperator],
-                MaxRules = DeliveryRuleSet.MaxRules,
-                MaxValueLength = DeliveryRuleSet.MaxValueLength
+                MaxRules = WorkItemRuleSet.MaxRules,
+                MaxValueLength = WorkItemRuleSet.MaxValueLength
             };
         }
 
-        public IEnumerable<Feature> GetMatchingFeaturesForRuleset(DeliveryRuleSet ruleSet, IEnumerable<Feature> features)
+        public IEnumerable<Feature> GetMatchingFeaturesForRuleset(WorkItemRuleSet ruleSet, IEnumerable<Feature> features)
         {
             return ruleEvaluator.Match(ruleSet, features, fieldProvider);
         }
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     continue;
                 }
 
-                var ruleSet = JsonSerializer.Deserialize<DeliveryRuleSet>(delivery.RuleDefinitionJson);
+                var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(delivery.RuleDefinitionJson);
                 if (ruleSet == null)
                 {
                     continue;

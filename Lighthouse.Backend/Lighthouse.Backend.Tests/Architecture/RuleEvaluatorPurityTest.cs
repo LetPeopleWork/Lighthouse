@@ -1,5 +1,5 @@
 using System.Reflection;
-using Lighthouse.Backend.Services.Implementation.DeliveryRules;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

@@ -1,6 +1,6 @@
-namespace Lighthouse.Backend.Models.DeliveryRules
+namespace Lighthouse.Backend.Models.WorkItemRules
 {
-    public class DeliveryRuleSet
+    public class WorkItemRuleSet
     {
         public const int SchemaVersion = 1;
 
@@ -10,6 +10,6 @@ namespace Lighthouse.Backend.Models.DeliveryRules
 
         public int Version { get; set; } = SchemaVersion;
 
-        public List<DeliveryRuleCondition> Conditions { get; set; } = [];
+        public List<WorkItemRuleCondition> Conditions { get; set; } = [];
     }
 }

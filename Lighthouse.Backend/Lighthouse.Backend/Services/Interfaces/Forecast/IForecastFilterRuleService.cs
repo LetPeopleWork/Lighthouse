@@ -1,18 +1,18 @@
 // SCAFFOLD: true
 using System.Collections.Generic;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliveryRules;
+using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.Services.Interfaces.Forecast
 {
     public interface IForecastFilterRuleService
     {
-        DeliveryRuleSchema GetSchema(Team team);
+        WorkItemRuleSchema GetSchema(Team team);
 
-        DeliveryRuleSet? GetEffectiveRuleSet(Team team);
+        WorkItemRuleSet? GetEffectiveRuleSet(Team team);
 
-        IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, DeliveryRuleSet ruleSet);
+        IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, WorkItemRuleSet ruleSet);
 
-        bool ValidateRuleSet(DeliveryRuleSet ruleSet, Team team);
+        bool ValidateRuleSet(WorkItemRuleSet ruleSet, Team team);
     }
 }
