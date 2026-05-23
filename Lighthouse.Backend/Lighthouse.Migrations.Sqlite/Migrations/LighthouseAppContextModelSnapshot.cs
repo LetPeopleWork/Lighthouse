@@ -1018,7 +1018,13 @@ namespace Lighthouse.Backend.Migrations
                 {
                     b.HasBaseType("Lighthouse.Backend.Models.Forecast.ForecastBase");
 
+                    b.Property<string>("ExcludedSummary")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("FilterApplied")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("NumberOfItems")
