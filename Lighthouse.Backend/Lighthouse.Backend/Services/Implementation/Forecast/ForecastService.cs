@@ -14,8 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         IRepository<Feature> featureRepository)
         : IForecastService
     {
-        // Read from Env Vars or settings in future?
-        private readonly int trials = 10_000;
+        private const int Trials = 10_000;
 
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
         {
@@ -210,18 +209,12 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private static int RecalculateFeatureWIP(int featureWIP, int remainingItems)
         {
-            var featureWorkedOnIndex = featureWIP;
-            if (remainingItems < featureWIP)
-            {
-                featureWorkedOnIndex = remainingItems;
-            }
-
-            return featureWorkedOnIndex;
+            return Math.Min(featureWIP, remainingItems);
         }
 
         private void RunSimulations(Action individualSimulation)
         {
-            for (var trial = 0; trial < trials; trial++)
+            for (var trial = 0; trial < Trials; trial++)
             {
                 individualSimulation();
             }
@@ -229,12 +222,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private static void AddSimulationResult(Dictionary<int, int> simulationResults, int simulationResult)
         {
-            if (!simulationResults.ContainsKey(simulationResult))
-            {
-                simulationResults[simulationResult] = 0;
-            }
-
-            simulationResults[simulationResult]++;
+            simulationResults[simulationResult] = simulationResults.GetValueOrDefault(simulationResult) + 1;
         }
 
         private int GetSimulatedThroughput(RunChartData throughput)
