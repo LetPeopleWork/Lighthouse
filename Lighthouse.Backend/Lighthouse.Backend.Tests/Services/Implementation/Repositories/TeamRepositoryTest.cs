@@ -28,6 +28,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public async Task GetTeamById_TeamWithForecastFilterRuleSetJson_RoundTripsVerbatim()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            const string serializedRuleSet = "{\"matchAll\":true,\"rules\":[{\"field\":\"State\",\"comparator\":\"Equals\",\"value\":\"Done\"}]}";
+
+            var team = new Team
+            {
+                Name = "Filtered Team",
+                WorkTrackingSystemConnection = workTrackingSystemConnection,
+                ForecastFilterRuleSetJson = serializedRuleSet,
+            };
+
+            subject.Add(team);
+            await subject.Save();
+
+            DatabaseContext.ChangeTracker.Clear();
+
+            var foundTeam = subject.GetById(team.Id);
+
+            Assert.That(foundTeam, Is.Not.Null);
+            Assert.That(foundTeam!.ForecastFilterRuleSetJson, Is.EqualTo(serializedRuleSet));
+        }
+
+        [Test]
+        public async Task GetTeamById_TeamWithoutForecastFilterRuleSetJson_RoundTripsNull()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+
+            var team = new Team
+            {
+                Name = "Unfiltered Team",
+                WorkTrackingSystemConnection = workTrackingSystemConnection,
+                ForecastFilterRuleSetJson = null,
+            };
+
+            subject.Add(team);
+            await subject.Save();
+
+            DatabaseContext.ChangeTracker.Clear();
+
+            var foundTeam = subject.GetById(team.Id);
+
+            Assert.That(foundTeam, Is.Not.Null);
+            Assert.That(foundTeam!.ForecastFilterRuleSetJson, Is.Null);
+        }
+
+        [Test]
         public async Task Remove_TeamWithFeatureWork_RemovesTeamAndFeatureWork()
         {
             var subject = CreateSubject();

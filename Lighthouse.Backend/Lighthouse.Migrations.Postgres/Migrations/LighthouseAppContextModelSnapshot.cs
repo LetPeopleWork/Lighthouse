@@ -796,6 +796,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ForecastFilterRuleSetJson")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
