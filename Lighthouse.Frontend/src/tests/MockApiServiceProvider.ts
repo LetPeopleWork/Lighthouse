@@ -142,6 +142,12 @@ export const createMockTeamService = (): ITeamService => {
 		updateTeamData: vi.fn(),
 		updateAllTeamData: vi.fn(),
 		updateForecastsForTeamPortfolios: vi.fn(),
+		getForecastFilterSchema: vi.fn().mockResolvedValue({
+			fields: [],
+			operators: [],
+			maxRules: 20,
+			maxValueLength: 500,
+		}),
 	};
 };
 

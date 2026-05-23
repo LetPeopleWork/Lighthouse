@@ -1,5 +1,6 @@
 import type { ITeam, Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
+import type { IWorkItemRuleSchema } from "../../models/WorkItemRules";
 import { ApiError } from "./ApiError";
 import { BaseApiService } from "./BaseApiService";
 
@@ -14,6 +15,7 @@ export interface ITeamService {
 	updateTeamData(teamId: number): Promise<void>;
 	updateAllTeamData(): Promise<void>;
 	updateForecastsForTeamPortfolios(teamId: number): Promise<void>;
+	getForecastFilterSchema(teamId: number): Promise<IWorkItemRuleSchema>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
@@ -133,6 +135,15 @@ export class TeamService extends BaseApiService implements ITeamService {
 			await this.apiService.post<void>(
 				`/forecast/update-portfolios-for-team/${teamId}`,
 			);
+		});
+	}
+
+	async getForecastFilterSchema(teamId: number): Promise<IWorkItemRuleSchema> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IWorkItemRuleSchema>(
+				`/teams/${teamId}/forecast-filter/schema`,
+			);
+			return response.data;
 		});
 	}
 }
