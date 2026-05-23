@@ -439,6 +439,7 @@ StrykerOutput/
 reports/mutation/
 
 .claude/scheduled_tasks.lock
+.claude/worktrees/
 Lighthouse.Frontend/reports/mutation/*
 Lighthouse.Frontend/.stryker-*
 social-posts/*
