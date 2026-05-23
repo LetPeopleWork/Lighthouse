@@ -48,6 +48,7 @@ test.describe("Forecast filter — premium walking skeleton", () => {
 		await page.getByLabel(/value/i).first().fill("Bug");
 
 		await teamEditPage.save();
+		await page.waitForLoadState("networkidle");
 
 		await page.reload();
 		await expect(page.getByText("Bug").first()).toBeVisible();
