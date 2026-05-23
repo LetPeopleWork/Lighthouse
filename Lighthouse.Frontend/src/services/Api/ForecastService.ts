@@ -32,6 +32,7 @@ export interface IForecastService {
 		endDate: Date,
 		historicalStartDate: Date,
 		historicalEndDate: Date,
+		applyFilterOverride?: boolean,
 	): Promise<BacktestResult>;
 }
 
@@ -121,16 +122,29 @@ export class ForecastService
 		endDate: Date,
 		historicalStartDate: Date,
 		historicalEndDate: Date,
+		applyFilterOverride?: boolean,
 	): Promise<BacktestResult> {
 		return this.withErrorHandling(async () => {
+			const requestBody: {
+				startDate: string;
+				endDate: string;
+				historicalStartDate: string;
+				historicalEndDate: string;
+				applyFilterOverride?: boolean;
+			} = {
+				startDate: this.formatDateOnly(startDate),
+				endDate: this.formatDateOnly(endDate),
+				historicalStartDate: this.formatDateOnly(historicalStartDate),
+				historicalEndDate: this.formatDateOnly(historicalEndDate),
+			};
+
+			if (applyFilterOverride !== undefined) {
+				requestBody.applyFilterOverride = applyFilterOverride;
+			}
+
 			const response = await this.apiService.post<IBacktestResult>(
 				`/forecast/backtest/${teamId}`,
-				{
-					startDate: this.formatDateOnly(startDate),
-					endDate: this.formatDateOnly(endDate),
-					historicalStartDate: this.formatDateOnly(historicalStartDate),
-					historicalEndDate: this.formatDateOnly(historicalEndDate),
-				},
+				requestBody,
 			);
 			return this.deserializeBacktestResult(response.data);
 		});
@@ -151,6 +165,8 @@ export class ForecastService
 			new Date(data.historicalEndDate),
 			percentiles,
 			data.actualThroughput,
+			data.filterApplied ?? false,
+			data.excludedSummary,
 		);
 	}
 }

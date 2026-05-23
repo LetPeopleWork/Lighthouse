@@ -7,6 +7,8 @@ export interface IBacktestResult {
 	historicalEndDate: string;
 	percentiles: IHowManyForecast[];
 	actualThroughput: number;
+	filterApplied?: boolean;
+	excludedSummary?: string;
 }
 
 export class BacktestResult {
@@ -16,6 +18,8 @@ export class BacktestResult {
 	historicalEndDate: Date;
 	percentiles: HowManyForecast[];
 	actualThroughput: number;
+	filterApplied?: boolean;
+	excludedSummary?: string;
 
 	constructor(
 		startDate: Date,
@@ -24,6 +28,8 @@ export class BacktestResult {
 		historicalEndDate: Date,
 		percentiles: HowManyForecast[],
 		actualThroughput: number,
+		filterApplied = false,
+		excludedSummary?: string,
 	) {
 		this.startDate = startDate;
 		this.endDate = endDate;
@@ -31,5 +37,7 @@ export class BacktestResult {
 		this.historicalEndDate = historicalEndDate;
 		this.percentiles = percentiles;
 		this.actualThroughput = actualThroughput;
+		this.filterApplied = filterApplied;
+		this.excludedSummary = excludedSummary;
 	}
 }
