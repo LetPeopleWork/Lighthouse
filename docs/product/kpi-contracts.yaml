@@ -166,6 +166,14 @@ outcomes:
   # and OUT-6 are CI-gated. Outcomes registry not yet bootstrapped in this
   # project; OUT-N IDs below serve as the local SSOT until that registry is
   # introduced.
+  #
+  # Baseline note: shipped 2026-05-23, customer feedback measurement starts
+  # now. Running notes (community feedback, interview observations, defect
+  # status) accumulate in docs/evolution/filter-forecast-throughput-evolution.md.
+  # CI-gated entries (OUT-filter-default-chart-regression,
+  # OUT-filter-rule-engine-regression) are green at ship time;
+  # OD-1 / OD-2 (see evolution archive) are open defects scoped to the
+  # Throughput Metrics page only and do not affect the CI gates above.
   # ─────────────────────────────────────────────────────────────────────────
 
   - id: OUT-filter-adoption
@@ -188,11 +196,11 @@ outcomes:
         - "NOT INSTRUMENTED. Self-hosted telemetry blocked on Epic 5015."
       derivation: "N/A — proxy signals only."
       surfacing:
-        - "docs/evolution/filter-forecast-throughput.md (post-release running notes)"
+        - "docs/evolution/filter-forecast-throughput-evolution.md (post-release running notes)"
     alerting: []
     status: deferred-pending-telemetry-feature
     blocked_by: "ADO Epic #5015 — Opt-in Product Telemetry."
-    interim_measurement: "Community / customer-follow-up only; document confirmations in docs/evolution/filter-forecast-throughput.md"
+    interim_measurement: "Community / customer-follow-up only; document confirmations in docs/evolution/filter-forecast-throughput-evolution.md"
 
   - id: OUT-filter-forecast-shift
     feature: filter-forecast-throughput
@@ -208,7 +216,7 @@ outcomes:
         - "Community feedback or interview note."
       derivation: "N/A — proxy signals only."
       surfacing:
-        - "docs/evolution/filter-forecast-throughput.md"
+        - "docs/evolution/filter-forecast-throughput-evolution.md"
     alerting: []
     status: deferred-pending-telemetry-feature
 
@@ -243,7 +251,7 @@ outcomes:
     measurement_plan:
       data_collection: ["Community / interview note."]
       derivation: "N/A — proxy signals only."
-      surfacing: ["docs/evolution/filter-forecast-throughput.md"]
+      surfacing: ["docs/evolution/filter-forecast-throughput-evolution.md"]
     alerting: []
     status: deferred-pending-telemetry-feature
 
@@ -258,7 +266,7 @@ outcomes:
     measurement_plan:
       data_collection: ["Community / interview note."]
       derivation: "N/A — proxy signals only."
-      surfacing: ["docs/evolution/filter-forecast-throughput.md"]
+      surfacing: ["docs/evolution/filter-forecast-throughput-evolution.md"]
     alerting: []
     status: deferred-pending-telemetry-feature
 
