@@ -12,7 +12,10 @@ import ProcessBehaviourChart, {
 	ProcessBehaviourChartType,
 } from "../../../components/Common/Charts/ProcessBehaviourChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
-import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
+import {
+	type EvaluatorCondition,
+	formatConditions,
+} from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
@@ -559,6 +562,9 @@ function buildPbcNode(
 	type: ProcessBehaviourChartType,
 	workItemLookup: Map<number, IWorkItem>,
 ): ReactNode | null {
+	// PBC server-side toggle wiring (chartKind="pbc" + onServerViewChange + GET ?view=filtered)
+	// is deferred — needs useMetricsData hook extended with a view parameter and a refetch handler.
+	// Tracked in evolution archive OD-2.
 	if (!data) return null;
 	return (
 		<ProcessBehaviourChart
@@ -763,6 +769,7 @@ function buildWidgetNodes(ctx: {
 						hasFilter={ctx.hasForecastFilter}
 						chartKind="runChart"
 						conditions={ctx.forecastFilterConditions}
+						excludedSummary={formatConditions(ctx.forecastFilterConditions)}
 					/>
 				}
 			/>

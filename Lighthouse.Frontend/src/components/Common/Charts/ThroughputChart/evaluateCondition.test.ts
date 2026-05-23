@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	type EvaluableWorkItem,
 	evaluateCondition,
+	formatConditions,
 	matchesAllConditions,
 } from "./evaluateCondition";
 
@@ -134,5 +135,68 @@ describe("evaluateCondition — does not mutate input", () => {
 			value: "Pri",
 		});
 		expect(baseItem.tags).toEqual(tagsBefore);
+	});
+});
+
+describe("formatConditions — human-readable excludedSummary for FilteredThroughputChip tooltip", () => {
+	it("formats a single equals condition with no quotes around the value", () => {
+		expect(
+			formatConditions([
+				{ fieldKey: "workitem.type", operator: "equals", value: "Bug" },
+			]),
+		).toBe("Type = Bug");
+	});
+
+	it("formats a contains condition with quotes around the value", () => {
+		expect(
+			formatConditions([
+				{
+					fieldKey: "workitem.tags",
+					operator: "contains",
+					value: "maintenance",
+				},
+			]),
+		).toBe('Tags contains "maintenance"');
+	});
+
+	it("joins multiple conditions with '; '", () => {
+		expect(
+			formatConditions([
+				{ fieldKey: "workitem.type", operator: "equals", value: "Bug" },
+				{
+					fieldKey: "workitem.tags",
+					operator: "contains",
+					value: "maintenance",
+				},
+			]),
+		).toBe('Type = Bug; Tags contains "maintenance"');
+	});
+
+	it("renders notEquals as '!='", () => {
+		expect(
+			formatConditions([
+				{ fieldKey: "workitem.state", operator: "notequals", value: "Closed" },
+			]),
+		).toBe("State != Closed");
+	});
+
+	it("renders additionalField.{id} as 'Custom field {id}'", () => {
+		expect(
+			formatConditions([
+				{ fieldKey: "additionalField.42", operator: "equals", value: "alpha" },
+			]),
+		).toBe("Custom field 42 = alpha");
+	});
+
+	it("returns empty string for empty conditions array", () => {
+		expect(formatConditions([])).toBe("");
+	});
+
+	it("is case-insensitive on the fieldKey lookup", () => {
+		expect(
+			formatConditions([
+				{ fieldKey: "WorkItem.Type", operator: "equals", value: "Bug" },
+			]),
+		).toBe("Type = Bug");
 	});
 });
