@@ -165,6 +165,15 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode)
+        {
+            return GetFromCacheIfExists(team, $"ThroughputProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{mode}", () =>
+            {
+                return BuildThroughputProcessBehaviourChart(team, startDate, endDate,
+                    (s, e) => ApplyForecastFilter(team, GetThroughputForTeam(team, s, e), mode).Throughput);
+            }, logger);
+        }
+
         public ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
         {
             return GetFromCacheIfExists(team, $"WipProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>

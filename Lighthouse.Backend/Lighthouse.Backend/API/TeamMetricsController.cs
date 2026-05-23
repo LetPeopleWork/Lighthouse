@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("throughput/pbc")]
-        public ActionResult<ProcessBehaviourChart> GetThroughputProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<ProcessBehaviourChart> GetThroughputProcessBehaviourChart(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? view = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -247,7 +247,17 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                AnnotateBlackoutDays(teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)));
+                AnnotateBlackoutDays(GetPbcForView(team, startDate, endDate, view)));
+        }
+
+        private ProcessBehaviourChart GetPbcForView(Team team, DateTime startDate, DateTime endDate, string? view)
+        {
+            if (string.Equals(view, "filtered", StringComparison.OrdinalIgnoreCase))
+            {
+                return teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate, ThroughputFilterMode.ApplyFilter);
+            }
+
+            return teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate);
         }
 
         [HttpGet("arrivals/pbc")]
