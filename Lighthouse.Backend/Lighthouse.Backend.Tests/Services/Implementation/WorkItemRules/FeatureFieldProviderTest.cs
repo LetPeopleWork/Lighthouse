@@ -7,6 +7,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
     [TestFixture]
     public class FeatureFieldProviderTest
     {
+        private static readonly string[] PriorityAndQ1Tags = ["Priority", "Q1"];
+
         private FeatureFieldProvider subject;
 
         [SetUp]
@@ -105,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
 
             var result = subject.GetTagsForField(feature, "feature.tags");
 
-            Assert.That(result, Is.EquivalentTo(new[] { "Priority", "Q1" }));
+            Assert.That(result, Is.EquivalentTo(PriorityAndQ1Tags));
         }
 
         [Test]

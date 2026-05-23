@@ -118,9 +118,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
             fieldProvider.Setup(p => p.GetFieldValue(feature, TypeFieldKey)).Returns("Story");
             var items = new List<Feature> { feature };
 
-            subject.Match(ruleSet, items, fieldProvider.Object).ToList();
+            var matched = subject.Match(ruleSet, items, fieldProvider.Object).ToList();
 
-            Assert.That(items, Has.Count.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(items, Has.Count.EqualTo(1));
+                Assert.That(matched, Is.Not.Null);
+            }
         }
 
         [Test]

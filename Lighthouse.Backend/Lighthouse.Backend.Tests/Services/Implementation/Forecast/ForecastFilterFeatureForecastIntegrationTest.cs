@@ -22,6 +22,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     {
         private const string BugExclusionWarning = "Filter excluded all throughput; showing unfiltered forecast";
 
+        private static readonly string[] UserStoriesOnly = ["US-1", "US-2"];
+        private static readonly string[] BugExcludedTeamFiltered = ["US-T1"];
+        private static readonly string[] BugIncludedTeamUnfiltered = ["BUG-T2", "US-T2"];
+        private static readonly string[] BugsOnlyFallback = ["BUG-1", "BUG-2"];
+
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
@@ -88,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var closedItems = status.Throughput.WorkItemsPerUnitOfTime.Values.SelectMany(items => items).ToList();
             Assert.That(closedItems.Select(i => i.ReferenceId), Does.Not.Contain("BUG-1"));
-            Assert.That(closedItems.Select(i => i.ReferenceId), Is.EquivalentTo(new[] { "US-1", "US-2" }));
+            Assert.That(closedItems.Select(i => i.ReferenceId), Is.EquivalentTo(UserStoriesOnly));
         }
 
         [Test]
@@ -146,9 +151,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(statusFiltered.FilterApplied, Is.True);
-                Assert.That(filteredRefs, Is.EquivalentTo(new[] { "US-T1" }));
+                Assert.That(filteredRefs, Is.EquivalentTo(BugExcludedTeamFiltered));
                 Assert.That(statusUnfiltered.FilterApplied, Is.False);
-                Assert.That(unfilteredRefs, Is.EquivalentTo(new[] { "BUG-T2", "US-T2" }));
+                Assert.That(unfilteredRefs, Is.EquivalentTo(BugIncludedTeamUnfiltered));
             }
         }
 
@@ -166,7 +171,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             {
                 Assert.That(status.FilterApplied, Is.False);
                 Assert.That(status.ExcludedSummary, Is.EqualTo(BugExclusionWarning));
-                Assert.That(refs, Is.EquivalentTo(new[] { "BUG-1", "BUG-2" }));
+                Assert.That(refs, Is.EquivalentTo(BugsOnlyFallback));
             }
         }
 

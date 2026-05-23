@@ -158,15 +158,15 @@ export class ForecastService
 		const percentiles = data.percentiles.map(
 			(forecast) => new HowManyForecast(forecast.probability, forecast.value),
 		);
-		return new BacktestResult(
-			new Date(data.startDate),
-			new Date(data.endDate),
-			new Date(data.historicalStartDate),
-			new Date(data.historicalEndDate),
+		return new BacktestResult({
+			startDate: new Date(data.startDate),
+			endDate: new Date(data.endDate),
+			historicalStartDate: new Date(data.historicalStartDate),
+			historicalEndDate: new Date(data.historicalEndDate),
 			percentiles,
-			data.actualThroughput,
-			data.filterApplied ?? false,
-			data.excludedSummary,
-		);
+			actualThroughput: data.actualThroughput,
+			filterApplied: data.filterApplied ?? false,
+			excludedSummary: data.excludedSummary,
+		});
 	}
 }

@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     [TestFixture]
     public class ForecastFilterRuleServiceIntegrationTest
     {
+        private static readonly string[] UserStoryReferenceIds = ["US-1", "US-2"];
+
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
@@ -129,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var result = subject.Filter(items, CreateNonEmptyRuleSet()).ToList();
 
-            Assert.That(result.Select(i => i.ReferenceId), Is.EquivalentTo(new[] { "US-1", "US-2" }));
+            Assert.That(result.Select(i => i.ReferenceId), Is.EquivalentTo(UserStoryReferenceIds));
         }
 
         [Test]
@@ -142,7 +144,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var result = subject.Filter(items, CreateNonEmptyRuleSet()).ToList();
 
-            Assert.That(result.Select(i => i.ReferenceId), Is.EquivalentTo(new[] { "US-1", "US-2" }));
+            Assert.That(result.Select(i => i.ReferenceId), Is.EquivalentTo(UserStoryReferenceIds));
         }
 
         [Test]

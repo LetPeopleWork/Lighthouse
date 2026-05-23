@@ -201,17 +201,23 @@ namespace Lighthouse.Backend.Tests.Models.WorkItemRules
 
         private static void AssertRuleSetsEqual(WorkItemRuleSet expected, WorkItemRuleSet actual)
         {
-            Assert.That(actual.Version, Is.EqualTo(expected.Version), "Version mismatch across consumers");
-            Assert.That(actual.Conditions, Has.Count.EqualTo(expected.Conditions.Count), "Condition count mismatch across consumers");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(actual.Version, Is.EqualTo(expected.Version), "Version mismatch across consumers");
+                Assert.That(actual.Conditions, Has.Count.EqualTo(expected.Conditions.Count), "Condition count mismatch across consumers");
+            }
 
             for (var i = 0; i < expected.Conditions.Count; i++)
             {
                 var expectedCondition = expected.Conditions[i];
                 var actualCondition = actual.Conditions[i];
 
-                Assert.That(actualCondition.FieldKey, Is.EqualTo(expectedCondition.FieldKey), $"FieldKey mismatch at index {i}");
-                Assert.That(actualCondition.Operator, Is.EqualTo(expectedCondition.Operator), $"Operator mismatch at index {i}");
-                Assert.That(actualCondition.Value, Is.EqualTo(expectedCondition.Value), $"Value mismatch at index {i}");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(actualCondition.FieldKey, Is.EqualTo(expectedCondition.FieldKey), $"FieldKey mismatch at index {i}");
+                    Assert.That(actualCondition.Operator, Is.EqualTo(expectedCondition.Operator), $"Operator mismatch at index {i}");
+                    Assert.That(actualCondition.Value, Is.EqualTo(expectedCondition.Value), $"Value mismatch at index {i}");
+                }
             }
         }
     }

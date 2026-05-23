@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return Math.Min(featureWIP, remainingItems);
         }
 
-        private void RunSimulations(Action individualSimulation)
+        private static void RunSimulations(Action individualSimulation)
         {
             for (var trial = 0; trial < Trials; trial++)
             {

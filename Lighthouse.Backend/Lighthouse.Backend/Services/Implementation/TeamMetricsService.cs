@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Services.Implementation
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
             ITeamMetricsService
     {
-        private const string ThroughputMetricIdentifier = "Throughput";
         private const string ForecastStatusMetricIdentifier = "ForecastThroughputStatus";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
         internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
