@@ -9,22 +9,15 @@
         public AggregatedWhenForecast(IEnumerable<WhenForecast> forecasts) : base()
         {
             var materialized = forecasts.ToList();
-            var worstCaseForecast = int.MinValue;
 
-            foreach (var forecast in materialized)
+            var worstCase = materialized.MaxBy(f => f.GetProbability(85));
+            if (worstCase != null)
             {
-                var result = forecast.GetProbability(85);
-
-                if (result > worstCaseForecast)
-                {
-                    worstCaseForecast = result;
-
-                    SetSimulationResult(new Dictionary<int, int>(forecast.SimulationResult));
-                    Team = forecast.Team;
-                    TeamId = forecast.TeamId;
-                    NumberOfItems = forecast.NumberOfItems;
-                    CreationTime = forecast.CreationTime;
-                }
+                SetSimulationResult(new Dictionary<int, int>(worstCase.SimulationResult));
+                Team = worstCase.Team;
+                TeamId = worstCase.TeamId;
+                NumberOfItems = worstCase.NumberOfItems;
+                CreationTime = worstCase.CreationTime;
             }
 
             FilterApplied = materialized.Any(f => f.FilterApplied);
