@@ -1,10 +1,9 @@
-﻿
-namespace Lighthouse.Backend.Models.Forecast
+﻿namespace Lighthouse.Backend.Models.Forecast
 {
     public class WhenForecast : ForecastBase
     {
         public WhenForecast() : base(Comparer<int>.Create((x, y) => x.CompareTo(y)))
-        {            
+        {
         }
 
         public WhenForecast(SimulationResult simulationResult) : base(simulationResult.SimulationResults, Comparer<int>.Create((x, y) => x.CompareTo(y)))

@@ -11,9 +11,9 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         public DateOnly StartDate { get; }
-        
+
         public DateOnly EndDate { get; }
-        
+
         public DateOnly HistoricalStartDate { get; }
 
         public DateOnly HistoricalEndDate { get; }

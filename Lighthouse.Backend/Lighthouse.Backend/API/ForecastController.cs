@@ -57,11 +57,11 @@ namespace Lighthouse.Backend.API
                 var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
 
                 var howManyForecast = forecastService.PredictWorkItemCreation(team, input.WorkItemTypes, input.StartDate, input.EndDate, timeToTargetDate);
-                
-                // We want a "X or *less*" forecast, thus we "invert" the usual percentiles, and then adjust the probability 
+
+                // "X or less" forecast: invert the percentiles (50/30/15/5) and the probability so high probabilities map to low item counts.
                 var forecastDtos = howManyForecast.CreateForecastDtos(50, 30, 15, 5);
                 forecastDtos.ForEach(f => f.Probability = 100 - f.Probability);
-                
+
                 itemCreationPrediction.HowManyForecasts.AddRange(forecastDtos.OrderByDescending(x => x.Probability));
 
                 return itemCreationPrediction;

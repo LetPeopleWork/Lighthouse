@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.API.DTO
     public class TeamSettingDto : SettingsOwnerDtoBase
     {
         public TeamSettingDto() : base()
-        {            
+        {
         }
 
         public TeamSettingDto(Team team) : base(team)
