@@ -44,6 +44,10 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [selectedFeatures, setSelectedFeatures] = useState<IFeatureCandidate[]>(
 		[],
 	);
+	const [hasForecastFilter, setHasForecastFilter] = useState<boolean>(false);
+	const [applyFilterOverride, setApplyFilterOverride] = useState<boolean>(true);
+	const [applyBacktestFilterOverride, setApplyBacktestFilterOverride] =
+		useState<boolean>(true);
 
 	const featureAggregateRemainingWork = useMemo(
 		() => selectedFeatures.reduce((sum, f) => sum + f.remainingWork, 0),
@@ -67,8 +71,42 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	// Sequence counter to guard against stale responses
 	const requestSeqRef = useRef(0);
 
-	const { forecastService, teamMetricsService } = useContext(ApiServiceContext);
+	const { forecastService, teamMetricsService, teamService } =
+		useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
+
+	useEffect(() => {
+		if (!team?.id || !teamService) {
+			return;
+		}
+
+		let cancelled = false;
+		teamService
+			.getTeamSettings(team.id)
+			.then((settings) => {
+				if (cancelled) return;
+				const json = settings.forecastFilterRuleSetJson;
+				if (!json || json.trim() === "") {
+					setHasForecastFilter(false);
+					return;
+				}
+				try {
+					const parsed = JSON.parse(json) as {
+						conditions?: unknown[];
+					};
+					setHasForecastFilter((parsed.conditions ?? []).length > 0);
+				} catch {
+					setHasForecastFilter(false);
+				}
+			})
+			.catch(() => {
+				setHasForecastFilter(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [team?.id, teamService]);
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -89,7 +127,11 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	}, [team?.id, teamMetricsService]);
 
 	const runForecast = useCallback(
-		async (items: number | null, date: dayjs.Dayjs | null) => {
+		async (
+			items: number | null,
+			date: dayjs.Dayjs | null,
+			filterOverride: boolean | undefined,
+		) => {
 			if (!team?.id) {
 				return;
 			}
@@ -111,6 +153,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					team.id,
 					items ?? undefined,
 					date?.toDate() ?? null,
+					filterOverride,
 				);
 
 				// Discard stale responses
@@ -130,18 +173,27 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		[team?.id, forecastService, showError],
 	);
 
-	// Auto-run on input changes with debounce — skips the initial render
+	const isPremiumFilterActive = hasForecastFilter;
+	const effectiveFilterOverride = isPremiumFilterActive
+		? applyFilterOverride
+		: undefined;
+
 	useEffect(() => {
 		if (!hasInteractedRef.current) {
 			return;
 		}
 
 		const timer = setTimeout(() => {
-			runForecast(effectiveRemainingItems, targetDate);
+			runForecast(effectiveRemainingItems, targetDate, effectiveFilterOverride);
 		}, DEBOUNCE_MS);
 
 		return () => clearTimeout(timer);
-	}, [effectiveRemainingItems, targetDate, runForecast]);
+	}, [
+		effectiveRemainingItems,
+		targetDate,
+		effectiveFilterOverride,
+		runForecast,
+	]);
 
 	const handleRemainingItemsChange = useCallback((value: number | null) => {
 		hasInteractedRef.current = true;
@@ -166,6 +218,11 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		},
 		[],
 	);
+
+	const handleApplyFilterOverrideChange = useCallback((apply: boolean) => {
+		hasInteractedRef.current = true;
+		setApplyFilterOverride(apply);
+	}, []);
 
 	const onRunNewItemForecast = async (
 		startDate: Date,
@@ -206,12 +263,16 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		}
 
 		try {
+			const filterOverride = isPremiumFilterActive
+				? applyBacktestFilterOverride
+				: undefined;
 			const result = await forecastService.runBacktest(
 				team.id,
 				startDate,
 				endDate,
 				historicalStartDate,
 				historicalEndDate,
+				filterOverride,
 			);
 			setBacktestResult(result);
 		} catch (error) {
@@ -237,6 +298,9 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					selectedFeatures={selectedFeatures}
 					onModeChange={handleModeChange}
 					onFeatureSelectionChange={handleFeatureSelectionChange}
+					hasForecastFilter={hasForecastFilter}
+					applyFilterOverride={applyFilterOverride}
+					onApplyFilterOverrideChange={handleApplyFilterOverrideChange}
 				/>
 			</InputGroup>
 			<InputGroup title={`New ${workItemsTerm} Creation Forecast`}>
@@ -253,6 +317,9 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					onRunBacktest={onRunBacktest}
 					backtestResult={backtestResult}
 					onClearBacktestResult={() => setBacktestResult(null)}
+					hasForecastFilter={hasForecastFilter}
+					applyFilterOverride={applyBacktestFilterOverride}
+					onApplyFilterOverrideChange={setApplyBacktestFilterOverride}
 				/>
 			</InputGroup>
 		</Grid>

@@ -7,4 +7,5 @@ export interface ITeamSettings extends IBaseSettings {
 	throughputHistoryEndDate: Date;
 	featureWIP: number;
 	automaticallyAdjustFeatureWIP: boolean;
+	forecastFilterRuleSetJson?: string | null;
 }

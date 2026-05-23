@@ -1,6 +1,8 @@
 import {
 	Box,
 	CircularProgress,
+	FormControlLabel,
+	Switch,
 	Tab,
 	Tabs,
 	TextField,
@@ -16,11 +18,15 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
+import FilteredThroughputChip from "../../../components/Common/Forecasting/FilteredThroughputChip";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { ITeam } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import BacktestResultDisplay from "./BacktestResultDisplay";
+
+const FORECAST_FILTER_TOGGLE_LABEL = "Apply forecast-throughput filter";
 
 function getLocaleDateFormat(): string {
 	const date = new Date(2000, 0, 2);
@@ -56,6 +62,9 @@ interface BacktestForecasterProps {
 	) => Promise<void>;
 	backtestResult: BacktestResult | null;
 	onClearBacktestResult: () => void;
+	hasForecastFilter?: boolean;
+	applyFilterOverride?: boolean;
+	onApplyFilterOverrideChange?: (apply: boolean) => void;
 }
 
 const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
@@ -63,7 +72,13 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	onRunBacktest,
 	backtestResult,
 	onClearBacktestResult,
+	hasForecastFilter = false,
+	applyFilterOverride = true,
+	onApplyFilterOverrideChange,
 }) => {
+	const { licenseStatus } = useLicenseRestrictions();
+	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
+	const showFilterToggle = isPremium && hasForecastFilter;
 	const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(
 		dayjs().subtract(31, "day"),
 	);
@@ -340,8 +355,31 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 							buttonText="Run Backtest"
 						/>
 					</Grid>
+					{showFilterToggle && (
+						<Grid size={{ xs: 12 }}>
+							<FormControlLabel
+								control={
+									<Switch
+										checked={applyFilterOverride}
+										onChange={(event) =>
+											onApplyFilterOverrideChange?.(event.target.checked)
+										}
+									/>
+								}
+								label={FORECAST_FILTER_TOGGLE_LABEL}
+							/>
+						</Grid>
+					)}
 				</Grid>
 			</Grid>
+			{backtestResult?.filterApplied && (
+				<Grid size={{ xs: 12 }}>
+					<FilteredThroughputChip
+						visible={backtestResult.filterApplied}
+						excludedSummary={backtestResult.excludedSummary}
+					/>
+				</Grid>
+			)}
 			{backtestResult && (
 				<Grid size={{ xs: 12 }}>
 					<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>

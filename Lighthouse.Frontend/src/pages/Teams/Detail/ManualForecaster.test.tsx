@@ -12,6 +12,20 @@ import { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import ManualForecaster from "./ManualForecaster";
 
+const mockCanUsePremiumFeatures = vi.fn(() => true);
+
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canCreatePortfolio: true,
+		canUpdatePortfolioData: true,
+		licenseStatus: { canUsePremiumFeatures: mockCanUsePremiumFeatures() },
+		maxTeamsWithoutPremium: 3,
+		maxPortfoliosWithoutPremium: 1,
+	}),
+}));
+
 // Test data factory function
 const getMockManualForecast = (
 	overrides?: Partial<IManualForecast>,
@@ -707,6 +721,92 @@ describe("ManualForecaster component", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Manual" }));
 			expect(mockOnRemainingItemsChange).toHaveBeenCalledWith(13);
 			expect(mockOnModeChange).toHaveBeenCalledWith("manual");
+		});
+	});
+
+	describe("Apply forecast-throughput filter toggle", () => {
+		const TOGGLE_LABEL = "Apply forecast-throughput filter";
+
+		afterEach(() => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+		});
+
+		it("renders the toggle when premium and team has a forecast filter", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					hasForecastFilter={true}
+					applyFilterOverride={true}
+				/>,
+			);
+			expect(screen.getByLabelText(TOGGLE_LABEL)).toBeInTheDocument();
+		});
+
+		it("hides the toggle on non-premium tenants", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(false);
+			render(<ManualForecaster {...defaultProps} hasForecastFilter={true} />);
+			expect(screen.queryByLabelText(TOGGLE_LABEL)).not.toBeInTheDocument();
+		});
+
+		it("hides the toggle when the team has no forecast filter configured", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			render(<ManualForecaster {...defaultProps} hasForecastFilter={false} />);
+			expect(screen.queryByLabelText(TOGGLE_LABEL)).not.toBeInTheDocument();
+		});
+
+		it("reflects applyFilterOverride=true as a checked switch", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					hasForecastFilter={true}
+					applyFilterOverride={true}
+				/>,
+			);
+			expect(screen.getByLabelText(TOGGLE_LABEL)).toBeChecked();
+		});
+
+		it("calls onApplyFilterOverrideChange when the user toggles the switch off", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			const onApplyFilterOverrideChange = vi.fn();
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					hasForecastFilter={true}
+					applyFilterOverride={true}
+					onApplyFilterOverrideChange={onApplyFilterOverrideChange}
+				/>,
+			);
+			fireEvent.click(screen.getByLabelText(TOGGLE_LABEL));
+			expect(onApplyFilterOverrideChange).toHaveBeenCalledWith(false);
+		});
+	});
+
+	describe("FilteredThroughputChip on result panel", () => {
+		it("renders the chip when the forecast result has filterApplied=true", () => {
+			const forecastResult = getMockManualForecast({
+				filterApplied: true,
+				excludedSummary: 'Type = Bug; Tags contains "maintenance"',
+			});
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					manualForecastResult={forecastResult}
+				/>,
+			);
+			expect(screen.getByText("Filtered throughput")).toBeInTheDocument();
+		});
+
+		it("does not render the chip when the forecast result has filterApplied=false", () => {
+			const forecastResult = getMockManualForecast({ filterApplied: false });
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					manualForecastResult={forecastResult}
+				/>,
+			);
+			expect(screen.queryByText("Filtered throughput")).not.toBeInTheDocument();
 		});
 	});
 });

@@ -40,6 +40,20 @@ vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 	default: () => <div data-testid="loading-animation">Loading...</div>,
 }));
 
+const mockCanUsePremiumFeatures = vi.fn(() => true);
+
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canCreatePortfolio: true,
+		canUpdatePortfolioData: true,
+		licenseStatus: { canUsePremiumFeatures: mockCanUsePremiumFeatures() },
+		maxTeamsWithoutPremium: 3,
+		maxPortfoliosWithoutPremium: 1,
+	}),
+}));
+
 describe("BacktestForecaster component", () => {
 	const mockOnRunBacktest = vi.fn();
 	const mockOnClearBacktestResult = vi.fn();
@@ -68,6 +82,11 @@ describe("BacktestForecaster component", () => {
 		) => Promise<void>,
 		backtestResult: null as BacktestResult | null,
 		onClearBacktestResult: mockOnClearBacktestResult as () => void,
+		hasForecastFilter: undefined as boolean | undefined,
+		applyFilterOverride: undefined as boolean | undefined,
+		onApplyFilterOverrideChange: undefined as
+			| ((apply: boolean) => void)
+			| undefined,
 	};
 
 	const renderWithContext = (props: typeof defaultProps = defaultProps) => {
@@ -674,6 +693,80 @@ describe("BacktestForecaster component", () => {
 				);
 				expect(actualChart).toBeInTheDocument();
 			});
+		});
+	});
+
+	describe("Apply forecast-throughput filter toggle", () => {
+		const TOGGLE_LABEL = "Apply forecast-throughput filter";
+
+		afterEach(() => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+		});
+
+		it("renders the toggle when premium and team has a forecast filter", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			renderWithContext({
+				...defaultProps,
+				hasForecastFilter: true,
+				applyFilterOverride: true,
+			});
+			expect(screen.getByLabelText(TOGGLE_LABEL)).toBeInTheDocument();
+		});
+
+		it("hides the toggle on non-premium tenants", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(false);
+			renderWithContext({ ...defaultProps, hasForecastFilter: true });
+			expect(screen.queryByLabelText(TOGGLE_LABEL)).not.toBeInTheDocument();
+		});
+
+		it("hides the toggle when the team has no forecast filter configured", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			renderWithContext({ ...defaultProps, hasForecastFilter: false });
+			expect(screen.queryByLabelText(TOGGLE_LABEL)).not.toBeInTheDocument();
+		});
+
+		it("calls onApplyFilterOverrideChange when the user toggles the switch off", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			const onApplyFilterOverrideChange = vi.fn();
+			renderWithContext({
+				...defaultProps,
+				hasForecastFilter: true,
+				applyFilterOverride: true,
+				onApplyFilterOverrideChange,
+			});
+			fireEvent.click(screen.getByLabelText(TOGGLE_LABEL));
+			expect(onApplyFilterOverrideChange).toHaveBeenCalledWith(false);
+		});
+	});
+
+	describe("FilteredThroughputChip on backtest result panel", () => {
+		it("renders the chip when the backtest result has filterApplied=true", () => {
+			const mockResult: BacktestResult = {
+				startDate: dayjs().subtract(60, "day").toDate(),
+				endDate: dayjs().subtract(30, "day").toDate(),
+				historicalStartDate: dayjs().subtract(90, "day").toDate(),
+				historicalEndDate: dayjs().subtract(60, "day").toDate(),
+				percentiles: [new HowManyForecast(50, 10)],
+				actualThroughput: 12,
+				filterApplied: true,
+				excludedSummary: 'Type = Bug; Tags contains "maintenance"',
+			};
+			renderWithContext({ ...defaultProps, backtestResult: mockResult });
+			expect(screen.getByText("Filtered throughput")).toBeInTheDocument();
+		});
+
+		it("does not render the chip when the backtest result has filterApplied=false", () => {
+			const mockResult: BacktestResult = {
+				startDate: dayjs().subtract(60, "day").toDate(),
+				endDate: dayjs().subtract(30, "day").toDate(),
+				historicalStartDate: dayjs().subtract(90, "day").toDate(),
+				historicalEndDate: dayjs().subtract(60, "day").toDate(),
+				percentiles: [new HowManyForecast(50, 10)],
+				actualThroughput: 12,
+				filterApplied: false,
+			};
+			renderWithContext({ ...defaultProps, backtestResult: mockResult });
+			expect(screen.queryByText("Filtered throughput")).not.toBeInTheDocument();
 		});
 	});
 });

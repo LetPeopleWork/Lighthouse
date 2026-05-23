@@ -12,16 +12,45 @@ import ForecastFilterEditor from "../../../components/Teams/ForecastFilterEditor
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
+const RULE_SET_SCHEMA_VERSION = 1;
+
+const parseRulesFromJson = (
+	json: string | null | undefined,
+): IWorkItemRuleCondition[] => {
+	if (!json || json.trim() === "") {
+		return [];
+	}
+	try {
+		const parsed = JSON.parse(json) as {
+			conditions?: IWorkItemRuleCondition[];
+		};
+		return parsed.conditions ?? [];
+	} catch {
+		return [];
+	}
+};
+
+const serializeRulesToJson = (rules: IWorkItemRuleCondition[]): string => {
+	return JSON.stringify({
+		version: RULE_SET_SCHEMA_VERSION,
+		conditions: rules,
+	});
+};
 
 interface PremiumGatedForecastFilterProps {
 	teamId: number;
+	rules: IWorkItemRuleCondition[];
+	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
 }
 
 const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 	teamId,
+	rules,
+	onRulesChange,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? true;
@@ -32,7 +61,11 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 				Forecast Filter (Premium)
 			</Typography>
 			{isPremium ? (
-				<ForecastFilterEditor teamId={teamId} />
+				<ForecastFilterEditor
+					teamId={teamId}
+					rules={rules}
+					onChange={onRulesChange}
+				/>
 			) : (
 				<Typography variant="body2">
 					Forecast Filter is a Premium feature.{" "}
@@ -48,7 +81,7 @@ interface ForecastSettingsComponentProps {
 	isDefaultSettings: boolean;
 	onTeamSettingsChange: (
 		key: keyof ITeamSettings,
-		value: string | number | boolean | Date,
+		value: string | number | boolean | Date | null,
 	) => void;
 }
 
@@ -149,7 +182,16 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 			)}
 
 			{!isDefaultSettings && teamSettings && (
-				<PremiumGatedForecastFilter teamId={teamSettings.id} />
+				<PremiumGatedForecastFilter
+					teamId={teamSettings.id}
+					rules={parseRulesFromJson(teamSettings.forecastFilterRuleSetJson)}
+					onRulesChange={(rules) =>
+						onTeamSettingsChange(
+							"forecastFilterRuleSetJson",
+							rules.length === 0 ? null : serializeRulesToJson(rules),
+						)
+					}
+				/>
 			)}
 		</InputGroup>
 	);

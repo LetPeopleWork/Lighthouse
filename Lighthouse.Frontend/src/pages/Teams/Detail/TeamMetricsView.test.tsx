@@ -17,6 +17,12 @@ interface BaseMetricsViewProps {
 	featuresInProgress?: Array<{ id: number; name: string }>;
 	featureWip?: number;
 	hasBlockedConfig?: boolean;
+	hasForecastFilter?: boolean;
+	forecastFilterConditions?: ReadonlyArray<{
+		fieldKey: string;
+		operator: string;
+		value: string;
+	}>;
 }
 
 vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
@@ -27,6 +33,8 @@ vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
 		featuresInProgress,
 		featureWip,
 		hasBlockedConfig,
+		hasForecastFilter,
+		forecastFilterConditions,
 	}: BaseMetricsViewProps) => (
 		<div data-testid="base-metrics-view">
 			<div data-testid="entity-name">{entity.name}</div>
@@ -43,6 +51,12 @@ vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
 			{hasBlockedConfig !== undefined && (
 				<div data-testid="has-blocked-config">{String(hasBlockedConfig)}</div>
 			)}
+			<div data-testid="has-forecast-filter">
+				{String(hasForecastFilter ?? false)}
+			</div>
+			<div data-testid="forecast-filter-condition-count">
+				{forecastFilterConditions?.length ?? 0}
+			</div>
 		</div>
 	),
 }));
@@ -317,6 +331,69 @@ describe("TeamMetricsView component", () => {
 		// Assert
 		await waitFor(() => {
 			expect(screen.getByTestId("default-date-range")).toHaveTextContent("45");
+		});
+	});
+
+	describe("forecast filter wiring", () => {
+		const renderWithFilterSettings = (
+			forecastFilterRuleSetJson: string | null,
+		) => {
+			const team = new Team();
+			team.id = 1;
+			team.name = "Filtered Team";
+
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+				automaticallyAdjustFeatureWIP: true,
+				doingStates: ["In Progress"],
+				blockedStates: [],
+				blockedTags: [],
+				forecastFilterRuleSetJson,
+			});
+
+			const mockContext = createMockApiServiceContext({
+				teamMetricsService: mockTeamMetricsService,
+				teamService: mockTeamService,
+			});
+
+			return render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<TeamMetricsView team={team} />
+				</ApiServiceContext.Provider>,
+			);
+		};
+
+		it("passes hasForecastFilter=false when the team has no forecast filter configured", async () => {
+			renderWithFilterSettings(null);
+			await waitFor(() => {
+				expect(screen.getByTestId("has-forecast-filter")).toHaveTextContent(
+					"false",
+				);
+				expect(
+					screen.getByTestId("forecast-filter-condition-count"),
+				).toHaveTextContent("0");
+			});
+		});
+
+		it("propagates parsed forecastFilter conditions when the team has rules", async () => {
+			const ruleSet = JSON.stringify({
+				version: 1,
+				conditions: [
+					{ fieldKey: "workitem.type", operator: "equals", value: "Bug" },
+					{ fieldKey: "workitem.state", operator: "notequals", value: "Done" },
+				],
+			});
+
+			renderWithFilterSettings(ruleSet);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("has-forecast-filter")).toHaveTextContent(
+					"true",
+				);
+				expect(
+					screen.getByTestId("forecast-filter-condition-count"),
+				).toHaveTextContent("2");
+			});
 		});
 	});
 });

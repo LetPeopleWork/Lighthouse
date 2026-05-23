@@ -391,6 +391,7 @@ describe("TeamForecastView component", () => {
 					mockTeam.id,
 					15,
 					null,
+					undefined,
 				);
 			} finally {
 				vi.useRealTimers();
@@ -424,6 +425,7 @@ describe("TeamForecastView component", () => {
 					mockTeam.id,
 					undefined,
 					expect.any(Object),
+					undefined,
 				);
 			} finally {
 				vi.useRealTimers();
@@ -795,6 +797,7 @@ describe("TeamForecastView component", () => {
 					expect.any(Date),
 					expect.any(Date),
 					expect.any(Date),
+					undefined,
 				);
 			});
 		});
@@ -910,6 +913,7 @@ describe("TeamForecastView component", () => {
 					mockTeam.id,
 					5,
 					null,
+					undefined,
 				);
 			} finally {
 				vi.useRealTimers();

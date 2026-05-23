@@ -1,11 +1,28 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
+
+const parseForecastFilterConditions = (
+	json: string | null | undefined,
+): readonly EvaluatorCondition[] => {
+	if (!json || json.trim() === "") {
+		return [];
+	}
+	try {
+		const parsed = JSON.parse(json) as {
+			conditions?: EvaluatorCondition[];
+		};
+		return parsed.conditions ?? [];
+	} catch {
+		return [];
+	}
+};
 
 interface TeamMetricsViewProps {
 	team: Team;
@@ -18,6 +35,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 	const [featureWip, setFeatureWip] = useState<number | undefined>(undefined);
+	const [forecastFilterConditions, setForecastFilterConditions] = useState<
+		readonly EvaluatorCondition[]
+	>([]);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -62,6 +82,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				setHasBlockedConfig(
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
+				setForecastFilterConditions(
+					parseForecastFilterConditions(settings.forecastFilterRuleSetJson),
+				);
 			} catch (err) {
 				console.error("Error fetching team settings:", err);
 			}
@@ -94,6 +117,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			featureWip={featureWip}
 			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
+			hasForecastFilter={forecastFilterConditions.length > 0}
+			forecastFilterConditions={forecastFilterConditions}
 		/>
 	);
 };

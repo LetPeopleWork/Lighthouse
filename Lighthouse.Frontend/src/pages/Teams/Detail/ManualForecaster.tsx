@@ -2,9 +2,11 @@ import { Close } from "@mui/icons-material";
 import {
 	Autocomplete,
 	Chip,
+	FormControlLabel,
 	IconButton,
 	InputAdornment,
 	Stack,
+	Switch,
 	TextField,
 	ToggleButton,
 	ToggleButtonGroup,
@@ -17,8 +19,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
 import { useState } from "react";
+import FilteredThroughputChip from "../../../components/Common/Forecasting/FilteredThroughputChip";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
 	IFeatureCandidate,
 	IForecastInputCandidates,
@@ -26,6 +30,8 @@ import type {
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+
+const FORECAST_FILTER_TOGGLE_LABEL = "Apply forecast-throughput filter";
 
 function getLocaleDateFormat(): string {
 	const date = new Date(2000, 0, 2);
@@ -76,6 +82,9 @@ interface ManualForecasterProps {
 	selectedFeatures?: IFeatureCandidate[];
 	onModeChange?: (mode: "manual" | "features") => void;
 	onFeatureSelectionChange?: (features: IFeatureCandidate[]) => void;
+	hasForecastFilter?: boolean;
+	applyFilterOverride?: boolean;
+	onApplyFilterOverrideChange?: (apply: boolean) => void;
 }
 
 const ManualForecaster: React.FC<ManualForecasterProps> = ({
@@ -89,9 +98,15 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	selectedFeatures = [],
 	onModeChange,
 	onFeatureSelectionChange,
+	hasForecastFilter = false,
+	applyFilterOverride = true,
+	onApplyFilterOverrideChange,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const { licenseStatus } = useLicenseRestrictions();
+	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
+	const showFilterToggle = isPremium && hasForecastFilter;
 
 	const [featureInputValue, setFeatureInputValue] = useState("");
 
@@ -122,27 +137,46 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	return (
 		<Grid container spacing={3}>
 			<Grid size={{ xs: 12 }}>
-				<ToggleButtonGroup
-					value={mode}
-					exclusive
-					onChange={(_, newMode) => {
-						if (newMode) {
-							if (mode === "features" && newMode === "manual") {
-								onRemainingItemsChange(featureAggregate);
-							}
-							onModeChange?.(newMode);
-						}
-					}}
-					aria-label="Forecast mode"
-					size="small"
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{ alignItems: "center", flexWrap: "wrap" }}
 				>
-					<ToggleButton value="manual" aria-label="Manual">
-						Manual
-					</ToggleButton>
-					<ToggleButton value="features" aria-label="Features">
-						Features
-					</ToggleButton>
-				</ToggleButtonGroup>
+					<ToggleButtonGroup
+						value={mode}
+						exclusive
+						onChange={(_, newMode) => {
+							if (newMode) {
+								if (mode === "features" && newMode === "manual") {
+									onRemainingItemsChange(featureAggregate);
+								}
+								onModeChange?.(newMode);
+							}
+						}}
+						aria-label="Forecast mode"
+						size="small"
+					>
+						<ToggleButton value="manual" aria-label="Manual">
+							Manual
+						</ToggleButton>
+						<ToggleButton value="features" aria-label="Features">
+							Features
+						</ToggleButton>
+					</ToggleButtonGroup>
+					{showFilterToggle && (
+						<FormControlLabel
+							control={
+								<Switch
+									checked={applyFilterOverride}
+									onChange={(event) =>
+										onApplyFilterOverrideChange?.(event.target.checked)
+									}
+								/>
+							}
+							label={FORECAST_FILTER_TOGGLE_LABEL}
+						/>
+					)}
+				</Stack>
 			</Grid>
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Typography variant="subtitle2" gutterBottom>
@@ -384,6 +418,14 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 						/>
 					</Grid>
 				)}
+			{manualForecastResult?.filterApplied && (
+				<Grid size={{ xs: 12 }}>
+					<FilteredThroughputChip
+						visible={manualForecastResult.filterApplied}
+						excludedSummary={manualForecastResult.excludedSummary}
+					/>
+				</Grid>
+			)}
 		</Grid>
 	);
 };

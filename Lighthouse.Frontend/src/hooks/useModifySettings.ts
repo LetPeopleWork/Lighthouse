@@ -46,6 +46,7 @@ const NULLABLE_FIELDS = new Set([
 	"estimationAdditionalFieldDefinitionId",
 	"estimationUnit",
 	"owningTeam",
+	"forecastFilterRuleSetJson",
 ]);
 
 /** Pure helper to update a specific list within the settings object */

@@ -328,3 +328,106 @@ describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
 		expect(subHeadingPosition & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
 	});
 });
+
+describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", () => {
+	const teamSettings = createMockTeamSettings();
+
+	it("propagates editor rule changes through onTeamSettingsChange as serialised JSON", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const onTeamSettingsChange = vi.fn();
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		const addRuleButton = await screen.findByTestId("add-rule-button");
+		fireEvent.click(addRuleButton);
+
+		await waitFor(() => {
+			expect(onTeamSettingsChange).toHaveBeenCalledWith(
+				"forecastFilterRuleSetJson",
+				expect.any(String),
+			);
+		});
+
+		const calls = onTeamSettingsChange.mock.calls;
+		const lastCall = calls[calls.length - 1];
+		expect(lastCall).toBeDefined();
+		const payload = JSON.parse(lastCall?.[1] as string) as {
+			version: number;
+			conditions: { fieldKey: string; operator: string; value: string }[];
+		};
+		expect(payload.version).toBe(1);
+		expect(payload.conditions).toHaveLength(1);
+		expect(payload.conditions[0].fieldKey).toBe("workitem.type");
+	});
+
+	it("hydrates the editor from teamSettings.forecastFilterRuleSetJson on render", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const settingsWithRules = {
+			...teamSettings,
+			forecastFilterRuleSetJson: JSON.stringify({
+				version: 1,
+				conditions: [
+					{
+						fieldKey: "workitem.type",
+						operator: "equals",
+						value: "Bug",
+					},
+				],
+			}),
+		};
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={settingsWithRules}
+				isDefaultSettings={false}
+				onTeamSettingsChange={vi.fn()}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByDisplayValue("Bug")).toBeInTheDocument();
+		});
+	});
+
+	it("propagates null to onTeamSettingsChange when all rules are deleted", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const onTeamSettingsChange = vi.fn();
+		const settingsWithOneRule = {
+			...teamSettings,
+			forecastFilterRuleSetJson: JSON.stringify({
+				version: 1,
+				conditions: [
+					{
+						fieldKey: "workitem.type",
+						operator: "equals",
+						value: "Bug",
+					},
+				],
+			}),
+		};
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={settingsWithOneRule}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		const removeButton = await screen.findByLabelText("Remove rule");
+		fireEvent.click(removeButton);
+
+		await waitFor(() => {
+			expect(onTeamSettingsChange).toHaveBeenCalledWith(
+				"forecastFilterRuleSetJson",
+				null,
+			);
+		});
+	});
+});

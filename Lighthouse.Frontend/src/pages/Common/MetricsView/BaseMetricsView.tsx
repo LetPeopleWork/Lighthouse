@@ -12,10 +12,13 @@ import ProcessBehaviourChart, {
 	ProcessBehaviourChartType,
 } from "../../../components/Common/Charts/ProcessBehaviourChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
+import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
+import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { IFeature } from "../../../models/Feature";
@@ -93,6 +96,8 @@ export interface BaseMetricsViewProps<
 	featureWip?: number;
 	hasBlockedConfig?: boolean;
 	doingStates: string[];
+	hasForecastFilter?: boolean;
+	forecastFilterConditions?: readonly EvaluatorCondition[];
 }
 
 function formatDate(date: Date): string {
@@ -607,6 +612,9 @@ function buildWidgetNodes(ctx: {
 	arrivalsInfo: IArrivalsInfo | null;
 	featureSizePercentilesInfo: IFeatureSizePercentilesInfo | null;
 	loadBalanceData: LoadBalanceMatrixData;
+	isPremium: boolean;
+	hasForecastFilter: boolean;
+	forecastFilterConditions: readonly EvaluatorCondition[];
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -747,7 +755,17 @@ function buildWidgetNodes(ctx: {
 			/>
 		) : null,
 		totalThroughput: ctx.throughputInfo ? (
-			<TotalThroughputWidget data={ctx.throughputInfo} />
+			<TotalThroughputWidget
+				data={ctx.throughputInfo}
+				filterToggle={
+					<ThroughputChartFilterToggle
+						isPremium={ctx.isPremium}
+						hasFilter={ctx.hasForecastFilter}
+						chartKind="runChart"
+						conditions={ctx.forecastFilterConditions}
+					/>
+				}
+			/>
 		) : null,
 		totalArrivals: ctx.arrivalsInfo ? (
 			<TotalArrivalsWidget data={ctx.arrivalsInfo} />
@@ -820,8 +838,12 @@ export const BaseMetricsView = <
 	featureWip,
 	hasBlockedConfig = false,
 	doingStates,
+	hasForecastFilter = false,
+	forecastFilterConditions = [],
 }: BaseMetricsViewProps<T, E>) => {
 	const [searchParams, setSearchParams] = useSearchParams();
+	const { licenseStatus } = useLicenseRestrictions();
+	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const [startDate, setStartDate] = useState<Date>(() => {
 		const parsed = parseDate(searchParams.get("startDate") ?? "");
@@ -992,6 +1014,9 @@ export const BaseMetricsView = <
 		arrivalsInfo,
 		featureSizePercentilesInfo,
 		loadBalanceData,
+		isPremium,
+		hasForecastFilter,
+		forecastFilterConditions,
 	});
 
 	const widgetFooters = buildWidgetFooters({
