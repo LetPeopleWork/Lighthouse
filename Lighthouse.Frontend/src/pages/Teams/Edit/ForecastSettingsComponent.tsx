@@ -1,10 +1,47 @@
-import { FormControlLabel, Switch, TextField } from "@mui/material";
+import {
+	FormControlLabel,
+	Link,
+	Switch,
+	TextField,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
+import ForecastFilterEditor from "../../../components/Teams/ForecastFilterEditor/ForecastFilterEditor";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+
+const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
+
+interface PremiumGatedForecastFilterProps {
+	teamId: number;
+}
+
+const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
+	teamId,
+}) => {
+	const { licenseStatus } = useLicenseRestrictions();
+	const isPremium = licenseStatus?.canUsePremiumFeatures ?? true;
+
+	return (
+		<Grid size={{ xs: 12 }}>
+			<Typography variant="h6" component="h3">
+				Forecast Filter (Premium)
+			</Typography>
+			{isPremium ? (
+				<ForecastFilterEditor teamId={teamId} />
+			) : (
+				<Typography variant="body2">
+					Forecast Filter is a Premium feature.{" "}
+					<Link href={PREMIUM_DOCS_HREF}>Learn more.</Link>
+				</Typography>
+			)}
+		</Grid>
+	);
+};
 
 interface ForecastSettingsComponentProps {
 	teamSettings: ITeamSettings | null;
@@ -109,6 +146,10 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 						}
 					/>
 				</Grid>
+			)}
+
+			{!isDefaultSettings && teamSettings && (
+				<PremiumGatedForecastFilter teamId={teamSettings.id} />
 			)}
 		</InputGroup>
 	);

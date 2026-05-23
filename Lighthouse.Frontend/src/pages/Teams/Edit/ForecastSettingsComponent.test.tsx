@@ -1,10 +1,17 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
+import {
+	ApiServiceContext,
+	type IApiServiceContext,
+} from "../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockTeamService,
+} from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ForecastSettingsComponent from "./ForecastSettingsComponent";
 
-// Mock InputGroup component
 vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 	__esModule: true,
 	default: ({
@@ -20,6 +27,62 @@ vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 		</div>
 	),
 }));
+
+const mockIsTeamAdmin = vi.fn(() => true);
+const mockCanUsePremiumFeatures = vi.fn(() => true);
+
+vi.mock("../../../hooks/useRbac", () => ({
+	useRbac: () => ({
+		isLoading: false,
+		isRbacEnabled: true,
+		isSystemAdmin: false,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+		isTeamAdmin: mockIsTeamAdmin,
+		isPortfolioAdmin: () => true,
+		summary: {
+			isRbacEnabled: true,
+			isSystemAdmin: false,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+			adminTeamIds: [],
+			adminPortfolioIds: [],
+		},
+	}),
+}));
+
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canCreatePortfolio: true,
+		canUpdatePortfolioData: true,
+		licenseStatus: { canUsePremiumFeatures: mockCanUsePremiumFeatures() },
+		maxTeamsWithoutPremium: 3,
+		maxPortfoliosWithoutPremium: 1,
+	}),
+}));
+
+const getApiServiceContextWithSchema = (): IApiServiceContext => {
+	const teamService = createMockTeamService();
+	teamService.getForecastFilterSchema = vi.fn().mockResolvedValue({
+		fields: [
+			{ fieldKey: "workitem.type", displayName: "Type", isMultiValue: false },
+			{ fieldKey: "workitem.state", displayName: "State", isMultiValue: false },
+		],
+		operators: ["equals", "notequals", "contains"],
+		maxRules: 20,
+		maxValueLength: 500,
+	});
+	return createMockApiServiceContext({ teamService });
+};
+
+const renderWithContext = (ui: React.ReactElement) => {
+	const ctx = getApiServiceContextWithSchema();
+	return render(
+		<ApiServiceContext.Provider value={ctx}>{ui}</ApiServiceContext.Provider>,
+	);
+};
 
 describe("ForecastSettingsComponent", () => {
 	const onTeamSettingsChange = vi.fn();
@@ -160,29 +223,108 @@ describe("ForecastSettingsComponent", () => {
 	});
 });
 
-// SCAFFOLD: true — DISTILL RED scaffolds for filter-forecast-throughput (Epic 4896).
-describe("ForecastSettingsComponent — Forecast Filter sub-section (RED scaffold)", () => {
-	it("renders the ForecastFilterEditor inside the existing Forecast Configuration InputGroup on premium tenants", () => {
-		throw new Error(
-			"Not yet implemented — RED scaffold (US-01, feature-delta row 359, slice-01 line 21). DELIVER wave: the editor must render INSIDE the existing 'Forecast Configuration' InputGroup (below throughputHistory / fixed-dates fields), NOT in a new sibling section.",
+describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
+	const teamSettings = createMockTeamSettings();
+	const onTeamSettingsChange = vi.fn();
+
+	it("renders the ForecastFilterEditor inside the existing Forecast Configuration InputGroup on premium tenants", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
 		);
+
+		const forecastConfigHeading = screen.getByRole("heading", {
+			name: "Forecast Configuration",
+		});
+		const inputGroup = forecastConfigHeading.parentElement as HTMLElement;
+
+		await waitFor(() => {
+			const editor = inputGroup.querySelector(
+				"[data-testid='delivery-rule-builder']",
+			);
+			expect(editor).not.toBeNull();
+		});
+
+		expect(
+			screen.getByRole("heading", { name: "Forecast Filter (Premium)" }),
+		).toBeInTheDocument();
 	});
 
 	it("renders the upgrade teaser instead of the editor on non-premium tenants", () => {
-		throw new Error(
-			"Not yet implemented — RED scaffold (US-07 AC). DELIVER wave: useLicenseRestrictions().isPremium==false renders a one-line teaser with a docs link.",
+		mockCanUsePremiumFeatures.mockReturnValue(false);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
 		);
+
+		expect(
+			screen.getByText(/Forecast Filter is a Premium feature/i),
+		).toBeInTheDocument();
+		const learnMoreLink = screen.getByRole("link", { name: /learn more/i });
+		expect(learnMoreLink).toHaveAttribute(
+			"href",
+			"/docs/premium-features#forecast-filter",
+		);
+		expect(
+			screen.queryByTestId("delivery-rule-builder"),
+		).not.toBeInTheDocument();
 	});
 
 	it("does not render the Forecast Filter sub-section at all when the team page is in default-settings mode", () => {
-		throw new Error(
-			"Not yet implemented — RED scaffold. DELIVER wave: the filter editor is team-scoped — default-team-settings page hides it.",
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={true}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
 		);
+
+		expect(
+			screen.queryByRole("heading", { name: "Forecast Filter (Premium)" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("delivery-rule-builder"),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(/Forecast Filter is a Premium feature/i),
+		).not.toBeInTheDocument();
 	});
 
 	it("preserves today's throughputHistory and fixed-dates fields above the new sub-section", () => {
-		throw new Error(
-			"Not yet implemented — RED scaffold. DELIVER wave: regression-protect the existing fields' presence and order inside the InputGroup.",
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
 		);
+
+		const throughputField = screen.getByLabelText("Throughput History");
+		const fixedDatesSwitch = screen.getByRole("switch", {
+			name: "Use Fixed Dates for Throughput",
+		});
+		const subHeading = screen.getByRole("heading", {
+			name: "Forecast Filter (Premium)",
+		});
+
+		expect(throughputField).toBeInTheDocument();
+		expect(fixedDatesSwitch).toBeInTheDocument();
+
+		const subHeadingPosition =
+			subHeading.compareDocumentPosition(throughputField);
+		expect(subHeadingPosition & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
 	});
 });
