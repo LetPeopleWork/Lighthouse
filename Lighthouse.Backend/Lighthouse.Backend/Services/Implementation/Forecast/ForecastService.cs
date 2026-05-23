@@ -81,29 +81,31 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private async Task ForecastFeatures(IEnumerable<Feature> features)
         {
-            var throughpoutByTeam = InitializeThroughputPerTeam(features);
+            var throughputByTeam = InitializeThroughputPerTeam(features, out var chipStatusByTeam);
 
             var simulationResults = InitializeSimulationResults(features);
-            await RunMonteCarloSimulation(simulationResults, throughpoutByTeam);
-            UpdateFeatureForecasts(features, simulationResults);
+            await RunMonteCarloSimulation(simulationResults, throughputByTeam);
+            UpdateFeatureForecasts(features, simulationResults, chipStatusByTeam);
         }
 
-        private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features)
+        private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, out Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
         {
             var teams = features.SelectMany(f => f.Teams).Distinct().ToList();
-            var throughpoutByTeam = new Dictionary<int, RunChartData>();
+            var throughputByTeam = new Dictionary<int, RunChartData>();
+            chipStatusByTeam = new Dictionary<int, ForecastThroughputStatus>();
 
             foreach (var team in teams)
             {
-                var throughput = teamMetricsService.GetCurrentThroughputForTeamForecast(team);
+                var status = teamMetricsService.GetForecastThroughputStatus(team);
+                chipStatusByTeam[team.Id] = status;
 
-                if (throughput.Total > 0)
+                if (status.Throughput.Total > 0)
                 {
-                    throughpoutByTeam[team.Id] = throughput;
+                    throughputByTeam[team.Id] = status.Throughput;
                 }
             }
 
-            return throughpoutByTeam;
+            return throughputByTeam;
         }
 
         private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults, Dictionary<int, RunChartData> throughputByTeam)
@@ -130,7 +132,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             await Task.WhenAll(tasks);
         }
 
-        private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)
+        private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
         {
             foreach (var feature in features)
             {
@@ -144,14 +146,20 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                     simulationResultsForFeature.Add(simulationResult);
                 }
 
-                var featureForecasts = simulationResultsForFeature.Select(CreateWhenForecastForSimulationResult);
+                var featureForecasts = simulationResultsForFeature.Select(r => CreateWhenForecastForSimulationResult(r, chipStatusByTeam));
                 feature.SetFeatureForecasts(featureForecasts);
             }
         }
 
-        private static WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
+        private static WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
         {
-            return new WhenForecast(simulationResult);
+            var forecast = new WhenForecast(simulationResult);
+            if (simulationResult.Team is { } team && chipStatusByTeam.TryGetValue(team.Id, out var status))
+            {
+                forecast.FilterApplied = status.FilterApplied;
+                forecast.ExcludedSummary = status.ExcludedSummary;
+            }
+            return forecast;
         }
 
         private static List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)

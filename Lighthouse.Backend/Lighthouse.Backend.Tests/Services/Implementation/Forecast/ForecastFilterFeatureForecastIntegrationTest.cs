@@ -204,6 +204,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [Test]
+        public void FeatureForecast_IdenticalTeamStateAndRuleSet_ProducesIdenticalThroughputAndChipData()
+        {
+            var teamFirstRun = BuildTeamWithBugExclusion(teamId: 9001);
+            AddClosedWorkItem(teamId: 9001, type: "Bug", referenceId: "BUG-1", daysAgo: 3);
+            AddClosedWorkItem(teamId: 9001, type: "User Story", referenceId: "US-1", daysAgo: 5);
+            AddClosedWorkItem(teamId: 9001, type: "User Story", referenceId: "US-2", daysAgo: 7);
+
+            var firstRun = subject.GetForecastThroughputStatus(teamFirstRun);
+
+            subject.InvalidateTeamMetrics(teamFirstRun);
+            var teamSecondRun = BuildTeamWithBugExclusion(teamId: 9001);
+            var secondRun = subject.GetForecastThroughputStatus(teamSecondRun);
+
+            var firstRefs = firstRun.Throughput.WorkItemsPerUnitOfTime.Values.SelectMany(items => items).Select(i => i.ReferenceId).OrderBy(r => r).ToList();
+            var secondRefs = secondRun.Throughput.WorkItemsPerUnitOfTime.Values.SelectMany(items => items).Select(i => i.ReferenceId).OrderBy(r => r).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(secondRun.FilterApplied, Is.EqualTo(firstRun.FilterApplied));
+                Assert.That(secondRun.ExcludedSummary, Is.EqualTo(firstRun.ExcludedSummary));
+                Assert.That(secondRun.Throughput.Total, Is.EqualTo(firstRun.Throughput.Total));
+                Assert.That(secondRun.Throughput.History, Is.EqualTo(firstRun.Throughput.History));
+                Assert.That(secondRefs, Is.EqualTo(firstRefs));
+            }
+        }
+
         private static Team BuildTeam(int teamId)
         {
             return new Team

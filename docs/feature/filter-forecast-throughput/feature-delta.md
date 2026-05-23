@@ -743,3 +743,13 @@ Per the project's `per-feature` mutation testing strategy (CLAUDE.md), the Stryk
 3. **Glob hygiene** (low): if the backend `mutate` field stays a hard-coded file list, document in a one-line config comment that adding a new file under `DeliveryRules/` or `Forecast/` requires manually extending the list. Globs avoid the foot-gun; choose deliberately.
 
 These three tasks are **not** DISTILL blockers — they relate to running mutation testing on production code that does not yet exist (RED scaffolds throw). They are pre-conditions for closing DOD item 6 at the end of DELIVER.
+
+## Wave: DELIVER / [WHY] Decision: OQ-3 DTO shape
+
+**Decision**: `FilterApplied: bool` + `ExcludedSummary: string?` ship as adjacent properties on the existing `WhenForecast` (`Feature.Forecast`) entity, projected through `WhenForecastDto`. NOT a new top-level `FeatureDto` field, NOT a separate property bag.
+
+**Rationale**: cohesion. The chip data lives where the percentile dates live (`feature.forecasts[].filterApplied`, `feature.forecasts[].excludedSummary`); the FE chip component reads from the same per-forecast path that already drives the date display, no parallel lookup required. Multi-team aggregation collapses naturally on `AggregatedWhenForecast`: `FilterApplied = any(team.FilterApplied)`, `ExcludedSummary` = distinct non-null summaries joined by `"; "` (or `null` when no team contributes a summary).
+
+**Alternative considered**: a new `feature.forecastFilterStatus: { applied, summary }` object hanging off `FeatureDto`. Rejected — duplicates the per-forecast/per-team locality already captured by `Forecasts[]`, forces the FE to cross-reference two paths, and breaks the cache-key symmetry of `WhenForecast` (which already keys filtered vs unfiltered Monte Carlo series at the TeamMetricsService seam — DDD-4 / scenario 27).
+
+**Path**: `WhenForecast.FilterApplied` / `WhenForecast.ExcludedSummary` → populated in `ForecastService.UpdateFeatureForecasts` from the `ForecastThroughputStatus` map built by `InitializeThroughputPerTeam` → projected through `WhenForecastDto(forecast, probability)` → consumed by the FE chip at slice 01-16.

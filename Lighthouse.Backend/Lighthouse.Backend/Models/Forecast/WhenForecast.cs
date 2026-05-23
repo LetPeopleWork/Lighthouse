@@ -23,5 +23,9 @@ namespace Lighthouse.Backend.Models.Forecast
         public Team? Team { get; set; }
 
         public int NumberOfItems { get; set; } = 0;
+
+        public bool FilterApplied { get; set; }
+
+        public string? ExcludedSummary { get; set; }
     }
 }
