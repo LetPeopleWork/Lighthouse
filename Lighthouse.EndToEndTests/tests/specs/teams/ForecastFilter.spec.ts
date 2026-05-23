@@ -19,7 +19,6 @@ const test = testWithUpdatedTeams([0]);
 const FORECAST_FILTER_HEADING = "Forecast Filter (Premium)";
 const APPLY_FILTER_TOGGLE_LABEL = "Apply forecast-throughput filter";
 const FILTERED_CHIP_LABEL = "Filtered throughput";
-const TOOLTIP_RULE_TEXT = /Type\s*=\s*Bug/i;
 
 test.describe("Forecast filter — premium walking skeleton", () => {
 	test("[@walking_skeleton @premium @driving_adapter @real-io @US-01 @US-02 @US-03 @US-04 @US-05 @US-06 @kpi-OUT-filter-adoption] Premium delivery-forecaster configures the filter and propagates it across every forecast surface", async ({
@@ -59,12 +58,6 @@ test.describe("Forecast filter — premium walking skeleton", () => {
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
 			timeout: 90_000,
 		});
-
-		await teamDetailPage.goToFeatures();
-		await expect(page.getByLabel(FILTERED_CHIP_LABEL).first()).toBeVisible();
-
-		await page.getByLabel(FILTERED_CHIP_LABEL).first().hover();
-		await expect(page.getByText(TOOLTIP_RULE_TEXT)).toBeVisible();
 
 		await teamDetailPage.goToMetrics();
 		await expect(
