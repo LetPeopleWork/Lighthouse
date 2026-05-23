@@ -8,6 +8,8 @@ export interface DeliveryRuleBuilderProps {
 	maxRules: number;
 	maxValueLength: number;
 	disabled?: boolean;
+	title?: string;
+	emptyStateMessage?: string;
 }
 
 export interface RuleRowProps {

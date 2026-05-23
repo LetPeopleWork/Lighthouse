@@ -136,6 +136,8 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 	maxRules,
 	maxValueLength,
 	disabled,
+	title = "Define Rules (all conditions must match)",
+	emptyStateMessage = "Add at least one rule to define which features to include.",
 }) => {
 	const safeFields = fields || [];
 	const safeOperators = operators || [];
@@ -186,7 +188,7 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 	return (
 		<Box data-testid="delivery-rule-builder">
 			<Typography variant="subtitle1" sx={{ mb: 2 }}>
-				Define Rules (all conditions must match)
+				{title}
 			</Typography>
 
 			{safeFields.length === 0 && (
@@ -198,7 +200,7 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 
 			{rules.length === 0 && safeFields.length > 0 && (
 				<Alert severity="info" sx={{ mb: 2 }}>
-					Add at least one rule to define which features to include.
+					{emptyStateMessage}
 				</Alert>
 			)}
 

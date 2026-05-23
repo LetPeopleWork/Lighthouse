@@ -178,4 +178,84 @@ describe("DeliveryRuleBuilder", () => {
 		expect(screen.getByTestId("add-rule-button")).toBeDisabled();
 		expect(screen.getByTestId("rule-delete-0")).toBeDisabled();
 	});
+
+	it("renders default title when no title prop is provided", () => {
+		render(
+			<DeliveryRuleBuilder
+				rules={[]}
+				onChange={vi.fn()}
+				fields={mockFields}
+				operators={mockOperators}
+				maxRules={20}
+				maxValueLength={500}
+			/>,
+		);
+
+		expect(
+			screen.getByText("Define Rules (all conditions must match)"),
+		).toBeInTheDocument();
+	});
+
+	it("renders custom title when title prop is provided", () => {
+		render(
+			<DeliveryRuleBuilder
+				rules={[]}
+				onChange={vi.fn()}
+				fields={mockFields}
+				operators={mockOperators}
+				maxRules={20}
+				maxValueLength={500}
+				title="Exclude items where…"
+			/>,
+		);
+
+		expect(screen.getByText("Exclude items where…")).toBeInTheDocument();
+		expect(
+			screen.queryByText("Define Rules (all conditions must match)"),
+		).not.toBeInTheDocument();
+	});
+
+	it("renders default empty-state message when no emptyStateMessage prop is provided", () => {
+		render(
+			<DeliveryRuleBuilder
+				rules={[]}
+				onChange={vi.fn()}
+				fields={mockFields}
+				operators={mockOperators}
+				maxRules={20}
+				maxValueLength={500}
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"Add at least one rule to define which features to include.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("renders custom empty-state message when emptyStateMessage prop is provided", () => {
+		render(
+			<DeliveryRuleBuilder
+				rules={[]}
+				onChange={vi.fn()}
+				fields={mockFields}
+				operators={mockOperators}
+				maxRules={20}
+				maxValueLength={500}
+				emptyStateMessage="Add at least one rule to exclude items from throughput."
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"Add at least one rule to exclude items from throughput.",
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText(
+				"Add at least one rule to define which features to include.",
+			),
+		).not.toBeInTheDocument();
+	});
 });
