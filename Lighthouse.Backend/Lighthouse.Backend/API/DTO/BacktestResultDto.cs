@@ -21,5 +21,9 @@ namespace Lighthouse.Backend.API.DTO
         public List<ForecastDto> Percentiles { get; } = new List<ForecastDto>();
 
         public int ActualThroughput { get; set; }
+
+        public bool FilterApplied { get; set; }
+
+        public string? ExcludedSummary { get; set; }
     }
 }

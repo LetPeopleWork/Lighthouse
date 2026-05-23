@@ -148,9 +148,10 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
+                var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
                 var historyStart = input.HistoricalStartDate.ToDateTime(TimeOnly.MinValue);
                 var historyEnd = input.HistoricalEndDate.ToDateTime(TimeOnly.MinValue);
-                var historicalThroughput = teamMetricsService.GetBlackoutAwareThroughputForTeam(team, historyStart, historyEnd);
+                var historicalThroughput = teamMetricsService.GetBlackoutAwareThroughputForTeam(team, historyStart, historyEnd, mode);
 
                 var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);
 
@@ -158,9 +159,13 @@ namespace Lighthouse.Backend.API
                 var periodEnd = input.EndDate.ToDateTime(TimeOnly.MinValue);
                 var actualThroughput = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd);
 
+                var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
+
                 var result = new BacktestResultDto(input.StartDate, input.EndDate, input.HistoricalStartDate, input.HistoricalEndDate)
                 {
-                    ActualThroughput = actualThroughput.Total
+                    ActualThroughput = actualThroughput.Total,
+                    FilterApplied = status.FilterApplied,
+                    ExcludedSummary = status.ExcludedSummary,
                 };
 
                 result.Percentiles.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));

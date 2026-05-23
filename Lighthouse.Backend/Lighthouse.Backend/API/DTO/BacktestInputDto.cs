@@ -15,5 +15,7 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public DateOnly HistoricalEndDate { get; set; }
+
+        public bool? ApplyFilterOverride { get; set; }
     }
 }

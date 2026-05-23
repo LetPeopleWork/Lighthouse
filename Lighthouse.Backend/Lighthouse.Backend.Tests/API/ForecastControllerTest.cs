@@ -512,15 +512,18 @@ namespace Lighthouse.Backend.Tests.API
             var historicalEndDate = startDate;
             var forecastDays = endDate.DayNumber - startDate.DayNumber;
 
-            // Setup historical throughput - 3 days with [2, 1, 3] items = 6 total
             var historicalThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 1, 3]));
             teamMetricsServiceMock.Setup(x => x.GetBlackoutAwareThroughputForTeam(
                 expectedTeam,
                 historicalStartDate.ToDateTime(TimeOnly.MinValue),
-                historicalEndDate.ToDateTime(TimeOnly.MinValue)))
+                historicalEndDate.ToDateTime(TimeOnly.MinValue),
+                ThroughputFilterMode.RespectTeamSetting))
                 .Returns(historicalThroughput);
 
-            // Setup actual throughput (in backtest period) - 3 days with [2, 3, 1] items = 6 total
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(expectedTeam, ThroughputFilterMode.RespectTeamSetting))
+                .Returns(new ForecastThroughputStatus(historicalThroughput, false, null));
+
             var actualThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 3, 1]));
             teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
                 expectedTeam,
@@ -528,7 +531,6 @@ namespace Lighthouse.Backend.Tests.API
                 endDate.ToDateTime(TimeOnly.MinValue)))
                 .Returns(actualThroughput);
 
-            // Setup forecast service
             var howManyForecast = new HowManyForecast();
             forecastServiceMock.Setup(x => x.HowMany(historicalThroughput, forecastDays))
                 .Returns(howManyForecast);
