@@ -4,6 +4,8 @@ import type { IForecast } from "./IForecast";
 
 export interface IWhenForecast extends IForecast {
 	expectedDate: Date;
+	filterApplied?: boolean;
+	excludedSummary?: string;
 }
 
 export class WhenForecast implements IWhenForecast {
@@ -11,6 +13,9 @@ export class WhenForecast implements IWhenForecast {
 
 	@Type(() => Date)
 	expectedDate: Date = new Date();
+
+	filterApplied?: boolean;
+	excludedSummary?: string;
 
 	static fromBackend(data: IWhenForecast): WhenForecast {
 		return plainToInstance(WhenForecast, data);
