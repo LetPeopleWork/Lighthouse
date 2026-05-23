@@ -53,6 +53,7 @@ test.describe("Forecast filter — premium walking skeleton", () => {
 		await page.reload();
 		await expect(page.getByText("Bug").first()).toBeVisible();
 
+		await page.goto("/");
 		const teamDetailPage = await overviewPage.goToTeam(team.name);
 		await teamDetailPage.updateTeamData();
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({

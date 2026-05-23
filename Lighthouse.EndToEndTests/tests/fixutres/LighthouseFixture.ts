@@ -1,4 +1,4 @@
-import { type APIRequestContext, test as base } from "@playwright/test";
+import { type APIRequestContext, type Page, test as base } from "@playwright/test";
 import { createPortfolio } from "../helpers/api/portfolios";
 import { createTeam, updateTeam } from "../helpers/api/teams";
 import {
@@ -153,8 +153,19 @@ async function generateTestData(
 	};
 }
 
+async function suppressUpdateNotifications(page: Page): Promise<void> {
+	await page.addInitScript(() => {
+		try {
+			localStorage.setItem("lighthouse-hide-all-update-notifications", "true");
+		} catch {
+			// localStorage unavailable in some contexts (e.g. about:blank); ignore.
+		}
+	});
+}
+
 export const testWithAuth = base.extend<LighthouseFixtures>({
 	loginPage: async ({ page }, use) => {
+		await suppressUpdateNotifications(page);
 		const lighthousePage = new LighthousePage(page);
 		const loginPage = await lighthousePage.openWithAuth();
 
@@ -164,6 +175,7 @@ export const testWithAuth = base.extend<LighthouseFixtures>({
 
 export const test = base.extend<LighthouseFixtures>({
 	overviewPage: async ({ page, request }, use) => {
+		await suppressUpdateNotifications(page);
 		const lighthousePage = new LighthousePage(page);
 		const overviewPage = await lighthousePage.open();
 
