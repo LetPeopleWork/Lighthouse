@@ -56,4 +56,14 @@ describe("TotalThroughputWidget", () => {
 			"0.0",
 		);
 	});
+
+	it("renders the provided filter toggle slot when supplied", () => {
+		render(
+			<TotalThroughputWidget
+				data={defaultData}
+				filterToggle={<div data-testid="filter-toggle-slot">toggle</div>}
+			/>,
+		);
+		expect(screen.getByTestId("filter-toggle-slot")).toBeInTheDocument();
+	});
 });

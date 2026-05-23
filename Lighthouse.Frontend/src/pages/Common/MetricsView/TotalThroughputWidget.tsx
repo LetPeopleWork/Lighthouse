@@ -1,15 +1,17 @@
 import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
+import type { ReactNode } from "react";
 import type { IThroughputInfo } from "../../../models/Metrics/InfoWidgetData";
 import type { TrendPayload } from "./trendTypes";
 
 interface TotalThroughputWidgetProps {
 	readonly data: IThroughputInfo;
+	readonly filterToggle?: ReactNode;
 }
 
 const TotalThroughputWidget: React.FC<TotalThroughputWidgetProps> & {
 	getTrendPayload: (data: IThroughputInfo) => { trendPayload: TrendPayload };
-} = ({ data }) => {
+} = ({ data, filterToggle }) => {
 	const theme = useTheme();
 
 	return (
@@ -27,6 +29,8 @@ const TotalThroughputWidget: React.FC<TotalThroughputWidgetProps> & {
 				<Typography variant="h6" gutterBottom sx={{ textAlign: "center" }}>
 					Total Throughput
 				</Typography>
+
+				{filterToggle}
 
 				<Typography
 					variant="h3"

@@ -158,6 +158,7 @@ interface ProcessBehaviourChartProps {
 	title: string;
 	workItemLookup?: Map<number, IWorkItem>;
 	type: ProcessBehaviourChartType;
+	filterToggle?: React.ReactNode;
 }
 
 const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
@@ -165,6 +166,7 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 	title,
 	workItemLookup,
 	type,
+	filterToggle,
 }) => {
 	const theme = useTheme();
 
@@ -364,7 +366,10 @@ const ProcessBehaviourChart: React.FC<ProcessBehaviourChartProps> = ({
 							mb: 1,
 						}}
 					>
-						<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
+						<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+							<Typography variant="h6">{`${title} Process Behaviour Chart`}</Typography>
+							{filterToggle}
+						</Stack>
 						{hasAnySpecialCause && (
 							<Stack direction="row" spacing={0.5}>
 								{specialCausePriority.map((cause) => {
