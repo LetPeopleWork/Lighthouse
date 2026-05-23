@@ -50,6 +50,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(Mock.Of<IForecastService>());
 
+            var forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
+            forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
+
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
             subject = new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
@@ -57,7 +60,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 featureRepositoryMock.Object,
                 appSettingsServiceMock.Object,
                 serviceProvider.Object,
-                blackoutPeriodRepositoryMock.Object);
+                blackoutPeriodRepositoryMock.Object,
+                forecastFilterRuleServiceMock.Object);
 
             workItems = new List<WorkItem>();
             features = new List<Feature>();
@@ -141,7 +145,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var item = new WorkItem
             {
-                Id = 1, StateCategory = StateCategories.Doing, TeamId = 99,
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                TeamId = 99,
                 StartedDate = Day1
             };
             workItems.Add(item);

@@ -838,6 +838,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
             builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleEvaluator<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.RuleEvaluator<WorkItem>>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleFieldProvider<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.WorkItemFieldProvider>();
+            builder.Services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();
             builder.Services.AddScoped<IWriteBackService, WriteBackService>();
             builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();
 

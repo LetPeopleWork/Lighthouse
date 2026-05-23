@@ -1,12 +1,16 @@
-﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
+    public sealed record ForecastThroughputStatus(RunChartData Throughput, bool FilterApplied, string? ExcludedSummary);
+
     public interface ITeamMetricsService
     {
-        RunChartData GetCurrentThroughputForTeamForecast(Team team);
+        RunChartData GetCurrentThroughputForTeamForecast(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
+
+        ForecastThroughputStatus GetForecastThroughputStatus(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
 
         ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
 
@@ -18,7 +22,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
+        RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 
@@ -39,7 +43,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         ArrivalsInfoDto GetArrivalsInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
         ForecastInputCandidatesDto GetForecastInputCandidates(Team team);
-        
+
         IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);

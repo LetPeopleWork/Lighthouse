@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -12,12 +13,15 @@ namespace Lighthouse.Backend.Services.Implementation
         IRepository<Feature> featureRepository,
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IForecastFilterRuleService forecastFilterRuleService)
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
             ITeamMetricsService
     {
         private const string ThroughputMetricIdentifier = "Throughput";
+        private const string ForecastStatusMetricIdentifier = "ForecastThroughputStatus";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
+        internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate)
         {
@@ -93,23 +97,34 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        public RunChartData GetCurrentThroughputForTeamForecast(Team team)
+        public RunChartData GetCurrentThroughputForTeamForecast(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
-            logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
+            return GetForecastThroughputStatus(team, mode).Throughput;
+        }
 
-            return GetFromCacheIfExists(team, ThroughputMetricIdentifier, () =>
+        public ForecastThroughputStatus GetForecastThroughputStatus(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
+        {
+            logger.LogDebug("Getting Forecast Throughput Status for Team {TeamName} (mode: {Mode})", team.Name, mode);
+
+            return GetFromCacheIfExists(team, $"{ForecastStatusMetricIdentifier}_{mode}", () =>
             {
-                if (team.UseFixedDatesForThroughput)
-                {
-                    var endDate = DateTime.UtcNow.Date;
-                    var startDate = team.ThroughputHistoryStartDate ?? endDate.AddDays(-(team.ThroughputHistory - 1));
-                    var fixedEndDate = team.ThroughputHistoryEndDate ?? endDate;
-
-                    return GetBlackoutAwareThroughputForTeam(team, startDate, fixedEndDate);
-                }
-
-                return GetBlackoutAwareThroughputForTeam(team, team.ThroughputHistory);
+                var unfiltered = ComputeBlackoutAwareThroughput(team);
+                return ApplyForecastFilter(team, unfiltered, mode);
             }, logger);
+        }
+
+        private RunChartData ComputeBlackoutAwareThroughput(Team team)
+        {
+            if (team.UseFixedDatesForThroughput)
+            {
+                var endDate = DateTime.UtcNow.Date;
+                var startDate = team.ThroughputHistoryStartDate ?? endDate.AddDays(-(team.ThroughputHistory - 1));
+                var fixedEndDate = team.ThroughputHistoryEndDate ?? endDate;
+
+                return GetBlackoutAwareThroughputForTeam(team, startDate, fixedEndDate, ThroughputFilterMode.SkipFilter);
+            }
+
+            return GetBlackoutAwareThroughputForTeam(team, team.ThroughputHistory);
         }
 
         public RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -123,14 +138,22 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
+        public RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
-            return GetFromCacheIfExists(team, $"BlackoutAwareThroughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            var unfiltered = GetFromCacheIfExists(team, $"BlackoutAwareThroughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
                 var throughput = GetThroughputForTeam(team, startDate, endDate);
                 var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                 return FilterBlackoutDaysFromRunChart(throughput, startDate, endDate, blackoutPeriods);
             }, logger);
+
+            if (mode == ThroughputFilterMode.SkipFilter)
+            {
+                return unfiltered;
+            }
+
+            return GetFromCacheIfExists(team, $"BlackoutAwareThroughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{mode}", () =>
+                ApplyForecastFilter(team, unfiltered, mode).Throughput, logger);
         }
 
         public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
@@ -467,6 +490,56 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return filtered;
+        }
+
+        private ForecastThroughputStatus ApplyForecastFilter(Team team, RunChartData unfiltered, ThroughputFilterMode mode)
+        {
+            if (mode == ThroughputFilterMode.SkipFilter)
+            {
+                return new ForecastThroughputStatus(unfiltered, false, null);
+            }
+
+            var effectiveRuleSet = forecastFilterRuleService.GetEffectiveRuleSet(team);
+            if (mode == ThroughputFilterMode.RespectTeamSetting && effectiveRuleSet == null)
+            {
+                return new ForecastThroughputStatus(unfiltered, false, null);
+            }
+
+            if (effectiveRuleSet == null)
+            {
+                return new ForecastThroughputStatus(unfiltered, false, null);
+            }
+
+            var allWorkItems = unfiltered.WorkItemsPerUnitOfTime.Values.SelectMany(items => items).OfType<WorkItem>().ToList();
+            var kept = forecastFilterRuleService.Filter(allWorkItems, effectiveRuleSet).ToList();
+
+            if (kept.Count == 0 && allWorkItems.Count > 0)
+            {
+                return new ForecastThroughputStatus(unfiltered, false, EmptyFilteredSampleWarning);
+            }
+
+            var filteredRunChart = BuildFilteredRunChart(unfiltered, kept);
+            return new ForecastThroughputStatus(filteredRunChart, true, BuildExcludedSummary(allWorkItems.Count - kept.Count));
+        }
+
+        private static RunChartData BuildFilteredRunChart(RunChartData unfiltered, List<WorkItem> kept)
+        {
+            var keptIds = kept.Select(i => i.Id).ToHashSet();
+            var filteredData = new Dictionary<int, List<WorkItemBase>>();
+
+            for (var day = 0; day < unfiltered.History; day++)
+            {
+                filteredData[day] = unfiltered.WorkItemsPerUnitOfTime[day]
+                    .Where(item => keptIds.Contains(item.Id))
+                    .ToList();
+            }
+
+            return new RunChartData(filteredData);
+        }
+
+        private static string BuildExcludedSummary(int excludedCount)
+        {
+            return $"Excluded {excludedCount} work item{(excludedCount == 1 ? string.Empty : "s")} via team forecast filter";
         }
 
         private static RunChartData FilterBlackoutDaysFromRunChart(RunChartData runChart, DateTime startDate, DateTime endDate, List<BlackoutPeriod> blackoutPeriods)
