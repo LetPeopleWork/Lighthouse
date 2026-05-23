@@ -119,32 +119,43 @@ namespace Lighthouse.Backend.API
             };
         }
 
-        [HttpPost("backtest/{teamId:int}")]
-        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
-        public ActionResult<BacktestResultDto> RunBacktest(int teamId, [FromBody] BacktestInputDto input)
+        private static string? ValidateBacktestInput(BacktestInputDto input)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var minStartDate = today.AddDays(-14);
+            var minStartDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-14);
             if (input.StartDate > minStartDate)
             {
-                return BadRequest("StartDate must be at least 14 days in the past.");
+                return "StartDate must be at least 14 days in the past.";
             }
 
-            var forecastDays = input.EndDate.DayNumber - input.StartDate.DayNumber;
-            if (forecastDays < 14)
+            if (input.EndDate.DayNumber - input.StartDate.DayNumber < 14)
             {
-                return BadRequest("EndDate must be at least 14 days after StartDate.");
+                return "EndDate must be at least 14 days after StartDate.";
             }
 
             if (input.HistoricalEndDate > input.StartDate)
             {
-                return BadRequest("HistoricalEndDate must not be after StartDate.");
+                return "HistoricalEndDate must not be after StartDate.";
             }
 
             if (input.HistoricalStartDate >= input.HistoricalEndDate)
             {
-                return BadRequest("HistoricalStartDate must be before HistoricalEndDate.");
+                return "HistoricalStartDate must be before HistoricalEndDate.";
             }
+
+            return null;
+        }
+
+        [HttpPost("backtest/{teamId:int}")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
+        public ActionResult<BacktestResultDto> RunBacktest(int teamId, [FromBody] BacktestInputDto input)
+        {
+            var validationError = ValidateBacktestInput(input);
+            if (validationError != null)
+            {
+                return BadRequest(validationError);
+            }
+
+            var forecastDays = input.EndDate.DayNumber - input.StartDate.DayNumber;
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
