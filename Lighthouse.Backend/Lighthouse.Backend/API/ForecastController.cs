@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -74,14 +75,17 @@ namespace Lighthouse.Backend.API
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
                 var manualForecast = new ManualForecastDto(input.RemainingItems ?? 0, input.TargetDate);
+                var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
 
                 var timeToTargetDate = input.TargetDate.HasValue ? (input.TargetDate.Value - DateTime.Today).Days : 0;
 
                 if (input.RemainingItems is > 0)
                 {
-                    var whenForecast = await forecastService.When(team, input.RemainingItems.Value);
+                    var whenForecast = await forecastService.When(team, input.RemainingItems.Value, mode);
 
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
+                    manualForecast.FilterApplied = whenForecast.FilterApplied;
+                    manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
 
                     if (timeToTargetDate > 0)
                     {
@@ -94,13 +98,25 @@ namespace Lighthouse.Backend.API
                     return manualForecast;
                 }
 
-                var throughput = teamMetricsService.GetCurrentThroughputForTeamForecast(team);
-                var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
+                var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
+                var howManyForecast = forecastService.HowMany(status.Throughput, timeToTargetDate);
 
                 manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
+                manualForecast.FilterApplied = status.FilterApplied;
+                manualForecast.ExcludedSummary = status.ExcludedSummary;
 
                 return manualForecast;
             });
+        }
+
+        private static ThroughputFilterMode MapOverrideToFilterMode(bool? applyFilterOverride)
+        {
+            return applyFilterOverride switch
+            {
+                true => ThroughputFilterMode.ApplyFilter,
+                false => ThroughputFilterMode.SkipFilter,
+                null => ThroughputFilterMode.RespectTeamSetting,
+            };
         }
 
         [HttpPost("backtest/{teamId:int}")]
@@ -158,6 +174,8 @@ namespace Lighthouse.Backend.API
             public int? RemainingItems { get; set; }
 
             public DateTime? TargetDate { get; set; }
+
+            public bool? ApplyFilterOverride { get; set; }
         }
 
         public class ItemCreationPredictionInputDto

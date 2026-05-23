@@ -11,5 +11,9 @@
         public List<WhenForecastDto> WhenForecasts { get; } = [];
 
         public List<ForecastDto> HowManyForecasts { get; } = [];
+
+        public bool FilterApplied { get; set; }
+
+        public string? ExcludedSummary { get; set; }
     }
 }

@@ -49,12 +49,12 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return new HowManyForecast(simulationResults, days);
         }
 
-        public async Task<WhenForecast> When(Team team, int remainingItems)
+        public async Task<WhenForecast> When(Team team, int remainingItems, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
-            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items (mode {Mode}).", team.Name, remainingItems, mode);
 
             var fakeFeature = new Feature(team, remainingItems);
-            await ForecastFeatures([fakeFeature]);
+            await ForecastFeatures([fakeFeature], mode);
 
             logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
@@ -79,16 +79,16 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             await featureRepository.Save();
         }
 
-        private async Task ForecastFeatures(IEnumerable<Feature> features)
+        private async Task ForecastFeatures(IEnumerable<Feature> features, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
-            var throughputByTeam = InitializeThroughputPerTeam(features, out var chipStatusByTeam);
+            var throughputByTeam = InitializeThroughputPerTeam(features, mode, out var chipStatusByTeam);
 
             var simulationResults = InitializeSimulationResults(features);
             await RunMonteCarloSimulation(simulationResults, throughputByTeam);
             UpdateFeatureForecasts(features, simulationResults, chipStatusByTeam);
         }
 
-        private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, out Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
+        private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, ThroughputFilterMode mode, out Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
         {
             var teams = features.SelectMany(f => f.Teams).Distinct().ToList();
             var throughputByTeam = new Dictionary<int, RunChartData>();
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             foreach (var team in teams)
             {
-                var status = teamMetricsService.GetForecastThroughputStatus(team);
+                var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
                 chipStatusByTeam[team.Id] = status;
 
                 if (status.Throughput.Total > 0)

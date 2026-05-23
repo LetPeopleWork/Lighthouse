@@ -182,6 +182,9 @@ namespace Lighthouse.Backend.Tests.API
             var forecast = new HowManyForecast();
 
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(forecast);
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(expectedTeam, It.IsAny<ThroughputFilterMode>()))
+                .Returns(new ForecastThroughputStatus(new RunChartData(), false, null));
 
             var subject = CreateSubject();
 
@@ -201,7 +204,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.Likelihood, Is.Zero);
 
-                forecastServiceMock.Verify(x => x.When(It.IsAny<Team>(), It.IsAny<int>()), Times.Never);
+                forecastServiceMock.Verify(x => x.When(It.IsAny<Team>(), It.IsAny<int>(), It.IsAny<ThroughputFilterMode>()), Times.Never);
             }
         }
 
@@ -212,7 +215,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
             var forecast = new WhenForecast();
 
-            forecastServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(forecast));
+            forecastServiceMock.Setup(x => x.When(expectedTeam, 42, It.IsAny<ThroughputFilterMode>())).Returns(Task.FromResult(forecast));
 
             var subject = CreateSubject();
 
@@ -240,8 +243,11 @@ namespace Lighthouse.Backend.Tests.API
             var expectedTeam = new Team();
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
-            forecastServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(new WhenForecast()));
+            forecastServiceMock.Setup(x => x.When(expectedTeam, 42, It.IsAny<ThroughputFilterMode>())).Returns(Task.FromResult(new WhenForecast()));
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(expectedTeam, It.IsAny<ThroughputFilterMode>()))
+                .Returns(new ForecastThroughputStatus(new RunChartData(), false, null));
 
             var subject = CreateSubject();
 
