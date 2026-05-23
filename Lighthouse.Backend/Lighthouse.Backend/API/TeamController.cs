@@ -1,12 +1,15 @@
-﻿using Lighthouse.Backend.API.DTO;
+﻿using System.Text.Json;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +27,8 @@ namespace Lighthouse.Backend.API
         IPortfolioUpdater portfolioUpdater,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
         IRefreshLogService refreshLogService,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        IForecastFilterRuleService forecastFilterRuleService)
         : ControllerBase
     {
         [HttpGet]
@@ -115,6 +119,16 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
+            var teamForValidation = teamRepository.GetById(teamId);
+            if (teamForValidation != null)
+            {
+                var filterValidation = ValidateForecastFilterRuleSet(teamSetting.ForecastFilterRuleSetJson, teamForValidation);
+                if (!filterValidation.IsValid)
+                {
+                    return BadRequest(filterValidation.ErrorMessage);
+                }
+            }
+
             return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
             {
                 if (team.WorkItemRelatedSettingsChanged(teamSetting))
@@ -138,6 +152,50 @@ namespace Lighthouse.Backend.API
         public ActionResult<TeamSettingDto> GetTeamSettings(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => new TeamSettingDto(team));
+        }
+
+        [HttpGet("forecast-filter/schema")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
+        public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
+        }
+
+        private ForecastFilterValidationResult ValidateForecastFilterRuleSet(string? ruleSetJson, Team team)
+        {
+            if (string.IsNullOrWhiteSpace(ruleSetJson))
+            {
+                return ForecastFilterValidationResult.Valid();
+            }
+
+            WorkItemRuleSet? ruleSet;
+            try
+            {
+                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson);
+            }
+            catch (JsonException)
+            {
+                return ForecastFilterValidationResult.Invalid("Forecast filter rule set is not valid JSON.");
+            }
+
+            if (ruleSet == null || ruleSet.Conditions.Count == 0)
+            {
+                return ForecastFilterValidationResult.Valid();
+            }
+
+            if (!forecastFilterRuleService.ValidateRuleSet(ruleSet, team))
+            {
+                return ForecastFilterValidationResult.Invalid("Forecast filter rule set is invalid: unknown field key, unsupported operator, value exceeds maximum length, or rule count exceeds the allowed maximum.");
+            }
+
+            return ForecastFilterValidationResult.Valid();
+        }
+
+        private sealed record ForecastFilterValidationResult(bool IsValid, string? ErrorMessage)
+        {
+            public static ForecastFilterValidationResult Valid() => new(true, null);
+
+            public static ForecastFilterValidationResult Invalid(string message) => new(false, message);
         }
     }
 }

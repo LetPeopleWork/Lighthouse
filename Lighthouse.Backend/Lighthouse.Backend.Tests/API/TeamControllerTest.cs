@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
+        private Mock<IForecastFilterRuleService> forecastFilterRuleServiceMock;
 
         [SetUp]
         public void Setup()
@@ -37,6 +39,7 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
@@ -682,7 +685,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object, refreshLogServiceMock.Object, rbacAdministrationServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object, refreshLogServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object);
         }
     }
 }

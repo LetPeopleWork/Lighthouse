@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.API.DTO
             FeatureWIP = team.FeatureWIP;
             AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
             DoneItemsCutoffDays = team.DoneItemsCutoffDays;
+            ForecastFilterRuleSetJson = team.ForecastFilterRuleSetJson;
 
             if (team.WorkTrackingSystemConnection != null)
             {
@@ -45,5 +46,7 @@ namespace Lighthouse.Backend.API.DTO
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
 
         public int DoneItemsCutoffDays { get; set; } = 365;
+
+        public string? ForecastFilterRuleSetJson { get; set; }
     }
 }

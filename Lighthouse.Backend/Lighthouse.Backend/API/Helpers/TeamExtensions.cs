@@ -50,6 +50,7 @@ namespace Lighthouse.Backend.API.Helpers
                 team.SystemWIPLimit = teamSetting.SystemWIPLimit;
                 team.ProcessBehaviourChartBaselineStartDate = teamSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;
                 team.ProcessBehaviourChartBaselineEndDate = teamSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;
+                team.ForecastFilterRuleSetJson = teamSetting.ForecastFilterRuleSetJson;
 
                 SyncStates(team, teamSetting);
                 SyncStateMappings(team, teamSetting);
