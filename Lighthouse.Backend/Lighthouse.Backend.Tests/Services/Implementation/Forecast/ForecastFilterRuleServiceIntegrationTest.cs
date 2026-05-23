@@ -1,38 +1,121 @@
-// SCAFFOLD: true
+using System.Text.Json;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Moq;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {
-    /// <summary>
-    /// Wave: DISTILL — RED scaffold for filter-forecast-throughput Slice 01.
-    /// Drives DDD-8 normalisation, DDD-9 premium gate, D8 exclusion semantics,
-    /// invariant #4 (empty-filter no-op), invariant #7 (license-downgrade non-destruction).
-    /// </summary>
     [TestFixture]
     public class ForecastFilterRuleServiceIntegrationTest
     {
+        private Mock<ILicenseService> licenseServiceMock;
+
+        [SetUp]
+        public void SetUp()
+        {
+            licenseServiceMock = new Mock<ILicenseService>();
+        }
+
         [Test]
         public void GetEffectiveRuleSet_FreeTenantWithPersistedRuleSet_ReturnsNull()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-9). DELIVER wave: ForecastFilterRuleService.GetEffectiveRuleSet returns null when ILicenseService.CanUsePremiumFeatures() == false.");
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+            var team = CreateTeam(forecastFilterRuleSetJson: SerializeRuleSet(CreateNonEmptyRuleSet()));
+            var subject = CreateSubject();
+
+            var result = subject.GetEffectiveRuleSet(team);
+
+            Assert.That(result, Is.Null);
         }
 
         [Test]
         public void GetEffectiveRuleSet_PremiumTenantNullJson_ReturnsNull()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-8). DELIVER wave: null JSON normalises to no-filter.");
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var team = CreateTeam(forecastFilterRuleSetJson: null);
+            var subject = CreateSubject();
+
+            var result = subject.GetEffectiveRuleSet(team);
+
+            Assert.That(result, Is.Null);
         }
 
         [Test]
         public void GetEffectiveRuleSet_PremiumTenantZeroConditions_ReturnsNull()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (DDD-8, invariant #4). DELIVER wave: zero conditions normalise to no-filter.");
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var emptyRuleSet = new WorkItemRuleSet { Conditions = [] };
+            var team = CreateTeam(forecastFilterRuleSetJson: SerializeRuleSet(emptyRuleSet));
+            var subject = CreateSubject();
+
+            var result = subject.GetEffectiveRuleSet(team);
+
+            Assert.That(result, Is.Null);
         }
 
         [Test]
         public void GetEffectiveRuleSet_PremiumTenantNonEmptyRuleSet_ReturnsDeserialisedRuleSet()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (US-01). DELIVER wave: deserialise JSON via the same call DeliveryRuleService uses.");
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var ruleSet = CreateNonEmptyRuleSet();
+            var team = CreateTeam(forecastFilterRuleSetJson: SerializeRuleSet(ruleSet));
+            var subject = CreateSubject();
+
+            var result = subject.GetEffectiveRuleSet(team);
+
+            Assert.That(result, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result!.Conditions, Has.Count.EqualTo(1));
+                Assert.That(result.Conditions[0].FieldKey, Is.EqualTo("workitem.type"));
+                Assert.That(result.Conditions[0].Operator, Is.EqualTo("equals"));
+                Assert.That(result.Conditions[0].Value, Is.EqualTo("Bug"));
+            }
+        }
+
+        [Test]
+        public void GetSchema_ReturnsFixedWorkItemFields()
+        {
+            var team = CreateTeam();
+            var subject = CreateSubject();
+
+            var schema = subject.GetSchema(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f.FieldKey == "workitem.type"));
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f.FieldKey == "workitem.state"));
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f.FieldKey == "workitem.name"));
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f.FieldKey == "workitem.referenceid"));
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f.FieldKey == "workitem.parentreferenceid"));
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "workitem.tags", IsMultiValue: true }));
+                Assert.That(schema.Operators, Does.Contain("equals"));
+                Assert.That(schema.Operators, Does.Contain("notequals"));
+                Assert.That(schema.Operators, Does.Contain("contains"));
+                Assert.That(schema.MaxRules, Is.EqualTo(WorkItemRuleSet.MaxRules));
+                Assert.That(schema.MaxValueLength, Is.EqualTo(WorkItemRuleSet.MaxValueLength));
+            }
+        }
+
+        [Test]
+        public void GetSchema_IncludesAdditionalFieldsFromTeamConnection()
+        {
+            var team = CreateTeamWithAdditionalFields(
+                new AdditionalFieldDefinition { Id = 7, DisplayName = "Sprint" },
+                new AdditionalFieldDefinition { Id = 13, DisplayName = "Priority" });
+            var subject = CreateSubject();
+
+            var schema = subject.GetSchema(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "additionalField.7", DisplayName: "Sprint" }));
+                Assert.That(schema.Fields, Has.Some.Matches<WorkItemRuleFieldDefinition>(f => f is { FieldKey: "additionalField.13", DisplayName: "Priority" }));
+            }
         }
 
         [Test]
@@ -63,6 +146,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         public void LicenseReUpgrade_AfterDowngrade_GetEffectiveReturnsOriginalRuleSet()
         {
             Assert.Fail("Not yet implemented — RED scaffold (US-07 invariant). DELIVER wave: re-upgrading restores filtered behaviour without re-configuration.");
+        }
+
+        private ForecastFilterRuleService CreateSubject()
+        {
+            return new ForecastFilterRuleService(
+                new RuleEvaluator<WorkItem>(),
+                new WorkItemFieldProvider(),
+                licenseServiceMock.Object);
+        }
+
+        private static Team CreateTeam(string? forecastFilterRuleSetJson = null)
+        {
+            return new Team
+            {
+                Name = "Test Team",
+                ForecastFilterRuleSetJson = forecastFilterRuleSetJson,
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn" }
+            };
+        }
+
+        private static Team CreateTeamWithAdditionalFields(params AdditionalFieldDefinition[] fields)
+        {
+            var connection = new WorkTrackingSystemConnection { Name = "Conn" };
+            foreach (var field in fields)
+            {
+                connection.AdditionalFieldDefinitions.Add(field);
+            }
+            return new Team
+            {
+                Name = "Test Team",
+                WorkTrackingSystemConnection = connection
+            };
+        }
+
+        private static WorkItemRuleSet CreateNonEmptyRuleSet()
+        {
+            return new WorkItemRuleSet
+            {
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = "workitem.type", Operator = "equals", Value = "Bug" }
+                ]
+            };
+        }
+
+        private static string SerializeRuleSet(WorkItemRuleSet ruleSet)
+        {
+            return JsonSerializer.Serialize(ruleSet);
         }
     }
 }
