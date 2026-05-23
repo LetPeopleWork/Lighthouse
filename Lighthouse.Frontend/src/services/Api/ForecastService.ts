@@ -15,6 +15,7 @@ export interface IForecastService {
 		teamId: number,
 		remainingItems: number | undefined,
 		targetDate: Date | null,
+		applyFilterOverride?: boolean,
 	): Promise<ManualForecast>;
 
 	runItemPrediction(
@@ -42,17 +43,23 @@ export class ForecastService
 		teamId: number,
 		remainingItems: number | undefined,
 		targetDate: Date | null,
+		applyFilterOverride?: boolean,
 	): Promise<ManualForecast> {
 		return this.withErrorHandling(async () => {
 			const requestBody: {
 				targetDate: Date | null;
 				remainingItems?: number;
+				applyFilterOverride?: boolean;
 			} = {
 				targetDate: targetDate,
 			};
 
 			if (remainingItems !== undefined) {
 				requestBody.remainingItems = remainingItems;
+			}
+
+			if (applyFilterOverride !== undefined) {
+				requestBody.applyFilterOverride = applyFilterOverride;
 			}
 
 			const response = await this.apiService.post<IManualForecast>(
