@@ -121,19 +121,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public void Filter_MatchingRule_ExcludesMatchedItems()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (D8 semantics). DELIVER wave: Match returns matched items, Filter excludes them from the returned enumeration.");
+            var subject = CreateSubject();
+            var bug = new WorkItem { ReferenceId = "BUG-1", Type = "Bug", Name = "Crash" };
+            var story = new WorkItem { ReferenceId = "US-1", Type = "User Story", Name = "Feature A" };
+            var anotherStory = new WorkItem { ReferenceId = "US-2", Type = "User Story", Name = "Feature B" };
+            var items = new[] { bug, story, anotherStory };
+
+            var result = subject.Filter(items, CreateNonEmptyRuleSet()).ToList();
+
+            Assert.That(result.Select(i => i.ReferenceId), Is.EquivalentTo(new[] { "US-1", "US-2" }));
         }
 
         [Test]
         public void Filter_NoMatchingRule_ReturnsAllItemsUnchanged()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (D8 semantics).");
+            var subject = CreateSubject();
+            var storyOne = new WorkItem { ReferenceId = "US-1", Type = "User Story", Name = "Feature A" };
+            var storyTwo = new WorkItem { ReferenceId = "US-2", Type = "User Story", Name = "Feature B" };
+            var items = new[] { storyOne, storyTwo };
+
+            var result = subject.Filter(items, CreateNonEmptyRuleSet()).ToList();
+
+            Assert.That(result.Select(i => i.ReferenceId), Is.EquivalentTo(new[] { "US-1", "US-2" }));
         }
 
         [Test]
         public void Filter_RuleMatchesAllItems_ReturnsEmptyEnumeration()
         {
-            Assert.Fail("Not yet implemented — RED scaffold (D5 forecast half upstream — caller handles fallback).");
+            var subject = CreateSubject();
+            var bugOne = new WorkItem { ReferenceId = "BUG-1", Type = "Bug", Name = "Crash" };
+            var bugTwo = new WorkItem { ReferenceId = "BUG-2", Type = "Bug", Name = "Leak" };
+            var items = new[] { bugOne, bugTwo };
+
+            var result = subject.Filter(items, CreateNonEmptyRuleSet()).ToList();
+
+            Assert.That(result, Is.Empty);
         }
 
         [Test]

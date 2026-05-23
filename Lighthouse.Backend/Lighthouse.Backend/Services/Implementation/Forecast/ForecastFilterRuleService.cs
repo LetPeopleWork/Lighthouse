@@ -73,12 +73,39 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         public IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, WorkItemRuleSet ruleSet)
         {
-            throw new InvalidOperationException("Not yet implemented — RED scaffold (D8 semantics: matched items are EXCLUDED). Step 01-08 will call IRuleEvaluator<WorkItem>.Match then exclude.");
+            var materialised = items.ToList();
+            var matched = ruleEvaluator.Match(ruleSet, materialised, fieldProvider);
+            return materialised.Except(matched, WorkItemReferenceIdComparer.Instance).ToList();
         }
 
         public bool ValidateRuleSet(WorkItemRuleSet ruleSet, Team team)
         {
-            throw new InvalidOperationException("Not yet implemented — RED scaffold. Step 01-08 will call IRuleEvaluator<WorkItem>.IsValid against GetSchema(team).");
+            return ruleEvaluator.IsValid(ruleSet, GetSchema(team));
+        }
+
+        private sealed class WorkItemReferenceIdComparer : IEqualityComparer<WorkItem>
+        {
+            internal static readonly WorkItemReferenceIdComparer Instance = new();
+
+            public bool Equals(WorkItem? x, WorkItem? y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return true;
+                }
+
+                if (x is null || y is null)
+                {
+                    return false;
+                }
+
+                return string.Equals(x.ReferenceId, y.ReferenceId, StringComparison.Ordinal);
+            }
+
+            public int GetHashCode(WorkItem obj)
+            {
+                return obj.ReferenceId.GetHashCode(StringComparison.Ordinal);
+            }
         }
     }
 }
