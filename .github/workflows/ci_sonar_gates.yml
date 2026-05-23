@@ -70,4 +70,4 @@ jobs:
       - name: Audit Frontend Dependencies
         if: inputs.frontend-ran && github.ref == 'refs/heads/main'
         working-directory: ./Lighthouse.Frontend
-        run: pnpm audit --audit-level=low
+        run: pnpm audit --audit-level=low --prod
