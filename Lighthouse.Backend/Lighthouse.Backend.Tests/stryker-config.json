@@ -8,7 +8,26 @@
     "mutate": [
       "**/API/AuthorizationController.cs",
       "**/Models/Authorization/RbacUserSummary.cs",
-      "**/Services/Implementation/Authorization/RbacAdministrationService.cs"
+      "**/Services/Implementation/Authorization/RbacAdministrationService.cs",
+      "**/API/ForecastController.cs",
+      "**/API/TeamController.cs",
+      "**/API/TeamMetricsController.cs",
+      "**/API/DTO/BacktestInputDto.cs",
+      "**/API/DTO/BacktestResultDto.cs",
+      "**/API/DTO/ManualForecastDto.cs",
+      "**/API/DTO/TeamSettingDto.cs",
+      "**/API/DTO/WhenForecastDto.cs",
+      "**/API/Helpers/TeamExtensions.cs",
+      "**/Models/Forecast/AggregatedWhenForecast.cs",
+      "**/Models/Forecast/WhenForecast.cs",
+      "**/Models/Metrics/ThroughputFilterMode.cs",
+      "**/Models/Team.cs",
+      "**/Services/Implementation/Forecast/ForecastFilterRuleService.cs",
+      "**/Services/Implementation/Forecast/ForecastService.cs",
+      "**/Services/Implementation/TeamMetricsService.cs",
+      "**/Services/Implementation/WorkItemRules/FeatureFieldProvider.cs",
+      "**/Services/Implementation/WorkItemRules/RuleEvaluator.cs",
+      "**/Services/Implementation/WorkItemRules/WorkItemFieldProvider.cs"
     ],
     "thresholds": {
       "high": 80,
