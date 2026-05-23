@@ -6,10 +6,10 @@
 **Epic**: ADO #4896 (https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/4896)
 **Customer**: Liz / JLP at LetPeopleWork
 **Waves shipped**: DISCUSS → DESIGN → DISTILL → DELIVER (2026-05-20 → 2026-05-23)
-**Commit range**: `34c4b0c3..1fed9c3e` (origin/main) — 30 commits inclusive of two CI infra fixes
-**Status**: DELIVER complete with one **open defect under interactive debug** and a small set of documented follow-ups (see below).
+**Commit range**: `34c4b0c3..498a02d9` (origin/main) — ~40 commits inclusive of CI infra fixes, post-archive defect resolution, and the H-1 chip-tooltip wiring.
+**Status**: DELIVER complete. OD-1 (toggle render) **RESOLVED**. OD-2 (BaseMetricsView prop forwarding) **partially resolved** (chip tooltip done; PBC server-side toggle deferred). OD-3 (Playwright walking skeleton) **closed** by deletion — spec to be rewritten when remaining wiring lands. One quality follow-up remains: mutation kill rate 69.17%, below the 80% gate.
 
-> WARNING — This archive is being written WHILE the toggle-render defect on `TeamMetricsView` is still under active debug by the user. The feature is functionally complete on the configure / forecast / backtest / chart paths verified in CI, but the Throughput Metrics page (Team detail → Metrics tab) currently fails to surface the filter chip + toggle because of a server round-trip issue described in "Open defects" below. The archive is being created at the user's explicit request to lock in everything that did ship before the next session.
+> UPDATE — This archive's earlier "WARNING" section described OD-1 as under active debug. Resolved in commit `8deba479` (2026-05-23): `ForecastFilterRuleService.GetEffectiveRuleSet` was calling `JsonSerializer.Deserialize<WorkItemRuleSet>(...)` without `PropertyNameCaseInsensitive = true`. The FE writes camelCase JSON; `Conditions` therefore bound to an empty list at the read path and `GetEffectiveRuleSet` returned `null`, so the Metrics-page toggle never rendered. Fix: shared `static readonly JsonSerializerOptions { PropertyNameCaseInsensitive = true }` passed to the Deserialize call. Test: `GetEffectiveRuleSet_PremiumTenantCamelCaseJson_ReturnsDeserialisedRuleSet`. New memory filed: `feedback_systemtextjson_case_insensitive`.
 
 ---
 
@@ -67,50 +67,40 @@ Mutation testing per CLAUDE.md (`per-feature` strategy, ≥ 80% kill rate) is **
 
 ---
 
-## Open defects
+## Open defects (post-archive resolution status)
 
-These three items are real, reproducible, and carry forward into the next session. Each is logged with reproduction steps and suspected cause so the next agent / human can pick up directly.
+The three items below carried forward from the original archive write at `c7824d0f`. Status updates landed in commits `8deba479`, `16eecd70`, `35017162`, and `498a02d9`:
 
-### OD-1 — Throughput Metrics page never renders chip + toggle (under active debug)
+### OD-1 — RESOLVED (commit `8deba479`, 2026-05-23)
 
-**Symptom**: On a Premium tenant with a saved non-empty `ForecastFilterRuleSetJson`, opening Team detail → Metrics tab does not render `FilteredThroughputChip` or `ThroughputChartFilterToggle`. The browser-side fetch of `getTeamSettings(team.id)` returns `forecastFilterRuleSetJson: null` even though the FE PUT verifiably saved a non-null rule set (confirmed via network capture before this archive).
+**Original symptom**: On a Premium tenant with a saved non-empty `ForecastFilterRuleSetJson`, opening Team detail → Metrics tab did not render `FilteredThroughputChip` or `ThroughputChartFilterToggle`. The browser-side fetch of `getTeamSettings(team.id)` returned `forecastFilterRuleSetJson: null` even though the FE PUT had saved a non-null rule set.
 
-**Reproduction**:
+**Actual root cause** (different from the original 5-Whys hypothesis on EF tracking races): `ForecastFilterRuleService.GetEffectiveRuleSet` called `JsonSerializer.Deserialize<WorkItemRuleSet>(team.ForecastFilterRuleSetJson)` *without* `PropertyNameCaseInsensitive = true`. The FE serialises the rule set as camelCase (`{"version":1,"conditions":[{"fieldKey":"workitem.type","operator":"equals","value":"Bug"}]}`). The C# record exposes `Conditions` in PascalCase. System.Text.Json defaults to case-sensitive matching, so `Conditions` bound to an empty list. Downstream guard `if (ruleSet == null || ruleSet.Conditions.Count == 0) return null` returned `null`, so `BaseMetricsView`'s `hasForecastFilter` derivation was always false on the Metrics page → toggle never rendered. ASP.NET Core's controller binding (used by the PUT validation path) DOES apply case-insensitivity, so the validation step and the JSON column write looked correct; only the *read* path via direct `JsonSerializer.Deserialize` was silently broken.
 
-```
-cd /storage/repos/Lighthouse/Lighthouse.EndToEndTests
-LIGHTHOUSEURL=http://localhost:5169/ npx playwright test tests/specs/teams/ForecastFilter.spec.ts
-```
+**Fix**: shared `private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true }` on `ForecastFilterRuleService`, passed to the `Deserialize<WorkItemRuleSet>` call. The DbContext-race hypothesis turned out to be wrong: the DB row was always populated; only the in-process deserialization was empty.
 
-Fails at `expect(page.getByRole("group", { name: /Throughput filter view/i })).toBeVisible()`.
+**Test**: `ForecastFilterRuleServiceIntegrationTest.GetEffectiveRuleSet_PremiumTenantCamelCaseJson_ReturnsDeserialisedRuleSet` — fixture-JSON in camelCase, asserts `result` is non-null.
 
-**Suspected root cause (5 Whys)**:
+**Memory filed for future deliveries**: `feedback_systemtextjson_case_insensitive` — any non-controller-boundary `JsonSerializer.Deserialize` on FE-originated JSON in this .NET codebase MUST pass `PropertyNameCaseInsensitive = true`. Validation passing vacuously is the silent-defect class.
 
-1. Why doesn't the chip render? → `forecastFilterRuleSetJson` is `null` in the GET response that `TeamMetricsView` reads.
-2. Why is the FE GET returning null when the PUT just succeeded? → The backing `Team` row in the DB has `ForecastFilterRuleSetJson = NULL`.
-3. Why is it null in the DB? → It was non-null after the PUT but a later write overwrote it.
-4. Why did a later write overwrite it? → `POST /teams/{id}` (any subsequent save) triggers `TeamUpdater.Update(id)` which loads the team in a *new* DbContext scope, and `TeamMetricsService.UpdateTeamMetrics` calls `workItemRepository.Save()` while still holding the *old* team snapshot.
-5. Why does the old snapshot win? → EF change tracking flushes the stale entity reference (loaded before the PUT settled in this scope) on top of the just-saved row.
+**Related cosmetic fix in the same commit**: collapsed a vacuous OR-operand in `TeamMetricsService` (`mode == Respect && rs == null || rs == null` was logically equivalent to `rs == null`).
 
-**Status**: User is interactively debugging via DevTools at the time of archive. Expected to land in a follow-on commit. The `TeamMetricsView.tsx` working-tree change visible at archive time is part of that debugging.
+### OD-2 — PARTIALLY RESOLVED (commit `498a02d9`, 2026-05-23)
 
-**Risk**: All other surfaces (Feature Forecast, Team Forecast, Backtest, Run Chart Raw view) verifiably work — this defect is **scoped to the Metrics page server-view branch only**.
+**Resolved half**: `BaseMetricsView` now passes `excludedSummary` to `ThroughputChartFilterToggle` for the Run Chart slot. New helper `formatConditions(conditions): string` in `evaluateCondition.ts` produces a human-readable summary string per the existing `FilteredThroughputChip.test.tsx` expectation (`"Type = Bug; Tags contains \"maintenance\""`). 7 Vitest cases on the helper, including per-operator, multi-condition join, additionalField rendering, case-insensitivity, and empty-array edge case.
 
-### OD-2 — `BaseMetricsView` does not pass props through to `ThroughputChartFilterToggle`
+**Deferred half**: PBC server-side toggle wiring. `BaseMetricsView`'s `buildPbcWidget` does not yet:
+- Render a `<ThroughputChartFilterToggle chartKind="pbc" onServerViewChange={...}>`
+- Wire `onServerViewChange` to a refetch handler on the PBC endpoint with `?view=filtered`
+- Extend `useMetricsData` to accept a `view` parameter and trigger a re-fetch
 
-**Symptom**: Even if OD-1 is resolved, the PBC server-side branch will not function because `BaseMetricsView` does not forward `excludedSummary` and `onServerViewChange` to its `ThroughputChartFilterToggle` child. The toggle therefore cannot trigger a refetch with `?view=filtered`, and the chip has no `excludedSummary` payload to render.
+A code-comment marker exists at the `buildPbcWidget` function pointing at this archive entry. This is real but bounded work — requires touching the hook and the PBC widget; estimated ~1-2h focused crafter session.
 
-**Source**: Adversarial review (Phase 5) finding **H-1**, verified.
+### OD-3 — CLOSED-BY-DELETION (commit `35017162`, 2026-05-23)
 
-**Fix**: in `Lighthouse.Frontend/src/pages/Teams/Detail/BaseMetricsView.tsx`, surface the two props from the parent component and thread them into the toggle. Add a Vitest test asserting the toggle is invoked with both props when a filter is configured.
+**Resolution**: `Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts` and its companion `ForecastFilter.feature` were both deleted. The spec had been red on CI for slice-end wiring gaps and the minimal "save-and-persist" variant flaked on local back-to-back runs once the test fixture teardown started racing the schema endpoint. The user's directive was to remove both files and rewrite from scratch once the remaining wiring (OD-2 PBC half) lands. Backend integration tests + Vitest unit tests for the underlying components remain green and cover the per-component behaviour at the right layer.
 
-**Coupling with OD-1**: should be fixed *together* with OD-1 — the round-trip behaviour cannot be observed end-to-end until both land.
-
-### OD-3 — Walking-skeleton Playwright spec is partial
-
-**Symptom**: `Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts` covers configure → Team Forecast → Backtest → Run Chart but **skips the Feature Forecast block** (commit `c3a42601` swapped the Features-tab assertion for a "navigate back to Overview" call) because the existing `testWithUpdatedTeams` Playwright fixture does not seed a Portfolio + Feature.
-
-**Fix**: extend the fixture (`Lighthouse.EndToEndTests/tests/fixtures/...`) to seed a Portfolio with one Feature whose forecast surfaces the chip. Then restore the Features-tab assertion in the spec.
+**Re-write plan when picked back up**: extend the `testWithUpdatedTeams` fixture to seed a Portfolio + Feature; restore the configure → Team Forecast → Backtest → Metrics chain end-to-end; run locally against `dotnet run` + premium-licensed backend per the new memory `reference_premium_license_dev_seed`.
 
 ---
 
@@ -190,20 +180,33 @@ Three EF migrations shipped in this feature (`Team.ForecastFilterRuleSetJson`, t
 - `3069c3b0` fix(ci): remove stray `.claude/worktrees` gitlink that broke Detect Changes job
 - `a9028034` fix(ci): actually remove the gitlink from HEAD
 
+### Post-archive defect resolution + CI close-out (after `c7824d0f`)
+
+- `f0482d56`..`3f7d2af9` (5 commits) refactor(forecast): L1-L6 pass on slice-01-05 production code (exclusions list honoured per Phase 5 review)
+- `8deba479` fix(forecast): deserialise FE-camelCase JSON in ForecastFilterRuleService — **the OD-1 resolution**
+- `16eecd70` test(forecast): activate US-07 license-downgrade scaffolds — DDD-9 read-path gate
+- `3fb5feda` style(ci): clear 14 SonarCloud new-code violations from slice 01-04 (CA1861 x 8, NUnit2045 x 2, S1144, S2325, CA1806, S107 frontend)
+- `757de810` docs(ci-learnings): record CA1806, S2325+S1144, frontend S107 rules + CA1861/NUnit2045 recurrence counts
+- `35017162` test(forecast): remove ForecastFilter Playwright spec + Gherkin companion — **the OD-3 close-by-deletion**
+- `1cf172f4` / `de47c594` / `a8a968ef` (range-form, then bare) attempted `pnpm.overrides` for `qs` security advisory — reverted at `3187d37f` because both formats trip `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` in CI's `--frozen-lockfile` despite local pnpm being happy (root cause unresolved; ledgered)
+- `3187d37f` revert(ci): drop pnpm.overrides — restores Verify Frontend + Package App + verifysqlite + verifypostgres green; sonar-gates remains red on the qs audit
+- `3bd3d4e0` docs(ci-learnings): correct pnpm.overrides entry — root cause unresolved, rollback workaround in place
+- `498a02d9` fix(forecast): thread excludedSummary into ThroughputChartFilterToggle — **the OD-2 chip-tooltip half**
+
 ---
 
 ## Follow-ups (carry into next session)
 
-1. **OD-1** — Fix the TeamMetricsView round-trip defect. Interactive debug already in progress; the working-tree edit on `TeamMetricsView.tsx` at archive time belongs to this work.
-2. **OD-2 / H-1** — Wire `excludedSummary` + `onServerViewChange` through `BaseMetricsView` to `ThroughputChartFilterToggle`; add a Vitest test to lock it in.
-3. **OD-3** — Extend the `testWithUpdatedTeams` Playwright fixture to seed a Portfolio + Feature so the walking-skeleton spec can re-cover the Feature Forecast chip.
-4. **Phase 4 L1-L6 refactor pass** — deferred this session. Recommended targets: `TeamMetricsService` (length + branching on `ThroughputFilterMode`), `ForecastFilterRuleService` (the `GetEffectiveRuleSet` / `Filter` interplay), `ForecastSettingsComponent` (premium-gating branching), `TeamMetricsView` (post-fix).
-5. **Phase 6 mutation testing** — Stryker configs in place. Run:
-   - Backend: `dotnet stryker -f stryker-config.json`
-   - Frontend: `pnpm stryker run vitest.stryker.filter-forecast.config.ts`
-   Verify ≥ 80% kill rate per CLAUDE.md `per-feature` strategy.
-6. **Memory candidate** — file `nW reference` titled "Premium license dev seed for Lighthouse" capturing the `POST /api/v1/license/import` + `valid_not_expired_license.json` recipe.
-7. **Backend integration test for the round-trip** (per L-3) — `ForecastFilterRoundTripIntegrationTest.cs` using `WebApplicationFactory` + EF InMemory.
+1. ~~**OD-1**~~ — RESOLVED `8deba479`.
+2. **OD-2 PBC server-side half** — Wire `chartKind="pbc"` toggle into `buildPbcWidget` in `BaseMetricsView.tsx`. Extend `useMetricsData` hook with a `view` parameter; expose a refetch handler the toggle's `onServerViewChange` invokes; pass it down via the `filterToggle` slot on `ProcessBehaviourChart`. Estimated: 1-2h focused crafter session.
+3. ~~**OD-3**~~ — Closed by deletion at `35017162`. When picked back up: extend `testWithUpdatedTeams` fixture to seed a Portfolio + Feature; rewrite the spec from scratch; run locally per `reference_premium_license_dev_seed` memory.
+4. **Mutation testing under 80% gate** — re-ran 2026-05-23 after the JSON-case fix + scaffold activations + CA1861 hoists: **69.17%** (was 69.09%; +0.08%). Worst slice files: `TeamMetricsService` 48.2% (110 surviving mutants, the biggest opportunity), `ForecastService` 57.5%, `ForecastFilterRuleService` 69.2%, `RuleEvaluator` 73.2%, `ForecastController` 79.2%, plus four small files (`WhenForecastDto`, `AggregatedWhenForecast`, `TeamSettingDto`) below 80%. ~99 more mutants need killing to clear the gate. Estimated: 2-4h focused crafter session targeting `TeamMetricsService` + `ForecastService`.
+5. **L1-L6 refactor pass** — landed for slice 01-05 production code in `f0482d56..3f7d2af9` (5 commits, 10 files). The exclusions list (the toggle-render path) was honoured — that path can be revisited now that OD-1 + the OD-2 chip-tooltip half are landed.
+6. ~~**Premium license dev seed memory**~~ — filed as `reference_premium_license_dev_seed`.
+7. **CI sonar-gates audit gap (qs vulnerability)** — `pnpm audit --audit-level=low` flags GHSA-q8mj-m7cp-5q26 (qs DoS, moderate, transitive via `@stryker-mutator/core`). `pnpm.overrides` workaround attempted but breaks Verify Frontend's `--frozen-lockfile` (root cause unresolved). Currently accept the audit failure; Dependabot PR #80 tracks upstream resolution.
+8. **Backend integration test for the round-trip** (per L-3) — `ForecastFilterRoundTripIntegrationTest.cs` using `WebApplicationFactory` + EF Sqlite would lock OD-1 in. The current `GetEffectiveRuleSet_PremiumTenantCamelCaseJson_ReturnsDeserialisedRuleSet` unit test exercises the deserializer at the service-layer entry point but does not exercise the full PUT-then-GET round-trip.
+9. **ADO sync** — Epic #4896 + child stories US-01..US-07 transition Active → Resolved. Deferred per user; outlined in the `/clean-ci` session notes for the next dispatch.
+10. **Docs page screenshot regen** — `/docs/teams/edit.md` got the Forecast Filter (Premium) text-only section at commit `34619ab4`. Per `feedback_docs_wait_for_confirmation`, regen screenshots via `/update-docs` once the OD-2 PBC half lands and the chip tooltip is visually verified end-to-end.
 
 ---
 
