@@ -509,12 +509,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var effectiveRuleSet = forecastFilterRuleService.GetEffectiveRuleSet(team);
-            if (mode == ThroughputFilterMode.RespectTeamSetting && effectiveRuleSet == null)
-            {
-                return new ForecastThroughputStatus(unfiltered, false, null);
-            }
-
-            if (effectiveRuleSet == null)
+            if (mode == ThroughputFilterMode.RespectTeamSetting && effectiveRuleSet == null || effectiveRuleSet == null)
             {
                 return new ForecastThroughputStatus(unfiltered, false, null);
             }

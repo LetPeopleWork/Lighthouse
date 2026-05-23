@@ -7,25 +7,17 @@ using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
-    public sealed class ForecastFilterRuleService : IForecastFilterRuleService
+    public sealed class ForecastFilterRuleService(
+        IRuleEvaluator<WorkItem> ruleEvaluator,
+        IRuleFieldProvider<WorkItem> fieldProvider,
+        ILicenseService licenseService)
+        : IForecastFilterRuleService
     {
         private const string EqualsOperator = "equals";
         private const string NotEqualsOperator = "notequals";
         private const string ContainsOperator = "contains";
-
-        private readonly IRuleEvaluator<WorkItem> ruleEvaluator;
-        private readonly IRuleFieldProvider<WorkItem> fieldProvider;
-        private readonly ILicenseService licenseService;
-
-        public ForecastFilterRuleService(
-            IRuleEvaluator<WorkItem> ruleEvaluator,
-            IRuleFieldProvider<WorkItem> fieldProvider,
-            ILicenseService licenseService)
-        {
-            this.ruleEvaluator = ruleEvaluator;
-            this.fieldProvider = fieldProvider;
-            this.licenseService = licenseService;
-        }
+        
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
         public WorkItemRuleSchema GetSchema(Team team)
         {
@@ -61,8 +53,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 return null;
             }
-
-            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(team.ForecastFilterRuleSetJson);
+            
+            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(team.ForecastFilterRuleSetJson, JsonSerializerOptions);
             if (ruleSet == null || ruleSet.Conditions.Count == 0)
             {
                 return null;

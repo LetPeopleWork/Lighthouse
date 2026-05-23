@@ -169,6 +169,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             Assert.Fail("Not yet implemented — RED scaffold (US-07 invariant). DELIVER wave: re-upgrading restores filtered behaviour without re-configuration.");
         }
+        
+        [Test]
+        public void GetEffectiveRuleSet_PremiumTenantCamelCaseJson_ReturnsDeserialisedRuleSet()
+        {
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            // Simulates JSON as stored/sent from the frontend (camelCase keys)
+            const string camelCaseJson = """{"version":1,"conditions":[{"fieldKey":"workitem.type","operator":"equals","value":"Bug"}]}""";
+            var team = CreateTeam(forecastFilterRuleSetJson: camelCaseJson);
+            var subject = CreateSubject();
+
+            var result = subject.GetEffectiveRuleSet(team);
+
+            Assert.That(result, Is.Not.Null);
+        }
 
         private ForecastFilterRuleService CreateSubject()
         {
