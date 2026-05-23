@@ -70,7 +70,7 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"qs@>=6.11.1 <=6.15.1": "^6.15.2"
+			"qs": "^6.15.2"
 		},
 		"onlyBuiltDependencies": [
 			"esbuild"
