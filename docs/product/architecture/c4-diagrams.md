@@ -366,3 +366,119 @@ The diagram makes three architectural commitments visible:
 2. **Single filter seam** (`TeamMetricsService` — and nothing else — calls `IForecastFilterRuleService.Filter`); enforced by ArchUnitNET (DDD-4).
 3. **Single license gate for this feature** (`ForecastFilterRuleService.GetEffectiveRuleSet`); enforced by ArchUnitNET (DDD-9).
 
+---
+
+# C4 Architecture Diagrams — time-in-state-and-staleness
+
+Feature: time-in-state-and-staleness (Epic 4144 MVP bundle, slice A+B1+D)
+Wave: DESIGN
+Date: 2026-05-24
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+
+---
+
+## C4 Level 1 — System Context (delta)
+
+The Lighthouse system context (RBAC + OAuth + filter-forecast-throughput baselines) is unchanged. This feature adds **no** new external actors and **no** new external systems. It introduces a focus persona — `Flow Coach` — already represented across the RBAC personas, and clarifies the read-side relationship with the existing work-tracking systems: Lighthouse now CAPTURES state-transition history (where the source exposes it) rather than only deriving Started / Closed boundary dates.
+
+```mermaid
+C4Context
+    title System Context — Time in State and Staleness
+
+    Person(coach, "Flow Coach", "Team lead / agile coach / scrum master / RTE. Runs flow reviews; needs to spot stuck items at a glance.")
+    Person(teamAdmin, "Team Admin", "Configures the team's staleness threshold (days).")
+    Person(portfolioAdmin, "Portfolio Admin", "Configures the portfolio's staleness threshold (days).")
+
+    System(lighthouse, "Lighthouse", "Software delivery forecasting tool. New: persisted state-transition history per work item; per-item Time-in-State badge with red emphasis above a Team/Portfolio-configured threshold. Data foundation for two sibling MVP features (aging-pace-percentiles, state-time-cumulative-view).")
+
+    System_Ext(wts, "Work-Tracking System", "Jira / Azure DevOps / Linear / CSV. Source of WorkItems; for Jira/ADO/Linear the source-system also exposes per-item state-transition history (changelog / revisions / GraphQL history) used by Lighthouse as source-of-truth. CSV has no history; Lighthouse falls back to sync-cadence delta capture.")
+
+    Rel(coach, lighthouse, "Reads team / portfolio work-item table; spots red badges via")
+    Rel(teamAdmin, lighthouse, "Configures Team staleness threshold via")
+    Rel(portfolioAdmin, lighthouse, "Configures Portfolio staleness threshold via")
+    Rel(lighthouse, wts, "Reads work items AND state-transition history (where exposed) from", "HTTPS / GraphQL / file system")
+```
+
+---
+
+## C4 Level 2 — Container (delta)
+
+No new containers. The existing Frontend SPA, Backend API, Database, and E2E Test Runner all gain additive responsibilities. The Database container gains one new table (`WorkItemStateTransitions`) and two new columns (`WorkItems.CurrentStateEnteredAt`, `WorkTrackingSystemOptionsOwner.StalenessThresholdDays`). The Backend API extends the existing sync-path inside `WorkItemService.RefreshWorkItems` and the existing `WorkItemDto` projection. The Frontend SPA extends the existing work-item-table column rendering and adds a `Staleness Threshold (days)` input on the Team and Portfolio settings forms.
+
+```mermaid
+C4Container
+    title Container Diagram — Time in State and Staleness
+
+    Person(user, "Authenticated User", "Flow Coach / Team Admin / Portfolio Admin (existing RBAC roles)")
+
+    Container(spa, "Frontend SPA", "React 18 + TypeScript + Material UI", "Renders new TimeInStateBadge per work-item row (extends WorkItemsDialog). Renders Staleness Threshold input on Team and Portfolio settings forms (gated by useRbac).")
+    Container(api, "Backend API", "C# .NET 8 ASP.NET Core Web API", "Captures state transitions inside WorkItemService.RefreshWorkItems (per-connector capability flag). Persists WorkItemStateTransition rows and WorkItem.CurrentStateEnteredAt. Surfaces currentStateEnteredAt + approximate on WorkItemDto. Round-trips stalenessThresholdDays via TeamSettingDto / PortfolioSettingDto. Ports-and-adapters.")
+    ContainerDb(db, "Database", "SQLite (dev/test) / PostgreSQL (prod) via EF Core", "Adds WorkItemStateTransitions table (FK→WorkItem cascade delete; composite index on (WorkItemId, TransitionedAt)). Adds WorkItems.CurrentStateEnteredAt nullable column. Adds WorkTrackingSystemOptionsOwner.StalenessThresholdDays column (defaults 7 / 14 applied via entity initialiser).")
+    Container(e2e, "E2E Test Runner", "Playwright + TypeScript", "One @flow-coach E2E covers the badge appearance and threshold-change-on-render. Per-connector integration tests live in NUnit (faster, deterministic).")
+
+    System_Ext(wts, "Work-Tracking System", "Jira / ADO / Linear / CSV")
+
+    Rel(user, spa, "Navigates application via", "HTTPS")
+    Rel(spa, api, "GET /api/v1/teams/{id}/metrics/wip, GET /api/v1/teams/{id}/metrics/cycleTimeData (extended WorkItemDto); PUT /api/v1/teams/{id} (extended TeamSettingDto); PUT /api/v1/portfolios/{id} (extended PortfolioSettingDto)", "HTTPS / JSON")
+    Rel(api, db, "Reads WorkItems + WorkItemStateTransitions; writes both atomically per sync via", "EF Core")
+    Rel(api, wts, "Polls WorkItems AND state-transition history per existing connector path (extended)", "HTTPS / GraphQL / file system")
+    Rel(e2e, spa, "Drives browser interactions against", "Playwright CDP")
+    Rel(e2e, api, "Calls API helpers for test setup against", "HTTPS / JSON")
+```
+
+---
+
+## C4 Level 3 — Component: Transition Capture and Time-in-State Domain
+
+The transition-capture dispatch (ADR-017) is the architecturally significant subsystem of this feature. This diagram makes the capability-flag dispatch, the single-seam invariant (`WorkItemService.RefreshWorkItems` is the only writer), and the consumer-facing repository surface explicit.
+
+```mermaid
+C4Component
+    title Component Diagram — Transition Capture and Time-in-State Domain (Backend)
+
+    Container_Boundary(api, "Backend API") {
+        Component(teamMetricsCtrl, "TeamMetricsController (existing, EXTENDED)", "ASP.NET Core ApiController", "GET /metrics/wip and /metrics/cycleTimeData unchanged routes; WorkItemDto payload gains currentStateEnteredAt + approximate.")
+        Component(teamCtrl, "TeamController (existing, EXTENDED)", "ASP.NET Core ApiController", "PUT /api/v1/teams/{id} accepts stalenessThresholdDays via TeamSettingDto.")
+        Component(portfolioCtrl, "PortfolioController (existing, EXTENDED)", "ASP.NET Core ApiController", "PUT /api/v1/portfolios/{id} accepts stalenessThresholdDays via PortfolioSettingDto.")
+
+        Component(workItemSvc, "WorkItemService.RefreshWorkItems (existing, EXTENDED)", "C# class", "ONLY writer of WorkItemStateTransitions and ONLY mutator of WorkItem.CurrentStateEnteredAt. Branches on IWorkTrackingConnector.SupportsTransitionHistory: true = persist SyncedTransitions + derive CurrentStateEnteredAt from them; false = sync-delta synthetic transition with TransitionedAt = UtcNow. All writes flush in one SaveChangesAsync.")
+
+        Component(connectorPort, "IWorkTrackingConnector (existing, EXTENDED)", "C# interface", "Adds bool SupportsTransitionHistory. Existing GetWorkItemsForTeam(Team) now also populates WorkItemBase.SyncedTransitions on each item when capability is true.")
+        Component(jiraConn, "JiraWorkTrackingConnector (existing, EXTENDED) + IssueFactory", "C# class", "SupportsTransitionHistory=true. Extends GetTransitionDate / ExtractDateOfStateTransitionFromHistory to emit every status transition (not just boundary). Source-of-truth: changelog histories field.")
+        Component(adoConn, "AzureDevOpsWorkTrackingConnector (existing, EXTENDED)", "C# class", "SupportsTransitionHistory=true. Extends GetStateTransitionDateThrottled to emit every (fromState, toState, changedDate) from witClient.GetRevisionsAsync.")
+        Component(linearConn, "LinearWorkTrackingConnector (existing, EXTENDED)", "C# class", "SupportsTransitionHistory=true with per-connection runtime downgrade if GraphQL history field unsupported. Extends IssueNode query with history { nodes { fromState toState createdAt } }.")
+        Component(csvConn, "CsvWorkTrackingConnector (existing, EXTENDED)", "C# class", "SupportsTransitionHistory=false. SyncedTransitions always empty; WorkItemService runs sync-delta.")
+
+        Component(transitionRepo, "IWorkItemStateTransitionRepository + WorkItemStateTransitionRepository", "C# port + impl (NEW)", "Extends IRepository<WorkItemStateTransition>. Sole abstraction layer for sibling MVP consumers (aging-pace-percentiles, state-time-cumulative-view).")
+        Component(workItemRepo, "IWorkItemRepository (existing, NO CHANGE)", "C# port", "Continues to expose WorkItem read/write — WorkItem.CurrentStateEnteredAt is a plain property, no new repository method needed.")
+        Component(efCtx, "LighthouseAppContext (existing, EXTENDED)", "EF Core DbContext", "Adds DbSet<WorkItemStateTransition> with FK→WorkItem cascade delete and composite index (WorkItemId, TransitionedAt). Existing UtcDateTimeConverter applied automatically.")
+
+        Component(workItemDto, "WorkItemDto (existing, EXTENDED)", "C# record/class", "Gains CurrentStateEnteredAt: DateTime?, Approximate: bool.")
+        Component(settingsBase, "SettingsOwnerDtoBase (existing, EXTENDED)", "C# class", "Gains StalenessThresholdDays: int.")
+    }
+
+    Rel(teamMetricsCtrl, workItemRepo, "reads via")
+    Rel(teamMetricsCtrl, workItemDto, "projects via")
+    Rel(teamCtrl, settingsBase, "via TeamSettingDto round-trip")
+    Rel(portfolioCtrl, settingsBase, "via PortfolioSettingDto round-trip")
+
+    Rel(workItemSvc, connectorPort, "polls SyncedTransitions + State via")
+    Rel(workItemSvc, transitionRepo, "writes new transition rows via")
+    Rel(workItemSvc, workItemRepo, "updates WorkItem.CurrentStateEnteredAt via")
+
+    Rel(jiraConn, connectorPort, "implements")
+    Rel(adoConn, connectorPort, "implements")
+    Rel(linearConn, connectorPort, "implements")
+    Rel(csvConn, connectorPort, "implements")
+
+    Rel(transitionRepo, efCtx, "reads / writes WorkItemStateTransitions via")
+    Rel(workItemRepo, efCtx, "reads / writes WorkItems via")
+```
+
+The diagram makes four architectural commitments visible:
+
+1. **Single capture seam** — `WorkItemService.RefreshWorkItems` is the only mutator of `WorkItem.CurrentStateEnteredAt` and the only writer of `WorkItemStateTransition` rows (ADR-016 + ADR-017; ArchUnitNET-enforced).
+2. **Capability-flagged dispatch** — `IWorkTrackingConnector.SupportsTransitionHistory` is the single branch point. Adding a 5th connector means implementing the interface and setting the flag — zero touches to `WorkItemService.RefreshWorkItems` (ADR-017).
+3. **Standalone transition entity** — `WorkItem` holds NO transition navigation; the work-item-table read path loads zero transition rows (ADR-015; ArchUnitNET-enforced).
+4. **Consumer-facing surface is the repository, not a service** — sibling MVP DESIGNs (`aging-pace-percentiles`, `state-time-cumulative-view`) consume `IWorkItemStateTransitionRepository` directly. No shared `IPerStateAggregationService` is introduced (ADR-018; rationale documented for future readers).
+

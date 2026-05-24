@@ -179,3 +179,178 @@ KPIs will be appended to `docs/product/kpi-contracts.yaml` at the DEVOPS handoff
 **Feature type**: cross-cutting (sync layer + persistence + 2 UI surfaces + 2 settings forms).
 
 **Upstream changes**: none. DISCOVER and DIVERGE were skipped because the Epic is community-validated by the Productboard + Community tags. No prior assumption is contradicted.
+
+## Wave: DESIGN / [REF] DDD list
+
+| ID | Decision | Verdict | One-line rationale |
+|---|---|---|---|
+| DDD-1 | `WorkItemStateTransition` is a standalone entity with FK→WorkItem (not an owned collection, not a JSON column) | Locked | Consumer aggregate-query friendliness + read-path performance for the work-item table; see ADR-015 |
+| DDD-2 | `WorkItem.CurrentStateEnteredAt` is a sync-time-persisted column (not a query-time MAX over transitions, not a materialised view) | Locked | Work-item table renders the badge with one SELECT, zero subqueries; see ADR-016 |
+| DDD-3 | Transition capture dispatch is a per-connector `SupportsTransitionHistory` boolean; sync-delta fallback lives in `WorkItemService.RefreshWorkItems` | Locked | One seam, explicit capability declaration, observable Linear runtime downgrade; see ADR-017 |
+| DDD-4 | Shared `IPerStateAggregationService` is NOT introduced by this DESIGN | Locked (deferred to consumer DESIGNs) | Sibling consumer semantics diverge (completed-only-window-distribution vs full-duration-frame-inclusion); helper would conflate. Sibling DESIGNs consume `IWorkItemStateTransitionRepository` directly; ADR-018 |
+| DDD-5 | `StalenessThresholdDays` lives on `WorkTrackingSystemOptionsOwner` (inherited by both `Team` and `Portfolio`); defaults applied via entity initialiser (`= 7` for Team, `= 14` for Portfolio) | Locked | DISCUSS D8 mandates per-Team and per-Portfolio with no per-state breakdown; shared base class avoids two parallel migrations |
+| DDD-6 | `WorkItemService.RefreshWorkItems` is the ONLY writer of `WorkItemStateTransition` rows AND the ONLY mutator of `WorkItem.CurrentStateEnteredAt`. Both writes flush in one `SaveChangesAsync` | Locked | Aggregate-consistency invariant by-construction; ArchUnitNET-enforced |
+| DDD-7 | Transition idempotency: dedup by `(WorkItemId, ToState, TransitionedAt)` on every sync | Locked | Re-running the same sync (Jira/ADO re-fetch with full `expand=changelog`) must not produce duplicate rows; integration test asserts |
+| DDD-8 | Per-render staleness comparison is client-side, driven by `currentStateEnteredAt` + `stalenessThresholdDays` on the FE | Locked | DISCUSS US-02 AC line 3 ("Threshold changes take effect on the next page render — no sync required"); no backend round-trip on threshold edit |
+| DDD-9 | The `WorkItemDto.Approximate: bool` flag carries the badge tooltip distinction. Sibling consumers (`aging-pace-percentiles`, `state-time-cumulative-view`) consume transition rows uniformly — only the badge UX surfaces capability |  Locked | Sibling DESIGNs do NOT need to branch on transition origin; the distinction lives only at the FE badge layer |
+| DDD-10 | Linear connector extends GraphQL query with `history` connection; runtime downgrade to sync-delta if the field is unsupported per connection (logged once, badge tooltip surfaces "Approximate") | Locked | DISCUSS D1 mandated investigating Linear at DESIGN. Public Linear GraphQL schema documents `Issue.history.nodes { fromState toState createdAt }`; some Linear plans / quotas may restrict — graceful per-connection downgrade is the right failure mode |
+| DDD-11 | The work-item-list API endpoint is `GET /api/v1/teams/{teamId}/metrics/wip` and `/cycleTimeData` (NOT a flat `/work-items` route as DISCUSS shorthand implied) — `WorkItemDto` is the carrier | Locked (DISCUSS-shorthand correction) | Code-reality check: routes live on `TeamMetricsController` at `/api/v1/teams/{teamId}/metrics/*`. Surface is the same; the DISCUSS shorthand is preserved with this DESIGN-side correction |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | File | Change Type | Change Summary |
+|---|---|---|---|
+| `WorkItemStateTransition` (entity) | `Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemStateTransition.cs` | NEW | 4 properties per DISCUSS: `WorkItemId` (FK), `FromState`, `ToState`, `TransitionedAt`. Implements `IEntity`. |
+| `IWorkItemStateTransitionRepository` (port) | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs` | NEW | Extends `IRepository<WorkItemStateTransition>`. No additional methods at MVP (sibling consumer DESIGNs may extend). |
+| `WorkItemStateTransitionRepository` (adapter) | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs` | NEW | Extends `RepositoryBase<WorkItemStateTransition>` following the existing pattern. |
+| EF migration `AddWorkItemStateTransitions` | `Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/*_AddWorkItemStateTransitions.cs` + `Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/*_AddWorkItemStateTransitions.cs` | NEW | Adds `WorkItemStateTransitions` table (FK→WorkItems cascade delete; composite index `(WorkItemId, TransitionedAt)`), adds `WorkItems.CurrentStateEnteredAt` nullable, adds `WorkTrackingSystemOptionsOwner.StalenessThresholdDays` non-null with default values seeded by EF. Generated via `Create-Migration.ps1` (CLAUDE.md). |
+| `LighthouseAppContext` | `Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs` | EXTEND | Adds `DbSet<WorkItemStateTransition>`. Adds `OnModelCreating` config block for the entity (FK + cascade + index). |
+| `WorkItemBase` | `Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs` | EXTEND | Adds `DateTime? CurrentStateEnteredAt { get; set; }`. Adds transient `[NotMapped] IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; }` (sync-transport data; consumed and detached by `WorkItemService.RefreshWorkItems`). |
+| `WorkTrackingSystemOptionsOwner` | `Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs` | EXTEND | Adds `int StalenessThresholdDays { get; set; }`. Default values applied via `Team` and `Portfolio` entity initialisers (7 and 14 respectively per DISCUSS D8). |
+| `IWorkTrackingConnector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs` | EXTEND | Adds `bool SupportsTransitionHistory { get; }`. |
+| `IssueFactory` (Jira) | `Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs` | EXTEND | Add `GetAllStateTransitions(JsonElement json) → IReadOnlyList<(string fromState, string toState, DateTime transitionedAt)>` that walks the SAME `changelog.histories` array as today's `GetTransitionDate`, but emits every status transition. Existing `GetStartedAndClosedDate` unchanged (DISCUSS D9 invariant). |
+| `JiraWorkTrackingConnector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs` | EXTEND | `SupportsTransitionHistory => true`. In `CreateWorkItemFromJiraIssue`, populates `WorkItemBase.SyncedTransitions` from the new `IssueFactory.GetAllStateTransitions`. |
+| `AzureDevOpsWorkTrackingConnector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | EXTEND | `SupportsTransitionHistory => true`. Add `GetAllStateTransitionsThrottled(witClient, workItemId)` next to today's `GetStateTransitionDateThrottled`; in `ConvertAdoWorkItemToLighthouseWorkItem`, populate `SyncedTransitions`. |
+| `LinearWorkTrackingConnector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs` + `LinearResponses.cs` | EXTEND | `SupportsTransitionHistory => true` (with per-connection runtime downgrade). Extend `IssueNode` GraphQL query with `history { nodes { fromState { name } toState { name } createdAt } }`. Map to `SyncedTransitions`. On GraphQL error indicating history-field unsupported, log once + flip a per-connection in-memory flag + return `SyncedTransitions = []` for that connection thereafter; `WorkItemService` falls through to sync-delta for that connection's items. |
+| `CsvWorkTrackingConnector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs` | EXTEND | `SupportsTransitionHistory => false`. `SyncedTransitions = []` for every item. No other changes. |
+| `WorkItemService.RefreshWorkItems` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs` | EXTEND | Single seam for transition persistence + `CurrentStateEnteredAt` derivation. Capability-flag branch per ADR-017. All writes flush in one `SaveChangesAsync`. |
+| `WorkItemDto` | `Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs` | EXTEND | Adds `CurrentStateEnteredAt: DateTime?` and `Approximate: bool` (true when latest transition was synthesised via sync-delta — connector did not provide history). |
+| `SettingsOwnerDtoBase` | `Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs` | EXTEND | Adds `int StalenessThresholdDays { get; set; }`. Bubbles up to both `TeamSettingDto` and `PortfolioSettingDto` via the existing base-class constructor pattern. |
+| `TeamController.UpdateTeam` | `Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs` | EXTEND | Validates `stalenessThresholdDays ∈ [0,365]`; returns 400 on out-of-range. Existing `[RbacGuard(TeamWrite)]` gates write. |
+| `PortfolioController.UpdatePortfolio` | `Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs` | EXTEND | Same validation as TeamController. |
+| ArchUnitNET tests | `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/` (existing suite) | EXTEND | Adds the rules from ADR-015/016/017/018: WorkItem has no transition navigation; `WorkItemService.RefreshWorkItems` is sole writer; no `*PerStateAggregation*` class introduced. |
+| Per-connector integration tests | `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs` + per-connector fixtures | EXTEND | One test per connector × representative fixture asserts: (a) transition rows persisted with expected timestamps; (b) `CurrentStateEnteredAt == MAX(transitions.TransitionedAt WHERE ToState = State)` invariant; (c) idempotency on re-sync. |
+| `IWorkItem` model (TS) | `Lighthouse.Frontend/src/models/WorkItem.ts` | EXTEND | Adds `currentStateEnteredAt: Date \| null` and `approximate: boolean`. |
+| `TimeInStateBadge` component | `Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx` (+ test) | NEW | Renders `<integer>d in <stateName>` with optional red emphasis. Tooltip `"Approximate — based on sync cadence"` when `approximate === true`. Renders `—` when `currentStateEnteredAt === null`. Pure component; takes `(currentStateEnteredAt, currentStateName, stalenessThresholdDays, approximate, now)` props (with `now` defaulting to a clock service for testability). |
+| `WorkItemsDialog` | `Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx` | EXTEND | Adds optional `timeInStateColumn?: { stalenessThresholdDays: number }` prop (parallel structure to existing `highlightColumn`). When provided, the dialog renders a "Time in State" sortable column using `TimeInStateBadge`. |
+| `ItemsInProgress` + Team/Portfolio metrics views | `Lighthouse.Frontend/src/pages/Teams/Detail/ItemsInProgress.tsx`, `TeamMetricsView.tsx`, equivalent portfolio file | EXTEND | Pass `timeInStateColumn={{ stalenessThresholdDays: team.stalenessThresholdDays }}` (and portfolio equivalent) through to `WorkItemsDialog`. |
+| `ITeamSettings` model (TS) | `Lighthouse.Frontend/src/models/Team/TeamSettings.ts` | EXTEND | Adds `stalenessThresholdDays: number`. |
+| `IPortfolioSettings` model (TS) | `Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts` | EXTEND | Adds `stalenessThresholdDays: number`. |
+| `ForecastSettingsComponent` (team) | `Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx` | EXTEND | Adds a new `InputGroup` titled "Flow Signals" containing a numeric `TextField` for `Staleness Threshold (days)` ([0,365], default 7). Field visible only when `useRbac().isTeamAdmin(teamId)` returns true (gated via parent page's `useRbacGate` or equivalent — matches existing pattern). |
+| Portfolio edit settings form | `Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx` (+ existing portfolio settings sub-components) | EXTEND | Same "Flow Signals" `InputGroup` (default 14, gated by `useRbac().isPortfolioAdmin(portfolioId)`). |
+| Vitest + RTL tests for the new badge / column / settings field | colocated `.test.tsx` files | NEW / EXTEND | RBAC-gating, threshold-change-on-render, approximate-tooltip behaviour, badge red-emphasis above threshold. |
+| E2E spec | `Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts` (new file) | NEW | 1 happy-path scenario per skill DoD #5: open team → see badge → flip threshold → badges re-colour. NUnit integration tests carry the per-connector correctness work (faster than driving four connectors through Playwright). |
+
+### Reuse / CREATE NEW summary
+
+**EXTEND: 19** (every backend touchpoint is an extension of an existing class / method / DTO / settings round-trip / migration mechanism)
+**NEW: 9** (1 entity + 1 repo port + 1 repo impl + 1 migration pair + 1 frontend component + 1 frontend test file group + 1 e2e spec + ArchUnit additions to existing suite, per-connector integration test additions to existing suite — the per-connector integration test extensions are counted under EXTEND on the table above for accuracy)
+
+## Wave: DESIGN / [REF] Driving ports
+
+| Method | Route | Auth | Status | Implementation pointer |
+|---|---|---|---|---|
+| GET | `/api/v1/teams/{teamId:int}/metrics/wip?asOfDate=…` | `[RbacGuard(TeamRead, ScopeIdRouteKey="teamId")]` | EXTEND | `TeamMetricsController.GetCurrentWipForTeam` line ~102 — payload via `WorkItemDto`; new fields auto-flow |
+| GET | `/api/v1/teams/{teamId:int}/metrics/cycleTimeData?startDate&endDate` | `[RbacGuard(TeamRead)]` | EXTEND | `TeamMetricsController.GetCycleTimeDataForTeam` line ~131 — same |
+| GET | `/api/v1/teams/{teamId:int}` | `[RbacGuard(TeamRead)]` | EXTEND (settings carrier — `TeamSettingDto` gains `stalenessThresholdDays`) | `TeamsController.GetTeamSettings` (parallel to `TeamController.GetTeam`); confirm exact route at GREEN time |
+| PUT | `/api/v1/teams/{teamId:int}` | `[RbacGuard(TeamWrite)]` | EXTEND — validates `stalenessThresholdDays ∈ [0,365]` | `TeamController.UpdateTeam` (existing PUT handler — extend with validation) |
+| GET | `/api/v1/portfolios/{portfolioId:int}` (settings GET) | `[RbacGuard(PortfolioRead)]` | EXTEND (settings carrier — `PortfolioSettingDto` gains `stalenessThresholdDays`) | `PortfolioController.GetPortfolio` (existing) |
+| PUT | `/api/v1/portfolios/{portfolioId:int}` | `[RbacGuard(PortfolioWrite)]` | EXTEND — validates `stalenessThresholdDays ∈ [0,365]` | `PortfolioController.UpdatePortfolio` line ~85 |
+
+No new top-level routes; no premium gate; no contract removal — Type A additive throughout, per DISCUSS WS.
+
+## Wave: DESIGN / [REF] Driven ports + adapters
+
+| Port | Adapter | Status |
+|---|---|---|
+| `IWorkItemStateTransitionRepository` (extends `IRepository<WorkItemStateTransition>`) | `WorkItemStateTransitionRepository` (EF Core via `LighthouseAppContext`) | NEW |
+| `IWorkTrackingConnector.SupportsTransitionHistory` | `JiraWorkTrackingConnector` (true), `AzureDevOpsWorkTrackingConnector` (true), `LinearWorkTrackingConnector` (true with runtime downgrade), `CsvWorkTrackingConnector` (false) | EXTEND |
+| `WorkItem.CurrentStateEnteredAt` persistence | `LighthouseAppContext` (EF Core, Sqlite + Postgres lockstep) | EXTEND (additive nullable column) |
+| `WorkTrackingSystemOptionsOwner.StalenessThresholdDays` persistence | `LighthouseAppContext` (EF Core, Sqlite + Postgres lockstep) | EXTEND (additive non-null column with entity-initialiser defaults) |
+| `WorkItemStateTransitions` table persistence | `LighthouseAppContext` (EF Core, Sqlite + Postgres lockstep) | NEW (new `DbSet<>`; FK + cascade + composite index) |
+
+External integrations REUSED: Jira REST (`expand=changelog` already requested), Azure DevOps Work Item Tracking API (revisions already fetched), Linear GraphQL (new `history` field added to the existing query), CSV file system (no new contract). No new external integration; no contract test required (sibling features may add contract tests for the new endpoints they introduce, but THIS DESIGN does not introduce any external integration the project does not already have).
+
+## Wave: DESIGN / [REF] Technology choices
+
+| Component | Pin |
+|---|---|
+| Backend | C# .NET 8, ASP.NET Core, EF Core 8.x (existing) |
+| Backend tests | NUnit 4.6, Moq, EF InMemory, `Microsoft.AspNetCore.Mvc.Testing` (WebApplicationFactory) — per the project's actual stack, NOT per CLAUDE.md's xUnit claim (project_test_stack memory) |
+| Backend mutation | Stryker.NET (≥80% kill rate gate) |
+| Backend migration tool | `Lighthouse.Backend/Create-Migration.ps1` (CLAUDE.md hard rule) |
+| Backend ArchUnit | ArchUnitNET (existing suite extended) |
+| Frontend | React 18 + TypeScript 5.x (strict), MUI 5.x |
+| Frontend tests | Vitest + React Testing Library |
+| Frontend mutation | Stryker (TS) (≥80% kill rate gate) |
+| Frontend linter | Biome (zero errors / zero warnings on `./src` per CLAUDE.md) |
+| E2E | Playwright with Page Object Model |
+
+NO new technology introduced.
+
+## Wave: DESIGN / [REF] Decisions table
+
+| ID | Decision | Source / ADR |
+|---|---|---|
+| DDD-1 | `WorkItemStateTransition` placement: standalone entity with FK | ADR-015 |
+| DDD-2 | `CurrentStateEnteredAt` derivation: sync-time persisted column | ADR-016 |
+| DDD-3 | Transition capture dispatch: per-connector capability flag, sync-delta fallback in `WorkItemService` | ADR-017 |
+| DDD-4 | Shared `IPerStateAggregationService`: NOT introduced (deferred to consumer DESIGNs) | ADR-018 |
+| DDD-5 | `StalenessThresholdDays` placement: shared via `WorkTrackingSystemOptionsOwner` base class | DESIGN, no ADR (DISCUSS D7/D8 fixes the shape; placement is mechanical) |
+| DDD-6 | Single seam (`WorkItemService.RefreshWorkItems` only writer/mutator); ArchUnitNET-enforced | ADR-016 / ADR-017 |
+| DDD-7 | Transition idempotency: dedup by `(WorkItemId, ToState, TransitionedAt)` | ADR-017 |
+| DDD-8 | Client-side staleness comparison (US-02 AC line 3) | DISCUSS US-02 (DESIGN locks the placement) |
+| DDD-9 | `WorkItemDto.Approximate: bool` — only UX-layer distinguisher of capability path | DESIGN, no ADR (DISCUSS US-01 AC mandates the tooltip; placement is mechanical) |
+| DDD-10 | Linear connector: extend GraphQL query with `history` connection; per-connection runtime downgrade | ADR-017 |
+| DDD-11 | DISCUSS shorthand `/api/teams/{teamId}/work-items` is corrected to actual routes on `TeamMetricsController` (`/metrics/wip`, `/metrics/cycleTimeData`) | DESIGN, code-reality correction surfaced under Driving Ports |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `WorkItemService.RefreshWorkItems` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs:51-86` | Already does the diff between stored and incoming work items; already iterates per item; already calls `SaveChangesAsync` per sync | EXTEND | Adding transition-persistence + sync-delta synthesis inside the SAME loop is the natural extension; the diff that decides "new vs updated vs removed" already implicitly knows whether state changed. Net add: ~30 LOC vs ~150 LOC for a parallel sync-layer class. |
+| `IssueFactory.GetTransitionDate` / `ExtractDateOfStateTransitionFromHistory` (Jira) | `Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs:171-223` | Already walks every changelog `histories[].items[]` looking for `field == "status"` transitions; already extracts `(createdDate, fromString, toString)` per transition; today keeps only the LAST one matching a target-state predicate | EXTEND | The walker function ALREADY sees every transition; adding `GetAllStateTransitions` next to it reuses the parsing investment. CREATE NEW would duplicate the changelog-pagination + json-extraction logic. |
+| `AzureDevOpsWorkTrackingConnector.GetStateTransitionDateThrottled` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:758-778` | Already calls `witClient.GetRevisionsAsync(workItemId)`; already iterates revisions; already detects state changes via `RevisionWasChangingState`; today keeps only the LAST boundary transition | EXTEND | Same reasoning as Jira: the revision walker already pages and parses; adding `GetAllStateTransitionsThrottled` reuses the throttled fetch and revision-iteration code. |
+| `LinearWorkTrackingConnector` (GraphQL query for `IssueNode`) | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs` + `LinearResponses.cs:171-200` | Existing query fetches `IssueNode` fields including `state { name }`. Linear's GraphQL exposes `Issue.history.nodes { fromState toState createdAt }` per their public schema | EXTEND | Adding the `history` connection to the existing query is a 1-block GraphQL change + a new `LinearResponses.IssueHistoryNode` mapping. CREATE NEW Linear-only history service would re-implement the GraphQL transport that the existing connector already operates. |
+| `CsvWorkTrackingConnector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:17-188` | No history at the source — CSV files are snapshots | EXTEND (single property: `SupportsTransitionHistory => false`) | No new code needed beyond the capability declaration; `WorkItemService` handles the rest. |
+| `WorkItemBase` | `Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs` | Already owns the per-item state semantics: `State`, `StateCategory`, `StartedDate`, `ClosedDate`, computed `CycleTime` and `WorkItemAge` | EXTEND | `CurrentStateEnteredAt` is the third member of the same family (derived from state-history). Plus transient `SyncedTransitions` for sync-transport. Net add: 2 properties. |
+| `WorkTrackingSystemOptionsOwner` | `Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs` | Already houses settings shared between `Team` and `Portfolio` (e.g. `ThroughputHistory` on Team-specific, `StateMappings` / `BlockedStates` / `BlockedTags` / `SystemWIPLimit` shared) | EXTEND | `StalenessThresholdDays` belongs in the same base — same lifecycle, same RBAC scope (admin of the owner can edit). Single column, two entity initialisers seed the defaults (Team=7, Portfolio=14). |
+| `WorkItemDto` | `Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs` | Already projects `WorkItemBase` for the work-item-table API | EXTEND | Add `CurrentStateEnteredAt`, `Approximate`. Net add: 2 properties. CREATE NEW DTO would duplicate the projection of 12 existing fields. |
+| `SettingsOwnerDtoBase` / `TeamSettingDto` / `PortfolioSettingDto` | `Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs` (+ Team/Portfolio specifics) | Already round-trips shared settings via the base class; existing `bug-5016-cache-thread-safety` pre-req cleared the cache invariant | EXTEND | Add `StalenessThresholdDays` to the base; both Team and Portfolio inherit automatically. |
+| `LighthouseAppContext` / `OnModelCreating` | `Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs` | Already maps every entity, already configures FKs and cascade-deletes for related entities | EXTEND | Add `DbSet<WorkItemStateTransition>` + one `entity =>` config block. Migration via `Create-Migration.ps1`. CREATE NEW DbContext is absurd. |
+| `Create-Migration.ps1` | `Lighthouse.Backend/Create-Migration.ps1` | Already generates lockstep Sqlite + Postgres migrations | REUSE AS-IS | CLAUDE.md hard rule. |
+| `WorkItemsDialog` | `Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx` | Already renders a sortable work-item DataGrid with optional `highlightColumn` extension slot for per-item numeric values | EXTEND | The `timeInStateColumn` prop is structurally parallel to the existing `highlightColumn`. CREATE NEW table component would duplicate the DataGrid setup, sort persistence, export, and link rendering. |
+| `useRbac` hook + `useRbacGate` | `Lighthouse.Frontend/src/hooks/useRbac.ts`, `useRbacGate.ts` | Already exposes `isTeamAdmin(teamId)`, `isPortfolioAdmin(portfolioId)`, hidden-on-no-access render gating | REUSE AS-IS | Architectural invariant from rbac-enhancements (brief.md §RBAC). No new permissions; no new hook needed. |
+| `ForecastSettingsComponent` / `EditPortfolio` settings page | `Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx`, `Portfolios/Edit/EditPortfolio.tsx` | Already host setting `InputGroup` sections with numeric fields and RBAC gating | EXTEND | New `Flow Signals` group adjacent to existing `Forecast Configuration` group. Pattern-parallel to existing groups; CREATE NEW page would split the team settings UX. |
+| `WorkItemAge` computation on `WorkItemBase` | `Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs:66-84` | Computes "days since item started" for in-progress items; uses `GetDateDifference` (date-only diff + 1) | REUSE the same `GetDateDifference` rounding convention for `daysInState` | DISCUSS US-01 AC mandates "matches source within 1 day"; using the project's existing day-diff convention keeps the badge consistent with `WorkItemAge` semantics. (Implementation detail handed to software-crafter.) |
+
+**Totals: 15 rows. 9 EXTEND + 4 REUSE-AS-IS (no change) + 0 CREATE NEW at the OVERLAP level.** (The NEW entries — `WorkItemStateTransition` entity, the new repository, the new EF migration, the new `TimeInStateBadge` component, the new E2E spec — appear in the Component decomposition table; they have ZERO existing overlap in the codebase per the Reuse Analysis grep below, so they are correctly NEW.)
+
+CODEBASE GREP FOR OVERLAP CANDIDATES THAT MIGHT JUSTIFY CREATE NEW BUT WERE REJECTED:
+
+- Searched for `Transition|StateChange|StateHistory|state.*log|StateAudit` across `Lighthouse.Backend` — only matches are in connector code (changelog walkers) already in the Reuse table above. No existing entity / table / service named anything resembling `WorkItemStateTransition`.
+- Searched for `staleness|stuckItem|stale.*item|TimeInState` across `Lighthouse.Backend` + `Lighthouse.Frontend/src` — zero production matches. No existing component duplicates the badge concern.
+- Searched for `PerState|StateAggregation|PerStateMetric` — zero production matches. Confirms ADR-018's "no existing service to extend" position.
+
+## Wave: DESIGN / [REF] Open questions
+
+- **Linear `history` GraphQL plan/quota validation**: assumed available based on Linear's public GraphQL schema documentation. If a customer's plan denies the field at runtime, the per-connection runtime downgrade (ADR-017 / DDD-10) handles it gracefully. **Validation deferred to DELIVER** — first Linear-connected fixture exercises the path; if the field fails for the test workspace, the downgrade fires and the integration test asserts the fallback. No DESIGN blocker.
+- **Backfill of pre-feature transitions**: explicitly OUT OF SCOPE per DISCUSS. First-observation items render `—`. Sibling consumers (`aging-pace-percentiles`, `state-time-cumulative-view`) inherit the same forward-only constraint — both explicitly noted this in their DISCUSS "out of scope" lists. **Resolved by DISCUSS; no DESIGN action.**
+- **Cross-MVP coordination — shared aggregation primitive**: DEFERRED to consumer DESIGNs (ADR-018). Sibling DESIGN authors may choose to extract a helper inside their own DESIGN with a new superseding ADR. **Resolved by ADR-018; tracked in the consumer DESIGNs.**
+- **`Team.PortfolioId`-scoped vs portfolio-team-aggregate staleness threshold semantics**: portfolios contain teams; if a portfolio has threshold 14 but its constituent teams have threshold 7, which threshold applies to portfolio-scope WORK ITEMS (which are different entities — portfolio work items are `Feature`s, not the constituent teams' `WorkItem`s)? Per DISCUSS US-04 the portfolio threshold applies to PORTFOLIO-level items (the `Feature` entities under the portfolio's `Features` collection — NOT a recursive aggregation of constituent teams' WorkItems). **Resolved**: portfolio threshold applies to the portfolio-level item table only; team thresholds apply to team-level item tables only. No cross-scope aggregation. (This was implicit in DISCUSS; making it explicit here so DELIVER does not invent surprising semantics.)
+- **`Feature` entity transitions**: this DESIGN ships `WorkItemStateTransition` (FK→`WorkItem`). Portfolio item tables show `Feature`s (different entity). The DISCUSS feature-delta's "Add `currentStateEnteredAt` per work item" in the portfolio endpoint refers to the FEATURE-equivalent entity shown on the portfolio detail page. **Resolution for DELIVER**: mirror the same shape on `Feature` — add `Feature.CurrentStateEnteredAt` column + capture `Feature`-level transitions via the existing `WorkItemService.UpdateFeaturesForPortfolio` path. The architectural mechanism is identical (`FeatureStateTransition` entity OR generalising `WorkItemStateTransition` to accept either via a polymorphism; software-crafter chooses at GREEN — both are valid implementations of the same architectural rule). **Flagged as DELIVER decision, not a DESIGN blocker** because the architectural shape is the same; only the entity is different.
+
+## Wave: DESIGN / [REF] Cross-MVP coordination outcomes
+
+- **`WorkItemStateTransition` 4-field schema is sufficient for both sibling consumers** — confirmed against sibling DISCUSS D11 (aging-pace-percentiles) and D9 (state-time-cumulative-view). No upstream change requested by either sibling. NO FIELD ADDITION IS SURFACED by this DESIGN. The baseline assumption holds.
+- **`WorkItem.CurrentStateEnteredAt` is the derived-but-persisted column both siblings explicitly rely on** — confirmed against sibling state-time-cumulative-view D9 and D11. ADR-016 ships exactly that shape.
+- **Shared `IPerStateAggregationService` decision** — RESOLVED: NOT introduced by this DESIGN. ADR-018 records the decision and the rationale (semantic divergence between consumers; premature abstraction risk). Sibling DESIGNs are free to extract a helper later via a superseding ADR. ONE-LINE rationale: *"Helper would conflate inclusion-rule semantics that sibling DISCUSSes deliberately distinguished; ship the primitive (repository), defer the abstraction to known concrete callers."*
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+**Primary architectural commitment**: introduce a minimum viable persistence + capture pipeline for `WorkItemStateTransition` (1 new entity, 1 new column on `WorkItem`, 1 new column on `WorkTrackingSystemOptionsOwner`, 1 new capability boolean on `IWorkTrackingConnector`). Every other touchpoint is an additive extension of an existing class / DTO / route / migration mechanism. NO new top-level routes. NO new external integration. NO premium gate. NO breaking change.
+
+**Architecture pattern**: ports-and-adapters / hexagonal (unchanged). The transition-capture dispatch is a single-property capability flag on the existing port; the dispatch seam is `WorkItemService.RefreshWorkItems` and it is the ONLY mutator of the new column / the ONLY writer of the new table.
+
+**Walking skeleton path** (validates the architecture in one slice end-to-end): Jira (or ADO) connector → IssueFactory extension → WorkItemBase.SyncedTransitions → WorkItemService.RefreshWorkItems → `WorkItemStateTransition` row + `WorkItem.CurrentStateEnteredAt` update → existing `WorkItemDto` carries the new field → existing `/metrics/wip` route serves it → new `TimeInStateBadge` component renders it on the Team detail view. One slice exercises every architectural seam.
+
+**Sibling MVP coordination**: both consumers' "no schema additions required" claims hold. The cross-MVP shared-aggregation question (D10 of both siblings) is answered: DEFER to consumer DESIGNs (ADR-018).
+
+**Downstream changes propagated upstream**: NONE. DISCUSS assumptions (D1-D9) all hold without revision. The only DISCUSS-shorthand clarification surfaced (DDD-11: route is `/metrics/wip` not `/work-items`) does not change the contract or the persona experience.
+
+**Handoff readiness**: ready for nw-platform-architect (DEVOPS) handoff. The outcome KPIs in DISCUSS feed into `kpi-contracts.yaml` at the handoff per DISCUSS note. No CI workflow changes are required (the existing `ci_verifysqlite.yml` + `ci_verifypostgres.yml` cover the EF migration; the existing test gates cover the new code).
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+`nwave-ai outcomes check-delta docs/feature/time-in-state-and-staleness/feature-delta.md` was NOT executed: the tool (`nwave-ai`) is not installed in this repository and the canonical outcomes registry at `docs/product/outcomes/registry.yaml` does not exist. Per skill ("skip-and-document"): documented here, deferred to DEVOPS handoff for KPI / outcomes registration alongside the DISCUSS-defined `OUT-time-in-state-adoption`, `OUT-staleness-threshold-tuning`, `OUT-time-in-state-trust`.
+
