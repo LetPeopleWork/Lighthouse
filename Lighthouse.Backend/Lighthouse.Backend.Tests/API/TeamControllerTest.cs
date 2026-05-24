@@ -2,6 +2,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -580,6 +581,40 @@ namespace Lighthouse.Backend.Tests.API
             var okResult = result.Result as OkObjectResult;
             var dto = okResult!.Value as TeamDto;
             Assert.That(dto!.HasThroughputBlackoutOverlap, Is.False);
+        }
+
+        [Test]
+        public async Task GetTeam_WithEffectiveForecastFilter_SetsHasForecastFilterTrue()
+        {
+            var team = CreateTeam(1, "Team 1");
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            forecastFilterRuleServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(team))
+                .Returns(new WorkItemRuleSet());
+
+            var subject = CreateSubject([team]);
+            var result = await subject.GetTeam(1);
+
+            var dto = (result.Result as OkObjectResult)!.Value as TeamDto;
+            Assert.That(dto!.HasForecastFilter, Is.True);
+        }
+
+        [Test]
+        public async Task GetTeam_WithoutEffectiveForecastFilter_SetsHasForecastFilterFalse()
+        {
+            var team = CreateTeam(1, "Team 1");
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            forecastFilterRuleServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(team))
+                .Returns((WorkItemRuleSet?)null);
+
+            var subject = CreateSubject([team]);
+            var result = await subject.GetTeam(1);
+
+            var dto = (result.Result as OkObjectResult)!.Value as TeamDto;
+            Assert.That(dto!.HasForecastFilter, Is.False);
         }
 
         [Test]

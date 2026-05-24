@@ -400,6 +400,7 @@ const TeamDetail: React.FC = () => {
 													startDate={team.throughputStartDate}
 													endDate={team.throughputEndDate}
 													hasBlackoutOverlap={team.hasThroughputBlackoutOverlap}
+													hasForecastFilter={team.hasForecastFilter}
 													onSave={async (
 														useFixedDates,
 														throughputHistory,

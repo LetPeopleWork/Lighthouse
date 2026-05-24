@@ -49,6 +49,7 @@ namespace Lighthouse.Backend.API
                 var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                 var throughputSettings = team.GetThroughputSettings();
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
+                teamDto.HasForecastFilter = forecastFilterRuleService.GetEffectiveRuleSet(team) != null;
 
                 return teamDto;
             });

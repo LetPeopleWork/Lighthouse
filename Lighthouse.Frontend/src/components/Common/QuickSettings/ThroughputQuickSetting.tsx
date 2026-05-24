@@ -28,6 +28,7 @@ type ThroughputQuickSettingProps = {
 	) => Promise<void>;
 	disabled?: boolean;
 	hasBlackoutOverlap?: boolean;
+	hasForecastFilter?: boolean;
 };
 
 const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
@@ -37,6 +38,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	onSave,
 	disabled = false,
 	hasBlackoutOverlap = false,
+	hasForecastFilter = false,
 }) => {
 	const theme = useTheme();
 	const terminology = useTerminology();
@@ -81,16 +83,19 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		const blackoutSuffix = hasBlackoutOverlap
 			? " (Blackout days within window — excluded from forecast)"
 			: "";
+		const filterSuffix = hasForecastFilter
+			? ` (Forecast filter active — some ${throughputTerm.toLowerCase()} items excluded)`
+			: "";
 
 		if (!initialUseFixedDates && initialThroughputHistory <= 0) {
-			return `${throughputTerm}: Not set`;
+			return `${throughputTerm}: Not set${filterSuffix}`;
 		}
 
 		if (initialUseFixedDates && initialStartDate && initialEndDate) {
-			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}${blackoutSuffix}`;
+			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}${blackoutSuffix}${filterSuffix}`;
 		}
 
-		return `${throughputTerm}: Rolling ${initialThroughputHistory} days${blackoutSuffix}`;
+		return `${throughputTerm}: Rolling ${initialThroughputHistory} days${blackoutSuffix}${filterSuffix}`;
 	};
 
 	const isUnset = !initialUseFixedDates && initialThroughputHistory <= 0;
@@ -202,6 +207,9 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		}
 		if (hasBlackoutOverlap) {
 			return theme.palette.warning.main;
+		}
+		if (hasForecastFilter) {
+			return theme.palette.info.main;
 		}
 		return theme.palette.primary.main;
 	};

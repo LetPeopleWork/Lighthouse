@@ -3,10 +3,12 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -29,6 +31,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
+        private Mock<IForecastFilterRuleService> forecastFilterRuleServiceMock;
 
         [SetUp]
         public void Setup()
@@ -45,6 +48,7 @@ namespace Lighthouse.Backend.Tests.API
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
+            forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
         }
 
         [Test]
@@ -506,6 +510,34 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task GetTeams_WithEffectiveForecastFilter_SetsHasForecastFilterTrue()
+        {
+            var team = CreateTeam(1, "Team 1");
+            forecastFilterRuleServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(team))
+                .Returns(new WorkItemRuleSet());
+
+            var subject = CreateSubject([team]);
+            var results = (await subject.GetTeams()).ToList();
+
+            Assert.That(results.Single().HasForecastFilter, Is.True);
+        }
+
+        [Test]
+        public async Task GetTeams_WithoutEffectiveForecastFilter_SetsHasForecastFilterFalse()
+        {
+            var team = CreateTeam(1, "Team 1");
+            forecastFilterRuleServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(team))
+                .Returns((WorkItemRuleSet?)null);
+
+            var subject = CreateSubject([team]);
+            var results = (await subject.GetTeams()).ToList();
+
+            Assert.That(results.Single().HasForecastFilter, Is.False);
+        }
+
+        [Test]
         public async Task GetTeams_WhenRbacIsEnabled_FiltersToReadableTeams()
         {
             var firstTeam = CreateTeam(1, "Visible Team");
@@ -590,7 +622,8 @@ namespace Lighthouse.Backend.Tests.API
                 workTrackingConnectorFactoryMock.Object,
                 licenseServiceMock.Object,
                 blackoutPeriodRepositoryMock.Object,
-                rbacAdministrationServiceMock.Object);
+                rbacAdministrationServiceMock.Object,
+                forecastFilterRuleServiceMock.Object);
         }
     }
 }

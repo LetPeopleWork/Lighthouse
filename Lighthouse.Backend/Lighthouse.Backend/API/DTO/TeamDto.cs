@@ -37,5 +37,7 @@ namespace Lighthouse.Backend.API.DTO
         public DateTime ThroughputEndDate { get; }
 
         public bool HasThroughputBlackoutOverlap { get; set; }
+
+        public bool HasForecastFilter { get; set; }
     }
 }

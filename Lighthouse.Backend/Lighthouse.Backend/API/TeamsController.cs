@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -26,7 +27,8 @@ namespace Lighthouse.Backend.API
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         ILicenseService licenseService,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        IForecastFilterRuleService forecastFilterRuleService)
         : ControllerBase
     {
         [HttpGet]
@@ -56,6 +58,7 @@ namespace Lighthouse.Backend.API
                 var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdsSet);
                 var throughputSettings = team.GetThroughputSettings();
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
+                teamDto.HasForecastFilter = forecastFilterRuleService.GetEffectiveRuleSet(team) != null;
 
                 teamDtos.Add(teamDto);
             }

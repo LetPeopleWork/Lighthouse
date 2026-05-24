@@ -16,6 +16,7 @@ const getMockProps = (
 		) => Promise<void>;
 		disabled: boolean;
 		hasBlackoutOverlap: boolean;
+		hasForecastFilter: boolean;
 	}>,
 ) => ({
 	useFixedDates: false,
@@ -24,6 +25,7 @@ const getMockProps = (
 	onSave: vi.fn().mockResolvedValue(undefined),
 	disabled: false,
 	hasBlackoutOverlap: false,
+	hasForecastFilter: false,
 	...overrides,
 });
 
@@ -398,6 +400,61 @@ describe("ThroughputQuickSetting", () => {
 		expect(
 			screen.getByRole("button", {
 				name: /Fixed dates.*Blackout days within window/i,
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("shows forecast-filter indicator in tooltip when hasForecastFilter is true", () => {
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({
+					startDate,
+					endDate,
+					hasForecastFilter: true,
+				})}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", {
+				name: /Forecast filter active/i,
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("does not surface forecast-filter indicator when hasForecastFilter is false", () => {
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ startDate, endDate, hasForecastFilter: false })}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("button", { name: /Forecast filter active/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("combines blackout warning and forecast-filter info suffixes in the tooltip", () => {
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({
+					startDate,
+					endDate,
+					hasBlackoutOverlap: true,
+					hasForecastFilter: true,
+				})}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", {
+				name: /Blackout days within window.*Forecast filter active/i,
 			}),
 		).toBeInTheDocument();
 	});
