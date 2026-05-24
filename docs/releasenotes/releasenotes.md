@@ -4,6 +4,56 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.5.24.10
+
+## Exclude Items for Throughput (Premium)
+Does your team carry maintenance, support, or unplanned bug work alongside feature delivery? Until now that left you two options: live with throughput numbers polluted by interrupt work — and forecasts that are too optimistic — or split things into a *"fake team"* that doesn't actually exist in your tracker. Neither is great.
+
+The new **Exclude Items for Throughput** rule lets you tell Lighthouse *"don't count these"*: exclude by type, by parent reference, by tags, or any combination of conditions. The filter then flows through **every forecast** — *How Many*, *When*, and *Backtesting* — so the dates you commit to reflect the work your team actually does, not the noise around it.
+
+![Exclude Items](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/Release 26.5.24/ExcludeThroughputRules.png)
+
+It's also a conversation tool. Want to show leadership how much faster you'd ship if the team could focus? Run *When will this be done?* against your **raw** throughput, then against the **filtered** throughput, and compare. You've always known the interrupt work matters — now you have the numbers to put behind it.
+
+![Manual Forecast](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/Release 26.5.24/Manual_Forecast.png)
+
+The same idea extends to your metrics: a toggle on the **Throughput Run Chart**, **Throughput Process Behaviour Chart** (bars *and* the Average / UNPL / LNPL bounds), and **Predictability Score Details** lets you flip between raw and filtered views without leaving the page. The team's Quick Settings shows an indicator whenever a filter is active, so you always know which world you're looking at.
+
+![Filtered Cycle Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/Release 26.5.24/CT_Filtered.png)
+
+The rule builder works wherever rules are used in Lighthouse — including the Portfolio Delivery editor — and it picked up new conditions along the way:
+
+- **Does Not Contain**
+- **Is Empty** / **Is Not Empty** — match `null`, empty string, or a missing field; no value input required.
+- **AND / OR** group mode for combining rules.
+
+## Feature Size — View by Closed Date
+The **Feature Size** chart got a third *Show by* mode alongside *Estimation Unit* and *Cycle Time*: **Closed Date**. Picking *Closed Date* flips the axis (date on X, size on Y), rotates the percentile bands accordingly, and parks any in-flight (not-yet-closed) feature at the **Today** marker so it stays visible in context.
+
+![Feature Size with Cycle Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/Release 26.5.24/FeatureSize.png)
+
+## Documentation Light Mode
+The [docs site](https://docs.lighthouse.letpeople.work) now ships a light / dark **color-scheme toggle**. The site still defaults to following your OS preference; you can pin either mode explicitly from the header.
+
+## Bugfixes and Improvements
+- **Jira Data Center: 504 Gateway Timeout on team sync** — the Jira client used a fixed page size of 1000, which Data Center instances behind a slow reverse proxy can't always return inside their gateway timeout window. Page size is now **configurable** on the Jira connection (defaulting to 1000 as before).
+- **Forecast Backtesting: Historical Window (Days) clear behaviour** — clearing the *Historical Window (Days)* field used to snap the value back to `1` on every keystroke, forcing you to type `156` to enter `56`. The value now clamps on **blur** instead of on every keystroke, so clear-and-retype works the way you'd expect.
+- **Started Date reset when reverting to the To-Do state** — if you moved an item *To Do → Doing → To Do → Done* (skipping *Doing* on the second pass), Lighthouse kept the original *Started Date* set on the first transition. *Started* and *Closed* now match for items that never actually re-entered an in-progress state. Applies across Jira, Azure DevOps, and Linear.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+- [Evgeniy Stepchenko](https://www.linkedin.com/in/stepe/)
+- [Alex Priestley](https://www.linkedin.com/in/alex-priestley-uk/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- Will Pyke
+- Gordon Price
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.19.1...v26.5.24.10)
+
+
 # Lighthouse v26.5.19.1
 
 ## OAuth Authentication for Work Tracking Systems

@@ -16,6 +16,10 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Anoop A Parapurath**](https://www.linkedin.com/in/anoop-a-parapurath-137a3b4/)
 - [**Ann K Brea**](https://www.linkedin.com/in/annkbrea/)
 - [**Chris Graves**](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [**Evgeniy Stepchenko**](https://www.linkedin.com/in/stepe/)
+- [**Alex Priestley**](https://www.linkedin.com/in/alex-priestley-uk/)
+- **Will Pyke**
+- **Gordon Price**
 
 ---
 
