@@ -848,17 +848,7 @@ function buildWidgetNodes(ctx: {
 			/>
 		) : null,
 		totalThroughput: ctx.throughputInfo ? (
-			<TotalThroughputWidget
-				data={ctx.throughputInfo}
-				filterToggle={
-					<ThroughputChartFilterToggle
-						isPremium={ctx.isPremium}
-						hasFilter={ctx.hasForecastFilter}
-						chartKind="runChart"
-						conditions={ctx.forecastFilterConditions}
-					/>
-				}
-			/>
+			<TotalThroughputWidget data={ctx.throughputInfo} />
 		) : null,
 		totalArrivals: ctx.arrivalsInfo ? (
 			<TotalArrivalsWidget data={ctx.arrivalsInfo} />
