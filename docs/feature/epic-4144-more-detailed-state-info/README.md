@@ -1,33 +1,45 @@
 # Epic 4144: More Detailed State Info — Slice Catalog
 
 **ADO**: https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/4144
-**Status**: Planned, forecast 2026-06-03
+**Status**: Planned, MVP forecast 2026-06-03
 **Tags**: Community, Productboard
 
-Tracks the carpaccio split of Epic 4144 into shippable features. Each row below points to its own DISCUSS-onwards lifecycle when ready. The Epic stays open until every slice has a corresponding ADO Story marked Done.
+Tracks the carpaccio split of Epic 4144 into shippable features. The MVP release ships three features together (see below); post-MVP features ship independently afterwards. Each feature has its own DISCUSS-onwards lifecycle.
 
-## Slice map
+## MVP release bundle
+
+The Epic 4144 MVP ships **all three** features below together. The MVP gate does not lift until each has reached Done.
+
+| # | Slice | Feature ID | Primary persona | Status | Role in MVP |
+|---|---|---|---|---|---|
+| A+B1+D | Capture transitions + per-item live badge + Team/Portfolio threshold | `time-in-state-and-staleness` | flow-coach | DISCUSS complete | Data foundation + triage signal (per-item) |
+| F | Pace-percentiles bands on Work Item Aging chart (ActionableAgile-style) | `aging-pace-percentiles` | flow-coach + PM | PRE-DISCUSS stub | Competitive-parity story; chart-glance pace recognition |
+| B3 | Cumulative time-per-state across timeframe (incl. ongoing items) | `state-time-cumulative-view` | Delivery Lead / RTE | PRE-DISCUSS stub | Leadership / retro view; "where do we spend our time?" |
+
+**Why these three together**: A+B1+D alone ships per-item triage but doesn't answer "where does my team spend its time?" (B3) or "are my in-flight items pacing OK vs history?" (F). The product call (user-driven, 2026-05-24) is that an MVP without F and B3 would not close the perceived gap with ActionableAgile and would not give leadership the aggregate view it needs alongside the per-item view.
+
+## Post-MVP features
+
+Ship independently after the MVP bundle. No dependency between these and the MVP closure.
 
 | # | Slice | Feature ID | Primary persona | Status | Notes |
 |---|---|---|---|---|---|
-| A+B1+D | Capture transitions + per-item live badge + Team/Portfolio threshold | `time-in-state-and-staleness` | flow-coach | DISCUSS (in progress) | First customer-visible release |
-| F | Pace-percentiles bands on Work Item Aging chart (ActionableAgile-style) | TBD `aging-pace-percentiles` | flow-coach + PM | Planned (next) | Strongest differentiated UX; needs distribution statistics |
 | B2 | Per-item historical state breakdown (outlier deep-dive) | TBD `work-item-state-history-view` | Product Owner | Planned | Reuses transition data captured by A |
-| B3 | Cumulative time-per-state across timeframe | TBD `state-time-cumulative-view` | Delivery Lead / RTE | Planned | Aggregation view; powers leadership conversations |
 | C | Detailed CFD using actual workflow states | TBD `detailed-cfd` | flow-coach | Planned | Replaces Simplified CFD as an option (not default initially) |
 
 > Blocked-time history was originally scoped here as slice E. It has since been promoted to its own Epic — **#5074** — because it needs a different capture mechanism. See `docs/feature/epic-5074-blocked-items/README.md`.
 
-## Cross-cutting design decisions (apply to all slices)
+## Cross-cutting design decisions (apply to all features)
 
 - **State transitions: source-of-truth first.** Jira and ADO already read transitions to derive Started/Closed; extend that mechanism to capture all state changes. Linear: investigate at DESIGN of `time-in-state-and-staleness` (GraphQL `IssueHistory` is the candidate). CSV + any connector that can't expose history: sync-side delta fallback (compare to last-known state on every sync; resolution = sync cadence).
-- **Shared data foundation.** All slices consume the `WorkItemStateTransition` data built in `time-in-state-and-staleness`.
+- **Shared data foundation.** All features consume the `WorkItemStateTransition` data built in `time-in-state-and-staleness`. F and B3 are downstream consumers — neither rebuilds the capture.
 - **Three views of "time in state", one foundation.** B1 (live, per-item, current state), B2 (historical, per-item breakdown), B3 (cumulative across items in a timeframe) are different UX layers on the same transition data — captured once in A, consumed many times.
 
 ## When this Epic is "done"
 
-When every slice above has a corresponding ADO Story marked Done AND the resulting feature has been archived to `docs/evolution/`.
+- **MVP done**: all three MVP-bundle features have their ADO Stories Done AND each feature has been archived to `docs/evolution/`.
+- **Epic done**: MVP done AND both post-MVP features (B2, C) have shipped and been archived.
 
-## Why a carpaccio split (not one mega-feature)
+## Why a carpaccio split with an MVP bundle (not one mega-feature, not three separate ships)
 
-Each slice targets a distinct persona / decision and can ship independently. Shipping A+B1+D first proves the data foundation and the flow-coach persona's value loop. F, B2, B3, C then each become focused, shippable improvements without re-litigating the foundation.
+Each feature keeps a distinct persona and JTBD — that's the carpaccio principle preserved. But three feature-deltas with their own DISCUSS / DESIGN / DELIVER each is cheaper to plan and review than one mega-feature, and the MVP bundle lets the release-coordination concern ("ship together") live at the Epic level instead of polluting any individual feature scope. B2 and C remain truly independent ships afterwards.
