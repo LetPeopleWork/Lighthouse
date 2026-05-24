@@ -3,18 +3,11 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
 import type { IFeature } from "../../../models/Feature";
-import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { DataGridColumn } from "../DataGrid/types";
-import FilteredThroughputChip from "../Forecasting/FilteredThroughputChip";
 import ForecastInfoList from "../Forecasts/ForecastInfoList";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
 import ActiveWorkIndicator from "./ActiveWorkIndicator";
 import WarningsIndicator from "./WarningsIndicator";
-
-const findFilteredForecast = (
-	forecasts: IWhenForecast[] | undefined,
-): IWhenForecast | undefined =>
-	(forecasts ?? []).find((forecast) => forecast.filterApplied === true);
 
 export const createForecastsColumn = (
 	headerName = "Forecasts",
@@ -23,18 +16,11 @@ export const createForecastsColumn = (
 	headerName,
 	width: 200,
 	sortable: false,
-	renderCell: ({ row }) => {
-		const filteredForecast = findFilteredForecast(row.forecasts);
-		return (
-			<Box>
-				<ForecastInfoList title={""} forecasts={row.forecasts} />
-				<FilteredThroughputChip
-					visible={filteredForecast !== undefined}
-					excludedSummary={filteredForecast?.excludedSummary}
-				/>
-			</Box>
-		);
-	},
+	renderCell: ({ row }) => (
+		<Box>
+			<ForecastInfoList title={""} forecasts={row.forecasts} />
+		</Box>
+	),
 });
 
 export const createStateColumn = (): DataGridColumn<
