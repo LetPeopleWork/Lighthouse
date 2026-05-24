@@ -585,3 +585,118 @@ The diagram makes four architectural commitments visible:
 3. **Algorithmic parity with `cycleTimePercentiles`** — same `PercentileCalculator`, same `GetWorkItemsClosedInDateRange` predicate, same `GetFromCacheIfExists` cache mechanism, same `PercentileValue` response type. NUnit-enforced (ADR-019).
 4. **Backwards-compatible chart extension** — `WorkItemAgingChart` with `perStatePercentileValues` undefined renders identically to today; the per-state band SVG overlay is rendered inside the existing `<ChartsContainer>` coordinate system, not absolute-positioned over the chart. Vitest-enforced (ADR-020).
 
+---
+
+# C4 Architecture Diagrams — state-time-cumulative-view
+
+Feature: state-time-cumulative-view (Epic 4144 MVP bundle, slice B3 — cumulative time-per-state horizontal-bar widget with stacked completed-vs-ongoing segments, US-03 tooltip enrichment, US-04 per-item drill-down dialog on bar click)
+Wave: DESIGN
+Date: 2026-05-24
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+
+---
+
+## C4 Level 1 — System Context (delta)
+
+The Lighthouse system context (RBAC + OAuth + filter-forecast-throughput + time-in-state-and-staleness + aging-pace-percentiles baselines) is unchanged. This feature adds **no** new external actors and **no** new external systems. The `Delivery Lead / RTE` persona introduced by this feature's DISCUSS (`docs/product/personas/delivery-lead-rte.yaml`) consumes the same chart-glance relationship with Lighthouse that the existing `Flow Coach` persona uses for sibling F — different decision shape (per-state systemic constraint vs per-state pace outlier), same data foundation, same read-only relationship.
+
+No L1 diagram is added — the System Context from sibling 1 (time-in-state-and-staleness) covers this feature's actors and systems unchanged. The new `Delivery Lead / RTE` persona is a refinement-by-decomposition of the broader leadership audience already implicit in the prior System Contexts.
+
+---
+
+## C4 Level 2 — Container (delta)
+
+No new containers. The existing Frontend SPA and Backend API gain additive responsibilities — Backend API gains four new endpoints (team + portfolio x bar + drill-down); Frontend SPA gains a new chart widget, a new drill-down dialog, a new RAG rule, and three new metadata entries (`categoryMetadata`, `widgetInfoMetadata`, `ragRules`). The Database container is unchanged — no schema additions (sibling 1's `WorkItemStateTransitions` table and `WorkItem.CurrentStateEnteredAt` column are consumed read-only, alongside the existing `WorkItem.State` / `StateCategory` fields). The E2E Test Runner gains one new spec.
+
+```mermaid
+C4Container
+    title Container Diagram - State-Time Cumulative View (delta over aging-pace-percentiles baseline)
+
+    Person(rte, "Delivery Lead / RTE", "Reads team/portfolio Flow Metrics chart; identifies systemic workflow constraint via tallest bar; drills down to per-item contributors")
+    Person(coach, "Flow Coach", "Secondary persona - uses the same chart in retro-facilitation context")
+
+    Container(spa, "Frontend SPA", "React 18 + TypeScript + MUI + MUI-X-charts", "NEW CumulativeStateTimeChart widget (MUI-X BarChart, stacked horizontal segments, SVG pattern-based hatching). NEW CumulativeStateTimeDrillDownDialog (MUI Dialog + DataGridBase). NEW computeCumulativeStateTimeRag function. Extended categoryMetadata / widgetInfoMetadata / ragRules with stateTimeCumulative entry. useMetricsData extended with parallel fetch and new ctx field.")
+    Container(api, "Backend API", "C# .NET 8 ASP.NET Core Web API", "Four new endpoints: GET /api/teams|portfolios/{id}/metrics/cumulativeStateTime and .../items?state=X. Computation inside TeamMetricsService / PortfolioMetricsService, delegating to two new protected helpers on BaseMetricsService (ComputeCumulativeStateTime, ComputeCumulativeStateTimeItems). Reads WorkItemStateTransition rows via sibling 1's IWorkItemStateTransitionRepository (GetAllByPredicate). D12 inclusion query also uses IWorkItemRepository. Cache via existing GetFromCacheIfExists with new namespaces.")
+    ContainerDb(db, "Database", "SQLite (dev/test) / PostgreSQL (prod) via EF Core", "NO schema changes. Reads sibling 1's WorkItemStateTransitions table + WorkItem.CurrentStateEnteredAt column + existing WorkItem.State / StateCategory fields.")
+    Container(e2e, "E2E Test Runner", "Playwright + TypeScript", "One new spec covers happy-path bar-rendering + drill-down dialog open/close. Per-state arithmetic correctness lives in NUnit (faster, deterministic). Per-component tests in Vitest.")
+
+    Rel(rte, spa, "Reads Flow Metrics cumulative-state-time chart and drills down via", "HTTPS")
+    Rel(coach, spa, "Reads the same chart in retro-facilitation contexts via", "HTTPS")
+    Rel(spa, api, "GET /api/teams/{id}/metrics/cumulativeStateTime, .../items?state=X, GET /api/portfolios/{id}/metrics/cumulativeStateTime, .../items?state=X", "HTTPS / JSON")
+    Rel(api, db, "Reads WorkItemStateTransition + WorkItem via", "EF Core")
+    Rel(e2e, spa, "Drives browser interactions against", "Playwright CDP")
+    Rel(e2e, api, "Calls API helpers for test setup against", "HTTPS / JSON")
+```
+
+---
+
+## C4 Level 3 - Component: Per-State Cumulative Computation, Chart Widget, and Drill-Down Domain
+
+The per-state cumulative computation (ADR-022), the drill-down endpoint shape and dialog primitive (ADR-023), the ADR-018+021 disposition (ADR-024), and the new chart widget structure (ADR-025) are the four architecturally significant decisions for this feature. This diagram makes the consumer-side surfaces explicit: the cumulative-time computation flows through the existing `BaseMetricsService` inheritance (parallel to sibling F's `ComputeAgeInStatePercentiles`); the chart is a NEW MUI-X `<BarChart>`-based widget (not an extension of an existing chart); the drill-down dialog is a NEW MUI `Dialog`-based component mirroring `WorkItemsDialog`'s structural pattern; the repository seam (sibling 1's `IWorkItemStateTransitionRepository`) is the only data-layer touchpoint.
+
+```mermaid
+C4Component
+    title Component Diagram - State-Time Cumulative View (Backend + Frontend)
+
+    Container_Boundary(api, "Backend API") {
+        Component(teamMetricsCtrl, "TeamMetricsController (existing, EXTENDED)", "ASP.NET Core ApiController", "Two new endpoints: GET /metrics/cumulativeStateTime and /metrics/cumulativeStateTime/items?state=X. Validation mirrors cycleTimePercentiles (startDate.Date <= endDate.Date; additionally state is required and non-empty for the items endpoint). RbacGuard(TeamRead) at class level.")
+        Component(portfolioMetricsCtrl, "PortfolioMetricsController (existing, EXTENDED)", "ASP.NET Core ApiController", "Mirror endpoints for portfolio scope. RbacGuard(PortfolioRead).")
+        Component(teamMetricsSvc, "TeamMetricsService (existing, EXTENDED)", "C# class", "New methods: GetCumulativeStateTimeForTeam, GetCumulativeStateTimeItemsForTeam. Resolves D12 included-items query via IWorkItemRepository + IWorkItemStateTransitionRepository, then delegates to BaseMetricsService.ComputeCumulativeStateTime / ComputeCumulativeStateTimeItems. Wraps in GetFromCacheIfExists with cache keys CumulativeStateTime_{startDate}_{endDate} and CumulativeStateTime_Items_{state}_{startDate}_{endDate}.")
+        Component(portfolioMetricsSvc, "PortfolioMetricsService (existing, EXTENDED)", "C# class", "Mirror methods for portfolio scope.")
+        Component(baseMetricsSvc, "BaseMetricsService (existing, EXTENDED)", "C# class", "Two new PROTECTED helpers: ComputeCumulativeStateTime(includedItems, getTransitionsForItem, workflowStatesInOrder, nowSnapshot) and ComputeCumulativeStateTimeItems(includedItems, getTransitionsForItem, selectedState, nowSnapshot). Per ADR-022 algorithm: walks transitions via the delegate, sums per-visit durations, sums in-flight contributions for current-state items, returns segment-split arrays. Uses PercentileCalculator for median per state. INTRA-INHERITANCE ONLY - not exposed via interface (ADR-024). Lives alongside sibling F's ComputeAgeInStatePercentiles helper.")
+        Component(transitionRepo, "IWorkItemStateTransitionRepository (sibling 1, REUSE-AS-IS)", "C# port", "Consumed via GetAllByPredicate. No new methods added; ADR-024 confirms repository-only data seam.")
+        Component(workItemRepo, "IWorkItemRepository (existing, REUSE-AS-IS)", "C# port", "Used for D12 inclusion-rule candidate resolution: items by transition-intersection AND items by in-flight-at-windowEnd.")
+        Component(percentileCalc, "PercentileCalculator (existing, REUSE-AS-IS)", "C# static class", "Reused for median-per-state computation in ADR-022 #7 - algorithmic parity with cycleTimePercentiles and ageInStatePercentiles.")
+        Component(cumDto, "CumulativeStateTimeDto + CumulativeStateTimeStateRowDto (NEW)", "C# records", "Bar response DTO: { states: [{ state, workflowOrder, totalDays, completedContributionDays, ongoingContributionDays, itemCount, completedItemCount, ongoingItemCount, meanDays, medianDays }] }.")
+        Component(cumItemsDto, "CumulativeStateTimeItemsDto + CumulativeStateTimeItemRowDto (NEW)", "C# records", "Drill-down response DTO: { state, items: [{ workItemId, title, workItemType, currentState, daysContributed }] }, sorted by daysContributed desc.")
+    }
+
+    Container_Boundary(spa, "Frontend SPA") {
+        Component(metricsServiceTs, "MetricsService.ts (existing, EXTENDED)", "TypeScript HTTP adapter", "Four new methods: getCumulativeStateTimeForTeam, getCumulativeStateTimeForPortfolio, getCumulativeStateTimeItemsForTeam, getCumulativeStateTimeItemsForPortfolio. Added to IMetricsService interface.")
+        Component(useMetricsData, "useMetricsData (existing, EXTENDED)", "React hook", "Parallel fetch of cumulativeStateTime (bar data) alongside existing cycleTimePercentiles + ageInStatePercentiles. New ctx field cumulativeStateTime: ICumulativeStateTimeResponse | null. Drill-down items fetched lazily on bar click - not in the hook.")
+        Component(baseMetricsView, "BaseMetricsView (existing, EXTENDED)", "React component", "New widget dispatch entry for widgetKey 'stateTimeCumulative' renders <CumulativeStateTimeChart>. The chart's onBarClick handler is wired to a local state that triggers the drill-down fetch via MetricsService and opens the dialog. Shared between team and portfolio routes.")
+        Component(cumChart, "CumulativeStateTimeChart (NEW)", "React component", "MUI-X <BarChart> with horizontal layout, stacked completed/ongoing series, SVG <pattern>-based hatching for the ongoing series. Tooltip shows totalDays + segment split + counts + mean + median + US-03 inclusion-breakdown line + full-duration attribution clarification. Bar onClick fires onBarClick(stateName).")
+        Component(cumDrillDialog, "CumulativeStateTimeDrillDownDialog (NEW)", "React component", "MUI Dialog + DialogTitle + DialogContent wrapping a DataGridBase table. Columns: Work Item ID (linkable), Title, Type, Current State, Days Contributed. Default sort: Days Contributed descending. ARIA role='dialog', focus trap, Escape closes. Mirrors WorkItemsDialog's structural pattern but with a distinct data model.")
+        Component(catMeta, "categoryMetadata.ts (existing, EXTENDED)", "TypeScript module", "New entry { widgetKey: 'stateTimeCumulative', size: 'large' } in flow-metrics list. No ownerFilter - renders in both team and portfolio scopes.")
+        Component(widgetInfo, "widgetInfoMetadata.ts (existing, EXTENDED)", "TypeScript module", "New entry stateTimeCumulative with description, RAG status guidance, learn-more URL.")
+        Component(ragRules, "ragRules.ts (existing, EXTENDED)", "TypeScript module", "New function computeCumulativeStateTimeRag returning green (<=40%) / amber (40-60%) / red (>60%) based on the percent of total cumulative time captured by the single most-time-consuming state.")
+        Component(cumModels, "ICumulativeStateTimeStateRow + ICumulativeStateTimeResponse + ICumulativeStateTimeItemRow + ICumulativeStateTimeItemsResponse (NEW)", "TypeScript interfaces", "Mirror backend DTOs.")
+        Component(dataGrid, "DataGridBase (existing, REUSE-AS-IS)", "React component", "Reused by CumulativeStateTimeDrillDownDialog for the table. Provides column sorting, keyboard navigation, ARIA roles, visual style.")
+    }
+
+    Rel(teamMetricsCtrl, teamMetricsSvc, "delegates to via GetEntityByIdAnExecuteAction")
+    Rel(portfolioMetricsCtrl, portfolioMetricsSvc, "delegates to via GetEntityByIdAnExecuteAction")
+    Rel(teamMetricsSvc, baseMetricsSvc, "calls ComputeCumulativeStateTime + ComputeCumulativeStateTimeItems (inherited protected) via")
+    Rel(portfolioMetricsSvc, baseMetricsSvc, "calls ComputeCumulativeStateTime + ComputeCumulativeStateTimeItems (inherited protected) via")
+    Rel(teamMetricsSvc, workItemRepo, "resolves D12 inclusion-rule candidates via GetAllByPredicate")
+    Rel(portfolioMetricsSvc, workItemRepo, "resolves D12 inclusion-rule candidates via")
+    Rel(teamMetricsSvc, transitionRepo, "passes transition-fetcher delegate sourcing GetAllByPredicate to the helper")
+    Rel(portfolioMetricsSvc, transitionRepo, "passes transition-fetcher delegate to the helper")
+    Rel(baseMetricsSvc, percentileCalc, "computes median per state via CalculatePercentile(values, 50)")
+    Rel(teamMetricsSvc, cumDto, "projects bar response via")
+    Rel(teamMetricsSvc, cumItemsDto, "projects drill-down response via")
+    Rel(portfolioMetricsSvc, cumDto, "projects bar response via")
+    Rel(portfolioMetricsSvc, cumItemsDto, "projects drill-down response via")
+
+    Rel(useMetricsData, metricsServiceTs, "fetches bar data via getCumulativeStateTimeForTeam / ForPortfolio")
+    Rel(baseMetricsView, useMetricsData, "consumes ctx.cumulativeStateTime to feed <CumulativeStateTimeChart>")
+    Rel(baseMetricsView, cumChart, "renders with bar data; wires onBarClick to drill-down fetch + dialog open")
+    Rel(baseMetricsView, cumDrillDialog, "renders with state + resolved items on bar click")
+    Rel(baseMetricsView, metricsServiceTs, "fetches drill-down items on click via getCumulativeStateTimeItemsForTeam / ForPortfolio")
+    Rel(cumDrillDialog, dataGrid, "renders the per-item table via")
+    Rel(catMeta, baseMetricsView, "supplies widget placement and ownerFilter rules to")
+    Rel(widgetInfo, baseMetricsView, "supplies description + RAG status guidance to")
+    Rel(ragRules, baseMetricsView, "supplies computeCumulativeStateTimeRag for the widget shell to")
+    Rel(useMetricsData, cumModels, "populates ctx field as ICumulativeStateTimeResponse")
+    Rel(cumChart, cumModels, "consumes via props")
+    Rel(cumDrillDialog, cumModels, "consumes via props")
+```
+
+The diagram makes five architectural commitments visible:
+
+1. **Repository-only data seam** - `BaseMetricsService.ComputeCumulativeStateTime` and `ComputeCumulativeStateTimeItems` read transitions exclusively via sibling 1's `IWorkItemStateTransitionRepository` (`GetAllByPredicate`) passed as a delegate; D12 inclusion-rule candidates resolve via `IWorkItemRepository.GetAllByPredicate`. No direct `DbSet<WorkItemStateTransition>` access; no raw SQL. ArchUnitNET-enforced (ADR-024 extending the ADR-015 rule).
+2. **Inheritance-bound computation, not a new service** - the two new helpers live as `protected` methods inside the existing `BaseMetricsService`, alongside sibling F's `ComputeAgeInStatePercentiles`. No new interface, no new service, no `IPerStateAggregationService`. Three-way convergence (ADR-018 + ADR-021 + ADR-024).
+3. **NEW chart widget, not an extension** - `CumulativeStateTimeChart` is a new component using MUI-X `<BarChart>` with stacked horizontal bars and SVG `<pattern>`-based hatching. Does NOT extend `WorkItemAgingChart` (different data shape, different question). Widget registration follows the established pattern (`categoryMetadata` + `widgetInfoMetadata` + `ragRules` + `BaseMetricsView` dispatch).
+4. **Separate drill-down endpoint and Dialog primitive** - drill-down rows are NOT included in the bar endpoint payload (no `?expand=items` parameter); they are fetched lazily via a separate `/cumulativeStateTime/items?state=X` endpoint on bar click. The dialog is MUI `Dialog` (modal), following the `WorkItemsDialog` precedent for "table-from-chart-click" interactions - no `Drawer` exists in the codebase.
+5. **Sum-equals-bar-height invariant by construction** - the drill-down endpoint's `Sum daysContributed` over rows equals the bar endpoint's `totalDays[state]` within +-0.1d tolerance because both endpoints compute the same per-item formula and sum in different orders. Integration-test-enforced (ADR-022).
+
