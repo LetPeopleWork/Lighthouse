@@ -74,6 +74,7 @@ import {
 	computeWorkItemAgeChartRag,
 	type RagTerms,
 } from "./ragRules";
+import ThroughputRunChartCard from "./ThroughputRunChartCard";
 import TotalArrivalsWidget from "./TotalArrivalsWidget";
 import TotalThroughputWidget from "./TotalThroughputWidget";
 import type { TrendPayload } from "./trendTypes";
@@ -596,10 +597,8 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 		<ThroughputChartFilterToggle
 			isPremium={ctx.isPremium}
 			hasFilter={ctx.hasForecastFilter}
-			chartKind="pbc"
-			conditions={ctx.forecastFilterConditions}
-			onServerViewChange={(view) => {
-				void ctx.refetchThroughputPbc(view);
+			onChange={(filtered) => {
+				void ctx.refetchThroughputPbc(filtered ? "filtered" : "raw");
 			}}
 		/>
 	);
@@ -740,6 +739,12 @@ function buildWidgetNodes(ctx: {
 		predictabilityScoreDetails: (
 			<PredictabilityScoreDetailsWidget
 				predictabilityData={ctx.predictabilityData}
+				entityId={ctx.entity.id}
+				metricsService={ctx.metricsService}
+				startDate={ctx.startDate}
+				endDate={ctx.endDate}
+				isPremium={ctx.isPremium}
+				hasForecastFilter={ctx.hasForecastFilter}
 			/>
 		),
 		percentiles: (
@@ -753,11 +758,15 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		throughput: ctx.throughputData ? (
-			<BarRunChart
-				title={`${ctx.title} Completed`}
+			<ThroughputRunChartCard
+				entityId={ctx.entity.id}
+				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
-				chartData={ctx.throughputData}
-				displayTotal={true}
+				endDate={ctx.endDate}
+				rawData={ctx.throughputData}
+				title={`${ctx.title} Completed`}
+				isPremium={ctx.isPremium}
+				hasForecastFilter={ctx.hasForecastFilter}
 			/>
 		) : null,
 		cycleScatter: (

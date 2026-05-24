@@ -1,7 +1,7 @@
 import { Box, useTheme } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import type React from "react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -16,6 +16,7 @@ interface BarRunChartProps {
 	startDate: Date;
 	displayTotal?: boolean;
 	title?: string;
+	filterToggle?: ReactNode;
 }
 
 const BarRunChart: React.FC<BarRunChartProps> = ({
@@ -23,6 +24,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 	startDate,
 	displayTotal = false,
 	title = "Bar Chart",
+	filterToggle,
 }) => {
 	const theme = useTheme();
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
@@ -66,6 +68,11 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 							flexDirection: "column",
 						}}
 					>
+						{filterToggle && (
+							<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+								{filterToggle}
+							</Box>
+						)}
 						<Box sx={{ flex: 1, minHeight: 0 }}>
 							<BarChart
 								style={{ height: "100%", width: "100%" }}

@@ -3094,7 +3094,7 @@ describe("BaseMetricsView component", () => {
 
 			(pbcMetricsService.getThroughputPbc as Mock).mockClear();
 
-			await user.click(screen.getByRole("button", { name: /^filtered$/i }));
+			await user.click(screen.getByLabelText(/use filtered throughput/i));
 
 			await waitFor(() => {
 				expect(pbcMetricsService.getThroughputPbc).toHaveBeenCalledWith(

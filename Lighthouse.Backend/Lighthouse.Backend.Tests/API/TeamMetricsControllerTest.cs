@@ -600,6 +600,43 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetMultiItemForecastPredictabilityScore_WithViewFiltered_RoutesToFilterAwareOverload()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedScore = new ForecastPredictabilityScore(new HowManyForecast());
+            teamMetricsServiceMock
+                .Setup(service => service.GetMultiItemForecastPredictabilityScoreForTeam(
+                    team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), ThroughputFilterMode.ApplyFilter))
+                .Returns(expectedScore);
+
+            var subject = CreateSubject();
+            var response = subject.GetMultiItemForecastPredictabilityScore(team.Id, DateTime.Now.AddDays(-1), DateTime.Now, "filtered");
+
+            var result = response.Result as OkObjectResult;
+            Assert.That(result!.Value, Is.EqualTo(expectedScore));
+            teamMetricsServiceMock.Verify(s => s.GetMultiItemForecastPredictabilityScoreForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), ThroughputFilterMode.ApplyFilter), Times.Once);
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScore_WithViewOmitted_RoutesToUnfilteredOverload()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            teamMetricsServiceMock
+                .Setup(service => service.GetMultiItemForecastPredictabilityScoreForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new ForecastPredictabilityScore(new HowManyForecast()));
+
+            var subject = CreateSubject();
+            subject.GetMultiItemForecastPredictabilityScore(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            teamMetricsServiceMock.Verify(s => s.GetMultiItemForecastPredictabilityScoreForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            teamMetricsServiceMock.Verify(s => s.GetMultiItemForecastPredictabilityScoreForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()), Times.Never);
+        }
+
+        [Test]
         public void GetTotalWorkItemAge_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();

@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("multiitemforecastpredictabilityscore")]
-        public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? view = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -154,8 +154,18 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
-                return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate);
+                return GetPredictabilityScoreForView(team, startDate, endDate, view);
             });
+        }
+
+        private ForecastPredictabilityScore GetPredictabilityScoreForView(Team team, DateTime startDate, DateTime endDate, string? view)
+        {
+            if (string.Equals(view, "filtered", StringComparison.OrdinalIgnoreCase))
+            {
+                return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate, ThroughputFilterMode.ApplyFilter);
+            }
+
+            return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate);
         }
 
         [HttpGet("totalWorkItemAge")]

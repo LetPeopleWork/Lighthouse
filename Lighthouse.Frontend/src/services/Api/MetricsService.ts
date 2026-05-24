@@ -50,6 +50,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		view?: "raw" | "filtered",
 	): Promise<ForecastPredictabilityScore>;
 
 	getTotalWorkItemAge(id: number, asOfDate: Date): Promise<number>;
@@ -281,10 +282,12 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		view?: "raw" | "filtered",
 	): Promise<IForecastPredictabilityScore> {
 		return this.withErrorHandling(async () => {
+			const viewSuffix = view ? `&view=${view}` : "";
 			const response = await this.apiService.get<IForecastPredictabilityScore>(
-				`/${this.api}/${id}/metrics/multiitemforecastpredictabilityscore?${this.getDateFormatString(startDate, endDate)}`,
+				`/${this.api}/${id}/metrics/multiitemforecastpredictabilityscore?${this.getDateFormatString(startDate, endDate)}${viewSuffix}`,
 			);
 
 			return this.deserializeForecastAccuracy(response.data);

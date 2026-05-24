@@ -282,6 +282,15 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode)
+        {
+            return GetFromCacheIfExists(team, $"ForecastPredictabilityScore_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{mode}", () =>
+            {
+                var throughput = GetBlackoutAwareThroughputForTeam(team, startDate, endDate, mode);
+                return GetMultiItemForecastPredictabilityScore(throughput);
+            }, logger);
+        }
+
         public IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

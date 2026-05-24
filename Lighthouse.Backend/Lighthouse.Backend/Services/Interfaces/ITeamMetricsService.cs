@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode);
+
         IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate);
 
         IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate);
