@@ -1,10 +1,15 @@
 import type { Locator, Page } from "@playwright/test";
 import { BaseEditPage } from "../common/BaseEditPage";
+import { ForecastFilterEditor } from "./ForecastFilterEditor";
 import { TeamDetailPage } from "./TeamDetailPage";
 
 export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	constructor(page: Page) {
 		super(page, (page) => new TeamDetailPage(page));
+	}
+
+	get forecastFilterEditor(): ForecastFilterEditor {
+		return new ForecastFilterEditor(this.page);
 	}
 
 	override async save(): Promise<TeamDetailPage> {

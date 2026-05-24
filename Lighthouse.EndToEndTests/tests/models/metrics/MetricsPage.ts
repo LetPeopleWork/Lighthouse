@@ -35,6 +35,22 @@ export class MetricsWidget {
 	get Widget(): Locator {
 		return this.page.locator(`[data-testid="dashboard-item-${this.widgetId}"]`);
 	}
+
+	get forecastFilterToggle(): Locator {
+		return this.Widget.getByLabel(/^Use filtered/i);
+	}
+
+	async toggleForecastFilter(): Promise<void> {
+		await this.forecastFilterToggle.click();
+	}
+
+	async isForecastFilterEnabled(): Promise<boolean> {
+		return await this.forecastFilterToggle.isChecked();
+	}
+
+	async snapshotChartContent(): Promise<string> {
+		return (await this.Widget.innerText()) ?? "";
+	}
 }
 
 export enum MetricsCategories {

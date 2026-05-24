@@ -131,6 +131,16 @@ export class TeamDetailPage {
 		return this.page.getByRole("button", { name: "Update Team Data" });
 	}
 
+	get throughputQuickSettingButton(): Locator {
+		return this.page.getByRole("button", { name: /^Throughput:/ });
+	}
+
+	async getThroughputQuickSettingTooltip(): Promise<string> {
+		return (
+			(await this.throughputQuickSettingButton.getAttribute("aria-label")) ?? ""
+		);
+	}
+
 	get teamId(): number {
 		const url = new URL(this.page.url());
 		const teamId = url.pathname.split("/").pop() ?? "0";
