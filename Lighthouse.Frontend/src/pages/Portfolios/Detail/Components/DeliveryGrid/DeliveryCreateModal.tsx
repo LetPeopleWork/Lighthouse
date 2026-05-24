@@ -537,29 +537,26 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	};
 
 	const handleSave = () => {
-		if (validateForm()) {
-			const isRuleBased = selectionMode === DeliverySelectionMode.RuleBased;
-			if (isEditMode && editingDelivery && onUpdate) {
-				onUpdate({
-					id: editingDelivery.id,
-					name: name.trim(),
-					date,
-					featureIds: selectedFeatureIds,
-					selectionMode,
-					rules: isRuleBased ? rules : undefined,
-					mode: isRuleBased ? mode : undefined,
-				});
-			} else {
-				onSave({
-					name: name.trim(),
-					date,
-					featureIds: selectedFeatureIds,
-					selectionMode,
-					rules: isRuleBased ? rules : undefined,
-					mode: isRuleBased ? mode : undefined,
-				});
-			}
+		if (!validateForm()) {
+			return;
 		}
+
+		const isRuleBased = selectionMode === DeliverySelectionMode.RuleBased;
+		const basePayload = {
+			name: name.trim(),
+			date,
+			featureIds: selectedFeatureIds,
+			selectionMode,
+			rules: isRuleBased ? rules : undefined,
+			mode: isRuleBased ? mode : undefined,
+		};
+
+		if (isEditMode && editingDelivery && onUpdate) {
+			onUpdate({ id: editingDelivery.id, ...basePayload });
+			return;
+		}
+
+		onSave(basePayload);
 	};
 
 	const resetForm = useCallback(() => {
