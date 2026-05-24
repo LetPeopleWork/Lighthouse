@@ -60,7 +60,6 @@ function getToggleProps(
 		chartKind: "runChart",
 		conditions: [typeIsBugCondition],
 		items: sampleItems,
-		excludedSummary: "Type = Bug",
 		onClientFiltered: vi.fn(),
 		onServerViewChange: vi.fn(),
 		...overrides,
@@ -161,17 +160,6 @@ describe("ThroughputChartFilterToggle", () => {
 
 		expect(onServerViewChange).toHaveBeenCalledWith("filtered");
 		expect(onClientFiltered).not.toHaveBeenCalled();
-	});
-
-	it("shows the FilteredThroughputChip next to the chart title when the toggle is Filtered", async () => {
-		const user = userEvent.setup();
-		render(<ThroughputChartFilterToggle {...getToggleProps()} />);
-
-		expect(screen.queryByText("Filtered throughput")).not.toBeInTheDocument();
-
-		await user.click(screen.getByRole("button", { name: /^filtered$/i }));
-
-		expect(screen.getByText("Filtered throughput")).toBeInTheDocument();
 	});
 
 	it("shows the empty-state message when the filter excludes every item in the window (Filtered view)", async () => {

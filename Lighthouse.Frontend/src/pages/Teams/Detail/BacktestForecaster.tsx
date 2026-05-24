@@ -18,7 +18,6 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
-import FilteredThroughputChip from "../../../components/Common/Forecasting/FilteredThroughputChip";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
@@ -382,14 +381,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 					)}
 				</Grid>
 			</Grid>
-			{backtestResult?.filterApplied && (
-				<Grid size={{ xs: 12 }}>
-					<FilteredThroughputChip
-						visible={backtestResult.filterApplied}
-						excludedSummary={backtestResult.excludedSummary}
-					/>
-				</Grid>
-			)}
 			{backtestResult && (
 				<Grid size={{ xs: 12 }}>
 					<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>

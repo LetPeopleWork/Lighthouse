@@ -782,31 +782,4 @@ describe("ManualForecaster component", () => {
 			expect(onApplyFilterOverrideChange).toHaveBeenCalledWith(false);
 		});
 	});
-
-	describe("FilteredThroughputChip on result panel", () => {
-		it("renders the chip when the forecast result has filterApplied=true", () => {
-			const forecastResult = getMockManualForecast({
-				filterApplied: true,
-				excludedSummary: 'Type = Bug; Tags contains "maintenance"',
-			});
-			render(
-				<ManualForecaster
-					{...defaultProps}
-					manualForecastResult={forecastResult}
-				/>,
-			);
-			expect(screen.getByText("Filtered throughput")).toBeInTheDocument();
-		});
-
-		it("does not render the chip when the forecast result has filterApplied=false", () => {
-			const forecastResult = getMockManualForecast({ filterApplied: false });
-			render(
-				<ManualForecaster
-					{...defaultProps}
-					manualForecastResult={forecastResult}
-				/>,
-			);
-			expect(screen.queryByText("Filtered throughput")).not.toBeInTheDocument();
-		});
-	});
 });

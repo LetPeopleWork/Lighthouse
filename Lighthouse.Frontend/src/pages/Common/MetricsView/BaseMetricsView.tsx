@@ -12,10 +12,7 @@ import ProcessBehaviourChart, {
 	ProcessBehaviourChartType,
 } from "../../../components/Common/Charts/ProcessBehaviourChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
-import {
-	type EvaluatorCondition,
-	formatConditions,
-} from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
+import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
@@ -601,7 +598,6 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 			hasFilter={ctx.hasForecastFilter}
 			chartKind="pbc"
 			conditions={ctx.forecastFilterConditions}
-			excludedSummary={formatConditions(ctx.forecastFilterConditions)}
 			onServerViewChange={(view) => {
 				void ctx.refetchThroughputPbc(view);
 			}}
@@ -860,7 +856,6 @@ function buildWidgetNodes(ctx: {
 						hasFilter={ctx.hasForecastFilter}
 						chartKind="runChart"
 						conditions={ctx.forecastFilterConditions}
-						excludedSummary={formatConditions(ctx.forecastFilterConditions)}
 					/>
 				}
 			/>

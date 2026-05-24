@@ -867,35 +867,4 @@ describe("BacktestForecaster component", () => {
 			);
 		});
 	});
-
-	describe("FilteredThroughputChip on backtest result panel", () => {
-		it("renders the chip when the backtest result has filterApplied=true", () => {
-			const mockResult: BacktestResult = {
-				startDate: dayjs().subtract(60, "day").toDate(),
-				endDate: dayjs().subtract(30, "day").toDate(),
-				historicalStartDate: dayjs().subtract(90, "day").toDate(),
-				historicalEndDate: dayjs().subtract(60, "day").toDate(),
-				percentiles: [new HowManyForecast(50, 10)],
-				actualThroughput: 12,
-				filterApplied: true,
-				excludedSummary: 'Type = Bug; Tags contains "maintenance"',
-			};
-			renderWithContext({ ...defaultProps, backtestResult: mockResult });
-			expect(screen.getByText("Filtered throughput")).toBeInTheDocument();
-		});
-
-		it("does not render the chip when the backtest result has filterApplied=false", () => {
-			const mockResult: BacktestResult = {
-				startDate: dayjs().subtract(60, "day").toDate(),
-				endDate: dayjs().subtract(30, "day").toDate(),
-				historicalStartDate: dayjs().subtract(90, "day").toDate(),
-				historicalEndDate: dayjs().subtract(60, "day").toDate(),
-				percentiles: [new HowManyForecast(50, 10)],
-				actualThroughput: 12,
-				filterApplied: false,
-			};
-			renderWithContext({ ...defaultProps, backtestResult: mockResult });
-			expect(screen.queryByText("Filtered throughput")).not.toBeInTheDocument();
-		});
-	});
 });

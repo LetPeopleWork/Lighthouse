@@ -19,7 +19,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
 import { useState } from "react";
-import FilteredThroughputChip from "../../../components/Common/Forecasting/FilteredThroughputChip";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -418,14 +417,6 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 						/>
 					</Grid>
 				)}
-			{manualForecastResult?.filterApplied && (
-				<Grid size={{ xs: 12 }}>
-					<FilteredThroughputChip
-						visible={manualForecastResult.filterApplied}
-						excludedSummary={manualForecastResult.excludedSummary}
-					/>
-				</Grid>
-			)}
 		</Grid>
 	);
 };

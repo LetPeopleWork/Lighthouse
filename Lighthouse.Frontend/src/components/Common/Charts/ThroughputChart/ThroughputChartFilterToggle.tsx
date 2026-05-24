@@ -5,7 +5,6 @@ import {
 	Typography,
 } from "@mui/material";
 import { type ReactElement, useMemo, useState } from "react";
-import FilteredThroughputChip from "../../Forecasting/FilteredThroughputChip";
 import {
 	type EvaluableWorkItem,
 	type EvaluatorCondition,
@@ -25,7 +24,6 @@ export interface ThroughputChartFilterToggleProps {
 	readonly chartKind: ThroughputChartFilterToggleChartKind;
 	readonly conditions: readonly EvaluatorCondition[];
 	readonly items?: readonly EvaluableWorkItem[];
-	readonly excludedSummary?: string;
 	readonly onClientFiltered?: (
 		filteredItems: readonly EvaluableWorkItem[],
 		total: number,
@@ -39,7 +37,6 @@ const ThroughputChartFilterToggle = ({
 	chartKind,
 	conditions,
 	items,
-	excludedSummary,
 	onClientFiltered,
 	onServerViewChange,
 }: ThroughputChartFilterToggleProps): ReactElement | null => {
@@ -97,10 +94,6 @@ const ThroughputChartFilterToggle = ({
 					Filtered
 				</ToggleButton>
 			</ToggleButtonGroup>
-			<FilteredThroughputChip
-				visible={isFilteredActive}
-				excludedSummary={excludedSummary}
-			/>
 			{showEmptyState && (
 				<Typography variant="body2" color="text.secondary">
 					{EMPTY_STATE_MESSAGE}
