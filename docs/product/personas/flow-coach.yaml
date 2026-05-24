@@ -17,6 +17,7 @@ short_description: >
 
 primary_jobs:
   - job-flow-coach-spot-stuck-items
+  - job-flow-coach-spot-pace-outliers
 
 goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast

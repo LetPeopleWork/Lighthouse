@@ -1,0 +1,133 @@
+schema_version: 1
+feature_id: aging-pace-percentiles
+updated: 2026-05-24
+
+journeys:
+
+  - name: spot-pace-outliers-on-aging-chart
+    goal: >
+      Flow coach opens the Work Item Aging chart and within a glance identifies which
+      in-flight items are pacing slower than most historically-completed items in the
+      same workflow state, then uses that signal to name the specific bottleneck step
+      in the next standup or flow review.
+    persona: flow-coach (also: delivery-forecaster as secondary, for forecast-honesty
+      conversations)
+
+    emotional_arc:
+      start: Curious — "I want to know which items are dragging — but specifically WHY are
+        they dragging, what step is the slow one?"
+      middle: Focused — "I can see exactly which state's pace is the outlier for each dot;
+        the dashed segment above the state column tells me what 'historically normal' looks
+        like for THIS step."
+      end: Precise — "I have specific items to ask about AND I know which state to ask about
+        for each one. The chart frames the conversation."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Does Lighthouse's Work Item Aging chart already show pace percentile bands?
+        decision: >
+          YES — the chart already overlays 50/70/85/95 percentile reference lines computed
+          from end-to-end cycle time of completed items (verified by inspecting
+          WorkItemAgingChart.tsx and TeamMetricsController.cs). The gap vs ActionableAgile
+          is PER-STATE bands (age-at-state-exit per workflow state, derived from
+          WorkItemStateTransition data), drawn as short segments anchored above each state
+          column alongside the existing full-width CT lines.
+      - id: D2
+        question: Which percentiles to render by default?
+        decision: 50/70/85/95 — matches existing Lighthouse cycle-time percentile choice and
+          ActionableAgile convention. Configurability deferred to a follow-up feature (ADO
+          #5076).
+      - id: D3
+        question: Distribution window for the historical age-at-state-exit calculation?
+        decision: Reuse the same start/end window the existing cycleTimePercentiles endpoint
+          uses (the team's configured History setting) so all pace measures on the page agree.
+      - id: D6
+        question: Visual treatment for the new bands?
+        decision: Short dashed horizontal segments anchored to each state column at each
+          percentile value, distinguished from the existing full-width CT lines via a
+          dedicated chip group in PercentileLegend with sub-header "Age-in-State %iles (per
+          state)". Two series, two chip groups, independent toggles.
+
+    steps:
+
+      - id: step-open-team-detail
+        action: Flow coach navigates to /teams/{teamId} during a flow review
+        expected_output: >
+          Team detail page renders. The Work Item Aging chart shows in-flight items as dots
+          across workflow state columns, AS TODAY, plus the new short dashed segments above
+          each state column at 50/70/85/95 of historical age-at-state-exit for that state.
+          The existing full-width end-to-end CT lines remain visible (no regression).
+        emotional_state: Curious — "let's see what's in flight and how it's pacing"
+        shared_artifacts:
+          - perStatePercentileValues (new, from GET /api/teams/{teamId}/metrics/ageInStatePercentiles)
+          - percentileValues (existing, from GET /api/teams/{teamId}/metrics/cycleTimePercentiles)
+
+      - id: step-scan-bands
+        action: Flow coach visually compares each in-flight dot's Y position against the
+          per-state band heights for ITS state column
+        expected_output: >
+          Dots above the 85th-percentile per-state segment are visibly past the band;
+          dots well below the 50th-percentile per-state segment are visibly clustered low.
+          Per-state bands have different heights from one state to another (Review's 85th
+          might be 10 days while In-Progress's 85th might be 4 days — the bands' geometry
+          itself tells the team's flow shape).
+        emotional_state: Engaged — "Review's 85th is at 10 days; this dot is at 14; that's
+          the one to talk about"
+        shared_artifacts:
+          - rendered band segments (per-state, from D6)
+          - rendered in-flight item dots (existing)
+
+      - id: step-confirm-via-tooltip
+        action: Flow coach hovers a dot that looks like it's above a per-state band, to
+          confirm the bucket without reading the chart geometry alone
+        expected_output: >
+          Existing tooltip text (item name, state, age, blocked status) plus one NEW line
+          like `Pace: above 85th percentile for Review` (or one of: `at 50-70`, `at 70-85`,
+          `at 85-95`, `above 95`, `below 50`, `no historical data for <state>`).
+        emotional_state: Validated — "yes, this is the one — and the chart said it in words"
+        shared_artifacts:
+          - chart tooltip (existing component, extended in US-03)
+
+      - id: step-toggle-pace-lens-if-needed
+        action: Flow coach toggles off the "Cycle Time %iles" chip group in the legend to
+          focus the chart on per-state pace only (or vice versa)
+        expected_output: >
+          The toggled-off series' bands hide; the other series remains. Each chip toggles
+          independently within its group. The chart's "feel" can be reduced to just the
+          pace lens being used in this minute.
+        emotional_state: In control — "the chart shows what I'm looking at, nothing more"
+        shared_artifacts:
+          - PercentileLegend chip state (session-only, not server-persisted)
+
+      - id: step-name-the-conversation
+        action: Flow coach moves to the standup / review and frames the conversation using
+          the specific state names surfaced by the chart and tooltips
+        expected_output: >
+          Coach can say "we have three items past 85th percentile in Review and one past
+          95th in Test — let's start with the Test one" instead of "a few things feel
+          slow" — the chart enabled a precise framing.
+        emotional_state: Precise — "I have specific items AND specific steps to ask about"
+        shared_artifacts: []
+
+    error_paths_summary:
+      - State with zero completed-item samples in window: no per-state bands rendered for
+        that state; existing full-width CT bands still render so the chart is never empty
+        of guidance. Tooltip on a dot in that state reads "no historical data for <state>".
+      - State with <10 completed-item samples: bands render normally; legend chip tooltip
+        warns about low sample sizes for the affected states; per-band hover tooltip shows
+        the actual N.
+      - First weeks post-sibling-slice-01-ship: transitions data only covers items
+        completed after sibling's deploy, so most states will have low or zero samples for
+        a few weeks. Expected and tolerated; OUT-aging-pace-bands-rendered KPI gives 6
+        weeks of accumulation before measurement.
+      - Bimodal distribution: percentile math is still defined; bands render at the
+        mathematical percentile values. No special visual handling (out of scope, D5).
+
+    success_signal:
+      - Flow coach leaves the chart having identified specific items AND specific states
+        to ask about, rather than a vague sense of slowness.
+      - Customer / community Slack stops mentioning "Lighthouse aging chart is missing
+        per-state percentile bands like ActionableAgile" — the parity claim is defensible
+        (OUT-aging-pace-parity-claim KPI).
+      - The Age-in-State chip group is used (toggled) by ≥15% of users who view a team
+        detail page within 4 weeks of release (OUT-aging-pace-legend-toggled KPI).

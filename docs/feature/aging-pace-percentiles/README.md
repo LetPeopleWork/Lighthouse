@@ -2,13 +2,15 @@
 
 **Parent Epic**: #4144 (More Detailed State Info) — `docs/feature/epic-4144-more-detailed-state-info/README.md`
 **ADO Epic**: https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/4144
-**Status**: PRE-DISCUSS. Carry-over only; not yet a DISCUSS artifact.
+**Status**: DISCUSS complete (2026-05-24). This stub is preserved as the origin record; the authoritative artifact is now `feature-delta.md`.
 **MVP membership**: **Yes** — required for the Epic 4144 MVP release bundle alongside `time-in-state-and-staleness` and `state-time-cumulative-view`.
 **Origin**: Promoted out of Epic #4144 slice F. Documented in the Epic catalog as "Pace-percentiles bands on Work Item Aging chart (ActionableAgile-style)".
 
-This file captures what we already figured out while scoping Epic #4144. The eventual `/nw-discuss` run will produce the full `feature-delta.md` alongside this stub.
+> **Premise correction surfaced during DISCUSS (2026-05-24)**: the "Strategic framing" below overstated the gap. Lighthouse's Work Item Aging chart already renders end-to-end 50/70/85/95 cycle-time percentile bands as dashed lines (verified in `Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx:349-364` and `Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs:303-318`). The ActionableAgile-parity differentiator is **per-state granularity** — bands showing how long items historically spent in *each* workflow state, not the end-to-end total. The feature has been reframed accordingly. See `feature-delta.md` for the corrected JTBD, AC, and the locked decision matrix.
 
-## Strategic framing
+This file captures what we figured out while scoping Epic #4144 — preserved for traceability. Read `feature-delta.md` for the current scope.
+
+## Strategic framing (PRE-DISCUSS, superseded — see correction above)
 
 This is **the** competitive-parity story for the MVP. ActionableAgile shows pace percentiles overlaid on the aging chart; Lighthouse currently does not. Closing this gap is the explicit value prop — the JTBD lives near "show me where my in-flight items sit relative to historically-finished items, at a glance."
 

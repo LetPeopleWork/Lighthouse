@@ -1,11 +1,12 @@
 schema_version: 1
-updated: 2026-05-20
+updated: 2026-05-24
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
   - test-speed-improvements
   - time-in-state-and-staleness
   - filter-forecast-throughput
+  - aging-pace-percentiles
 
 jobs:
   - id: job-rbac-bootstrap
@@ -375,3 +376,74 @@ jobs:
         Required to make the staleness signal useful per-team. Without this, the badge
         colour is meaningless (no team-specific baseline). Satisfaction is zero today
         because the setting doesn't exist.
+
+  - id: job-flow-coach-spot-pace-outliers
+    title: Spot in-flight items that are pacing slower than the team historically does in that state
+    persona: flow-coach
+    feature_context: aging-pace-percentiles
+    job_story: >
+      When I open my team's Work Item Aging chart during a flow review or a standup
+      and I want to know which in-flight items are dragging,
+      I want to see at a glance — without doing math in my head — which items are sitting
+      in their current state longer than most historically-completed items did while in
+      THAT SAME state,
+      so I can name the specific bottleneck step ("Review is slow on this item") rather than
+      a vague "this one feels old", and start the right conversation with the right person.
+    dimensions:
+      functional: >
+        See per-state percentile reference bands (50/70/85/95 of historical age-at-state-exit
+        per workflow state) overlaid on the Work Item Aging chart, alongside the existing
+        full-width cycle-time percentile lines. Each in-flight item dot's Y position can be
+        compared visually against the band heights for ITS state column. Tooltip surfaces a
+        plain-language pace assessment per dot (e.g. "above 85th percentile for Review").
+      emotional: >
+        Move from "I think this item is slow but I'm not sure compared to what" to "this
+        specific step is taking longer than 9 out of 10 items historically did — let's ask
+        why" — the chart names the specific dimension of slowness without requiring me to
+        remember historical numbers for each state.
+      social: >
+        Be the flow coach who frames bottleneck conversations precisely ("our Review step
+        for this item is at the 95th percentile of how long Review usually takes") rather
+        than imprecisely ("this one feels old"). Closes a parity claim against
+        ActionableAgile — a competitor tool — at customer / community demos.
+    forces:
+      push: >
+        Today's chart shows full-width 50/70/85/95 lines for end-to-end cycle time only.
+        Those lines answer "how does this item compare to overall cycle-time history?" — they
+        do NOT answer "how does this item's CURRENT STATE compare to history for THAT
+        STATE." Flow coaches who want the per-state framing must mentally translate ("the
+        end-to-end line is at 25 days; this item is at 14 in Review; is 14 in Review a lot
+        or a little for us?"). Friction → coaches don't use the chart for per-state framing
+        → conversations stay imprecise.
+      pull: >
+        Short dashed segments above each state column at 50/70/85/95 of age-at-state-exit
+        let the eye compare an in-flight dot directly to the historical pace for ITS state
+        — same chart, no extra view, no mental math. Plus a tooltip line that says the bucket
+        in plain language for the user who doesn't want to read chart geometry.
+      anxiety: >
+        What if the per-state distribution is too sparse to be meaningful in the first weeks
+        post-release? (Mitigated by D5: empty/low-sample states are explicit; the existing
+        end-to-end CT bands remain to fill the guidance gap.)
+        What if the per-state framing causes coaches to micro-optimise one state at the
+        expense of overall flow? (Mitigated by KEEPING the existing end-to-end CT bands;
+        the new bands ADD context, do not replace it.)
+        What if there's not enough visual contrast between the new short segments and the
+        existing full-width lines? (Mitigated by D6: dedicated chip group + separate sub-
+        header in the legend; users can hide either series.)
+      habit: >
+        Flow coaches who already use ActionableAgile are accustomed to per-state bands and
+        will expect them. Coaches who only know Lighthouse are accustomed to the existing
+        full-width bands and need the new series labelled clearly so it doesn't surprise
+        them — the second chip group sub-header handles that.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 — direct competitive-parity claim against ActionableAgile,
+        plus a real informational gap (per-state pace framing is materially different from
+        end-to-end CT framing). Current satisfaction: 2 (NOT 1) — because Lighthouse DOES
+        show end-to-end CT bands today, which partially satisfies the chart-glance pace
+        recognition need; the gap is the per-state framing, not the absence of bands
+        entirely. Gap: 2 — bigger than zero (real missing capability), smaller than the
+        sibling time-in-state job's gap of 3 (which had zero current satisfaction).
