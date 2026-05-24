@@ -224,6 +224,117 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task GetThroughput_PremiumTenantTeamWithFilterAndViewFiltered_ReturnsFilteredCounts()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var response = await client.GetAsync(BuildRunChartUrl(view: "filtered"));
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                var total = GetIntProperty(body, "total");
+                Assert.That(total, Is.EqualTo(3), $"Expected 3 User Stories to remain after Bug-excluding filter. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetThroughput_PremiumTenantTeamWithFilterAndViewRaw_ReturnsUnfilteredCounts()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var response = await client.GetAsync(BuildRunChartUrl(view: "raw"));
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                var total = GetIntProperty(body, "total");
+                Assert.That(total, Is.EqualTo(5), $"Expected all 5 items unfiltered (2 Bugs + 3 User Stories). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetThroughput_PremiumTenantTeamWithFilterAndQueryParamOmitted_DefaultsToRaw()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var response = await client.GetAsync(BuildRunChartUrl());
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                var total = GetIntProperty(body, "total");
+                Assert.That(total, Is.EqualTo(5), $"Omitted ?view= must preserve today's unfiltered behaviour (D1). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetThroughput_NonPremiumTenantTeamWithViewFiltered_SilentlyReturnsRaw()
+        {
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+
+            client.AsTeamAdmin(seededTeamId);
+
+            var response = await client.GetAsync(BuildRunChartUrl(view: "filtered"));
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                var total = GetIntProperty(body, "total");
+                Assert.That(total, Is.EqualTo(5), $"Non-premium tenant must ignore the filter (US-07). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task RunBacktest_PremiumTenantTeamWithFilterAndApplyFilter_ActualThroughputExcludesFilteredItems()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var actualThroughput = await RunBacktestAndGetActualThroughput(applyFilterOverride: true);
+
+            Assert.That(actualThroughput, Is.EqualTo(3), "ActualThroughput must reflect filtered count (3 User Stories) when ApplyFilter is opted-in.");
+        }
+
+        [Test]
+        public async Task RunBacktest_PremiumTenantTeamWithFilterAndDoNotApplyFilter_ActualThroughputIsRawTotal()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var actualThroughput = await RunBacktestAndGetActualThroughput(applyFilterOverride: false);
+
+            Assert.That(actualThroughput, Is.EqualTo(5), "ActualThroughput must reflect raw total (2 Bugs + 3 User Stories) when ApplyFilter is opted-out.");
+        }
+
+        private async Task<int> RunBacktestAndGetActualThroughput(bool applyFilterOverride)
+        {
+            var backtestStart = DateOnly.FromDateTime(displayStart);
+            var backtestEnd = DateOnly.FromDateTime(displayEnd);
+            var historicalEnd = backtestStart.AddDays(-1);
+            var historicalStart = historicalEnd.AddDays(-29);
+
+            var input = new
+            {
+                StartDate = backtestStart,
+                EndDate = backtestEnd,
+                HistoricalStartDate = historicalStart,
+                HistoricalEndDate = historicalEnd,
+                ApplyFilterOverride = applyFilterOverride,
+            };
+
+            var response = await client.PostAsJsonAsync($"/api/latest/forecast/backtest/{seededTeamId}", input);
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.GetProperty("actualThroughput").GetInt32();
+        }
+
         private Task<HttpResponseMessage> GetPbc(string? view)
         {
             return GetPbc(seededTeamId, view);
@@ -246,9 +357,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return document.RootElement.GetProperty(propertyName).GetInt32();
         }
 
-        private string BuildRunChartUrl()
+        private string BuildRunChartUrl(string? view = null)
         {
-            return $"/api/latest/teams/{seededTeamId}/metrics/throughput?startDate={displayStart:O}&endDate={displayEnd:O}";
+            var url = $"/api/latest/teams/{seededTeamId}/metrics/throughput?startDate={displayStart:O}&endDate={displayEnd:O}";
+            if (view != null)
+            {
+                url += $"&view={view}";
+            }
+
+            return url;
         }
 
         private static int SumDataPointYValues(string body)

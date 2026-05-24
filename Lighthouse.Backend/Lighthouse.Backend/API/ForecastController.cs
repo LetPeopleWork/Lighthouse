@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.API
 
                 var periodStart = input.StartDate.ToDateTime(TimeOnly.MinValue);
                 var periodEnd = input.EndDate.ToDateTime(TimeOnly.MinValue);
-                var actualThroughput = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd);
+                var actualThroughput = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd, mode);
 
                 var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
 

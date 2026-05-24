@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("throughput")]
-        public ActionResult<RunChartData> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartData> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? view = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -40,10 +40,20 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
-                var data = teamMetricsService.GetThroughputForTeam(team, startDate, endDate);
+                var data = GetThroughputForView(team, startDate, endDate, view);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
                 return data;
             });
+        }
+
+        private RunChartData GetThroughputForView(Team team, DateTime startDate, DateTime endDate, string? view)
+        {
+            if (string.Equals(view, "filtered", StringComparison.OrdinalIgnoreCase))
+            {
+                return teamMetricsService.GetThroughputForTeam(team, startDate, endDate, ThroughputFilterMode.ApplyFilter);
+            }
+
+            return teamMetricsService.GetThroughputForTeam(team, startDate, endDate);
         }
 
         [HttpGet("arrivals")]

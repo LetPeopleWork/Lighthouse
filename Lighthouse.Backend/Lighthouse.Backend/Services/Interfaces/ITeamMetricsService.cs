@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode);
+
         RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);

@@ -159,17 +159,16 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 
 				setHistoricalStartDate(historyStartDate);
 
+				const shouldRequestFiltered =
+					applyFilterOverride === true && hasForecastFilter && isPremium;
+				const fetchThroughput = (start: Date, end: Date) =>
+					shouldRequestFiltered
+						? teamMetricsService.getThroughput(team.id, start, end, "filtered")
+						: teamMetricsService.getThroughput(team.id, start, end);
+
 				const [throughputData, actualThroughputData] = await Promise.all([
-					teamMetricsService.getThroughput(
-						team.id,
-						historyStartDate,
-						historyEndDate,
-					),
-					teamMetricsService.getThroughput(
-						team.id,
-						backtestResult.startDate,
-						backtestResult.endDate,
-					),
+					fetchThroughput(historyStartDate, historyEndDate),
+					fetchThroughput(backtestResult.startDate, backtestResult.endDate),
 				]);
 
 				setHistoricalThroughput(throughputData);
@@ -188,7 +187,14 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 		};
 
 		fetchData();
-	}, [backtestResult, team, teamMetricsService]);
+	}, [
+		backtestResult,
+		team,
+		teamMetricsService,
+		applyFilterOverride,
+		hasForecastFilter,
+		isPremium,
+	]);
 
 	const handleRunBacktest = async () => {
 		if (!startDate || !endDate) {

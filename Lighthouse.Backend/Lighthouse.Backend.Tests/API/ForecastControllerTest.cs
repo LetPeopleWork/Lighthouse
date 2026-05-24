@@ -528,7 +528,8 @@ namespace Lighthouse.Backend.Tests.API
             teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
                 expectedTeam,
                 startDate.ToDateTime(TimeOnly.MinValue),
-                endDate.ToDateTime(TimeOnly.MinValue)))
+                endDate.ToDateTime(TimeOnly.MinValue),
+                ThroughputFilterMode.RespectTeamSetting))
                 .Returns(actualThroughput);
 
             var howManyForecast = new HowManyForecast();

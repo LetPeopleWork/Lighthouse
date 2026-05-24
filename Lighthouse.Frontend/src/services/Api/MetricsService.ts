@@ -27,6 +27,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		view?: "raw" | "filtered",
 	): Promise<RunChartData>;
 
 	getWorkInProgressOverTime(
@@ -190,10 +191,12 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		view?: "raw" | "filtered",
 	): Promise<RunChartData> {
 		return this.withErrorHandling(async () => {
+			const viewSuffix = view === "filtered" ? "&view=filtered" : "";
 			const response = await this.apiService.get<RunChartData>(
-				`/${this.api}/${id}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}`,
+				`/${this.api}/${id}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}${viewSuffix}`,
 			);
 
 			return new RunChartData(

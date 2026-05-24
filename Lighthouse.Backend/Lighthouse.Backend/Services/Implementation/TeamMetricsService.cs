@@ -137,6 +137,19 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode)
+        {
+            var unfiltered = GetThroughputForTeam(team, startDate, endDate);
+
+            if (mode == ThroughputFilterMode.SkipFilter)
+            {
+                return unfiltered;
+            }
+
+            return GetFromCacheIfExists(team, $"Throughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{mode}", () =>
+                ApplyForecastFilter(team, unfiltered, mode).Throughput, logger);
+        }
+
         public RunChartData GetBlackoutAwareThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
             var unfiltered = GetFromCacheIfExists(team, $"BlackoutAwareThroughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>

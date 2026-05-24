@@ -44,6 +44,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 .Setup(s => s.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new RunChartData(new Dictionary<int, List<WorkItemBase>>()));
 
+            teamMetricsServiceMock
+                .Setup(s => s.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns(new RunChartData(new Dictionary<int, List<WorkItemBase>>()));
+
             subject = new ForecastController(
                 forecastUpdaterMock.Object,
                 forecastServiceMock.Object,

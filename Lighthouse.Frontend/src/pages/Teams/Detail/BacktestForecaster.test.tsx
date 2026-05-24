@@ -737,6 +737,114 @@ describe("BacktestForecaster component", () => {
 			fireEvent.click(screen.getByLabelText(TOGGLE_LABEL));
 			expect(onApplyFilterOverrideChange).toHaveBeenCalledWith(false);
 		});
+
+		it("requests view=filtered for both throughput fetches when filter is on, premium, and configured", async () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			const mockResult: BacktestResult = {
+				startDate: dayjs().subtract(60, "day").toDate(),
+				endDate: dayjs().subtract(30, "day").toDate(),
+				historicalStartDate: dayjs().subtract(90, "day").toDate(),
+				historicalEndDate: dayjs().subtract(60, "day").toDate(),
+				percentiles: [new HowManyForecast(50, 10)],
+				actualThroughput: 12,
+				filterApplied: true,
+			};
+
+			renderWithContext({
+				...defaultProps,
+				backtestResult: mockResult,
+				hasForecastFilter: true,
+				applyFilterOverride: true,
+			});
+
+			await waitFor(() => {
+				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
+			});
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
+				1,
+				1,
+				mockResult.historicalStartDate,
+				mockResult.historicalEndDate,
+				"filtered",
+			);
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
+				2,
+				1,
+				mockResult.startDate,
+				mockResult.endDate,
+				"filtered",
+			);
+		});
+
+		it("omits the view argument from throughput fetches when the filter toggle is off", async () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			const mockResult: BacktestResult = {
+				startDate: dayjs().subtract(60, "day").toDate(),
+				endDate: dayjs().subtract(30, "day").toDate(),
+				historicalStartDate: dayjs().subtract(90, "day").toDate(),
+				historicalEndDate: dayjs().subtract(60, "day").toDate(),
+				percentiles: [new HowManyForecast(50, 10)],
+				actualThroughput: 12,
+			};
+
+			renderWithContext({
+				...defaultProps,
+				backtestResult: mockResult,
+				hasForecastFilter: true,
+				applyFilterOverride: false,
+			});
+
+			await waitFor(() => {
+				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
+			});
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
+				1,
+				1,
+				mockResult.historicalStartDate,
+				mockResult.historicalEndDate,
+			);
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
+				2,
+				1,
+				mockResult.startDate,
+				mockResult.endDate,
+			);
+		});
+
+		it("omits the view argument on non-premium tenants even when the filter would be on", async () => {
+			mockCanUsePremiumFeatures.mockReturnValue(false);
+			const mockResult: BacktestResult = {
+				startDate: dayjs().subtract(60, "day").toDate(),
+				endDate: dayjs().subtract(30, "day").toDate(),
+				historicalStartDate: dayjs().subtract(90, "day").toDate(),
+				historicalEndDate: dayjs().subtract(60, "day").toDate(),
+				percentiles: [new HowManyForecast(50, 10)],
+				actualThroughput: 12,
+			};
+
+			renderWithContext({
+				...defaultProps,
+				backtestResult: mockResult,
+				hasForecastFilter: true,
+				applyFilterOverride: true,
+			});
+
+			await waitFor(() => {
+				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
+			});
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
+				1,
+				1,
+				mockResult.historicalStartDate,
+				mockResult.historicalEndDate,
+			);
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
+				2,
+				1,
+				mockResult.startDate,
+				mockResult.endDate,
+			);
+		});
 	});
 
 	describe("FilteredThroughputChip on backtest result panel", () => {
