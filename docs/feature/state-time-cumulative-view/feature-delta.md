@@ -57,13 +57,14 @@ The three jobs all consume the same `WorkItemStateTransition` data foundation bu
 | D2 | **Default chart placement**: team detail page AND portfolio detail page, both under the existing `flow-metrics` category. Widget key: `stateTimeCumulative`. Size: `large`. Same placement reasoning as sibling F (D8): scope parity avoids confusion. Shipping a new top-level route would fragment the user's mental model. | Locked. |
 | D3 | **Bar ordering**: workflow order (left-to-right matching the team's kanban board, same ordering as `WorkItemAgingChart` X-axis state columns). Alternatives considered: descending-by-cumulative-time (rejected — breaks pipeline-shape mental model); by `StateCategory` (rejected — hides per-state detail which is the whole point). | Locked. |
 | D4 | **Unit displayed**: total time (in days) as the primary bar height. Tooltip discloses BOTH total and mean-per-item plus the item count. No user-facing total/mean toggle in MVP — one chart, one story. If post-release telemetry shows the mean view as a recurring user need, fold into a follow-up. | Locked. |
-| D5 | **Date-range semantics**: bars show ONLY time-in-state ACTUALLY SPENT during the filter window (clip-to-window). An item that entered "Review" 30 days before the window and exited 10 days into the window contributes 10 days to the Review bar, not 40. An item still in "Review" at window end contributes `(windowEnd - max(stateEnteredAt, windowStart))`. Matches the existing mental model for Lighthouse "throughput in last quarter" (only items closed in the window count) and avoids surprising-stretch behavior. Tooltip discloses partial-window vs full-window contribution counts. **Alternative considered**: full-duration attribution (item's entire time in state, even if most of it falls outside the window). REJECTED because it inflates bars with historical drag that current-window actions cannot influence; defeats the retro-actionable framing of the persona's job. The user's brief flagged this as the trickiest decision and asked us to make a reasonable default and let them redirect — clip-to-window is the default; if leadership-review users push for full-duration, fold into a follow-up toggle. | Locked (revisable post-release). |
+| D5 | **Date-range semantics: full-duration attribution with frame-based item selection** (revised 2026-05-24 per user redirect). The filter window selects WHICH ITEMS are included (per D12 inclusion rule); for every included item, the bar counts the FULL time the item spent in that state — regardless of whether that time falls inside or outside the window. An item that entered "Review" Dec 1 2025 and exited Jan 20 2026 contributes its FULL 50 days to the Review bar, even when the window is Q1 2026. Rationale: the chart's job is to surface the *real cycle pattern* of items relevant to the period, not to clip duration accounting to the window. Clipping would hide actual time items spent in slow states and mislead leadership about the true cost of those states. User verbatim (2026-05-24): *"we pick the items that were relevant within the frame, but then look at the full time. so even if an item was closed on the 1st day of the window, if it was in progress 40 days before that, we should count the full time."* **Alternative considered and rejected**: clip-to-window (was the initial DISCUSS default; rejected on user redirect because it under-counts real cycle time and conceals the constraint). A future toggle (full vs clip) is out-of-scope for MVP unless post-release telemetry shows demand. | Locked. |
 | D6 | **Ongoing-items visual treatment**: each bar is stacked into TWO segments — a solid base segment for "completed contribution" (items that exited the state during the window) and a diagonally-hatched top segment for "ongoing contribution" (items still in the state at window end). User-stated requirement verbatim 2026-05-24: *"cumulative times for all items in the filter, including ongoing items"*. Hatching is the familiar Lighthouse "in progress" visual idiom (consistent with how blocked items are emphasized today). Alternatives considered: different shade (rejected — colour-blind users would lose the distinction); separate bar per segment (rejected — doubles the chart's bar count and breaks the one-bar-per-state mental model). | Locked. |
 | D7 | **Filter composition**: composes UNCHANGED with existing Team/Portfolio scope, work-item-type chips, and date-range selector. No new filter primitives. Chart recomputes when any of those change. Matches sibling F's D7. | Locked. |
 | D8 | **WS strategy**: Type A (additive). No contract change to existing endpoints. ONE new endpoint per scope (team + portfolio); ONE new chart widget; ONE new entry in `widgetInfoMetadata` + `categoryMetadata`. If the endpoint is absent, the chart slot is empty — no regression to existing widgets. | Locked. |
 | D9 | **Sibling-data dependency on `WorkItemStateTransition`**: this DISCUSS does NOT request any schema addition to the transition table. The four fields shipped in sibling slice 01 (`workItemId`, `fromState`, `toState`, `transitionedAt`) PLUS the derived `currentStateEnteredAt` field on `WorkItem` are sufficient. The cumulative-time-per-state computation is fully expressible from those alone (formula in `journey-state-time-cumulative-view.yaml` D9 entry). **No upstream coordination with sibling 1 DESIGN required.** | Locked — explicit no-impact on sibling DESIGN. |
 | D10 | **Cross-feature alignment with sibling F**: both this feature and `aging-pace-percentiles` compute per-state aggregations from `WorkItemStateTransition`. A shared per-state aggregation service / materialised cache is a candidate DESIGN-time optimization but NOT required for MVP correctness. MVP proceeds assuming independent computation per feature; DESIGN may consolidate if profiling demands it. | Locked (DESIGN-flagged, not DISCUSS-blocking). |
-| D11 | **In-flight items MUST contribute**: user-stated requirement verbatim 2026-05-24. The bar height MUST include time-in-current-state for items still in flight at window end. D6 covers the visual treatment; D5 covers the date-range arithmetic for ongoing contribution. | Locked (verbatim user requirement). |
+| D11 | **In-flight items MUST contribute**: user-stated requirement verbatim 2026-05-24. The bar MUST include time-in-current-state for items still in flight at window end (provided they meet D12's inclusion rule). Per D5 full-duration semantics, an in-flight item's contribution to the ongoing segment is its FULL `now - currentStateEnteredAt` time (not clipped to windowStart). D6 covers the visual treatment. | Locked (verbatim user requirement). |
+| D12 | **Item-inclusion rule**: a work item is included in the chart if (a) its timeline has at least one `(state-enter, state-exit)` interval whose `[stateEnter, stateExit]` window intersects the filter window, OR (b) it is currently in-flight with `currentStateEnteredAt ≤ windowEnd`. Concretely covers: items closed within the window, items started within the window, items in any non-Done state at any point during the window, items still in-flight today whose current state was entered before windowEnd. Once included, the item's FULL state-durations contribute (per D5). Items entirely outside the window (e.g. closed before windowStart with no state-time overlap) are excluded. | Locked (user-confirmed 2026-05-24). |
 
 ## Wave: DISCUSS / [REF] User stories with elevator pitches
 
@@ -81,9 +82,9 @@ Decision enabled: which workflow state to target for next quarter's process-impr
 
 **AC**:
 
-- Given a team with `WorkItemStateTransition` data accumulated and at least one item matching the active filter, when I open `/teams/{teamId}` and switch to the Flow Metrics category, then the `stateTimeCumulative` widget renders with one bar per workflow state in the team's workflow order.
-- Each bar's height equals the sum, over all items matching the active filter, of `clip(stateExitTime, windowEnd) - clip(stateEnterTime, windowStart)` for every (enter, exit) interval of that item in that state — per D5 clip-to-window semantics.
-- Each bar is visually stacked into a solid base segment (`completedContribution`: time from items that exited the state during the window) and a diagonally-hatched top segment (`ongoingContribution`: time from items still in the state at window end) — per D6.
+- Given a team with `WorkItemStateTransition` data accumulated and at least one item matching the active filter AND the D12 inclusion rule, when I open `/teams/{teamId}` and switch to the Flow Metrics category, then the `stateTimeCumulative` widget renders with one bar per workflow state in the team's workflow order.
+- Each bar's height equals the sum, over all D12-included items, of (a) the FULL duration `stateExit - stateEnter` of every completed `(enter, exit)` interval that item had in this state PLUS (b) `now - currentStateEnteredAt` if the item is currently in this state — per D5 full-duration attribution. The window does NOT clip durations; it selects which items are summed.
+- Each bar is visually stacked into a solid base segment (`completedContribution`: time from D12-included items that have exited the state by now) and a diagonally-hatched top segment (`ongoingContribution`: time from items still in the state at now) — per D6.
 - Bar tooltip on hover shows: state name, total days, item count, completed-contribution days, ongoing-contribution days, mean days per item, median days per item, and partial-window-item count.
 - Given the filter changes (date range, work-item-type chip, blocked toggle), the chart refetches and re-renders with the recomputed bars — no manual refresh; same lifecycle as existing Flow Metrics widgets.
 - Given an empty filter (no items match), the widget renders an empty-state message identical in tone to existing `WorkDistributionChart` and `WorkItemAgingChart` empty states.
@@ -110,34 +111,61 @@ Decision enabled: portfolio-level improvement priorities — "across all teams i
 - All US-01 AC items (empty state, zero-contributing state, tooltip content, RAG rule, filter composition) hold for the portfolio scope unchanged.
 - No regression in the rest of the portfolio's Flow Metrics category.
 
-### US-03 — Tooltip surfaces partial-window-attribution count to disambiguate edge cases
+### US-03 — Tooltip surfaces included-items breakdown so users know which items the bar represents
 
-**Story**: As a `delivery-lead-rte` looking at the chart for the first time and wondering "wait, an item that entered Review BEFORE my window starts — how much of its Review time is in this bar?", I want the tooltip to disclose the count of items contributing PARTIAL-window time vs FULL-window time, so I can recognise edge effects without leaving the chart or reading documentation.
+**Story**: As a `delivery-lead-rte` looking at the chart for the first time and wondering "wait, which items are actually in this bar — the ones we closed this quarter, the ones still in flight, or both?", I want the tooltip to disclose the included-items breakdown by status, so I can recognise the chart's inclusion rule without leaving the chart or reading documentation.
 
 **Job-id**: `job-delivery-lead-spot-workflow-constraint`
 
 #### Elevator Pitch
 
-Before: even with the chart visible, a sophisticated user immediately asks "do you mean the FULL time the item spent in Review, or only the part that falls in my window?" Without an in-chart answer, they either trust silently (and may distrust later) or open documentation. Either way, friction breaks the chart-glance flow.
-After: hover any bar → tooltip includes one extra line `Window attribution: X items partial-window, Y items full-window` (where X = items whose state-time intersects but is not fully contained in the window; Y = items whose state-time is fully inside the window). One glance answers the date-range-semantics question.
-Decision enabled: confidence in the chart's number. The user trusts the bar represents what the window claims, not surprise-stretch from years past.
+Before: even with the chart visible, a sophisticated user immediately asks "wait, an item closed in Q1 had been in Review since December — does its FULL 50 days count, or just the bit inside Q1?" Without an in-chart answer, they distrust silently or open documentation. Either way, friction breaks the chart-glance flow.
+After: hover any bar → tooltip includes one extra line `Included items: A closed in window, B still in flight (C contributors total — full durations counted per D5).` One glance answers the inclusion + attribution question.
+Decision enabled: confidence in the chart's number. The user knows exactly which items were folded into the bar and that full durations were used, so they can defend the constraint claim in a leadership conversation.
 
 **AC**:
 
-- Given the bar tooltip from US-01 renders, then it includes an additional line of the form `Window attribution: X partial, Y full` where X and Y are the integer counts of partial-window-attribution and full-window-attribution items respectively for that state.
-- When X = 0 (every contributing item is fully inside the window), the line still renders for consistency, with `0 partial, Y full`.
+- Given the bar tooltip from US-01 renders, then it includes an additional line of the form `Included items: A closed in window, B still in flight (C total — full durations counted)` where A is the count of D12-included items that have exited the state, B is the count of D12-included items still in this state, and C = A + B.
+- When A = 0 (every contributing item is still in flight) or B = 0 (no in-flight contributors), the line still renders for consistency, showing `0` for the empty bucket.
 - The counts are computed server-side and returned in the same response payload as the bar totals — no extra round-trip.
-- The line is accessible to screen readers (aria-label includes the attribution counts in plain language).
+- The line is accessible to screen readers (aria-label includes the inclusion breakdown in plain language and clarifies the full-duration attribution rule).
+
+### US-04 — Per-item drill-down on bar click
+
+**Story**: As a `delivery-lead-rte`, when I identify a state as the constraint from the bar chart, I want to click that state's bar to see a table of the items that contributed and exactly how many days each contributed, so I can name the specific items driving the constraint when I raise it in a retrospective or improvement-planning meeting.
+
+**Job-id**: `job-delivery-lead-spot-workflow-constraint`
+
+#### Elevator Pitch
+
+Before: the bar tells me "Review took 38% of our cumulative time this quarter", but I can't see *which items* drove that. To name names I would have to open each item by hand, read its state history, sum the days, and pivot in my head — friction that makes the chart a conversation-starter but not a conversation-driver.
+After: click on the "Review" bar → a per-item panel opens listing each contributing item with `ID · Title · Type · Current State · Days contributed to Review`, sorted by days descending by default. The top 3 rows usually account for most of the bar; that's the retro agenda.
+Decision enabled: which specific items to raise in the retro / improvement meeting ("Items #1234, #1289, and #1301 account for 70% of Review time this quarter — let's discuss those three").
+
+**AC**:
+
+- Given the chart is rendered (US-01 or US-02), when I click on a state's bar (or its labelled placeholder for zero-contributing states), then a per-item panel opens (implementation choice between modal dialog and expandable side-panel deferred to DESIGN).
+- The panel's table has columns: Work Item ID (linkable to the existing work-item detail view), Title, Work-Item Type, Current State, Days Contributed To Selected State (the per-item portion of the bar height — full-duration per D5).
+- Default sort: Days Contributed To Selected State, descending.
+- Sorting by any column is supported (click column header to toggle asc/desc).
+- The sum of "Days Contributed" across all rows in the panel equals the bar's height for that state (within ±0.1d rounding tolerance — sanity-check assertion in integration test).
+- Closing the panel (Escape key, outside click, or explicit close control) returns to the chart view with the previous filter state intact.
+- Keyboard accessible: Escape closes; Tab/Shift+Tab navigates rows; Enter on a Work Item ID row activates the work-item link.
+- ARIA: panel has `role="dialog"` (or appropriate landmark for an expandable side-panel), labelled with "Items contributing to {state name}".
+- Filter respect: the table reflects the active filter (type chips, date range, scope). Changing the filter while the panel is open re-fetches the per-item data (consistent with the chart's live-recompute lifecycle in US-01 AC).
+- Zero-contributing case: clicking a zero-contributing-state bar opens an empty panel with the message "No items contributed to this state in the selected window."
+- No regression: existing chart click handlers (other widgets in the Flow Metrics category) are unaffected.
 
 ## Wave: DISCUSS / [REF] Definition of Done
 
-1. All 3 stories pass their ACs via integration tests (NUnit + EF InMemory + WebApplicationFactory for the new endpoints; Vitest + React Testing Library for the chart widget and tooltip).
-2. Cumulative time-per-state math verified against a fixture: a known set of items with known (state-enter, state-exit) intervals AND known in-flight items at a known windowEnd; assert exact bar heights AND exact completed/ongoing segment heights for each state.
-3. Date-range-clip semantics (D5) verified against a fixture: items entering before windowStart, items exiting after windowEnd, items fully inside, items fully outside (must contribute 0). Assert exact contributions.
-4. Ongoing-item attribution (D6, D11) verified: in-flight items at windowEnd contribute exactly `windowEnd - max(currentStateEnteredAt, windowStart)` to the ongoing segment for their current state.
+1. All 4 stories pass their ACs via integration tests (NUnit + EF InMemory + WebApplicationFactory for the new endpoints; Vitest + React Testing Library for the chart widget, tooltip, and drill-down panel).
+2. Cumulative time-per-state math (D5 full-duration) verified against a fixture: a known set of items with known (state-enter, state-exit) intervals AND known in-flight items, asserting exact bar heights AND exact completed/ongoing segment heights for each state; verifying that the FULL state durations contribute regardless of whether they fall inside or outside the window.
+3. Date-range INCLUSION semantics (D5, D12) verified against a fixture: items closed inside the window, items closed on day 1 of the window with pre-window state-time, items in-flight throughout the window, items still in flight today, items fully outside the window (must NOT be included). Assert exact contribution per included item.
+4. Ongoing-item attribution (D6, D11) verified: in-flight items contribute their FULL `now - currentStateEnteredAt` time to the ongoing segment for their current state (no clipping to windowStart).
 5. Filter composition (D7) verified: changing a type chip, date range, or scope re-fetches and re-renders correctly; no stale-cache bugs (this is why `bug-5016-cache-thread-safety` is a pre-req — same reason sibling 1 listed it).
-6. Empty-state, zero-contributing-state, single-item, and state-removed-from-workflow edge cases all render gracefully per AC.
+6. Empty-state, zero-contributing-state, single-item, and state-removed-from-workflow edge cases all render gracefully per AC — for both the chart and the drill-down panel.
 7. Portfolio-scope parity (US-02) verified by integration test asserting both scopes return shape-identical responses for the same underlying items.
+7a. Per-item drill-down (US-04) verified: integration test asserts the panel's per-item rows for a clicked state sum (within ±0.1d) to that state's bar height; Vitest + RTL test asserts keyboard accessibility (Escape closes, Tab navigates), ARIA labelling, default sort, column-sort toggling, and filter-respect re-fetch behaviour.
 8. No regression in existing Flow Metrics widgets (`computeSimplifiedCfdRag`, `computeWorkItemAgeChartRag`, etc.); existing `ragRules.test.ts` passes unchanged.
 9. `dotnet build` zero warnings; `pnpm build` clean (CI parity per CLAUDE.md).
 10. SonarCloud quality gate passes on PR.
@@ -147,9 +175,9 @@ Decision enabled: confidence in the chart's number. The user trusts the bar repr
 ## Wave: DISCUSS / [REF] Out of scope
 
 - **Total/mean per-item toggle in the widget** — deferred (D4). MVP ships total only; mean is in the tooltip. Fold into a follow-up if telemetry warrants.
-- **Full-duration attribution semantics override** — out of scope (D5 picks clip-to-window; full-duration alternative is explicitly rejected for MVP).
+- **Runtime toggle between full-duration and clip-to-window semantics** — out of scope. D5 locks full-duration per user redirect on 2026-05-24; a toggle would only ship if post-release telemetry shows demand from leadership-review users who want both lenses.
 - **Comparing two windows side-by-side (e.g. this quarter vs last quarter on one chart)** — out of scope. The user is expected to flip the date range OR open two browser tabs. A dedicated comparison view would be a separate feature.
-- **Per-state drill-down (e.g. click "Review" bar → see which items contributed)** — that is feature B2 (`work-item-state-history-view`), post-MVP. The bar tooltip's count + mean is the deepest MVP exposure.
+- **Per-item historical state breakdown (per-item → list of states)** — that is feature B2 (`work-item-state-history-view`), post-MVP. US-04's drill-down is the inverse (per-state → list of items contributing to that state); the two are complementary lenses on the same underlying transition data.
 - **Cross-team or cross-portfolio aggregation** — out of scope; chart is scoped to one team or one portfolio at a time. Multi-scope is a future feature.
 - **Configurable bar ordering** — out of scope. D3 picks workflow order; if users ask for descending-by-time, fold into a follow-up.
 - **Configurable RAG thresholds for the new widget** — out of scope. The 40%/60% thresholds in the RAG rule are baseline defaults; if customer feedback warrants tunability, fold into a follow-up alongside the existing per-widget RAG-config feature work.
@@ -160,27 +188,30 @@ Decision enabled: confidence in the chart's number. The user trusts the bar repr
 
 ## Wave: DISCUSS / [REF] WS strategy
 
-**Type A (additive walking skeleton).** No contract change to existing endpoints. One new endpoint (per scope), one new chart widget, one new widget-metadata entry. Walking skeleton = US-01 against the team scope only, with the new endpoint, the new widget rendering in the Flow Metrics category, and the empty / zero-state edge cases handled. US-02 = portfolio-scope parity (same chart, scope-swap). US-03 = tooltip enrichment (no new endpoint).
+**Type A (additive walking skeleton).** No contract change to existing endpoints. Two new endpoints per scope (one for the bar data, one for the per-state drill-down items), one new chart widget, one new drill-down panel component, one new widget-metadata entry. Walking skeleton = US-01 against the team scope only, with the new bar-data endpoint, the new widget rendering in the Flow Metrics category, and the empty / zero-state edge cases handled. US-02 = portfolio-scope parity (same chart + same endpoint shape, scope-swap). US-03 = tooltip enrichment (no new endpoint; counts piggy-back on US-01 response). US-04 = drill-down panel + new per-state items endpoint (kept separate from the bar-data endpoint to keep the bar-chart payload small for the common case where users only glance at the chart).
 
 ## Wave: DISCUSS / [REF] Driving ports
 
 | Method | Route | Auth | Status | Change |
 |---|---|---|---|---|
-| GET | `/api/teams/{teamId}/metrics/cumulativeStateTime?startDate&endDate` | Authenticated | **New** | Returns `{ states: [{ state: string, workflowOrder: int, totalDays: double, completedContributionDays: double, ongoingContributionDays: double, itemCount: int, completedItemCount: int, ongoingItemCount: int, partialWindowItemCount: int, fullWindowItemCount: int, meanDays: double, medianDays: double }] }` — one entry per workflow state, ordered by `workflowOrder`. Empty `states` array when no items match. |
+| GET | `/api/teams/{teamId}/metrics/cumulativeStateTime?startDate&endDate` | Authenticated | **New** | Returns `{ states: [{ state: string, workflowOrder: int, totalDays: double, completedContributionDays: double, ongoingContributionDays: double, itemCount: int, completedItemCount: int, ongoingItemCount: int, meanDays: double, medianDays: double }] }` — one entry per workflow state, ordered by `workflowOrder`. Item counts (`completedItemCount`, `ongoingItemCount`) feed US-03's tooltip line. Empty `states` array when no items match. |
 | GET | `/api/portfolios/{portfolioId}/metrics/cumulativeStateTime?startDate&endDate` | Authenticated | **New** | Same shape as the team route, scoped to the portfolio (D2). |
+| GET | `/api/teams/{teamId}/metrics/cumulativeStateTime/items?state=X&startDate&endDate` | Authenticated | **New (US-04)** | Returns `{ state: string, items: [{ workItemId: string, title: string, workItemType: string, currentState: string, daysContributed: double }] }` — per-item breakdown for ONE state. Ordered by `daysContributed` descending (default sort matches the panel's default; client may re-sort). Empty `items` array when no items contributed. Kept separate from the bar endpoint to keep the chart payload small for users who never drill down. |
+| GET | `/api/portfolios/{portfolioId}/metrics/cumulativeStateTime/items?state=X&startDate&endDate` | Authenticated | **New (US-04)** | Same shape as the team route, portfolio-scoped. |
 | GET | `/api/teams/{teamId}/metrics/cycleTimePercentiles` | Authenticated | Existing | **Unchanged** (D9). |
 | GET | `/api/teams/{teamId}/metrics/ageInStatePercentiles?startDate&endDate` | Authenticated | New-via-sibling-F | **Unchanged** by THIS feature; sibling F ships it independently. |
 
 UI surfaces touched:
 
-- `Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx` (NEW): horizontal-bar chart widget with stacked completed/ongoing segments per bar, tooltip per D5/D6/US-03.
+- `Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx` (NEW): horizontal-bar chart widget with stacked completed/ongoing segments per bar, tooltip per D5/D6/US-03, click-to-drill-down handler per US-04.
+- `Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeDrillDownPanel.tsx` (NEW): per-item table opened from a bar click; columns / sort / accessibility per US-04 AC. Implementation choice (modal vs side panel) deferred to DESIGN.
 - `Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts`: add `{ widgetKey: "stateTimeCumulative", size: "large" }` to `flow-metrics`.
 - `Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts`: add `stateTimeCumulative` entry with description, learn-more URL, and RAG status guidance per US-01 AC.
 - `Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts`: add `computeCumulativeStateTimeRag` function returning sustain/observe/act per the AC's % thresholds.
 - `Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx`: import and dispatch the new widget by `widgetKey` (mirror existing `WorkDistributionChart` / `WorkItemAgingChart` dispatch pattern).
-- `Lighthouse.Frontend/src/services/Api/MetricsService.ts` (and the matching interface): add `getCumulativeStateTimeForTeam(teamId, startDate, endDate)` and `getCumulativeStateTimeForPortfolio(portfolioId, startDate, endDate)` methods.
-- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs` and `PortfolioMetricsService.cs`: add `GetCumulativeStateTimeForTeam` / `GetCumulativeStateTimeForPortfolio` methods (implementation reads `WorkItemStateTransition` rows + `WorkItem.currentStateEnteredAt`, applies D5 clip semantics, returns the response shape above).
-- `Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs` and `PortfolioMetricsController.cs`: add the new endpoints.
+- `Lighthouse.Frontend/src/services/Api/MetricsService.ts` (and the matching interface): add `getCumulativeStateTimeForTeam(teamId, startDate, endDate)`, `getCumulativeStateTimeForPortfolio(portfolioId, startDate, endDate)`, `getCumulativeStateTimeItemsForTeam(teamId, state, startDate, endDate)`, and `getCumulativeStateTimeItemsForPortfolio(portfolioId, state, startDate, endDate)` methods.
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs` and `PortfolioMetricsService.cs`: add `GetCumulativeStateTimeForTeam` / `GetCumulativeStateTimeForPortfolio` methods (read `WorkItemStateTransition` rows + `WorkItem.currentStateEnteredAt`, apply D12 inclusion rule, sum FULL durations per D5, return the response shape above) plus `GetCumulativeStateTimeItemsFor{Team|Portfolio}` methods (same inclusion rule scoped to one state, returns per-item rows with `daysContributed` summed per item).
+- `Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs` and `PortfolioMetricsController.cs`: add the four new endpoints.
 
 No new top-level routes; no schema additions.
 
@@ -209,15 +240,15 @@ KPIs will be appended to `docs/product/kpi-contracts.yaml` at the DEVOPS handoff
 
 | # | DoR item | Verdict | Evidence |
 |---|---|---|---|
-| 1 | Every story traces to a `job_id` | Pass | US-01, US-02, US-03 → `job-delivery-lead-spot-workflow-constraint` (new entry added to `docs/product/jobs.yaml` in this run, differentiated from sibling jobs). |
+| 1 | Every story traces to a `job_id` | Pass | US-01, US-02, US-03, US-04 → `job-delivery-lead-spot-workflow-constraint` (new entry added to `docs/product/jobs.yaml` in this run, differentiated from sibling jobs). |
 | 2 | Persona named & scoped | Pass | `delivery-lead-rte` primary (NEW persona file created at `docs/product/personas/delivery-lead-rte.yaml` with explicit differentiation from sibling personas — `flow-coach` per-item triage, `delivery-forecaster` forecast honesty); `flow-coach` secondary (existing persona, retro facilitation context). |
-| 3 | Elevator pitch per non-`@infrastructure` story | Pass | Each US-NN has a Before/After/Decision triplet. After lines reference real entry points (`/teams/{teamId}` and `/portfolios/{portfolioId}` Flow Metrics category); sees-portions describe concrete observable output (bars, tooltips with named fields, segment shapes, RAG colours); decision-enabled lines name the systemic-improvement decision the chart enables. |
-| 4 | AC testable, no ambiguous outcomes | Pass | Quantified bar-height formula (D5 clip math); explicit empty-state / zero-contributing-state / single-item / state-removed behaviour; explicit no-regression guarantee for existing Flow Metrics widgets; quantified RAG-rule thresholds (40% / 60%); explicit tooltip field list (US-01) and attribution-count field shape (US-03). |
-| 5 | Out-of-scope explicit | Pass | 11 items listed (total/mean toggle, full-duration semantics, comparison view, per-state drill-down, cross-scope aggregation, configurable bar ordering, configurable RAG thresholds, transition-schema changes, backfill, blocked attribution, shared aggregation service with sibling F). |
-| 6 | Outcome KPIs measurable with targets | Pass | 3 KPIs, each with numeric target, scope, and measurement method. KPI 3 (`constraint-naming`) explicitly tests the causal chain "chart → process change", going beyond adoption-vanity to outcome. |
+| 3 | Elevator pitch per non-`@infrastructure` story | Pass | Each US-NN has a Before/After/Decision triplet. After lines reference real entry points (`/teams/{teamId}` and `/portfolios/{portfolioId}` Flow Metrics category, bar click for US-04); sees-portions describe concrete observable output (bars, tooltips with named fields, segment shapes, RAG colours, per-item table rows for US-04); decision-enabled lines name the systemic-improvement decision the chart enables. |
+| 4 | AC testable, no ambiguous outcomes | Pass | Quantified bar-height formula (D5 full-duration with D12 inclusion); explicit empty-state / zero-contributing-state / single-item / state-removed behaviour; explicit no-regression guarantee for existing Flow Metrics widgets; quantified RAG-rule thresholds (40% / 60%); explicit tooltip field list (US-01) and inclusion-breakdown field shape (US-03); explicit drill-down panel column list, sort behaviour, keyboard / ARIA, and sum-equals-bar-height sanity check (US-04). |
+| 5 | Out-of-scope explicit | Pass | 11 items listed (total/mean toggle, runtime full-vs-clip toggle, comparison view, per-item historical state breakdown [feature B2], cross-scope aggregation, configurable bar ordering, configurable RAG thresholds, transition-schema changes, backfill, blocked attribution, shared aggregation service with sibling F). |
+| 6 | Outcome KPIs measurable with targets | Pass | 3 KPIs, each with numeric target, scope, and measurement method. KPI 3 (`constraint-naming`) explicitly tests the causal chain "chart → process change", going beyond adoption-vanity to outcome. Drill-down click-through (US-04) is a secondary signal feeding KPI 2 (leadership-share) — not a separate KPI to avoid over-instrumentation. |
 | 7 | Pre-requisites resolved | Pass (with sequencing note) | bug-5016 merged. Sibling 1 DISCUSS complete; sibling 1 DELIVER is the actual DELIVER-time blocker, NOT a DISCUSS or DESIGN blocker for this feature. Sibling F (medium pre-req) is in DISCUSS-complete state. Existing Flow Metrics category infrastructure confirmed present via code reality check. |
-| 8 | Slice composition: each slice contains ≥1 user-visible story | Pass | Slice 01 ships US-01 (chart visible at team scope — value-bearing). Slice 02 ships US-02 + US-03 (portfolio parity + tooltip enrichment — both value-bearing). No `@infrastructure`-only slices. |
-| 9 | Handoff target identified | Pass | `nw-solution-architect` (DESIGN, full artifacts including cross-feature coordination note D10); `nw-platform-architect` (DEVOPS, `outcome-kpis` only). |
+| 8 | Slice composition: each slice contains ≥1 user-visible story | Pass | Slice 01 ships US-01 (chart visible at team scope — value-bearing). Slice 02 ships US-02 + US-03 (portfolio parity + tooltip enrichment — both value-bearing). Slice 03 ships US-04 (per-item drill-down panel — value-bearing). No `@infrastructure`-only slices. |
+| 9 | Handoff target identified | Pass | `nw-solution-architect` (DESIGN, full artifacts including cross-feature coordination note D10 and the drill-down modal-vs-side-panel implementation choice deferred from US-04); `nw-platform-architect` (DEVOPS, `outcome-kpis` only). |
 
 **DoR overall verdict: PASSED (9/9 with evidence).**
 
@@ -227,7 +258,7 @@ KPIs will be appended to `docs/product/kpi-contracts.yaml` at the DEVOPS handoff
 
 **Foundation investment**: zero new persistence; reuses `WorkItemStateTransition` (sibling 1) and existing `WorkItem.currentStateEnteredAt` (sibling 1). One new endpoint per scope (team + portfolio); one new chart widget; three new metadata entries (`categoryMetadata`, `widgetInfoMetadata`, `ragRules`). Backwards-compatible throughout — no schema changes, no existing-endpoint changes.
 
-**Walking skeleton scope**: slice 01 (US-01) — team scope only, the new endpoint, the new widget rendering in the Flow Metrics category, empty/zero-state edge cases handled, no portfolio scope, no tooltip enrichment. Proves the data-foundation → endpoint → widget path in one slice.
+**Walking skeleton scope**: slice 01 (US-01) — team scope only, the new bar-data endpoint, the new widget rendering in the Flow Metrics category, empty/zero-state edge cases handled, no portfolio scope, no tooltip enrichment, no drill-down. Proves the data-foundation → endpoint → widget path in one slice. Slice 02 adds US-02 + US-03 (portfolio parity + tooltip). Slice 03 adds US-04 (per-item drill-down panel + per-state items endpoint).
 
 **Feature type**: user-facing (Flow Metrics widget extension).
 
@@ -241,8 +272,8 @@ The three Epic 4144 MVP-bundle features all consume `WorkItemStateTransition`. T
 
 1. **Shared per-state aggregation primitive (D10)**: sibling F computes per-state percentiles of age-at-state-exit for completed items; this feature computes per-state cumulative time across all items (completed + in-flight). Both walk the same transition data and group by state. A shared `IPerStateAggregationService` with two methods (`GetPerStatePercentiles(team, window)` and `GetPerStateCumulativeTime(team, window)`) would deduplicate the per-state loop and could share a materialised cache. NOT required for MVP correctness; flagged for DESIGN consideration.
 2. **Materialised cache key strategy**: if a per-state cache materialises, the cache key must include (teamId-or-portfolioId, scope-type, startDate, endDate, type-filter-hash). Sibling 1 already touches the metrics cache; bug-5016 made it thread-safe; the new endpoints inherit that cache infrastructure.
-3. **Date-range semantics consistency**: sibling F uses "history window" (matches `cycleTimePercentiles`). This feature uses "clip-to-window" (D5). Both are correct for their respective questions, but a DESIGN-time review should confirm the two semantics are clearly named and documented so users don't conflate them ("why does the aging chart's bands include items from before the window but the cumulative bar chart doesn't?" — answer: different questions, both correct).
-4. **In-flight contribution treatment**: this feature's D11 mandates in-flight contribution; sibling F's per-state bands are derived from COMPLETED items only. DESIGN should ensure the two endpoints don't accidentally share a query helper that has different in-flight semantics for each.
+3. **Date-range semantics are intentionally different across the bundle (sharper after D5 redirect)**: sibling F uses "history window" with COMPLETED items only (matches `cycleTimePercentiles` — the distribution is over historical age-at-state-exit of items that finished in the window). This feature uses "full-duration attribution with frame-based item selection" (D5 revised 2026-05-24; D12 inclusion rule) — items that touched the window during their life are included and their FULL state-durations are counted regardless of when those durations happened. DESIGN must NOT share a helper that conflates the two; the two endpoints should be named and documented to make the distinction unmistakable, since a sophisticated user will ask "why are the bar-chart numbers higher than the aging-chart bands suggest?" and the correct answer is "different question, different inclusion + attribution rule".
+4. **In-flight contribution treatment**: this feature's D11 mandates in-flight contribution (their FULL current-state time, per revised D5); sibling F's per-state bands are derived from COMPLETED items only. DESIGN should ensure the two endpoints don't accidentally share a query helper that has different in-flight semantics for each — particularly important now that this feature uses full-duration attribution rather than the previously-locked clip-to-window math.
 5. **Endpoint naming consistency**: sibling F's new endpoint is `/metrics/ageInStatePercentiles`; this feature's is `/metrics/cumulativeStateTime`. DESIGN should confirm both names are stable before either ships (renaming after either is consumed externally is expensive).
 
 ## Wave: DISCUSS / [REF] Changed Assumptions
@@ -258,3 +289,25 @@ Per the `Document Update (Back-Propagation)` contract in `nw-discuss/SKILL.md`, 
 **New journey**: `docs/product/journeys/state-time-cumulative-view.yaml` created in this DISCUSS run with the full emotional-arc + steps + error-paths + design-decisions structure used by sibling F.
 
 No DISCOVER document exists for Epic 4144 (per sibling 1's note); this DISCUSS extends the same community-validation reasoning, which has not been contradicted by any subsequent finding.
+
+### Post-DISCUSS revision (2026-05-24) — D5 flipped, US-04 added
+
+**Source**: user redirect after reviewing the DISCUSS output.
+
+**Original D5 (pre-redirect)**: clip-to-window — bars showed only the time-in-state actually spent during the filter window; an item that entered Review 30 days before the window and exited 10 days in contributed 10 days to the Review bar. Rationale at the time: matched the "throughput in last quarter" mental model; avoided surprise-stretch from historical drag.
+
+**Revised D5 (post-redirect, current)**: full-duration attribution with frame-based item selection. The window selects WHICH items count (per the new D12 inclusion rule); for each included item, the FULL state-durations contribute regardless of when they happened. Same item in the example now contributes its full 50 days. **User verbatim (2026-05-24)**: *"we pick the items that were relevant within the frame, but then look at the full time. so even if an item was closed on the 1st day of the window, if it was in progress 40 days before that, we should count the full time."*
+
+**Rationale for the redirect**: clip-to-window under-counts the *real* cycle time of items relevant to the period and conceals the actual cost of slow states. For a leadership-review / retro audience the "real cycle pattern" framing is more actionable and harder to mislead with. The downside (bars become larger and sometimes much larger when items are stuck across window boundaries) is intentional — that's the signal the audience needs.
+
+**New US-04 added**: per-item drill-down on bar click. Motivated by the corollary user requirement: with full-duration attribution, "which items drove this bar?" becomes the natural follow-up question. The drill-down panel lists contributing items with per-item day counts, sortable, accessible. Implementation choice (modal vs side panel) deferred to DESIGN. The drill-down also acts as the chart's "show your work" affordance — leadership can sanity-check the bar height by sum-of-rows.
+
+**Items moved from out-of-scope to in-scope**: per-state drill-down (previously deferred to feature B2). Note: B2 (`work-item-state-history-view`) remains post-MVP for the inverse view (per-item → list of states); the two are complementary.
+
+**Items moved from in-scope to out-of-scope**: runtime full-vs-clip toggle (added to out-of-scope as a deliberate "if telemetry demands" follow-up rather than a hidden assumption).
+
+**New slice added**: slice-03 covers US-04 (per-item drill-down). Effort estimate: ~1–2 crafter days. Total feature effort grows from ~2 to ~3–4 crafter days. Slice ordering: 01 → 02 → 03 unchanged in dependency; all three remain within one MVP cycle.
+
+**Cross-MVP impact of the redirect**: the date-range-semantics divergence between this feature and sibling F is now SHARPER (this feature: full-duration + frame-based inclusion; sibling F: completed-items-only with history window for the distribution). DESIGN coordination note 3 has been updated to reflect this — the two endpoints must NOT share a helper that conflates the rules.
+
+**ADO follow-up flagged (not yet executed)**: ADO Story #5076 ("Cumulative time-per-state bar chart for filtered items") still describes US-01 well, so no rename needed. A new ADO Story for US-04 (per-item drill-down) should be added under Epic #4144 — flagged for the next /ado-sync invocation rather than auto-created.

@@ -1,4 +1,4 @@
-# Slice 02 — Portfolio-scope parity + tooltip attribution-count enrichment
+# Slice 02 — Portfolio-scope parity + tooltip inclusion-breakdown enrichment
 
 **Feature**: `state-time-cumulative-view` (Epic 4144 MVP-bundle, slice B3)
 **Stories**: US-02, US-03
@@ -7,23 +7,24 @@
 
 ## Goal (one sentence)
 
-Ship the two value-bearing extensions on top of slice 01's walking skeleton: (a) the portfolio-scope endpoint and chart-widget registration so the same chart works at portfolio detail, and (b) the tooltip's `Window attribution: X partial, Y full` line so users can immediately see how many items contributed partial vs full-window time without leaving the chart.
+Ship the two value-bearing extensions on top of slice 01's walking skeleton: (a) the portfolio-scope endpoint and chart-widget registration so the same chart works at portfolio detail, and (b) the tooltip's `Included items: A closed in window, B still in flight (C total — full durations counted)` line so users can immediately see which items contributed to the bar and that the FULL state-durations are counted (per D5 full-duration attribution).
 
 ## IN scope
 
 - New endpoint `GET /api/portfolios/{portfolioId}/metrics/cumulativeStateTime?startDate&endDate` (shape-identical to the team endpoint from slice 01)
 - New service method `PortfolioMetricsService.GetCumulativeStateTimeForPortfolio(portfolio, startDate, endDate)` (mirrors the team-scope method)
 - `widgetInfoMetadata.ts` and `categoryMetadata.ts` already include the widget from slice 01; the portfolio dispatch in `BaseMetricsView.tsx` picks it up automatically because the widget has no `ownerFilter`
-- Backend response payload extended with `partialWindowItemCount` and `fullWindowItemCount` per state (these were specified in slice 01's endpoint contract; this slice WIRES them through the chart tooltip)
-- Chart tooltip extended with the `Window attribution: X partial, Y full` line (US-03)
-- ARIA label on the tooltip includes the attribution counts in plain language (US-03 AC)
+- Backend response payload already exposes `completedItemCount` and `ongoingItemCount` per state (specified in slice 01's endpoint contract); this slice WIRES them through the chart tooltip
+- Chart tooltip extended with the `Included items: A closed in window, B still in flight (C total — full durations counted)` line (US-03)
+- ARIA label on the tooltip includes the inclusion breakdown in plain language and notes that full durations are counted (US-03 AC)
 - Integration test for the portfolio endpoint asserting shape parity with the team endpoint on a comparable fixture
-- Vitest test asserting the tooltip's attribution-line renders correctly and is screen-reader accessible
+- Vitest test asserting the tooltip's inclusion-breakdown line renders correctly and is screen-reader accessible
 
 ## OUT scope (post-MVP follow-ups, not this slice)
 
 - Total/mean per-item toggle (D4 — deferred to follow-up)
-- Per-state drill-down (feature B2, post-MVP)
+- Per-item drill-down on bar click (US-04 — ships in slice 03)
+- Per-item historical state breakdown (feature B2, post-MVP — different lens)
 - Configurable bar ordering (D3 picks workflow order; reconsider only on telemetry signal)
 - Shared per-state aggregation service with sibling F (D10 — DESIGN-time decision, may land in DESIGN of either feature independently)
 
@@ -44,6 +45,7 @@ Ship the two value-bearing extensions on top of slice 01's walking skeleton: (a)
 
 - **HARD**: slice 01 of THIS feature merged (provides the chart widget, the metric service base, and the widget-metadata registration this slice extends).
 - **HARD**: same sibling-1 dependency as slice 01 — `WorkItemStateTransition` data accumulated for at least one portfolio's items.
+- **NONE on slice 03**: slice 03 (US-04 drill-down) is independent and can ship before or after this slice.
 
 ## Production data requirement
 
