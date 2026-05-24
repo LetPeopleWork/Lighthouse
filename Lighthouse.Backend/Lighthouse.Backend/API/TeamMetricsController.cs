@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.API
                 return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate, ThroughputFilterMode.ApplyFilter);
             }
 
-            return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate);
+            return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate, ThroughputFilterMode.SkipFilter);
         }
 
         [HttpGet("totalWorkItemAge")]
