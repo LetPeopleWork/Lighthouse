@@ -7,6 +7,7 @@ feature_context:
   - time-in-state-and-staleness
   - filter-forecast-throughput
   - aging-pace-percentiles
+  - state-time-cumulative-view
 
 jobs:
   - id: job-rbac-bootstrap
@@ -447,3 +448,85 @@ jobs:
         recognition need; the gap is the per-state framing, not the absence of bands
         entirely. Gap: 2 — bigger than zero (real missing capability), smaller than the
         sibling time-in-state job's gap of 3 (which had zero current satisfaction).
+
+  - id: job-delivery-lead-spot-workflow-constraint
+    title: Spot which workflow state is the systemic constraint on the team's throughput
+    persona: delivery-lead-rte
+    feature_context: state-time-cumulative-view
+    job_story: >
+      When I am preparing a retrospective, an improvement-planning meeting, or a leadership
+      review for my team (or release train) and the conversation is about WHERE to invest
+      our process-improvement effort next quarter,
+      I want to see at a glance which workflow state has consumed the most of our collective
+      time over the period — including time that in-flight items are STILL consuming right
+      now — and how that compares across teams or windows,
+      so I can name the constraint with evidence ("Review took 38% of our time this quarter,
+      up from 22% last quarter") rather than guessing from anecdotes or from per-item charts
+      that answer a different question.
+    dimensions:
+      functional: >
+        See a horizontal bar chart, one bar per workflow state, height = cumulative time
+        all items in the active filter spent in that state during the active window.
+        Includes time-in-current-state for in-flight items (user-stated requirement).
+        Filter composes with existing Team/Portfolio/work-item-type/date-range primitives
+        unchanged. Default placement on team and portfolio detail pages (flow-metrics
+        category). Bar ordering follows workflow order (left-to-right matching kanban) so
+        the chart maps to the team's mental model of the pipeline.
+      emotional: >
+        Move from "I think Review is our problem but I'm not sure how big" (vague,
+        defensible only by anecdote) to "Review took 38% of our cumulative time this
+        quarter — here is the bar, here is the comparison to last quarter, this is where
+        improvement effort lands" (defensible, retro-actionable). The chart names the
+        constraint without requiring the user to do mental arithmetic across per-item ages.
+      social: >
+        Be the delivery lead / RTE who walks into the leadership review with one chart that
+        answers the meeting's central question ("where are we spending our time?") rather
+        than three charts that each answer a partial sub-question. Frames the improvement
+        conversation in numbers leadership can act on (budget, hiring, process change)
+        rather than gut-feel diagnoses.
+    forces:
+      push: >
+        Today, "where did our time go this quarter?" cannot be answered from any single
+        Lighthouse chart. The Simplified CFD shows volume-over-time per StateCategory (only
+        Doing/Done) but not per workflow state, and not as a single cumulative number.
+        Cycle-time percentiles are end-to-end, not per-state. Work Item Aging is per-item,
+        not aggregated. To get the answer, leads either skip the question (intuit the
+        constraint) or build a spreadsheet from raw history data — both lose the
+        integrated-tool advantage and break the trail back to the source items.
+      pull: >
+        One bar chart on the team / portfolio detail page that answers the retrospective
+        question in one glance, respecting the team's current filter, including in-flight
+        time. Set the date range, set the type filter, read the bars. The chart works for
+        any time horizon (sprint, quarter, year) because it composes with the existing
+        date-range filter unchanged.
+      anxiety: >
+        What if items that entered a state before the date window contribute full or partial
+        time and I can't tell which? (Mitigated by D5 below: bars show only the time-in-state
+        actually spent during the window, matching how throughput is already calculated;
+        tooltip discloses how many items contributed partial-window time vs full-window time.)
+        What if the bar chart shows "Review is the constraint" but it's because of one
+        outlier item, not a systemic issue? (Mitigated by D6: tooltip shows the count of
+        items contributing to each bar AND the mean per item, so a single-outlier bar is
+        visible from the tooltip rather than hidden in the sum.)
+        What if comparing teams or quarters needs export to a spreadsheet anyway? (Mitigated
+        by the cumulative bar being a defensible single number per state — directly
+        screenshottable into a deck or compared by eye across two browser tabs.)
+      habit: >
+        Delivery leads today use the Simplified CFD or a spreadsheet of cycle-time data to
+        infer where time goes; the new chart asks them to ADOPT a new visual answer to a
+        question they've previously answered indirectly. The bar chart's familiarity (bars
+        per category, height = magnitude — a primary-school chart shape) keeps the learning
+        cost minimal.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — Theory-of-Constraints-style improvement planning is a recurring,
+        high-stakes leadership decision (where the quarter's improvement budget goes); the
+        bar chart names the constraint defensibly. Current satisfaction: 1 — no chart in
+        Lighthouse today answers "cumulative time per state across items in a window";
+        users either guess or build a spreadsheet. Gap: 3 — same magnitude as sibling
+        time-in-state job (also gap 3, also zero current satisfaction for the specific
+        question); both are foundational Epic 4144 gaps surfaced by the same Productboard +
+        Community signal on ADO #4144.

@@ -1,0 +1,75 @@
+schema_version: 1
+id: delivery-lead-rte
+created: 2026-05-24
+created_in_feature: state-time-cumulative-view
+
+display_name: Delivery Lead / RTE
+aliases:
+  - delivery-lead
+  - release-train-engineer
+  - rte
+  - engineering-manager
+  - delivery-manager
+
+short_description: >
+  Owns the team's or release train's flow improvement agenda — the person who runs the retro,
+  the quarterly improvement-planning meeting, or the leadership review where "where are we
+  spending our time?" gets answered. Uses Lighthouse as evidence for SYSTEMIC analysis of the
+  workflow (which states are constraints?), not per-item triage. Distinct from the flow-coach
+  persona, which is per-item / per-day; and distinct from the delivery-forecaster persona,
+  which is forward-looking forecast-honesty.
+
+primary_jobs:
+  - job-delivery-lead-spot-workflow-constraint
+
+goals:
+  - Identify which workflow state(s) consume the most of the team's collective time over a
+    quarter, so improvement effort goes to the actual constraint rather than the loudest
+    complaint
+  - Compare "where time goes" across teams, portfolios, or time windows to spot drift or
+    confirm an improvement landed
+  - Give leadership a one-glance answer to "is our process improving or degrading?" without
+    needing to interpret per-item charts
+
+frustrations:
+  - Per-item charts (Work Item Aging, Time in State badge) answer "which item is stuck?",
+    not "which step is the systemic constraint?" — different question, different decision
+  - The Cumulative Flow Diagram (CFD) shows volume-over-time, not aggregated time-per-state;
+    reading "time spent in Review last quarter" from a CFD requires mental geometry
+  - In-flight work is invisible to most aggregated metrics (they look at completed items
+    only), so the picture is biased toward what's already shipped — missing the items that
+    are dragging the current quarter
+
+mental_model:
+  - The workflow is a pipeline of states; each state has a "time tax" — the cumulative time
+    items spend in it over a window
+  - The state with the biggest time tax IS the constraint (Theory of Constraints lens)
+  - Improvement effort should target the constraint, not the most-visible problem; the bar
+    chart names the constraint
+  - Both completed AND in-flight items contribute to the time tax (in-flight items are still
+    consuming the team's calendar even though they haven't shipped yet)
+
+vocabulary:
+  - "constraint" — the workflow state with the highest cumulative time-tax (Goldratt / Theory
+    of Constraints)
+  - "time tax" — informal term for cumulative time-per-state across a window
+  - "improvement debt" — the gap between the current constraint and where the team could be
+    if the constraint were addressed
+  - "retro view" or "leadership view" — the bar chart, as distinct from "standup view"
+    (per-item triage) or "forecast view" (Monte Carlo)
+  - "in-flight time" / "ongoing time" — the time-in-current-state for items that have not
+    yet completed; user-stated requirement that this be included in the bar
+
+related_personas:
+  - flow-coach (different job — per-item triage; sees badge + aging chart, not the bar chart)
+  - delivery-forecaster (different job — forecast honesty; sees throughput filter, not the
+    bar chart)
+  - portfolio-admin (often the same person at portfolio scope)
+  - product-owner (overlap at portfolio scope; PO uses the bar chart to argue for scope cuts
+    when the constraint is "we keep adding work to Review")
+
+not_this_persona:
+  - System admin (no flow ownership at this granularity)
+  - Viewer (read-only; sees the bar chart but does not own improvement decisions)
+  - Per-item flow coach (different scope — the coach's question is "which item?"; the
+    delivery lead's question is "which state?")

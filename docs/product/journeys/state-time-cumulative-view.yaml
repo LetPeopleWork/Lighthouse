@@ -1,0 +1,260 @@
+schema_version: 1
+feature_id: state-time-cumulative-view
+updated: 2026-05-24
+
+journeys:
+
+  - name: spot-workflow-constraint-from-cumulative-bars
+    goal: >
+      Delivery Lead / RTE opens the team or portfolio detail page during a retro,
+      improvement-planning meeting, or leadership review and within a glance identifies which
+      workflow state has consumed the most of the team's collective time during the active
+      filter window — including time that in-flight items are still consuming — and uses
+      that signal to name the constraint, frame the improvement conversation, and decide
+      where to invest the next quarter's process-improvement effort.
+    persona: delivery-lead-rte (also: flow-coach as secondary, for retro facilitation)
+
+    emotional_arc:
+      start: Searching — "where is our team / portfolio actually spending its time this
+        quarter? I have a guess but I need evidence before I bring it to leadership."
+      middle: Focused — "the bar chart shows Review at 38% of cumulative time, much higher
+        than the next state — and the in-flight items contribute almost half of that bar.
+        This isn't a tail of stuck completed items; this is what we're doing RIGHT NOW."
+      end: Decisive — "Review is the constraint this quarter. The chart is screenshottable
+        for the leadership deck. The improvement effort goes to Review process — not to
+        whichever team complained loudest in the retro."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Does Lighthouse already have a cumulative time-per-state visualization?
+        decision: >
+          NO — verified by inspecting Lighthouse.Frontend/src/components/Common/Charts/* and
+          Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts. The
+          existing "stacked" widget is the Simplified CFD (Doing/Done areas over TIME, not
+          per-state cumulative). WorkDistributionChart aggregates by parent feature, not by
+          state. WorkItemAgingChart is per-item, not aggregated. No premise correction
+          needed — the gap claim in the carry-over README is accurate.
+      - id: D2
+        question: Default chart placement?
+        decision: >
+          Team detail page AND portfolio detail page, both under the existing "flow-metrics"
+          category (alongside cycleScatter, aging, throughput, wipOverTime,
+          totalWorkItemAgeOverTime, arrivals, stacked, loadBalanceMatrix). Widget key:
+          `stateTimeCumulative`. Size: `large`. Shipping team-only would create a parity
+          hole between scopes (same rationale as sibling F's D8); shipping a new top-level
+          route would fragment the user's mental model (improvement decisions are made at
+          team or portfolio scope, both already have a detail page).
+      - id: D3
+        question: Bar ordering?
+        decision: >
+          Workflow order, left-to-right matching the team's kanban board (i.e.
+          alphabetical-by-StateCategory then by configured order within the category — same
+          ordering the WorkItemAgingChart uses for its X-axis state columns). The bar chart
+          shares the pipeline metaphor with the aging chart; using the same ordering means
+          a user can read both charts with the same eye motion. Alternatives considered:
+          (a) descending by cumulative time — rejected, breaks the pipeline-shape mental
+          model; (b) by StateCategory only (To Do / Doing / Done) — rejected, hides
+          per-state detail which is the whole point of the chart.
+      - id: D4
+        question: Unit displayed (total person-days, mean per item, or both)?
+        decision: >
+          Total time (in days) as the bar height — this is the cumulative-time-tax
+          framing the persona uses. Tooltip on hover discloses BOTH total and mean-per-item
+          plus the item count contributing to the bar. A toggle is NOT shipped in MVP —
+          one chart, one story; the toggle would add cognitive overhead for a persona that
+          opens the chart maybe weekly. If post-release telemetry shows users wanting the
+          mean view as the primary, fold into a follow-up.
+      - id: D5
+        question: Date-range semantics for items entering a state BEFORE the filter window?
+        decision: >
+          The bar represents ONLY the time-in-state actually spent DURING the filter
+          window (clip-to-window). An item that entered "Review" 30 days before the
+          window starts and left "Review" 10 days into the window contributes 10 days to
+          the Review bar — not 40. An item still in "Review" at window end contributes
+          (windowEnd - max(stateEnteredAt, windowStart)) days. This matches the existing
+          mental model for Lighthouse "throughput in last quarter" (only items closed in
+          the window count) and avoids the surprise where setting "last 30 days" suddenly
+          shows time stretching back years for one stuck item. Tooltip on each bar shows
+          how many items contributed PARTIAL-window time vs FULL-window time, so the
+          user can recognise edge effects without leaving the chart. Alternative considered:
+          full-duration attribution (the entire time the item spent in the state, even if
+          most of it falls outside the window) — rejected because it inflates bars with
+          historical drag that the current window's actions cannot influence; defeats the
+          retro-actionable framing of the persona's job.
+      - id: D6
+        question: Ongoing-items visual treatment?
+        decision: >
+          Each state bar is stacked into TWO segments: a base segment for time
+          contributed by items that COMPLETED at least one transition out of the state
+          during the window ("completed contribution"), and a top segment for time
+          contributed by items still IN the state at window end ("ongoing contribution",
+          rendered with diagonal hatching to disambiguate from the solid base segment).
+          User stated this requirement verbatim 2026-05-24: "cumulative times for all
+          items in the filter, including ongoing items". The hatch pattern is the
+          familiar Lighthouse convention for "this is in progress, not done" — same as
+          the existing blocked-item visual semantics carry hatching today. Tooltip
+          breaks out the count and total of each segment so leaders can read "Review
+          time is half completed, half in-flight" at a glance.
+      - id: D7
+        question: Filter composition?
+        decision: >
+          Composes UNCHANGED with the existing Team/Portfolio scope, work-item-type
+          filter chips, and date-range selector. No new filter primitives. The bar
+          chart recomputes when any of those change. This matches sibling F's D7
+          (same chart-filter composition principle).
+      - id: D8
+        question: WS strategy?
+        decision: >
+          Type A (additive). No contract change to existing endpoints. One new endpoint
+          per scope (team + portfolio); one new chart widget; one new entry in
+          widgetInfoMetadata + categoryMetadata. If the endpoint is absent, the chart
+          slot is empty — no regression to existing widgets.
+      - id: D9
+        question: Sibling-data dependency on WorkItemStateTransition?
+        decision: >
+          The 4 fields shipped by sibling time-in-state-and-staleness slice 01
+          (workItemId, fromState, toState, transitionedAt) PLUS the derived
+          currentStateEnteredAt field on WorkItem are sufficient. NO schema additions
+          requested. The cumulative-time-per-state computation is:
+          for each item in filter, for each state s,
+            timeInS = sum over (state-enter-event, state-exit-event-or-windowEnd) pairs
+                      of [min(exit, windowEnd) - max(enter, windowStart)],
+                      clipped to >= 0;
+            barHeight[s] += timeInS;
+            if (item still in s at windowEnd) ongoingSegment[s] += timeInS
+            else completedSegment[s] += timeInS.
+          This is computable from the four transition fields + currentStateEnteredAt
+          alone. **No upstream coordination with sibling 1 DESIGN required.**
+      - id: D10
+        question: Cross-feature alignment with sibling F (aging-pace-percentiles)?
+        decision: >
+          Both features compute per-state aggregations from WorkItemStateTransition. A
+          shared per-state aggregation service / materialised cache is a candidate
+          optimization but NOT required for MVP correctness. DISCUSS calls it out as a
+          DESIGN-time cross-feature coordination point (see "Cross-MVP DESIGN
+          coordination" section); MVP DISCUSS proceeds assuming independent
+          computation per feature.
+
+    steps:
+
+      - id: step-open-detail-page-for-retro
+        action: >
+          Delivery Lead / RTE navigates to /teams/{teamId} or /portfolios/{portfolioId}
+          before a retrospective or improvement-planning meeting and switches to the
+          Flow Metrics category
+        expected_output: >
+          Detail page renders; Flow Metrics category shows the existing widgets
+          (cycleScatter, aging, throughput, wipOverTime, totalWorkItemAgeOverTime,
+          arrivals, stacked, loadBalanceMatrix) PLUS the new "Cumulative Time per
+          State" widget (`stateTimeCumulative`). The widget shows a horizontal bar
+          chart, one bar per workflow state in workflow order, with each bar visibly
+          split into a solid base segment (completed contribution) and a diagonally-
+          hatched top segment (ongoing contribution).
+        emotional_state: Curious — "let's see where our time went this quarter"
+        shared_artifacts:
+          - cumulativeStateTimeData (new, from GET
+            /api/teams/{teamId}/metrics/cumulativeStateTime?startDate&endDate)
+          - currentFilter (existing — team/portfolio scope, type chips, date range)
+
+      - id: step-scan-bars-find-constraint
+        action: >
+          Delivery Lead visually identifies the tallest bar and the relative heights
+          of other bars
+        expected_output: >
+          Tallest bar is visibly taller than the rest; the user identifies it as
+          "the constraint" (e.g. "Review", at 38% of cumulative time). The ratio
+          between the tallest and second-tallest bars is read at a glance from the
+          chart geometry.
+        emotional_state: Focused — "Review is far ahead of everything else. That's
+          our constraint."
+        shared_artifacts:
+          - rendered bar geometry (per-state, with base + ongoing segments)
+
+      - id: step-tooltip-confirm-not-outlier
+        action: >
+          Delivery Lead hovers the tallest bar to confirm it represents many items,
+          not one outlier dragging the sum
+        expected_output: >
+          Tooltip shows:
+            State: Review
+            Total: 184 days
+            Items contributing: 47 (38 completed, 9 ongoing)
+            Mean per item: 3.9 days
+            Median per item: 2.5 days
+            Completed segment: 122 days from items that exited Review during the window
+            Ongoing segment: 62 days from items still in Review at window end
+            (8 items partial-window, 39 items full-window — see D5 semantics)
+        emotional_state: Validated — "47 items, not 1. This is systemic, not an
+          outlier. Improvement effort here pays off."
+        shared_artifacts:
+          - bar tooltip component
+
+      - id: step-toggle-filter-compare-quarters
+        action: >
+          Delivery Lead changes the date range from "last 30 days" to "last quarter"
+          to compare; or toggles a work-item-type filter chip (e.g. excludes "Bug")
+          to confirm the constraint holds for feature work
+        expected_output: >
+          Chart recomputes immediately (within the same fetch cycle the existing
+          Flow Metrics widgets use). Bar heights re-render; the ranking may change.
+          The user can flip across windows by changing dates; the chart respects
+          every existing filter primitive without any new controls.
+        emotional_state: In control — "I can compare quarters or filter types
+          without leaving the chart"
+        shared_artifacts:
+          - existing filter primitive (date range, type chips)
+          - cumulativeStateTimeData (refetched per filter)
+
+      - id: step-name-the-conversation
+        action: >
+          Delivery Lead screenshots the chart for the leadership deck and frames the
+          retro / improvement-planning conversation using the bar chart as evidence
+        expected_output: >
+          Delivery lead can say "Review consumed 38% of our cumulative time last
+          quarter (here is the chart); 47 items contributed, half of that time is
+          still in flight; let's invest in Review process automation next quarter"
+          — vs. the previous best, which was "I think Review is slow, here are some
+          aging-chart screenshots that hint at it."
+        emotional_state: Decisive — "the chart names the constraint; the
+          improvement decision follows from evidence, not anecdote"
+        shared_artifacts: []
+
+    error_paths_summary:
+      - Empty filter (no items match): chart renders an "empty state" message
+        ("No items match the current filter for the selected window — adjust
+        filters to see time distribution"). Same convention as existing
+        WorkDistributionChart and aging chart when no items match.
+      - All items skipped a state (no transitions through state X): state X gets
+        zero-height bar; bar still rendered as a labeled placeholder so the user
+        sees which states are part of the workflow definition. Avoids the
+        "missing state" confusion ("did the chart drop a state?" vs "no time
+        spent there").
+      - State removed from the workflow during the window: state appears as a
+        bar with the time accumulated WHILE it was active; tooltip notes
+        "state removed from workflow on YYYY-MM-DD". Surfaces workflow changes
+        as part of the evidence rather than silently hiding them.
+      - Single item in filter: chart renders one item's per-state durations as
+        the bars; mean and total are equal; tooltip notes "1 item — sample
+        size is small". Useful for single-item deep-dive (e.g. an epic post
+        mortem) but flagged as low-sample.
+      - Zero transitions data accumulated (sibling slice 01 just shipped, or a
+        team has only been using Lighthouse for a few days): the endpoint
+        returns an empty array; the widget renders the same "empty state"
+        message as the empty-filter case plus a tooltip linking to "data
+        accumulates forward only — wait for transitions to populate."
+      - In-flight item with `currentStateEnteredAt = null` (first-observation,
+        per sibling D-handling): item contributes 0 to the ongoing segment for
+        any state until next sync establishes a baseline. Same forward-only
+        constraint sibling already documented.
+
+    success_signal:
+      - Delivery Lead / RTE leaves the retro or planning meeting with a
+        specific constraint named ("Review") and a specific evidence-backed
+        next-quarter improvement target — rather than a list of complaints to
+        triage.
+      - The chart shows up in customer-shared retro decks within 6 weeks of
+        sibling slice 01 shipping (OUT-cumulative-state-time-leadership-share).
+      - The "where do we spend our time?" question stops being answered by
+        spreadsheets or guesses; ≥30% of team/portfolio detail page sessions
+        include a view of the Cumulative Time per State widget within 6 weeks
+        of release (OUT-cumulative-state-time-adoption).

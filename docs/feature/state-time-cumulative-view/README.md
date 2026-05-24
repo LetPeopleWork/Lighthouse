@@ -2,7 +2,22 @@
 
 **Parent Epic**: #4144 (More Detailed State Info) — `docs/feature/epic-4144-more-detailed-state-info/README.md`
 **ADO Epic**: https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/4144
-**Status**: PRE-DISCUSS. Carry-over only; not yet a DISCUSS artifact.
+**Status**: DISCUSS complete (2026-05-24). See `feature-delta.md` for the authoritative artifact.
+
+> **DISCUSS verification note (2026-05-24)**: a pre-DISCUSS code reality check
+> (inspecting `Lighthouse.Frontend/src/components/Common/Charts/*`,
+> `Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts`,
+> `Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts`, and the
+> backend metrics services) **CONFIRMED** the gap claim below: no chart in
+> Lighthouse today aggregates cumulative time per workflow state across items in
+> a window. The existing `stacked` widget is the Simplified CFD (areas-over-time
+> by `StateCategory`, not per-state cumulative); `WorkDistributionChart`
+> aggregates by parent feature, not by state; `WorkItemAgingChart` is per-item.
+> No premise correction was required (unlike sibling `aging-pace-percentiles`,
+> whose README premise had to be reframed at DISCUSS). The DISCUSS feature-delta
+> (`docs/feature/state-time-cumulative-view/feature-delta.md` D1) records the
+> inspection evidence so future readers can trust the gap claim without
+> repeating the inspection.
 **MVP membership**: **Yes** — required for the Epic 4144 MVP release bundle alongside `time-in-state-and-staleness` and `aging-pace-percentiles`.
 **Origin**: Promoted out of Epic #4144 slice B3. Documented in the Epic catalog as "Cumulative time-per-state across timeframe".
 
