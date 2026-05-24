@@ -158,6 +158,36 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetThroughputPbc_PremiumTenantTeamWithFilter_LimitLinesRecomputedFromFilteredBaseline()
+        {
+            var denseTeamId = SeedTeamWithBugDenseBaselineWindow();
+            client.AsTeamAdmin(denseTeamId);
+
+            var rawResponse = await GetPbc(denseTeamId, view: "raw");
+            var rawBody = await rawResponse.Content.ReadAsStringAsync();
+
+            var filteredResponse = await GetPbc(denseTeamId, view: "filtered");
+            var filteredBody = await filteredResponse.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rawResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), rawBody);
+                Assert.That(filteredResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), filteredBody);
+
+                var rawAverage = GetIntProperty(rawBody, "average");
+                var rawUpper = GetIntProperty(rawBody, "upperNaturalProcessLimit");
+                var rawLower = GetIntProperty(rawBody, "lowerNaturalProcessLimit");
+                var filteredAverage = GetIntProperty(filteredBody, "average");
+                var filteredUpper = GetIntProperty(filteredBody, "upperNaturalProcessLimit");
+                var filteredLower = GetIntProperty(filteredBody, "lowerNaturalProcessLimit");
+
+                Assert.That(filteredAverage, Is.Not.EqualTo(rawAverage), $"Average must be recomputed from the filtered baseline (raw={rawAverage}, filtered={filteredAverage}). Raw body: {rawBody}; Filtered body: {filteredBody}");
+                Assert.That(filteredUpper, Is.Not.EqualTo(rawUpper), $"UpperNaturalProcessLimit must be recomputed from the filtered baseline (raw={rawUpper}, filtered={filteredUpper})");
+                Assert.That(filteredLower, Is.Not.EqualTo(rawLower), $"LowerNaturalProcessLimit must be recomputed from the filtered baseline (raw={rawLower}, filtered={filteredLower})");
+            }
+        }
+
+        [Test]
         public async Task GetThroughput_PremiumTenantTeamWithFilter_ReturnsPerItemGranularPayloadForClientSideFilter()
         {
             client.AsTeamAdmin(seededTeamId);
@@ -196,13 +226,24 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private Task<HttpResponseMessage> GetPbc(string? view)
         {
-            var url = $"/api/latest/teams/{seededTeamId}/metrics/throughput/pbc?startDate={displayStart:O}&endDate={displayEnd:O}";
+            return GetPbc(seededTeamId, view);
+        }
+
+        private Task<HttpResponseMessage> GetPbc(int teamId, string? view)
+        {
+            var url = $"/api/latest/teams/{teamId}/metrics/throughput/pbc?startDate={displayStart:O}&endDate={displayEnd:O}";
             if (view != null)
             {
                 url += $"&view={view}";
             }
 
             return client.GetAsync(url);
+        }
+
+        private static int GetIntProperty(string body, string propertyName)
+        {
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.GetProperty(propertyName).GetInt32();
         }
 
         private string BuildRunChartUrl()
@@ -242,6 +283,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ForecastFilterRuleSetJson = ruleSet,
                 ProcessBehaviourChartBaselineStartDate = baselineStart,
                 ProcessBehaviourChartBaselineEndDate = baselineEnd,
+                DoneItemsCutoffDays = 0,
             };
 
             var teamRepository = sp.GetRequiredService<IRepository<Team>>();
@@ -259,6 +301,64 @@ namespace Lighthouse.Backend.Tests.API.Integration
             AddClosedWorkItem(workItemRepository, team, "User Story", displayStart.AddDays(15), referenceId: "S-3");
 
             workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        private int SeedTeamWithBugDenseBaselineWindow()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = $"Connection {Guid.NewGuid():N}",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+            };
+
+            var ruleSet = """{"Version":1,"Conditions":[{"FieldKey":"workitem.type","Operator":"equals","Value":"Bug"}]}""";
+
+            var denseBaselineEnd = displayStart.AddDays(-1);
+            var denseBaselineStart = denseBaselineEnd.AddDays(-29);
+
+            var team = new Team
+            {
+                Name = $"DenseTeam {Guid.NewGuid():N}",
+                WorkTrackingSystemConnection = connection,
+                ForecastFilterRuleSetJson = ruleSet,
+                ProcessBehaviourChartBaselineStartDate = denseBaselineStart,
+                ProcessBehaviourChartBaselineEndDate = denseBaselineEnd,
+                DoneItemsCutoffDays = 0,
+            };
+
+            var teamRepository = sp.GetRequiredService<IRepository<Team>>();
+            teamRepository.Add(team);
+            teamRepository.Save().GetAwaiter().GetResult();
+
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+
+            // Density is tuned so raw vs filtered Average/UNPL/LNPL differ after integer rounding:
+            // raw -> Average=1, UNPL=1, LNPL=1; filtered -> 0, 0, 0. User Stories must remain
+            // in the filtered baseline because TeamMetricsService falls back to the unfiltered
+            // data when the filter removes every item (line 519-522).
+            const int bugsPerDay = 3;
+            const int daysWithBugs = 10;
+            for (var dayOffset = 0; dayOffset < daysWithBugs; dayOffset++)
+            {
+                for (var indexInDay = 0; indexInDay < bugsPerDay; indexInDay++)
+                {
+                    var referenceId = $"DB-{dayOffset}-{indexInDay}";
+                    AddClosedWorkItem(workItemRepository, team, "Bug", denseBaselineStart.AddDays(dayOffset), referenceId);
+                }
+            }
+
+            for (var dayOffset = daysWithBugs; dayOffset < daysWithBugs + 6; dayOffset++)
+            {
+                var referenceId = $"DS-{dayOffset}";
+                AddClosedWorkItem(workItemRepository, team, "User Story", denseBaselineStart.AddDays(dayOffset), referenceId);
+            }
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
         }
 
         private static void AddClosedWorkItem(IWorkItemRepository repository, Team team, string type, DateTime closedDate, string referenceId)
