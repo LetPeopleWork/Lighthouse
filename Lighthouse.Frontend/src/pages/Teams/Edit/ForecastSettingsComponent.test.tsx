@@ -278,6 +278,39 @@ describe("ForecastSettingsComponent — Exclude Items for Throughput sub-section
 		).not.toBeInTheDocument();
 	});
 
+	it("shows a take-effect hint beneath the editor on premium tenants", () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		const hint = screen.getByTestId("forecast-filter-takeeffect-hint");
+		expect(hint).toBeInTheDocument();
+		expect(hint).toHaveTextContent(/save these settings/i);
+		expect(hint).toHaveTextContent(/refresh throughput data/i);
+	});
+
+	it("does not render the take-effect hint on non-premium tenants", () => {
+		mockCanUsePremiumFeatures.mockReturnValue(false);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		expect(
+			screen.queryByTestId("forecast-filter-takeeffect-hint"),
+		).not.toBeInTheDocument();
+	});
+
 	it("does not render the sub-section at all when the team page is in default-settings mode", () => {
 		mockCanUsePremiumFeatures.mockReturnValue(true);
 

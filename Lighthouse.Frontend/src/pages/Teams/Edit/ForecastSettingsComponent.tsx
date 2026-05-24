@@ -1,4 +1,5 @@
 import {
+	Alert,
 	FormControlLabel,
 	Link,
 	Switch,
@@ -57,6 +58,7 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? true;
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const heading = `Exclude Items for ${throughputTerm}`;
 
 	return (
@@ -75,11 +77,23 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 				</Typography>
 			</LicenseTooltip>
 			{isPremium ? (
-				<ForecastFilterEditor
-					teamId={teamId}
-					rules={rules}
-					onChange={onRulesChange}
-				/>
+				<>
+					<ForecastFilterEditor
+						teamId={teamId}
+						rules={rules}
+						onChange={onRulesChange}
+					/>
+					<Alert
+						severity="info"
+						sx={{ mt: 2 }}
+						data-testid="forecast-filter-takeeffect-hint"
+					>
+						Filter changes only take effect after you{" "}
+						<strong>save these settings</strong> and then{" "}
+						<strong>refresh {throughputTerm.toLowerCase()} data</strong> on the{" "}
+						{teamTerm.toLowerCase()} page.
+					</Alert>
+				</>
 			) : (
 				<Typography variant="body2" sx={{ mt: 1 }}>
 					Available with a <Link href={PREMIUM_DOCS_HREF}>premium license</Link>
