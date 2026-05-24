@@ -11,6 +11,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 
         private const string ContainsOperator = "contains";
 
+        private const string NotContainsOperator = "notcontains";
+
+        private const string IsEmptyOperator = "isempty";
+
+        private const string IsNotEmptyOperator = "isnotempty";
+
         private const string TagsFieldKey = "feature.tags";
 
         public IEnumerable<T> Match(WorkItemRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider)
@@ -20,7 +26,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
                 return [];
             }
 
-            return items.Where(item => MatchesAllConditions(item, ruleSet.Conditions, fieldProvider)).ToList();
+            var useOrMode = IsOrMode(ruleSet.Mode);
+            return items.Where(item => MatchesGroup(item, ruleSet.Conditions, fieldProvider, useOrMode)).ToList();
         }
 
         public bool IsValid(WorkItemRuleSet ruleSet, WorkItemRuleSchema schema)
@@ -106,14 +113,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 
         private static bool IsKnownOperator(string op)
         {
-            return string.Equals(op, EqualsOperator, StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(op, NotEqualsOperator, StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(op, ContainsOperator, StringComparison.OrdinalIgnoreCase);
+            var normalised = op.ToLowerInvariant();
+            return normalised is EqualsOperator
+                or NotEqualsOperator
+                or ContainsOperator
+                or NotContainsOperator
+                or IsEmptyOperator
+                or IsNotEmptyOperator;
         }
 
-        private static bool MatchesAllConditions(T item, List<WorkItemRuleCondition> conditions, IRuleFieldProvider<T> fieldProvider)
+        private static bool IsOrMode(string mode)
         {
-            return conditions.All(c => EvaluateCondition(item, c, fieldProvider));
+            return string.Equals(mode, WorkItemRuleSet.ModeOr, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool MatchesGroup(T item, List<WorkItemRuleCondition> conditions, IRuleFieldProvider<T> fieldProvider, bool useOrMode)
+        {
+            return useOrMode
+                ? conditions.Any(c => EvaluateCondition(item, c, fieldProvider))
+                : conditions.All(c => EvaluateCondition(item, c, fieldProvider));
         }
 
         private static bool EvaluateCondition(T item, WorkItemRuleCondition condition, IRuleFieldProvider<T> fieldProvider)
@@ -132,6 +150,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
                 EqualsOperator => string.Equals(fieldValue, condition.Value, StringComparison.OrdinalIgnoreCase),
                 NotEqualsOperator => !string.Equals(fieldValue, condition.Value, StringComparison.OrdinalIgnoreCase),
                 ContainsOperator => fieldValue.Contains(condition.Value, StringComparison.OrdinalIgnoreCase),
+                NotContainsOperator => !fieldValue.Contains(condition.Value, StringComparison.OrdinalIgnoreCase),
+                IsEmptyOperator => string.IsNullOrEmpty(fieldValue),
+                IsNotEmptyOperator => !string.IsNullOrEmpty(fieldValue),
                 _ => false,
             };
         }
@@ -143,6 +164,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
                 EqualsOperator => tags.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase)),
                 NotEqualsOperator => !tags.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase)),
                 ContainsOperator => tags.Any(t => t.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                NotContainsOperator => !tags.Any(t => t.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                IsEmptyOperator => tags.Count == 0,
+                IsNotEmptyOperator => tags.Count > 0,
                 _ => false,
             };
         }

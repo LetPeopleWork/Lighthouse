@@ -8,7 +8,13 @@ namespace Lighthouse.Backend.Models.WorkItemRules
 
         public const int MaxValueLength = 500;
 
+        public const string ModeAnd = "and";
+
+        public const string ModeOr = "or";
+
         public int Version { get; set; } = SchemaVersion;
+
+        public string Mode { get; set; } = ModeAnd;
 
         public List<WorkItemRuleCondition> Conditions { get; set; } = [];
     }

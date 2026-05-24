@@ -42,6 +42,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
         [TestCase("contains", "Auth", "Authentication Module", true)]
         [TestCase("contains", "AUTH", "authentication module", true)]
         [TestCase("contains", "Auth", "Payment Module", false)]
+        [TestCase("notContains", "Auth", "Payment Module", true)]
+        [TestCase("notContains", "auth", "Authentication Module", false)]
+        [TestCase("notContains", "Auth", "", true)]
+        [TestCase("isEmpty", "", "", true)]
+        [TestCase("isEmpty", "ignored", "", true)]
+        [TestCase("isEmpty", "", "Anything", false)]
+        [TestCase("isNotEmpty", "", "Anything", true)]
+        [TestCase("isNotEmpty", "ignored", "X", true)]
+        [TestCase("isNotEmpty", "", "", false)]
         public void Match_OperatorSemantics_MatchesItemsCaseInsensitively(
             string op, string conditionValue, string itemFieldValue, bool shouldMatch)
         {
@@ -64,6 +73,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
         [TestCase("notEquals", "Blocked", new[] { "Blocked", "Priority" }, false)]
         [TestCase("contains", "Pri", new[] { "Priority" }, true)]
         [TestCase("contains", "Pri", new[] { "Backlog" }, false)]
+        [TestCase("notContains", "Pri", new[] { "Backlog" }, true)]
+        [TestCase("notContains", "Pri", new[] { "Priority" }, false)]
+        [TestCase("notContains", "Pri", new string[0], true)]
+        [TestCase("isEmpty", "", new string[0], true)]
+        [TestCase("isEmpty", "ignored", new string[0], true)]
+        [TestCase("isEmpty", "", new[] { "Anything" }, false)]
+        [TestCase("isNotEmpty", "", new[] { "Anything" }, true)]
+        [TestCase("isNotEmpty", "ignored", new[] { "X" }, true)]
+        [TestCase("isNotEmpty", "", new string[0], false)]
         public void Match_TagsField_DelegatesToTagsProviderCaseInsensitively(
             string op, string conditionValue, string[] tags, bool shouldMatch)
         {
@@ -78,6 +96,87 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
             var result = subject.Match(ruleSet, [feature], fieldProvider.Object).ToList();
 
             Assert.That(result, shouldMatch ? Does.Contain(feature) : Is.Empty);
+        }
+
+        [Test]
+        public void Match_ModeOmitted_DefaultsToAndSemantics()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" },
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Active" },
+                ]
+            };
+            var matching = new Feature { Name = "M" };
+            var partial = new Feature { Name = "P" };
+            fieldProvider.Setup(p => p.GetFieldValue(matching, TypeFieldKey)).Returns("Epic");
+            fieldProvider.Setup(p => p.GetFieldValue(matching, StateFieldKey)).Returns("Active");
+            fieldProvider.Setup(p => p.GetFieldValue(partial, TypeFieldKey)).Returns("Epic");
+            fieldProvider.Setup(p => p.GetFieldValue(partial, StateFieldKey)).Returns("Done");
+
+            var result = subject.Match(ruleSet, [matching, partial], fieldProvider.Object).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result, Does.Contain(matching));
+            }
+        }
+
+        [Test]
+        public void Match_ModeOr_MatchesItemWhenAnyConditionPasses()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = "or",
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" },
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Active" },
+                ]
+            };
+            var typeOnlyMatch = new Feature { Name = "T" };
+            var stateOnlyMatch = new Feature { Name = "S" };
+            var noMatch = new Feature { Name = "N" };
+            fieldProvider.Setup(p => p.GetFieldValue(typeOnlyMatch, TypeFieldKey)).Returns("Epic");
+            fieldProvider.Setup(p => p.GetFieldValue(typeOnlyMatch, StateFieldKey)).Returns("Done");
+            fieldProvider.Setup(p => p.GetFieldValue(stateOnlyMatch, TypeFieldKey)).Returns("Story");
+            fieldProvider.Setup(p => p.GetFieldValue(stateOnlyMatch, StateFieldKey)).Returns("Active");
+            fieldProvider.Setup(p => p.GetFieldValue(noMatch, TypeFieldKey)).Returns("Story");
+            fieldProvider.Setup(p => p.GetFieldValue(noMatch, StateFieldKey)).Returns("Done");
+
+            var result = subject.Match(ruleSet, [typeOnlyMatch, stateOnlyMatch, noMatch], fieldProvider.Object).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Has.Count.EqualTo(2));
+                Assert.That(result, Does.Contain(typeOnlyMatch));
+                Assert.That(result, Does.Contain(stateOnlyMatch));
+                Assert.That(result, Does.Not.Contain(noMatch));
+            }
+        }
+
+        [Test]
+        public void Match_ModeAndExplicit_BehavesLikeOmittedMode()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = "and",
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" },
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Active" },
+                ]
+            };
+            var matching = new Feature { Name = "M" };
+            fieldProvider.Setup(p => p.GetFieldValue(matching, TypeFieldKey)).Returns("Epic");
+            fieldProvider.Setup(p => p.GetFieldValue(matching, StateFieldKey)).Returns("Active");
+
+            var result = subject.Match(ruleSet, [matching], fieldProvider.Object).ToList();
+
+            Assert.That(result, Does.Contain(matching));
         }
 
         [Test]
@@ -193,6 +292,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
         }
 
         [Test]
+        public void IsValid_IsEmptyOperatorWithEmptyValue_ReturnsTrue()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "isEmpty", Value = string.Empty }]
+            };
+
+            var valid = subject.IsValid(ruleSet, BuildSchema());
+
+            Assert.That(valid, Is.True);
+        }
+
+        [Test]
+        public void IsValid_IsNotEmptyOperatorWithEmptyValue_ReturnsTrue()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "isNotEmpty", Value = string.Empty }]
+            };
+
+            var valid = subject.IsValid(ruleSet, BuildSchema());
+
+            Assert.That(valid, Is.True);
+        }
+
+        [Test]
         public void IsValid_UnknownOperator_ReturnsFalse()
         {
             var ruleSet = new WorkItemRuleSet
@@ -227,7 +352,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
                     new WorkItemRuleFieldDefinition { FieldKey = StateFieldKey, DisplayName = "State" },
                     new WorkItemRuleFieldDefinition { FieldKey = TagsFieldKey, DisplayName = "Tags", IsMultiValue = true },
                 ],
-                Operators = ["equals", "notEquals", "contains"],
+                Operators = ["equals", "notEquals", "contains", "notContains", "isEmpty", "isNotEmpty"],
                 MaxRules = WorkItemRuleSet.MaxRules,
                 MaxValueLength = WorkItemRuleSet.MaxValueLength,
             };

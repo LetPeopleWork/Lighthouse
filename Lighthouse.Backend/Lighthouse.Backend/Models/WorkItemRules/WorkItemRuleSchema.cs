@@ -4,7 +4,7 @@ namespace Lighthouse.Backend.Models.WorkItemRules
     {
         public List<WorkItemRuleFieldDefinition> Fields { get; set; } = [];
 
-        public List<string> Operators { get; set; } = ["equals", "notEquals", "contains"];
+        public List<string> Operators { get; set; } = ["equals", "notEquals", "contains", "notContains", "isEmpty", "isNotEmpty"];
 
         public int MaxRules { get; set; } = WorkItemRuleSet.MaxRules;
 
