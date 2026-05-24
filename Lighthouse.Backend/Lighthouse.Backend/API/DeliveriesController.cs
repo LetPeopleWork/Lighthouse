@@ -207,9 +207,13 @@ namespace Lighthouse.Backend.API
 
         private void CreateRuleBasedDelivery(UpdateDeliveryRequest request, Delivery delivery)
         {
+            var mode = string.Equals(request.Mode, WorkItemRuleSet.ModeOr, StringComparison.OrdinalIgnoreCase)
+                ? WorkItemRuleSet.ModeOr
+                : WorkItemRuleSet.ModeAnd;
             var ruleSet = new WorkItemRuleSet
             {
                 Version = WorkItemRuleSet.SchemaVersion,
+                Mode = mode,
                 Conditions = request.Rules!.Select(r => new WorkItemRuleCondition
                 {
                     FieldKey = r.FieldKey,

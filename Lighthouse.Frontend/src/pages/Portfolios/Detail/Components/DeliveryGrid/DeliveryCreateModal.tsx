@@ -41,6 +41,7 @@ interface DeliveryCreateModalProps {
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
+		mode?: "and" | "or";
 	}) => void;
 	onUpdate?: (deliveryData: {
 		id: number;
@@ -49,6 +50,7 @@ interface DeliveryCreateModalProps {
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
+		mode?: "and" | "or";
 	}) => void;
 }
 
@@ -124,24 +126,28 @@ const RuleBasedContent: React.FC<{
 	ruleSchema: IWorkItemRuleSchema | null;
 	errors: { rules?: string };
 	rules: IWorkItemRuleCondition[];
+	mode: "and" | "or";
 	validatingRules: boolean;
 	rulesValidated: boolean;
 	matchedFeatures: IFeature[];
 	featuresTerm: string;
 	portfolioId: number;
 	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
+	onModeChange: (mode: "and" | "or") => void;
 	onValidateRules: () => void;
 }> = ({
 	loadingSchema,
 	ruleSchema,
 	errors,
 	rules,
+	mode,
 	validatingRules,
 	rulesValidated,
 	matchedFeatures,
 	featuresTerm,
 	portfolioId,
 	onRulesChange,
+	onModeChange,
 	onValidateRules,
 }) => {
 	if (loadingSchema) {
@@ -168,6 +174,8 @@ const RuleBasedContent: React.FC<{
 				operators={ruleSchema.operators}
 				maxRules={ruleSchema.maxRules}
 				maxValueLength={ruleSchema.maxValueLength}
+				mode={mode}
+				onModeChange={onModeChange}
 			/>
 			<Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2 }}>
 				<ValidationButton
@@ -200,6 +208,7 @@ const SelectionModeContent: React.FC<{
 	allFeatures: IFeature[];
 	selectedFeatureIds: number[];
 	rules: IWorkItemRuleCondition[];
+	mode: "and" | "or";
 	validatingRules: boolean;
 	rulesValidated: boolean;
 	matchedFeatures: IFeature[];
@@ -207,6 +216,7 @@ const SelectionModeContent: React.FC<{
 	portfolioId: number;
 	onSelectedFeaturesChange: (ids: number[]) => void;
 	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
+	onModeChange: (mode: "and" | "or") => void;
 	onValidateRules: () => void;
 }> = ({
 	selectionMode,
@@ -217,6 +227,7 @@ const SelectionModeContent: React.FC<{
 	allFeatures,
 	selectedFeatureIds,
 	rules,
+	mode,
 	validatingRules,
 	rulesValidated,
 	matchedFeatures,
@@ -224,6 +235,7 @@ const SelectionModeContent: React.FC<{
 	portfolioId,
 	onSelectedFeaturesChange,
 	onRulesChange,
+	onModeChange,
 	onValidateRules,
 }) => {
 	if (selectionMode === DeliverySelectionMode.Manual) {
@@ -260,12 +272,14 @@ const SelectionModeContent: React.FC<{
 			ruleSchema={ruleSchema}
 			errors={errors}
 			rules={rules}
+			mode={mode}
 			validatingRules={validatingRules}
 			rulesValidated={rulesValidated}
 			matchedFeatures={matchedFeatures}
 			featuresTerm={featuresTerm}
 			portfolioId={portfolioId}
 			onRulesChange={onRulesChange}
+			onModeChange={onModeChange}
 			onValidateRules={onValidateRules}
 		/>
 	);
@@ -379,6 +393,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		DeliverySelectionMode.Manual,
 	);
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
+	const [mode, setMode] = useState<"and" | "or">("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
 		null,
 	);
@@ -494,6 +509,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			const matchedFeatures = await deliveryService.validateRules(
 				portfolio.id,
 				rules,
+				mode,
 			);
 			setMatchedFeatures(matchedFeatures);
 			setRulesValidated(true);
@@ -522,6 +538,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 
 	const handleSave = () => {
 		if (validateForm()) {
+			const isRuleBased = selectionMode === DeliverySelectionMode.RuleBased;
 			if (isEditMode && editingDelivery && onUpdate) {
 				onUpdate({
 					id: editingDelivery.id,
@@ -529,10 +546,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					date,
 					featureIds: selectedFeatureIds,
 					selectionMode,
-					rules:
-						selectionMode === DeliverySelectionMode.RuleBased
-							? rules
-							: undefined,
+					rules: isRuleBased ? rules : undefined,
+					mode: isRuleBased ? mode : undefined,
 				});
 			} else {
 				onSave({
@@ -540,10 +555,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					date,
 					featureIds: selectedFeatureIds,
 					selectionMode,
-					rules:
-						selectionMode === DeliverySelectionMode.RuleBased
-							? rules
-							: undefined,
+					rules: isRuleBased ? rules : undefined,
+					mode: isRuleBased ? mode : undefined,
 				});
 			}
 		}
@@ -555,6 +568,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setSelectedFeatureIds([]);
 		setSelectionMode(DeliverySelectionMode.Manual);
 		setRules([]);
+		setMode("and");
 		setRuleSchema(null);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
@@ -585,6 +599,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					value: r.value,
 				})) || [],
 			);
+			setMode(editingDelivery.mode === "or" ? "or" : "and");
 			// Reset validation state for rule-based edits (user must re-validate)
 			setRulesValidated(false);
 			setMatchedFeatures([]);
@@ -705,6 +720,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						allFeatures={allFeatures}
 						selectedFeatureIds={selectedFeatureIds}
 						rules={rules}
+						mode={mode}
 						validatingRules={validatingRules}
 						rulesValidated={rulesValidated}
 						matchedFeatures={matchedFeatures}
@@ -712,6 +728,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						portfolioId={portfolio.id}
 						onSelectedFeaturesChange={setSelectedFeatureIds}
 						onRulesChange={handleRulesChange}
+						onModeChange={(next) => {
+							setMode(next);
+							setRulesValidated(false);
+							setMatchedFeatures([]);
+						}}
 						onValidateRules={handleValidateRules}
 					/>
 				</Box>

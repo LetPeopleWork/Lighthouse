@@ -24,6 +24,7 @@ export interface IDelivery {
 	completionDates: WhenForecast[];
 	selectionMode: DeliverySelectionMode;
 	rules?: IWorkItemRuleCondition[];
+	mode?: "and" | "or";
 }
 
 export class Delivery implements IDelivery {
@@ -40,6 +41,7 @@ export class Delivery implements IDelivery {
 	completionDates!: WhenForecast[];
 	selectionMode!: DeliverySelectionMode;
 	rules?: WorkItemRuleCondition[];
+	mode?: "and" | "or";
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -57,6 +59,7 @@ export class Delivery implements IDelivery {
 		delivery.rules = data.rules?.map((r) =>
 			WorkItemRuleCondition.fromBackend(r),
 		);
+		delivery.mode = data.mode?.toLowerCase() === "or" ? "or" : "and";
 
 		delivery.completionDates = (data.completionDates || []).map(
 			(forecastData) => WhenForecast.fromBackend(forecastData),

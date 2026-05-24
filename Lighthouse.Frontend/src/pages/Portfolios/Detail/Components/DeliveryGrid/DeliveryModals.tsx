@@ -16,12 +16,18 @@ interface DeliveryModalsProps {
 		name: string;
 		date: string;
 		featureIds: number[];
+		selectionMode?: number;
+		rules?: { fieldKey: string; operator: string; value: string }[];
+		mode?: "and" | "or";
 	}) => Promise<void>;
 	onUpdateDelivery: (deliveryData: {
 		id: number;
 		name: string;
 		date: string;
 		featureIds: number[];
+		selectionMode?: number;
+		rules?: { fieldKey: string; operator: string; value: string }[];
+		mode?: "and" | "or";
 	}) => Promise<void>;
 	onDeleteConfirmation: (confirmed: boolean) => void;
 }

@@ -66,6 +66,7 @@ namespace Lighthouse.Backend.API
         {
             return new WorkItemRuleSet
             {
+                Mode = NormaliseMode(request.Mode),
                 Conditions = request.Rules.Select(r => new WorkItemRuleCondition
                 {
                     FieldKey = r.FieldKey,
@@ -73,6 +74,13 @@ namespace Lighthouse.Backend.API
                     Value = r.Value
                 }).ToList()
             };
+        }
+
+        private static string NormaliseMode(string? mode)
+        {
+            return string.Equals(mode, WorkItemRuleSet.ModeOr, StringComparison.OrdinalIgnoreCase)
+                ? WorkItemRuleSet.ModeOr
+                : WorkItemRuleSet.ModeAnd;
         }
     }
 }

@@ -18,5 +18,7 @@ namespace Lighthouse.Backend.API.DTO
         public DeliverySelectionMode SelectionMode { get; set; } = DeliverySelectionMode.Manual;
 
         public List<WorkItemRuleCondition>? Rules { get; set; }
+
+        public string? Mode { get; set; }
     }
 }

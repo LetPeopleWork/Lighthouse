@@ -5,5 +5,7 @@ namespace Lighthouse.Backend.API.DTO
     public class ValidateDeliveryRulesRequest
     {
         public List<WorkItemRuleCondition> Rules { get; set; } = [];
+
+        public string? Mode { get; set; }
     }
 }

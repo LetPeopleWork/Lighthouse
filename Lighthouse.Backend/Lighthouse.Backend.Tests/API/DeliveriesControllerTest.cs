@@ -737,6 +737,59 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task CreateDelivery_RuleBasedWithModeOr_PersistsOrInRuleDefinitionJson()
+        {
+            const int portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery (OR)",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Mode = "or",
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            Delivery? savedDelivery = null;
+            deliveryRepositoryMock
+                .Setup(x => x.Add(It.IsAny<Delivery>()))
+                .Callback<Delivery>(d => savedDelivery = d);
+
+            var controller = CreateSubject();
+            await controller.CreateDelivery(portfolioId, request);
+
+            Assert.That(savedDelivery!.RuleDefinitionJson, Does.Match("\\\"Mode\\\":\\s*\\\"or\\\""));
+        }
+
+        [Test]
+        public async Task CreateDelivery_RuleBasedWithModeOmitted_DefaultsToAnd()
+        {
+            const int portfolioId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Rule-Based Delivery (no mode)",
+                Date = DateTime.UtcNow.AddDays(30),
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                FeatureIds = [],
+                Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
+            };
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            Delivery? savedDelivery = null;
+            deliveryRepositoryMock
+                .Setup(x => x.Add(It.IsAny<Delivery>()))
+                .Callback<Delivery>(d => savedDelivery = d);
+
+            var controller = CreateSubject();
+            await controller.CreateDelivery(portfolioId, request);
+
+            Assert.That(savedDelivery!.RuleDefinitionJson, Does.Match("\\\"Mode\\\":\\s*\\\"and\\\""));
+        }
+
+        [Test]
         public async Task CreateDelivery_RuleBasedWithValidRules_FeatureMatchesRules_SetsFeaturesCorrectly()
         {
             // Arrange

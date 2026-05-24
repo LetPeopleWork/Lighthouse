@@ -135,6 +135,7 @@ export const useDeliveryManagement = ({
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
+		mode?: "and" | "or";
 	}) => {
 		try {
 			await deliveryService.create(
@@ -144,6 +145,7 @@ export const useDeliveryManagement = ({
 				deliveryData.featureIds,
 				deliveryData.selectionMode,
 				deliveryData.rules,
+				deliveryData.mode,
 			);
 			setShowCreateModal(false);
 			await fetchDeliveries();
@@ -160,6 +162,7 @@ export const useDeliveryManagement = ({
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
+		mode?: "and" | "or";
 	}) => {
 		try {
 			const wasExpanded = expandedDeliveries.has(deliveryData.id);
@@ -171,6 +174,7 @@ export const useDeliveryManagement = ({
 				deliveryData.featureIds,
 				deliveryData.selectionMode,
 				deliveryData.rules,
+				deliveryData.mode,
 			);
 			setSelectedDelivery(null);
 			setLoadedFeatures((prev) => {

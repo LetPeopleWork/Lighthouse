@@ -13,13 +13,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         ILicenseService licenseService)
         : IForecastFilterRuleService
     {
-        private const string EqualsOperator = "equals";
-        private const string NotEqualsOperator = "notequals";
-        private const string ContainsOperator = "contains";
-        private const string NotContainsOperator = "notcontains";
-        private const string IsEmptyOperator = "isempty";
-        private const string IsNotEmptyOperator = "isnotempty";
-
         private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
         public WorkItemRuleSchema GetSchema(Team team)
@@ -39,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return new WorkItemRuleSchema
             {
                 Fields = fields,
-                Operators = [EqualsOperator, NotEqualsOperator, ContainsOperator, NotContainsOperator, IsEmptyOperator, IsNotEmptyOperator],
+                Operators = [.. RuleOperators.All],
                 MaxRules = WorkItemRuleSet.MaxRules,
                 MaxValueLength = WorkItemRuleSet.MaxValueLength
             };

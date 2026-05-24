@@ -38,8 +38,10 @@ namespace Lighthouse.Backend.API.DTO
         public List<FeatureLikelihoodDto> FeatureLikelihoods { get; set; } = [];
         
         public DeliverySelectionMode SelectionMode { get; set; }
-        
+
         public List<WorkItemRuleCondition> Rules { get; set; } = [];
+
+        public string Mode { get; set; } = WorkItemRuleSet.ModeAnd;
 
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
@@ -72,20 +74,22 @@ namespace Lighthouse.Backend.API.DTO
                 Features = delivery.Features.Select(f => f.Id).ToList(),
                 FeatureLikelihoods = featureLikelihoods,
                 SelectionMode = delivery.SelectionMode,
-                Rules = GetRules(delivery.RuleDefinitionJson),
+                Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
+                Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
             };
         }
 
-        private static List<WorkItemRuleCondition> GetRules(string? ruleDefinitionJson)
+        private static WorkItemRuleSet GetRuleSet(string? ruleDefinitionJson)
         {
             if (string.IsNullOrEmpty(ruleDefinitionJson))
             {
-                return [];
+                return new WorkItemRuleSet();
             }
-            
-            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleDefinitionJson);
-            return ruleSet.Conditions;
+
+            return JsonSerializer.Deserialize<WorkItemRuleSet>(ruleDefinitionJson, JsonOptions) ?? new WorkItemRuleSet();
         }
+
+        private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         private static FeatureLikelihoodDto? GetLeastLikelyFeature(List<FeatureLikelihoodDto> featureLikelihoods)
         {

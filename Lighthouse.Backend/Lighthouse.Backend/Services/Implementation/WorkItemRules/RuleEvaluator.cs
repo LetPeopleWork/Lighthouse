@@ -5,18 +5,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 {
     public class RuleEvaluator<T> : IRuleEvaluator<T> where T : class
     {
-        private const string EqualsOperator = "equals";
-
-        private const string NotEqualsOperator = "notequals";
-
-        private const string ContainsOperator = "contains";
-
-        private const string NotContainsOperator = "notcontains";
-
-        private const string IsEmptyOperator = "isempty";
-
-        private const string IsNotEmptyOperator = "isnotempty";
-
         private const string TagsFieldKey = "feature.tags";
 
         public IEnumerable<T> Match(WorkItemRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider)
@@ -114,12 +102,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
         private static bool IsKnownOperator(string op)
         {
             var normalised = op.ToLowerInvariant();
-            return normalised is EqualsOperator
-                or NotEqualsOperator
-                or ContainsOperator
-                or NotContainsOperator
-                or IsEmptyOperator
-                or IsNotEmptyOperator;
+            return normalised is RuleOperators.Equals
+                or RuleOperators.NotEquals
+                or RuleOperators.Contains
+                or RuleOperators.NotContains
+                or RuleOperators.IsEmpty
+                or RuleOperators.IsNotEmpty;
         }
 
         private static bool IsOrMode(string mode)
@@ -147,12 +135,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
             var fieldValue = fieldProvider.GetFieldValue(item, condition.FieldKey);
             return op switch
             {
-                EqualsOperator => string.Equals(fieldValue, condition.Value, StringComparison.OrdinalIgnoreCase),
-                NotEqualsOperator => !string.Equals(fieldValue, condition.Value, StringComparison.OrdinalIgnoreCase),
-                ContainsOperator => fieldValue.Contains(condition.Value, StringComparison.OrdinalIgnoreCase),
-                NotContainsOperator => !fieldValue.Contains(condition.Value, StringComparison.OrdinalIgnoreCase),
-                IsEmptyOperator => string.IsNullOrEmpty(fieldValue),
-                IsNotEmptyOperator => !string.IsNullOrEmpty(fieldValue),
+                RuleOperators.Equals => string.Equals(fieldValue, condition.Value, StringComparison.OrdinalIgnoreCase),
+                RuleOperators.NotEquals => !string.Equals(fieldValue, condition.Value, StringComparison.OrdinalIgnoreCase),
+                RuleOperators.Contains => fieldValue.Contains(condition.Value, StringComparison.OrdinalIgnoreCase),
+                RuleOperators.NotContains => !fieldValue.Contains(condition.Value, StringComparison.OrdinalIgnoreCase),
+                RuleOperators.IsEmpty => string.IsNullOrEmpty(fieldValue),
+                RuleOperators.IsNotEmpty => !string.IsNullOrEmpty(fieldValue),
                 _ => false,
             };
         }
@@ -161,12 +149,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
         {
             return op switch
             {
-                EqualsOperator => tags.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase)),
-                NotEqualsOperator => !tags.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase)),
-                ContainsOperator => tags.Any(t => t.Contains(value, StringComparison.OrdinalIgnoreCase)),
-                NotContainsOperator => !tags.Any(t => t.Contains(value, StringComparison.OrdinalIgnoreCase)),
-                IsEmptyOperator => tags.Count == 0,
-                IsNotEmptyOperator => tags.Count > 0,
+                RuleOperators.Equals => tags.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase)),
+                RuleOperators.NotEquals => !tags.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase)),
+                RuleOperators.Contains => tags.Any(t => t.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                RuleOperators.NotContains => !tags.Any(t => t.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                RuleOperators.IsEmpty => tags.Count == 0,
+                RuleOperators.IsNotEmpty => tags.Count > 0,
                 _ => false,
             };
         }

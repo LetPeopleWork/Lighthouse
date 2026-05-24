@@ -16,6 +16,7 @@ export interface IDeliveryService {
 		featureIds: number[],
 		selectionMode?: DeliverySelectionMode,
 		rules?: IWorkItemRuleCondition[],
+		mode?: "and" | "or",
 	): Promise<void>;
 	update(
 		deliveryId: number,
@@ -24,12 +25,14 @@ export interface IDeliveryService {
 		featureIds: number[],
 		selectionMode?: DeliverySelectionMode,
 		rules?: IWorkItemRuleCondition[],
+		mode?: "and" | "or",
 	): Promise<void>;
 	delete(deliveryId: number): Promise<void>;
 	getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema>;
 	validateRules(
 		portfolioId: number,
 		rules: IWorkItemRuleCondition[],
+		mode?: "and" | "or",
 	): Promise<Feature[]>;
 }
 
@@ -53,6 +56,7 @@ export class DeliveryService
 		featureIds: number[],
 		selectionMode: DeliverySelectionMode = DeliverySelectionMode.Manual,
 		rules?: IWorkItemRuleCondition[],
+		mode?: "and" | "or",
 	): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/deliveries/portfolio/${portfolioId}`, {
@@ -61,6 +65,7 @@ export class DeliveryService
 				featureIds,
 				selectionMode,
 				rules,
+				mode,
 			});
 		});
 	}
@@ -72,6 +77,7 @@ export class DeliveryService
 		featureIds: number[],
 		selectionMode: DeliverySelectionMode = DeliverySelectionMode.Manual,
 		rules?: IWorkItemRuleCondition[],
+		mode?: "and" | "or",
 	): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.put<void>(`/deliveries/${deliveryId}`, {
@@ -80,6 +86,7 @@ export class DeliveryService
 				featureIds,
 				selectionMode,
 				rules,
+				mode,
 			});
 		});
 	}
@@ -102,6 +109,7 @@ export class DeliveryService
 	async validateRules(
 		portfolioId: number,
 		rules: IWorkItemRuleCondition[],
+		mode?: "and" | "or",
 	): Promise<Feature[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<Feature[]>(
@@ -109,6 +117,7 @@ export class DeliveryService
 				{
 					portfolioId,
 					rules,
+					mode,
 				},
 			);
 			return response.data;
