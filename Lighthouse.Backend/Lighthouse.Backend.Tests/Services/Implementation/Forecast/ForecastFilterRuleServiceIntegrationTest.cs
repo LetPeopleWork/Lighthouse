@@ -98,6 +98,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(schema.Operators, Does.Contain("equals"));
                 Assert.That(schema.Operators, Does.Contain("notequals"));
                 Assert.That(schema.Operators, Does.Contain("contains"));
+                Assert.That(schema.Operators, Does.Contain("notcontains"));
+                Assert.That(schema.Operators, Does.Contain("isempty"));
+                Assert.That(schema.Operators, Does.Contain("isnotempty"));
                 Assert.That(schema.MaxRules, Is.EqualTo(WorkItemRuleSet.MaxRules));
                 Assert.That(schema.MaxValueLength, Is.EqualTo(WorkItemRuleSet.MaxValueLength));
             }

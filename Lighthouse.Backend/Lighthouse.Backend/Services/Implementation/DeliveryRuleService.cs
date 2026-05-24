@@ -12,6 +12,9 @@ namespace Lighthouse.Backend.Services.Implementation
         private const string EqualsOperator = "equals";
         private const string NotEqualsOperator = "notequals";
         private const string ContainsOperator = "contains";
+        private const string NotContainsOperator = "notcontains";
+        private const string IsEmptyOperator = "isempty";
+        private const string IsNotEmptyOperator = "isnotempty";
 
         private readonly IRuleEvaluator<Feature> ruleEvaluator;
         private readonly IRuleFieldProvider<Feature> fieldProvider;
@@ -44,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return new WorkItemRuleSchema
             {
                 Fields = fields,
-                Operators = [EqualsOperator, NotEqualsOperator, ContainsOperator],
+                Operators = [EqualsOperator, NotEqualsOperator, ContainsOperator, NotContainsOperator, IsEmptyOperator, IsNotEmptyOperator],
                 MaxRules = WorkItemRuleSet.MaxRules,
                 MaxValueLength = WorkItemRuleSet.MaxValueLength
             };

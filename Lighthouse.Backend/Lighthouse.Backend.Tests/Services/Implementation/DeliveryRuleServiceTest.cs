@@ -469,6 +469,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(schema.Operators, Does.Contain("equals"));
                 Assert.That(schema.Operators, Does.Contain("notequals"));
                 Assert.That(schema.Operators, Does.Contain("contains"));
+                Assert.That(schema.Operators, Does.Contain("notcontains"));
+                Assert.That(schema.Operators, Does.Contain("isempty"));
+                Assert.That(schema.Operators, Does.Contain("isnotempty"));
             }
         }
 
