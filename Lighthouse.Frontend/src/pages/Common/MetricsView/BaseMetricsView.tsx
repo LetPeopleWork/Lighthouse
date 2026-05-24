@@ -575,6 +575,97 @@ function buildPbcNode(
 	);
 }
 
+type PbcNodesCtx = {
+	throughputPbcData: ProcessBehaviourChartData | null;
+	wipPbcData: ProcessBehaviourChartData | null;
+	totalWorkItemAgePbcData: ProcessBehaviourChartData | null;
+	cycleTimePbcData: ProcessBehaviourChartData | null;
+	featureSizePbcData: ProcessBehaviourChartData | null;
+	arrivalsPbcData: ProcessBehaviourChartData | null;
+	workItemLookup: Map<number, IWorkItem>;
+	throughputTerm: string;
+	workItemAgeTerm: string;
+	workInProgressTerm: string;
+	featureTerm: string;
+	getTerm: (key: string) => string;
+	isPremium: boolean;
+	hasForecastFilter: boolean;
+	forecastFilterConditions: readonly EvaluatorCondition[];
+	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
+};
+
+function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
+	const throughputPbcFilterToggle = (
+		<ThroughputChartFilterToggle
+			isPremium={ctx.isPremium}
+			hasFilter={ctx.hasForecastFilter}
+			chartKind="pbc"
+			conditions={ctx.forecastFilterConditions}
+			excludedSummary={formatConditions(ctx.forecastFilterConditions)}
+			onServerViewChange={(view) => {
+				void ctx.refetchThroughputPbc(view);
+			}}
+		/>
+	);
+
+	const pbcConfigs = [
+		{
+			id: "throughputPbc",
+			data: ctx.throughputPbcData,
+			titleSuffix: ctx.throughputTerm,
+			type: ProcessBehaviourChartType.Throughput,
+			filterToggle: throughputPbcFilterToggle as ReactNode | undefined,
+		},
+		{
+			id: "wipPbc",
+			data: ctx.wipPbcData,
+			titleSuffix: ctx.workInProgressTerm,
+			type: ProcessBehaviourChartType.WorkInProgress,
+			filterToggle: undefined,
+		},
+		{
+			id: "totalWorkItemAgePbc",
+			data: ctx.totalWorkItemAgePbcData,
+			titleSuffix: `Total ${ctx.workItemAgeTerm}`,
+			type: ProcessBehaviourChartType.TotalWorkItemAge,
+			filterToggle: undefined,
+		},
+		{
+			id: "cycleTimePbc",
+			data: ctx.cycleTimePbcData,
+			titleSuffix: ctx.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+			type: ProcessBehaviourChartType.CycleTime,
+			filterToggle: undefined,
+		},
+		{
+			id: "featureSizePbc",
+			data: ctx.featureSizePbcData,
+			titleSuffix: `${ctx.featureTerm} Size`,
+			type: ProcessBehaviourChartType.FeatureSize,
+			filterToggle: undefined,
+		},
+		{
+			id: "arrivalsPbc",
+			data: ctx.arrivalsPbcData,
+			titleSuffix: "Arrivals",
+			type: ProcessBehaviourChartType.Throughput,
+			filterToggle: undefined,
+		},
+	];
+
+	const result: Record<string, ReactNode | null> = {};
+	for (const config of pbcConfigs) {
+		result[config.id] = buildPbcNode(
+			config.data,
+			config.titleSuffix,
+			config.type,
+			ctx.workItemLookup,
+			config.filterToggle,
+		);
+	}
+	return result;
+}
+
 function buildWidgetNodes(ctx: {
 	entity: IFeatureOwner;
 	title: string;
@@ -782,69 +873,7 @@ function buildWidgetNodes(ctx: {
 		) : null,
 	};
 
-	const pbcConfigs = [
-		{
-			id: "throughputPbc",
-			data: ctx.throughputPbcData,
-			titleSuffix: ctx.throughputTerm,
-			type: ProcessBehaviourChartType.Throughput,
-		},
-		{
-			id: "wipPbc",
-			data: ctx.wipPbcData,
-			titleSuffix: ctx.workInProgressTerm,
-			type: ProcessBehaviourChartType.WorkInProgress,
-		},
-		{
-			id: "totalWorkItemAgePbc",
-			data: ctx.totalWorkItemAgePbcData,
-			titleSuffix: `Total ${ctx.workItemAgeTerm}`,
-			type: ProcessBehaviourChartType.TotalWorkItemAge,
-		},
-		{
-			id: "cycleTimePbc",
-			data: ctx.cycleTimePbcData,
-			titleSuffix: ctx.getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
-			type: ProcessBehaviourChartType.CycleTime,
-		},
-		{
-			id: "featureSizePbc",
-			data: ctx.featureSizePbcData,
-			titleSuffix: `${ctx.featureTerm} Size`,
-			type: ProcessBehaviourChartType.FeatureSize,
-		},
-		{
-			id: "arrivalsPbc",
-			data: ctx.arrivalsPbcData,
-			titleSuffix: "Arrivals",
-			type: ProcessBehaviourChartType.Throughput,
-		},
-	];
-
-	const throughputPbcFilterToggle = (
-		<ThroughputChartFilterToggle
-			isPremium={ctx.isPremium}
-			hasFilter={ctx.hasForecastFilter}
-			chartKind="pbc"
-			conditions={ctx.forecastFilterConditions}
-			excludedSummary={formatConditions(ctx.forecastFilterConditions)}
-			onServerViewChange={(view) => {
-				void ctx.refetchThroughputPbc(view);
-			}}
-		/>
-	);
-
-	for (const config of pbcConfigs) {
-		const filterToggle =
-			config.id === "throughputPbc" ? throughputPbcFilterToggle : undefined;
-		nodes[config.id] = buildPbcNode(
-			config.data,
-			config.titleSuffix,
-			config.type,
-			ctx.workItemLookup,
-			filterToggle,
-		);
-	}
+	Object.assign(nodes, buildPbcNodes(ctx));
 
 	return nodes;
 }
