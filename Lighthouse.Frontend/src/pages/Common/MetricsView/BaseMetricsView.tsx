@@ -561,10 +561,8 @@ function buildPbcNode(
 	titleSuffix: string,
 	type: ProcessBehaviourChartType,
 	workItemLookup: Map<number, IWorkItem>,
+	filterToggle?: ReactNode,
 ): ReactNode | null {
-	// PBC server-side toggle wiring (chartKind="pbc" + onServerViewChange + GET ?view=filtered)
-	// is deferred — needs useMetricsData hook extended with a view parameter and a refetch handler.
-	// Tracked in evolution archive OD-2.
 	if (!data) return null;
 	return (
 		<ProcessBehaviourChart
@@ -572,6 +570,7 @@ function buildPbcNode(
 			title={titleSuffix}
 			workItemLookup={workItemLookup}
 			type={type}
+			filterToggle={filterToggle}
 		/>
 	);
 }
@@ -621,6 +620,7 @@ function buildWidgetNodes(ctx: {
 	isPremium: boolean;
 	hasForecastFilter: boolean;
 	forecastFilterConditions: readonly EvaluatorCondition[];
+	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -821,12 +821,28 @@ function buildWidgetNodes(ctx: {
 		},
 	];
 
+	const throughputPbcFilterToggle = (
+		<ThroughputChartFilterToggle
+			isPremium={ctx.isPremium}
+			hasFilter={ctx.hasForecastFilter}
+			chartKind="pbc"
+			conditions={ctx.forecastFilterConditions}
+			excludedSummary={formatConditions(ctx.forecastFilterConditions)}
+			onServerViewChange={(view) => {
+				void ctx.refetchThroughputPbc(view);
+			}}
+		/>
+	);
+
 	for (const config of pbcConfigs) {
+		const filterToggle =
+			config.id === "throughputPbc" ? throughputPbcFilterToggle : undefined;
 		nodes[config.id] = buildPbcNode(
 			config.data,
 			config.titleSuffix,
 			config.type,
 			ctx.workItemLookup,
+			filterToggle,
 		);
 	}
 
@@ -910,6 +926,7 @@ export const BaseMetricsView = <
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
+		refetchThroughputPbc,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
 	const { getTerm } = useTerminology();
@@ -1024,6 +1041,7 @@ export const BaseMetricsView = <
 		isPremium,
 		hasForecastFilter,
 		forecastFilterConditions,
+		refetchThroughputPbc,
 	});
 
 	const widgetFooters = buildWidgetFooters({

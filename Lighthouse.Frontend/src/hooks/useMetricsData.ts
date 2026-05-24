@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { IFeature } from "../models/Feature";
 import type { IForecastPredictabilityScore } from "../models/Forecasts/ForecastPredictabilityScore";
@@ -59,6 +59,7 @@ export interface MetricsData<T> {
 	totalWorkItemAgeInfo: ITotalWorkItemAgeInfo | null;
 	predictabilityScoreInfo: IPredictabilityScoreInfo | null;
 	cycleTimePercentilesInfo: ICycleTimePercentilesInfo | null;
+	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }
 
 function isProjectMetricsService(
@@ -373,6 +374,23 @@ export function useMetricsData<
 		);
 	}, [entity, metricsService, startDate, endDate]);
 
+	const refetchThroughputPbc = useCallback(
+		async (view?: "raw" | "filtered"): Promise<void> => {
+			try {
+				const data = await metricsService.getThroughputPbc(
+					entity.id,
+					startDate,
+					endDate,
+					view,
+				);
+				setThroughputPbcData(data);
+			} catch (error) {
+				console.error("Error refetching throughput PBC data:", error);
+			}
+		},
+		[entity, metricsService, startDate, endDate],
+	);
+
 	return {
 		blackoutPeriods,
 		throughputData,
@@ -403,5 +421,6 @@ export function useMetricsData<
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
+		refetchThroughputPbc,
 	};
 }

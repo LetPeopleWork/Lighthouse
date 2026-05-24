@@ -1,7 +1,21 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canCreatePortfolio: true,
+		canUpdatePortfolioData: true,
+		licenseStatus: { canUsePremiumFeatures: true },
+		maxTeamsWithoutPremium: 3,
+		maxPortfoliosWithoutPremium: 1,
+	}),
+}));
+
 import type { IFeature } from "../../../models/Feature";
 import { ForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
@@ -311,15 +325,20 @@ vi.mock("../../../components/Common/Charts/ProcessBehaviourChart", () => ({
 	default: ({
 		data,
 		title,
+		filterToggle,
 	}: {
 		data: ProcessBehaviourChartData;
 		title: string;
+		filterToggle?: ReactNode;
 	}) => (
 		<div data-testid={`process-behaviour-chart-${title}`}>
 			<div data-testid={`pbc-status-${title}`}>{data.status}</div>
 			<div data-testid={`pbc-data-points-${title}`}>
 				{data.dataPoints.length}
 			</div>
+			{filterToggle ? (
+				<div data-testid={`pbc-filter-toggle-${title}`}>{filterToggle}</div>
+			) : null}
 		</div>
 	),
 	ProcessBehaviourChartType: {
@@ -3001,6 +3020,89 @@ describe("BaseMetricsView component", () => {
 				expect(
 					screen.getByTestId("pbc-data-points-Throughput"),
 				).toHaveTextContent("2");
+			});
+		});
+
+		it("renders the Raw/Filtered toggle on the Throughput PBC only when the team has a forecast filter", async () => {
+			const conditions = [
+				{
+					fieldKey: "workitem.type" as const,
+					operator: "equals" as const,
+					value: "Bug",
+				},
+			];
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={mockMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+					hasForecastFilter={true}
+					forecastFilterConditions={conditions}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("pbc-filter-toggle-Throughput"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.queryByTestId("pbc-filter-toggle-Work In Progress"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("pbc-filter-toggle-Cycle Time"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("pbc-filter-toggle-Total Work Item Age"),
+			).not.toBeInTheDocument();
+		});
+
+		it("refetches throughput PBC with view=filtered when the toggle flips to Filtered", async () => {
+			const user = userEvent.setup();
+			const conditions = [
+				{
+					fieldKey: "workitem.type" as const,
+					operator: "equals" as const,
+					value: "Bug",
+				},
+			];
+			const pbcMetricsService = createMockMetricsService<IWorkItem>();
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={pbcMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+					hasForecastFilter={true}
+					forecastFilterConditions={conditions}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(pbcMetricsService.getThroughputPbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+
+			(pbcMetricsService.getThroughputPbc as Mock).mockClear();
+
+			await user.click(screen.getByRole("button", { name: /^filtered$/i }));
+
+			await waitFor(() => {
+				expect(pbcMetricsService.getThroughputPbc).toHaveBeenCalledWith(
+					mockTeam.id,
+					expect.any(Date),
+					expect.any(Date),
+					"filtered",
+				);
 			});
 		});
 	});

@@ -57,6 +57,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		view?: "raw" | "filtered",
 	): Promise<ProcessBehaviourChartData>;
 
 	getWipPbc(
@@ -301,10 +302,12 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		view?: "raw" | "filtered",
 	): Promise<ProcessBehaviourChartData> {
 		return this.withErrorHandling(async () => {
+			const viewSuffix = view === "filtered" ? "&view=filtered" : "";
 			const response = await this.apiService.get<ProcessBehaviourChartData>(
-				`/${this.api}/${id}/metrics/throughput/pbc?${this.getDateFormatString(startDate, endDate)}`,
+				`/${this.api}/${id}/metrics/throughput/pbc?${this.getDateFormatString(startDate, endDate)}${viewSuffix}`,
 			);
 
 			return response.data;

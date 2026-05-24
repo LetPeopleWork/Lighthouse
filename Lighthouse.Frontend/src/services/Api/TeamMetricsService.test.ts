@@ -357,6 +357,58 @@ describe("TeamMetricsService", () => {
 		);
 	});
 
+	it("should get throughput PBC for a team without view param when none specified", async () => {
+		const mockPbc = {
+			status: "Ready",
+			statusReason: "",
+			xAxisKind: "Date",
+			average: 5,
+			upperNaturalProcessLimit: 10,
+			lowerNaturalProcessLimit: 0,
+			baselineConfigured: true,
+			dataPoints: [],
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockPbc });
+
+		const startDate = new Date("2026-04-05");
+		const endDate = new Date("2026-04-14");
+		await teamMetricsService.getThroughputPbc(7, startDate, endDate);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/throughput/pbc?startDate=2026-04-05&endDate=2026-04-14",
+		);
+	});
+
+	it("should append view=filtered when requesting filtered PBC", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: {} });
+
+		const startDate = new Date("2026-04-05");
+		const endDate = new Date("2026-04-14");
+		await teamMetricsService.getThroughputPbc(
+			7,
+			startDate,
+			endDate,
+			"filtered",
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/throughput/pbc?startDate=2026-04-05&endDate=2026-04-14&view=filtered",
+		);
+	});
+
+	it("should omit the view query param when explicitly requesting raw PBC", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: {} });
+
+		const startDate = new Date("2026-04-05");
+		const endDate = new Date("2026-04-14");
+		await teamMetricsService.getThroughputPbc(7, startDate, endDate, "raw");
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/throughput/pbc?startDate=2026-04-05&endDate=2026-04-14",
+		);
+	});
+
 	it("should get cycle time percentiles info for a team", async () => {
 		const mockInfo = {
 			percentiles: [
