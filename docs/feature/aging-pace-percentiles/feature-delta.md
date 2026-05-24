@@ -288,3 +288,191 @@ existing CT-based bands do NOT need — they use Started/Closed dates only) — 
 
 The README itself is NOT modified (per the contract: "Do NOT modify DISCOVER documents
 directly"); this Changed Assumptions section IS the modification record.
+
+## Wave: DESIGN / [REF] DDD list
+
+| ID | Decision | Verdict | One-line rationale |
+|---|---|---|---|
+| DDD-1 | Per-state percentile algorithm: visit-level (not item-level) observations of `ageAtStateExit = exitTransition.TransitionedAt - entryTransition.TransitionedAt` per completed visit, bucketed by state | Locked | Matches the user-facing chart-glance question ("the work this dot is doing IS slower than 85% of historical visits"); see ADR-019 |
+| DDD-2 | Item-membership rule: `W.ClosedDate ∈ [startDate, endDate]` — mirrors `cycleTimePercentiles` exactly. EXPLICITLY DIFFERENT from sibling B3's frame-intersection rule | Locked | Keeps band heights comparable to the existing CT bands shown on the same chart; semantic divergence vs B3 is the deliberate distinction; ADR-019 |
+| DDD-3 | Percentile function: reuse existing `PercentileCalculator.CalculatePercentile` (nearest-rank with clamp). Defaults 50/70/85/95 per DISCUSS D2 | Locked | Algorithmic parity with `cycleTimePercentiles` — user reads both percentile families on the same chart | ADR-019 |
+| DDD-4 | Empty / single / low-sample at the API: emit dto when ≥1 sample, omit state entry when 0; FE handles presentation (per DISCUSS D5) | Locked | No backend threshold — presentational decisions stay in the FE; ADR-019 |
+| DDD-5 | Cache via existing `BaseMetricsService.GetFromCacheIfExists` with key `AgeInStatePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}`; inherits existing post-sync invalidation hook | Locked | Zero new cache infrastructure; matches existing `cycleTimePercentiles` cache pattern | ADR-019 |
+| DDD-6 | Per-state band rendering: custom SVG `<line>` overlay rendered as a child of the existing `<ChartsContainer>`, anchored to each state column index. NOT `ChartsReferenceLine` (no X-range support); NOT a sibling widget (breaks D6 "alongside" semantics); NOT a chart replacement (discards investment) | Locked | Resolves the slice-01 spike candidate at DESIGN time so DELIVER does not stall; ADR-020 |
+| DDD-7 | Chart prop interface: `WorkItemAgingChart` accepts new optional `perStatePercentileValues?: IPerStatePercentileValues[]`. Absent / empty → renders today-identical (guarded by snapshot test) | Locked | Backwards-compatible; matches DISCUSS WS Type A | ADR-020 |
+| DDD-8 | Legend chip-group wiring: two independent invocations of `useChartVisibility` (or one invocation with two parameters — implementation shape, software-crafter chooses at GREEN). Two parallel chip groups in `PercentileLegend` with distinct sub-headers | Locked | DISCUSS US-02 requires independent toggles; the existing hook supports both wiring shapes | ADR-020 |
+| DDD-9 | Backend computation lives as a `protected` helper inside `BaseMetricsService` (`ComputeAgeInStatePercentiles`); both `TeamMetricsService.GetAgeInStatePercentilesForTeam` and `PortfolioMetricsService.GetAgeInStatePercentilesForPortfolio` delegate to it. Helper takes the result of the scope-specific "completed items in window" query plus workflow state order plus requested percentiles | Locked | Mirrors the existing inheritance pattern for shared metrics work (throughput, total work item age); intra-service helper, NOT an interface | ADR-021 |
+| DDD-10 | ADR-018 disposition: UPHELD. No shared `IPerStateAggregationService`. The repository (`IWorkItemStateTransitionRepository`) IS the shared primitive across siblings. Sibling B3 writes its own service-layer method when it DESIGNs | Locked | Concrete query shapes (DDD-2 vs sibling B3 D12) make the semantic divergence visible; consolidation would conflate; ADR-021 |
+| DDD-11 | US-03 tooltip annotation: computed client-side using the dot's existing `daysInState` (derived from `currentStateEnteredAt` per sibling 1's `WorkItemDto`) and the per-state percentile values already in chart state. No extra round-trip. Bucket: `below 50` / `at 50–70` / `at 70–85` / `at 85–95` / `above 95` / `no historical data` (when the dot's state has no entry in `perStatePercentileValues`) | Locked | DISCUSS US-03 AC line 4 mandates client-side; no API change | DESIGN, no ADR (DISCUSS-mechanical) |
+| DDD-12 | Endpoint route shape: `GET /api/teams/{teamId:int}/metrics/ageInStatePercentiles?startDate&endDate` and `GET /api/portfolios/{portfolioId:int}/metrics/ageInStatePercentiles?startDate&endDate`. Auth: existing `[RbacGuard(TeamRead)]` / `[RbacGuard(PortfolioRead)]`. Validation: `startDate.Date <= endDate.Date` (HTTP 400 otherwise), matching the existing `cycleTimePercentiles` validation | Locked | Mirrors the existing route convention precisely; no new top-level routes | DESIGN, no ADR |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | File | Change Type | Change Summary |
+|---|---|---|---|
+| `AgeInStatePercentilesDto` (NEW DTO) | `Lighthouse.Backend/Lighthouse.Backend/API/DTO/AgeInStatePercentilesDto.cs` | NEW | `record AgeInStatePercentilesDto(string State, int SampleSize, IReadOnlyList<PercentileValue> Percentiles)`. Returned by the new endpoint. |
+| `ITeamMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs` | EXTEND | Add `IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)`. |
+| `IPortfolioMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs` | EXTEND | Add `IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)`. |
+| `BaseMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs` | EXTEND | Add `protected IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(IEnumerable<WorkItem> completedItemsInWindow, IEnumerable<string> doingStatesInWorkflowOrder, IReadOnlyList<int> requestedPercentiles)`. Per ADR-019 algorithm: walks transitions via `IWorkItemStateTransitionRepository.GetAllByPredicate(t => completedItemIds.Contains(t.WorkItemId))` (or equivalent SQL-friendly composition), pairs entry→next-exit per state, buckets, computes percentiles via `PercentileCalculator`. |
+| `TeamMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs` | EXTEND | Implement `GetAgeInStatePercentilesForTeam` by: (1) `GetWorkItemsClosedInDateRange(team, startDate, endDate)` (existing); (2) call `ComputeAgeInStatePercentiles(...)`; (3) wrap in `GetFromCacheIfExists(team, $"AgeInStatePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () => …, logger)`. Default percentiles `[50, 70, 85, 95]` per DDD-3. Workflow state order from the team's existing `doingStates` (same source the chart's X axis uses). |
+| `PortfolioMetricsService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs` | EXTEND | Same pattern as Team. The portfolio's "completed items in window" comes from the existing per-portfolio equivalent of `GetWorkItemsClosedInDateRange`. |
+| `TeamMetricsController` | `Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs` | EXTEND | Add `[HttpGet("ageInStatePercentiles")] ActionResult<IEnumerable<AgeInStatePercentilesDto>> GetAgeInStatePercentilesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)`. Validation: `startDate.Date <= endDate.Date` (HTTP 400 with `StartDateMustBeBeforeEndDateErrorMessage`); auth via existing `[RbacGuard(TeamRead, ScopeIdRouteKey="teamId")]` if present at the class level (verify at GREEN). Implementation: `GetEntityByIdAnExecuteAction(teamRepository, teamId, team => teamMetricsService.GetAgeInStatePercentilesForTeam(team, startDate, endDate))`. |
+| `PortfolioMetricsController` | `Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs` | EXTEND | Mirror endpoint: `[HttpGet("ageInStatePercentiles")] ActionResult<IEnumerable<AgeInStatePercentilesDto>> GetAgeInStatePercentilesForPortfolio(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)`. |
+| `IPercentileValue` (TS model) | `Lighthouse.Frontend/src/models/PercentileValue.ts` | NO CHANGE | Existing model is reused. The new model below composes it. |
+| `IPerStatePercentileValues` (TS model — NEW) | `Lighthouse.Frontend/src/models/PerStatePercentileValues.ts` | NEW | `interface IPerStatePercentileValues { state: string; sampleSize: number; percentiles: IPercentileValue[]; }`. Mirrors backend DTO. |
+| `MetricsService` (TS) | `Lighthouse.Frontend/src/services/Api/MetricsService.ts` | EXTEND | Add `getAgeInStatePercentiles(id: number, startDate: Date, endDate: Date): Promise<IPerStatePercentileValues[]>` to both the `IMetricsService` interface and the `MetricsService` class. Implementation mirrors `getCycleTimePercentiles` (line 247) — GET `/${this.api}/${id}/metrics/ageInStatePercentiles?${this.getDateFormatString(startDate, endDate)}`. |
+| `useMetricsData` (hook) | `Lighthouse.Frontend/src/hooks/useMetricsData.ts` | EXTEND | Add `perStatePercentileValues: IPerStatePercentileValues[]` to the returned ctx (default `[]`). In the same `useEffect` block that calls `metricsService.getCycleTimePercentiles` (~line 211), add a parallel call to `metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate)`. Both calls share the same window state; both can run in parallel via `Promise.all` (software-crafter chooses shape at GREEN). |
+| `BaseMetricsView` | `Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx` | EXTEND | Pass `perStatePercentileValues={ctx.perStatePercentileValues}` to the `<WorkItemAgingChart>` instance (currently line 788-794). |
+| `WorkItemAgingChart` | `Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx` | EXTEND | Add optional `perStatePercentileValues?: IPerStatePercentileValues[]` prop. Add a custom SVG `<line>` overlay inside `<ChartsContainer>` per ADR-020 — one `<line>` per visible `(state, percentile)` pair, anchored to `x = stateIndex ± 0.4`, `y = percentileValue`, `strokeDasharray = "5 5"`, `stroke = ForecastLevel(percentile).color`. Extend the `useChartVisibility` wiring to manage a parallel `visiblePerStatePercentiles` map. Extend the `<PercentileLegend>` invocation with the new chip-group props. Per-segment hover tooltip (slice 02): `<percentile>th %ile for <state>: <value>d (n=<sampleSize>)`. Per-dot tooltip annotation (US-03, slice 02): one new line `Pace: above 85th percentile for <state>` (or appropriate bucket). |
+| `PercentileLegend` | `Lighthouse.Frontend/src/components/Common/Charts/PercentileLegend.tsx` | EXTEND | Add optional `perStatePercentiles?: IPercentileValue[]`, `visiblePerStatePercentiles?: Record<number, boolean>`, `onTogglePerStatePercentile?: (percentile: number) => void`, `perStateGroupLabel?: string`, `perStateLowSampleNotice?: string` props. When `perStatePercentiles` is non-empty, render a second chip group below the existing one, with a sub-header `Age-in-State %iles (per state)` and per-chip styling consistent with the existing chips. Low-sample notice (per slice 02): append `Note: some states have low sample sizes — hover the chart bands for per-state counts.` to the group's tooltip when any state in `perStatePercentileValues` has `sampleSize < 10` (the WAC passes this via `perStateLowSampleNotice` derived from the data). |
+| `useChartVisibility` (hook) | `Lighthouse.Frontend/src/hooks/useChartVisibility.ts` | EXTEND or INVOKE-TWICE (DDD-8) | Either extend the hook signature to accept a second percentile-set parameter, or invoke the hook twice from `WorkItemAgingChart` with the two sets. Software-crafter chooses at GREEN. Both shapes meet the independent-toggle requirement (DISCUSS US-02 AC). |
+| Vitest + RTL tests for the new chart behaviour | `Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx` + `PercentileLegend.test.tsx` | EXTEND | (a) No-regression test: render with `perStatePercentileValues` undefined → DOM matches existing snapshot; (b) per-state band rendering test: render with a 2-state, 2-percentile fixture → assert 4 `<line>` elements with expected x1/x2/y1/y2 inside `<ChartsContainer>`; (c) legend chip-group test: toggle one group, assert only that group's bands hide; (d) per-dot tooltip annotation test: hover a dot whose state has a percentile entry, assert the tooltip text matches the spec bucket. |
+| Vitest tests for `MetricsService` and `useMetricsData` extension | colocated `.test.ts` files | EXTEND | Mock `getAgeInStatePercentiles` resolves; assert `ctx.perStatePercentileValues` populated; assert parallel-fetch shape. |
+| NUnit tests for `BaseMetricsService.ComputeAgeInStatePercentiles` | `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs` (or alongside `TeamMetricsServiceTests`) | NEW / EXTEND | Fixture with 20 completed items having known per-state durations across 3 states (`In Progress`, `Review`, `Test`); assert exact 50/70/85/95 percentile values per state matching hand-computed expectations. Boundary tests: empty state, single-sample state, multi-visit item (re-work). Visit-level (not item-level) sampling test per ADR-019 enforcement table. Cache-key shape test per ADR-019. |
+| NUnit tests for `TeamMetricsController.GetAgeInStatePercentilesForTeam` | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs` | EXTEND | HTTP 400 on inverted date range; HTTP 200 with empty body on team with no completed items; HTTP 200 with expected dto shape on populated fixture; `[RbacGuard]` test asserts unauthenticated returns 401/403 (matches the pattern used by `cycleTimePercentiles` tests at the same controller). |
+| NUnit tests for `PortfolioMetricsController.GetAgeInStatePercentilesForPortfolio` | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs` | EXTEND | Same coverage as Team. |
+| ArchUnitNET test (NEW rule) | `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/` (existing suite) | EXTEND | No class or interface named `*PerStateAggregation*` exists in the feature commit set (ADR-021). The metrics-service classes read transitions only via `IWorkItemStateTransitionRepository`, never via `DbSet<WorkItemStateTransition>` (extends the ADR-015 rule). The `BaseMetricsService.ComputeAgeInStatePercentiles` helper is `protected` (intra-inheritance only). |
+| E2E spec | `Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts` (new file) | NEW | 1 happy-path scenario per skill DoD: open team detail → see aging chart with both band families → toggle off `Age-in-State 85` → assert that percentile's per-state segments hide while CT bands remain. Per-state algorithm correctness lives in NUnit (faster, deterministic) per the established sibling-1 pattern. |
+
+### EXTEND / NEW summary
+
+**EXTEND: 16** (existing classes / files / hooks / components / test suites that gain additive code paths)
+**NEW: 5** (`AgeInStatePercentilesDto`, `IPerStatePercentileValues` TS model, the new E2E spec file, the NUnit test additions for `ComputeAgeInStatePercentiles` as new methods on existing test classes, the new ArchUnitNET rule additions in the existing suite — every NEW item has zero existing overlap)
+**REUSE AS-IS: 4** (`PercentileCalculator`, `PercentileValue`, `IPercentileValue` TS model, `ForecastLevel` color palette — no change to any of them; all four are consumed at the established API)
+
+## Wave: DESIGN / [REF] Driving ports
+
+| Method | Route | Auth | Status | Implementation pointer |
+|---|---|---|---|---|
+| GET | `/api/teams/{teamId:int}/metrics/ageInStatePercentiles?startDate&endDate` | `[RbacGuard(TeamRead)]` (per the existing `TeamMetricsController` class-level guard pattern; verify at GREEN) | NEW | `TeamMetricsController.GetAgeInStatePercentilesForTeam` — mirrors `cycleTimePercentiles` shape and validation (line 119) |
+| GET | `/api/portfolios/{portfolioId:int}/metrics/ageInStatePercentiles?startDate&endDate` | `[RbacGuard(PortfolioRead)]` | NEW | `PortfolioMetricsController.GetAgeInStatePercentilesForPortfolio` — mirrors `cycleTimePercentiles` shape (line 100) |
+| GET | `/api/teams/{teamId:int}/metrics/cycleTimePercentiles` | Existing | NO CHANGE (D11 of DISCUSS) | `TeamMetricsController.GetCycleTimePercentilesForTeam` — unchanged |
+| GET | `/api/portfolios/{portfolioId:int}/metrics/cycleTimePercentiles` | Existing | NO CHANGE | `PortfolioMetricsController.GetCycleTimePercentiles` — unchanged |
+| GET | `/api/teams/{teamId:int}/metrics/wip` (and other endpoints carrying `WorkItemDto`) | Existing | NO CHANGE | Sibling 1's `WorkItemDto.CurrentStateEnteredAt` and `Approximate` additions are inherited from sibling DESIGN; this feature does not modify the DTO further |
+
+No new top-level routes. No premium gate. WS strategy Type A: additive throughout.
+
+Response shape (both endpoints):
+
+```
+[
+  { "state": "In Progress", "sampleSize": 42, "percentiles": [
+      { "percentile": 50, "value": 3 },
+      { "percentile": 70, "value": 5 },
+      { "percentile": 85, "value": 8 },
+      { "percentile": 95, "value": 14 } ] },
+  { "state": "Review",      "sampleSize": 38, "percentiles": [ … ] },
+  { "state": "Test",        "sampleSize": 35, "percentiles": [ … ] }
+]
+```
+
+States are returned in workflow order (matching the chart's X-axis order). States with zero observations are omitted; the FE renders no per-state bands above them.
+
+## Wave: DESIGN / [REF] Driven ports + adapters
+
+| Port | Adapter | Status |
+|---|---|---|
+| `IWorkItemStateTransitionRepository` (extends `IRepository<WorkItemStateTransition>`) | `WorkItemStateTransitionRepository` (shipped by sibling 1, ADR-015) | REUSE AS-IS — sibling 1's repository is consumed via `GetAllByPredicate` |
+| `WorkItem` read access via `IWorkItemRepository` / existing `GetWorkItemsClosedInDateRange` | `WorkItemRepository` (existing) | REUSE AS-IS |
+| `WorkItem.CurrentStateEnteredAt` read access | Direct property on `WorkItem` (shipped by sibling 1, ADR-016) | REUSE AS-IS — read-only for this feature (sibling 1's `WorkItemService.RefreshWorkItems` is the only mutator) |
+| Cache: existing `BaseMetricsService.GetFromCacheIfExists` | Existing in-process cache (post-`bug-5016-cache-thread-safety` thread-safe) | REUSE AS-IS — new cache key namespace `AgeInStatePercentiles_...` slots into the same scope-keyed cache |
+
+External integrations: NONE introduced by this feature. The endpoint reads only Lighthouse-internal persisted data (transitions table + work items table). The sibling 1 connector capture machinery is what populates the transitions table — this feature is purely a downstream reader. **No contract tests recommended** because no external integration is introduced.
+
+## Wave: DESIGN / [REF] Technology choices
+
+| Component | Pin |
+|---|---|
+| Backend | C# .NET 8, ASP.NET Core, EF Core 8.x (existing) |
+| Backend tests | NUnit 4.6, Moq, EF InMemory, `Microsoft.AspNetCore.Mvc.Testing` (project_test_stack memory: project actually uses NUnit, not CLAUDE.md's xUnit claim) |
+| Backend mutation | Stryker.NET (≥80% kill rate gate per CLAUDE.md) |
+| Backend ArchUnit | ArchUnitNET (existing suite extended per ADR-021 rules) |
+| Frontend | React 18 + TypeScript 5.x (strict), MUI 5.x, MUI-X-charts (existing chart library — no version change) |
+| Frontend tests | Vitest + React Testing Library |
+| Frontend mutation | Stryker (TS) (≥80% kill rate gate) |
+| Frontend linter | Biome (zero errors / zero warnings on `./src` per CLAUDE.md) |
+| E2E | Playwright with Page Object Model |
+
+NO new technology introduced. NO new library dependency. NO new third-party service.
+
+## Wave: DESIGN / [REF] Decisions table
+
+| ID | Decision | Source / ADR |
+|---|---|---|
+| DDD-1 | Visit-level (not item-level) percentile sampling | ADR-019 |
+| DDD-2 | Item-membership rule: `ClosedDate ∈ window` (mirrors `cycleTimePercentiles`) | ADR-019 |
+| DDD-3 | Percentile function: existing `PercentileCalculator` with defaults 50/70/85/95 | ADR-019 |
+| DDD-4 | Empty / low-sample at API: emit when ≥1, omit when 0; FE handles presentation | ADR-019 |
+| DDD-5 | Cache key shape and invalidation reuse the `cycleTimePercentiles` pattern | ADR-019 |
+| DDD-6 | Per-state band rendering: custom SVG `<line>` overlay inside `<ChartsContainer>` | ADR-020 |
+| DDD-7 | Chart prop interface: optional `perStatePercentileValues` → backwards-compatible | ADR-020 |
+| DDD-8 | Legend chip groups: independent visibility wiring via `useChartVisibility` | ADR-020 |
+| DDD-9 | Backend computation: `protected` helper inside `BaseMetricsService` | ADR-021 |
+| DDD-10 | ADR-018 disposition: UPHELD — no `IPerStateAggregationService` | ADR-021 |
+| DDD-11 | US-03 tooltip: client-side bucket computation from `daysInState` + per-state percentiles | DESIGN, no ADR (mechanical) |
+| DDD-12 | Endpoint route shape mirrors `cycleTimePercentiles` precisely | DESIGN, no ADR (mechanical) |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `WorkItemAgingChart` | `Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx` | Already renders the dot scatter, the existing CT band lines (line 349-364), the X-axis state columns (line 287-298), the SLE line, the per-type filter chips, and integrates with `WorkItemsDialog` on dot click | EXTEND | The new per-state bands are conceptually "alongside the existing CT bands"; per DISCUSS D6 + ADR-020, they share the same chart, the same coordinate system, the same legend strip, the same tooltip surface. A new sibling widget would duplicate every one of these and lose the "alongside" semantics. Net add: ~30 LOC for SVG overlay + ~10 LOC for prop + ~10 LOC for legend wiring. |
+| `PercentileLegend` | `Lighthouse.Frontend/src/components/Common/Charts/PercentileLegend.tsx` | Already renders a chip group with `(percentiles, visiblePercentiles, onTogglePercentile)` for the existing CT bands; supports an optional SLE chip | EXTEND | Adding a SECOND chip group with parallel props is structurally consistent with the existing component shape. A new sibling legend would split the legend strip and complicate alignment. Net add: ~20 LOC. |
+| `useChartVisibility` | `Lighthouse.Frontend/src/hooks/useChartVisibility.ts` | Already manages `visiblePercentiles: Record<number, boolean>` and `visibleTypes`; supports SLE visibility toggle | EXTEND (per DDD-8 — software-crafter chooses extend signature OR invoke twice at GREEN) | Either shape meets the independent-toggle requirement. CREATE NEW hook would duplicate state machinery. |
+| `MetricsService` / `IMetricsService` (TS) | `Lighthouse.Frontend/src/services/Api/MetricsService.ts` | Already exposes `getCycleTimePercentiles(id, startDate, endDate)` with identical shape to what `getAgeInStatePercentiles` needs (line 247-260) | EXTEND | One new method following the exact same shape. CREATE NEW service would duplicate the HTTP plumbing, the date-format string helper, the per-entity scoping pattern. |
+| `useMetricsData` | `Lighthouse.Frontend/src/hooks/useMetricsData.ts` | Already fetches `percentileValues` via `getCycleTimePercentiles` (~line 211); already manages the window state shared across all metrics fetches | EXTEND | Add one parallel call in the same effect; add one returned ctx field. CREATE NEW hook would duplicate the entire window-state management. |
+| `BaseMetricsView` | `Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx` | Already renders `<WorkItemAgingChart>` from `ctx.percentileValues` (line 788-794); shared across team and portfolio routes | EXTEND | Pass one more prop. CREATE NEW view would split team and portfolio metrics rendering. |
+| `TeamMetricsController.GetCycleTimePercentilesForTeam` | `Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:119-129` | Already does: route attribute, query-string date validation, log-and-dispatch via `GetEntityByIdAnExecuteAction(teamRepository, teamId, …)` | EXTEND (pattern, not the method itself) | The new endpoint mirrors this exact shape — same validation, same error message, same dispatch pattern. CREATE NEW controller would duplicate scaffolding. |
+| `PortfolioMetricsController.GetCycleTimePercentiles` | `Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:100-114` | Same shape as TeamMetricsController equivalent | EXTEND (pattern) | Same reasoning. |
+| `TeamMetricsService.GetCycleTimePercentilesForTeam` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs:303-320` | Already: GetWorkItemsClosedInDateRange + map to cycle times + `PercentileCalculator.CalculatePercentile` per 50/70/85/95 + `GetFromCacheIfExists` wrap | EXTEND (pattern) + new method | New `GetAgeInStatePercentilesForTeam` reuses the SAME `GetWorkItemsClosedInDateRange` predicate (per ADR-019 DDD-2) and the same `GetFromCacheIfExists` mechanism with the same date-stamped key namespace. The per-state algorithm itself is new (lives in `BaseMetricsService` protected helper per DDD-9). |
+| `PortfolioMetricsService.GetCycleTimePercentilesForPortfolio` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs` (mirror of Team equivalent) | Same shape | EXTEND (pattern) + new method | Same reasoning. |
+| `BaseMetricsService.GetFromCacheIfExists` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs` | Already provides the cache + per-entity invalidation hook; thread-safe after `bug-5016-cache-thread-safety` | REUSE AS-IS | The new cache key namespace `AgeInStatePercentiles_...` slots in alongside the existing `CycleTimePercentiles_...`. No mechanism change. |
+| `PercentileCalculator.CalculatePercentile` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileCalculator.cs` | Already implements the nearest-rank algorithm Lighthouse uses for `cycleTimePercentiles` | REUSE AS-IS | Algorithmic parity per ADR-019 DDD-3. |
+| `PercentileValue` (C# model) | `Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/PercentileValue.cs` | Already used by `cycleTimePercentiles` response | REUSE AS-IS | The new `AgeInStatePercentilesDto.Percentiles` is `IReadOnlyList<PercentileValue>` — same type. |
+| `IWorkItemStateTransitionRepository` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs` (shipped by sibling 1, ADR-015) | Already exposes `GetAllByPredicate(Expression<Func<WorkItemStateTransition, bool>>)` via `IRepository<T>` | REUSE AS-IS | The per-state walk in `ComputeAgeInStatePercentiles` calls `GetAllByPredicate(t => completedItemIds.Contains(t.WorkItemId))` (or an equivalent EF-friendly composition; software-crafter chooses at GREEN). Adding methods to the repository was explicitly deferred to consumer DESIGNs per sibling ADR-015; this DESIGN does NOT add methods — the base `GetAllByPredicate` is sufficient. |
+| `WorkItem.CurrentStateEnteredAt` | sibling 1 ADR-016 | Persisted column on `WorkItem` | REUSE AS-IS | Read-only access; used by the chart's `daysInState` derivation feeding US-03 client-side bucket. No mutation. |
+| `WorkItem.ClosedDate`, `WorkItem.StartedDate`, `GetWorkItemsClosedInDateRange` | `WorkItemBase` + `BaseMetricsService` | Existing persistence + existing predicate | REUSE AS-IS | Item-membership rule per ADR-019 DDD-2 reuses this predicate exactly. |
+| `ForecastLevel(percentile).color` palette | `Lighthouse.Frontend/src/components/Common/Forecasts/ForecastLevel.ts` (already imported by `WorkItemAgingChart`) | Already provides the per-percentile color for the existing CT bands | REUSE AS-IS | The new per-state bands use the SAME color per percentile so 85th-CT and 85th-per-state look visually related but differ only in span. |
+| MUI-X `<ChartsContainer>` | `@mui/x-charts` (existing dependency) | Provides the chart coordinate system; supports arbitrary SVG children | REUSE AS-IS | The custom `<line>` overlay (ADR-020) is rendered as a child of the existing `<ChartsContainer>`. No new chart library; no new chart container. |
+
+**Totals: 17 rows. 7 EXTEND + 10 REUSE-AS-IS + 0 CREATE-NEW at the OVERLAP level.** (The NEW entries — `AgeInStatePercentilesDto`, `IPerStatePercentileValues` TS model, the new E2E spec, the new test methods, the new ArchUnit rules — appear in the Component decomposition; they have ZERO existing overlap per the grep below.)
+
+CODEBASE GREP FOR OVERLAP CANDIDATES THAT MIGHT JUSTIFY CREATE-NEW BUT WERE REJECTED:
+
+- Searched for `AgeInState|ageInState|PerStatePercentile|perStatePercentile` across `Lighthouse.Backend` + `Lighthouse.Frontend/src` — zero production matches. No existing DTO, service, hook, or component duplicates the per-state percentile concern.
+- Searched for `PerState|StateAggregation|PerStateMetric` — zero production matches. Confirms ADR-018 + ADR-021's "no existing service to extend" position.
+- Searched for `BandSegment|ChartBand|PercentileBand` — zero production matches. The new SVG `<line>` overlay (ADR-020) is the first per-state band rendering in the codebase.
+
+## Wave: DESIGN / [REF] Open questions
+
+- **MUI-X coordinate-system access from custom SVG children**: ADR-020 assumes that an SVG `<line>` rendered as a child of `<ChartsContainer>` receives the same coordinate system as `<ChartsReferenceLine>` (i.e. `x` and `y` are in data space, not pixel space). This is consistent with MUI-X's documented API but is a small interop assumption. **Validation deferred to DELIVER spike (slice 01, ~30 min per slice-01 spec)**: confirm at the start of slice 01 implementation. If false, ADR-020's alternative would be to use an `<svg>` overlay positioned via `getBoundingClientRect()` math on the chart container — heavier, but still feasible. No DESIGN blocker.
+- **Endpoint profiling at scale**: ADR-019's algorithm is `O(transitions_per_item × completed_items_in_window)`. For a team with 200 completed items × 12 transitions each over a 6-month window, ~2400 row-level operations per request. Expected to be sub-100ms uncached. **Validation deferred to DELIVER spike (slice 01, ~30 min per slice-01 spec)**: profile against a team with 6 months of transition data on the project's own ADO instance. If profiling shows materially worse performance, the existing `GetFromCacheIfExists` already handles repeat requests; a one-step materialisation (e.g. precompute per (team, window) at sync time) is a follow-up — NOT in scope for MVP.
+- **`useChartVisibility` shape (extend signature vs. invoke twice)**: DDD-8 leaves this to software-crafter at GREEN. Both shapes meet the architectural requirement (independent toggle state). Software-crafter picks the cleaner shape after seeing the call site.
+- **Linear connector transition timestamps**: depend on sibling 1's per-connection runtime downgrade behaviour (ADR-017). When Linear's `history` field is unavailable, the transitions for that team are sync-cadence approximations — the per-state bands for that team will be band-heights derived from approximate timestamps. **Resolution**: no change required by this DESIGN. The sibling's `WorkItemDto.Approximate` flag already indicates the badge tooltip on the in-flight side. For the historical band side, the approximation is inherited from the transition data; no separate annotation needed (a band derived from 10 approximate-timestamp items is not meaningfully more wrong than the same band derived from 10 exact items). Documented as an inherited characteristic, not a feature gap.
+- **Backfill of pre-feature transitions**: explicitly OUT OF SCOPE per DISCUSS (forward-only constraint inherited from sibling 1). First weeks post-release will have low / empty per-state bands for most states. The legend low-sample tooltip (slice 02) surfaces this honestly. **Resolved by DISCUSS**; no DESIGN action.
+
+## Wave: DESIGN / [REF] Cross-MVP coordination outcomes
+
+- **ADR-018 (sibling 1) disposition: UPHELD.** This DESIGN does NOT introduce `IPerStateAggregationService`. Per-state percentile computation lives as a `protected` helper inside `BaseMetricsService`, consumed only by `TeamMetricsService` / `PortfolioMetricsService` via inheritance. Repository-level sharing (sibling 1's `IWorkItemStateTransitionRepository`) IS the architectural seam across siblings. Rationale captured in ADR-021.
+- **No new flag-ups for sibling B3 (`state-time-cumulative-view`) DESIGN.** B3's DESIGN author retains full freedom to either (a) follow the same Path A pattern this feature establishes (independent computation), or (b) supersede both ADR-018 and ADR-021 with a new ADR that argues for consolidation in light of B3's concrete query shape. ADR-021's "Reviewer note (cross-MVP)" section flags both options for B3's DESIGN author.
+- **No upstream impact on sibling 1 DESIGN.** D11 of DISCUSS held: no schema additions to `WorkItemStateTransition`. ADR-019's algorithm reads only the 4 fields shipped by sibling 1 plus `WorkItem.CurrentStateEnteredAt` (read-only) plus `WorkItem.ClosedDate` (read-only, unchanged). Zero feedback to sibling 1.
+- **Semantic divergence vs sibling B3 made permanent in writing.** ADR-019 explicitly contrasts this feature's "ClosedDate-in-window + unclipped visit-level duration" rule with sibling B3's "frame-intersection + unclipped item-level duration including in-flight" rule. The two endpoints are intentionally named differently (`ageInStatePercentiles` vs B3's `cumulativeStateTime`) and ADR-021's enforcement rules prevent silent helper consolidation.
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+**Primary architectural commitment**: introduce one new endpoint per scope (team + portfolio), one chart prop extension, one custom SVG overlay inside the existing chart's `<ChartsContainer>`, and one `protected` helper inside `BaseMetricsService`. Every other touchpoint is an additive extension of an existing class / hook / component / DTO / cache key namespace. NO new top-level routes. NO new external integration. NO new external library. NO new persistence. NO premium gate. NO breaking change.
+
+**Architecture pattern**: ports-and-adapters / hexagonal (unchanged). Reads transitions via the sibling 1 repository port; no new port introduced.
+
+**Walking skeleton path** (validates the architecture in one slice end-to-end): existing sibling-1 `WorkItemStateTransition` rows → new `BaseMetricsService.ComputeAgeInStatePercentiles` helper → new `TeamMetricsService.GetAgeInStatePercentilesForTeam` method → new `TeamMetricsController.GetAgeInStatePercentilesForTeam` endpoint → new `MetricsService.getAgeInStatePercentiles` TS method → extended `useMetricsData` ctx → extended `WorkItemAgingChart` prop → custom SVG overlay rendering on the team detail page. One slice (slice 01) exercises every architectural seam end-to-end.
+
+**Sibling MVP coordination**: ADR-018 upheld (ADR-021); semantic divergence vs sibling B3 documented permanently in ADR-019; sibling 1's DESIGN unchanged (no schema feedback, no port feedback).
+
+**Downstream changes propagated upstream**: NONE. Sibling 1 DESIGN unchanged. Sibling B3 DESIGN unaffected.
+
+**Handoff readiness**: ready for nw-acceptance-designer (DISTILL) handoff. The 3 user stories with their AC are already locked at DISCUSS; this DESIGN adds the architectural decomposition the acceptance designer needs to write executable specs against. Subsequent nw-platform-architect (DEVOPS) handoff: no CI workflow changes required (the existing test gates cover the new code; the existing `ci_verifysqlite.yml` + `ci_verifypostgres.yml` cover the no-new-migration case).
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+`nwave-ai outcomes check-delta docs/feature/aging-pace-percentiles/feature-delta.md` was NOT executed: the tool (`nwave-ai`) is not installed in this repository and the canonical outcomes registry at `docs/product/outcomes/registry.yaml` does not exist. Per skill ("skip-and-document"): documented here, deferred to DEVOPS handoff for KPI / outcomes registration alongside the DISCUSS-defined `OUT-aging-pace-bands-rendered`, `OUT-aging-pace-legend-toggled`, `OUT-aging-pace-parity-claim`.
+

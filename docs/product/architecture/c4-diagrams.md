@@ -482,3 +482,106 @@ The diagram makes four architectural commitments visible:
 3. **Standalone transition entity** — `WorkItem` holds NO transition navigation; the work-item-table read path loads zero transition rows (ADR-015; ArchUnitNET-enforced).
 4. **Consumer-facing surface is the repository, not a service** — sibling MVP DESIGNs (`aging-pace-percentiles`, `state-time-cumulative-view`) consume `IWorkItemStateTransitionRepository` directly. No shared `IPerStateAggregationService` is introduced (ADR-018; rationale documented for future readers).
 
+---
+
+# C4 Architecture Diagrams — aging-pace-percentiles
+
+Feature: aging-pace-percentiles (Epic 4144 MVP bundle, slice F)
+Wave: DESIGN
+Date: 2026-05-24
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+
+---
+
+## C4 Level 1 — System Context (delta)
+
+The Lighthouse system context (RBAC + OAuth + filter-forecast-throughput + time-in-state-and-staleness baselines) is unchanged. This feature adds **no** new external actors and **no** new external systems. The `Flow Coach` persona already introduced by sibling 1 retains the same chart-glance relationship with Lighthouse; the secondary `Delivery Forecaster` persona (already present in `docs/product/personas/`) consumes the same chart in forecast-conversation contexts. The chart-glance question this feature enables ("which in-flight items are pacing slower than 85% of historical items for their current state?") sits inside the existing read-only relationship; no new outbound integration.
+
+No L1 diagram is added — the System Context from sibling 1 (time-in-state-and-staleness) covers this feature's actors and systems unchanged.
+
+---
+
+## C4 Level 2 — Container (delta)
+
+No new containers. The existing Frontend SPA and Backend API gain additive responsibilities — Backend API gains two new endpoints (team + portfolio); Frontend SPA gains a new chart overlay, a new legend chip group, and a new per-dot tooltip annotation. The Database container is unchanged — no schema additions (sibling 1's `WorkItemStateTransitions` table and `WorkItem.CurrentStateEnteredAt` column are consumed read-only). The E2E Test Runner gains one new spec.
+
+```mermaid
+C4Container
+    title Container Diagram — Aging Pace Percentiles (delta over time-in-state-and-staleness baseline)
+
+    Person(coach, "Flow Coach", "Reads team/portfolio Work Item Aging chart; spots pace outliers via per-state bands")
+    Person(forecaster, "Delivery Forecaster", "Reads the same chart in forecast-conversation contexts")
+
+    Container(spa, "Frontend SPA", "React 18 + TypeScript + MUI + MUI-X-charts", "Existing WorkItemAgingChart extended with per-state SVG band overlay. PercentileLegend extended with second chip group. useMetricsData hook extended with parallel fetch. New tooltip annotation on chart dots.")
+    Container(api, "Backend API", "C# .NET 8 ASP.NET Core Web API", "New endpoints: GET /api/teams/{id}/metrics/ageInStatePercentiles + portfolio equivalent. Computation inside TeamMetricsService / PortfolioMetricsService, delegating to protected helper on BaseMetricsService. Reads WorkItemStateTransition rows via sibling 1's IWorkItemStateTransitionRepository. Reuses PercentileCalculator + GetWorkItemsClosedInDateRange. Cache via existing GetFromCacheIfExists.")
+    ContainerDb(db, "Database", "SQLite (dev/test) / PostgreSQL (prod) via EF Core", "NO schema changes. Reads sibling 1's WorkItemStateTransitions table + WorkItem.CurrentStateEnteredAt column.")
+    Container(e2e, "E2E Test Runner", "Playwright + TypeScript", "One new spec covers happy-path chart-rendering + legend chip toggle. Per-state algorithm correctness lives in NUnit (faster).")
+
+    Rel(coach, spa, "Reads aging chart with per-state bands via", "HTTPS")
+    Rel(forecaster, spa, "Reads aging chart with per-state bands via", "HTTPS")
+    Rel(spa, api, "GET /api/teams/{id}/metrics/ageInStatePercentiles, GET /api/portfolios/{id}/metrics/ageInStatePercentiles, (existing) GET /api/teams/{id}/metrics/cycleTimePercentiles", "HTTPS / JSON")
+    Rel(api, db, "Reads WorkItemStateTransition + WorkItem via", "EF Core")
+    Rel(e2e, spa, "Drives browser interactions against", "Playwright CDP")
+    Rel(e2e, api, "Calls API helpers for test setup against", "HTTPS / JSON")
+```
+
+---
+
+## C4 Level 3 — Component: Per-State Percentile Computation and Chart-Overlay Domain
+
+The per-state percentile computation (ADR-019) + the SVG-overlay chart rendering (ADR-020) + the ADR-018 disposition (ADR-021) are the three architecturally significant decisions for this feature. This diagram makes the consumer-side surfaces explicit: the per-state computation flows through the existing `BaseMetricsService` inheritance; the chart-overlay flows through the existing `<ChartsContainer>` coordinate system; the repository seam (sibling 1's `IWorkItemStateTransitionRepository`) is the only data-layer touchpoint.
+
+```mermaid
+C4Component
+    title Component Diagram — Aging Pace Percentiles (Backend + Frontend)
+
+    Container_Boundary(api, "Backend API") {
+        Component(teamMetricsCtrl, "TeamMetricsController (existing, EXTENDED)", "ASP.NET Core ApiController", "GET /metrics/cycleTimePercentiles unchanged. New: GET /metrics/ageInStatePercentiles?startDate&endDate. Validation + auth mirror cycleTimePercentiles. RbacGuard(TeamRead).")
+        Component(portfolioMetricsCtrl, "PortfolioMetricsController (existing, EXTENDED)", "ASP.NET Core ApiController", "Mirror endpoint for portfolio scope. RbacGuard(PortfolioRead).")
+        Component(teamMetricsSvc, "TeamMetricsService (existing, EXTENDED)", "C# class", "New method GetAgeInStatePercentilesForTeam: scope-specific 'completed items in window' query via existing GetWorkItemsClosedInDateRange, then delegates to BaseMetricsService.ComputeAgeInStatePercentiles, wraps in GetFromCacheIfExists with cache key AgeInStatePercentiles_{startDate}_{endDate}.")
+        Component(portfolioMetricsSvc, "PortfolioMetricsService (existing, EXTENDED)", "C# class", "Mirror method for portfolio scope.")
+        Component(baseMetricsSvc, "BaseMetricsService (existing, EXTENDED)", "C# class", "New PROTECTED helper ComputeAgeInStatePercentiles(completedItems, doingStates, requestedPercentiles): walks transitions via IWorkItemStateTransitionRepository.GetAllByPredicate, pairs entry→next-exit per state per ADR-019, buckets observations, calls PercentileCalculator per state per percentile. INTRA-INHERITANCE ONLY — not exposed via interface (ADR-021).")
+        Component(percentileCalc, "PercentileCalculator (existing, REUSE-AS-IS)", "C# static class", "Nearest-rank algorithm with clamp. Same function used by cycleTimePercentiles — algorithmic parity per ADR-019.")
+        Component(transitionRepo, "IWorkItemStateTransitionRepository (sibling 1, REUSE-AS-IS)", "C# port", "Consumed via GetAllByPredicate. No new methods added to the repository — DESIGN sibling 1 explicitly deferred extension to consumer DESIGNs; this DESIGN chose not to extend.")
+        Component(workItemRepo, "IWorkItemRepository (existing, REUSE-AS-IS)", "C# port", "Used to resolve the team/portfolio's completed items in window via the existing GetWorkItemsClosedInDateRange predicate.")
+        Component(ageInStateDto, "AgeInStatePercentilesDto (NEW)", "C# record", "record AgeInStatePercentilesDto(string State, int SampleSize, IReadOnlyList<PercentileValue> Percentiles). Returned by both endpoints as IReadOnlyList<>.")
+        Component(percentileValue, "PercentileValue (existing, REUSE-AS-IS)", "C# class", "{ Percentile, Value }. Same type used by cycleTimePercentiles response.")
+    }
+
+    Container_Boundary(spa, "Frontend SPA") {
+        Component(metricsServiceTs, "MetricsService.ts (existing, EXTENDED)", "TypeScript HTTP adapter", "New method getAgeInStatePercentiles(id, startDate, endDate) — mirrors getCycleTimePercentiles shape. Added to IMetricsService interface.")
+        Component(useMetricsData, "useMetricsData (existing, EXTENDED)", "React hook", "Parallel fetch of ageInStatePercentiles alongside existing cycleTimePercentiles. New ctx field perStatePercentileValues.")
+        Component(baseMetricsView, "BaseMetricsView (existing, EXTENDED)", "React component", "Passes perStatePercentileValues={ctx.perStatePercentileValues} to <WorkItemAgingChart>. Shared between team and portfolio routes.")
+        Component(agingChart, "WorkItemAgingChart (existing, EXTENDED)", "React component", "New optional prop perStatePercentileValues. Custom SVG <line> overlay inside <ChartsContainer> per ADR-020 — anchored to state column index, dashed style matching CT bands. New tooltip annotation per dot per US-03 (client-side bucket computation from daysInState + per-state values).")
+        Component(percentileLegend, "PercentileLegend (existing, EXTENDED)", "React component", "Renders SECOND chip group `Age-in-State %iles (per state)` alongside existing `Cycle Time %iles (overall)` group. Independent toggle state.")
+        Component(useChartVis, "useChartVisibility (existing, EXTENDED)", "React hook", "Manages two independent visiblePercentiles maps (either signature-extended OR invoked twice — DDD-8).")
+        Component(perStateModel, "IPerStatePercentileValues TS model (NEW)", "TypeScript interface", "{ state, sampleSize, percentiles: IPercentileValue[] }. Mirrors backend DTO.")
+    }
+
+    Rel(teamMetricsCtrl, teamMetricsSvc, "delegates to via GetEntityByIdAnExecuteAction")
+    Rel(portfolioMetricsCtrl, portfolioMetricsSvc, "delegates to via GetEntityByIdAnExecuteAction")
+    Rel(teamMetricsSvc, baseMetricsSvc, "calls ComputeAgeInStatePercentiles (inherited protected) via")
+    Rel(portfolioMetricsSvc, baseMetricsSvc, "calls ComputeAgeInStatePercentiles (inherited protected) via")
+    Rel(teamMetricsSvc, workItemRepo, "resolves completed-items-in-window via GetWorkItemsClosedInDateRange")
+    Rel(portfolioMetricsSvc, workItemRepo, "resolves completed-items-in-window via")
+    Rel(baseMetricsSvc, transitionRepo, "walks transitions via GetAllByPredicate")
+    Rel(baseMetricsSvc, percentileCalc, "computes per-state percentiles via CalculatePercentile")
+    Rel(baseMetricsSvc, percentileValue, "constructs response elements via")
+    Rel(teamMetricsSvc, ageInStateDto, "projects response via")
+    Rel(portfolioMetricsSvc, ageInStateDto, "projects response via")
+
+    Rel(useMetricsData, metricsServiceTs, "fetches via getAgeInStatePercentiles + (existing) getCycleTimePercentiles in parallel")
+    Rel(baseMetricsView, agingChart, "passes perStatePercentileValues prop to")
+    Rel(agingChart, percentileLegend, "renders with two chip-group prop sets")
+    Rel(agingChart, useChartVis, "manages two independent visibility maps via")
+    Rel(useMetricsData, perStateModel, "populates ctx field as IPerStatePercentileValues[]")
+    Rel(agingChart, perStateModel, "consumes via new prop")
+```
+
+The diagram makes four architectural commitments visible:
+
+1. **Repository-only data seam** — `BaseMetricsService.ComputeAgeInStatePercentiles` reads transitions exclusively via sibling 1's `IWorkItemStateTransitionRepository` (`GetAllByPredicate`). No direct `DbSet<WorkItemStateTransition>` access; no raw SQL. ArchUnitNET-enforced (ADR-021 extending the ADR-015 rule).
+2. **Inheritance-bound computation, not a new service** — the per-state walk lives as a `protected` helper inside the existing `BaseMetricsService`, consumed only by the two existing derived classes. No new interface, no new service, no `IPerStateAggregationService`. ArchUnitNET + NUnit-reflection-enforced (ADR-021).
+3. **Algorithmic parity with `cycleTimePercentiles`** — same `PercentileCalculator`, same `GetWorkItemsClosedInDateRange` predicate, same `GetFromCacheIfExists` cache mechanism, same `PercentileValue` response type. NUnit-enforced (ADR-019).
+4. **Backwards-compatible chart extension** — `WorkItemAgingChart` with `perStatePercentileValues` undefined renders identically to today; the per-state band SVG overlay is rendered inside the existing `<ChartsContainer>` coordinate system, not absolute-positioned over the chart. Vitest-enforced (ADR-020).
+
