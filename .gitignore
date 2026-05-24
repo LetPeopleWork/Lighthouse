@@ -448,3 +448,12 @@ social-posts/*
 
 # ASP.NET Core DataProtection key store + protected blobs (runtime state)
 **/data-protection-keys/
+
+# Playwright artifacts (per-run, never committed)
+test-results/
+
+# nWave session/audit state (per CLAUDE.md + finalize discard list):
+# - .develop-progress.json: resume token, session-only
+# - deliver/execution-log.json: DES audit log, harness-protected
+**/.develop-progress.json
+**/deliver/execution-log.json
