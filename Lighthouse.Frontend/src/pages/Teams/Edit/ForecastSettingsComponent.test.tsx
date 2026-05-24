@@ -462,4 +462,66 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 			);
 		});
 	});
+
+	it("persists the OR mode when the user flips the group-mode toggle", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const callback = vi.fn();
+		const settingsWithTwoRules = {
+			...teamSettings,
+			forecastFilterRuleSetJson: JSON.stringify({
+				version: 1,
+				mode: "and",
+				conditions: [
+					{ fieldKey: "workitem.type", operator: "equals", value: "Bug" },
+					{ fieldKey: "workitem.state", operator: "equals", value: "Done" },
+				],
+			}),
+		};
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={settingsWithTwoRules}
+				isDefaultSettings={false}
+				onTeamSettingsChange={callback}
+			/>,
+		);
+
+		const orButton = await screen.findByRole("button", {
+			name: /match any rule \(or\)/i,
+		});
+		fireEvent.click(orButton);
+
+		expect(callback).toHaveBeenCalledWith(
+			"forecastFilterRuleSetJson",
+			expect.stringMatching(/"mode":\s*"or"/),
+		);
+	});
+
+	it("treats a stored rule set without a mode field as AND (back-compat)", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const callback = vi.fn();
+		const settingsWithLegacyJson = {
+			...teamSettings,
+			forecastFilterRuleSetJson: JSON.stringify({
+				version: 1,
+				conditions: [
+					{ fieldKey: "workitem.type", operator: "equals", value: "Bug" },
+					{ fieldKey: "workitem.state", operator: "equals", value: "Done" },
+				],
+			}),
+		};
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={settingsWithLegacyJson}
+				isDefaultSettings={false}
+				onTeamSettingsChange={callback}
+			/>,
+		);
+
+		const andButton = await screen.findByRole("button", {
+			name: /match all rules \(and\)/i,
+		});
+		expect(andButton).toHaveAttribute("aria-pressed", "true");
+	});
 });

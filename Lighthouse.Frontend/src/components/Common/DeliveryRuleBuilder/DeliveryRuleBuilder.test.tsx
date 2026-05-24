@@ -258,4 +258,247 @@ describe("DeliveryRuleBuilder", () => {
 			),
 		).not.toBeInTheDocument();
 	});
+
+	describe("Empty-value operators", () => {
+		const operatorsWithEmpty = [
+			...mockOperators,
+			"notContains",
+			"isEmpty",
+			"isNotEmpty",
+		];
+
+		it("hides the Value input when the operator is isEmpty", () => {
+			const rules: IWorkItemRuleCondition[] = [
+				{ fieldKey: "feature.type", operator: "isEmpty", value: "" },
+			];
+
+			render(
+				<DeliveryRuleBuilder
+					rules={rules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={operatorsWithEmpty}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			expect(screen.getByTestId("rule-operator-select-0")).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("rule-value-input-0"),
+			).not.toBeInTheDocument();
+		});
+
+		it("hides the Value input when the operator is isNotEmpty", () => {
+			const rules: IWorkItemRuleCondition[] = [
+				{ fieldKey: "feature.type", operator: "isNotEmpty", value: "" },
+			];
+
+			render(
+				<DeliveryRuleBuilder
+					rules={rules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={operatorsWithEmpty}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			expect(
+				screen.queryByTestId("rule-value-input-0"),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not require a value to be filled for isEmpty rules", () => {
+			const rules: IWorkItemRuleCondition[] = [
+				{ fieldKey: "feature.type", operator: "isEmpty", value: "" },
+			];
+
+			render(
+				<DeliveryRuleBuilder
+					rules={rules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={operatorsWithEmpty}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			expect(
+				screen.queryByText(/please complete all rule fields/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("still surfaces the missing-value warning for contains operator", () => {
+			const rules: IWorkItemRuleCondition[] = [
+				{ fieldKey: "feature.type", operator: "contains", value: "" },
+			];
+
+			render(
+				<DeliveryRuleBuilder
+					rules={rules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={operatorsWithEmpty}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			expect(
+				screen.getByText(/please complete all rule fields/i),
+			).toBeInTheDocument();
+		});
+
+		it("blanks out the value on the persisted rule when switching to isEmpty", () => {
+			const onChange = vi.fn();
+			const rules: IWorkItemRuleCondition[] = [
+				{ fieldKey: "feature.type", operator: "equals", value: "Bug" },
+			];
+
+			render(
+				<DeliveryRuleBuilder
+					rules={rules}
+					onChange={onChange}
+					fields={mockFields}
+					operators={operatorsWithEmpty}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			const operatorSelect = screen
+				.getByTestId("rule-operator-select-0")
+				.querySelector("input");
+			expect(operatorSelect).not.toBeNull();
+
+			fireEvent.change(operatorSelect as HTMLInputElement, {
+				target: { value: "isEmpty" },
+			});
+
+			expect(onChange).toHaveBeenCalledWith([
+				{ fieldKey: "feature.type", operator: "isEmpty", value: "" },
+			]);
+		});
+	});
+
+	describe("Group mode (AND/OR) toggle", () => {
+		const twoRules: IWorkItemRuleCondition[] = [
+			{ fieldKey: "feature.type", operator: "equals", value: "Bug" },
+			{ fieldKey: "feature.state", operator: "equals", value: "Done" },
+		];
+
+		it("does not render the mode toggle when onModeChange is not supplied", () => {
+			render(
+				<DeliveryRuleBuilder
+					rules={twoRules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={mockOperators}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			expect(
+				screen.queryByTestId("rule-group-mode-toggle"),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not render the mode toggle when there are fewer than two rules", () => {
+			const singleRule: IWorkItemRuleCondition[] = [
+				{ fieldKey: "feature.type", operator: "equals", value: "Bug" },
+			];
+
+			render(
+				<DeliveryRuleBuilder
+					rules={singleRule}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={mockOperators}
+					maxRules={20}
+					maxValueLength={500}
+					onModeChange={vi.fn()}
+				/>,
+			);
+
+			expect(
+				screen.queryByTestId("rule-group-mode-toggle"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders the mode toggle when two or more rules and onModeChange is supplied", () => {
+			render(
+				<DeliveryRuleBuilder
+					rules={twoRules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={mockOperators}
+					maxRules={20}
+					maxValueLength={500}
+					onModeChange={vi.fn()}
+				/>,
+			);
+
+			expect(screen.getByTestId("rule-group-mode-toggle")).toBeInTheDocument();
+		});
+
+		it("emits onModeChange when the user flips to OR", () => {
+			const onModeChange = vi.fn();
+
+			render(
+				<DeliveryRuleBuilder
+					rules={twoRules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={mockOperators}
+					maxRules={20}
+					maxValueLength={500}
+					mode="and"
+					onModeChange={onModeChange}
+				/>,
+			);
+
+			fireEvent.click(
+				screen.getByRole("button", { name: /match any rule \(or\)/i }),
+			);
+
+			expect(onModeChange).toHaveBeenCalledExactlyOnceWith("or");
+		});
+
+		it("renders the separator label as AND by default", () => {
+			render(
+				<DeliveryRuleBuilder
+					rules={twoRules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={mockOperators}
+					maxRules={20}
+					maxValueLength={500}
+				/>,
+			);
+
+			expect(screen.getByText("AND")).toBeInTheDocument();
+			expect(screen.queryByText("OR")).not.toBeInTheDocument();
+		});
+
+		it("renders the separator label as OR when mode='or'", () => {
+			render(
+				<DeliveryRuleBuilder
+					rules={twoRules}
+					onChange={vi.fn()}
+					fields={mockFields}
+					operators={mockOperators}
+					maxRules={20}
+					maxValueLength={500}
+					mode="or"
+					onModeChange={vi.fn()}
+				/>,
+			);
+
+			expect(screen.getByText("OR")).toBeInTheDocument();
+		});
+	});
 });

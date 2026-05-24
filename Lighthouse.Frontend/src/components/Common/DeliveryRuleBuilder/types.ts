@@ -1,5 +1,7 @@
 import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
 
+export type DeliveryRuleGroupMode = "and" | "or";
+
 export interface DeliveryRuleBuilderProps {
 	rules: IWorkItemRuleCondition[];
 	onChange: (rules: IWorkItemRuleCondition[]) => void;
@@ -10,6 +12,8 @@ export interface DeliveryRuleBuilderProps {
 	disabled?: boolean;
 	title?: string;
 	emptyStateMessage?: string;
+	mode?: DeliveryRuleGroupMode;
+	onModeChange?: (mode: DeliveryRuleGroupMode) => void;
 }
 
 export interface RuleRowProps {
@@ -22,4 +26,10 @@ export interface RuleRowProps {
 	onDelete: (index: number) => void;
 	disabled?: boolean;
 	isLast: boolean;
+	separatorLabel?: string;
 }
+
+export const isValuelessOperator = (operator: string): boolean => {
+	const normalised = operator.toLowerCase();
+	return normalised === "isempty" || normalised === "isnotempty";
+};

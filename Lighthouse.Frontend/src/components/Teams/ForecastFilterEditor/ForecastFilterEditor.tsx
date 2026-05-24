@@ -8,11 +8,14 @@ import type {
 } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { DeliveryRuleBuilder } from "../../Common/DeliveryRuleBuilder/DeliveryRuleBuilder";
+import type { DeliveryRuleGroupMode } from "../../Common/DeliveryRuleBuilder/types";
 
 interface ForecastFilterEditorProps {
 	teamId: number;
 	rules?: IWorkItemRuleCondition[];
+	mode?: DeliveryRuleGroupMode;
 	onChange?: (rules: IWorkItemRuleCondition[]) => void;
+	onModeChange?: (mode: DeliveryRuleGroupMode) => void;
 }
 
 const EXCLUSION_TITLE = "Exclude items where…";
@@ -22,7 +25,9 @@ const EXCLUSION_EMPTY_STATE =
 const ForecastFilterEditor: React.FC<ForecastFilterEditorProps> = ({
 	teamId,
 	rules = [],
+	mode = "and",
 	onChange,
+	onModeChange,
 }) => {
 	const { teamService } = useContext(ApiServiceContext);
 	const { isTeamAdmin } = useRbac();
@@ -76,6 +81,8 @@ const ForecastFilterEditor: React.FC<ForecastFilterEditorProps> = ({
 			disabled={readOnly}
 			title={EXCLUSION_TITLE}
 			emptyStateMessage={EXCLUSION_EMPTY_STATE}
+			mode={mode}
+			onModeChange={onModeChange}
 		/>
 	);
 };

@@ -10,21 +10,34 @@ import {
 	MenuItem,
 	Select,
 	TextField,
+	ToggleButton,
+	ToggleButtonGroup,
 	Typography,
 } from "@mui/material";
 import type React from "react";
 import { useRef } from "react";
 import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
-import type { DeliveryRuleBuilderProps, RuleRowProps } from "./types";
+import {
+	type DeliveryRuleBuilderProps,
+	type DeliveryRuleGroupMode,
+	isValuelessOperator,
+	type RuleRowProps,
+} from "./types";
 
 const getOperatorLabel = (operator: string): string => {
-	switch (operator) {
+	switch (operator.toLowerCase()) {
 		case "equals":
 			return "Equals";
 		case "notequals":
 			return "Not Equals";
 		case "contains":
 			return "Contains";
+		case "notcontains":
+			return "Does Not Contain";
+		case "isempty":
+			return "Is Empty";
+		case "isnotempty":
+			return "Is Not Empty";
 		default:
 			return operator;
 	}
@@ -40,13 +53,18 @@ const RuleRow: React.FC<RuleRowProps> = ({
 	onDelete,
 	disabled,
 	isLast,
+	separatorLabel = "AND",
 }) => {
 	const handleFieldChange = (fieldKey: string) => {
 		onChange(index, { ...rule, fieldKey });
 	};
 
 	const handleOperatorChange = (operator: string) => {
-		onChange(index, { ...rule, operator });
+		const next: IWorkItemRuleCondition = { ...rule, operator };
+		if (isValuelessOperator(operator)) {
+			next.value = "";
+		}
+		onChange(index, next);
 	};
 
 	const handleValueChange = (value: string) => {
@@ -54,6 +72,8 @@ const RuleRow: React.FC<RuleRowProps> = ({
 			onChange(index, { ...rule, value });
 		}
 	};
+
+	const showValueInput = !isValuelessOperator(rule.operator);
 
 	return (
 		<Box
@@ -94,16 +114,18 @@ const RuleRow: React.FC<RuleRowProps> = ({
 				</Select>
 			</FormControl>
 
-			<TextField
-				size="small"
-				label="Value"
-				value={rule.value}
-				onChange={(e) => handleValueChange(e.target.value)}
-				disabled={disabled}
-				sx={{ flex: 1 }}
-				slotProps={{ htmlInput: { maxLength: maxValueLength } }}
-				data-testid={`rule-value-input-${index}`}
-			/>
+			{showValueInput && (
+				<TextField
+					size="small"
+					label="Value"
+					value={rule.value}
+					onChange={(e) => handleValueChange(e.target.value)}
+					disabled={disabled}
+					sx={{ flex: 1 }}
+					slotProps={{ htmlInput: { maxLength: maxValueLength } }}
+					data-testid={`rule-value-input-${index}`}
+				/>
+			)}
 
 			<IconButton
 				onClick={() => onDelete(index)}
@@ -121,11 +143,21 @@ const RuleRow: React.FC<RuleRowProps> = ({
 					variant="body2"
 					sx={{ color: "text.secondary", fontWeight: 500, ml: 1, mr: 1 }}
 				>
-					AND
+					{separatorLabel}
 				</Typography>
 			)}
 		</Box>
 	);
+};
+
+const ruleIsIncomplete = (rule: IWorkItemRuleCondition): boolean => {
+	if (!rule.fieldKey.trim() || !rule.operator.trim()) {
+		return true;
+	}
+	if (isValuelessOperator(rule.operator)) {
+		return false;
+	}
+	return !rule.value.trim();
 };
 
 export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
@@ -138,6 +170,8 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 	disabled,
 	title = "Define Rules (all conditions must match)",
 	emptyStateMessage = "Add at least one rule to define which features to include.",
+	mode = "and",
+	onModeChange,
 }) => {
 	const safeFields = fields || [];
 	const safeOperators = operators || [];
@@ -178,10 +212,19 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 		onChange(rules.filter((_, i) => i !== index));
 	};
 
-	const hasEmptyRules = rules.some(
-		(rule) =>
-			!rule.fieldKey.trim() || !rule.operator.trim() || !rule.value.trim(),
-	);
+	const handleModeChange = (
+		_event: React.MouseEvent<HTMLElement>,
+		next: DeliveryRuleGroupMode | null,
+	) => {
+		if (next === null || next === mode || !onModeChange) {
+			return;
+		}
+		onModeChange(next);
+	};
+
+	const hasEmptyRules = rules.some(ruleIsIncomplete);
+	const separatorLabel = mode === "or" ? "OR" : "AND";
+	const showModeToggle = Boolean(onModeChange) && rules.length >= 2;
 
 	return (
 		<Box data-testid="delivery-rule-builder">
@@ -202,6 +245,30 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 				</Alert>
 			)}
 
+			{showModeToggle && (
+				<Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+					<Typography variant="body2" sx={{ color: "text.secondary" }}>
+						Match
+					</Typography>
+					<ToggleButtonGroup
+						value={mode}
+						exclusive
+						size="small"
+						onChange={handleModeChange}
+						aria-label="Rule group match mode"
+						disabled={disabled}
+						data-testid="rule-group-mode-toggle"
+					>
+						<ToggleButton value="and" aria-label="Match all rules (AND)">
+							All (AND)
+						</ToggleButton>
+						<ToggleButton value="or" aria-label="Match any rule (OR)">
+							Any (OR)
+						</ToggleButton>
+					</ToggleButtonGroup>
+				</Box>
+			)}
+
 			{rules.map((rule, index) => (
 				<RuleRow
 					key={getRuleId(index)}
@@ -214,6 +281,7 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 					onDelete={handleDeleteRule}
 					disabled={disabled}
 					isLast={index === rules.length - 1}
+					separatorLabel={separatorLabel}
 				/>
 			))}
 

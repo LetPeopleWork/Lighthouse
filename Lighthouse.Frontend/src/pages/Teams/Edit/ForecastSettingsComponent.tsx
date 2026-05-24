@@ -9,6 +9,7 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
+import type { DeliveryRuleGroupMode } from "../../../components/Common/DeliveryRuleBuilder/types";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import ForecastFilterEditor from "../../../components/Teams/ForecastFilterEditor/ForecastFilterEditor";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -20,39 +21,50 @@ import { useTerminology } from "../../../services/TerminologyContext";
 const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
 const RULE_SET_SCHEMA_VERSION = 1;
 
-const parseRulesFromJson = (
-	json: string | null | undefined,
-): IWorkItemRuleCondition[] => {
+interface RuleSetData {
+	rules: IWorkItemRuleCondition[];
+	mode: DeliveryRuleGroupMode;
+}
+
+const parseRuleSetFromJson = (json: string | null | undefined): RuleSetData => {
 	if (!json || json.trim() === "") {
-		return [];
+		return { rules: [], mode: "and" };
 	}
 	try {
 		const parsed = JSON.parse(json) as {
 			conditions?: IWorkItemRuleCondition[];
+			mode?: string;
 		};
-		return parsed.conditions ?? [];
+		const mode: DeliveryRuleGroupMode =
+			parsed.mode?.toLowerCase() === "or" ? "or" : "and";
+		return { rules: parsed.conditions ?? [], mode };
 	} catch {
-		return [];
+		return { rules: [], mode: "and" };
 	}
 };
 
-const serializeRulesToJson = (rules: IWorkItemRuleCondition[]): string => {
+const serializeRuleSetToJson = (data: RuleSetData): string => {
 	return JSON.stringify({
 		version: RULE_SET_SCHEMA_VERSION,
-		conditions: rules,
+		mode: data.mode,
+		conditions: data.rules,
 	});
 };
 
 interface PremiumGatedForecastFilterProps {
 	teamId: number;
 	rules: IWorkItemRuleCondition[];
+	mode: DeliveryRuleGroupMode;
 	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
+	onModeChange: (mode: DeliveryRuleGroupMode) => void;
 }
 
 const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 	teamId,
 	rules,
+	mode,
 	onRulesChange,
+	onModeChange,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? true;
@@ -81,7 +93,9 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 					<ForecastFilterEditor
 						teamId={teamId}
 						rules={rules}
+						mode={mode}
 						onChange={onRulesChange}
+						onModeChange={onModeChange}
 					/>
 					<Alert
 						severity="info"
@@ -207,18 +221,32 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 				</Grid>
 			)}
 
-			{!isDefaultSettings && teamSettings && (
-				<PremiumGatedForecastFilter
-					teamId={teamSettings.id}
-					rules={parseRulesFromJson(teamSettings.forecastFilterRuleSetJson)}
-					onRulesChange={(rules) =>
+			{!isDefaultSettings &&
+				teamSettings &&
+				(() => {
+					const currentRuleSet = parseRuleSetFromJson(
+						teamSettings.forecastFilterRuleSetJson,
+					);
+					const persistRuleSet = (next: RuleSetData) => {
 						onTeamSettingsChange(
 							"forecastFilterRuleSetJson",
-							rules.length === 0 ? null : serializeRulesToJson(rules),
-						)
-					}
-				/>
-			)}
+							next.rules.length === 0 ? null : serializeRuleSetToJson(next),
+						);
+					};
+					return (
+						<PremiumGatedForecastFilter
+							teamId={teamSettings.id}
+							rules={currentRuleSet.rules}
+							mode={currentRuleSet.mode}
+							onRulesChange={(rules) =>
+								persistRuleSet({ rules, mode: currentRuleSet.mode })
+							}
+							onModeChange={(mode) =>
+								persistRuleSet({ rules: currentRuleSet.rules, mode })
+							}
+						/>
+					);
+				})()}
 		</InputGroup>
 	);
 };
