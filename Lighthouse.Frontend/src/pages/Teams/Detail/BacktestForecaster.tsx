@@ -23,10 +23,10 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { ITeam } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import BacktestResultDisplay from "./BacktestResultDisplay";
-
-const FORECAST_FILTER_TOGGLE_LABEL = "Apply forecast-throughput filter";
 
 function getLocaleDateFormat(): string {
 	const date = new Date(2000, 0, 2);
@@ -79,6 +79,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
 	const showFilterToggle = isPremium && hasForecastFilter;
+	const { getTerm } = useTerminology();
+	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
+	const filterToggleLabel = `Use filtered ${throughputTerm}`;
 	const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(
 		dayjs().subtract(31, "day"),
 	);
@@ -373,7 +376,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 										}}
 									/>
 								}
-								label={FORECAST_FILTER_TOGGLE_LABEL}
+								label={filterToggleLabel}
 							/>
 						</Grid>
 					)}

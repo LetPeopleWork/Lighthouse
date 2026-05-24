@@ -223,7 +223,7 @@ describe("ForecastSettingsComponent", () => {
 	});
 });
 
-describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
+describe("ForecastSettingsComponent — Exclude Items for Throughput sub-section", () => {
 	const teamSettings = createMockTeamSettings();
 	const onTeamSettingsChange = vi.fn();
 
@@ -251,7 +251,7 @@ describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
 		});
 
 		expect(
-			screen.getByRole("heading", { name: "Forecast Filter (Premium)" }),
+			screen.getByRole("heading", { name: "Exclude Items for Throughput" }),
 		).toBeInTheDocument();
 	});
 
@@ -266,11 +266,10 @@ describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByText(/Forecast Filter is a Premium feature/i),
-		).toBeInTheDocument();
-		const learnMoreLink = screen.getByRole("link", { name: /learn more/i });
-		expect(learnMoreLink).toHaveAttribute(
+		const premiumLink = screen.getByRole("link", {
+			name: /premium license/i,
+		});
+		expect(premiumLink).toHaveAttribute(
 			"href",
 			"/docs/premium-features#forecast-filter",
 		);
@@ -279,7 +278,7 @@ describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("does not render the Forecast Filter sub-section at all when the team page is in default-settings mode", () => {
+	it("does not render the sub-section at all when the team page is in default-settings mode", () => {
 		mockCanUsePremiumFeatures.mockReturnValue(true);
 
 		renderWithContext(
@@ -291,13 +290,13 @@ describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
 		);
 
 		expect(
-			screen.queryByRole("heading", { name: "Forecast Filter (Premium)" }),
+			screen.queryByRole("heading", { name: "Exclude Items for Throughput" }),
 		).not.toBeInTheDocument();
 		expect(
 			screen.queryByTestId("delivery-rule-builder"),
 		).not.toBeInTheDocument();
 		expect(
-			screen.queryByText(/Forecast Filter is a Premium feature/i),
+			screen.queryByRole("link", { name: /premium license/i }),
 		).not.toBeInTheDocument();
 	});
 
@@ -317,7 +316,7 @@ describe("ForecastSettingsComponent — Forecast Filter sub-section", () => {
 			name: "Use Fixed Dates for Throughput",
 		});
 		const subHeading = screen.getByRole("heading", {
-			name: "Forecast Filter (Premium)",
+			name: "Exclude Items for Throughput",
 		});
 
 		expect(throughputField).toBeInTheDocument();

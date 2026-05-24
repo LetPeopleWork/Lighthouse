@@ -696,8 +696,8 @@ describe("BacktestForecaster component", () => {
 		});
 	});
 
-	describe("Apply forecast-throughput filter toggle", () => {
-		const TOGGLE_LABEL = "Apply forecast-throughput filter";
+	describe("Use filtered Throughput toggle", () => {
+		const TOGGLE_LABEL = "Use filtered Throughput";
 
 		afterEach(() => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
