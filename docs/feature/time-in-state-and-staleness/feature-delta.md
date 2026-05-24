@@ -21,8 +21,8 @@ Job-id: `job-flow-coach-spot-stuck-items` (in `docs/product/jobs.yaml`).
 | ID | Decision | Verdict |
 |---|---|---|
 | D1 | State transitions are pulled from source-of-truth where available (Jira, ADO confirmed; Linear investigated at DESIGN). For CSV or any connector that can't expose history, fall back to sync-side delta capture (compare current State to last-known on every sync). | Locked |
-| D2 | Blocked transitions are out of scope for this feature; deferred to slice E with a different mechanism (always Lighthouse-side per-sync). | Locked (deferred) |
-| D3 | Slice ordering across Epic 4144: A+B1+D (this feature) → F → B2 → B3 → C → E. | Locked |
+| D2 | Blocked transitions are out of scope for this feature; tracked under Epic #5074 (`docs/feature/epic-5074-blocked-items/`) with a different mechanism. | Locked (deferred) |
+| D3 | Slice ordering across Epic 4144: A+B1+D (this feature) → F → B2 → B3 → C. | Locked |
 | D7 | Staleness threshold: one integer per Team, one per Portfolio. No per-state thresholds. | Locked |
 | D8 | Default staleness threshold: 7 days for newly-created teams; 14 days for newly-created portfolios. Revisable based on `OUT-staleness-threshold-tuning` KPI. | Locked (revisable post-release) |
 | D9 | No changes to existing Cycle Time or Work Item Age semantics. Time-in-state is a new measurement that coexists with them. | Locked |
@@ -115,7 +115,7 @@ Decision enabled: how aggressive the portfolio-level signal should be (typically
 - B3 — cumulative time-per-state across timeframe (separate future feature)
 - C — detailed CFD using actual states (separate future feature)
 - F — pace-percentiles bands on the Work Item Aging chart (separate future feature)
-- E — blocked-time history (separate mechanism, separate future feature)
+- Blocked-time history (Epic #5074, separate mechanism — see `docs/feature/epic-5074-blocked-items/`)
 - Per-state thresholds (locked D7)
 - Changes to existing CycleTime / WorkItemAge computation
 - Backfilling historical state transitions from before this feature ships (data accumulates forward-only)
