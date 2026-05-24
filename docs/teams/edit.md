@@ -75,19 +75,25 @@ If you use a *fixed* Throughput, you must specify a start and end date. The end 
 {: .note}
 As mentioned above, use a *fixed* Throughput with caution, and ideally only temporarily. Examples where it may be useful is if most of the team is off for some time (for example if the offices are closed for a week or more, like it happens for some companies in the Christmas period). As soon as you have enough data after this period again, we encourage you to switch back to the *dynamic* Throughput.
 
-## Filter Forecast Throughput (Premium)
-The *Filter Forecast Throughput* setting lets a team-admin define which work items should NOT count toward forecast throughput, using the same rule editor Lighthouse already uses for rule-based deliveries. This is a [Premium Capability](../licensing/licensing.html#licensed-features).
+## Exclude Items for Throughput (Premium)
+The *Exclude Items for Throughput* setting lets a team-admin define which work items should NOT count toward forecast throughput, using the same rule editor Lighthouse already uses for rule-based deliveries. This is a [Premium Capability](../licensing/licensing.html#licensed-features).
 
 The intent is to remove "noise" from the Monte Carlo throughput sample so the forecast reflects the kind of work the team will actually deliver against the upcoming feature backlog. Typical exclusions are Bug items, orphan items (work items with no parent), and tag-driven categories like *maintenance* or *spike*.
 
 ### How the rule set is defined
-The editor exposes the same operators as rule-based deliveries (`equals`, `notEquals`, `contains`) and the following WorkItem fields:
+The editor offers the following operators:
+
+- `Equals` / `Not Equals` — exact match (case-insensitive).
+- `Contains` / `Does Not Contain` — substring match (case-insensitive).
+- `Is Empty` / `Is Not Empty` — match when the field is blank (empty string, missing, or null) / not blank. These two operators take no value input — only the field selection is needed.
+
+Fields available:
 
 - `Type`
 - `State`
 - `Name`
 - `Reference ID`
-- `Parent Reference ID` (use `equals` with an empty value to match orphan items)
+- `Parent Reference ID` (use `Is Empty` to match orphan items)
 - `Tags`
 - Connector-defined `additionalField.{id}` entries — same set as delivery rules for this team's connection
 
@@ -95,16 +101,38 @@ A rule that **matches** a work item means **exclude this item from forecast thro
 
 The rule set is constrained to a maximum of 20 conditions, each with a value up to 500 characters and a known field key. Saving with zero conditions explicitly clears the filter; no separate "delete filter" action exists.
 
-### Where the filter applies
-- **Feature Forecasts** — always use the filter when one is configured (no per-run override on Feature Forecasts).
-- **Team Forecast** (How Many / When) — per-run toggle, defaulted to **on**.
-- **Backtest** — per-run toggle, defaulted to **on**.
-- **Throughput Run Chart** and **Throughput PBC** — per-view toggle, defaulted to **Raw** (the filtered view is opt-in).
+### Combining multiple rules — AND or OR
+When the rule set has two or more rules, a **Match** toggle appears above the rule list: choose **All (AND)** to require every rule to match, or **Any (OR)** to require at least one. The mode applies to the whole group — you cannot mix AND and OR within a single rule set.
 
-When any surface is computed against the filtered throughput, a small chip labelled **"Filtered throughput"** renders adjacent to the percentile dates / chart title / backtest output. Hover the chip for a human-readable summary of the active rules (for example: *Type = Bug; Parent Reference ID = (empty); Tags contains "maintenance"*).
+A concrete example: to exclude everything that doesn't directly contribute to feature delivery, configure:
+
+```
+Match: Any (OR)
+  Type Equals Bug
+  Parent Reference ID Is Empty
+```
+
+That excludes both Bug-typed items AND orphan items (work items with no parent) from forecast throughput — a useful default for teams whose Monte Carlo history would otherwise be skewed by these two categories.
+
+### Save and refresh — making changes take effect
+Changes to the filter only take effect after **two** steps:
+
+1. **Save** the team settings. This persists the rule set to the team configuration.
+2. **Refresh Throughput data** on the team page. The cached throughput is recomputed against the new filter.
+
+The editor surfaces an inline reminder for this directly below the rule list. Without the refresh, forecasts on the team detail page continue to use the cached unfiltered throughput.
+
+### Where the filter applies
+- **Feature Forecasts** — always use the filter when one is configured.
+- **Team Forecast** (How Many / When) — per-run toggle labeled **"Use filtered Throughput"**, on by default.
+- **Backtest** — per-run toggle labeled **"Use filtered Throughput"**, on by default. Toggling clears any prior backtest result, so the user clicks *Run Backtest* again to see the new values.
+- **Throughput Run Chart**, **Throughput PBC**, and **Predictability Score Details** — per-view toggle labeled **"Use filtered Throughput"**, off by default (raw view is the default; the filtered view is opt-in for these visualisations).
+
+### Quick-settings indicator
+When a filter is configured, the **Throughput** icon in the team's quick-settings bar (header) changes to an info colour and its tooltip mentions *"Forecast filter active — some throughput items excluded"*. This signals at a glance that the team has the feature configured, without occupying space on every chart or forecast surface.
 
 ### Empty-filter fallback
-If the rule set excludes every closed item in the throughput window, the forecast or backtest **falls back to unfiltered throughput** and the chip switches to a warning style with the copy *"Filter excluded all throughput; showing unfiltered forecast"*. This ensures the forecast remains usable even when the filter is too aggressive for the current window. The throughput charts behave differently: in their **Filtered** view a zero-match window simply shows an empty chart (the user explicitly asked for the filtered view, so no automatic fallback occurs).
+If the rule set excludes every closed item in the throughput window, the forecast or backtest **falls back to unfiltered throughput** so the result is still usable even when the filter is too aggressive for the current window. The throughput charts behave differently: in their **filtered** view a zero-match window simply shows an empty chart (the user explicitly asked for the filtered view, so no automatic fallback occurs).
 
 ### Premium gate and license downgrades
 The rule editor and all per-run / per-view toggles are visible only to premium tenants. If a premium tenant downgrades, the persisted rule set remains on the team (no destructive deletion); the backend silently no-ops the filter and the toggles disappear from every surface. Re-upgrading the license restores filtered behaviour without re-configuration.
