@@ -738,6 +738,27 @@ describe("BacktestForecaster component", () => {
 			expect(onApplyFilterOverrideChange).toHaveBeenCalledWith(false);
 		});
 
+		it("clears the existing backtest result when the user toggles the filter", () => {
+			mockCanUsePremiumFeatures.mockReturnValue(true);
+			const existingResult: BacktestResult = {
+				startDate: dayjs().subtract(60, "day").toDate(),
+				endDate: dayjs().subtract(30, "day").toDate(),
+				historicalStartDate: dayjs().subtract(90, "day").toDate(),
+				historicalEndDate: dayjs().subtract(60, "day").toDate(),
+				percentiles: [new HowManyForecast(50, 10)],
+				actualThroughput: 12,
+				filterApplied: true,
+			};
+			renderWithContext({
+				...defaultProps,
+				backtestResult: existingResult,
+				hasForecastFilter: true,
+				applyFilterOverride: true,
+			});
+			fireEvent.click(screen.getByLabelText(TOGGLE_LABEL));
+			expect(mockOnClearBacktestResult).toHaveBeenCalled();
+		});
+
 		it("requests view=filtered for both throughput fetches when filter is on, premium, and configured", async () => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
 			const mockResult: BacktestResult = {

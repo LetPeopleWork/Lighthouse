@@ -367,9 +367,10 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 								control={
 									<Switch
 										checked={applyFilterOverride}
-										onChange={(event) =>
-											onApplyFilterOverrideChange?.(event.target.checked)
-										}
+										onChange={(event) => {
+											onApplyFilterOverrideChange?.(event.target.checked);
+											onClearBacktestResult();
+										}}
 									/>
 								}
 								label={FORECAST_FILTER_TOGGLE_LABEL}
