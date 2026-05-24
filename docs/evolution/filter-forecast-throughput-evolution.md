@@ -7,7 +7,7 @@
 **Customer**: Liz / JLP at LetPeopleWork
 **Waves shipped**: DISCUSS → DESIGN → DISTILL → DELIVER (2026-05-20 → 2026-05-23)
 **Commit range**: `34c4b0c3..498a02d9` (origin/main) — ~40 commits inclusive of CI infra fixes, post-archive defect resolution, and the H-1 chip-tooltip wiring.
-**Status**: DELIVER complete. OD-1 (toggle render) **RESOLVED**. OD-2 (BaseMetricsView prop forwarding) **partially resolved** (chip tooltip done; PBC server-side toggle deferred). OD-3 (Playwright walking skeleton) **closed** by deletion — spec to be rewritten when remaining wiring lands. One quality follow-up remains: mutation kill rate 69.17%, below the 80% gate.
+**Status**: DELIVER complete. OD-1 (toggle render) **RESOLVED**. OD-2 (BaseMetricsView prop forwarding + PBC server-side toggle) **RESOLVED**. OD-3 (Playwright walking skeleton) **closed** by deletion — spec to be rewritten when premium-license fixture is ready. One quality follow-up remains: mutation kill rate 69.17%, below the 80% gate.
 
 > UPDATE — This archive's earlier "WARNING" section described OD-1 as under active debug. Resolved in commit `8deba479` (2026-05-23): `ForecastFilterRuleService.GetEffectiveRuleSet` was calling `JsonSerializer.Deserialize<WorkItemRuleSet>(...)` without `PropertyNameCaseInsensitive = true`. The FE writes camelCase JSON; `Conditions` therefore bound to an empty list at the read path and `GetEffectiveRuleSet` returned `null`, so the Metrics-page toggle never rendered. Fix: shared `static readonly JsonSerializerOptions { PropertyNameCaseInsensitive = true }` passed to the Deserialize call. Test: `GetEffectiveRuleSet_PremiumTenantCamelCaseJson_ReturnsDeserialisedRuleSet`. New memory filed: `feedback_systemtextjson_case_insensitive`.
 
@@ -85,16 +85,11 @@ The three items below carried forward from the original archive write at `c7824d
 
 **Related cosmetic fix in the same commit**: collapsed a vacuous OR-operand in `TeamMetricsService` (`mode == Respect && rs == null || rs == null` was logically equivalent to `rs == null`).
 
-### OD-2 — PARTIALLY RESOLVED (commit `498a02d9`, 2026-05-23)
+### OD-2 — RESOLVED (chip-tooltip half: commit `498a02d9`, 2026-05-23; PBC server-side half: commit `7dbc16b7`, 2026-05-24)
 
-**Resolved half**: `BaseMetricsView` now passes `excludedSummary` to `ThroughputChartFilterToggle` for the Run Chart slot. New helper `formatConditions(conditions): string` in `evaluateCondition.ts` produces a human-readable summary string per the existing `FilteredThroughputChip.test.tsx` expectation (`"Type = Bug; Tags contains \"maintenance\""`). 7 Vitest cases on the helper, including per-operator, multi-condition join, additionalField rendering, case-insensitivity, and empty-array edge case.
+**Chip-tooltip half** (`498a02d9`): `BaseMetricsView` passes `excludedSummary` to `ThroughputChartFilterToggle` for the Run Chart slot. New helper `formatConditions(conditions): string` in `evaluateCondition.ts` produces a human-readable summary string per the existing `FilteredThroughputChip.test.tsx` expectation (`"Type = Bug; Tags contains \"maintenance\""`). 7 Vitest cases on the helper, including per-operator, multi-condition join, additionalField rendering, case-insensitivity, and empty-array edge case.
 
-**Deferred half**: PBC server-side toggle wiring. `BaseMetricsView`'s `buildPbcWidget` does not yet:
-- Render a `<ThroughputChartFilterToggle chartKind="pbc" onServerViewChange={...}>`
-- Wire `onServerViewChange` to a refetch handler on the PBC endpoint with `?view=filtered`
-- Extend `useMetricsData` to accept a `view` parameter and trigger a re-fetch
-
-A code-comment marker exists at the `buildPbcWidget` function pointing at this archive entry. This is real but bounded work — requires touching the hook and the PBC widget; estimated ~1-2h focused crafter session.
+**PBC server-side half** (`7dbc16b7`): `MetricsService.getThroughputPbc` accepts an optional `view: "raw" | "filtered"` parameter, appending `&view=filtered` to the URL only when explicitly requested (raw stays the backend default per DDD-5, preserving the D1 non-breaking invariant). `useMetricsData` exposes a `refetchThroughputPbc(view)` callback. `BaseMetricsView.buildPbcNode` renders `ThroughputChartFilterToggle` (chartKind="pbc") in the Throughput PBC widget's `filterToggle` slot only — Cycle Time, WIP, Total Work Item Age, Feature Size, and Arrivals PBCs are unchanged. Service-layer tests cover URL contract (raw/filtered/omitted); component-layer tests cover toggle visibility on the Throughput PBC only and the refetch round-trip with `view="filtered"`.
 
 ### OD-3 — CLOSED-BY-DELETION (commit `35017162`, 2026-05-23)
 
@@ -192,13 +187,14 @@ Three EF migrations shipped in this feature (`Team.ForecastFilterRuleSetJson`, t
 - `3187d37f` revert(ci): drop pnpm.overrides — restores Verify Frontend + Package App + verifysqlite + verifypostgres green; sonar-gates remains red on the qs audit
 - `3bd3d4e0` docs(ci-learnings): correct pnpm.overrides entry — root cause unresolved, rollback workaround in place
 - `498a02d9` fix(forecast): thread excludedSummary into ThroughputChartFilterToggle — **the OD-2 chip-tooltip half**
+- `7dbc16b7` feat(forecast): wire PBC server-side toggle — **the OD-2 PBC server-side close-out**
 
 ---
 
 ## Follow-ups (carry into next session)
 
 1. ~~**OD-1**~~ — RESOLVED `8deba479`.
-2. **OD-2 PBC server-side half** — Wire `chartKind="pbc"` toggle into `buildPbcWidget` in `BaseMetricsView.tsx`. Extend `useMetricsData` hook with a `view` parameter; expose a refetch handler the toggle's `onServerViewChange` invokes; pass it down via the `filterToggle` slot on `ProcessBehaviourChart`. Estimated: 1-2h focused crafter session.
+2. ~~**OD-2 PBC server-side half**~~ — RESOLVED `7dbc16b7`. `MetricsService.getThroughputPbc(..., view?)` + `useMetricsData.refetchThroughputPbc(view)` + `BaseMetricsView.buildPbcNode` filterToggle slot on the Throughput PBC only.
 3. ~~**OD-3**~~ — Closed by deletion at `35017162`. When picked back up: extend `testWithUpdatedTeams` fixture to seed a Portfolio + Feature; rewrite the spec from scratch; run locally per `reference_premium_license_dev_seed` memory.
 4. **Mutation testing under 80% gate** — re-ran 2026-05-23 after the JSON-case fix + scaffold activations + CA1861 hoists: **69.17%** (was 69.09%; +0.08%). Worst slice files: `TeamMetricsService` 48.2% (110 surviving mutants, the biggest opportunity), `ForecastService` 57.5%, `ForecastFilterRuleService` 69.2%, `RuleEvaluator` 73.2%, `ForecastController` 79.2%, plus four small files (`WhenForecastDto`, `AggregatedWhenForecast`, `TeamSettingDto`) below 80%. ~99 more mutants need killing to clear the gate. Estimated: 2-4h focused crafter session targeting `TeamMetricsService` + `ForecastService`.
 5. **L1-L6 refactor pass** — landed for slice 01-05 production code in `f0482d56..3f7d2af9` (5 commits, 10 files). The exclusions list (the toggle-render path) was honoured — that path can be revisited now that OD-1 + the OD-2 chip-tooltip half are landed.
