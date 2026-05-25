@@ -364,7 +364,11 @@ export function computeCycleTimeScatterplotRag(
 export function computeWorkItemAgeChartRag(
 	sle: { percentile: number; value: number } | null,
 	hasBlockedConfig: boolean,
-	items: ReadonlyArray<{ workItemAge: number; isBlocked: boolean }>,
+	items: ReadonlyArray<{
+		workItemAge: number;
+		isBlocked: boolean;
+		isStale: boolean;
+	}>,
 	terms: RagTerms,
 ): RagResult {
 	if (!sle) {
@@ -391,20 +395,24 @@ export function computeWorkItemAgeChartRag(
 	const abovePercent = (aboveSle.length / items.length) * 100;
 	const allowedAbove = 100 - sle.percentile;
 	const hasBlocked = items.some((i) => i.isBlocked);
+	const hasStale = items.some((i) => i.isStale);
+	const hasFlagged = hasBlocked || hasStale;
 	const anyAbove = aboveSle.length > 0;
 
-	const blockedSuffix = hasBlocked ? `, and some are ${terms.blocked}` : "";
+	const flaggedSuffix = hasFlagged
+		? `, and some are ${terms.blocked} or stale`
+		: "";
 
-	if (abovePercent > allowedAbove || (anyAbove && hasBlocked)) {
+	if (abovePercent > allowedAbove || (anyAbove && hasFlagged)) {
 		return {
 			ragStatus: "red",
-			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days (${abovePercent.toFixed(1)}%, expected: ${allowedAbove}%)${blockedSuffix}. Resolve immediately.`,
+			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days (${abovePercent.toFixed(1)}%, expected: ${allowedAbove}%)${flaggedSuffix}. Resolve immediately.`,
 		};
 	}
-	if (anyAbove || hasBlocked) {
+	if (anyAbove || hasFlagged) {
 		return {
 			ragStatus: "amber",
-			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days${blockedSuffix}. Monitor closely.`,
+			tipText: `${aboveSle.length} ${terms.workItem}(s) exceed the ${terms.sle} of ${sle.value} days${flaggedSuffix}. Monitor closely.`,
 		};
 	}
 	return {

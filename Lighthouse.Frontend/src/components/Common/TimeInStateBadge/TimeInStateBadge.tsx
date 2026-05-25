@@ -1,11 +1,13 @@
 import { Box } from "@mui/material";
 import type React from "react";
 import getAgeInDaysFromStart from "../../../utils/date/age";
+import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 
 type TimeInStateBadgeProps = {
 	currentStateEnteredAt: Date | null;
 	currentStateName: string;
 	stalenessThresholdDays?: number;
+	isBlocked?: boolean;
 	now?: Date;
 };
 
@@ -24,6 +26,7 @@ const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 	currentStateEnteredAt,
 	currentStateName,
 	stalenessThresholdDays,
+	isBlocked = false,
 	now = new Date(),
 }) => {
 	if (currentStateEnteredAt === null) {
@@ -33,10 +36,11 @@ const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 	const days = daysInState(currentStateEnteredAt, now);
 	const label = `${days}d in ${currentStateName}`;
 
-	const isStale =
-		stalenessThresholdDays !== undefined &&
-		stalenessThresholdDays > 0 &&
-		days > stalenessThresholdDays;
+	const isStale = deriveStaleness(
+		{ currentStateEnteredAt, isBlocked },
+		stalenessThresholdDays,
+		now,
+	);
 
 	if (isStale) {
 		return (

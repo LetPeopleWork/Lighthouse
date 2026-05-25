@@ -239,6 +239,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 						currentStateEnteredAt={row.currentStateEnteredAt ?? null}
 						currentStateName={row.state}
 						stalenessThresholdDays={timeInStateColumn.stalenessThresholdDays}
+						isBlocked={row.isBlocked}
 						now={timeInStateColumn.now}
 					/>
 				),

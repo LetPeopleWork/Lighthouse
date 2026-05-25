@@ -459,8 +459,8 @@ describe("ragRules", () => {
 		it("returns red when any item is above SLE", () => {
 			const sle = { percentile: 85, value: 14 };
 			const items = [
-				{ workItemAge: 10, isBlocked: false },
-				{ workItemAge: 15, isBlocked: false },
+				{ workItemAge: 10, isBlocked: false, isStale: false },
+				{ workItemAge: 15, isBlocked: false, isStale: false },
 			];
 			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("red");
@@ -470,8 +470,12 @@ describe("ragRules", () => {
 			const sle = { percentile: 85, value: 14 };
 			// 1 of 10 above SLE → 10% <= allowedAbove(15%) → anyAbove=true → amber
 			const items = [
-				{ workItemAge: 15, isBlocked: false },
-				...new Array(9).fill({ workItemAge: 5, isBlocked: false }),
+				{ workItemAge: 15, isBlocked: false, isStale: false },
+				...new Array(9).fill({
+					workItemAge: 5,
+					isBlocked: false,
+					isStale: false,
+				}),
 			];
 			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("amber");
@@ -480,18 +484,38 @@ describe("ragRules", () => {
 		it("returns amber when any item is blocked", () => {
 			const sle = { percentile: 85, value: 14 };
 			const items = [
-				{ workItemAge: 5, isBlocked: true },
-				{ workItemAge: 3, isBlocked: false },
+				{ workItemAge: 5, isBlocked: true, isStale: false },
+				{ workItemAge: 3, isBlocked: false, isStale: false },
 			];
 			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("amber");
 		});
 
+		it("returns amber when any item is stale, mirroring blocked", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 5, isBlocked: false, isStale: true },
+				{ workItemAge: 3, isBlocked: false, isStale: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("returns red when items are both above SLE and stale, mirroring blocked", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 15, isBlocked: false, isStale: true },
+				{ workItemAge: 3, isBlocked: false, isStale: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
+			expect(result.ragStatus).toBe("red");
+		});
+
 		it("returns green when no blockers and all below SLE", () => {
 			const sle = { percentile: 85, value: 14 };
 			const items = [
-				{ workItemAge: 5, isBlocked: false },
-				{ workItemAge: 8, isBlocked: false },
+				{ workItemAge: 5, isBlocked: false, isStale: false },
+				{ workItemAge: 8, isBlocked: false, isStale: false },
 			];
 			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
 			expect(result.ragStatus).toBe("green");

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
-import { getColorMapForKeys } from "../../../utils/theme/colors";
+import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
 import WorkItemAgingChart from "./WorkItemAgingChart";
 
 // Mock the Material-UI theme
@@ -18,37 +18,58 @@ vi.mock("@mui/material", async () => {
 
 // Mock WorkItemsDialog component
 vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
-	default: vi.fn(({ title, items, open, onClose }) => {
-		if (!open) return null;
-		return (
-			<div data-testid="work-items-dialog">
-				<h2>{title}</h2>
-				<button type="button" onClick={onClose} data-testid="close-dialog">
-					Close
-				</button>
-				<table>
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Type</th>
-							<th>State</th>
-							<th>Age</th>
-						</tr>
-					</thead>
-					<tbody>
-						{items?.map((item: IWorkItem) => (
-							<tr key={item.id}>
-								<td>{item.name}</td>
-								<td>{item.type}</td>
-								<td>{item.state}</td>
-								<td>{item.workItemAge} days</td>
+	default: vi.fn(
+		({
+			title,
+			items,
+			open,
+			onClose,
+			timeInStateColumn,
+		}: {
+			title: string;
+			items?: IWorkItem[];
+			open: boolean;
+			onClose: () => void;
+			timeInStateColumn?: { stalenessThresholdDays?: number };
+		}) => {
+			if (!open) return null;
+			return (
+				<div
+					data-testid="work-items-dialog"
+					data-time-in-state-threshold={
+						timeInStateColumn
+							? String(timeInStateColumn.stalenessThresholdDays)
+							: undefined
+					}
+				>
+					<h2>{title}</h2>
+					<button type="button" onClick={onClose} data-testid="close-dialog">
+						Close
+					</button>
+					<table>
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>State</th>
+								<th>Age</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
-		);
-	}),
+						</thead>
+						<tbody>
+							{items?.map((item: IWorkItem) => (
+								<tr key={item.id}>
+									<td>{item.name}</td>
+									<td>{item.type}</td>
+									<td>{item.state}</td>
+									<td>{item.workItemAge} days</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			);
+		},
+	),
 }));
 
 // Mock the MUI-X Charts
@@ -642,6 +663,80 @@ describe("WorkItemAgingChart component", () => {
 
 			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+		});
+	});
+
+	describe("Stale items functionality", () => {
+		const now = new Date("2026-05-25T12:00:00Z");
+
+		const seriesColorOf = (
+			items: IWorkItem[],
+			stalenessThresholdDays: number,
+		): string | undefined => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={items}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					stalenessThresholdDays={stalenessThresholdDays}
+					now={now}
+				/>,
+			);
+
+			const container = screen.getByTestId("mock-chart-container");
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			return series?.[0]?.data?.[0]?.color;
+		};
+
+		it("reds a stale, non-blocked bubble with the same emphasis as blocked", () => {
+			const staleItem: IWorkItem = {
+				...mockInProgressItems[0],
+				isBlocked: false,
+				currentStateEnteredAt: new Date("2026-05-23T23:00:00Z"),
+			};
+
+			expect(seriesColorOf([staleItem], 1)).toBe(errorColor);
+		});
+
+		it("does not red a stale bubble when staleness is disabled (threshold 0)", () => {
+			const oldButNotStaleItem: IWorkItem = {
+				...mockInProgressItems[0],
+				isBlocked: false,
+				currentStateEnteredAt: new Date("2026-05-23T23:00:00Z"),
+			};
+
+			expect(seriesColorOf([oldButNotStaleItem], 0)).not.toBe(errorColor);
+		});
+
+		it("gives the bubble dialog a Time in State column carrying the staleness threshold", async () => {
+			const { default: WorkItemsDialogMock } = await import(
+				"../WorkItemsDialog/WorkItemsDialog"
+			);
+
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					stalenessThresholdDays={7}
+					now={now}
+				/>,
+			);
+
+			const calls = (
+				WorkItemsDialogMock as unknown as {
+					mock: { calls: Array<[{ timeInStateColumn?: unknown }]> };
+				}
+			).mock.calls;
+			const dialogProps = calls[calls.length - 1]?.[0];
+
+			expect(dialogProps?.timeInStateColumn).toEqual({
+				now,
+				stalenessThresholdDays: 7,
+			});
 		});
 	});
 

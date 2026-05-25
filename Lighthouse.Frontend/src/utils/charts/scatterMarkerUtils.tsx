@@ -5,6 +5,7 @@ import { errorColor } from "../theme/colors";
 export interface BaseGroupedItem<T> {
 	items: T[];
 	hasBlockedItems?: boolean;
+	hasStaleItems?: boolean;
 	type?: string;
 }
 
@@ -84,7 +85,7 @@ export const getMarkerColor = <T extends BaseGroupedItem<unknown>>(
 	theme: Theme,
 	providedColor?: string,
 ): string => {
-	if (group.hasBlockedItems) {
+	if (group.hasBlockedItems || group.hasStaleItems) {
 		return errorColor;
 	}
 	const typeColor = group.type ? colorMap[group.type] : undefined;

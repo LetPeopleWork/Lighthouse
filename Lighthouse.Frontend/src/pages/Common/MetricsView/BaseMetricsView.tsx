@@ -38,6 +38,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
 import { getWidgetsForCategory } from "./categoryMetadata";
@@ -188,6 +189,7 @@ type RagInputs = {
 	readonly agingItems: ReadonlyArray<{
 		workItemAge: number;
 		isBlocked: boolean;
+		isStale: boolean;
 	}>;
 	readonly wipOverTimeValues: ReadonlyArray<number>;
 	readonly totalAgeStart: number;
@@ -711,6 +713,7 @@ function buildWidgetNodes(ctx: {
 	isPremium: boolean;
 	hasForecastFilter: boolean;
 	forecastFilterConditions: readonly EvaluatorCondition[];
+	stalenessThresholdDays: number | undefined;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
@@ -796,6 +799,7 @@ function buildWidgetNodes(ctx: {
 				percentileValues={ctx.percentileValues}
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
 				doingStates={ctx.doingStates}
+				stalenessThresholdDays={ctx.stalenessThresholdDays}
 			/>
 		),
 		loadBalanceMatrix: <LoadBalanceMatrixChart data={ctx.loadBalanceData} />,
@@ -1070,6 +1074,7 @@ export const BaseMetricsView = <
 		isPremium,
 		hasForecastFilter,
 		forecastFilterConditions,
+		stalenessThresholdDays,
 		refetchThroughputPbc,
 	});
 
@@ -1112,6 +1117,7 @@ export const BaseMetricsView = <
 		agingItems: inProgressItems.map((item) => ({
 			workItemAge: item.workItemAge,
 			isBlocked: item.isBlocked,
+			isStale: deriveStaleness(item, stalenessThresholdDays),
 		})),
 		wipOverTimeValues: wipOverTimeData
 			? Array.from({ length: wipOverTimeData.history }, (_, i) =>

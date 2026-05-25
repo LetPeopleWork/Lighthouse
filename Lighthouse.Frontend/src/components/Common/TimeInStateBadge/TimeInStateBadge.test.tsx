@@ -103,4 +103,19 @@ describe("TimeInStateBadge", () => {
 		expect(screen.getByText("—")).toBeInTheDocument();
 		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
 	});
+
+	test("does not apply the stale treatment to a blocked item over the threshold (blocked precedence)", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-23T23:00:00Z")}
+				currentStateName="In Progress"
+				stalenessThresholdDays={1}
+				isBlocked={true}
+				now={now}
+			/>,
+		);
+
+		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
+		expect(screen.getByText("3d in In Progress")).toBeInTheDocument();
+	});
 });
