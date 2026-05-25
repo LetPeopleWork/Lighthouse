@@ -115,6 +115,7 @@ const ScatterMarker = (
 				size: bubbleSize,
 				ariaLabel: `View ${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`,
 				onClick: handleOpenWorkItems,
+				testId: group.hasStaleItems ? "aging-bubble-stale" : undefined,
 			})}
 		</>
 	);
@@ -183,7 +184,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	serviceLevelExpectation = null,
 	doingStates,
 	stalenessThresholdDays,
-	now = new Date(),
+	now: providedNow,
 }) => {
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
@@ -224,6 +225,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 
+	const now = useMemo(() => providedNow ?? new Date(), [providedNow]);
 	const nowTime = now.getTime();
 
 	useEffect(() => {

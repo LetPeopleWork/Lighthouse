@@ -76,6 +76,11 @@ export class MetricsWidget {
 	async countStaleAgingBubbles(): Promise<number> {
 		return this.staleAgingBubbles.count();
 	}
+
+	async openDialogFromStaleBubble(): Promise<WorkItemsDialog> {
+		await this.staleAgingBubbles.first().click();
+		return new WorkItemsDialog(this.page);
+	}
 }
 
 export enum MetricsCategories {

@@ -193,11 +193,6 @@ test("flow coach sees a stale item red in the Work Item Aging Chart and its red 
 	request,
 	overviewPage,
 }) => {
-	test.fixme(
-		true,
-		"slice 03 US-07: aging-chart stale red bubbles + Time-in-State on bubble click (red when stale) + blocked precedence on every surface. Un-fixme when US-07 code (deriveStaleness + chart isStale) lands; confirm demo seed has a stale-not-blocked item and a blocked-over-threshold item.",
-	);
-
 	await loadDemoScenario(request, DEMO_SCENARIO_ID);
 	await waitForBackgroundUpdates(request);
 	await page.goto("/");
@@ -219,7 +214,7 @@ test("flow coach sees a stale item red in the Work Item Aging Chart and its red 
 	await expect(agingChart.Widget).toBeVisible();
 	expect(await agingChart.countStaleAgingBubbles()).toBeGreaterThan(0);
 
-	const agingDialog = await agingChart.openDialog();
+	const agingDialog = await agingChart.openDialogFromStaleBubble();
 	await expect(agingDialog.timeInStateColumnHeader).toBeVisible();
 	expect(await agingDialog.countStaleTimeInStateBadges()).toBeGreaterThan(0);
 });

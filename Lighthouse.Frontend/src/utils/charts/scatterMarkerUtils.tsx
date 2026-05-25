@@ -52,6 +52,7 @@ export interface MarkerButtonProps {
 	size: number;
 	ariaLabel: string;
 	onClick: () => void;
+	testId?: string;
 }
 
 export const renderMarkerButton = ({
@@ -60,6 +61,7 @@ export const renderMarkerButton = ({
 	size,
 	ariaLabel,
 	onClick,
+	testId,
 }: MarkerButtonProps) => (
 	<foreignObject x={x - size} y={y - size} width={size * 2} height={size * 2}>
 		<button
@@ -75,6 +77,7 @@ export const renderMarkerButton = ({
 			}}
 			onClick={onClick}
 			aria-label={ariaLabel}
+			data-testid={testId}
 		/>
 	</foreignObject>
 );
