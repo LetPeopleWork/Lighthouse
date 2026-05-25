@@ -7,6 +7,18 @@
 
 ---
 
+## Amendment (2026-05-25) — feature simplification
+
+The feature was scoped down with the user to "the coloring with the toggle, nothing more". This ADR is amended; the body below is **superseded where it conflicts** (see `aging-pace-percentiles/feature-delta.md` D6, DDD-6, DDD-8):
+
+1. **Bands are filled colored `<rect>` zones, not dashed `<line>` segments.** Per state column with data, render a stacked set of `<rect>`s spanning `x ∈ [stateIndex−0.4, stateIndex+0.4]` and the consecutive percentile boundaries in Y (`0→p50→p70→p85→p95→top`), filled from the `ForecastLevel` green→red palette, rendered **before the dots** so they sit behind them. The §Decision "Option B / custom SVG `<line>`" and Option E discussion are superseded on the *primitive* (rect vs line) — but the **core decision is unchanged**: extend `WorkItemAgingChart` via a custom SVG overlay inside the existing `<ChartsContainer>` coordinate system; sibling widget (C) and chart replacement (D) remain rejected for the same reasons.
+2. **One on/off toggle, not two chip groups.** A single `showPaceBands` boolean (one **Pace percentiles** chip in `PercentileLegend`, **off by default**) gates the whole overlay. §3's `visiblePerStatePercentiles` map and the `useChartVisibility` extension are **dropped** — `useChartVisibility` is unchanged; `showPaceBands` is a trivial local `useState`. §4's "second chip group with sub-header" becomes one chip. The existing percentile/SLE chips are untouched.
+3. **No low-sample tooltip, no per-segment hover, no `sampleSize`.** §6's low-sample handling and `IPerStatePercentileValues.sampleSize` are removed; a state with no data simply renders no band.
+
+Unchanged: extend-not-replace (reject C/D), the optional `perStatePercentileValues` prop with absent/empty ⇒ today-identical rendering, in-`ChartsContainer` coordinate system (no absolute positioning), and the data plumbing through `useMetricsData` / `BaseMetricsView` (now for both team and portfolio).
+
+---
+
 ## Context
 
 DISCUSS D6 locked the visual treatment: per-state bands render as **short horizontal segments anchored to each state column** (not full-width lines), at the same dashed style as today's full-width CT bands. The legend has TWO chip groups: `Cycle Time %iles (overall)` (existing full-width) and `Age-in-State %iles (per state)` (new per-column segments).
@@ -40,9 +52,9 @@ The architectural contract:
 1. **Chart component interface** — `WorkItemAgingChart` accepts a new optional prop `perStatePercentileValues?: IPerStatePercentileValues[]` where:
 
     ```
+    // AMENDED 2026-05-25 (DDD-4): sampleSize dropped
     interface IPerStatePercentileValues {
         state: string;
-        sampleSize: number;
         percentiles: IPercentileValue[];
     }
     ```

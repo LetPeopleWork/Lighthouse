@@ -7,6 +7,18 @@
 
 ---
 
+## Amendment (2026-05-25) — feature simplification
+
+The feature was scoped down with the user to "colored bands + one on/off toggle, nothing more". This ADR is amended; the body below is **superseded where it conflicts** with the points here (see `aging-pace-percentiles/feature-delta.md` D12, DDD-1, DDD-4):
+
+1. **Duration formula is now cumulative total age at state exit, not per-state duration.** The observation for a `(item, state, visit)` is `exitTransition.TransitionedAt − item.StartedDate` (the item's *total* work-item age at the moment it left the state) — **not** `exit − entry`. Reason: the chart's Y axis is total work-item age, so a band must be in total-age units to be comparable to the dots above its column; this also makes the bands rise monotonically left→right through the workflow (ActionableAgile parity). The `exit − entry` formula in §1 / §3 / the §A "max/sum" discussion is superseded — but **visit-level sampling is retained** (re-entries still contribute separate observations, each measured as total-age-at-that-exit).
+2. **No `sampleSize` and no low-sample handling.** §4's DTO drops `SampleSize`; §5's "n<10 low-sample tooltip" rules are **removed entirely** (the FE shows no low-sample messaging). States with zero observations are still omitted; everything else returns its bands. The DTO is `AgeInStatePercentilesDto(string State, IReadOnlyList<PercentileValue> Percentiles)`.
+3. **US-03 removed.** §B's "accepted for the FE-side US-03 tooltip computation" no longer applies — there is no dot tooltip annotation and this feature does not read `CurrentStateEnteredAt` at all.
+
+Unchanged: the "completed in window" membership rule (§2, `ClosedDate ∈ window`), the percentile function (§4, `PercentileCalculator`, defaults 50/70/85/95), and the caching policy (§6).
+
+---
+
 ## Context
 
 DISCUSS locked the user-facing contract: per-state percentile bands at 50/70/85/95 (D2) of the historical distribution of age-at-state-exit (D1), computed over the team's existing history window (D3), for completed items only (implicit in D5: empty/low-sample handling is keyed on the completed-item count per state). DESIGN must pin down precisely:
@@ -39,7 +51,8 @@ Sibling F DISCUSS lock D3: "window matches the existing `cycleTimePercentiles` e
 For a given workflow state `S` and a given work item `W` that was **completed within `[startDate, endDate]`** (definition below), every **completed visit** of `W` through `S` contributes one observation:
 
 ```
-observation(W, S, visit_i) = exitTransition_i.TransitionedAt - entryTransition_i.TransitionedAt
+# AMENDED 2026-05-25 (D12): cumulative total age at exit, NOT exit − entry
+observation(W, S, visit_i) = exitTransition_i.TransitionedAt - W.StartedDate
 ```
 
 where, ordered by `TransitionedAt` ascending across `W.Transitions`:
@@ -68,7 +81,8 @@ This rule is **explicitly different** from sibling `state-time-cumulative-view`'
 Per sample definition (1) above:
 
 ```
-ageAtStateExit = exitTransition.TransitionedAt - entryTransition.TransitionedAt
+# AMENDED 2026-05-25 (D12): cumulative total age at exit, NOT exit − entry
+ageAtStateExit = exitTransition.TransitionedAt - W.StartedDate
 ```
 
 Day-counting convention: project's existing `GetDateDifference` (date-only diff, ceiling — same as `WorkItemAge`).
@@ -82,9 +96,9 @@ Reuse the existing `PercentileCalculator.CalculatePercentile(List<int>, int)`. S
 Concrete shape per state:
 
 ```
+// AMENDED 2026-05-25 (DDD-4): SampleSize dropped — no low-sample messaging
 public sealed record AgeInStatePercentilesDto(
     string State,
-    int SampleSize,
     IReadOnlyList<PercentileValue> Percentiles);
 ```
 

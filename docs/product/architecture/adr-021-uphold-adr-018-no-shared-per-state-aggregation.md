@@ -7,6 +7,12 @@
 
 ---
 
+## Amendment (2026-05-25) — feature simplification
+
+The **decision below stands unchanged**: per-state percentiles are computed independently inside `TeamMetricsService` / `PortfolioMetricsService`; no shared `IPerStateAggregationService`. Only one incidental detail is stale: the Context's "duration = `exitTransition − entryTransition` per visit" was amended (ADR-019, D12) to **cumulative total age at exit** = `exitTransition − StartedDate`. This does not change the divergence argument vs sibling B3 (the membership rules still differ; the duration formulas still differ), so Path A still holds.
+
+---
+
 ## Context
 
 Sibling ADR-018 (`time-in-state-and-staleness` DESIGN, 2026-05-24) deferred the question of whether to introduce a shared `IPerStateAggregationService` for the two MVP consumers of `WorkItemStateTransition` (`aging-pace-percentiles` and `state-time-cumulative-view`). The sibling architect's verbatim rationale: *"Helper would conflate inclusion-rule semantics that sibling DISCUSSes deliberately distinguished. Defer the abstraction further; ship the primitive (repository); siblings consume independently."* The decision was deliberately punted to each sibling's DESIGN to be re-litigated when the queries are concrete.
