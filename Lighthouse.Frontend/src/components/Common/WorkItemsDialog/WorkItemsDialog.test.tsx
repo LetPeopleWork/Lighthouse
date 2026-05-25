@@ -663,6 +663,37 @@ describe("WorkItemsDialog Component", () => {
 			expect(badgeCells[1]).toHaveTextContent("8d in Review");
 			expect(badgeCells[2]).toHaveTextContent("3d in In Progress");
 		});
+
+		test("applies the stale treatment when the threshold reaches the badge", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={timeInStateItems}
+					highlightColumn={undefined}
+					timeInStateColumn={{ now, stalenessThresholdDays: 5 }}
+				/>,
+			);
+
+			const staleBadges = screen.getAllByTestId("time-in-state-stale");
+			expect(staleBadges).toHaveLength(2);
+			expect(staleBadges[0]).toHaveTextContent("16d in Active");
+			expect(staleBadges[1]).toHaveTextContent("8d in Review");
+		});
+
+		test("applies no stale treatment when the threshold is zero", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={timeInStateItems}
+					highlightColumn={undefined}
+					timeInStateColumn={{ now, stalenessThresholdDays: 0 }}
+				/>,
+			);
+
+			expect(
+				screen.queryByTestId("time-in-state-stale"),
+			).not.toBeInTheDocument();
+		});
 	});
 
 	describe("Feature owning team functionality", () => {

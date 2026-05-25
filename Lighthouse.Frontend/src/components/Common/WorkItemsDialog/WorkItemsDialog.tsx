@@ -49,6 +49,7 @@ export interface HighlightColumnDefinition {
 
 export interface TimeInStateColumnDefinition {
 	now?: Date;
+	stalenessThresholdDays?: number;
 }
 
 const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
@@ -237,6 +238,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 					<TimeInStateBadge
 						currentStateEnteredAt={row.currentStateEnteredAt ?? null}
 						currentStateName={row.state}
+						stalenessThresholdDays={timeInStateColumn.stalenessThresholdDays}
 						now={timeInStateColumn.now}
 					/>
 				),

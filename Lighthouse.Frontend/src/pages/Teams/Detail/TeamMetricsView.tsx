@@ -32,6 +32,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
+	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
+		number | undefined
+	>(undefined);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 	const [featureWip, setFeatureWip] = useState<number | undefined>(undefined);
@@ -82,6 +85,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				setHasBlockedConfig(
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
+				setStalenessThresholdDays(settings.stalenessThresholdDays);
 				setForecastFilterConditions(
 					parseForecastFilterConditions(settings.forecastFilterRuleSetJson),
 				);
@@ -119,6 +123,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			doingStates={doingStates}
 			hasForecastFilter={forecastFilterConditions.length > 0}
 			forecastFilterConditions={forecastFilterConditions}
+			stalenessThresholdDays={stalenessThresholdDays}
 		/>
 	);
 };

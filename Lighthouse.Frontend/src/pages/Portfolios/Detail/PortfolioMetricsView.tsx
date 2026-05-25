@@ -15,6 +15,9 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
+	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
+		number | undefined
+	>(undefined);
 	const { portfolioMetricsService, portfolioService } =
 		useContext(ApiServiceContext);
 
@@ -31,6 +34,7 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 				setHasBlockedConfig(
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
+				setStalenessThresholdDays(settings.stalenessThresholdDays);
 			} catch (err) {
 				console.error("Error fetching portfolio settings:", err);
 			}
@@ -47,6 +51,7 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			defaultDateRange={90}
 			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
+			stalenessThresholdDays={stalenessThresholdDays}
 		/>
 	);
 };

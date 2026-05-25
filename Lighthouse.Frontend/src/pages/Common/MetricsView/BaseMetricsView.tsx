@@ -99,6 +99,7 @@ export interface BaseMetricsViewProps<
 	doingStates: string[];
 	hasForecastFilter?: boolean;
 	forecastFilterConditions?: readonly EvaluatorCondition[];
+	stalenessThresholdDays?: number;
 }
 
 function formatDate(date: Date): string {
@@ -373,6 +374,7 @@ type ViewDataInputs = {
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
 	readonly arrivalsData: RunChartData | null;
 	readonly workItemLookup: Map<number, IWorkItem>;
+	readonly stalenessThresholdDays: number | undefined;
 	readonly terms: {
 		workItems: string;
 		features: string;
@@ -445,7 +447,9 @@ function buildViewData(
 			title: `${inputs.title} in Progress`,
 			items: inputs.inProgressItems,
 			highlightColumn: ageHighlight,
-			timeInStateColumn: {},
+			timeInStateColumn: {
+				stalenessThresholdDays: inputs.stalenessThresholdDays,
+			},
 		},
 		blockedOverview: {
 			title: `${terms.blocked} ${terms.workItems}`,
@@ -887,6 +891,7 @@ export const BaseMetricsView = <
 	doingStates,
 	hasForecastFilter = false,
 	forecastFilterConditions = [],
+	stalenessThresholdDays,
 }: BaseMetricsViewProps<T, E>) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { licenseStatus } = useLicenseRestrictions();
@@ -1167,6 +1172,7 @@ export const BaseMetricsView = <
 		estimationVsCycleTimeData,
 		arrivalsData,
 		workItemLookup,
+		stalenessThresholdDays,
 		terms: {
 			workItems: ragTerms.workItems,
 			features: ragTerms.features,
