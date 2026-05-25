@@ -28,7 +28,7 @@ import {
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import TimeInStateBadge, {
-	wholeDaysInState,
+	daysInState,
 } from "../TimeInStateBadge/TimeInStateBadge";
 
 export interface WorkItemsDialogProps {
@@ -82,7 +82,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 
 	const sortValueOf = (workItem: IWorkItem): number => {
 		if (timeInStateColumn) {
-			return wholeDaysInState(
+			return daysInState(
 				workItem.currentStateEnteredAt ?? null,
 				timeInStateColumn.now,
 			);
@@ -232,10 +232,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				width: 200,
 				sortable: true,
 				valueGetter: (_, row) =>
-					wholeDaysInState(
-						row.currentStateEnteredAt ?? null,
-						timeInStateColumn.now,
-					),
+					daysInState(row.currentStateEnteredAt ?? null, timeInStateColumn.now),
 				renderCell: ({ row }) => (
 					<TimeInStateBadge
 						currentStateEnteredAt={row.currentStateEnteredAt ?? null}

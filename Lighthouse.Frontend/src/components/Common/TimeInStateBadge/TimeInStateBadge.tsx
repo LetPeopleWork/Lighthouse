@@ -1,4 +1,5 @@
 import type React from "react";
+import getAgeInDaysFromStart from "../../../utils/date/age";
 
 type TimeInStateBadgeProps = {
 	currentStateEnteredAt: Date | null;
@@ -6,9 +7,7 @@ type TimeInStateBadgeProps = {
 	now?: Date;
 };
 
-const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
-
-export const wholeDaysInState = (
+export const daysInState = (
 	currentStateEnteredAt: Date | null,
 	now: Date = new Date(),
 ): number => {
@@ -16,21 +15,7 @@ export const wholeDaysInState = (
 		return 0;
 	}
 
-	const fromDateOnly = Date.UTC(
-		currentStateEnteredAt.getUTCFullYear(),
-		currentStateEnteredAt.getUTCMonth(),
-		currentStateEnteredAt.getUTCDate(),
-	);
-	const toDateOnly = Date.UTC(
-		now.getUTCFullYear(),
-		now.getUTCMonth(),
-		now.getUTCDate(),
-	);
-
-	return Math.max(
-		0,
-		Math.floor((toDateOnly - fromDateOnly) / MILLISECONDS_PER_DAY),
-	);
+	return getAgeInDaysFromStart(currentStateEnteredAt, now);
 };
 
 const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
@@ -42,7 +27,7 @@ const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 		return <span>—</span>;
 	}
 
-	const days = wholeDaysInState(currentStateEnteredAt, now);
+	const days = daysInState(currentStateEnteredAt, now);
 
 	return <span>{`${days}d in ${currentStateName}`}</span>;
 };

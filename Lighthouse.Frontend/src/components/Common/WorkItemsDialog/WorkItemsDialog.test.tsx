@@ -633,9 +633,9 @@ describe("WorkItemsDialog Component", () => {
 
 			expect(screen.getByText("Time in State")).toBeInTheDocument();
 
-			expect(screen.getByText("2d in In Progress")).toBeInTheDocument();
-			expect(screen.getByText("15d in Active")).toBeInTheDocument();
-			expect(screen.getByText("7d in Review")).toBeInTheDocument();
+			expect(screen.getByText("3d in In Progress")).toBeInTheDocument();
+			expect(screen.getByText("16d in Active")).toBeInTheDocument();
+			expect(screen.getByText("8d in Review")).toBeInTheDocument();
 		});
 
 		test("does not render the 'Time in State' column when timeInStateColumn is absent", () => {
@@ -659,9 +659,9 @@ describe("WorkItemsDialog Component", () => {
 				.getAllByRole("gridcell")
 				.filter((cell) => /d in /.test(cell.textContent ?? ""));
 
-			expect(badgeCells[0]).toHaveTextContent("15d in Active");
-			expect(badgeCells[1]).toHaveTextContent("7d in Review");
-			expect(badgeCells[2]).toHaveTextContent("2d in In Progress");
+			expect(badgeCells[0]).toHaveTextContent("16d in Active");
+			expect(badgeCells[1]).toHaveTextContent("8d in Review");
+			expect(badgeCells[2]).toHaveTextContent("3d in In Progress");
 		});
 	});
 
