@@ -4,7 +4,11 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDev
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Common;
 using Moq;
+using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
@@ -1102,6 +1106,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return new AzureDevOpsWorkTrackingConnector(
                 Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
                 factory);
+        }
+    }
+
+    public class AzureDevOpsStateTransitionParserTest
+    {
+        [Test]
+        public async Task GetAllStateTransitions_RevisionsWithThreeStateChanges_ReturnsAllTransitions()
+        {
+            var newDate = new DateTime(2025, 4, 24, 8, 0, 0, DateTimeKind.Utc);
+            var activeDate = new DateTime(2025, 4, 24, 9, 0, 0, DateTimeKind.Utc);
+            var resolvedDate = new DateTime(2025, 4, 24, 10, 0, 0, DateTimeKind.Utc);
+            var closedDate = new DateTime(2025, 4, 24, 11, 0, 0, DateTimeKind.Utc);
+
+            var witClient = CreateWitClientReturningRevisions(
+                CreateRevision("New", newDate),
+                CreateRevision("Active", activeDate),
+                CreateRevision("Resolved", resolvedDate),
+                CreateRevision("Closed", closedDate));
+
+            var transitions = await AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, 42);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions.Select(t => (t.FromState, t.ToState)), Is.EqualTo(new[]
+                {
+                    ("New", "Active"),
+                    ("Active", "Resolved"),
+                    ("Resolved", "Closed"),
+                }));
+
+                Assert.That(transitions[^1].ToState, Is.EqualTo("Closed"));
+                Assert.That(transitions[^1].TransitionedAt.Date, Is.EqualTo(closedDate.Date));
+            }
+        }
+
+        private static WorkItemTrackingHttpClient CreateWitClientReturningRevisions(params AdoWorkItem[] revisions)
+        {
+            var witClientMock = new Mock<WorkItemTrackingHttpClient>(new Uri("https://dev.azure.com/lighthouse-test"), new VssCredentials());
+            witClientMock
+                .Setup(c => c.GetRevisionsAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(revisions.ToList());
+
+            return witClientMock.Object;
+        }
+
+        private static AdoWorkItem CreateRevision(string state, DateTime changedDate)
+        {
+            return new AdoWorkItem
+            {
+                Fields = new Dictionary<string, object>
+                {
+                    [AzureDevOpsFieldNames.State] = state,
+                    [AzureDevOpsFieldNames.ChangedDate] = changedDate,
+                },
+            };
         }
     }
 }

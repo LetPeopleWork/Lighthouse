@@ -22,6 +22,7 @@ using Microsoft.TeamFoundation.Work.WebApi;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 using Board = Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards.Board;
 using LighthouseWorkItem = Lighthouse.Backend.Models.WorkItem;
+using WorkItemStateTransition = Lighthouse.Backend.Models.WorkItemStateTransition;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
@@ -699,6 +700,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, stateCategory, workItem.Id);
 
+            var syncedTransitions = await GetSyncedTransitionsForWorkItem(workItemQueryOwner, workItem.Id);
+
             var additionalFields = new Dictionary<int, string?>();
             foreach (var additionalField in additionalFieldDefinitions)
             {
@@ -719,7 +722,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 ClosedDate = closedDate,
                 Tags = workItem.ExtractTagsFromWorkItem(),
                 AdditionalFieldValues = additionalFields,
+                SyncedTransitions = syncedTransitions,
             };
+        }
+
+        private async Task<IReadOnlyList<WorkItemStateTransition>> GetSyncedTransitionsForWorkItem(IWorkItemQueryOwner workItemQueryOwner, int? workItemId)
+        {
+            if (!workItemId.HasValue)
+            {
+                return [];
+            }
+
+            var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
+            return await GetAllStateTransitionsThrottled(witClient, workItemId.Value);
         }
 
         private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)
@@ -777,6 +792,36 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var last = movedToStateCategory.OrderByDescending(d => d).FirstOrDefault();
             return last == default ? null : DateTime.SpecifyKind(last, DateTimeKind.Utc);
+        }
+
+        internal static async Task<IReadOnlyList<WorkItemStateTransition>> GetAllStateTransitionsThrottled(WorkItemTrackingHttpClient witClient, int workItemId)
+        {
+            var revisions = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId));
+
+            var transitions = new List<WorkItemStateTransition>();
+            var previousState = string.Empty;
+
+            foreach (var revision in revisions)
+            {
+                if (!RevisionWasChangingState(revision, out var result))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(previousState) && !previousState.Equals(result.state, StringComparison.OrdinalIgnoreCase))
+                {
+                    transitions.Add(new WorkItemStateTransition
+                    {
+                        FromState = previousState,
+                        ToState = result.state,
+                        TransitionedAt = DateTime.SpecifyKind(result.changedDate, DateTimeKind.Utc),
+                    });
+                }
+
+                previousState = result.state;
+            }
+
+            return transitions;
         }
 
         private static bool RevisionWasChangingState(AdoWorkItem revision, out (string state, DateTime changedDate) result)
