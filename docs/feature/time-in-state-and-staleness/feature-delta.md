@@ -518,3 +518,142 @@ Un-ignore each AT one at a time; confirm the failure is MISSING_FUNCTIONALITY, n
 - **Adapter coverage (Mandate 6):** CSV sync-delta fallback and Linear source-of-truth capture each get a real-service-seam AT (#16-18) driving the real `WorkItemService` + real EF repositories (the level slice-01 bugfixing proved necessary — mocked-connector-in-isolation missed the `WorkItemBase→WorkItem` + derive wiring). Per-connector GraphQL/CSV-parser correctness (Linear `history` field availability) is the DESIGN-flagged DELIVER open question.
 - **Infrastructure policy:** unchanged from slice 01 — C#/.NET + React/Playwright, not the Python pilot. Backend ATs use `WebApplicationFactory<Program>` (driving) + real EF context (driven internal) + mocked `IWorkTrackingConnector`/`ILicenseService` (driven external). E2E uses the production React app + live connector sync. NUnit `[Ignore]` / Playwright `test.fixme` are the C#-row / TS-row skip markers per the polyglot matrix.
 
+## Wave: DISCUSS / [REF] Inherited commitments (slice 03 — staleness as a first-class Flow Signal)
+
+Origin: product-owner dogfooding feedback. Slices 01 (US-01) and 02 (US-02/03/04) are SHIPPED to main. This slice **reuses the entire backend foundation unchanged** (transition capture, `CurrentStateEnteredAt`, threshold persistence via `WorkTrackingSystemOptionsOwner.StalenessThresholdDays`, the read DTO, the `[0,365]` validation, the RBAC gating). What changes: the **default value** (opt-in), the **config placement** (into "Flow Metrics Configuration"), the **visualisation surfaces** (two new, modelled on Blocked Items), and one **new business rule** (blocked-excludes-stale). Predominantly a frontend slice; the only backend change is the default-value flip plus its two integration tests.
+
+### Revised locked decisions
+
+| ID | Decision | Verdict |
+|---|---|---|
+| D8 (REVISED) | Default staleness threshold = **0 (opt-in)** for both newly-created teams AND newly-created portfolios. The threshold is disabled until an admin enables it (checkbox in "Flow Metrics Configuration") and sets a value > 0. **Supersedes** the prior D8 (7 for teams, 14 for portfolios) and the DDD-5 entity-initialiser defaults of 7/14. Rationale: staleness becomes opt-in like every other Flow Metric (WIP-limit, SLE, Feature-WIP, Blocked Items), all of which default to off and require an explicit enable. | Locked (slice 03, supersedes prior D8) |
+| D10 | **Blocked-excludes-stale (blocked precedence)**: a blocked item must NOT also be flagged stale. Blocked and Stale are related-but-distinct signals; an item that is both blocked and over the staleness threshold is shown as blocked only, never stale. Applies UNIFORMLY to every surface — the existing WIP-dialog Time-in-State badge, the new Stale Items widget, and the Work Item Aging Chart. | Locked (slice 03) |
+
+(D10 here is the slice-03 DISCUSS decision id; it is distinct from the DESIGN-level DDD-10 Linear-connector decision already locked above. Numbered to continue the DISCUSS `D*` sequence which previously ran D1–D9.)
+
+### US-05 — Staleness as an opt-in Flow Metric (revises US-03 / US-04)
+
+**Story**: As a `team-admin` (and `portfolio-admin`), I want the staleness threshold to sit with my other Flow Metrics and be off by default, so that staleness behaves like every other opt-in signal and I turn it on deliberately when my team is ready for it.
+
+**Job-id**: `job-team-admin-tune-staleness`
+
+#### Elevator Pitch
+Before: the staleness threshold lives in its own one-off "Flow Signals" section and ships pre-enabled at 7 (team) / 14 (portfolio) — every team gets red badges they never asked for, in a place inconsistent with how WIP-limit, SLE, and Blocked Items are configured.
+After: the threshold moves into the existing "Flow Metrics Configuration" group; it is **off by default (0)**; a checkbox enables it and seeds a suggested default; un-checking resets it to 0. One generic component covers team and portfolio identically.
+Decision enabled: opt into the staleness signal when the team's cadence is understood, alongside the other flow metrics, instead of inheriting a default opinion.
+
+**AC**:
+- The "Flow Metrics Configuration" settings group (team AND portfolio) shows a staleness opt-in: an unchecked checkbox by default; when checked, a `Staleness Threshold (days)` numeric field appears seeded with a sensible suggested default (> 0); un-checking resets the persisted value to 0.
+- A newly-created team and a newly-created portfolio both default to `stalenessThresholdDays = 0` (staleness disabled — no badges reddened, no stale widget count, no chart emphasis).
+- The field accepts integers in `[0, 365]`; the existing PUT validation (400 out-of-range) and RBAC gating (`isTeamAdmin` / `isPortfolioAdmin` for write) are unchanged.
+- The separate "Flow Signals" settings group is removed from the team edit form and the portfolio edit form; the threshold is no longer shown there.
+- The threshold persists on the existing entity column and round-trips through the existing settings GET/PUT — no new endpoint.
+
+### US-06 — "Stale Items" overview widget
+
+**Story**: As a `flow-coach`, I want a Stale Items overview widget alongside the Blocked Items widget, so that stale work is discoverable at a glance on the metrics dashboard instead of hidden behind a column in the WIP dialog.
+
+**Job-id**: `job-flow-coach-spot-stuck-items`
+
+#### Elevator Pitch
+Before: the only signal that an item is stale is red text in the WIP dialog's Time-in-State column — too hidden to drive a flow review.
+After: a "Stale Items" widget in the flow-overview category shows the count of stale items (goal 0) with a RAG status, and "view data" lists exactly which items are stale — exactly the affordance the Blocked Items widget already provides.
+Decision enabled: open the dashboard, see at a glance whether staleness needs attention this review, drill into the list if it does.
+
+**AC**:
+- A "Stale Items" widget appears in the flow-overview category (team AND portfolio), modelled on the Blocked Items widget: a count card (goal 0) with a RAG status and a "view data" list of the stale items.
+- RAG follows the house convention (mirrors `computeBlockedOverviewRag`): **red when no staleness config is defined** (threshold 0/unset), red when the stale count is high (≥ the same threshold the blocked widget uses), amber at 1, green at 0-with-config.
+- The stale count excludes blocked items (D10 blocked-excludes-stale): an item that is both blocked and over threshold is counted by the Blocked widget, not the Stale widget.
+- The "view data" list shows the same stale items the WIP-dialog badge would redden, with the Time-in-State value visible.
+
+### US-07 — Staleness in the Work Item Aging Chart
+
+**Story**: As a `flow-coach`, I want stale items to stand out red in the Work Item Aging Chart the way blocked items do, and I want a clicked bubble to show its Time in State, so that the chart I already use for triage also surfaces staleness.
+
+**Job-id**: `job-flow-coach-spot-stuck-items`
+
+#### Elevator Pitch
+Before: the aging chart reds blocked bubbles but is blind to staleness; a stale-but-not-blocked item looks ordinary.
+After: stale items render red (same emphasis as blocked); clicking a bubble shows the item's Time in State, marked red when the item is stale; the chart's RAG factors staleness the same way it factors blocked.
+Decision enabled: use one chart to spot both blocked and stale items during triage, with the supporting Time-in-State detail one click away.
+
+**AC**:
+- In the Work Item Aging Chart, stale items render with the same red emphasis as blocked items.
+- D10 applies: an item that is both blocked and over threshold is treated as blocked (not double-flagged); blocked emphasis takes precedence.
+- Clicking a bubble shows, in the bubble detail / dialog, each item's Time in State, marked red when the item is stale.
+- The chart's RAG (`computeWorkItemAgeChartRag`) factors `isStale` into its status the same way it already factors `isBlocked`.
+- The blocked-excludes-stale rule (D10) is ALSO applied retroactively to the existing WIP-dialog Time-in-State badge: a blocked item over threshold no longer renders the badge red.
+
+## Wave: DESIGN / [REF] DDD list (slice 03 — staleness as a first-class Flow Signal)
+
+Continues the DDD numbering from DDD-11. Slice-01/02 DDDs (DDD-1, DDD-2, DDD-5, DDD-6, DDD-7, DDD-8) remain intact except the explicitly-noted DDD-5 default-value supersession.
+
+| ID | Decision | Verdict | One-line rationale |
+|---|---|---|---|
+| DDD-12 | Staleness becomes an **opt-in Flow Metric**: default `StalenessThresholdDays = 0` on both `Team` and `Portfolio` (entity initialisers flip from `7`/`14` to `0`); the config field is relocated from the standalone "Flow Signals" group into the generic `FlowMetricsConfigurationComponent<T extends IBaseSettings>` using the established checkbox→on-enable-seed-default→on-disable-set-0 pattern (same as WIP-limit / SLE / Feature-WIP / Blocked Items). | Locked (slice 03) | **Supersedes** DISCUSS D8 (7/14) and the DDD-5 default-value clause. Placement on `WorkTrackingSystemOptionsOwner` (DDD-5) is unchanged — only the seeded defaults flip and the UI moves. Mechanical placement decision; DESIGN, no ADR. Requires hoisting `stalenessThresholdDays` onto `IBaseSettings` (FE) so the generic component can bind it for both owners. |
+| DDD-13 | A **single client-side pure selector** `deriveStaleness(item, thresholdDays, now) → boolean` is the sole home of the staleness predicate AND the blocked-excludes-stale rule (`thresholdDays > 0 && daysInState > thresholdDays && !item.isBlocked`); consumed by the WIP-dialog badge, the new Stale Items widget, and the aging chart so the three surfaces can never disagree. | Locked (slice 03) | Three surfaces + a cross-cutting precedence rule (DISCUSS slice-03 D10) demand single-sourcing — mirrors how `isBlocked` is single-sourced today. Upholds DDD-8 (client-side, no sync; selector is pure). See ADR-026. |
+| DDD-14 | The **"Stale Items" overview widget** mirrors the Blocked Items widget: clone `BlockedOverviewWidget` → `StaleOverviewWidget` (count card), add `computeStaleOverviewRag(staleCount, hasStaleConfig, terms)` to `ragRules.ts` following `computeBlockedOverviewRag` semantics (red if `!hasStaleConfig`, red ≥ high threshold, amber 1, green 0), and register one widget via `categoryMetadata.ts` + `widgetInfoMetadata.ts` + `BaseMetricsView.tsx` dispatch + view-data entry. No backend / DTO change; the count is `inProgressItems.filter(i => deriveStaleness(i, threshold)).length`. | Locked (slice 03) | Pattern-parallel to the existing blocked widget end-to-end; reuses the established widget-registration seam (same as ADR-025 §4). `hasStaleConfig = thresholdDays > 0`. See ADR-026 for the count derivation. |
+| DDD-15 | The **aging-chart staleness treatment**: extend the chart per-item shape from `{ workItemAge, isBlocked }` to `{ workItemAge, isBlocked, isStale }` (with `isStale` from the DDD-13 selector); reds stale bubbles with the same emphasis as blocked (blocked precedence per D10 already baked into the selector); surfaces Time-in-State in the bubble detail (red if stale); factors `isStale` into `computeWorkItemAgeChartRag` the way `isBlocked` is factored today. Also routes the existing `TimeInStateBadge` red decision through the DDD-13 selector so D10 applies retroactively to the dialog badge. | Locked (slice 03) | `WorkItemAgingChart` + `computeWorkItemAgeChartRag` already consume `isBlocked`; adding `isStale` is the symmetric extension. The Time-in-State-on-bubble-click reuses the existing `WorkItemsDialog.timeInStateColumn` slot (slice 01/02). See ADR-026. |
+
+## Wave: DESIGN / [REF] DDD-5 / D8 supersession note (slice 03)
+
+**DDD-5 is amended, not replaced.** The placement decision ("`StalenessThresholdDays` lives on `WorkTrackingSystemOptionsOwner`, inherited by both `Team` and `Portfolio`") stands unchanged and is reused as-is. The ONLY part of DDD-5 superseded is its parenthetical default-value clause `(= 7 for Team, = 14 for Portfolio)`, which is replaced by DDD-12's `= 0` for both. Correspondingly DISCUSS D8 (7/14) is superseded by the revised slice-03 D8 (0/0). Everything else locked by slice 01/02 — DDD-1, DDD-2, DDD-6, DDD-7, **DDD-8 (client-side comparison, explicitly upheld)** — remains intact. No persistence-shape change: the column type/placement is identical; only the seeded default integer changes, plus a one-time migration consideration noted in the component table.
+
+## Wave: DESIGN / [REF] Component decomposition (slice 03)
+
+Grounded in verified paths. Backend touch is a single default-value flip plus its two integration-test expectations; everything else is frontend.
+
+| Component | File | Change Type | Change Summary |
+|---|---|---|---|
+| `Team` entity initialiser | `Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs` | EXTEND | `public override int StalenessThresholdDays { get; set; } = 7;` → `= 0;` (DDD-12, opt-in default). Verified at `Team.cs:23`. |
+| `Portfolio` entity initialiser | `Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs` | EXTEND | `= 14;` → `= 0;` (DDD-12). Verified at `Portfolio.cs:31`. |
+| `TeamStalenessThresholdSettingsIntegrationTest` | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamStalenessThresholdSettingsIntegrationTest.cs` | EXTEND | `private const int DefaultTeamThresholdDays = 7;` → `= 0;` (verified at line 24); the `GetTeamSettings_NewlyCreatedTeam_ExposesDefaultStalenessThresholdOfSevenDays` expectation must assert 0. Rename the test to `…ExposesDefaultStalenessThresholdOfZero` (opt-in) for intent clarity. |
+| `PortfolioStalenessThresholdSettingsIntegrationTest` | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioStalenessThresholdSettingsIntegrationTest.cs` | EXTEND | `private const int DefaultPortfolioThresholdDays = 14;` → `= 0;` (verified at line 23); rename `…OfFourteenDays` expectation accordingly. |
+| EF migration (default-value flip) | via `Lighthouse.Backend/Create-Migration.ps1` | EXTEND (consideration) | The column already exists (slice 02). The default flip is an entity-initialiser change, not a schema change — no new migration is strictly required for go-forward behaviour. **DELIVER decision**: whether to add a data migration that resets EXISTING rows still holding the old 7/14 default to 0; recommended NO (existing teams that received 7/14 keep their value; only newly-created owners default to 0) — but flag for PO confirmation (see open questions). Generated via `Create-Migration.ps1` only if a data migration is chosen. |
+| `IBaseSettings` model (TS) | `Lighthouse.Frontend/src/models/Common/BaseSettings.ts` | EXTEND | Hoist `stalenessThresholdDays: number` onto the shared base interface (verified absent today — slice 02 placed it only on `ITeamSettings`/`IPortfolioSettings`). Required so the generic `FlowMetricsConfigurationComponent<T extends IBaseSettings>` can bind it for both owners (DDD-12). `ITeamSettings`/`IPortfolioSettings` inherit it; remove their now-redundant declarations. |
+| `FlowMetricsConfigurationComponent` | `Lighthouse.Frontend/src/components/Common/BaseSettings/FlowMetricsConfigurationComponent.tsx` | EXTEND | Add a staleness opt-in block following the existing WIP-limit/SLE/Blocked-Items pattern: `isStalenessEnabled` state seeded from `settings.stalenessThresholdDays > 0`; checkbox `handleStalenessEnableChange(checked)` → on-enable `onSettingsChange("stalenessThresholdDays", stalenessSeedDefault)` (new prop: team parent passes `5`, portfolio parent passes `14` — PO 2026-05-25), on-disable `→ 0`; numeric `TextField` (`min 0, max 365`) shown when enabled. One change covers team AND portfolio (the component is generic; only the seed value differs by owner via the prop). |
+| `ForecastSettingsComponent` (team) | `Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx` | EXTEND | REMOVE the standalone `InputGroup title="Flow Signals"` staleness block (verified at lines ~255-269) and its `showFlowSignals` / `isTeamAdmin` gate; the field now lives in `FlowMetricsConfigurationComponent`. |
+| Portfolio settings surface | `Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx` (+ the portfolio's settings sub-component) | EXTEND (verify at GREEN) | `EditPortfolio.tsx` does NOT render a `FlowMetricsConfigurationComponent` or a "Flow Signals" group itself (verified — its only staleness reference is the default literal `stalenessThresholdDays: 14` at line 86, which must drop to `0` per DDD-12 if it seeds a create/edit form). The PORTFOLIO's staleness UI is surfaced through whatever component renders `FlowMetricsConfigurationComponent` for portfolio scope (team scope uses `ModifyTeamSettings.tsx:173`; locate the portfolio equivalent at GREEN). Because the relocation lives INSIDE the generic shared `FlowMetricsConfigurationComponent`, the portfolio gains the opt-in automatically once the component is extended (DDD-12) — no portfolio-specific "Flow Signals" block exists to remove. Drop any standalone portfolio staleness field/default that predates this relocation. |
+| `deriveStaleness` selector | `Lighthouse.Frontend/src/utils/staleness/deriveStaleness.ts` (+ `.test.ts`) | NEW | Pure `(item, thresholdDays, now) → boolean` = `thresholdDays > 0 && daysInState(item.currentStateEnteredAt, now) > thresholdDays && !item.isBlocked`. Sole home of the predicate + blocked-exclusion (DDD-13 / ADR-026). MUST consume the already-exported `daysInState(currentStateEnteredAt, now)` from `TimeInStateBadge.tsx` (verified exported at `TimeInStateBadge.tsx:12`) — this is what guarantees the widget count and the badge agree. Software-crafter picks final path/name at GREEN; the contract is fixed. |
+| `TimeInStateBadge` | `Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx` | EXTEND | Today the badge computes `isStale` inline (verified at `TimeInStateBadge.tsx:36-39`: `stalenessThresholdDays > 0 && days > stalenessThresholdDays`) and takes NO `isBlocked` prop. Replace that inline check with the DDD-13 selector and thread the item's `isBlocked` in, so D10 (blocked-excludes-stale) applies to the existing dialog badge — a blocked item over threshold stops rendering red. (`isBlocked` is already on `IWorkItem`; the calling `WorkItemsDialog.timeInStateColumn` must pass it through.) |
+| `StaleOverviewWidget` | `Lighthouse.Frontend/src/pages/Common/MetricsView/StaleOverviewWidget.tsx` (+ `.test.tsx`) | NEW | Clone of `BlockedOverviewWidget` (count card, `data-testid="stale-overview-count"`, default title "Stale"). DDD-14. |
+| `computeStaleOverviewRag` | `Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts` (+ `ragRules.test.ts`) | EXTEND | New function mirroring `computeBlockedOverviewRag(count, hasStaleConfig, terms)`: red if `!hasStaleConfig`, red ≥ high threshold, amber 1, green 0. Add a `stale` term to `RagTerms` if a dedicated term is wanted (else reuse plain "stale"). DDD-14. |
+| Widget metadata + dispatch | `Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts`, `widgetInfoMetadata.ts`, `BaseMetricsView.tsx` | EXTEND | Register `staleOverview` in the `flow-overview` category (small, adjacent to `blockedOverview` at `categoryMetadata.ts:52`); add `widgetInfoMetadata` entry (description/RAG guidance/learn-more, parallel to `blockedOverview` at lines 26-34); wire the `RagInputs` (`staleCount`, `hasStaleConfig`), the `ViewDataInputs` (`staleItems`), and the dispatch (`<StaleOverviewWidget …>`) in `BaseMetricsView.tsx` — `staleItems = inProgressItems.filter(i => deriveStaleness(i, threshold))`, parallel to the existing `blockedItems = inProgressItems.filter(item => item.isBlocked)` (verified at `BaseMetricsView.tsx:1008`). DDD-14. |
+| `WorkItemAgingChart` | `Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx` | EXTEND | Group items into `{ …, hasBlockedItems, hasStaleItems }`; `hasStaleItems` from the DDD-13 selector (computed before grouping). Red emphasis for stale bubbles via the existing `getMarkerColor`/`renderMarkerCircle` path (blocked precedence already in the selector). Add a Time-in-State column to the chart's `WorkItemsDialog` (the dialog currently passes only `highlightColumn={workItemAge}` at lines 448-452) using the existing `timeInStateColumn` slot, marked red when stale. Pass `stalenessThresholdDays` into the chart (new prop). DDD-15. |
+| `computeWorkItemAgeChartRag` | `Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts` | EXTEND | Extend the `items` param shape to `{ workItemAge, isBlocked, isStale }` and factor `isStale` into the status symmetrically with `isBlocked` (verified the function already takes `{ workItemAge, isBlocked }` at lines 364-414). Update `RagInputs.agingItems` in `BaseMetricsView.tsx` (lines 1112-1115) to map `isStale` via the selector. DDD-15. |
+| Vitest + RTL tests | colocated `.test.tsx` / `.test.ts` | NEW / EXTEND | Selector boundary tests (threshold 0, at-threshold, one-over, blocked-over → not stale); widget RAG tests in `ragRules.test.ts`; widget render test; aging-chart stale-red + Time-in-State-on-click tests; badge blocked-excludes-stale test; `FlowMetricsConfigurationComponent` staleness opt-in test; settings-form relocation tests (`ForecastSettingsComponent.test.tsx`, `EditPortfolio.test.tsx` lose the old "Flow Signals" assertions). |
+| E2E spec | `Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts` (+ POMs) | EXTEND | New `test.fixme` scenarios: enable staleness from "Flow Metrics Configuration" (not the old "Flow Signals" group); Stale Items widget shows count + view-data; aging-chart stale bubble red + Time-in-State on click; blocked-item-over-threshold is NOT stale on any surface. POM updates: relocate the threshold-field locator to the Flow Metrics group; add `StaleOverviewWidget` reader; add aging-chart stale-bubble reader. Run locally before commit (project rule). |
+
+### Reuse / CREATE NEW summary (slice 03)
+
+**EXTEND: 14** (2 backend defaults + 2 backend tests + 1 migration-consideration + `IBaseSettings` + `FlowMetricsConfigurationComponent` + 2 settings-form removals + `TimeInStateBadge` + `computeStaleOverviewRag` + widget metadata/dispatch + `WorkItemAgingChart` + `computeWorkItemAgeChartRag`).
+**NEW: 2** production files (`deriveStaleness` selector, `StaleOverviewWidget`) + colocated tests + E2E extensions. Every new file has zero existing overlap (no prior staleness selector; no prior stale widget — the blocked widget is the analog, deliberately cloned not extended, mirroring ADR-025's clone-vs-extend reasoning for the Blocked vs Stale distinct-signal split).
+
+## Wave: DESIGN / [REF] Decisions table (slice 03 additions)
+
+| ID | Decision | Source / ADR |
+|---|---|---|
+| DDD-12 | Staleness opt-in: default `StalenessThresholdDays = 0` (Team + Portfolio), config relocated into `FlowMetricsConfigurationComponent` | DESIGN, no ADR (mechanical default-value + placement; supersedes DISCUSS D8 + the DDD-5 default clause); `IBaseSettings` hoist required |
+| DDD-13 | Single client-side pure `deriveStaleness` selector = sole home of the staleness predicate + blocked-excludes-stale rule | ADR-026 (upholds DDD-8) |
+| DDD-14 | "Stale Items" overview widget mirrors Blocked Items: `StaleOverviewWidget` + `computeStaleOverviewRag` + metadata/dispatch wiring; no backend change | ADR-026 (count derivation) + DESIGN widget-registration pattern (ADR-025 §4 precedent) |
+| DDD-15 | Aging-chart stale treatment: `{ workItemAge, isBlocked, isStale }` item shape, red stale bubbles (blocked precedence), Time-in-State on bubble click, `isStale` into chart RAG; retroactive D10 on the dialog badge | ADR-026 |
+
+## Wave: DESIGN / [REF] Open questions (slice 03)
+
+- **Existing-row default reset — RESOLVED (PO, 2026-05-25): do NOT reset.** Flipping the entity initialisers to 0 affects only newly-created teams/portfolios; teams/portfolios created during slice 02 keep their existing 7/14 (treated as their current opt-in value). No data migration. Only new owners default to 0 (off).
+- **Stale-widget "high" RAG threshold — RESOLVED (PO, 2026-05-25): reuse Blocked's `count >= 2`** for cross-widget consistency. One-line constant at DELIVER.
+- **Suggested default seeded on enable — RESOLVED (PO, 2026-05-25): owner-specific — `5` for teams, `14` for portfolios.** The generic `FlowMetricsConfigurationComponent` takes a `stalenessSeedDefault` prop; the team settings parent passes `5`, the portfolio parent passes `14`. On enable → `onSettingsChange("stalenessThresholdDays", stalenessSeedDefault)`; on disable → `0`.
+- **Server-side aggregate stale counts (future, not this slice):** ADR-026 keeps derivation client-side (DDD-8 upheld). IF a future surface needs aggregate stale counts without loading all items (e.g. a portfolio roll-up tile), server-side derivation for that aggregate becomes worth revisiting via a superseding ADR. **Explicitly noted as a future consideration, NOT a slice-03 decision.** No action this slice.
+
+## Wave: DESIGN / [REF] Wave decisions summary (slice 03)
+
+**Primary commitment**: promote staleness from a one-off to a first-class Flow Signal modelled on Blocked Items, reusing the entire shipped backend foundation unchanged. The only backend change is flipping two entity-initialiser defaults (7/14 → 0) and the two integration-test expectations that pin them. Everything else is frontend.
+
+**Architectural rule of record (ADR-026)**: a single client-side pure selector `deriveStaleness` is the sole home of the staleness predicate and the blocked-excludes-stale precedence rule, consumed by all three surfaces (dialog badge, new widget, aging chart) so they can never disagree. This upholds DDD-8 (client-side, no sync) and mirrors how the codebase already single-sources `isBlocked`.
+
+**Reuse posture**: the Stale Items widget clones the Blocked Items widget end-to-end (`StaleOverviewWidget` ↔ `BlockedOverviewWidget`, `computeStaleOverviewRag` ↔ `computeBlockedOverviewRag`, same `categoryMetadata`/`widgetInfoMetadata`/`BaseMetricsView` registration seam). The aging-chart change is the symmetric extension of its existing `isBlocked` handling to `isStale`. The config relocation reuses the generic `FlowMetricsConfigurationComponent` opt-in pattern that WIP-limit / SLE / Feature-WIP / Blocked Items already follow.
+
+**Invariants upheld**: ports-and-adapters unchanged; no new top-level route; no premium gate; no breaking change; no new external integration (no contract test required); DDD-1/2/6/7/8 intact; DDD-5 placement intact (only its default-value clause superseded). External-integration check: this slice reads only Lighthouse-internal persisted data — **no contract tests recommended at the platform-architect handoff.**
+
+**Supersession**: DISCUSS D8 (7/14) and the DDD-5 default clause are superseded by the revised D8 / DDD-12 (0/0, opt-in), explicitly noted so DELIVER does not reintroduce the old defaults.
+
