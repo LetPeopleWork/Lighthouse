@@ -113,9 +113,9 @@ test("flow coach sees stale items turn red in the work-item dialog after enablin
 	const workItemsDialog = await workInProgressOverview.openDialog();
 
 	await expect(workItemsDialog.timeInStateColumnHeader).toBeVisible();
-	expect(await workItemsDialog.countStaleTimeInStateBadges()).toBeGreaterThan(
-		0,
-	);
+	await expect
+		.poll(() => workItemsDialog.countStaleTimeInStateBadges())
+		.toBeGreaterThan(0);
 });
 
 test("flow coach sees the Time in State column on the portfolio work-item view", async ({
@@ -205,9 +205,13 @@ test("flow coach sees a stale item red in the Work Item Aging Chart and its red 
 		flowMetricsWidgets,
 	);
 	await expect(agingChart.Widget).toBeVisible();
-	expect(await agingChart.countStaleAgingBubbles()).toBeGreaterThan(0);
+	await expect
+		.poll(() => agingChart.countStaleAgingBubbles())
+		.toBeGreaterThan(0);
 
 	const agingDialog = await agingChart.openDialogFromStaleBubble();
 	await expect(agingDialog.timeInStateColumnHeader).toBeVisible();
-	expect(await agingDialog.countStaleTimeInStateBadges()).toBeGreaterThan(0);
+	await expect
+		.poll(() => agingDialog.countStaleTimeInStateBadges())
+		.toBeGreaterThan(0);
 });
