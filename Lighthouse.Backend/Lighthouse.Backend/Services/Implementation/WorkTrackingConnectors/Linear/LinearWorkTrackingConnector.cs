@@ -25,8 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private const string IssueTypeIdentifier = "Issue";
         private const string ProjectTypeIdentifier = "Project";
         private const string InitiativeTypeIdentifier = "Initiative";
-        private const int HistoryPageSize = 50;
-        private const string HistoryFieldName = "history";
+        private const int HistoryPageSize = 25;
 
         private bool historyUnavailable;
 
@@ -443,7 +442,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 return true;
             }, errors =>
             {
-                historyFieldRejected = !historyUnavailable && HistoryFieldIsUnsupported(errors);
+                historyFieldRejected = !historyUnavailable && errors.Any();
                 return !historyFieldRejected;
             });
 
@@ -453,12 +452,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private void DowngradeHistorySupport()
         {
             historyUnavailable = true;
-            logger.LogWarning("Linear connection does not support the issue history connection. Falling back to sync-delta transition derivation for this connection.");
-        }
-
-        private static bool HistoryFieldIsUnsupported(IEnumerable<GraphQLError> errors)
-        {
-            return errors.Any(error => error.Message?.Contains(HistoryFieldName, StringComparison.OrdinalIgnoreCase) ?? false);
+            logger.LogWarning("Linear rejected the issue history connection for this query. Falling back to sync-delta transition derivation for this connection.");
         }
 
         private async Task<List<ProjectNode>> GetAllProjects(WorkTrackingSystemConnection connection)

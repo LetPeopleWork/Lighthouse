@@ -48,14 +48,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_HistoryFieldUnsupported_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions()
+        [TestCaseSource(nameof(HistoryRejectionErrors))]
+        public async Task GetWorkItemsForTeam_HistoryQueryRejected_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions(string historyErrorResponse)
         {
             var requestBodies = new List<string>();
             var handler = HandlerReturning(body =>
             {
                 requestBodies.Add(body);
                 return body.Contains("history", StringComparison.Ordinal)
-                    ? HistoryFieldValidationError()
+                    ? historyErrorResponse
                     : IssuesResponseWithoutHistory();
             });
 
@@ -69,12 +70,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems, Has.Count.EqualTo(1),
-                    "On an unsupported history field the connector must re-query without history so work items still sync.");
+                    "When the history-carrying query is rejected the connector must re-query without history so work items still sync.");
                 Assert.That(issue.SyncedTransitions, Is.Empty,
                     "After the per-connection downgrade, issues must yield no synced transitions so RefreshWorkItems falls through to the sync-delta path.");
                 Assert.That(requestBodies.Any(b => !b.Contains("history", StringComparison.Ordinal)), Is.True,
-                    "A history-field validation error fails the whole query, so the connector must re-issue it without the history connection.");
+                    "A rejected history query fails the whole request, so the connector must re-issue it without the history connection.");
             }
+        }
+
+        private static IEnumerable<string> HistoryRejectionErrors()
+        {
+            yield return HistoryFieldValidationError();
+            yield return QueryTooComplexError();
         }
 
         private static HttpMessageHandler HandlerReturning(Func<string, string> bodyForRequest)
@@ -149,6 +156,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static string HistoryFieldValidationError()
         {
             return @"{ ""errors"": [ { ""message"": ""Cannot query field \""history\"" on type \""Issue\""."", ""extensions"": { ""code"": ""GRAPHQL_VALIDATION_FAILED"" } } ], ""data"": null }";
+        }
+
+        private static string QueryTooComplexError()
+        {
+            return @"{ ""errors"": [ { ""message"": ""Query too complex"", ""extensions"": { ""type"": ""invalid input"", ""code"": ""INPUT_ERROR"", ""userPresentableMessage"": ""The query is too complex. Complexity: 17201.2. Maximum allowed complexity: 10000."" } } ], ""data"": null }";
         }
 
         private static Team CreateTeam()
