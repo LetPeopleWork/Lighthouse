@@ -1,0 +1,278 @@
+{
+  "roadmap": {
+    "project_id": "time-in-state-and-staleness",
+    "created_at": "2026-05-25T06:47:18Z",
+    "total_steps": 11
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Persistence foundation",
+      "description": "WorkItemStateTransition entity + WorkItem.CurrentStateEnteredAt column + LighthouseAppContext mapping + lockstep EF migration; repository port and adapter for transition rows. No capture, no read-API change yet.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "WorkItemStateTransition entity + CurrentStateEnteredAt column + EF mapping + migration",
+          "criteria": [
+            "WorkItemStateTransition is a standalone entity implementing IEntity with WorkItemId (FK), FromState, ToState, TransitionedAt (DDD-1/ADR-015)",
+            "WorkItemBase exposes a nullable DateTime? CurrentStateEnteredAt persisted column (DDD-2/ADR-016)",
+            "LighthouseAppContext exposes DbSet<WorkItemStateTransition> and configures FK->WorkItem with cascade delete plus a composite index (WorkItemId, TransitionedAt)",
+            "EnsureCreated against the test LighthouseAppContext materialises the WorkItemStateTransitions table and the WorkItems.CurrentStateEnteredAt column without error",
+            "Persisting a WorkItem with one WorkItemStateTransition row and re-reading it returns the same FromState, ToState, TransitionedAt and a non-null CurrentStateEnteredAt",
+            "EF migration AddWorkItemStateTransitions is generated for BOTH Sqlite and Postgres via Create-Migration.ps1 and dotnet build is zero-warning"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs",
+          "scenario_name": "PersistsWorkItemStateTransition_AndCurrentStateEnteredAt_RoundTripsThroughContext",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemStateTransition.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs"
+          ],
+          "implementation_notes": "NEW entity WorkItemStateTransition.cs: implements IEntity (int Id), int WorkItemId FK, string FromState, string ToState, DateTime TransitionedAt. Keep slice 01 to four columns; do NOT add StalenessThresholdDays here (slice 02). EXTEND WorkItemBase with public DateTime? CurrentStateEnteredAt { get; set; } only (the [NotMapped] SyncedTransitions transport lands in 02-01, not here). EXTEND LighthouseAppContext: add DbSet<WorkItemStateTransition>; in OnModelCreating add one entity config block: HasOne(WorkItem).WithMany().HasForeignKey(WorkItemId).OnDelete(Cascade) and HasIndex(WorkItemId, TransitionedAt). Generate the migration via Create-Migration.ps1 ONLY (CLAUDE.md hard rule) so Sqlite + Postgres stay in lockstep; never call dotnet ef migrations add directly. The migration adds the WorkItemStateTransitions table and the nullable WorkItems.CurrentStateEnteredAt column. Test is a real EF round-trip through the test LighthouseAppContext (EnsureDeleted/EnsureCreated, mirroring the existing LighthouseAppContextUtcTest precedent at the Tests project root) - exercises the driven persistence port with real I/O, not a mock. Immutable C#: nullable enabled, no mutable public collections. No comments per CLAUDE.md."
+        },
+        {
+          "id": "01-02",
+          "name": "IWorkItemStateTransitionRepository port + EF repository adapter",
+          "criteria": [
+            "IWorkItemStateTransitionRepository extends IRepository<WorkItemStateTransition> with no additional methods at MVP",
+            "WorkItemStateTransitionRepository extends RepositoryBase<WorkItemStateTransition> following the existing repository pattern and is registered in DI",
+            "Adding a WorkItemStateTransition via the repository and calling Save() persists the row; GetAll() returns it after a fresh scope",
+            "Removing the parent WorkItem cascades and the transition row is gone (FK cascade verified through the adapter)"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/WorkItemStateTransitionRepositoryTest.cs",
+          "scenario_name": "AddAndSave_PersistsTransitionRow_AndGetAllReturnsIt",
+          "deps": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/WorkItemStateTransitionRepositoryTest.cs"
+          ],
+          "implementation_notes": "NEW port + adapter mirroring the existing WorkItemRepository pair (closest sibling). IWorkItemStateTransitionRepository : IRepository<WorkItemStateTransition> - empty body at MVP; sibling consumer DESIGNs may add methods later. WorkItemStateTransitionRepository : RepositoryBase<WorkItemStateTransition> - constructor takes LighthouseAppContext + ILogger like the existing repos; rely on the base for Add/GetAll/Save/Remove. Register in Program.cs DI alongside the other IRepository<> registrations (confirm the exact registration block at GREEN). Integration test is a real EF round-trip through RepositoryBase against the test context (adapter-to-port contract, per Mandate 4 adapters get integration tests only - no mocking the DB). Confirm cascade behaviour configured in 01-01 actually deletes children. Zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Capture + derivation seam",
+      "description": "Connector capability flag + SyncedTransitions transport; the single WorkItemService.RefreshWorkItems seam that persists transition rows and derives CurrentStateEnteredAt idempotently; Jira and ADO connector-layer transition extraction.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "SupportsTransitionHistory capability flag + SyncedTransitions transport",
+          "criteria": [
+            "IWorkTrackingConnector exposes bool SupportsTransitionHistory { get; } (DDD-3/ADR-017)",
+            "WorkItemBase exposes a transient [NotMapped] IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } defaulting to an empty list, never persisted by EF",
+            "JiraWorkTrackingConnector.SupportsTransitionHistory returns true",
+            "AzureDevOpsWorkTrackingConnector.SupportsTransitionHistory returns true",
+            "CsvWorkTrackingConnector.SupportsTransitionHistory returns false",
+            "A WorkItem persisted through the context does not create a SyncedTransitions column (transport remains transient)"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs",
+          "scenario_name": "SyncedTransitions_IsTransient_AndNotPersisted",
+          "deps": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs"
+          ],
+          "implementation_notes": "EXTEND the existing IWorkTrackingConnector port with one read-only bool member; every existing implementation must declare it - Jira true, ADO true, CSV false. Linear is OUT of slice 01 (slice 02); if the LinearWorkTrackingConnector already implements IWorkTrackingConnector, give it the minimum SupportsTransitionHistory => true (or false) needed to compile but do NOT add its history GraphQL query here. EXTEND WorkItemBase with [NotMapped] IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = []; - immutable init-only transport consumed and detached by RefreshWorkItems in 02-02. The [NotMapped] attribute keeps EF from mapping it; the test asserts no column is generated (extend the 01-01 persistence test rather than create a parallel file). No SaveChanges side effect. Zero-warning build."
+        },
+        {
+          "id": "02-02",
+          "name": "WorkItemService.RefreshWorkItems persists transitions + derives CurrentStateEnteredAt idempotently",
+          "criteria": [
+            "RefreshWorkItems is the single seam that persists WorkItemStateTransition rows from SyncedTransitions and derives WorkItem.CurrentStateEnteredAt, flushing in one SaveChangesAsync (DDD-6)",
+            "CurrentStateEnteredAt is set to the TransitionedAt of the latest transition whose ToState equals the item's current State (within 1 day of the source timestamp per US-01 AC line 2)",
+            "Re-running the same sync does not duplicate rows: dedup is by (WorkItemId, ToState, TransitionedAt) and the derived CurrentStateEnteredAt is unchanged across re-sync (DDD-7)",
+            "An item with no prior transition data leaves CurrentStateEnteredAt null (first-observation)",
+            "DISTILL AT #3 GetWip_TeamSyncedWithTransitionHistory_CurrentStateEnteredAtMatchesLastTransitionWithinOneDay is un-ignored and goes green",
+            "DISTILL AT #4 GetWip_SameTeamReadTwice_CurrentStateEnteredAtIsStableAcrossReads is un-ignored and goes green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs",
+          "scenario_name": "GetWip_TeamSyncedWithTransitionHistory_CurrentStateEnteredAtMatchesLastTransitionWithinOneDay",
+          "deps": ["01-02", "02-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs"
+          ],
+          "implementation_notes": "EXTEND RefreshWorkItems (WorkItemService.cs:51) - the existing single per-item sync loop. For each incoming WorkItemBase: read its transient SyncedTransitions, upsert transition rows via IWorkItemStateTransitionRepository deduping by (WorkItemId, ToState, TransitionedAt), then derive CurrentStateEnteredAt = MAX(TransitionedAt WHERE ToState == item.State) or null when none. All writes flush in ONE SaveChangesAsync per the existing loop's single-save invariant. Inject IWorkItemStateTransitionRepository into the WorkItemService constructor (primary-constructor style at line 12). Use the project's existing GetDateDifference day-rounding convention (WorkItemBase WorkItemAge precedent) so the badge stays consistent with WorkItemAge - the within-1-day AC falls out of this. RED handoff from DISTILL: in this step REMOVE the [Ignore] from AT #3 and AT #4 and FIRST confirm each fails for the right reason (functionality missing - derived value absent/unstable), not a setup error (empty wip array, 403, Parse throw). Replace the test's reflection seed (ApplyCurrentStateEnteredAt no-op) with seeding WorkItemStateTransition rows and letting RefreshWorkItems derive the value - this exercises the real seam per the pre-DELIVER gate and avoids Fixture Theater; confirm git diff shows WorkItemService.cs changed when the ATs flip green. WorkItemServiceTest gets the focused unit coverage (derivation picks the latest ToState-matching transition; idempotent re-sync; null when no history) through the WorkItemService driving port with in-memory repositories. The ArchUnit sole-writer rule is authored in 05-01, not here. Immutability, <=2 nesting, no else, no comments. Zero-warning build."
+        },
+        {
+          "id": "02-03",
+          "name": "Jira IssueFactory.GetAllStateTransitions + connector populates SyncedTransitions",
+          "criteria": [
+            "IssueFactory.GetAllStateTransitions(JsonElement) returns every status transition as (fromState, toState, transitionedAt) by walking the same changelog.histories array the existing GetTransitionDate walker uses",
+            "Existing GetStartedAndClosedDate behaviour is unchanged (DISCUSS D9 invariant - existing IssueFactory tests stay green)",
+            "Given a changelog with >=3 status transitions, the derived current-state-entered timestamp equals the last matching transition's date",
+            "JiraWorkTrackingConnector populates WorkItemBase.SyncedTransitions from GetAllStateTransitions when building each work item"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+          "scenario_name": "GetAllStateTransitions_ChangelogWithThreeStatusTransitions_ReturnsAllTransitionsInOrder",
+          "deps": ["02-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs"
+          ],
+          "implementation_notes": "EXTEND IssueFactory (closest existing file - do NOT create a parallel Jira parser). Add GetAllStateTransitions next to GetTransitionDate/ExtractDateOfStateTransitionFromHistory (IssueFactory.cs:171-223) reusing the same changelog.histories enumeration and the field == 'status' detection; emit every (fromString, toString, createdDate) instead of keeping only the last matching one. Do NOT touch GetStartedAndClosedDate (D9 invariant) - the existing tests guard it. JiraWorkTrackingConnector: in CreateWorkItemFromJiraIssue / the issue-to-workitem mapping, set SyncedTransitions = GetAllStateTransitions(...).Select(map to WorkItemStateTransition). Connector-layer correctness test follows the existing IssueFactoryTest changelog-template style (the jsonTemplate string with a histories array of >=3 status transitions; assert the parsed transitions and that the latest-into-current-state timestamp matches). This is the US-01 AC line 2 'verified against recorded API responses' coverage for Jira. No comments; immutability (LINQ over loops where natural)."
+        },
+        {
+          "id": "02-04",
+          "name": "ADO GetAllStateTransitionsThrottled + connector populates SyncedTransitions",
+          "criteria": [
+            "AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, workItemId) returns every state transition from the work item's revisions",
+            "Existing GetStateTransitionDateThrottled (Started/Closed derivation) behaviour is unchanged",
+            "Given a captured GetRevisionsAsync payload with >=3 state changes, the derived current-state-entered timestamp equals the last matching revision's changed date",
+            "AzureDevOpsWorkTrackingConnector populates WorkItemBase.SyncedTransitions during ConvertAdoWorkItemToLighthouseWorkItem"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+          "scenario_name": "GetAllStateTransitions_RevisionsWithThreeStateChanges_ReturnsAllTransitions",
+          "deps": ["02-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs"
+          ],
+          "implementation_notes": "EXTEND AzureDevOpsWorkTrackingConnector (closest existing file). Add GetAllStateTransitionsThrottled next to GetStateTransitionDateThrottled (AzureDevOpsWorkTrackingConnector.cs:758-778) reusing the throttled witClient.GetRevisionsAsync fetch and the existing RevisionWasChangingState detection; emit every (fromState, toState, changedDate) instead of keeping only the last boundary. Do NOT change GetStateTransitionDateThrottled. In ConvertAdoWorkItemToLighthouseWorkItem (line 693) set SyncedTransitions from the new method. FIXTURE GAP - the existing ADO connector tests drive live GetWorkItemsForTeam against a configured instance and no captured-revisions template helper exists yet: DELIVER must capture a small real GetRevisionsAsync payload (one ADO item with >=3 state changes) and assert the parser against it (US-01 AC line 2 for ADO). Add the capture as a test fixture/resource; keep it minimal. No comments; immutability."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Read API",
+      "description": "WorkItemDto carries currentStateEnteredAt and approximate; the /metrics/wip read endpoint exposes the field, including null for first-observation items.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "WorkItemDto exposes currentStateEnteredAt + approximate on the read endpoint",
+          "criteria": [
+            "WorkItemDto projects DateTime? CurrentStateEnteredAt and bool Approximate from WorkItemBase (DDD-9)",
+            "GET /api/latest/teams/{teamId}/metrics/wip serialises currentStateEnteredAt per item (ISO8601 string, or JSON null)",
+            "For Jira/ADO source-of-truth history, Approximate is false in slice 01",
+            "DISTILL AT #2 GetWip_JiraTeamWithInProgressItem_ExposesCurrentStateEnteredAtPerItem is un-ignored and goes green",
+            "DISTILL AT #5 GetWip_ItemFirstObservedThisSync_CurrentStateEnteredAtIsNull is un-ignored and goes green (property present, value JSON null)"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs",
+          "scenario_name": "GetWip_JiraTeamWithInProgressItem_ExposesCurrentStateEnteredAtPerItem",
+          "deps": ["02-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXTEND WorkItemDto (closest existing file - it already projects WorkItemBase for the work-item table). Add DateTime? CurrentStateEnteredAt and bool Approximate, populated in the existing WorkItemDto constructor/projection from the WorkItemBase. CurrentStateEnteredAt serialises null naturally when the column is null (first-observation). For slice 01 Jira/ADO always have history so Approximate = false; the sync-delta path that would set it true is slice 02 (CSV/Linear) - keep the field but do not branch on it yet beyond a constant false derivation tied to source-of-truth capture. No controller change needed: the existing /metrics/wip handler returns WorkItemDto and the new fields auto-flow (DDD-11). RED handoff from DISTILL: in this step REMOVE the [Ignore] from AT #2 and AT #5; confirm each first fails for the right reason (field absent from JSON -> TryGetDateTime false for #2; property absent or non-null for #5) before implementing. ATs #3/#4 (02-02) plus #2/#5 (here) cover the whole read contract. Confirm git diff shows WorkItemDto.cs changed when the ATs flip green (no Fixture Theater). Getters acceptable on a DTO (Rule 9 relaxation). Zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Frontend",
+      "description": "IWorkItem TS model gains the new fields; a new pure TimeInStateBadge component renders the days-in-state text; WorkItemsDialog gains an optional sortable Time-in-State column wired through the Team detail WIP view.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "IWorkItem model fields + TimeInStateBadge component",
+          "criteria": [
+            "IWorkItem includes currentStateEnteredAt: Date | null and approximate: boolean",
+            "TimeInStateBadge renders '<N>d in <stateName>' where N is whole days from currentStateEnteredAt to now",
+            "TimeInStateBadge renders an em dash placeholder when currentStateEnteredAt is null",
+            "No red/warning emphasis is applied (staleness colour is slice 02)",
+            "Vitest + RTL tests cover the populated, null, and pluralisation/rounding cases via parametrisation"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx",
+          "scenario_name": "renders N days in current state and an em dash when no entered date",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/WorkItem.ts",
+            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx",
+            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx"
+          ],
+          "implementation_notes": "EXTEND IWorkItem (WorkItem.ts) with currentStateEnteredAt: Date | null and approximate: boolean; if the model is parsed via a deserialiser/Zod schema, extend that schema (do not as-cast). NEW pure component TimeInStateBadge.tsx (Common/ has sibling components but none renders a days-in-state badge - this is a genuinely new concern per the DESIGN grep: zero TimeInState matches). Props: { currentStateEnteredAt: Date | null, currentStateName: string, now?: Date } - inject now (default to a clock) for deterministic tests. Compute whole-day difference; render `${days}d in ${currentStateName}`; render the em dash placeholder when currentStateEnteredAt is null. Do NOT take stalenessThresholdDays or apply red emphasis here - that prop and treatment are slice 02. Vitest + RTL: parametrise day counts (Mandate 5) plus the null case; assert rendered text, not internal state. Skip any 'renders without crashing' framework test (CLAUDE.md). Strict TS, no any. Biome clean."
+        },
+        {
+          "id": "04-02",
+          "name": "WorkItemsDialog Time-in-State column wired through Team detail",
+          "criteria": [
+            "WorkItemsDialog accepts an optional timeInStateColumn prop (structurally parallel to the existing highlightColumn)",
+            "When timeInStateColumn is provided, the dialog renders a 'Time in State' column using TimeInStateBadge",
+            "The Time-in-State column is sortable (longest first)",
+            "ItemsInProgress on the Team detail WIP view passes timeInStateColumn so the column appears for team work items",
+            "Portfolio wiring is NOT added (slice 02)"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+          "scenario_name": "renders sortable Time in State column with badges when timeInStateColumn provided",
+          "deps": ["04-01", "03-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/ItemsInProgress.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx"
+          ],
+          "implementation_notes": "EXTEND WorkItemsDialog (closest existing file - mirror the existing HighlightColumnDefinition prop pattern at WorkItemsDialog.tsx:31-40). Add an optional timeInStateColumn prop; for slice 01 it carries no threshold (just a presence flag / minimal shape) since staleness colour is slice 02 - keep the shape minimal and additive so slice 02 can extend it with stalenessThresholdDays. When present, push a DataGrid column (headerName 'Time in State', sortable - reuse the existing sortComparator approach) whose renderCell returns <TimeInStateBadge currentStateEnteredAt={row.currentStateEnteredAt} currentStateName={row.state} />; valueGetter returns the day count so the column sorts longest-first. EXTEND ItemsInProgress (Teams/Detail/ItemsInProgress.tsx:181 already renders WorkItemsDialog with highlightColumn) to also pass timeInStateColumn for team work items. TeamMetricsView renders the WIP widget that opens this dialog and needs no change beyond what ItemsInProgress passes; only touch it if a prop must thread through (confirm at GREEN). Do NOT wire PortfolioDetail/portfolio ItemsInProgress (slice 02). Vitest + RTL: assert the column header is present and a badge renders when timeInStateColumn is supplied, and absent when it is not. The Playwright POM (WorkItemsDialog.ts) already targets the 'Time in State' columnheader and gridcells matching /d in / - render real <th>/<td> with that accessible name and text so 05-02's locators resolve. Strict TS; Biome clean."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Cross-cutting + walking skeleton",
+      "description": "ArchUnitNET rules enforcing the single-seam architectural invariants; the Playwright walking-skeleton scenario un-fixmed, run against a locally-started app, and driven green.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "ArchUnitNET rules for the single-seam invariants",
+          "criteria": [
+            "An ArchUnitNET rule asserts WorkItem has no navigation property to WorkItemStateTransition (ADR-015 - FK-only, not an owned collection)",
+            "An ArchUnitNET rule asserts WorkItemService is the only type that writes WorkItemStateTransition rows / mutates WorkItem.CurrentStateEnteredAt (DDD-6/ADR-016/017 sole-writer invariant)",
+            "The new rules pass on the current implementation and the existing architecture suite stays green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs",
+          "scenario_name": "WorkItemService_IsSoleWriter_OfTransitionsAndCurrentStateEnteredAt",
+          "deps": ["02-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs"
+          ],
+          "implementation_notes": "NEW test file in the existing Architecture suite, modelled on the sibling ForecastFilterSeamArchUnitTest.cs (same suite, same single-seam intent). Rules: (1) WorkItem must not declare a member of type IEnumerable/ICollection/List of WorkItemStateTransition (no navigation property - FK lives on the child per ADR-015); (2) only WorkItemService may depend-on-and-write the transition repository / set CurrentStateEnteredAt - express as ArchUnitNET 'types that ... should be WorkItemService' on the dependency to IWorkItemStateTransitionRepository write path. Note ADR-018's 'no *PerStateAggregation* class' rule is slice-02/sibling-DESIGN scope and not required for US-01; keep this file to the ADR-015/016/017 rules that the slice-01 code actually establishes. This is a test-only step (no production change) - it pins the invariants the 02-02 seam already satisfies, so it should pass immediately; if it fails, a real architecture violation was introduced in phase 02. Zero-warning build."
+        },
+        {
+          "id": "05-02",
+          "name": "Walking-skeleton Playwright scenario green end-to-end",
+          "criteria": [
+            "The TimeInStateAndStaleness walking-skeleton spec is un-fixmed (test.fixme removed) and runs in the E2E suite",
+            "Opening the ADO-backed team's WIP dialog shows the 'Time in State' column with at least one '<N>d in <state>' badge",
+            "Clicking the column header sorts it; the column header stays visible",
+            "The POM locators in WorkItemsDialog.ts resolve against the real rendered column",
+            "The spec was run against a locally-started app before commit (project rule) and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts",
+          "scenario_name": "flow coach sees how long each in-progress item has been in its current state",
+          "deps": ["04-02"],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts"
+          ],
+          "implementation_notes": "WS strategy Type A (DISCUSS/DESIGN): one scenario closes the loop connector -> persistence -> /metrics/wip -> Team detail badge through the production composition root against the ADO-backed testData.teams[0] via testWithUpdatedTeams([0]). Remove the .fixme so the scenario runs. Per the project rule (memory: never commit an unrun Playwright spec), start the app locally, run the spec once, and confirm it first fails because the column/badge does not render, then drive green; validate the existing POM locators (timeInStateColumnHeader by columnheader name 'Time in State', getTimeInStateBadges by gridcells matching /d in /) against the real rendered DOM and adjust the POM only if the accessible names differ - all element access stays in WorkItemsDialog.ts (POM-only rule), never inline page.locator in the spec. This is the single E2E for the slice; per-connector parsing correctness is covered by the NUnit connector tests (02-03/02-04), not Playwright. Enable only this one scenario. Biome/lint clean on the E2E project."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests",
+      "Lighthouse.Backend/Lighthouse.Migrations.Sqlite",
+      "Lighthouse.Backend/Lighthouse.Migrations.Postgres",
+      "Lighthouse.Frontend/src",
+      "Lighthouse.EndToEndTests/tests"
+    ]
+  },
+  "validation": {
+    "status": "pending",
+    "reviewer": "nw-solution-architect",
+    "approved_at": "pending"
+  }
+}
