@@ -29,4 +29,15 @@ export class WorkItemsDialog {
 	async sortByTimeInState(): Promise<void> {
 		await this.timeInStateColumnHeader.click();
 	}
+
+	staleTimeInStateBadgeFor(workItemReference: string): Locator {
+		return this.page
+			.getByRole("row")
+			.filter({ hasText: workItemReference })
+			.getByTestId("time-in-state-stale");
+	}
+
+	async countStaleTimeInStateBadges(): Promise<number> {
+		return this.page.getByTestId("time-in-state-stale").count();
+	}
 }

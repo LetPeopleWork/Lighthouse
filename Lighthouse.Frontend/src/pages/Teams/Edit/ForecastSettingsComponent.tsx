@@ -13,7 +13,6 @@ import type { DeliveryRuleGroupMode } from "../../../components/Common/DeliveryR
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import ForecastFilterEditor from "../../../components/Teams/ForecastFilterEditor/ForecastFilterEditor";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import { useRbac } from "../../../hooks/useRbac";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
@@ -135,144 +134,120 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
-	const { isTeamAdmin } = useRbac();
-	const showFlowSignals = teamSettings !== null && isTeamAdmin(teamSettings.id);
 
 	const handleDateChange = (name: keyof ITeamSettings, newDate: string) => {
 		onTeamSettingsChange(name, new Date(newDate));
 	};
 
 	return (
-		<>
-			<InputGroup title={"Forecast Configuration"}>
-				{!isDefaultSettings && (
-					<Grid size={{ xs: 12 }}>
-						<FormControlLabel
-							control={
-								<Switch
-									checked={teamSettings?.useFixedDatesForThroughput ?? false}
-									onChange={(e) =>
-										onTeamSettingsChange(
-											"useFixedDatesForThroughput",
-											e.target.checked,
-										)
-									}
-								/>
-							}
-							label={`Use Fixed Dates for ${throughputTerm}`}
-						/>
-					</Grid>
-				)}
-
-				{teamSettings?.useFixedDatesForThroughput ? (
-					<Grid size={{ xs: 12, md: 12 }}>
-						<TextField
-							label="Start Date"
-							type="date"
-							slotProps={{
-								inputLabel: { shrink: true },
-								htmlInput: {
-									max: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
-										.toISOString()
-										.slice(0, 10),
-								},
-							}}
-							defaultValue={teamSettings.throughputHistoryStartDate
-								.toISOString()
-								.slice(0, 10)}
-							onChange={(e) =>
-								handleDateChange("throughputHistoryStartDate", e.target.value)
-							}
-						/>
-						<TextField
-							label="End Date"
-							type="date"
-							slotProps={{
-								inputLabel: { shrink: true },
-								htmlInput: {
-									min: new Date(
-										teamSettings.throughputHistoryStartDate.getTime() +
-											10 * 24 * 60 * 60 * 1000,
+		<InputGroup title={"Forecast Configuration"}>
+			{!isDefaultSettings && (
+				<Grid size={{ xs: 12 }}>
+					<FormControlLabel
+						control={
+							<Switch
+								checked={teamSettings?.useFixedDatesForThroughput ?? false}
+								onChange={(e) =>
+									onTeamSettingsChange(
+										"useFixedDatesForThroughput",
+										e.target.checked,
 									)
-										.toISOString()
-										.slice(0, 10),
-									max: new Date().toISOString().slice(0, 10),
-								},
-							}}
-							defaultValue={teamSettings.throughputHistoryEndDate
-								.toISOString()
-								.slice(0, 10)}
-							onChange={(e) =>
-								handleDateChange("throughputHistoryEndDate", e.target.value)
-							}
-						/>
-					</Grid>
-				) : (
-					<Grid size={{ xs: 12 }}>
-						<TextField
-							label={`${throughputTerm} History`}
-							type="number"
-							fullWidth
-							margin="normal"
-							value={teamSettings?.throughputHistory ?? ""}
-							onChange={(e) =>
-								onTeamSettingsChange(
-									"throughputHistory",
-									Number.parseInt(e.target.value, 10),
-								)
-							}
-						/>
-					</Grid>
-				)}
-
-				{!isDefaultSettings &&
-					teamSettings &&
-					(() => {
-						const currentRuleSet = parseRuleSetFromJson(
-							teamSettings.forecastFilterRuleSetJson,
-						);
-						const persistRuleSet = (next: RuleSetData) => {
-							onTeamSettingsChange(
-								"forecastFilterRuleSetJson",
-								next.rules.length === 0 ? null : serializeRuleSetToJson(next),
-							);
-						};
-						return (
-							<PremiumGatedForecastFilter
-								teamId={teamSettings.id}
-								rules={currentRuleSet.rules}
-								mode={currentRuleSet.mode}
-								onRulesChange={(rules) =>
-									persistRuleSet({ rules, mode: currentRuleSet.mode })
-								}
-								onModeChange={(mode) =>
-									persistRuleSet({ rules: currentRuleSet.rules, mode })
 								}
 							/>
-						);
-					})()}
-			</InputGroup>
-			{showFlowSignals && (
-				<InputGroup title={"Flow Signals"}>
-					<Grid size={{ xs: 12 }}>
-						<TextField
-							label="Staleness Threshold (days)"
-							type="number"
-							fullWidth
-							margin="normal"
-							value={teamSettings?.stalenessThresholdDays ?? ""}
-							slotProps={{ htmlInput: { min: 0, max: 365 } }}
-							onChange={(e) =>
-								onTeamSettingsChange(
-									"stalenessThresholdDays",
-									Number.parseInt(e.target.value, 10),
+						}
+						label={`Use Fixed Dates for ${throughputTerm}`}
+					/>
+				</Grid>
+			)}
+
+			{teamSettings?.useFixedDatesForThroughput ? (
+				<Grid size={{ xs: 12, md: 12 }}>
+					<TextField
+						label="Start Date"
+						type="date"
+						slotProps={{
+							inputLabel: { shrink: true },
+							htmlInput: {
+								max: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
+									.toISOString()
+									.slice(0, 10),
+							},
+						}}
+						defaultValue={teamSettings.throughputHistoryStartDate
+							.toISOString()
+							.slice(0, 10)}
+						onChange={(e) =>
+							handleDateChange("throughputHistoryStartDate", e.target.value)
+						}
+					/>
+					<TextField
+						label="End Date"
+						type="date"
+						slotProps={{
+							inputLabel: { shrink: true },
+							htmlInput: {
+								min: new Date(
+									teamSettings.throughputHistoryStartDate.getTime() +
+										10 * 24 * 60 * 60 * 1000,
 								)
+									.toISOString()
+									.slice(0, 10),
+								max: new Date().toISOString().slice(0, 10),
+							},
+						}}
+						defaultValue={teamSettings.throughputHistoryEndDate
+							.toISOString()
+							.slice(0, 10)}
+						onChange={(e) =>
+							handleDateChange("throughputHistoryEndDate", e.target.value)
+						}
+					/>
+				</Grid>
+			) : (
+				<Grid size={{ xs: 12 }}>
+					<TextField
+						label={`${throughputTerm} History`}
+						type="number"
+						fullWidth
+						margin="normal"
+						value={teamSettings?.throughputHistory ?? ""}
+						onChange={(e) =>
+							onTeamSettingsChange(
+								"throughputHistory",
+								Number.parseInt(e.target.value, 10),
+							)
+						}
+					/>
+				</Grid>
+			)}
+
+			{!isDefaultSettings &&
+				teamSettings &&
+				(() => {
+					const currentRuleSet = parseRuleSetFromJson(
+						teamSettings.forecastFilterRuleSetJson,
+					);
+					const persistRuleSet = (next: RuleSetData) => {
+						onTeamSettingsChange(
+							"forecastFilterRuleSetJson",
+							next.rules.length === 0 ? null : serializeRuleSetToJson(next),
+						);
+					};
+					return (
+						<PremiumGatedForecastFilter
+							teamId={teamSettings.id}
+							rules={currentRuleSet.rules}
+							mode={currentRuleSet.mode}
+							onRulesChange={(rules) =>
+								persistRuleSet({ rules, mode: currentRuleSet.mode })
+							}
+							onModeChange={(mode) =>
+								persistRuleSet({ rules: currentRuleSet.rules, mode })
 							}
 						/>
-					</Grid>
-				</InputGroup>
-			)}
-		</>
+					);
+				})()}
+		</InputGroup>
 	);
 };
 

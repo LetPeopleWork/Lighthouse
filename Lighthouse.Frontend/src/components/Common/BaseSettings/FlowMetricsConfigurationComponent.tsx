@@ -24,17 +24,20 @@ interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
 		value: number | boolean | string[] | Date | null,
 	) => void;
 	showFeatureWip?: boolean;
+	stalenessSeedDefault: number;
 }
 
 const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	settings,
 	onSettingsChange,
 	showFeatureWip = false,
+	stalenessSeedDefault,
 }: FlowMetricsConfigurationComponentProps<T>) => {
 	const [isSleEnabled, setIsSleEnabled] = useState(false);
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
+	const [isStalenessEnabled, setIsStalenessEnabled] = useState(false);
 	const [isBaselineEnabled, setIsBaselineEnabled] = useState(false);
 	const [probabilityInputValue, setProbabilityInputValue] =
 		useState<string>("");
@@ -66,6 +69,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			(settings.blockedTags && settings.blockedTags.length > 0) ||
 				(settings.blockedStates && settings.blockedStates.length > 0),
 		);
+		setIsStalenessEnabled(settings.stalenessThresholdDays > 0);
 		setIsBaselineEnabled(
 			settings.processBehaviourChartBaselineStartDate != null &&
 				settings.processBehaviourChartBaselineEndDate != null,
@@ -206,6 +210,22 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			// Clear both blocked tags and blocked states when disabled
 			onSettingsChange("blockedTags" as keyof T, []);
 			onSettingsChange("blockedStates" as keyof T, []);
+		}
+	};
+
+	const handleStalenessEnableChange = (checked: boolean) => {
+		setIsStalenessEnabled(checked);
+
+		onSettingsChange(
+			"stalenessThresholdDays" as keyof T,
+			checked ? stalenessSeedDefault : 0,
+		);
+	};
+
+	const handleStalenessThresholdChange = (value: string) => {
+		const newThreshold = Number.parseInt(value, 10);
+		if (!Number.isNaN(newThreshold)) {
+			onSettingsChange("stalenessThresholdDays" as keyof T, newThreshold);
 		}
 	};
 
@@ -454,6 +474,38 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							/>
 						</Grid>
 					</InputGroup>
+				</Grid>
+			)}
+
+			{/* Staleness Threshold Configuration */}
+			<Grid size={{ xs: 12 }}>
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={isStalenessEnabled}
+							onChange={(e) => handleStalenessEnableChange(e.target.checked)}
+						/>
+					}
+					label="Set Staleness Threshold"
+				/>
+			</Grid>
+			{isStalenessEnabled && (
+				<Grid size={{ xs: 12 }}>
+					<TextField
+						label="Staleness Threshold (days)"
+						type="number"
+						fullWidth
+						margin="normal"
+						value={settings.stalenessThresholdDays}
+						slotProps={{
+							htmlInput: {
+								min: 0,
+								max: 365,
+								step: 1,
+							},
+						}}
+						onChange={(e) => handleStalenessThresholdChange(e.target.value)}
+					/>
 				</Grid>
 			)}
 

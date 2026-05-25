@@ -8,5 +8,4 @@ export interface ITeamSettings extends IBaseSettings {
 	featureWIP: number;
 	automaticallyAdjustFeatureWIP: boolean;
 	forecastFilterRuleSetJson?: string | null;
-	stalenessThresholdDays: number;
 }

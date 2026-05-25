@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests
         }
 
         [Test]
-        public async Task PersistsStalenessThresholdDays_DefaultsSevenForTeamFourteenForPortfolio_RoundTripsThroughContext()
+        public async Task PersistsStalenessThresholdDays_DefaultsZeroForTeamAndPortfolio_RoundTripsThroughContext()
         {
             int teamId;
             int portfolioId;
@@ -52,8 +52,8 @@ namespace Lighthouse.Backend.Tests
 
                 using (Assert.EnterMultipleScope())
                 {
-                    Assert.That(savedTeam.StalenessThresholdDays, Is.EqualTo(7));
-                    Assert.That(savedPortfolio.StalenessThresholdDays, Is.EqualTo(14));
+                    Assert.That(savedTeam.StalenessThresholdDays, Is.Zero);
+                    Assert.That(savedPortfolio.StalenessThresholdDays, Is.Zero);
                 }
             }
         }

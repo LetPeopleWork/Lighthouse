@@ -150,4 +150,36 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.getByRole("combobox");
 		return (await combobox.textContent()) ?? "";
 	}
+
+	get stalenessThresholdField(): Locator {
+		return this.page.getByLabel("Staleness Threshold (days)");
+	}
+
+	async setStalenessThreshold(days: number): Promise<void> {
+		await this.stalenessThresholdField.fill(`${days}`);
+	}
+
+	async getStalenessThreshold(): Promise<number> {
+		const value = (await this.stalenessThresholdField.inputValue()) ?? "0";
+		return Number(value);
+	}
+
+	async toggleFlowMetricsConfiguration(): Promise<void> {
+		await this.page
+			.getByText("Flow Metrics Configuration", { exact: true })
+			.click();
+	}
+
+	get stalenessEnableCheckbox(): Locator {
+		return this.page.getByLabel("Set Staleness Threshold");
+	}
+
+	async enableStaleness(): Promise<void> {
+		await this.toggleFlowMetricsConfiguration();
+		await this.stalenessEnableCheckbox.check();
+	}
+
+	get legacyFlowSignalsGroupHeader(): Locator {
+		return this.page.getByText("Flow Signals", { exact: true });
+	}
 }

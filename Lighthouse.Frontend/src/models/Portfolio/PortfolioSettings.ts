@@ -12,5 +12,4 @@ export interface IPortfolioSettings extends IBaseSettings {
 	percentileHistoryInDays: number;
 	sizeEstimateAdditionalFieldDefinitionId: number | null;
 	featureOwnerAdditionalFieldDefinitionId: number | null;
-	stalenessThresholdDays: number;
 }

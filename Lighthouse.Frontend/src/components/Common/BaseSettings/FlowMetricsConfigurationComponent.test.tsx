@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
@@ -112,6 +112,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			<FlowMetricsConfigurationComponent
 				settings={mockSettings}
 				onSettingsChange={mockOnSettingsChange}
+				stalenessSeedDefault={5}
 			/>,
 		);
 		const titles = screen.getAllByTestId("input-group-title");
@@ -126,6 +127,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -140,6 +142,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithWipLimit}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -154,6 +157,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -177,6 +181,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -196,6 +201,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithWipLimit}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -214,6 +220,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithWipLimit}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -236,6 +243,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -255,6 +263,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithSLE}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -272,6 +281,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -306,6 +316,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithSLE}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -339,6 +350,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithSLE}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -372,6 +384,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithSLE}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -393,6 +406,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettingsWithFeatureWIP}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={false}
 				/>,
 			);
@@ -406,6 +420,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettingsWithFeatureWIP}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -422,6 +437,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettingsWithFeatureWIP}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -442,6 +458,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithFeatureWIPEnabled}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -460,6 +477,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettingsWithFeatureWIP}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -488,6 +506,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithFeatureWIPEnabled}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -515,6 +534,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithFeatureWIPEnabled}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -542,6 +562,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithFeatureWIPEnabled}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -573,6 +594,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithFeatureWIPEnabled}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 					showFeatureWip={true}
 				/>,
 			);
@@ -603,6 +625,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -619,6 +642,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -645,6 +669,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedTags}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -665,6 +690,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedTags}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -685,6 +711,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedTags}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -715,6 +742,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedTags}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -737,6 +765,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedTags}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -756,6 +785,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -772,6 +802,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -798,6 +829,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedStates}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -818,6 +850,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedStates}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -838,6 +871,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedStates}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -868,6 +902,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedStates}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -890,6 +925,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithDoingStates}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -909,6 +945,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -928,6 +965,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedTags}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -947,6 +985,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithBlockedStates}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -969,6 +1008,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -989,6 +1029,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1010,6 +1051,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1039,6 +1081,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1067,6 +1110,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1085,6 +1129,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1113,6 +1158,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1138,6 +1184,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1163,6 +1210,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1183,6 +1231,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1208,6 +1257,100 @@ describe("FlowMetricsConfigurationComponent", () => {
 		});
 	});
 
+	describe("Staleness opt-in", () => {
+		const STALENESS_CHECKBOX_LABEL = "Set Staleness Threshold";
+		const STALENESS_FIELD_LABEL = "Staleness Threshold (days)";
+
+		it("shows the checkbox unchecked and hides the field when stalenessThresholdDays is 0", () => {
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, stalenessThresholdDays: 0 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(screen.getByLabelText(STALENESS_CHECKBOX_LABEL)).not.toBeChecked();
+			expect(
+				screen.queryByLabelText(STALENESS_FIELD_LABEL),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows the checkbox checked and reveals the field when stalenessThresholdDays is greater than 0", () => {
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, stalenessThresholdDays: 9 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(screen.getByLabelText(STALENESS_CHECKBOX_LABEL)).toBeChecked();
+			expect(screen.getByLabelText(STALENESS_FIELD_LABEL)).toHaveValue(9);
+		});
+
+		it("seeds the staleness threshold with the owner-specific default on enable", async () => {
+			const user = userEvent.setup();
+			vi.clearAllMocks();
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, stalenessThresholdDays: 0 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(screen.getByLabelText(STALENESS_CHECKBOX_LABEL));
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"stalenessThresholdDays",
+				5,
+			);
+		});
+
+		it("resets the staleness threshold to 0 on disable", async () => {
+			const user = userEvent.setup();
+			vi.clearAllMocks();
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, stalenessThresholdDays: 14 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(screen.getByLabelText(STALENESS_CHECKBOX_LABEL));
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"stalenessThresholdDays",
+				0,
+			);
+		});
+
+		it("propagates an edited staleness threshold through onSettingsChange", () => {
+			vi.clearAllMocks();
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, stalenessThresholdDays: 5 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			fireEvent.change(screen.getByLabelText(STALENESS_FIELD_LABEL), {
+				target: { value: "21" },
+			});
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"stalenessThresholdDays",
+				21,
+			);
+		});
+	});
+
 	describe("Input Validation", () => {
 		it("should properly handle non-numeric input for systemWIPLimit", async () => {
 			const user = userEvent.setup();
@@ -1218,6 +1361,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithWipLimit}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1243,6 +1387,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={settingsWithMinValues}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 
@@ -1268,6 +1413,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				<FlowMetricsConfigurationComponent
 					settings={mockSettings}
 					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
 				/>,
 			);
 

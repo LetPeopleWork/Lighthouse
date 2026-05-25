@@ -2,7 +2,6 @@ import {
 	Alert,
 	Container,
 	type SelectChangeEvent,
-	TextField,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -10,7 +9,6 @@ import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useModifySettings } from "../../../hooks/useModifySettings";
-import { useRbac } from "../../../hooks/useRbac";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
@@ -21,7 +19,6 @@ import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
-import InputGroup from "../InputGroup/InputGroup";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
@@ -52,7 +49,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const [teams, setTeams] = useState<ITeam[]>([]);
 	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
 		useLicenseRestrictions();
-	const { isPortfolioAdmin } = useRbac();
 
 	const fetchTeams = useCallback(async () => {
 		const fetchedTeams = await getAllTeams();
@@ -201,28 +197,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<FlowMetricsConfigurationComponent
 							settings={projectSettings}
 							onSettingsChange={updateSettings}
+							stalenessSeedDefault={14}
 						/>
-
-						{isPortfolioAdmin(projectSettings.id) && (
-							<InputGroup title={"Flow Signals"}>
-								<Grid size={{ xs: 12 }}>
-									<TextField
-										label="Staleness Threshold (days)"
-										type="number"
-										fullWidth
-										margin="normal"
-										value={projectSettings.stalenessThresholdDays ?? ""}
-										slotProps={{ htmlInput: { min: 0, max: 365 } }}
-										onChange={(e) =>
-											updateSettings(
-												"stalenessThresholdDays",
-												Number.parseInt(e.target.value, 10),
-											)
-										}
-									/>
-								</Grid>
-							</InputGroup>
-						)}
 
 						<EstimationFieldComponent
 							estimationFieldDefinitionId={

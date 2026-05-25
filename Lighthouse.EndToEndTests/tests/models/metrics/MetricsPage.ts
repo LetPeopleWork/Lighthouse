@@ -51,6 +51,31 @@ export class MetricsWidget {
 	async snapshotChartContent(): Promise<string> {
 		return (await this.Widget.innerText()) ?? "";
 	}
+
+	get staleOverviewCount(): Locator {
+		return this.Widget.getByTestId("stale-overview-count");
+	}
+
+	async getStaleOverviewCount(): Promise<number> {
+		const text = (await this.staleOverviewCount.innerText()) ?? "0";
+		return Number(text.replace(/\D/g, ""));
+	}
+
+	get ragStatusIndicator(): Locator {
+		return this.Widget.getByTestId("rag-status");
+	}
+
+	async getRagStatus(): Promise<string> {
+		return (await this.ragStatusIndicator.getAttribute("data-rag")) ?? "";
+	}
+
+	get staleAgingBubbles(): Locator {
+		return this.Widget.getByTestId("aging-bubble-stale");
+	}
+
+	async countStaleAgingBubbles(): Promise<number> {
+		return this.staleAgingBubbles.count();
+	}
 }
 
 export enum MetricsCategories {
@@ -63,6 +88,7 @@ export enum MetricsCategories {
 export const MetricsWidgetNames = {
 	WorkInProgressOverview: "Work In Progress Overview",
 	BlockedItemsOverview: "Blocked Items Overview",
+	StaleItemsOverview: "Stale Items Overview",
 	FeaturesBeingWorkedOnOverview: "Features Being Worked On Overview",
 	TotalWorkItemAgeOverview: "Total Work Item Age Overview",
 	PredictabilityScoreOverview: "Predictability Score Overview",
@@ -95,6 +121,7 @@ export class MetricsPage {
 		[MetricsCategories.FlowOverview]: [
 			["Work In Progress Overview", "wipOverview"],
 			["Blocked Items Overview", "blockedOverview"],
+			["Stale Items Overview", "staleOverview"],
 			["Features Being Worked On Overview", "featuresWorkedOnOverview"],
 			["Total Work Item Age Overview", "totalWorkItemAge"],
 			["Predictability Score Overview", "predictabilityScore"],

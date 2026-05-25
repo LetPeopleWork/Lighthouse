@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [NonParallelizable]
     public class PortfolioStalenessThresholdSettingsIntegrationTest
     {
-        private const int DefaultPortfolioThresholdDays = 14;
-
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient client = null!;
@@ -72,25 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetPortfolioSettings_NewlyCreatedPortfolio_ExposesDefaultStalenessThresholdOfFourteenDays()
-        {
-            client.AsPortfolioAdmin(seededPortfolioId);
-
-            var response = await client.GetAsync($"/api/latest/portfolios/{seededPortfolioId}/settings");
-
-            var body = await response.Content.ReadAsStringAsync();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(TryGetInt(body, "stalenessThresholdDays", out var threshold), Is.True,
-                    $"Portfolio settings payload must carry stalenessThresholdDays for US-04. Body: {body}");
-                Assert.That(threshold, Is.EqualTo(DefaultPortfolioThresholdDays),
-                    $"A newly-created portfolio must default to {DefaultPortfolioThresholdDays} days. Body: {body}");
-            }
-        }
-
-        [Test]
-        [Ignore("pending DELIVER: US-05 default flip — entity initialiser flips 14 → 0 (DDD-12, opt-in). Replaces the OfFourteenDays expectation at GREEN; un-ignore and flip DefaultPortfolioThresholdDays to 0 then.")]
         public async Task GetPortfolioSettings_NewlyCreatedPortfolio_ExposesDefaultStalenessThresholdOfZero()
         {
             client.AsPortfolioAdmin(seededPortfolioId);

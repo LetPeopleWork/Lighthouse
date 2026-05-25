@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Models
 
         public override int DoneItemsCutoffDays { get; set; } = 365;
 
-        public override int StalenessThresholdDays { get; set; } = 14;
+        public override int StalenessThresholdDays { get; set; }
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 

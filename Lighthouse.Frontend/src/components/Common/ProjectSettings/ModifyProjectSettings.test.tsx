@@ -688,9 +688,8 @@ describe("ModifyProjectSettings", () => {
 		});
 	});
 
-	describe("Flow Signals staleness threshold", () => {
-		it("renders the staleness threshold field with the persisted value for a portfolio admin", async () => {
-			mockIsPortfolioAdmin.mockReturnValue(true);
+	describe("staleness relocated to Flow Metrics", () => {
+		it("surfaces the staleness threshold in Flow Metrics Configuration, not a standalone Flow Signals group", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
 				stalenessThresholdDays: 14,
@@ -711,16 +710,19 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
+			expect(screen.queryByText("Flow Signals")).not.toBeInTheDocument();
+			expect(
+				screen.getByText("Flow Metrics Configuration"),
+			).toBeInTheDocument();
 			expect(screen.getByLabelText("Staleness Threshold (days)")).toHaveValue(
 				14,
 			);
 		});
 
-		it("hides the staleness threshold field for a non-portfolio-admin", async () => {
-			mockIsPortfolioAdmin.mockReturnValue(false);
+		it("hides the staleness field when the threshold is 0 (opt-in off)", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
-				stalenessThresholdDays: 14,
+				stalenessThresholdDays: 0,
 			});
 
 			renderWithProvider(
@@ -741,40 +743,6 @@ describe("ModifyProjectSettings", () => {
 			expect(
 				screen.queryByLabelText("Staleness Threshold (days)"),
 			).not.toBeInTheDocument();
-		});
-
-		it("round-trips an edited staleness threshold into the saved settings", async () => {
-			mockIsPortfolioAdmin.mockReturnValue(true);
-			mockGetProjectSettings.mockResolvedValue({
-				...projectSettings,
-				stalenessThresholdDays: 14,
-			});
-			mockValidateProjectSettings.mockResolvedValue(true);
-
-			renderWithProvider(
-				<ModifyProjectSettings
-					title="Modify Project Settings"
-					getWorkTrackingSystems={mockGetWorkTrackingSystems}
-					getProjectSettings={mockGetProjectSettings}
-					getAllTeams={mockGetAllTeams}
-					saveProjectSettings={mockSaveProjectSettings}
-					validateProjectSettings={mockValidateProjectSettings}
-				/>,
-			);
-
-			await waitFor(() =>
-				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-			);
-
-			fireEvent.change(screen.getByLabelText("Staleness Threshold (days)"), {
-				target: { value: "30" },
-			});
-
-			await waitFor(() => {
-				expect(screen.getByLabelText("Staleness Threshold (days)")).toHaveValue(
-					30,
-				);
-			});
 		});
 	});
 });

@@ -526,29 +526,10 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 	});
 });
 
-describe("ForecastSettingsComponent — Flow Signals staleness threshold", () => {
+describe("ForecastSettingsComponent — staleness relocated to Flow Metrics", () => {
 	const onTeamSettingsChange = vi.fn();
 
-	it("renders the staleness threshold field for a team admin", () => {
-		mockIsTeamAdmin.mockReturnValue(true);
-		const teamSettings = createMockTeamSettings();
-
-		render(
-			<ForecastSettingsComponent
-				teamSettings={teamSettings}
-				isDefaultSettings={false}
-				onTeamSettingsChange={onTeamSettingsChange}
-			/>,
-		);
-
-		expect(screen.getByLabelText("Staleness Threshold (days)")).toHaveValue(
-			teamSettings.stalenessThresholdDays,
-		);
-	});
-
-	it("hides the staleness threshold field for a non-team-admin", () => {
-		mockIsTeamAdmin.mockReturnValue(false);
-
+	it("no longer renders the standalone Flow Signals group or the staleness field", () => {
 		render(
 			<ForecastSettingsComponent
 				teamSettings={createMockTeamSettings()}
@@ -557,27 +538,9 @@ describe("ForecastSettingsComponent — Flow Signals staleness threshold", () =>
 			/>,
 		);
 
+		expect(screen.queryByText("Flow Signals")).not.toBeInTheDocument();
 		expect(
 			screen.queryByLabelText("Staleness Threshold (days)"),
 		).not.toBeInTheDocument();
-	});
-
-	it("propagates an edited staleness threshold through onTeamSettingsChange", () => {
-		mockIsTeamAdmin.mockReturnValue(true);
-		const callback = vi.fn();
-
-		render(
-			<ForecastSettingsComponent
-				teamSettings={createMockTeamSettings()}
-				isDefaultSettings={false}
-				onTeamSettingsChange={callback}
-			/>,
-		);
-
-		fireEvent.change(screen.getByLabelText("Staleness Threshold (days)"), {
-			target: { value: "21" },
-		});
-
-		expect(callback).toHaveBeenCalledWith("stalenessThresholdDays", 21);
 	});
 });

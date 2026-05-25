@@ -18,6 +18,7 @@ export interface IBaseSettings {
 	blockedTags: string[];
 	stateMappings: IStateMapping[];
 	doneItemsCutoffDays: number;
+	stalenessThresholdDays: number;
 	processBehaviourChartBaselineStartDate: Date | null;
 	processBehaviourChartBaselineEndDate: Date | null;
 	estimationAdditionalFieldDefinitionId: number | null;
