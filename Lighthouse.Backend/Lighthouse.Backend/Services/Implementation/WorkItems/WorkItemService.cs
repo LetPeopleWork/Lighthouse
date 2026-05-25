@@ -53,6 +53,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
+            var syncTime = DateTime.UtcNow;
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
@@ -63,10 +64,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             foreach (var item in actualWorkItems)
             {
                 var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
+                var priorState = existingItem?.State;
                 var persistedItem = SyncWorkItem(item, existingItem);
                 storedWorkItems.RemoveAll(wi => wi.ReferenceId == item.ReferenceId);
 
-                itemsWithTransitions.Add((persistedItem, item.SyncedTransitions));
+                var syncedTransitions = WithSyncDeltaTransition(workItemService, persistedItem, item.SyncedTransitions, priorState, syncTime);
+                itemsWithTransitions.Add((persistedItem, syncedTransitions));
             }
 
             foreach (var itemToRemove in storedWorkItems)
@@ -84,6 +87,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await stateTransitionRepository.Save();
             await workItemRepository.Save();
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> WithSyncDeltaTransition(
+            IWorkTrackingConnector connector,
+            WorkItem persistedItem,
+            IReadOnlyList<WorkItemStateTransition> syncedTransitions,
+            string? priorState,
+            DateTime syncTime)
+        {
+            if (connector.SupportsTransitionHistory)
+            {
+                return syncedTransitions;
+            }
+
+            if (string.IsNullOrEmpty(priorState) || string.Equals(priorState, persistedItem.State, StringComparison.Ordinal))
+            {
+                return syncedTransitions;
+            }
+
+            var syntheticTransition = new WorkItemStateTransition
+            {
+                FromState = priorState,
+                ToState = persistedItem.State,
+                TransitionedAt = syncTime,
+            };
+
+            return [.. syncedTransitions, syntheticTransition];
         }
 
         private WorkItem SyncWorkItem(WorkItem item, WorkItem? existingItem)

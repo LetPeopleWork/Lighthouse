@@ -12,7 +12,6 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
-    [Ignore("pending DELIVER: slice 02 CSV sync-delta fallback + Linear capture (RefreshWorkItems fallback branch not yet implemented)")]
     public class WorkItemServiceTransitionFallbackIntegrationTest : IntegrationTestBase
     {
         [Test]
@@ -65,6 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        [Ignore("pending DELIVER: 04-01 Linear history capture")]
         public async Task UpdateWorkItemsForTeam_LinearConnectorWithHistory_PersistsRealTransitionsAndDerivesCurrentStateEnteredAt()
         {
             var team = await GivenPersistedTeam(rawStates: ["New", "Active"], mappedToDo: "To Do", mappedDoing: "In Progress");
