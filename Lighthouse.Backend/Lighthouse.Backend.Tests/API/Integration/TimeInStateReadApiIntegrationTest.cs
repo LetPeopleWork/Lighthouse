@@ -220,8 +220,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             using var document = JsonDocument.Parse(body);
             var clone = document.RootElement.Clone();
-            Assert.That(clone.ValueKind, Is.EqualTo(JsonValueKind.Array), $"Expected a work-item array. Body: {body}");
-            Assert.That(clone.GetArrayLength(), Is.EqualTo(1), $"Expected exactly one seeded in-progress item. Body: {body}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(clone.ValueKind, Is.EqualTo(JsonValueKind.Array), $"Expected a work-item array. Body: {body}");
+                Assert.That(clone.GetArrayLength(), Is.EqualTo(1), $"Expected exactly one seeded in-progress item. Body: {body}");
+            }
             return clone[0];
         }
 

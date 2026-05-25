@@ -971,8 +971,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await subject.UpdateWorkItemsForTeam(team);
 
             var persistedAfterFirstSync = workItems.Single(wi => wi.ReferenceId == incoming.ReferenceId);
-            Assert.That(persistedAfterFirstSync.CurrentStateEnteredAt, Is.EqualTo(latestDoing));
-            Assert.That(storedTransitions, Has.Count.EqualTo(3));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(persistedAfterFirstSync.CurrentStateEnteredAt, Is.EqualTo(latestDoing));
+                Assert.That(storedTransitions, Has.Count.EqualTo(3));
+            }
 
             await subject.UpdateWorkItemsForTeam(team);
 

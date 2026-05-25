@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private static IWorkItemQueryOwner CreateOwner(params (string mappedName, string[] rawStates)[] mappings)
+        private static TestQueryOwner CreateOwner(params (string mappedName, string[] rawStates)[] mappings)
         {
             var owner = new TestQueryOwner
             {
