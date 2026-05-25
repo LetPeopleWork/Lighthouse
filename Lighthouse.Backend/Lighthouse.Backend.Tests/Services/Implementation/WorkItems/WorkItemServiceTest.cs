@@ -18,10 +18,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
         private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
         private List<Team> teams;
+        private List<WorkItemStateTransition> storedTransitions;
 
         [SetUp]
         public void SetUp()
@@ -31,17 +33,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
+            stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
             workItems = [];
             teams = [];
+            storedTransitions = [];
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
             workItemRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<WorkItem, bool>>()))
                 .Returns((Func<WorkItem, bool> predicate) => workItems.SingleOrDefault(predicate));
+            workItemRepositoryMock.Setup(x => x.Add(It.IsAny<WorkItem>()))
+                .Callback((WorkItem item) => workItems.Add(item));
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(() => teams);
+
+            stateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItemStateTransition, bool>>>()))
+                .Returns((Expression<Func<WorkItemStateTransition, bool>> predicate) => storedTransitions.Where(predicate.Compile()).AsQueryable());
+            stateTransitionRepositoryMock.Setup(x => x.Add(It.IsAny<WorkItemStateTransition>()))
+                .Callback((WorkItemStateTransition transition) => storedTransitions.Add(transition));
         }
 
         [Test]
@@ -942,6 +953,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        public async Task RefreshWorkItems_DerivesCurrentStateEnteredAt_FromLatestMatchingTransition_Idempotently()
+        {
+            var team = CreateTeam();
+
+            var earlierDoing = new DateTime(2026, 5, 20, 9, 0, 0, DateTimeKind.Utc);
+            var latestDoing = new DateTime(2026, 5, 23, 14, 0, 0, DateTimeKind.Utc);
+
+            var incoming = CreateWorkItemWithTransitions(team, "Doing",
+                ("To Do", "Doing", earlierDoing),
+                ("Doing", "Review", new DateTime(2026, 5, 22, 10, 0, 0, DateTimeKind.Utc)),
+                ("Review", "Doing", latestDoing));
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            var persistedAfterFirstSync = workItems.Single(wi => wi.ReferenceId == incoming.ReferenceId);
+            Assert.That(persistedAfterFirstSync.CurrentStateEnteredAt, Is.EqualTo(latestDoing));
+            Assert.That(storedTransitions, Has.Count.EqualTo(3));
+
+            await subject.UpdateWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedTransitions, Has.Count.EqualTo(3));
+                Assert.That(persistedAfterFirstSync.CurrentStateEnteredAt, Is.EqualTo(latestDoing));
+            }
+        }
+
+        [Test]
+        public async Task RefreshWorkItems_NoTransitionMatchesCurrentState_LeavesCurrentStateEnteredAtNull()
+        {
+            var team = CreateTeam();
+
+            var incoming = CreateWorkItemWithTransitions(team, "Doing",
+                ("To Do", "Review", new DateTime(2026, 5, 21, 9, 0, 0, DateTimeKind.Utc)));
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            var persisted = workItems.Single(wi => wi.ReferenceId == incoming.ReferenceId);
+            Assert.That(persisted.CurrentStateEnteredAt, Is.Null);
+        }
+
+        [Test]
         public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ActualWorkExceedsDefault_UsesActualWork()
         {
             var team = CreateTeam();
@@ -999,6 +1058,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             newWorkItems.Take(remainingItems).ToList().ForEach(x => x.StateCategory = StateCategories.Doing);
 
             workItems.AddRange(newWorkItems);
+        }
+
+        private WorkItem CreateWorkItemWithTransitions(Team team, string currentState, params (string fromState, string toState, DateTime transitionedAt)[] transitions)
+        {
+            var syncedTransitions = transitions
+                .Select(t => new WorkItemStateTransition { FromState = t.fromState, ToState = t.toState, TransitionedAt = t.transitionedAt })
+                .ToList();
+
+            return new WorkItem
+            {
+                Id = idCounter++,
+                ReferenceId = Guid.NewGuid().ToString(),
+                State = currentState,
+                StateCategory = StateCategories.Doing,
+                Team = team,
+                TeamId = team.Id,
+                SyncedTransitions = syncedTransitions,
+            };
         }
 
         private void AddWorkItemForTeam(Team team)
@@ -1070,7 +1147,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
 
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object);
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object);
         }
     }
 }

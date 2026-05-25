@@ -15,7 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IRepository<Feature> featureRepository,
         IWorkItemRepository workItemRepository,
         IPortfolioMetricsService portfolioMetricsService,
-        IRepository<Team> teamRepository)
+        IRepository<Team> teamRepository,
+        IWorkItemStateTransitionRepository stateTransitionRepository)
         : IWorkItemService
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new();
@@ -60,20 +61,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             foreach (var item in actualWorkItems)
             {
                 var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
-                if (existingItem == null)
-                {
-                    workItemRepository.Add(item);
-                    logger.LogDebug("Added Work Item {WorkItemId}", item.ReferenceId);
-                }
-                else
-                {
-                    existingItem.Update(item);
-                    workItemRepository.Update(existingItem);
+                var persistedItem = SyncWorkItem(item, existingItem);
+                storedWorkItems.RemoveAll(wi => wi.ReferenceId == item.ReferenceId);
 
-                    storedWorkItems.Remove(existingItem);
-
-                    logger.LogDebug("Updated Work Item {WorkItemId}", item.ReferenceId);
-                }
+                SyncStateTransitions(persistedItem, item.SyncedTransitions);
             }
 
             foreach (var itemToRemove in storedWorkItems)
@@ -83,6 +74,56 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             await workItemRepository.Save();
+        }
+
+        private WorkItem SyncWorkItem(WorkItem item, WorkItem? existingItem)
+        {
+            if (existingItem == null)
+            {
+                workItemRepository.Add(item);
+                logger.LogDebug("Added Work Item {WorkItemId}", item.ReferenceId);
+                return item;
+            }
+
+            existingItem.Update(item);
+            workItemRepository.Update(existingItem);
+            logger.LogDebug("Updated Work Item {WorkItemId}", item.ReferenceId);
+            return existingItem;
+        }
+
+        private void SyncStateTransitions(WorkItem workItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
+        {
+            var existingTransitions = stateTransitionRepository
+                .GetAllByPredicate(transition => transition.WorkItemId == workItem.Id)
+                .ToList();
+
+            var newTransitions = syncedTransitions
+                .Where(transition => !existingTransitions.Exists(stored =>
+                    stored.ToState == transition.ToState && stored.TransitionedAt == transition.TransitionedAt))
+                .Select(transition => new WorkItemStateTransition
+                {
+                    WorkItemId = workItem.Id,
+                    FromState = transition.FromState,
+                    ToState = transition.ToState,
+                    TransitionedAt = transition.TransitionedAt,
+                })
+                .ToList();
+
+            newTransitions.ForEach(stateTransitionRepository.Add);
+
+            workItem.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(workItem, existingTransitions.Concat(newTransitions));
+        }
+
+        private static DateTime? DeriveCurrentStateEnteredAt(WorkItem workItem, IEnumerable<WorkItemStateTransition> transitions)
+        {
+            var matchingTransitions = transitions
+                .Where(transition => transition.ToState == workItem.State)
+                .Select(transition => transition.TransitionedAt)
+                .ToList();
+
+            return matchingTransitions.Count == 0
+                ? null
+                : matchingTransitions.Max();
         }
 
         private async Task UpdateRemainingWorkForPortfolio(Portfolio portfolio)
