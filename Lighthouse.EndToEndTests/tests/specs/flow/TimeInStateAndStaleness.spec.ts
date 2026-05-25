@@ -123,11 +123,6 @@ test("flow coach sees the Time in State column on the portfolio work-item view",
 	request,
 	overviewPage,
 }) => {
-	test.fixme(
-		true,
-		"slice 02 US-04: portfolio Time-in-State column renders, but live badges need connector-side Feature transition capture (ADO #5088, deferred in 05-01). Un-fixme once Feature capture lands.",
-	);
-
 	await loadDemoScenario(request, DEMO_SCENARIO_ID);
 	await waitForBackgroundUpdates(request);
 	await page.goto("/");
@@ -145,6 +140,7 @@ test("flow coach sees the Time in State column on the portfolio work-item view",
 
 	await expect(workItemsDialog.timeInStateColumnHeader).toBeVisible();
 	const badges = await workItemsDialog.getTimeInStateBadges();
+	expect(badges.length).toBeGreaterThan(0);
 	for (const badge of badges) {
 		expect(badge).toMatch(/\d+d in .+/);
 	}
