@@ -171,7 +171,9 @@ test("flow coach sees the Stale Items widget count a stale item, while a blocked
 		flowOverviewWidgets,
 	);
 	await expect(staleWidget.Widget).toBeVisible();
-	expect(await staleWidget.getStaleOverviewCount()).toBeGreaterThan(0);
+	await expect
+		.poll(() => staleWidget.getStaleOverviewCount())
+		.toBeGreaterThan(0);
 	expect(await staleWidget.getRagStatus()).not.toBe("");
 
 	const staleDialog = await staleWidget.openDialog();

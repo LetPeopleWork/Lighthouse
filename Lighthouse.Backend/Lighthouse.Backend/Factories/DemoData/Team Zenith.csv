@@ -202,9 +202,9 @@ TZ-200,Grid performance analytics,Done,User Story,ALT-100,{-10},{-4},,
 TZ-201,Final power grid certification,Done,User Story,ALT-100,{-6},{-1},,
 TZ-202,Comprehensive system testing,Done,User Story,ALT-100,{-3},{-0},,
 TZ-203,Documentation finalization,Done,User Story,ALT-100,{-2},{-0},,
-TZ-038,Performance testing suite,Next,User Story,,{-2},,,{-1}
-TZ-039,Accessibility improvements,Backlog,User Story,,,,,
-TZ-040,Database migration tools,Backlog,Bug,,,,,
+TZ-204,Performance testing suite,Next,User Story,,{-2},,,{-1}
+TZ-205,Accessibility improvements,Backlog,User Story,,,,,
+TZ-206,Database migration tools,Backlog,Bug,,,,,
 TV-055,Mission control dashboard foundation,Backlog,User Story,AP-004,,,,
 TV-056,Spacecraft telemetry data collection,Backlog,User Story,AP-004,,,,
 TV-057,Flight path calculation engine,Backlog,User Story,AP-004,,,,
