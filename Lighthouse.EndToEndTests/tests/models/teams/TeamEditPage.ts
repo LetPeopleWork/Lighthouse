@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { BaseEditPage } from "../common/BaseEditPage";
 import { ForecastFilterEditor } from "./ForecastFilterEditor";
 import { TeamDetailPage } from "./TeamDetailPage";
@@ -79,8 +79,22 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	async enableStaleness(): Promise<void> {
-		await this.toggleFlowMetricsConfiguration();
-		await this.stalenessEnableCheckbox.check();
+		await expect
+			.poll(
+				async () => {
+					if (!(await this.stalenessEnableCheckbox.isVisible())) {
+						await this.toggleFlowMetricsConfiguration().catch(() => {});
+						return false;
+					}
+					if (!(await this.stalenessEnableCheckbox.isChecked())) {
+						await this.stalenessEnableCheckbox.check().catch(() => {});
+					}
+					return this.stalenessEnableCheckbox.isChecked();
+				},
+				{ timeout: 15_000 },
+			)
+			.toBe(true);
+		await expect(this.stalenessThresholdField).toBeVisible();
 	}
 
 	get legacyFlowSignalsGroupHeader(): Locator {
