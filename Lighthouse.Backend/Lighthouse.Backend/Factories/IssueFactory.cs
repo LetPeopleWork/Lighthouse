@@ -52,7 +52,38 @@ namespace Lighthouse.Backend.Factories
                 State = state,
                 Labels = labels,
                 Fields = fields,
+                StateTransitions = GetAllStateTransitions(json),
             };
+        }
+
+        public IReadOnlyList<WorkItemStateTransition> GetAllStateTransitions(JsonElement json)
+        {
+            if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
+            {
+                return [];
+            }
+
+            var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
+
+            return histories.EnumerateArray()
+                .SelectMany(ExtractStatusTransitionsFromHistory)
+                .ToList();
+        }
+
+        private static IEnumerable<WorkItemStateTransition> ExtractStatusTransitionsFromHistory(JsonElement history)
+        {
+            var historyEntryCreationDateAsString = history.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
+            var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+            var transitionedAt = DateTime.SpecifyKind(historyEntryCreationDate, DateTimeKind.Utc);
+
+            return history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray()
+                .Where(item => item.GetProperty(JiraFieldNames.FieldFieldName).GetString() == JiraFieldNames.StatusFieldName)
+                .Select(item => new WorkItemStateTransition
+                {
+                    FromState = item.GetProperty(JiraFieldNames.FromStringPropertyName).GetString() ?? string.Empty,
+                    ToState = item.GetProperty(JiraFieldNames.ToStringPropertyName).GetString() ?? string.Empty,
+                    TransitionedAt = transitionedAt,
+                });
         }
 
         private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string state)

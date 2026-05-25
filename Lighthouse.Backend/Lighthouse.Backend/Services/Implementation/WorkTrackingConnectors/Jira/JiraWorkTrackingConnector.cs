@@ -973,6 +973,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Url = url,
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
+                SyncedTransitions = issue.StateTransitions,
             };
 
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);

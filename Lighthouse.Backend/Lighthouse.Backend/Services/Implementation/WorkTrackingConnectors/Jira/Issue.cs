@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Lighthouse.Backend.Models;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -25,5 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public string State { get; set;}
 
         public List<string> Labels { get; set; }
+
+        public IReadOnlyList<WorkItemStateTransition> StateTransitions { get; set; } = [];
     }
 }

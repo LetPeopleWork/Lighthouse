@@ -515,6 +515,45 @@ namespace Lighthouse.Backend.Tests.Factories
             }
         }
 
+        [Test]
+        public void GetAllStateTransitions_ChangelogWithThreeStatusTransitions_ReturnsAllTransitionsInOrder()
+        {
+            var firstTransitionDate = new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc);
+            var secondTransitionDate = new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc);
+            var currentStateEnteredDate = new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc);
+
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                AddChangelogEntries(json, [
+                    CreateChangelogEntry("Backlog", "Implementation", firstTransitionDate),
+                    CreateChangelogEntry("Implementation", "Verification", secondTransitionDate),
+                    CreateChangelogEntry("Verification", "Resolved", currentStateEnteredDate)
+                ]);
+            });
+
+            var transitions = CreateIssueFactory().GetAllStateTransitions(jsonDocument.RootElement);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(3));
+
+                Assert.That(transitions[0].FromState, Is.EqualTo("Backlog"));
+                Assert.That(transitions[0].ToState, Is.EqualTo("Implementation"));
+                Assert.That(transitions[0].TransitionedAt.Date, Is.EqualTo(firstTransitionDate.Date));
+                Assert.That(transitions[0].TransitionedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+
+                Assert.That(transitions[1].FromState, Is.EqualTo("Implementation"));
+                Assert.That(transitions[1].ToState, Is.EqualTo("Verification"));
+                Assert.That(transitions[1].TransitionedAt.Date, Is.EqualTo(secondTransitionDate.Date));
+
+                Assert.That(transitions[2].FromState, Is.EqualTo("Verification"));
+                Assert.That(transitions[2].ToState, Is.EqualTo("Resolved"));
+                Assert.That(transitions[2].TransitionedAt.Date, Is.EqualTo(currentStateEnteredDate.Date));
+
+                Assert.That(transitions[^1].TransitionedAt.Date, Is.EqualTo(currentStateEnteredDate.Date));
+            }
+        }
+
         private static void AddChangelogEntries(JsonNode jsonNode, JsonArray changelogEntries)
         {
             var changelog = jsonNode[JiraFieldNames.ChangelogFieldName];
