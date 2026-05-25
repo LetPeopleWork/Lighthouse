@@ -59,6 +59,7 @@ namespace Lighthouse.Backend.Factories
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.ParentReferenceIdHeader).Value = "Parent";
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.StartedDateHeader).Value = "StartedDate";
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.ClosedDateHeader).Value = "ClosedDate";
+            workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.StateEnteredDateHeader).Value = "StateEnteredDate";
 
             return workTrackingSystemConnection;
         }

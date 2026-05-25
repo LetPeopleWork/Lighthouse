@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private bool historyUnavailable;
 
-        public bool SupportsTransitionHistory => true;
+        public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {

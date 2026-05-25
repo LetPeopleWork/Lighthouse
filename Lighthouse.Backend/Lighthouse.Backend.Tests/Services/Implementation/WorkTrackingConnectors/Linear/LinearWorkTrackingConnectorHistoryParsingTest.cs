@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject(new Mock<HttpMessageHandler>().Object);
 
-            Assert.That(subject.SupportsTransitionHistory, Is.True);
+            Assert.That(subject.SupportsTransitionHistory(new WorkTrackingSystemConnection()), Is.True);
         }
 
         [Test]

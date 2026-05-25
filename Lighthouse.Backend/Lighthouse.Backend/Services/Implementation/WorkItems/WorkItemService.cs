@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var persistedItem = SyncWorkItem(item, existingItem);
                 storedWorkItems.RemoveAll(wi => wi.ReferenceId == item.ReferenceId);
 
-                var syncedTransitions = WithSyncDeltaTransition(workItemService, persistedItem, item.SyncedTransitions, priorState, syncTime);
+                var syncedTransitions = WithSyncDeltaTransition(workItemService, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
                 itemsWithTransitions.Add((persistedItem, syncedTransitions));
             }
 
@@ -94,12 +94,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private static IReadOnlyList<WorkItemStateTransition> WithSyncDeltaTransition(
             IWorkTrackingConnector connector,
+            WorkTrackingSystemConnection connection,
             WorkItem persistedItem,
             IReadOnlyList<WorkItemStateTransition> syncedTransitions,
             string? priorState,
             DateTime syncTime)
         {
-            if (connector.SupportsTransitionHistory)
+            if (connector.SupportsTransitionHistory(connection))
             {
                 return syncedTransitions;
             }

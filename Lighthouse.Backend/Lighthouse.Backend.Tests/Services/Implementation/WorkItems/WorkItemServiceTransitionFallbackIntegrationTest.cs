@@ -98,14 +98,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkTrackingConnector> ConnectorWithoutHistory()
         {
             var connector = new Mock<IWorkTrackingConnector>();
-            connector.SetupGet(x => x.SupportsTransitionHistory).Returns(false);
+            connector.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
             return connector;
         }
 
         private Mock<IWorkTrackingConnector> ConnectorWithHistory()
         {
             var connector = new Mock<IWorkTrackingConnector>();
-            connector.SetupGet(x => x.SupportsTransitionHistory).Returns(true);
+            connector.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
             return connector;
         }
 

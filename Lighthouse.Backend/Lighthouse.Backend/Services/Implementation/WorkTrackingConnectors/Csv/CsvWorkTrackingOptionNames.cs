@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         // Common Optional Columns
         public const string CreatedDateHeader = "Created Date Column";
 
+        public const string StateEnteredDateHeader = "Current State Since Column";
+
         public const string ParentReferenceIdHeader = "Parent Reference Id Column";
 
         public const string TagsHeader = "Tags Column";

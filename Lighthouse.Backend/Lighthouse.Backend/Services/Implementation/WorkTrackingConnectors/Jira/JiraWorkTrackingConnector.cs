@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
         private static readonly ConcurrentDictionary<string, string> CloudIdCache = new();
 
-        public bool SupportsTransitionHistory => true;
+        public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {

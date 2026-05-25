@@ -14,7 +14,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
     {
         private static int orderCounter;
 
-        public bool SupportsTransitionHistory => false;
+        public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
+        {
+            return !string.IsNullOrWhiteSpace(GetStateEnteredDateColumn(connection));
+        }
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
@@ -179,11 +182,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 return null;
             }
 
+            var mappedState = owner.MapRawStateToMappedName(state);
+
             var workItemBase = new WorkItemBase
             {
                 ReferenceId = referenceId,
                 Name = name,
-                State = owner.MapRawStateToMappedName(state),
+                State = mappedState,
                 StateCategory = stateCategory,
                 Type = type,
                 StartedDate = startedDate,
@@ -193,9 +198,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 Tags = [.. tags],
                 Url = url,
                 Order = order,
+                SyncedTransitions = BuildStateEnteredTransitions(csv, owner, mappedState, stateCategory),
             };
 
             return workItemBase;
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> BuildStateEnteredTransitions(
+            CsvReader csv, IWorkItemQueryOwner owner, string mappedState, StateCategories stateCategory)
+        {
+            var stateEnteredDateColumn = GetStateEnteredDateColumn(owner.WorkTrackingSystemConnection);
+
+            if (string.IsNullOrWhiteSpace(stateEnteredDateColumn) || stateCategory != StateCategories.Doing)
+            {
+                return [];
+            }
+
+            var stateEnteredDate = csv.GetField<DateTime?>(stateEnteredDateColumn);
+
+            if (!stateEnteredDate.HasValue)
+            {
+                return [];
+            }
+
+            return
+            [
+                new WorkItemStateTransition
+                {
+                    FromState = string.Empty,
+                    ToState = mappedState,
+                    TransitionedAt = DateTime.SpecifyKind(stateEnteredDate.Value, DateTimeKind.Utc),
+                }
+            ];
         }
 
         private static DateTime? ParseDateTime(CsvReader reader, WorkTrackingSystemConnection connection, string columnName)
@@ -289,6 +323,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private static string GetTagSeparator(WorkTrackingSystemConnection connection)
         {
             return GetOptionByKey(connection, CsvWorkTrackingOptionNames.TagSeparator);
+        }
+
+        private static string GetStateEnteredDateColumn(WorkTrackingSystemConnection connection)
+        {
+            return connection.Options.SingleOrDefault(o => o.Key == CsvWorkTrackingOptionNames.StateEnteredDateHeader)?.Value ?? string.Empty;
         }
 
         public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)

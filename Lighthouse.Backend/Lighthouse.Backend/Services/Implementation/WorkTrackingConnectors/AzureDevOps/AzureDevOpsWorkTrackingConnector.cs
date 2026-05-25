@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
     {
         private const int MaxChunkSize = 200;
 
-        public bool SupportsTransitionHistory => true;
+        public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
 

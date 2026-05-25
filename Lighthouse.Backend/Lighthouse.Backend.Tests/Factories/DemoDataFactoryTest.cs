@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.StartedDateHeader, options), Is.EqualTo("StartedDate"));
                 Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.ClosedDateHeader, options), Is.EqualTo("ClosedDate"));
                 Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.TagsHeader, options), Is.EqualTo("Tags"));
+                Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.StateEnteredDateHeader, options), Is.EqualTo("StateEnteredDate"));
             }
         }
 

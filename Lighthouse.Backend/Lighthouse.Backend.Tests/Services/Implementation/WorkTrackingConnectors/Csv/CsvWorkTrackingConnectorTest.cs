@@ -308,6 +308,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        [TestCase("", false)]
+        [TestCase("StateSince", true)]
+        public void SupportsTransitionHistory_DependsOnStateEnteredDateColumnBeingConfigured(string stateEnteredDateColumn, bool expectedSupport)
+        {
+            var subject = CreateSubject();
+            var connection = CreateCsvWorkTrackingConnection();
+            AdjustWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, stateEnteredDateColumn);
+
+            var support = subject.SupportsTransitionHistory(connection);
+
+            Assert.That(support, Is.EqualTo(expectedSupport));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_StateEnteredDateConfigured_EmitsTransitionIntoMappedCurrentStateForInProgressItems()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-state-since.csv");
+            team.StateMappings = [new StateMapping { Name = "Doing", States = ["In Progress"] }];
+            team.DoingStates = ["Doing"];
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, "StateSince");
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var inProgressItem = workItems.Single(w => w.ReferenceId == "ITEM-001");
+            var doneItem = workItems.Single(w => w.ReferenceId == "ITEM-002");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(inProgressItem.SyncedTransitions, Has.Count.EqualTo(1));
+                Assert.That(inProgressItem.SyncedTransitions[0].ToState, Is.EqualTo("Doing"));
+                Assert.That(inProgressItem.SyncedTransitions[0].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 22, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(doneItem.SyncedTransitions, Is.Empty);
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_StateEnteredDateNotConfigured_EmitsNoTransitions()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-state-since.csv");
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            Assert.That(workItems.SelectMany(w => w.SyncedTransitions), Is.Empty);
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_WrongType_Ignores()
         {
             var subject = CreateSubject();

@@ -109,6 +109,13 @@ namespace Lighthouse.Backend.Factories
 
                 new WorkTrackingSystemConnectionOption
                 {
+                    Key = CsvWorkTrackingOptionNames.StateEnteredDateHeader,
+                    Value = string.Empty,
+                    IsOptional = true,
+                },
+
+                new WorkTrackingSystemConnectionOption
+                {
                     Key = CsvWorkTrackingOptionNames.ParentReferenceIdHeader,
                     Value = "Parent Reference Id",
                     IsOptional = true,
