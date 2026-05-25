@@ -31,6 +31,14 @@ namespace Lighthouse.Backend.API
         IForecastFilterRuleService forecastFilterRuleService)
         : ControllerBase
     {
+        private const int MinStalenessThresholdDays = 0;
+        private const int MaxStalenessThresholdDays = 365;
+
+        internal static bool IsStalenessThresholdInRange(int stalenessThresholdDays)
+        {
+            return stalenessThresholdDays is >= MinStalenessThresholdDays and <= MaxStalenessThresholdDays;
+        }
+
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
         public async Task<ActionResult<TeamDto>> GetTeam(int teamId)
@@ -118,6 +126,11 @@ namespace Lighthouse.Backend.API
             if (!stateMappingValidation.IsValid)
             {
                 return BadRequest(stateMappingValidation.Errors);
+            }
+
+            if (!IsStalenessThresholdInRange(teamSetting.StalenessThresholdDays))
+            {
+                return BadRequest($"Staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
             }
 
             var teamForValidation = teamRepository.GetById(teamId);

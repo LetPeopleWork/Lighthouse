@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    [Ignore("pending DELIVER: US-03 team staleness threshold (StalenessThresholdDays not yet on SettingsOwnerDtoBase / TeamController validation)")]
     public class TeamStalenessThresholdSettingsIntegrationTest
     {
         private const int DefaultTeamThresholdDays = 7;

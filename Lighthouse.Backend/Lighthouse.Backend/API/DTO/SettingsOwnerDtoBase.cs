@@ -32,6 +32,7 @@ namespace Lighthouse.Backend.API.DTO
             EstimationUnit = workTrackingSystemOptionsOwner.EstimationUnit;
             UseNonNumericEstimation = workTrackingSystemOptionsOwner.UseNonNumericEstimation;
             EstimationCategoryValues = workTrackingSystemOptionsOwner.EstimationCategoryValues;
+            StalenessThresholdDays = workTrackingSystemOptionsOwner.StalenessThresholdDays;
             StateMappings = workTrackingSystemOptionsOwner.StateMappings.Select(sm => new StateMappingDto(sm)).ToList();
         }
 
@@ -81,6 +82,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> EstimationCategoryValues { get; set; } = [];
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
+
+        public int StalenessThresholdDays { get; set; }
 
         public DataRetrievalSchemaDto? DataRetrievalSchema { get; set; }
     }
