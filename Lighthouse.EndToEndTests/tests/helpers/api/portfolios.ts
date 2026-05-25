@@ -30,6 +30,7 @@ export async function createPortfolio(
 			serviceLevelExpectationProbability: 80,
 			serviceLevelExpectationRange: 25,
 			systemWIPLImit: 2,
+			stalenessThresholdDays: 0,
 			parentOverrideField: "",
 			blockedStates: [],
 			blockedTags: [],
