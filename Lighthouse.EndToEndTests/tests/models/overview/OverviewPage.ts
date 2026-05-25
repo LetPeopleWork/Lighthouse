@@ -51,6 +51,8 @@ export class OverviewPage {
 		const portfolioEditIcon = this.page.getByLabel("Edit");
 		await portfolioEditIcon.click();
 
+		await this.page.waitForURL(/\/portfolios\/\d+\/settings/);
+
 		return new PortfolioEditPage(this.page);
 	}
 
@@ -126,6 +128,8 @@ export class OverviewPage {
 
 		const teamEditIcon = this.page.getByLabel("Edit");
 		await teamEditIcon.click();
+
+		await this.page.waitForURL(/\/teams\/\d+\/settings/);
 
 		return new TeamEditPage(this.page);
 	}
