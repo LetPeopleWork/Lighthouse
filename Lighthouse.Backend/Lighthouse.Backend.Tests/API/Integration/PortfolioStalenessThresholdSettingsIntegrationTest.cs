@@ -90,6 +90,25 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        [Ignore("pending DELIVER: US-05 default flip — entity initialiser flips 14 → 0 (DDD-12, opt-in). Replaces the OfFourteenDays expectation at GREEN; un-ignore and flip DefaultPortfolioThresholdDays to 0 then.")]
+        public async Task GetPortfolioSettings_NewlyCreatedPortfolio_ExposesDefaultStalenessThresholdOfZero()
+        {
+            client.AsPortfolioAdmin(seededPortfolioId);
+
+            var response = await client.GetAsync($"/api/latest/portfolios/{seededPortfolioId}/settings");
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(TryGetInt(body, "stalenessThresholdDays", out var threshold), Is.True,
+                    $"Portfolio settings payload must carry stalenessThresholdDays. Body: {body}");
+                Assert.That(threshold, Is.Zero,
+                    $"A newly-created portfolio must default to 0 days (staleness opt-in, US-05/DDD-12). Body: {body}");
+            }
+        }
+
+        [Test]
         public async Task PutPortfolio_PortfolioAdminSetsThresholdToThirty_SettingsRoundTripsTheNewThreshold()
         {
             client.AsPortfolioAdmin(seededPortfolioId);

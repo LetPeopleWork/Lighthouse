@@ -91,6 +91,25 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        [Ignore("pending DELIVER: US-05 default flip — entity initialiser flips 7 → 0 (DDD-12, opt-in). Replaces the OfSevenDays expectation at GREEN; un-ignore and flip DefaultTeamThresholdDays to 0 then.")]
+        public async Task GetTeamSettings_NewlyCreatedTeam_ExposesDefaultStalenessThresholdOfZero()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var response = await client.GetAsync($"/api/latest/teams/{seededTeamId}/settings");
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(TryGetInt(body, "stalenessThresholdDays", out var threshold), Is.True,
+                    $"Team settings payload must carry stalenessThresholdDays. Body: {body}");
+                Assert.That(threshold, Is.Zero,
+                    $"A newly-created team must default to 0 days (staleness opt-in, US-05/DDD-12). Body: {body}");
+            }
+        }
+
+        [Test]
         public async Task PutTeam_TeamAdminSetsThresholdToFourteen_SettingsRoundTripsTheNewThreshold()
         {
             client.AsTeamAdmin(seededTeamId);
