@@ -525,3 +525,59 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 		expect(andButton).toHaveAttribute("aria-pressed", "true");
 	});
 });
+
+describe("ForecastSettingsComponent — Flow Signals staleness threshold", () => {
+	const onTeamSettingsChange = vi.fn();
+
+	it("renders the staleness threshold field for a team admin", () => {
+		mockIsTeamAdmin.mockReturnValue(true);
+		const teamSettings = createMockTeamSettings();
+
+		render(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		expect(screen.getByLabelText("Staleness Threshold (days)")).toHaveValue(
+			teamSettings.stalenessThresholdDays,
+		);
+	});
+
+	it("hides the staleness threshold field for a non-team-admin", () => {
+		mockIsTeamAdmin.mockReturnValue(false);
+
+		render(
+			<ForecastSettingsComponent
+				teamSettings={createMockTeamSettings()}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		expect(
+			screen.queryByLabelText("Staleness Threshold (days)"),
+		).not.toBeInTheDocument();
+	});
+
+	it("propagates an edited staleness threshold through onTeamSettingsChange", () => {
+		mockIsTeamAdmin.mockReturnValue(true);
+		const callback = vi.fn();
+
+		render(
+			<ForecastSettingsComponent
+				teamSettings={createMockTeamSettings()}
+				isDefaultSettings={false}
+				onTeamSettingsChange={callback}
+			/>,
+		);
+
+		fireEvent.change(screen.getByLabelText("Staleness Threshold (days)"), {
+			target: { value: "21" },
+		});
+
+		expect(callback).toHaveBeenCalledWith("stalenessThresholdDays", 21);
+	});
+});

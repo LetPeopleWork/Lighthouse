@@ -105,6 +105,7 @@ const EditTeamPage: React.FC = () => {
 			estimationUnit: null,
 			useNonNumericEstimation: false,
 			estimationCategoryValues: [],
+			stalenessThresholdDays: 7,
 		};
 
 		return defaultTeamSettings;

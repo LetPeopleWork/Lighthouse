@@ -83,6 +83,7 @@ const EditPortfolio: React.FC = () => {
 			estimationUnit: null,
 			useNonNumericEstimation: false,
 			estimationCategoryValues: [],
+			stalenessThresholdDays: 14,
 		};
 
 		return defaultPortfolioSettings;

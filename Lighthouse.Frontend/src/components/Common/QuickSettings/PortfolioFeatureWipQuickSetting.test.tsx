@@ -34,6 +34,7 @@ const getMockTeam = (overrides?: Partial<ITeamSettings>): ITeamSettings => ({
 	estimationUnit: null,
 	useNonNumericEstimation: false,
 	estimationCategoryValues: [],
+	stalenessThresholdDays: 7,
 	...overrides,
 });
 

@@ -50,6 +50,7 @@ export function createMockTeamSettings(): ITeamSettings {
 		doneItemsCutoffDays: 180,
 		processBehaviourChartBaselineStartDate: null,
 		processBehaviourChartBaselineEndDate: null,
+		stalenessThresholdDays: 7,
 	};
 }
 
@@ -84,6 +85,7 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		doneItemsCutoffDays: 365,
 		processBehaviourChartBaselineStartDate: null,
 		processBehaviourChartBaselineEndDate: null,
+		stalenessThresholdDays: 14,
 	};
 }
 
