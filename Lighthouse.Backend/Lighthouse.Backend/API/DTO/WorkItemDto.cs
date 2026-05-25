@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.API.DTO
             CycleTime = workItem.CycleTime;
             WorkItemAge = workItem.WorkItemAge;
             IsBlocked = workItem.IsBlocked;
+            CurrentStateEnteredAt = workItem.CurrentStateEnteredAt;
+            Approximate = false;
         }
 
         public string Name { get; }
@@ -46,5 +48,9 @@ namespace Lighthouse.Backend.API.DTO
         public DateTime? StartedDate { get; }
 
         public DateTime? ClosedDate { get; }
+
+        public DateTime? CurrentStateEnteredAt { get; }
+
+        public bool Approximate { get; }
     }
 }
