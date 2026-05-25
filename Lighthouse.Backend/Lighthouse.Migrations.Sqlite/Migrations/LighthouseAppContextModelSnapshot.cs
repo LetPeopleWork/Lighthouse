@@ -388,6 +388,33 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("Features");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.FeatureStateTransition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FromState")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ToState")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("TransitionedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeatureId", "TransitionedAt");
+
+                    b.ToTable("FeatureStateTransitions");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureWork", b =>
                 {
                     b.Property<int>("Id")
@@ -1155,6 +1182,15 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Portfolio");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.FeatureStateTransition", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Feature", null)
+                        .WithMany()
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureWork", b =>

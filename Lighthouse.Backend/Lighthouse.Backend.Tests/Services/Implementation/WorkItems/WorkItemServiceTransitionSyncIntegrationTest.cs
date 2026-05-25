@@ -100,7 +100,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 workItemRepository,
                 Mock.Of<IPortfolioMetricsService>(),
                 Mock.Of<IRepository<Team>>(),
-                transitionRepository);
+                transitionRepository,
+                Mock.Of<IFeatureStateTransitionRepository>());
         }
     }
 }

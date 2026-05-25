@@ -16,7 +16,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IWorkItemRepository workItemRepository,
         IPortfolioMetricsService portfolioMetricsService,
         IRepository<Team> teamRepository,
-        IWorkItemStateTransitionRepository stateTransitionRepository)
+        IWorkItemStateTransitionRepository stateTransitionRepository,
+        IFeatureStateTransitionRepository featureStateTransitionRepository)
         : IWorkItemService
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new();
@@ -356,6 +357,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var features = new List<Feature>();
+            var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
 
             foreach (var feature in await workItemService.GetFeaturesForProject(portfolio))
             {
@@ -363,11 +365,55 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 AddProjectToFeature(featureFromDatabase, portfolio);
                 features.Add(featureFromDatabase);
+                featuresWithTransitions.Add((featureFromDatabase, feature.SyncedTransitions));
             }
 
             portfolio.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
 
             await featureRepository.Save();
+
+            foreach (var (persistedFeature, syncedTransitions) in featuresWithTransitions)
+            {
+                SyncFeatureStateTransitions(persistedFeature, syncedTransitions);
+            }
+
+            await featureStateTransitionRepository.Save();
+            await featureRepository.Save();
+        }
+
+        private void SyncFeatureStateTransitions(Feature feature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
+        {
+            var existingTransitions = featureStateTransitionRepository
+                .GetAllByPredicate(transition => transition.FeatureId == feature.Id)
+                .ToList();
+
+            var newTransitions = syncedTransitions
+                .Where(transition => !existingTransitions.Exists(stored =>
+                    stored.ToState == transition.ToState && stored.TransitionedAt == transition.TransitionedAt))
+                .Select(transition => new FeatureStateTransition
+                {
+                    FeatureId = feature.Id,
+                    FromState = transition.FromState,
+                    ToState = transition.ToState,
+                    TransitionedAt = transition.TransitionedAt,
+                })
+                .ToList();
+
+            newTransitions.ForEach(featureStateTransitionRepository.Add);
+
+            feature.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(feature, existingTransitions.Concat(newTransitions));
+        }
+
+        private static DateTime? DeriveCurrentStateEnteredAt(Feature feature, IEnumerable<FeatureStateTransition> transitions)
+        {
+            var matchingTransitions = transitions
+                .Where(transition => transition.ToState == feature.State)
+                .Select(transition => transition.TransitionedAt)
+                .ToList();
+
+            return matchingTransitions.Count == 0
+                ? null
+                : matchingTransitions.Max();
         }
 
         private Feature AddOrUpdateFeature(Feature feature)

@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
+        private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepositoryMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
@@ -34,6 +35,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
             stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
+            featureStateTransitionRepositoryMock = new Mock<IFeatureStateTransitionRepository>();
+
+            featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns(new List<FeatureStateTransition>().AsQueryable());
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
@@ -1150,7 +1155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
 
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object);
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object, featureStateTransitionRepositoryMock.Object);
         }
     }
 }
