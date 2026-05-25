@@ -354,6 +354,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("CurrentStateEnteredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("EstimatedSize")
                         .HasColumnType("integer");
 
@@ -911,6 +914,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("CurrentStateEnteredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -956,6 +962,35 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.HasIndex("TeamId");
 
                     b.ToTable("WorkItems");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.WorkItemStateTransition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FromState")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ToState")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("TransitionedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WorkItemId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkItemId", "TransitionedAt");
+
+                    b.ToTable("WorkItemStateTransitions");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkTrackingSystemConnection", b =>
@@ -1245,6 +1280,15 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired();
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.WorkItemStateTransition", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.WorkItem", null)
+                        .WithMany()
+                        .HasForeignKey("WorkItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkTrackingSystemConnectionOption", b =>

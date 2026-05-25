@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Models
 
         public DateTime? ClosedDate { get; set; }
 
+        public DateTime? CurrentStateEnteredAt { get; set; }
+
         public Dictionary<int, string?> AdditionalFieldValues { get; set; } = new();
 
         public int CycleTime

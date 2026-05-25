@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<WorkItem> WorkItems { get; set; } = null!;
 
+        public DbSet<WorkItemStateTransition> WorkItemStateTransitions { get; set; } = null!;
+
         public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = null!;
 
         public DbSet<LicenseInformation> LicenseInformation { get; set; } = null!;
@@ -175,6 +177,15 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);
+
+            modelBuilder.Entity<WorkItemStateTransition>()
+                .HasOne<WorkItem>()
+                .WithMany()
+                .HasForeignKey(t => t.WorkItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WorkItemStateTransition>()
+                .HasIndex(t => new { t.WorkItemId, t.TransitionedAt });
 
             modelBuilder.Entity<Portfolio>()
                 .HasOne(p => p.OwningTeam)
