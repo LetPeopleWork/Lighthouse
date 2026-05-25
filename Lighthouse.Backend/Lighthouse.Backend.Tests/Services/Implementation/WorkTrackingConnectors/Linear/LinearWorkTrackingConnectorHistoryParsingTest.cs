@@ -48,6 +48,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetFeaturesForProject_ProjectHistorySupplied_MapsProjectStatusTransitionsToMappedStates()
+        {
+            var handler = HandlerReturning(_ => ProjectsResponseWithStatusHistory());
+
+            var subject = CreateSubject(handler);
+            var portfolio = CreatePortfolio();
+
+            var features = await subject.GetFeaturesForProject(portfolio);
+
+            var feature = features.Single(f => f.ReferenceId == "project-1");
+            var transition = feature.SyncedTransitions.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.State, Is.EqualTo("In Progress"));
+                Assert.That(feature.SyncedTransitions, Has.Count.EqualTo(1));
+                Assert.That(transition.FromState, Is.EqualTo("To Do"));
+                Assert.That(transition.ToState, Is.EqualTo("In Progress"));
+                Assert.That(transition.ToState, Is.EqualTo(feature.State));
+                Assert.That(transition.TransitionedAt, Is.EqualTo(new DateTime(2026, 5, 20, 9, 0, 0, DateTimeKind.Utc)));
+            }
+        }
+
+        [Test]
         [TestCaseSource(nameof(HistoryRejectionErrors))]
         public async Task GetWorkItemsForTeam_HistoryQueryRejected_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions(string historyErrorResponse)
         {
@@ -111,6 +135,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
 
             return bodyForRequest(requestBody);
+        }
+
+        private static string ProjectsResponseWithStatusHistory()
+        {
+            return $@"{{ ""data"": {{ ""projects"": {{ ""nodes"": [ {{
+                ""id"": ""project-1"",
+                ""name"": ""Portfolio Project"",
+                ""status"": {{ ""id"": ""s-active"", ""name"": ""Active"", ""type"": ""started"", ""color"": ""#000"" }},
+                ""url"": ""https://linear.app/demo/project/project-1"",
+                ""sortOrder"": 1.0,
+                ""createdAt"": ""2026-05-19T00:00:00.000Z"",
+                ""startDate"": ""2026-05-19T00:00:00.000Z"",
+                ""completedAt"": null,
+                ""initiatives"": {{ ""nodes"": [] }},
+                ""history"": {{ ""nodes"": [ {{
+                    ""createdAt"": ""2026-05-20T09:00:00.000Z"",
+                    ""entries"": [
+                        {{ ""at"": 1779267600000, ""type"": ""startDate"", ""fromDate"": null, ""toDate"": ""2026-05-19T00:00:00.000Z"" }},
+                        {{ ""at"": 1779267600000, ""type"": ""status"", ""fromStatus"": {{ ""name"": ""New"" }}, ""toStatus"": {{ ""name"": ""Active"" }} }}
+                    ]
+                }} ], ""pageInfo"": {{ ""hasNextPage"": false, ""endCursor"": null }} }}
+            }} ], ""pageInfo"": {{ ""hasNextPage"": false, ""endCursor"": null }} }} }} }}";
         }
 
         private static string TeamsResponse()
@@ -198,6 +244,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.DoneStates.Clear();
 
             return team;
+        }
+
+        private static Portfolio CreatePortfolio()
+        {
+            var connection = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = WorkTrackingSystems.Linear,
+                Name = "Linear Connection",
+            };
+            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            {
+                Key = LinearWorkTrackingOptionNames.ApiKey,
+                Value = "key",
+                IsSecret = true,
+            });
+
+            var portfolio = new Portfolio
+            {
+                Name = "Demo Portfolio",
+                WorkTrackingSystemConnection = connection,
+                StateMappings =
+                [
+                    new StateMapping { Name = "To Do", States = ["New"] },
+                    new StateMapping { Name = "In Progress", States = ["Active"] },
+                ],
+            };
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Project");
+            portfolio.ToDoStates.Clear();
+            portfolio.ToDoStates.Add("To Do");
+            portfolio.DoingStates.Clear();
+            portfolio.DoingStates.Add("In Progress");
+            portfolio.DoneStates.Clear();
+
+            return portfolio;
         }
 
         private static LinearWorkTrackingConnector CreateSubject(HttpMessageHandler handler)

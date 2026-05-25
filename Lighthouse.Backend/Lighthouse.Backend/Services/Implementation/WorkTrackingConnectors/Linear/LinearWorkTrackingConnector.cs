@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private const string IssueTypeIdentifier = "Issue";
         private const string ProjectTypeIdentifier = "Project";
         private const string InitiativeTypeIdentifier = "Initiative";
+        private const string ProjectStatusEntryType = "status";
         private const int HistoryPageSize = 25;
 
         private bool historyUnavailable;
@@ -413,7 +414,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 CreatedDate = projectNode.CreatedAt,
                 StartedDate = projectNode.StartDate,
                 ClosedDate = projectNode.CompletedAt,
+                SyncedTransitions = MapProjectSyncedTransitions(projectNode, portfolio),
             };
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> MapProjectSyncedTransitions(ProjectNode projectNode, Portfolio portfolio)
+        {
+            var historyNodes = projectNode.History?.Nodes ?? [];
+
+            var rawTransitions = historyNodes
+                .SelectMany(node => node.Entries ?? [])
+                .Where(entry => string.Equals(entry.Type, ProjectStatusEntryType, StringComparison.Ordinal))
+                .Where(entry => entry.FromStatus?.Name != null && entry.ToStatus?.Name != null)
+                .Select(entry => new WorkItemStateTransition
+                {
+                    FromState = entry.FromStatus.Name,
+                    ToState = entry.ToStatus.Name,
+                    TransitionedAt = DateTimeOffset.FromUnixTimeMilliseconds(entry.At).UtcDateTime,
+                })
+                .ToList();
+
+            return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, portfolio);
         }
 
         private async Task<List<IssueNode>> GetAllIssuesForTeam(WorkTrackingSystemConnection connection, string teamId)
@@ -457,17 +478,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private async Task<List<ProjectNode>> GetAllProjects(WorkTrackingSystemConnection connection)
         {
-            var projects = new List<ProjectNode>();
+            var projects = await FetchAllProjects(connection);
 
-            await GetWithPagination<ProjectsResponse>(connection, GetProjectsWithDetailsQueryTemplate, projectsResponse =>
+            if (projects == null)
+            {
+                DowngradeHistorySupport();
+                projects = await FetchAllProjects(connection) ?? [];
+            }
+
+            return projects;
+        }
+
+        private async Task<List<ProjectNode>?> FetchAllProjects(WorkTrackingSystemConnection connection)
+        {
+            var projects = new List<ProjectNode>();
+            var historyFieldRejected = false;
+
+            await GetWithPagination<ProjectsResponse>(connection, GetProjectsWithDetailsQuery, projectsResponse =>
             {
                 var fetchedProjects = projectsResponse?.Projects?.Nodes ?? [];
                 projects.AddRange(fetchedProjects);
 
                 return true;
+            }, errors =>
+            {
+                historyFieldRejected = !historyUnavailable && errors.Any();
+                return !historyFieldRejected;
             });
 
-            return projects;
+            return historyFieldRejected ? null : projects;
         }
 
         private async Task<InitiativeNode?> GetInitiativeById(WorkTrackingSystemConnection connection, string initiativeId)
@@ -667,7 +706,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return GetWorkItemQueryOwnersQueryTemplate("teams", cursorParam);
         }
 
-        private static string GetProjectsWithDetailsQueryTemplate(string cursorParam)
+        private string GetProjectsWithDetailsQuery(string cursorParam)
         {
             return $@"
             query {{
@@ -691,7 +730,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                                 id
                                 name
                             }}
-                        }}
+                        }}{ProjectHistoryConnectionFragment(!historyUnavailable)}
                     }}
                     pageInfo {{
                         hasNextPage
@@ -699,6 +738,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                     }}
                 }}
             }}";
+        }
+
+        private static string ProjectHistoryConnectionFragment(bool includeHistory)
+        {
+            if (!includeHistory)
+            {
+                return string.Empty;
+            }
+
+            return $@"
+                        history(first: {HistoryPageSize}) {{
+                            nodes {{
+                                entries
+                            }}
+                        }}";
         }
 
         private static string GetWorkItemQueryOwnersQueryTemplate(string type, string cursorParam)
