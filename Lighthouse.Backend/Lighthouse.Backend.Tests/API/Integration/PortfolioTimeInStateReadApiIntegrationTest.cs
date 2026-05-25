@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    [Ignore("pending DELIVER: US-04 portfolio Time-in-State column (Feature-level CurrentStateEnteredAt capture not yet wired)")]
     public class PortfolioTimeInStateReadApiIntegrationTest
     {
         private static int testDateOffset;
