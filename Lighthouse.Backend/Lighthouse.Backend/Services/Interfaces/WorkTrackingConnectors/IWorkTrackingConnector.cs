@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
     public interface IWorkTrackingConnector
     {
+        bool SupportsTransitionHistory { get; }
+
         Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team);
 
         Task<List<Feature>> GetFeaturesForProject(Portfolio project);

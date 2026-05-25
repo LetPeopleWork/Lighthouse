@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
 {
@@ -44,6 +45,9 @@ namespace Lighthouse.Backend.Models
         public DateTime? CurrentStateEnteredAt { get; set; }
 
         public Dictionary<int, string?> AdditionalFieldValues { get; set; } = new();
+
+        [NotMapped]
+        public IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = [];
 
         public int CycleTime
         {

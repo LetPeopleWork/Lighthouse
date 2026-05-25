@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
     {
         private const int MaxChunkSize = 200;
 
+        public bool SupportsTransitionHistory => true;
+
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
 
         private static readonly ConcurrentDictionary<string, IVssHttpClient> ClientCache = new();

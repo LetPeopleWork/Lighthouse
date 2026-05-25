@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private const string ProjectTypeIdentifier = "Project";
         private const string InitiativeTypeIdentifier = "Initiative";
 
+        public bool SupportsTransitionHistory => false;
+
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}", team.Name);

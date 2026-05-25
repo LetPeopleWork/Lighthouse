@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
     {
         private static int orderCounter;
 
+        public bool SupportsTransitionHistory => false;
+
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             var workItems = new List<WorkItem>();

@@ -77,5 +77,52 @@ namespace Lighthouse.Backend.Tests
                 }
             }
         }
+
+        [Test]
+        public async Task SyncedTransitions_IsTransient_AndNotPersisted()
+        {
+            int workItemId;
+
+            using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
+            {
+                var team = new Team { Name = "Transient Team" };
+                context.Teams.Add(team);
+                await context.SaveChangesAsync();
+
+                var workItem = new WorkItem
+                {
+                    Name = "Transient Work Item",
+                    Order = "1",
+                    State = "In Progress",
+                    TeamId = team.Id,
+                    SyncedTransitions =
+                    [
+                        new WorkItemStateTransition
+                        {
+                            FromState = "To Do",
+                            ToState = "In Progress",
+                            TransitionedAt = new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc),
+                        },
+                    ],
+                };
+                context.WorkItems.Add(workItem);
+                await context.SaveChangesAsync();
+                workItemId = workItem.Id;
+            }
+
+            var workItemEntityType = new LighthouseAppContext(options, cryptoService.Object, logger.Object)
+                .Model.FindEntityType(typeof(WorkItem));
+
+            using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
+            {
+                var savedWorkItem = await context.WorkItems.SingleAsync(wi => wi.Id == workItemId);
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(workItemEntityType!.FindProperty(nameof(WorkItem.SyncedTransitions)), Is.Null);
+                    Assert.That(savedWorkItem.SyncedTransitions, Is.Empty);
+                }
+            }
+        }
     }
 }
