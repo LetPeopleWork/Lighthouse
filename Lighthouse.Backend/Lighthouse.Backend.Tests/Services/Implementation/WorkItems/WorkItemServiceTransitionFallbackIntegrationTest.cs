@@ -64,7 +64,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        [Ignore("pending DELIVER: 04-01 Linear history capture")]
         public async Task UpdateWorkItemsForTeam_LinearConnectorWithHistory_PersistsRealTransitionsAndDerivesCurrentStateEnteredAt()
         {
             var team = await GivenPersistedTeam(rawStates: ["New", "Active"], mappedToDo: "To Do", mappedDoing: "In Progress");

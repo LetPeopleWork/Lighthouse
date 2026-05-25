@@ -197,6 +197,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 public DateTime? CompletedAt { get; set; }
 
                 public DateTime CreatedAt { get; set; }
+
+                public IssueHistoryConnection History { get; set; }
+            }
+
+            public class IssueHistoryConnection
+            {
+                public List<IssueHistoryNode> Nodes { get; set; }
+            }
+
+            public class IssueHistoryNode
+            {
+                public DateTime CreatedAt { get; set; }
+
+                public StateNode FromState { get; set; }
+
+                public StateNode ToState { get; set; }
             }
 
             public class ProjectReferenceNode

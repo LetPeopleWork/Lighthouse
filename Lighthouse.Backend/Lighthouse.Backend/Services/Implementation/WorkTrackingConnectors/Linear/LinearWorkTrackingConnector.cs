@@ -1,3 +1,4 @@
+using GraphQL;
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
@@ -14,15 +15,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 {
     public partial class LinearWorkTrackingConnector(
         ILogger<LinearWorkTrackingConnector> logger,
-        ICryptoService cryptoService)
+        ICryptoService cryptoService,
+        HttpMessageHandler? httpMessageHandlerForTesting = null)
         : ILinearWorkTrackingConnector
     {
+        private readonly HttpMessageHandler? httpMessageHandlerForTesting = httpMessageHandlerForTesting;
+
         private const string UnknownStateIdentifier = "Unknown";
         private const string IssueTypeIdentifier = "Issue";
         private const string ProjectTypeIdentifier = "Project";
         private const string InitiativeTypeIdentifier = "Initiative";
+        private const int HistoryPageSize = 50;
+        private const string HistoryFieldName = "history";
 
-        public bool SupportsTransitionHistory => false;
+        private bool historyUnavailable;
+
+        public bool SupportsTransitionHistory => true;
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
@@ -329,9 +337,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 CreatedDate = issue.CreatedAt,
                 StartedDate = issue.StartedAt,
                 ClosedDate = issue.CompletedAt,
+                SyncedTransitions = MapSyncedTransitions(issue, team),
             };
 
             return workItemBase;
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> MapSyncedTransitions(IssueNode issue, Team team)
+        {
+            var historyNodes = issue.History?.Nodes ?? [];
+
+            var rawTransitions = historyNodes
+                .Where(node => node.FromState != null && node.ToState != null)
+                .Select(node => new WorkItemStateTransition
+                {
+                    FromState = node.FromState.Name,
+                    ToState = node.ToState.Name,
+                    TransitionedAt = DateTime.SpecifyKind(node.CreatedAt, DateTimeKind.Utc),
+                })
+                .ToList();
+
+            return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, team);
         }
 
         private static string ResolveProjectIdForIssue(IssueNode issue, List<IssueNode> allIssues)
@@ -393,7 +419,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private async Task<List<IssueNode>> GetAllIssuesForTeam(WorkTrackingSystemConnection connection, string teamId)
         {
+            var issues = await FetchAllIssuesForTeam(connection, teamId);
+
+            if (issues == null)
+            {
+                DowngradeHistorySupport();
+                issues = await FetchAllIssuesForTeam(connection, teamId) ?? [];
+            }
+
+            return issues;
+        }
+
+        private async Task<List<IssueNode>?> FetchAllIssuesForTeam(WorkTrackingSystemConnection connection, string teamId)
+        {
             var issues = new List<IssueNode>();
+            var historyFieldRejected = false;
 
             await GetWithPagination<TeamResponse>(connection, cursorParam => GetIssuesForTeamQuery(teamId, cursorParam), teamResponse =>
             {
@@ -401,9 +441,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 issues.AddRange(fetchedIssues);
 
                 return true;
+            }, errors =>
+            {
+                historyFieldRejected = !historyUnavailable && HistoryFieldIsUnsupported(errors);
+                return !historyFieldRejected;
             });
 
-            return issues;
+            return historyFieldRejected ? null : issues;
+        }
+
+        private void DowngradeHistorySupport()
+        {
+            historyUnavailable = true;
+            logger.LogWarning("Linear connection does not support the issue history connection. Falling back to sync-delta transition derivation for this connection.");
+        }
+
+        private static bool HistoryFieldIsUnsupported(IEnumerable<GraphQLError> errors)
+        {
+            return errors.Any(error => error.Message?.Contains(HistoryFieldName, StringComparison.OrdinalIgnoreCase) ?? false);
         }
 
         private async Task<List<ProjectNode>> GetAllProjects(WorkTrackingSystemConnection connection)
@@ -463,7 +518,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return issues.Where(i => states.Contains(i.State.Name)).ToList();
         }
 
-        private async Task GetWithPagination<T>(WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult) where T : class, IPagedRespone
+        private Task GetWithPagination<T>(WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult) where T : class, IPagedRespone
+        {
+            return GetWithPagination(connection, getQuery, processResult, _ => true);
+        }
+
+        private async Task GetWithPagination<T>(WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult, Func<IEnumerable<GraphQLError>, bool> onErrors) where T : class, IPagedRespone
         {
             string? cursor = null;
             bool hasNextPage = true;
@@ -474,7 +534,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
                 var query = getQuery(cursorParam);
 
-                var response = await SendQuery<T>(connection, query);
+                var (response, errors) = await SendQueryWithErrors<T>(connection, query);
+
+                if (!onErrors(errors))
+                {
+                    return;
+                }
+
                 var continueToNextPage = processResult(response);
 
                 if (!continueToNextPage)
@@ -495,16 +561,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private async Task<T> SendQuery<T>(WorkTrackingSystemConnection connection, string query) where T : class
         {
+            var (data, _) = await SendQueryWithErrors<T>(connection, query);
+            return data;
+        }
+
+        private async Task<(T Data, IReadOnlyList<GraphQLError> Errors)> SendQueryWithErrors<T>(WorkTrackingSystemConnection connection, string query) where T : class
+        {
             var client = GetLinearGraphQLClient(connection);
 
             var response = await client.SendQueryAsync<T>(query);
+            var errors = response.Errors ?? [];
 
-            foreach (var error in response.Errors ?? [])
+            foreach (var error in errors)
             {
                 logger.LogDebug("GraphQL Error: {ErrorMessage}", error.Message);
             }
 
-            return response.Data;
+            return (response.Data, errors);
         }
 
         private GraphQLHttpClient GetLinearGraphQLClient(WorkTrackingSystemConnection connection)
@@ -512,10 +585,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             var encryptedApiKey = connection.GetWorkTrackingSystemConnectionOptionByKey(LinearWorkTrackingOptionNames.ApiKey);
             var apiKey = cryptoService.Decrypt(encryptedApiKey);
 
-            var client = new HttpClient
-            {
-                BaseAddress = new Uri(LinearWorkTrackingOptionNames.ApiUrl),
-            };
+            var client = httpMessageHandlerForTesting != null
+                ? new HttpClient(httpMessageHandlerForTesting, disposeHandler: false)
+                {
+                    BaseAddress = new Uri(LinearWorkTrackingOptionNames.ApiUrl),
+                }
+                : new HttpClient
+                {
+                    BaseAddress = new Uri(LinearWorkTrackingOptionNames.ApiUrl),
+                };
             client.DefaultRequestHeaders.Add("Authorization", apiKey);
 
             return new GraphQLHttpClient(new GraphQLHttpClientOptions
@@ -524,12 +602,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }, new NewtonsoftJsonSerializer(), client);
         }
 
-        private static string GetIssuesForTeamQuery(string teamId, string cursorParam)
+        private string GetIssuesForTeamQuery(string teamId, string cursorParam)
         {
-            return GetIssuesQueryTemplate("team", teamId, cursorParam);
+            return GetIssuesQueryTemplate("team", teamId, cursorParam, !historyUnavailable);
         }
 
-        private static string GetIssuesQueryTemplate(string parameter, string id, string cursorParam)
+        private static string GetIssuesQueryTemplate(string parameter, string id, string cursorParam, bool includeHistory)
         {
             return $@"
                     query {{
@@ -547,8 +625,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                                     createdAt
                                     startedAt
                                     completedAt
-                                    parent {{ 
-                                        id 
+                                    parent {{
+                                        id
                                         identifier
                                     }}
                                     project {{
@@ -562,7 +640,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                                     state {{
                                         id
                                         name
-                                    }}
+                                    }}{HistoryConnectionFragment(includeHistory)}
                                 }}
                                 pageInfo {{
                                     hasNextPage
@@ -571,6 +649,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                             }}
                         }}
                     }}";
+        }
+
+        private static string HistoryConnectionFragment(bool includeHistory)
+        {
+            if (!includeHistory)
+            {
+                return string.Empty;
+            }
+
+            return $@"
+                                    history(first: {HistoryPageSize}) {{
+                                        nodes {{
+                                            createdAt
+                                            fromState {{ name }}
+                                            toState {{ name }}
+                                        }}
+                                    }}";
         }
 
         private static string GetTeamsQueryTemplate(string cursorParam)
