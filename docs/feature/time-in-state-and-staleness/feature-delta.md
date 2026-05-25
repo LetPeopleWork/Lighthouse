@@ -354,3 +354,76 @@ CODEBASE GREP FOR OVERLAP CANDIDATES THAT MIGHT JUSTIFY CREATE NEW BUT WERE REJE
 
 `nwave-ai outcomes check-delta docs/feature/time-in-state-and-staleness/feature-delta.md` was NOT executed: the tool (`nwave-ai`) is not installed in this repository and the canonical outcomes registry at `docs/product/outcomes/registry.yaml` does not exist. Per skill ("skip-and-document"): documented here, deferred to DEVOPS handoff for KPI / outcomes registration alongside the DISCUSS-defined `OUT-time-in-state-adoption`, `OUT-staleness-threshold-tuning`, `OUT-time-in-state-trust`.
 
+## Wave: DISTILL / [REF] Inherited commitments
+
+Scope: **slice 01 / US-01 only** (Jira + ADO, source-of-truth history path). Staleness threshold/red colour, Linear, CSV fallback, portfolio column, and settings forms are slice 02 — explicitly NOT covered by DISTILL this pass.
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#US-01 | Every in-progress row on the team view shows `<integer>d in <currentStateName>` | n/a | Walking-skeleton E2E + black-box read-API ATs assert the badge data flows to the work-item table |
+| DISCUSS#US-01 | Jira/ADO derived integer matches source history within 1 day | n/a | Two correctness ATs assert `currentStateEnteredAt` is within 1 day of the last transition timestamp |
+| DISCUSS#US-01 | First-observed item (no prior data) renders `—` | n/a | Edge AT asserts `currentStateEnteredAt` is JSON `null` (FE maps null → `—` per DDD-9) |
+| DISCUSS#US-01 | "Time in State" column is sortable (longest first) | n/a | Walking-skeleton spec exercises the sortable column header through the POM |
+| DESIGN#DDD-11 | Read endpoint is `GET /api/v1/teams/{teamId}/metrics/wip` on `TeamMetricsController`, `WorkItemDto` is the carrier | DDD-11 | All backend ATs drive `/api/latest/teams/{teamId}/metrics/wip` (DISCUSS-shorthand `/work-items` corrected) |
+| DESIGN#DDD-7 | Re-running the same sync must not change derived `currentStateEnteredAt` nor duplicate rows | DDD-7 | Idempotency AT asserts a stable `currentStateEnteredAt` across two reads of the same synced team |
+| DESIGN#DDD-2 | `WorkItem.CurrentStateEnteredAt` is a sync-time-persisted column carried unchanged through the read DTO | DDD-2 | ATs assert the field on the response JSON, not a query-time recomputation |
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+| # | Scenario | Tier / Layer | Tags | US-01 AC covered |
+|---|---|---|---|---|
+| 1 | flow coach sees how long each in-progress item has been in its current state (E2E, Playwright `test.fixme`) | Tier A — E2E (layer 6) | `@walking_skeleton` `@driving_port` `@real-io` `@US-01` | Badge `<N>d in <state>` rendered on team view + sortable column (the demo proof) |
+| 2 | `GetWip_JiraTeamWithInProgressItem_ExposesCurrentStateEnteredAtPerItem` | Tier A — integration (layer 4) | `@driving_port` `@US-01` | Read endpoint exposes `currentStateEnteredAt` per item |
+| 3 | `GetWip_TeamSyncedWithTransitionHistory_CurrentStateEnteredAtMatchesLastTransitionWithinOneDay` | Tier A — integration (layer 4) | `@driving_port` `@US-01` | Read-API renders the derived value within 1 day of the last transition (connector-agnostic at this boundary) |
+| 4 | `GetWip_SameTeamReadTwice_CurrentStateEnteredAtIsStableAcrossReads` | Tier A — integration (layer 4) | `@driving_port` `@US-01` `@error` (idempotency edge) | DDD-7 idempotency — value stable across reads |
+| 5 | `GetWip_ItemFirstObservedThisSync_CurrentStateEnteredAtIsNull` | Tier A — integration (layer 4) | `@driving_port` `@US-01` `@error` (first-observation edge) | First-observed item surfaces `null` → FE `—` |
+
+Error/edge ratio: 2 of 5 scenarios (#4 idempotency, #5 first-observation) are edge/negative = **40%**, on target. Tier B (state-machine PBT) is correctly SKIPPED: US-01 is a 1-story read-projection with a 1-2 scenario journey and no rich chained state machine — Tier A examples cover the space (Mandate 10 "skip when" clauses 2 and 3).
+
+**Per-connector parsing correctness is deferred to DELIVER (not authored here).** The read-API ATs are connector-agnostic — at the `/metrics/wip` boundary the value renders identically regardless of which connector derived it, so a Jira-vs-ADO split there is duplication. The genuine Jira `changelog.histories` and ADO revisions parsing correctness (US-01 AC line 2, "verified against recorded API responses") becomes connector-layer tests authored in DELIVER: Jira via the existing `IssueFactoryTest` changelog-template style; ADO from a captured `GetRevisionsAsync` payload (no template helper exists yet — DELIVER captures one).
+
+## Wave: DISTILL / [REF] WS strategy
+
+Inherits DISCUSS "Type A (additive walking skeleton)". Under the project Architecture of Reference: **Driving port** = real HTTP via `WebApplicationFactory<Program>` (backend) and the production React app via Playwright (E2E); **Driven internal** (EF `LighthouseAppContext`, repositories) = real adapter through the test factory (`EnsureCreated`/`EnsureDeleted` per the `ForecastFilter*IntegrationTest` precedent); **Driven external** (Jira/ADO connector APIs) = real sync in E2E (`testWithUpdatedTeams` triggers a live update against the configured demo instances), seeded persisted state in the backend ATs. One walking-skeleton scenario (#1) closes the loop end-to-end through the production composition root.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | Covered by | Real-IO scenario? |
+|---|---|---|
+| `JiraWorkTrackingConnector` transition capture | E2E #1 (Jira-backed variant via `testWithUpdatedTeams`); connector-layer correctness AT authored in DELIVER (`IssueFactoryTest` changelog-template style) | DELIVER — read-API ATs here are connector-agnostic |
+| `AzureDevOpsWorkTrackingConnector` transition capture | E2E #1 (ADO-backed `testData.teams[0]`); connector-layer correctness AT authored in DELIVER (captured `GetRevisionsAsync` payload) | DELIVER — read-API ATs here are connector-agnostic |
+| `WorkItemStateTransitionRepository` / `WorkItem.CurrentStateEnteredAt` persistence (EF) | All backend ATs read the persisted column through the real EF context via the read endpoint | YES — real EF round-trip through `WebApplicationFactory` |
+
+Per the DESIGN E2E note ("NUnit integration tests carry the per-connector correctness work, faster than driving four connectors through Playwright"), the Jira/ADO parsing correctness lands as connector-layer tests in DELIVER — see the per-connector deferral above and the fixture gap note.
+
+## Wave: DISTILL / [REF] Test placement + precedent justification
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Backend read-API ATs (4) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs` | Mirrors `ForecastFilterThroughputChartIntegrationTest` (seed Team + WorkItem via repositories, drive `/metrics/*` over `WebApplicationFactory`, parse response JSON) and `ForecastFilterTeamSettingsIntegrationTest` (`JsonDocument.Parse` dynamic assertions, `client.AsTeamAdmin`) |
+| E2E walking-skeleton spec (1) | `Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts` (new `flow/` dir per DESIGN component table) | Mirrors `teams/ForecastFilter.spec.ts` (`goToMetrics` → `switchCategory` → `getWidgetByName` → `openDialog`) and `TeamsDetail.spec.ts` (team-data update wait) |
+| E2E POM extension | `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts` (extended, not duplicated) | DESIGN locates the "Time in State" column on `WorkItemsDialog`; POM methods (`timeInStateColumnHeader`, `getTimeInStateBadges`, `sortByTimeInState`) added per the project's POM-only rule |
+
+**Black-box / port-to-port note**: the backend ATs reference NO not-yet-existing C# symbol (`WorkItemDto.CurrentStateEnteredAt`, the new entity, new connector members). `currentStateEnteredAt` is read from the response JSON dynamically; the seed helper sets the future column via reflection (`property?.SetValue`, a no-op today). The suite therefore compiles against today's code (`dotnet build -warnaserror` clean) and each test fails at RUNTIME with the field absent — the right RED reason — once un-ignored. This is what keeps `dotnet build` green and the CI suite green in this DISTILL pass.
+
+## Wave: DISTILL / [REF] AT files created
+
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs` — 4 tests, all `[Ignore("pending DELIVER: US-01 …")]` (NUnit skip marker per the polyglot matrix C# row).
+- `Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts` — 1 walking-skeleton scenario, `test.fixme` (Playwright skip marker).
+- `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts` — extended POM (3 new members for the Time-in-State column).
+
+No production code, no scaffold stubs, no `.feature`/Python artifacts. DELIVER is the sole author of production code.
+
+## Wave: DISTILL / [REF] Pre-DELIVER fail-for-the-right-reason gate
+
+Before writing any production code, DELIVER MUST un-ignore each AT one at a time (per ADR-025: RED phase only unskips DISTILL scaffolds) and confirm it fails because functionality is missing — not because of a setup, compile, or fixture error:
+
+1. **Un-ignore backend AT one at a time.** Remove a single `[Ignore]`, run `dotnet test --filter`, and classify the failure. Correct RED for #2/#3: `currentStateEnteredAt` absent from the JSON → `TryGetDateTime` returns false → assertion fires. Correct RED for #5 (first-observation): property present-but-not-null OR absent. Correct RED for #4 (idempotency): values differ or absent. WRONG RED (BLOCK and fix the test first): `JsonDocument.Parse` throws, the wip array is empty (seed/StateCategory mismatch), a 403/500 status, or any compile error.
+2. **The reflection seed becomes a real setter at GREEN.** `ApplyCurrentStateEnteredAt` uses reflection only so the test compiles before the column exists. Once DELIVER adds `WorkItem.CurrentStateEnteredAt`, replace the reflection call with the real property setter (or seed `WorkItemStateTransition` rows + let `WorkItemService.RefreshWorkItems` derive it — preferred, as it exercises the real seam). Confirm `git diff --stat` shows production files changed when the AT flips to GREEN (no Fixture Theater).
+3. **Un-fixme the E2E spec last**, start a local app, run it once, and confirm it fails because the column/badge does not render — then drive it green. Per the project rule, never commit a Playwright spec that has not been RUN locally against a started app.
+
+## Wave: DISTILL / [REF] Reconciliation + infrastructure policy notes
+
+- **Wave-decision reconciliation: PASSED — 0 contradictions.** DISCUSS and DESIGN agree across US-01. DDD-11 (`/work-items` → `/metrics/wip`) is a flagged DISCUSS-shorthand correction, not a contradiction. No `docs/feature/time-in-state-and-staleness/devops/` delta exists — default environment assumptions apply (warn, not block).
+- **Infrastructure policy:** the canonical Python pilot artifacts (`docs/architecture/atdd-infrastructure-policy.md`, `tests/common/state_delta.<ext>`, `assert_state_delta` Universe assertions, Hypothesis/PBT harnesses, `__SCAFFOLD__` stubs) are NOT bootstrapped — this is a C#/.NET + React/Playwright project, not the Python pilot. The project's equivalent policy is already encoded in precedent: Driving = `WebApplicationFactory<Program>` (backend) / production React app (E2E); Driven internal = EF context via the test factory; Driven external = live connector sync (E2E) or persisted-state seeding (backend ATs). Mandates 8-9 (state-delta Universe, layer-dependent PBT) are Python-pilot-specific and do not transfer; the C# row of the polyglot matrix governs (NUnit skip marker, example-based integration tests, no PBT at layer 4+ per Mandate 11).
+
