@@ -909,7 +909,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock.Verify(x => x.Add(It.IsAny<WorkItem>()), Times.Exactly(2));
             workItemRepositoryMock.Verify(x => x.Update(It.IsAny<WorkItem>()), Times.Never);
             workItemRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
-            workItemRepositoryMock.Verify(x => x.Save(), Times.Once);
+            workItemRepositoryMock.Verify(x => x.Save(), Times.AtLeastOnce);
         }
 
         [Test]
@@ -929,7 +929,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock.Verify(x => x.Update(It.IsAny<WorkItem>()), Times.Exactly(2));
             workItemRepositoryMock.Verify(x => x.Add(It.IsAny<WorkItem>()), Times.Never);
             workItemRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
-            workItemRepositoryMock.Verify(x => x.Save(), Times.Once);
+            workItemRepositoryMock.Verify(x => x.Save(), Times.AtLeastOnce);
         }
 
         [Test]
@@ -949,7 +949,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Exactly(2));
             workItemRepositoryMock.Verify(x => x.Add(It.IsAny<WorkItem>()), Times.Never);
             workItemRepositoryMock.Verify(x => x.Update(It.IsAny<WorkItem>()), Times.Never);
-            workItemRepositoryMock.Verify(x => x.Save(), Times.Once);
+            workItemRepositoryMock.Verify(x => x.Save(), Times.AtLeastOnce);
         }
 
         [Test]

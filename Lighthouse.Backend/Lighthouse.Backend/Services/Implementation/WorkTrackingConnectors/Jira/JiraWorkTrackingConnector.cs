@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
@@ -973,7 +974,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Url = url,
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
-                SyncedTransitions = issue.StateTransitions,
+                SyncedTransitions = WorkItemStateTransitionMapper.MapToMappedStates(issue.StateTransitions, workItemQueryOwner),
             };
 
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);

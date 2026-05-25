@@ -734,7 +734,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
-            return await GetAllStateTransitionsThrottled(witClient, workItemId.Value);
+            var rawTransitions = await GetAllStateTransitionsThrottled(witClient, workItemId.Value);
+            return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, workItemQueryOwner);
         }
 
         private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)

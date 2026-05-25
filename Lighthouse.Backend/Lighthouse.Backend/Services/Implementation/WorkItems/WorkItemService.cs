@@ -58,13 +58,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
             var actualWorkItems = await workItemService.GetWorkItemsForTeam(team);
 
+            var itemsWithTransitions = new List<(WorkItem persistedItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
+
             foreach (var item in actualWorkItems)
             {
                 var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
                 var persistedItem = SyncWorkItem(item, existingItem);
                 storedWorkItems.RemoveAll(wi => wi.ReferenceId == item.ReferenceId);
 
-                SyncStateTransitions(persistedItem, item.SyncedTransitions);
+                itemsWithTransitions.Add((persistedItem, item.SyncedTransitions));
             }
 
             foreach (var itemToRemove in storedWorkItems)
@@ -73,6 +75,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 logger.LogDebug("Removed Work Item {WorkItemId}", itemToRemove.ReferenceId);
             }
 
+            await workItemRepository.Save();
+
+            foreach (var (persistedItem, syncedTransitions) in itemsWithTransitions)
+            {
+                SyncStateTransitions(persistedItem, syncedTransitions);
+            }
+
+            await stateTransitionRepository.Save();
             await workItemRepository.Save();
         }
 

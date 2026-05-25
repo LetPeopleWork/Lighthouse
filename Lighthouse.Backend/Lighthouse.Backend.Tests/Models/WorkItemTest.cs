@@ -50,6 +50,35 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
+        public void Construct_FromWorkItemBaseCarryingSyncedTransitions_PreservesTransitions()
+        {
+            var transition = new WorkItemStateTransition
+            {
+                FromState = "To Do",
+                ToState = "In Progress",
+                TransitionedAt = new DateTime(2026, 5, 25, 8, 0, 0, DateTimeKind.Utc),
+            };
+
+            var workItemBase = new WorkItemBase
+            {
+                ReferenceId = "5025",
+                Name = "Item",
+                State = "In Progress",
+                SyncedTransitions = [transition],
+            };
+
+            var item = new WorkItem(workItemBase, new Team { Id = 7, Name = "Team" });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(item.SyncedTransitions, Has.Count.EqualTo(1));
+                Assert.That(item.SyncedTransitions[0].FromState, Is.EqualTo("To Do"));
+                Assert.That(item.SyncedTransitions[0].ToState, Is.EqualTo("In Progress"));
+                Assert.That(item.SyncedTransitions[0].TransitionedAt, Is.EqualTo(transition.TransitionedAt));
+            }
+        }
+
+        [Test]
         public void IsBlocked_TeamHasNoBlockedSettings_ReturnsFalse()
         {
             var item = CreateSubject();

@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Models
         protected WorkItemBase(WorkItemBase workItemBase)
         {
             Update(workItemBase);
+            SyncedTransitions = workItemBase.SyncedTransitions;
         }
 
         public int Id { get; set; }
