@@ -155,11 +155,6 @@ test("flow coach sees the Stale Items widget count a stale item, while a blocked
 	request,
 	overviewPage,
 }) => {
-	test.fixme(
-		true,
-		"slice 03 US-06: Stale Items overview widget (count + RAG + view-data) modelled on Blocked Items; blocked-excludes-stale (D10). Un-fixme when US-06 code (StaleOverviewWidget + computeStaleOverviewRag) lands; confirm demo seed has an over-threshold item AND a blocked-over-threshold item.",
-	);
-
 	await loadDemoScenario(request, DEMO_SCENARIO_ID);
 	await waitForBackgroundUpdates(request);
 	await page.goto("/");
