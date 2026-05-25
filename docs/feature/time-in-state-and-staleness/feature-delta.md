@@ -427,3 +427,94 @@ Before writing any production code, DELIVER MUST un-ignore each AT one at a time
 - **Wave-decision reconciliation: PASSED — 0 contradictions.** DISCUSS and DESIGN agree across US-01. DDD-11 (`/work-items` → `/metrics/wip`) is a flagged DISCUSS-shorthand correction, not a contradiction. No `docs/feature/time-in-state-and-staleness/devops/` delta exists — default environment assumptions apply (warn, not block).
 - **Infrastructure policy:** the canonical Python pilot artifacts (`docs/architecture/atdd-infrastructure-policy.md`, `tests/common/state_delta.<ext>`, `assert_state_delta` Universe assertions, Hypothesis/PBT harnesses, `__SCAFFOLD__` stubs) are NOT bootstrapped — this is a C#/.NET + React/Playwright project, not the Python pilot. The project's equivalent policy is already encoded in precedent: Driving = `WebApplicationFactory<Program>` (backend) / production React app (E2E); Driven internal = EF context via the test factory; Driven external = live connector sync (E2E) or persisted-state seeding (backend ATs). Mandates 8-9 (state-delta Universe, layer-dependent PBT) are Python-pilot-specific and do not transfer; the C# row of the polyglot matrix governs (NUnit skip marker, example-based integration tests, no PBT at layer 4+ per Mandate 11).
 
+## Wave: DISTILL / [REF] Inherited commitments (slice 02 — US-02 / US-03 / US-04 + Linear/CSV capture + Portfolio column)
+
+Scope: **slice 02 only** (staleness threshold, visual highlight, portfolio parity, Linear source-of-truth + CSV sync-delta fallback). US-01 (slice 01) is shipped and unchanged.
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#US-03 | Team settings payload exposes `stalenessThresholdDays`, default 7; PUT accepts it; `[0,365]` enforced; write gated by `isTeamAdmin` | DDD-5 | GET/PUT round-trip ATs assert default + persistence; out-of-range → 400; non-admin → 403 |
+| DISCUSS#US-04 | Portfolio settings payload exposes `stalenessThresholdDays`, default 14; same `[0,365]` + `isPortfolioAdmin` gating | DDD-5 | Mirror of US-03 ATs against the portfolio settings carrier |
+| DISCUSS#US-04 | Portfolio (Feature) work-item read view carries `currentStateEnteredAt` for the Time-in-State column | DDD-9 / DESIGN open-q (Feature transitions) | Portfolio `/metrics/wip` read AT pins the contract; Feature-level capture is the DELIVER decision (FeatureStateTransition or polymorphic reuse) |
+| DISCUSS#US-02 | Threshold comparison is client-side; red treatment takes effect on next render, no sync | DDD-8 | Asserted in the E2E walking-skeleton only (FE behaviour); backend just persists/serves the threshold |
+| DISCUSS#D1 / slice-02 | CSV reload that detects a State change captures a transition + derives `currentStateEnteredAt`; connector without history → fallback (`approximate=true`); Linear with history → real (`approximate=false`) | DDD-1 / DDD-3 / DDD-9 | Service-seam ATs assert the OBSERVABLE contract (`CurrentStateEnteredAt` + captured transition). **No `source` field** — slice-doc `source="csv-fallback"` is superseded by `WorkItemDto.Approximate: bool` |
+| DESIGN#DDD-7 | Re-syncing an unchanged CSV item must not synthesise duplicate sync-delta transitions | DDD-7 | Idempotency seam AT asserts ≤1 transition into the mapped state across two unchanged syncs |
+
+## Wave: DISTILL / [REF] Scenario list with tags (slice 02)
+
+| # | Scenario | Tier / Layer | Tags | AC covered |
+|---|---|---|---|---|
+| 1 | `GetTeamSettings_NewlyCreatedTeam_ExposesDefaultStalenessThresholdOfSevenDays` | Tier A — integration (layer 4) | `@driving_port` `@US-03` | Team default 7 + payload exposure |
+| 2 | `PutTeam_TeamAdminSetsThresholdToFourteen_SettingsRoundTripsTheNewThreshold` | Tier A — integration (layer 4) | `@driving_port` `@US-03` | PUT accepts + GET round-trips |
+| 3 | `PutTeam_TeamAdminSetsThresholdToZero_PersistsZeroToDisableHighlighting` | Tier A — integration (layer 4) | `@driving_port` `@US-03` (boundary) | 0 disables highlighting (lower bound) |
+| 4 | `PutTeam_ThresholdBelowRange_ReturnsBadRequest` | Tier A — integration (layer 4) | `@driving_port` `@US-03` `@error` | `[0,365]` lower-bound rejection |
+| 5 | `PutTeam_ThresholdAboveRange_ReturnsBadRequest` | Tier A — integration (layer 4) | `@driving_port` `@US-03` `@error` | `[0,365]` upper-bound rejection |
+| 6 | `PutTeam_NonTeamAdminSetsThreshold_ReturnsForbidden` | Tier A — integration (layer 4) | `@driving_port` `@US-03` `@error` `@rbac` | write gated by `isTeamAdmin` |
+| 7 | `GetPortfolioSettings_NewlyCreatedPortfolio_ExposesDefaultStalenessThresholdOfFourteenDays` | Tier A — integration (layer 4) | `@driving_port` `@US-04` | Portfolio default 14 + exposure |
+| 8 | `PutPortfolio_PortfolioAdminSetsThresholdToThirty_SettingsRoundTripsTheNewThreshold` | Tier A — integration (layer 4) | `@driving_port` `@US-04` | PUT accepts + GET round-trips |
+| 9 | `PutPortfolio_PortfolioAdminSetsThresholdToZero_PersistsZeroToDisableHighlighting` | Tier A — integration (layer 4) | `@driving_port` `@US-04` (boundary) | 0 disables highlighting |
+| 10 | `PutPortfolio_ThresholdBelowRange_ReturnsBadRequest` | Tier A — integration (layer 4) | `@driving_port` `@US-04` `@error` | lower-bound rejection |
+| 11 | `PutPortfolio_ThresholdAboveRange_ReturnsBadRequest` | Tier A — integration (layer 4) | `@driving_port` `@US-04` `@error` | upper-bound rejection |
+| 12 | `PutPortfolio_NonPortfolioAdminSetsThreshold_ReturnsForbidden` | Tier A — integration (layer 4) | `@driving_port` `@US-04` `@error` `@rbac` | write gated by `isPortfolioAdmin` |
+| 13 | `GetWip_PortfolioFeatureWithStateHistory_ExposesCurrentStateEnteredAtWithinOneDay` | Tier A — integration (layer 4) | `@driving_port` `@US-04` | Portfolio Feature read exposes `currentStateEnteredAt`, rendering the persisted value within 1 day (read projection; Feature-derivation correctness deferred to the DELIVER capture layer) |
+| 14 | `GetWip_FeatureFirstObservedThisSync_CurrentStateEnteredAtIsNull` | Tier A — integration (layer 4) | `@driving_port` `@US-04` `@error` | first-observed Feature → `null` → FE `—` |
+| 15 | `UpdateWorkItemsForTeam_CsvConnectorWithoutHistory_StateChangesAcrossSyncs_DerivesCurrentStateEnteredAtFromSyncDelta` | Tier A — service seam (layer 4, real EF + real service) | `@real-io` `@adapter-integration` `@US-02` | CSV fallback synthesises transition + derives `CurrentStateEnteredAt` |
+| 16 | `UpdateWorkItemsForTeam_CsvConnectorWithoutHistory_StateUnchangedAcrossSyncs_DoesNotSynthesiseTransition` | Tier A — service seam (layer 4) | `@real-io` `@adapter-integration` `@US-02` `@error` (idempotency) | DDD-7 — no duplicate sync-delta transition |
+| 17 | `UpdateWorkItemsForTeam_LinearConnectorWithHistory_PersistsRealTransitionsAndDerivesCurrentStateEnteredAt` | Tier A — service seam (layer 4) | `@real-io` `@adapter-integration` `@US-02` | Linear real-history path derives from real timestamp (`approximate=false` semantics) |
+| 18 | E2E — stale items turn red after lowering threshold, no re-sync (`test.fixme`) | Tier A — E2E (layer 6) | `@walking_skeleton` `@driving_port` `@real-io` `@US-02` | US-02 red treatment on next render |
+| 19 | E2E — team admin configures threshold from team settings (`test.fixme`) | Tier A — E2E (layer 6) | `@driving_port` `@real-io` `@US-03` `@rbac` | US-03 settings field, RBAC-gated visibility |
+| 20 | E2E — portfolio admin configures threshold from portfolio settings (`test.fixme`) | Tier A — E2E (layer 6) | `@driving_port` `@real-io` `@US-04` `@rbac` | US-04 settings field |
+| 21 | E2E — Time in State column on the portfolio work-item view (`test.fixme`) | Tier A — E2E (layer 6) | `@walking_skeleton` `@driving_port` `@real-io` `@US-04` | portfolio column demo proof |
+
+Error/edge ratio (backend ATs #1-17): 10 of 17 (#3,4,5,6,9,10,11,12,14,16 — boundary + error + idempotency) = **>40%**, on target. Tier B (state-machine PBT) is correctly SKIPPED: per Mandate 10 "skip when" — the threshold round-trip is a config-shaped setting (single integer, no chained ≥3-scenario state machine); the CSV/Linear seam is example-pinned at layer 4 (Mandate 11 — integration sad paths stay example-based, never PBT-generated).
+
+## Wave: DISTILL / [REF] source → Approximate reconciliation note (slice 02 HARD reconciliation)
+
+The slice doc (`slices/slice-02-staleness-threshold.md`, "Additional slice-level acceptance") states CSV reload "generates a new `WorkItemStateTransition` row with `source = "csv-fallback"`." This is **superseded by DESIGN** and NOT asserted:
+
+- **DDD-1**: `WorkItemStateTransition` has exactly `FromState` / `ToState` / `TransitionedAt` + FK — no `source` column.
+- **DDD-9**: the source-of-truth-vs-sync-delta distinction is surfaced solely by `WorkItemDto.Approximate: bool` at the FE badge layer; sibling consumers read transition rows uniformly.
+
+Therefore the CSV/Linear seam ATs (#16-18) assert the **observable** contract: after a change-detecting sync, the item's `CurrentStateEnteredAt` updates and a transition into the new mapped state is captured. The fallback-vs-real distinction is expressed by which path derives the value (sync-delta timestamp → `approximate=true`; real-history timestamp → `approximate=false`), surfaced at `WorkItemDto.Approximate` (asserted in DELIVER FE unit tests + the read-API DTO, not in the seam test). No `source` field is referenced anywhere. **This is an applied reconciliation, not a live cross-wave contradiction** — DESIGN is the authority and is internally consistent; the slice-doc line is a stale shorthand from before DESIGN locked DDD-1/DDD-9.
+
+## Wave: DISTILL / [REF] Test placement + precedent justification (slice 02)
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Team threshold settings ATs (6) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamStalenessThresholdSettingsIntegrationTest.cs` | Mirrors `ForecastFilterTeamSettingsIntegrationTest` (mock `ILicenseService`, `client.AsTeamAdmin`/`AsViewer`, `JsonDocument.Parse` settings assertions). PUT body built as `JsonNode` from a valid `TeamSettingDto` + injected `stalenessThresholdDays` so the suite compiles before the DTO property exists. |
+| Portfolio threshold settings ATs (6) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioStalenessThresholdSettingsIntegrationTest.cs` | Same precedent; `client.AsPortfolioAdmin`; `PortfolioController.UpdatePortfolio` carries `[LicenseGuard]` so `ILicenseService` is mocked premium as in the team file. |
+| Portfolio Time-in-State read ATs (2) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioTimeInStateReadApiIntegrationTest.cs` | Mirrors slice-01's `TimeInStateReadApiIntegrationTest` shape against the portfolio `/metrics/wip` (Feature) endpoint; seeds a Portfolio + in-progress `Feature`; `FeatureDto : WorkItemDto` inherits the field, but Feature-level capture is unbuilt → genuine RED. |
+| CSV/Linear capture seam ATs (3) | `Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs` | Mirrors `WorkItemServiceTransitionSyncIntegrationTest` (the real connector→service→derive seam added during slice-01 bugfixing) — `IntegrationTestBase`, real `WorkItemRepository` / `WorkItemStateTransitionRepository`, mocked `IWorkTrackingConnector` (NOT mocked-in-isolation; drives the real `WorkItemService.UpdateWorkItemsForTeam`). |
+| E2E walking-skeleton specs (4) | `Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts` (extended) | Extends the slice-01 flow spec; `test.fixme` for all slice-02 scenarios (held for the user's live run, never committed unrun). |
+| E2E POM extensions | `WorkItemsDialog.ts` (stale-badge readers), `TeamEditPage.ts` / `PortfolioEditPage.ts` (threshold field) | POM-only rule; threshold field labelled `Staleness Threshold (days)` per DESIGN; stale badge via `data-testid="time-in-state-stale"` parallel to `getFeatureHasWarning`'s testid convention. |
+
+**Black-box / compile-safety note**: NO not-yet-existing C# symbol is referenced. `stalenessThresholdDays` is read from / injected into response JSON dynamically (`JsonDocument` / `JsonNode`); the portfolio read AT relies on the already-shipped `WorkItemDto.CurrentStateEnteredAt` (inherited by `FeatureDto`) but seeds a `Feature` whose value is never written → null today; the seam ATs reference only existing symbols (`WorkItemService`, `IWorkTrackingConnector.SupportsTransitionHistory`, `WorkItemStateTransition`, `WorkItemStateTransitionMapper`). `dotnet build -warnaserror` is clean (verified: 0 warnings) and all 17 backend ATs report **Skipped** (verified), so `dotnet test` stays green this DISTILL pass.
+
+## Wave: DISTILL / [REF] AT files created / extended (slice 02)
+
+- `Lighthouse.Backend.Tests/API/Integration/TeamStalenessThresholdSettingsIntegrationTest.cs` — NEW, 6 tests, `[Ignore("pending DELIVER: US-03 …")]`.
+- `Lighthouse.Backend.Tests/API/Integration/PortfolioStalenessThresholdSettingsIntegrationTest.cs` — NEW, 6 tests, `[Ignore("pending DELIVER: US-04 …")]`.
+- `Lighthouse.Backend.Tests/API/Integration/PortfolioTimeInStateReadApiIntegrationTest.cs` — NEW, 2 tests, `[Ignore("pending DELIVER: US-04 portfolio Time-in-State column …")]`.
+- `Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs` — NEW, 3 tests, class-level `[Ignore("pending DELIVER: slice 02 CSV sync-delta fallback + Linear capture …")]`.
+- `Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts` — EXTENDED, 4 new `test.fixme` scenarios (slice-01 scenario unchanged).
+- `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts` — EXTENDED (`staleTimeInStateBadgeFor`, `countStaleTimeInStateBadges`).
+- `Lighthouse.EndToEndTests/tests/models/teams/TeamEditPage.ts` + `Lighthouse.EndToEndTests/tests/models/portfolios/PortfolioEditPage.ts` — EXTENDED (`stalenessThresholdField`, `setStalenessThreshold`, `getStalenessThreshold`).
+
+DEFERRED to DELIVER (would red the build now): FE component unit tests (`TimeInStateBadge` red treatment, the two settings-form components — reference props/threshold that don't exist yet), the EF migration for `StalenessThresholdDays` (via `Create-Migration.ps1`), the `WorkItemDto.Approximate` true/false unit assertions, and the per-connector Linear GraphQL `history` parsing correctness test (DESIGN open-question — first Linear fixture in DELIVER).
+
+## Wave: DISTILL / [REF] Pre-DELIVER fail-for-the-right-reason gate (slice 02)
+
+Un-ignore each AT one at a time; confirm the failure is MISSING_FUNCTIONALITY, not a setup/compile/fixture error (BLOCK and fix the test otherwise):
+
+1. **Settings ATs (#1-12).** Correct RED for GET defaults: `stalenessThresholdDays` absent from the settings JSON → `TryGetInt` returns false → assertion fires. Correct RED for PUT round-trip: GET-after-PUT still lacks the field, or the PUT silently drops the injected property. Correct RED for `@error` 400 cases: the controller has no `[0,365]` validation yet → returns 200 instead of 400. Correct RED for `@rbac` 403: already wired by the existing `[RbacGuard(TeamWrite/PortfolioWrite)]` — if these PASS while un-ignored, that is EXPECTED (RBAC is inherited, not new); keep them as regression guards. WRONG RED: `JsonNode.Parse` throws, 500 from a malformed PUT body, or a compile error.
+2. **Portfolio read ATs (#13-15).** Correct RED: `currentStateEnteredAt` present-but-null on the seeded in-progress Feature (Feature capture unbuilt) → #13/#14 assertions fire; #15 (first-observed null) may PASS by accident today (value is null because capture is unbuilt) — at GREEN, confirm #15 still passes for the RIGHT reason (no transition rows for a first-observed Feature), not because capture is simply absent. WRONG RED: wip array empty (seed/`StateCategory`/`asOfDate` mismatch), 403/500.
+3. **Seam ATs (#16-18).** Correct RED for #16: after the change-detecting CSV sync, `CurrentStateEnteredAt` stays null (no fallback branch) → `Is.Not.Null` fires. Correct RED for #18: Linear real-history path may already derive correctly via existing `SyncStateTransitions` — if it PASSES un-ignored, that confirms the source-of-truth path works; keep as a guard and focus DELIVER on the #16 fallback branch. #17 (idempotency) guards against the DELIVER fallback double-counting. WRONG RED: connector mock returns null, EF context not created, `MapRawStateToMappedName` throws on an unmapped state.
+4. **E2E (#19-22) un-fixme LAST**, start a local app, run live, confirm RED (field/column/red-badge absent), then drive green. Per project rule + memory, never commit a Playwright spec not RUN locally against a started app. The premium-license dev seed (memory `reference_premium_license_dev_seed`) may be needed if any portfolio PUT path hits the `[LicenseGuard]` in the running app.
+5. **Fixture Theater check**: when each AT flips to GREEN, `git diff --stat` must show production files changed (DTO/base-class/controller/service/migration). Settings ATs that go green with only test-file changes mean the PUT-body injection is being echoed by the seed, not persisted — BLOCK.
+
+## Wave: DISTILL / [REF] Reconciliation + infrastructure policy notes (slice 02)
+
+- **Wave-decision reconciliation: PASSED — 0 live contradictions.** DISCUSS (US-02/03/04 + D1/D7/D8) and DESIGN (DDD-1/3/5/7/8/9) agree. The slice-doc `source="csv-fallback"` line is a stale pre-DESIGN shorthand, superseded by DDD-1/DDD-9 (applied as a HARD reconciliation above), not a cross-wave contradiction. No `devops/` delta exists — default environment assumptions apply (warn, not block).
+- **Adapter coverage (Mandate 6):** CSV sync-delta fallback and Linear source-of-truth capture each get a real-service-seam AT (#16-18) driving the real `WorkItemService` + real EF repositories (the level slice-01 bugfixing proved necessary — mocked-connector-in-isolation missed the `WorkItemBase→WorkItem` + derive wiring). Per-connector GraphQL/CSV-parser correctness (Linear `history` field availability) is the DESIGN-flagged DELIVER open question.
+- **Infrastructure policy:** unchanged from slice 01 — C#/.NET + React/Playwright, not the Python pilot. Backend ATs use `WebApplicationFactory<Program>` (driving) + real EF context (driven internal) + mocked `IWorkTrackingConnector`/`ILicenseService` (driven external). E2E uses the production React app + live connector sync. NUnit `[Ignore]` / Playwright `test.fixme` are the C#-row / TS-row skip markers per the polyglot matrix.
+
