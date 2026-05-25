@@ -14,4 +14,6 @@ export interface IWorkItem {
 	workItemAge: number;
 	parentWorkItemReference: string;
 	isBlocked: boolean;
+	currentStateEnteredAt?: Date | null;
+	approximate?: boolean;
 }
