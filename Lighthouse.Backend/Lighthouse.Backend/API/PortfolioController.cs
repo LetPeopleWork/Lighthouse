@@ -100,6 +100,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
+            if (!TeamController.IsStalenessThresholdInRange(portfolioSetting.StalenessThresholdDays))
+            {
+                return BadRequest($"Staleness threshold must be between {TeamController.MinStalenessThresholdDays} and {TeamController.MaxStalenessThresholdDays} days.");
+            }
+
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
                 portfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);

@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    [Ignore("pending DELIVER: US-04 portfolio staleness threshold (StalenessThresholdDays not yet on SettingsOwnerDtoBase / PortfolioController validation)")]
     public class PortfolioStalenessThresholdSettingsIntegrationTest
     {
         private const int DefaultPortfolioThresholdDays = 14;

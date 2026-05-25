@@ -31,8 +31,8 @@ namespace Lighthouse.Backend.API
         IForecastFilterRuleService forecastFilterRuleService)
         : ControllerBase
     {
-        private const int MinStalenessThresholdDays = 0;
-        private const int MaxStalenessThresholdDays = 365;
+        internal const int MinStalenessThresholdDays = 0;
+        internal const int MaxStalenessThresholdDays = 365;
 
         internal static bool IsStalenessThresholdInRange(int stalenessThresholdDays)
         {
