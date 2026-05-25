@@ -237,6 +237,9 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			const workItems = response.data.map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
+				workItem.currentStateEnteredAt = workItem.currentStateEnteredAt
+					? new Date(workItem.currentStateEnteredAt)
+					: workItem.currentStateEnteredAt;
 				return workItem;
 			});
 

@@ -117,6 +117,32 @@ describe("TeamMetricsService", () => {
 		);
 	});
 
+	it("should deserialize currentStateEnteredAt from an ISO string to a Date for in-progress items", async () => {
+		const isoEnteredItem = {
+			...createMockWorkItem("Entered Item"),
+			currentStateEnteredAt: "2025-06-01T08:30:00Z" as unknown as Date,
+		};
+		const nullEnteredItem = {
+			...createMockWorkItem("Null Item"),
+			currentStateEnteredAt: null,
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({
+			data: [isoEnteredItem, nullEnteredItem],
+		});
+
+		const result = await teamMetricsService.getInProgressItems(
+			1,
+			new Date(2025, 5, 15),
+		);
+
+		expect(result[0].currentStateEnteredAt).toBeInstanceOf(Date);
+		expect(result[0].currentStateEnteredAt?.toISOString()).toBe(
+			"2025-06-01T08:30:00.000Z",
+		);
+		expect(result[1].currentStateEnteredAt).toBeNull();
+	});
+
 	it("should handle errors when getting in-progress items", async () => {
 		const errorMessage = "Network Error";
 		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));

@@ -27,6 +27,9 @@ import {
 } from "../../../utils/theme/colors";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
+import TimeInStateBadge, {
+	wholeDaysInState,
+} from "../TimeInStateBadge/TimeInStateBadge";
 
 export interface WorkItemsDialogProps {
 	title: string;
@@ -34,6 +37,7 @@ export interface WorkItemsDialogProps {
 	open: boolean;
 	onClose: () => void;
 	highlightColumn?: HighlightColumnDefinition;
+	timeInStateColumn?: TimeInStateColumnDefinition;
 	sle?: number;
 }
 
@@ -41,6 +45,10 @@ export interface HighlightColumnDefinition {
 	title: string;
 	description: string;
 	valueGetter: (workItem: IWorkItem) => number;
+}
+
+export interface TimeInStateColumnDefinition {
+	now?: Date;
 }
 
 const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
@@ -55,6 +63,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	open,
 	onClose,
 	highlightColumn = emptyHighlightColumnDefinition,
+	timeInStateColumn,
 	sle,
 }) => {
 	const { getTerm } = useTerminology();
@@ -71,8 +80,18 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			isFeature(item) && item.owningTeam && item.owningTeam.trim() !== "",
 	);
 
+	const sortValueOf = (workItem: IWorkItem): number => {
+		if (timeInStateColumn) {
+			return wholeDaysInState(
+				workItem.currentStateEnteredAt ?? null,
+				timeInStateColumn.now,
+			);
+		}
+		return highlightColumn.valueGetter(workItem);
+	};
+
 	const sortedItems = [...items].sort((a, b) => {
-		return highlightColumn.valueGetter(b) - highlightColumn.valueGetter(a);
+		return sortValueOf(b) - sortValueOf(a);
 	});
 
 	const getColumnColor = useCallback(
@@ -206,6 +225,27 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			});
 		}
 
+		if (timeInStateColumn) {
+			baseColumns.push({
+				field: "timeInState",
+				headerName: "Time in State",
+				width: 200,
+				sortable: true,
+				valueGetter: (_, row) =>
+					wholeDaysInState(
+						row.currentStateEnteredAt ?? null,
+						timeInStateColumn.now,
+					),
+				renderCell: ({ row }) => (
+					<TimeInStateBadge
+						currentStateEnteredAt={row.currentStateEnteredAt ?? null}
+						currentStateName={row.state}
+						now={timeInStateColumn.now}
+					/>
+				),
+			});
+		}
+
 		return baseColumns;
 	}, [
 		hasOwningTeams,
@@ -215,6 +255,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		isFeature,
 		getColumnColor,
 		highlightColumn,
+		timeInStateColumn,
 	]);
 
 	return (
@@ -236,7 +277,10 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 							columns={columns}
 							storageKey="work-items-dialog"
 							initialSortModel={[
-								{ field: "additionalColumn", sort: "desc" as const },
+								{
+									field: timeInStateColumn ? "timeInState" : "additionalColumn",
+									sort: "desc" as const,
+								},
 							]}
 							enableExport={true}
 							exportFileName={title.replaceAll(/\s+/g, "_")}

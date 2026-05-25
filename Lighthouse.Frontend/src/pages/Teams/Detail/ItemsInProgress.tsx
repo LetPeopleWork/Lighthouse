@@ -188,6 +188,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({ entries = [] }) => {
 						description: "days",
 						valueGetter: (item) => item.workItemAge,
 					}}
+					timeInStateColumn={{}}
 					sle={entries[openIndex].sle}
 				/>
 			)}

@@ -588,6 +588,83 @@ describe("WorkItemsDialog Component", () => {
 		});
 	});
 
+	describe("Time in State column functionality", () => {
+		const timeInStateItems: IWorkItem[] = [
+			{
+				...mockWorkItems[0],
+				id: 101,
+				name: "Recently entered",
+				state: "In Progress",
+				referenceId: "TIS-1",
+				url: null,
+				currentStateEnteredAt: new Date("2026-05-23T00:00:00Z"),
+			},
+			{
+				...mockWorkItems[1],
+				id: 102,
+				name: "Longest in state",
+				state: "Active",
+				referenceId: "TIS-2",
+				url: null,
+				currentStateEnteredAt: new Date("2026-05-10T00:00:00Z"),
+			},
+			{
+				...mockWorkItems[2],
+				id: 103,
+				name: "Mid range item",
+				state: "Review",
+				referenceId: "TIS-3",
+				url: null,
+				currentStateEnteredAt: new Date("2026-05-18T00:00:00Z"),
+			},
+		];
+
+		const now = new Date("2026-05-25T12:00:00Z");
+
+		test("renders a 'Time in State' column with badges when timeInStateColumn provided", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={timeInStateItems}
+					highlightColumn={undefined}
+					timeInStateColumn={{ now }}
+				/>,
+			);
+
+			expect(screen.getByText("Time in State")).toBeInTheDocument();
+
+			expect(screen.getByText("2d in In Progress")).toBeInTheDocument();
+			expect(screen.getByText("15d in Active")).toBeInTheDocument();
+			expect(screen.getByText("7d in Review")).toBeInTheDocument();
+		});
+
+		test("does not render the 'Time in State' column when timeInStateColumn is absent", () => {
+			render(<WorkItemsDialog {...defaultProps} items={timeInStateItems} />);
+
+			expect(screen.queryByText("Time in State")).not.toBeInTheDocument();
+			expect(screen.queryByText(/d in /)).not.toBeInTheDocument();
+		});
+
+		test("sorts the 'Time in State' column with the longest-running item first", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={timeInStateItems}
+					highlightColumn={undefined}
+					timeInStateColumn={{ now }}
+				/>,
+			);
+
+			const badgeCells = screen
+				.getAllByRole("gridcell")
+				.filter((cell) => /d in /.test(cell.textContent ?? ""));
+
+			expect(badgeCells[0]).toHaveTextContent("15d in Active");
+			expect(badgeCells[1]).toHaveTextContent("7d in Review");
+			expect(badgeCells[2]).toHaveTextContent("2d in In Progress");
+		});
+	});
+
 	describe("Feature owning team functionality", () => {
 		test("displays 'Owned by' column for Features with owning teams", () => {
 			render(

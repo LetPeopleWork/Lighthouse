@@ -8,16 +8,23 @@ type TimeInStateBadgeProps = {
 
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const wholeDaysBetween = (from: Date, to: Date): number => {
+export const wholeDaysInState = (
+	currentStateEnteredAt: Date | null,
+	now: Date = new Date(),
+): number => {
+	if (currentStateEnteredAt === null) {
+		return 0;
+	}
+
 	const fromDateOnly = Date.UTC(
-		from.getUTCFullYear(),
-		from.getUTCMonth(),
-		from.getUTCDate(),
+		currentStateEnteredAt.getUTCFullYear(),
+		currentStateEnteredAt.getUTCMonth(),
+		currentStateEnteredAt.getUTCDate(),
 	);
 	const toDateOnly = Date.UTC(
-		to.getUTCFullYear(),
-		to.getUTCMonth(),
-		to.getUTCDate(),
+		now.getUTCFullYear(),
+		now.getUTCMonth(),
+		now.getUTCDate(),
 	);
 
 	return Math.max(
@@ -35,7 +42,7 @@ const TimeInStateBadge: React.FC<TimeInStateBadgeProps> = ({
 		return <span>—</span>;
 	}
 
-	const days = wholeDaysBetween(currentStateEnteredAt, now);
+	const days = wholeDaysInState(currentStateEnteredAt, now);
 
 	return <span>{`${days}d in ${currentStateName}`}</span>;
 };
