@@ -445,6 +445,7 @@ function buildViewData(
 			title: `${inputs.title} in Progress`,
 			items: inputs.inProgressItems,
 			highlightColumn: ageHighlight,
+			timeInStateColumn: {},
 		},
 		blockedOverview: {
 			title: `${terms.blocked} ${terms.workItems}`,

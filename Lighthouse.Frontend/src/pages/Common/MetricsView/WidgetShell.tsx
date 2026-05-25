@@ -17,6 +17,7 @@ import type React from "react";
 import { useRef, useState } from "react";
 import WorkItemsDialog, {
 	type HighlightColumnDefinition,
+	type TimeInStateColumnDefinition,
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { TrendPayload } from "./trendTypes";
@@ -39,6 +40,7 @@ export type ViewDataPayload = {
 	readonly title: string;
 	readonly items: IWorkItem[];
 	readonly highlightColumn?: HighlightColumnDefinition;
+	readonly timeInStateColumn?: TimeInStateColumnDefinition;
 	readonly sle?: number;
 };
 
@@ -356,6 +358,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					open={viewDataOpen}
 					onClose={() => setViewDataOpen(false)}
 					highlightColumn={viewData.highlightColumn}
+					timeInStateColumn={viewData.timeInStateColumn}
 					sle={viewData.sle}
 				/>
 			)}
