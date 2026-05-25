@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkItems
 {
+#pragma warning disable S107
     public class WorkItemService(
         ILogger<WorkItemService> logger,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
@@ -19,6 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IWorkItemStateTransitionRepository stateTransitionRepository,
         IFeatureStateTransitionRepository featureStateTransitionRepository)
         : IWorkItemService
+#pragma warning restore S107
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new();
 
@@ -159,6 +161,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             var matchingTransitions = transitions
                 .Where(transition => transition.ToState == workItem.State)
+                .Select(transition => transition.TransitionedAt)
+                .ToList();
+
+            return matchingTransitions.Count == 0
+                ? null
+                : matchingTransitions.Max();
+        }
+
+        private static DateTime? DeriveCurrentStateEnteredAt(Feature feature, IEnumerable<FeatureStateTransition> transitions)
+        {
+            var matchingTransitions = transitions
+                .Where(transition => transition.ToState == feature.State)
                 .Select(transition => transition.TransitionedAt)
                 .ToList();
 
@@ -402,18 +416,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             newTransitions.ForEach(featureStateTransitionRepository.Add);
 
             feature.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(feature, existingTransitions.Concat(newTransitions));
-        }
-
-        private static DateTime? DeriveCurrentStateEnteredAt(Feature feature, IEnumerable<FeatureStateTransition> transitions)
-        {
-            var matchingTransitions = transitions
-                .Where(transition => transition.ToState == feature.State)
-                .Select(transition => transition.TransitionedAt)
-                .ToList();
-
-            return matchingTransitions.Count == 0
-                ? null
-                : matchingTransitions.Max();
         }
 
         private Feature AddOrUpdateFeature(Feature feature)

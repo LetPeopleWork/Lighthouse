@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(TryGetInt(settingsBody, "stalenessThresholdDays", out var threshold), Is.True, settingsBody);
-                Assert.That(threshold, Is.EqualTo(0), settingsBody);
+                Assert.That(threshold, Is.Zero, settingsBody);
             }
         }
 

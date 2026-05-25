@@ -92,9 +92,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "SendAsync",
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>(async (request, _) =>
+                .Returns<HttpRequestMessage, CancellationToken>(async (request, cancellationToken) =>
                 {
-                    var requestBody = request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync();
+                    var requestBody = request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken);
                     return new HttpResponseMessage(HttpStatusCode.OK)
                     {
                         Content = new StringContent(ResponseFor(requestBody, bodyForRequest), Encoding.UTF8, "application/json"),

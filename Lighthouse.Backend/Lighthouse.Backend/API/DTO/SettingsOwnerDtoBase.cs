@@ -83,6 +83,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
 
+        [JsonRequired]
         public int StalenessThresholdDays { get; set; }
 
         public DataRetrievalSchemaDto? DataRetrievalSchema { get; set; }
