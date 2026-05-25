@@ -12,6 +12,7 @@ describe("widgetInfoMetadata", () => {
 		const expectedWidgetKeys = [
 			"wipOverview",
 			"blockedOverview",
+			"staleOverview",
 			"featuresWorkedOnOverview",
 			"predictabilityScore",
 			"predictabilityScoreDetails",

@@ -50,6 +50,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	"flow-overview": [
 		{ widgetKey: "wipOverview", size: "small" },
 		{ widgetKey: "blockedOverview", size: "small" },
+		{ widgetKey: "staleOverview", size: "small" },
 		{
 			widgetKey: "featuresWorkedOnOverview",
 			size: "small",
@@ -116,6 +117,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	featureSize: "none",
 	aging: "none",
 	blockedOverview: "none",
+	staleOverview: "none",
 	throughputPbc: "none",
 	arrivalsPbc: "none",
 	wipPbc: "none",

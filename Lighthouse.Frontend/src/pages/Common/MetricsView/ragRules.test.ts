@@ -11,6 +11,7 @@ import {
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
+	computeStaleOverviewRag,
 	computeStartedVsClosedRag,
 	computeThroughputRag,
 	computeTotalWorkItemAgeOverTimeRag,
@@ -103,6 +104,38 @@ describe("ragRules", () => {
 			const result = computeBlockedOverviewRag(0, true, terms);
 			expect(result.ragStatus).toBe("green");
 			expect(result.tipText).toContain("No Blocked");
+		});
+	});
+
+	describe("computeStaleOverviewRag", () => {
+		it("returns red when staleness is not configured", () => {
+			const result = computeStaleOverviewRag(0, false, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define a staleness threshold");
+		});
+
+		it("returns red when 2+ items are stale", () => {
+			const result = computeStaleOverviewRag(2, true, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Focus on unsticking");
+		});
+
+		it("returns red when many items are stale", () => {
+			const result = computeStaleOverviewRag(5, true, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Focus on unsticking");
+		});
+
+		it("returns amber when 1 item is stale", () => {
+			const result = computeStaleOverviewRag(1, true, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Do not ignore");
+		});
+
+		it("returns green when no items are stale", () => {
+			const result = computeStaleOverviewRag(0, true, terms);
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toContain("No stale");
 		});
 	});
 

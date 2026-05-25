@@ -321,7 +321,12 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 						{header && showTips && header.ragStatus !== "none" && (
 							<Tooltip title={header.tipText} arrow>
 								<Chip
-									label={ragLabelMap[header.ragStatus]}
+									component="span"
+									label={
+										<span data-testid="rag-status" data-rag={header.ragStatus}>
+											{ragLabelMap[header.ragStatus]}
+										</span>
+									}
 									size="small"
 									data-testid={`widget-rag-${widgetKey}`}
 									sx={{

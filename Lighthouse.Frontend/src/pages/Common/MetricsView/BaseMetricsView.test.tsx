@@ -1346,6 +1346,70 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
+	it("counts stale items in the stale overview widget excluding blocked items", async () => {
+		const tenDaysAgo = new Date();
+		tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+		const staleScenarioItems: IWorkItem[] = [
+			{
+				...mockInProgressItems[0],
+				id: 11,
+				isBlocked: false,
+				currentStateEnteredAt: tenDaysAgo,
+			},
+			{
+				...mockInProgressItems[0],
+				id: 12,
+				isBlocked: false,
+				currentStateEnteredAt: tenDaysAgo,
+			},
+			{
+				...mockInProgressItems[0],
+				id: 13,
+				isBlocked: true,
+				currentStateEnteredAt: tenDaysAgo,
+			},
+		];
+
+		const team = new Team();
+		team.name = "Stale Team";
+		team.id = 77;
+		team.systemWIPLimit = 6;
+		team.lastUpdated = new Date();
+
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+			getInProgressItems: vi.fn().mockResolvedValue(staleScenarioItems),
+		};
+
+		localStorage.setItem(
+			`lighthouse:metrics:team:${team.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={team}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				doingStates={["To Do", "In Progress", "Review"]}
+				stalenessThresholdDays={1}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("stale-overview-count")).toHaveTextContent("2");
+		});
+
+		expect(
+			screen.getByTestId("widget-view-data-count-staleOverview"),
+		).toHaveTextContent("2");
+		expect(screen.getByTestId("widget-rag-staleOverview")).toHaveTextContent(
+			"red",
+		);
+	});
+
 	it("renders flow overview trend chrome for team overview widgets", async () => {
 		const team = new Team();
 		team.name = "Trend Team";

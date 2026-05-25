@@ -169,6 +169,7 @@ describe("categoryMetadata", () => {
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"wipOverview",
 				"blockedOverview",
+				"staleOverview",
 				"featuresWorkedOnOverview",
 				"totalWorkItemAge",
 				"predictabilityScore",
@@ -183,6 +184,7 @@ describe("categoryMetadata", () => {
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"wipOverview",
 				"blockedOverview",
+				"staleOverview",
 				"totalWorkItemAge",
 				"predictabilityScore",
 				"percentiles",
@@ -278,6 +280,7 @@ describe("categoryMetadata", () => {
 		it("no-trend widgets have none trend policy", () => {
 			const noTrendWidgets = [
 				"blockedOverview",
+				"staleOverview",
 				"predictabilityScoreDetails",
 				"throughputPbc",
 				"arrivalsPbc",

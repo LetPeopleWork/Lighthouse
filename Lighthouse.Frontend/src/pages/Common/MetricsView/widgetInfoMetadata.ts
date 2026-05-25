@@ -33,6 +33,16 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No blocked indicators are configured, or 2 or more items are blocked.",
 		},
 	},
+	staleOverview: {
+		description:
+			"Number of items that have been in their current state longer than the staleness threshold. Blocked items are excluded — they are counted as blocked, not stale. The goal is always zero stale items.",
+		learnMoreUrl: `${DOCS_BASE}#work-items-in-progress`,
+		statusGuidance: {
+			sustain: "No items are stale.",
+			observe: "Exactly 1 item is stale.",
+			act: "No staleness threshold is configured, or 2 or more items are stale.",
+		},
+	},
 	featuresWorkedOnOverview: {
 		description:
 			"How many features your team is actively working on compared to the Feature WIP limit.",

@@ -65,6 +65,7 @@ import {
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
+	computeStaleOverviewRag,
 	computeStartedVsClosedRag,
 	computeThroughputRag,
 	computeTotalWorkItemAgeOverTimeRag,
@@ -75,6 +76,7 @@ import {
 	computeWorkItemAgeChartRag,
 	type RagTerms,
 } from "./ragRules";
+import StaleOverviewWidget from "./StaleOverviewWidget";
 import ThroughputRunChartCard from "./ThroughputRunChartCard";
 import TotalArrivalsWidget from "./TotalArrivalsWidget";
 import TotalThroughputWidget from "./TotalThroughputWidget";
@@ -173,6 +175,8 @@ type RagInputs = {
 	readonly systemWipLimit: number | undefined;
 	readonly blockedCount: number;
 	readonly hasBlockedConfig: boolean;
+	readonly staleCount: number;
+	readonly hasStaleConfig: boolean;
 	readonly featuresInProgress: IWorkItem[] | undefined;
 	readonly featureWip: number | undefined;
 	readonly predictabilityScore: number | null;
@@ -230,6 +234,11 @@ function buildWidgetFooters(
 		blockedOverview: computeBlockedOverviewRag(
 			inputs.blockedCount,
 			inputs.hasBlockedConfig,
+			inputs.terms,
+		),
+		staleOverview: computeStaleOverviewRag(
+			inputs.staleCount,
+			inputs.hasStaleConfig,
 			inputs.terms,
 		),
 		featuresWorkedOnOverview: inputs.featuresInProgress
@@ -367,6 +376,7 @@ type ViewDataInputs = {
 	readonly title: string;
 	readonly inProgressItems: IWorkItem[];
 	readonly blockedItems: IWorkItem[];
+	readonly staleItems: IWorkItem[];
 	readonly featuresInProgress: IWorkItem[] | undefined;
 	readonly cycleTimeData: IWorkItem[];
 	readonly throughputData: RunChartData | null;
@@ -457,6 +467,14 @@ function buildViewData(
 			title: `${terms.blocked} ${terms.workItems}`,
 			items: inputs.blockedItems,
 			highlightColumn: ageHighlight,
+		},
+		staleOverview: {
+			title: `Stale ${terms.workItems}`,
+			items: inputs.staleItems,
+			highlightColumn: ageHighlight,
+			timeInStateColumn: {
+				stalenessThresholdDays: inputs.stalenessThresholdDays,
+			},
 		},
 		featuresWorkedOnOverview: inputs.featuresInProgress
 			? {
@@ -675,6 +693,7 @@ function buildWidgetNodes(ctx: {
 	endDate: Date;
 	inProgressItems: IWorkItem[];
 	blockedItems: IWorkItem[];
+	staleItems: IWorkItem[];
 	blockedTerm: string;
 	featuresInProgress: IWorkItem[] | undefined;
 	featureWip: number | undefined;
@@ -732,6 +751,7 @@ function buildWidgetNodes(ctx: {
 				title={ctx.blockedTerm}
 			/>
 		),
+		staleOverview: <StaleOverviewWidget staleCount={ctx.staleItems.length} />,
 		featuresWorkedOnOverview: ctx.featuresInProgress ? (
 			<FeaturesWorkedOnWidget
 				featureCount={ctx.featuresInProgress.length}
@@ -1010,6 +1030,10 @@ export const BaseMetricsView = <
 	};
 
 	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
+	const staleItems = inProgressItems.filter((item) =>
+		deriveStaleness(item, stalenessThresholdDays),
+	);
+	const hasStaleConfig = (stalenessThresholdDays ?? 0) > 0;
 
 	const loadBalanceData = useMemo(
 		() =>
@@ -1036,6 +1060,7 @@ export const BaseMetricsView = <
 		endDate,
 		inProgressItems,
 		blockedItems,
+		staleItems,
 		blockedTerm,
 		featuresInProgress,
 		featureWip,
@@ -1084,6 +1109,8 @@ export const BaseMetricsView = <
 			entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
 		blockedCount: blockedItems.length,
 		hasBlockedConfig,
+		staleCount: staleItems.length,
+		hasStaleConfig,
 		terms: ragTerms,
 		featuresInProgress,
 		featureWip,
@@ -1169,6 +1196,7 @@ export const BaseMetricsView = <
 		title,
 		inProgressItems,
 		blockedItems,
+		staleItems,
 		featuresInProgress,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
 		throughputData,

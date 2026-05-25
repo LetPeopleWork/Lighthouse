@@ -74,6 +74,35 @@ export function computeBlockedOverviewRag(
 	};
 }
 
+export function computeStaleOverviewRag(
+	staleCount: number,
+	hasStaleConfig: boolean,
+	terms: RagTerms,
+): RagResult {
+	if (!hasStaleConfig) {
+		return {
+			ragStatus: "red",
+			tipText: "Define a staleness threshold in settings to track stale work.",
+		};
+	}
+	if (staleCount >= 2) {
+		return {
+			ragStatus: "red",
+			tipText: `${staleCount} stale ${terms.workItems}. Focus on unsticking them before starting new work.`,
+		};
+	}
+	if (staleCount === 1) {
+		return {
+			ragStatus: "amber",
+			tipText: `1 stale ${terms.workItem}. Do not ignore it.`,
+		};
+	}
+	return {
+		ragStatus: "green",
+		tipText: `No stale ${terms.workItems}.`,
+	};
+}
+
 export function computeFeaturesWorkedOnRag(
 	featureCount: number,
 	featureWip: number | undefined,

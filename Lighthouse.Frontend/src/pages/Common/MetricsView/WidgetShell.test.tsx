@@ -97,6 +97,22 @@ describe("WidgetShell", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("exposes the rag status via a data-rag attribute", () => {
+		render(
+			<WidgetShell
+				widgetKey="test-widget"
+				showTips={true}
+				header={{ ragStatus: "amber", tipText: "Review suggested" }}
+			>
+				<div>Content</div>
+			</WidgetShell>,
+		);
+		expect(screen.getByTestId("rag-status")).toHaveAttribute(
+			"data-rag",
+			"amber",
+		);
+	});
+
 	it("hides RAG chip when showTips is false", () => {
 		render(
 			<WidgetShell
