@@ -645,6 +645,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int?>("SizeEstimateAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("StalenessThresholdDays")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("StateMappings")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -779,6 +782,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ServiceLevelExpectationRange")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StalenessThresholdDays")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("StateMappings")

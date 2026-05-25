@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Models
 
         public override int DoneItemsCutoffDays { get; set; } = 365;
 
+        public override int StalenessThresholdDays { get; set; } = 14;
+
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 
         public void UpdateFeatures(IEnumerable<Feature> features)

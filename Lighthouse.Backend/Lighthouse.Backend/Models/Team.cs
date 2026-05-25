@@ -20,6 +20,8 @@
 
         public override int DoneItemsCutoffDays { get; set; } = 365;
 
+        public override int StalenessThresholdDays { get; set; } = 7;
+
         public List<Portfolio> Portfolios { get; } = [];
 
         public List<WorkItem> WorkItems { get; } = [];

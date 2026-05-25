@@ -43,6 +43,8 @@ namespace Lighthouse.Backend.Models
 
         public abstract int DoneItemsCutoffDays { get; set; }
 
+        public virtual int StalenessThresholdDays { get; set; }
+
         public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
 
         public DateTime? ProcessBehaviourChartBaselineEndDate { get; set; }
