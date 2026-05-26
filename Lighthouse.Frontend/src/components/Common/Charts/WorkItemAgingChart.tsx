@@ -8,10 +8,12 @@ import {
 	ChartsYAxis,
 	ScatterPlot,
 } from "@mui/x-charts";
+import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -33,6 +35,98 @@ import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
+
+export const STATE_BAND_HALF_WIDTH = 0.4;
+
+export interface IPaceBandRect {
+	key: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	fill: string;
+}
+
+interface PaceBandGeometryConfig {
+	perStatePercentileValues: IPerStatePercentileValues[];
+	doingStates: string[];
+	xScale: (value: number) => number;
+	yScale: (value: number) => number;
+}
+
+export const computePaceBandRects = ({
+	perStatePercentileValues,
+	doingStates,
+	xScale,
+	yScale,
+}: PaceBandGeometryConfig): IPaceBandRect[] => {
+	const stateIndexMap: Record<string, number> = {};
+	for (let index = 0; index < doingStates.length; index++) {
+		stateIndexMap[doingStates[index].toLowerCase()] = index;
+	}
+
+	return perStatePercentileValues.flatMap((perState) => {
+		const stateIndex = stateIndexMap[perState.state.toLowerCase()];
+		if (stateIndex === undefined || perState.percentiles.length === 0) {
+			return [];
+		}
+
+		const sortedPercentiles = [...perState.percentiles].sort(
+			(a, b) => a.value - b.value,
+		);
+
+		const leftX = xScale(stateIndex - STATE_BAND_HALF_WIDTH);
+		const rightX = xScale(stateIndex + STATE_BAND_HALF_WIDTH);
+		const bandWidth = Math.abs(rightX - leftX);
+
+		let lowerValue = 0;
+		return sortedPercentiles.map((percentile) => {
+			const lowerPixel = yScale(lowerValue);
+			const upperPixel = yScale(percentile.value);
+			lowerValue = percentile.value;
+			return {
+				key: `${perState.state}-${percentile.percentile}`,
+				x: Math.min(leftX, rightX),
+				y: Math.min(lowerPixel, upperPixel),
+				width: bandWidth,
+				height: Math.abs(upperPixel - lowerPixel),
+				fill: new ForecastLevel(percentile.percentile).color,
+			};
+		});
+	});
+};
+
+export const PaceBandOverlay: React.FC<{
+	perStatePercentileValues: IPerStatePercentileValues[];
+	doingStates: string[];
+}> = ({ perStatePercentileValues, doingStates }) => {
+	const xScale = useXScale("stateAxis") as (value: number) => number;
+	const yScale = useYScale("ageAxis") as (value: number) => number;
+
+	const rects = computePaceBandRects({
+		perStatePercentileValues,
+		doingStates,
+		xScale,
+		yScale,
+	});
+
+	return (
+		<g>
+			{rects.map((rect) => (
+				<rect
+					key={rect.key}
+					data-testid="pace-band"
+					x={rect.x}
+					y={rect.y}
+					width={rect.width}
+					height={rect.height}
+					fill={rect.fill}
+					fillOpacity={0.15}
+				/>
+			))}
+		</g>
+	);
+};
 
 interface ScatterMarkerProps {
 	x: number;
@@ -176,6 +270,7 @@ interface WorkItemAgingChartProps {
 	doingStates: string[];
 	stalenessThresholdDays?: number;
 	now?: Date;
+	perStatePercentileValues?: IPerStatePercentileValues[];
 }
 
 const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
@@ -185,12 +280,14 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	doingStates,
 	stalenessThresholdDays,
 	now: providedNow,
+	perStatePercentileValues = [],
 }) => {
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
 	>([]);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
+	const [showPaceBands] = useState<boolean>(false);
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
@@ -416,6 +513,12 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							))}
 							<ChartsXAxis axisId="stateAxis" />
 							<ChartsYAxis axisId="ageAxis" />
+							{showPaceBands && (
+								<PaceBandOverlay
+									perStatePercentileValues={perStatePercentileValues}
+									doingStates={doingStates}
+								/>
+							)}
 							<ScatterPlot
 								slots={{
 									marker: (props) =>

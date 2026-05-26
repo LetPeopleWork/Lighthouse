@@ -2,10 +2,34 @@ import * as MuiCharts from "@mui/x-charts";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
 import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
-import WorkItemAgingChart from "./WorkItemAgingChart";
+import { ForecastLevel } from "../Forecasts/ForecastLevel";
+import WorkItemAgingChart, {
+	computePaceBandRects,
+	PaceBandOverlay,
+	STATE_BAND_HALF_WIDTH,
+} from "./WorkItemAgingChart";
+
+vi.mock("@mui/x-charts/hooks", () => ({
+	useXScale: () => (value: number) => value,
+	useYScale: () => (value: number) => value,
+}));
+
+const getMockPerStatePercentileValues = (
+	overrides?: Partial<IPerStatePercentileValues>,
+): IPerStatePercentileValues => ({
+	state: "In Progress",
+	percentiles: [
+		{ percentile: 50, value: 3 },
+		{ percentile: 70, value: 5 },
+		{ percentile: 85, value: 8 },
+		{ percentile: 95, value: 12 },
+	],
+	...overrides,
+});
 
 // Mock the Material-UI theme
 vi.mock("@mui/material", async () => {
@@ -783,5 +807,160 @@ describe("WorkItemAgingChart component", () => {
 				([props]) => (props as { axisId?: string })?.axisId === "ageAxis",
 			),
 		).toBe(true);
+	});
+
+	describe("Per-state pace band overlay", () => {
+		const identityScale = (value: number) => value;
+
+		it("renders no pace-band rects by default even when perStatePercentileValues is provided", () => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+				/>,
+			);
+
+			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
+		});
+
+		it("spans each state band rect across x in [stateIndex - HALF_WIDTH, stateIndex + HALF_WIDTH]", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({ state: "Review" }),
+				],
+				doingStates: ["To Do", "In Progress", "Review"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			expect(rects.length).toBeGreaterThan(0);
+			const stateIndex = 2;
+			for (const rect of rects) {
+				expect(rect.x).toBe(stateIndex - STATE_BAND_HALF_WIDTH);
+				expect(rect.width).toBeCloseTo(2 * STATE_BAND_HALF_WIDTH);
+			}
+		});
+
+		it("stacks rect y-boundaries across consecutive percentile values from the baseline", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+							{ percentile: 85, value: 8 },
+							{ percentile: 95, value: 12 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			const boundaries = rects
+				.map((rect) => [rect.y, rect.y + rect.height])
+				.sort((a, b) => a[0] - b[0]);
+
+			expect(boundaries).toEqual([
+				[0, 3],
+				[3, 5],
+				[5, 8],
+				[8, 12],
+			]);
+		});
+
+		it("fills zones green-to-red using the ForecastLevel palette per percentile boundary", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+							{ percentile: 85, value: 8 },
+							{ percentile: 95, value: 12 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			const fillByUpperBoundary = new Map(
+				rects.map((rect) => [rect.y + rect.height, rect.fill]),
+			);
+
+			expect(fillByUpperBoundary.get(3)).toBe(new ForecastLevel(50).color);
+			expect(fillByUpperBoundary.get(5)).toBe(new ForecastLevel(70).color);
+			expect(fillByUpperBoundary.get(8)).toBe(new ForecastLevel(85).color);
+			expect(fillByUpperBoundary.get(12)).toBe(new ForecastLevel(95).color);
+		});
+
+		it("emits no rects for a state absent from perStatePercentileValues", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({ state: "In Progress" }),
+				],
+				doingStates: ["To Do", "In Progress", "Review"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			const stateIndicesWithRects = new Set(
+				rects.map((rect) => rect.x + STATE_BAND_HALF_WIDTH),
+			);
+			expect(stateIndicesWithRects).toEqual(new Set([1]));
+		});
+
+		it("collects all pace-band rects into a single svg group so the overlay is one z-layer", () => {
+			render(
+				<svg aria-label="overlay-host">
+					<title>overlay-host</title>
+					<PaceBandOverlay
+						perStatePercentileValues={[
+							getMockPerStatePercentileValues({ state: "In Progress" }),
+						]}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</svg>,
+			);
+
+			const bands = screen.getAllByTestId("pace-band");
+			expect(bands).toHaveLength(4);
+
+			const group = bands[0].parentElement;
+			expect(group?.tagName.toLowerCase()).toBe("g");
+			for (const band of bands) {
+				expect(band.parentElement).toBe(group);
+			}
+		});
+
+		it("applies the scales when projecting data coordinates to pixels", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [{ percentile: 50, value: 4 }],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: (value: number) => value * 100,
+				yScale: (value: number) => value * 10,
+			});
+
+			expect(rects).toHaveLength(1);
+			const [rect] = rects;
+			expect(rect.x).toBe((0 - STATE_BAND_HALF_WIDTH) * 100);
+			expect(rect.width).toBe(2 * STATE_BAND_HALF_WIDTH * 100);
+			expect(rect.y).toBe(0);
+			expect(rect.height).toBe(40);
+		});
 	});
 });

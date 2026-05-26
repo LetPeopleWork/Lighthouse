@@ -34,6 +34,7 @@ import type {
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -701,6 +702,7 @@ function buildWidgetNodes(ctx: {
 	featuresTerm: string;
 	predictabilityData: IForecastPredictabilityScore | null;
 	percentileValues: IPercentileValue[];
+	perStatePercentileValues: IPerStatePercentileValues[];
 	serviceLevelExpectation: IPercentileValue | null;
 	cycleTimeData: IWorkItem[];
 	throughputData: RunChartData | null;
@@ -820,6 +822,7 @@ function buildWidgetNodes(ctx: {
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
 				doingStates={ctx.doingStates}
 				stalenessThresholdDays={ctx.stalenessThresholdDays}
+				perStatePercentileValues={ctx.perStatePercentileValues}
 			/>
 		),
 		loadBalanceMatrix: <LoadBalanceMatrixChart data={ctx.loadBalanceData} />,
@@ -957,6 +960,7 @@ export const BaseMetricsView = <
 		inProgressItems,
 		cycleTimeData,
 		percentileValues,
+		perStatePercentileValues,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
 		predictabilityData,
@@ -1068,6 +1072,7 @@ export const BaseMetricsView = <
 		featuresTerm,
 		predictabilityData,
 		percentileValues,
+		perStatePercentileValues,
 		serviceLevelExpectation,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
 		throughputData,
