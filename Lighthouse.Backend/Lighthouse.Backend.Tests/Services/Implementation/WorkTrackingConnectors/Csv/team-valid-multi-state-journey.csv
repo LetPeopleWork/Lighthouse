@@ -1,5 +1,0 @@
-ID,Name,State,Type,Started Date,Closed Date,StateSince,StateSince_In Progress,StateSince_Review,StateSince_Test
-DONE-1,Completed journey story,done,User Story,2025-01-10,2025-01-22,,2025-01-10,2025-01-14,2025-01-19
-WIP-1,Mid journey story,In Progress,User Story,2025-01-10,,2025-01-15,2025-01-10,2025-01-14,
-DONE-NOCLOSE,Done but missing close date,done,User Story,2025-01-10,,,2025-01-10,2025-01-14,2025-01-19
-TODO-1,Not started yet,To Do,User Story,2025-01-25,,,,,

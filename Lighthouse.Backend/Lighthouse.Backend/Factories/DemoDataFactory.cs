@@ -60,6 +60,7 @@ namespace Lighthouse.Backend.Factories
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.StartedDateHeader).Value = "StartedDate";
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.ClosedDateHeader).Value = "ClosedDate";
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.StateEnteredDateHeader).Value = "StateEnteredDate";
+            workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo).Value = bool.TrueString;
 
             return workTrackingSystemConnection;
         }

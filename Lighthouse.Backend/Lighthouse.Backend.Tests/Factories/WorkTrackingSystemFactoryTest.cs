@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(connection.Options, Has.Count.EqualTo(16));
+                Assert.That(connection.Options, Has.Count.EqualTo(17));
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.Delimiter), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.DateTimeFormat), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.TagSeparator), Is.True);
@@ -117,6 +117,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.ClosedDateHeader), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.CreatedDateHeader, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.StateEnteredDateHeader, false, true), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.ParentReferenceIdHeader, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.TagsHeader, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.UrlHeader, false, true), Is.True);
@@ -134,6 +135,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.ClosedDateHeader), Is.EqualTo("Closed Date"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.CreatedDateHeader), Is.EqualTo("Created Date"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.StateEnteredDateHeader), Is.EqualTo(string.Empty));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo), Is.EqualTo(bool.FalseString));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.ParentReferenceIdHeader), Is.EqualTo("Parent Reference Id"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.TagsHeader), Is.EqualTo("Tags"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.UrlHeader), Is.EqualTo("Url"));

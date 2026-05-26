@@ -116,6 +116,13 @@ namespace Lighthouse.Backend.Factories
 
                 new WorkTrackingSystemConnectionOption
                 {
+                    Key = CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo,
+                    Value = bool.FalseString,
+                    IsOptional = true,
+                },
+
+                new WorkTrackingSystemConnectionOption
+                {
                     Key = CsvWorkTrackingOptionNames.ParentReferenceIdHeader,
                     Value = "Parent Reference Id",
                     IsOptional = true,

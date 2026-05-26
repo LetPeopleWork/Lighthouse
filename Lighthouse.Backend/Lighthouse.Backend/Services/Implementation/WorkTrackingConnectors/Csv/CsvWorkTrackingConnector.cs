@@ -198,14 +198,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 Tags = [.. tags],
                 Url = url,
                 Order = order,
-                SyncedTransitions = BuildStateEnteredTransitions(csv, owner, mappedState, stateCategory, closedDate),
+                SyncedTransitions = BuildStateEnteredTransitions(csv, owner, mappedState, stateCategory, startedDate, closedDate),
             };
 
             return workItemBase;
         }
 
         private static IReadOnlyList<WorkItemStateTransition> BuildStateEnteredTransitions(
-            CsvReader csv, IWorkItemQueryOwner owner, string mappedState, StateCategories stateCategory, DateTime? closedDate)
+            CsvReader csv, IWorkItemQueryOwner owner, string mappedState, StateCategories stateCategory, DateTime? startedDate, DateTime? closedDate)
         {
             var stateEnteredDateColumn = GetStateEnteredDateColumn(owner.WorkTrackingSystemConnection);
 
@@ -214,69 +214,65 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 return [];
             }
 
-            var journey = BuildMultiStateJourney(csv, owner, stateEnteredDateColumn, stateCategory, closedDate);
-
-            if (journey.Count > 0)
+            if (ShouldSynthesizeStateJourney(owner.WorkTrackingSystemConnection) && stateCategory == StateCategories.Done && startedDate.HasValue && closedDate.HasValue)
             {
-                return journey;
+                return BuildInterpolatedDoneJourney(owner, startedDate.Value, closedDate.Value);
             }
 
             return BuildCurrentStateEnteredTransition(csv, stateEnteredDateColumn, mappedState, stateCategory);
         }
 
-        private static IReadOnlyList<WorkItemStateTransition> BuildMultiStateJourney(
-            CsvReader csv, IWorkItemQueryOwner owner, string stateEnteredDateColumn, StateCategories stateCategory, DateTime? closedDate)
+        private static IReadOnlyList<WorkItemStateTransition> BuildInterpolatedDoneJourney(
+            IWorkItemQueryOwner owner, DateTime startedDate, DateTime closedDate)
         {
-            var enteredStates = owner.DoingStates
-                .Select(state => (State: state, EnteredAt: ReadPerStateEnteredDate(csv, stateEnteredDateColumn, state)))
-                .Where(entry => entry.EnteredAt.HasValue)
-                .Select(entry => (entry.State, EnteredAt: entry.EnteredAt!.Value))
-                .ToList();
+            var doingStates = owner.DoingStates;
 
-            if (enteredStates.Count == 0)
+            if (doingStates.Count == 0)
             {
                 return [];
             }
 
-            var exitTransitions = enteredStates
-                .Zip(enteredStates.Skip(1), (from, to) => new WorkItemStateTransition
-                {
-                    FromState = from.State,
-                    ToState = to.State,
-                    TransitionedAt = to.EnteredAt,
-                });
+            var started = DateTime.SpecifyKind(startedDate, DateTimeKind.Utc);
+            var closed = DateTime.SpecifyKind(closedDate, DateTimeKind.Utc);
+            var totalSpan = closed - started;
+            var stateCount = doingStates.Count;
 
-            if (stateCategory == StateCategories.Done && closedDate.HasValue)
-            {
-                var lastDoingState = enteredStates[^1].State;
+            var enteredAt = Enumerable
+                .Range(0, stateCount)
+                .Select(index => started + TimeSpan.FromTicks(totalSpan.Ticks * index / stateCount))
+                .ToList();
 
-                return
-                [
-                    .. exitTransitions,
-                    new WorkItemStateTransition
+            var exitTransitions = doingStates
+                .Zip(doingStates.Skip(1).Select((state, index) => (state, enteredAt: enteredAt[index + 1])),
+                    (fromState, to) => new WorkItemStateTransition
                     {
-                        FromState = lastDoingState,
-                        ToState = MappedDoneState(owner),
-                        TransitionedAt = DateTime.SpecifyKind(closedDate.Value, DateTimeKind.Utc),
-                    }
-                ];
-            }
+                        FromState = owner.MapRawStateToMappedName(fromState),
+                        ToState = owner.MapRawStateToMappedName(to.state),
+                        TransitionedAt = to.enteredAt,
+                    });
 
-            return [.. exitTransitions];
+            return
+            [
+                .. exitTransitions,
+                new WorkItemStateTransition
+                {
+                    FromState = owner.MapRawStateToMappedName(doingStates[^1]),
+                    ToState = MappedDoneState(owner),
+                    TransitionedAt = closed,
+                }
+            ];
+        }
+
+        private static bool ShouldSynthesizeStateJourney(WorkTrackingSystemConnection connection)
+        {
+            var optionValue = connection.Options.SingleOrDefault(o => o.Key == CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo)?.Value;
+
+            return bool.TryParse(optionValue, out var synthesize) && synthesize;
         }
 
         private static string MappedDoneState(IWorkItemQueryOwner owner)
         {
             return owner.MapRawStateToMappedName(owner.DoneStates[0]);
-        }
-
-        private static DateTime? ReadPerStateEnteredDate(CsvReader csv, string stateEnteredDateColumn, string doingState)
-        {
-            var columnName = $"{stateEnteredDateColumn}{CsvWorkTrackingOptionNames.PerStateEnteredDateColumnSeparator}{doingState}";
-
-            return csv.TryGetField<DateTime?>(columnName, out var enteredDate) && enteredDate.HasValue
-                ? DateTime.SpecifyKind(enteredDate.Value, DateTimeKind.Utc)
-                : null;
         }
 
         private static IReadOnlyList<WorkItemStateTransition> BuildCurrentStateEnteredTransition(

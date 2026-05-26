@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         public const string StateEnteredDateHeader = "Current State Since Column";
 
-        public const string PerStateEnteredDateColumnSeparator = "_";
+        public const string SynthesizeStateJourneyForDemo = "Synthesize State Journey For Demo";
 
         public const string ParentReferenceIdHeader = "Parent Reference Id Column";
 

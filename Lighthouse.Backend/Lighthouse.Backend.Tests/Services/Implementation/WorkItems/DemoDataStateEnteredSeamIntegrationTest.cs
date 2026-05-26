@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
@@ -43,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public async Task DemoScenarioZero_CompletedItems_ExposeMultiStateExitTransitions_SoAgeInStatePercentilesReturnsNonEmptyBands()
+        public async Task DemoScenarioZero_EveryCompletedItem_HasInterpolatedJourney_SoLastDoingStatePaceBandEqualsCycleTimePercentiles()
         {
             await SeedDatabase();
 
@@ -56,17 +57,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await workItemService.UpdateWorkItemsForTeam(team);
             await workItemService.UpdateFeaturesForPortfolio(portfolio);
 
-            var teamBands = GetTeamMetricsService()
-                .GetAgeInStatePercentilesForTeam(team, DateTime.UtcNow.Date.AddDays(-90), DateTime.UtcNow.Date)
-                .ToList();
-            var portfolioBands = GetPortfolioMetricsService()
-                .GetAgeInStatePercentilesForPortfolio(portfolio, DateTime.UtcNow.Date.AddDays(-90), DateTime.UtcNow.Date)
-                .ToList();
+            var windowStart = DateTime.UtcNow.Date.AddDays(-90);
+            var windowEnd = DateTime.UtcNow.Date;
+
+            var teamBands = GetTeamMetricsService().GetAgeInStatePercentilesForTeam(team, windowStart, windowEnd).ToList();
+            var teamCycleTime = GetTeamMetricsService().GetCycleTimePercentilesForTeam(team, windowStart, windowEnd).ToList();
+
+            var portfolioBands = GetPortfolioMetricsService().GetAgeInStatePercentilesForPortfolio(portfolio, windowStart, windowEnd).ToList();
+            var portfolioCycleTime = GetPortfolioMetricsService().GetCycleTimePercentilesForPortfolio(portfolio, windowStart, windowEnd).ToList();
 
             using (Assert.EnterMultipleScope())
             {
                 AssertRisingBandsExist(teamBands, "Team Zenith");
                 AssertRisingBandsExist(portfolioBands, "Project Apollo");
+
+                AssertLastDoingStateMatchesCycleTime(teamBands, teamCycleTime, team.DoingStates[^1], "Team Zenith");
+                AssertLastDoingStateMatchesCycleTime(portfolioBands, portfolioCycleTime, portfolio.DoingStates[^1], "Project Apollo");
+            }
+        }
+
+        private static void AssertLastDoingStateMatchesCycleTime(
+            IReadOnlyList<AgeInStatePercentilesDto> bands,
+            IReadOnlyList<PercentileValue> cycleTimePercentiles,
+            string lastDoingState,
+            string owner)
+        {
+            var lastStateBand = bands.SingleOrDefault(band => band.State == lastDoingState);
+
+            Assert.That(lastStateBand, Is.Not.Null,
+                $"{owner} must expose a pace band for its final Doing state '{lastDoingState}'; every completed item must traverse it so its population matches the cycle-time population.");
+
+            var bandByPercentile = lastStateBand!.Percentiles.ToDictionary(p => p.Percentile, p => p.Value);
+
+            foreach (var cycleTimePercentile in cycleTimePercentiles)
+            {
+                Assert.That(bandByPercentile, Does.ContainKey(cycleTimePercentile.Percentile));
+                Assert.That(bandByPercentile[cycleTimePercentile.Percentile], Is.EqualTo(cycleTimePercentile.Value),
+                    $"{owner}: cumulative age at exit of the final Doing state '{lastDoingState}' equals ClosedDate − StartedDate = cycle time, so the {cycleTimePercentile.Percentile}th pace-band value must equal the {cycleTimePercentile.Percentile}th cycle-time value exactly.");
             }
         }
 

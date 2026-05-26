@@ -1,4 +1,4 @@
-ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate,StateEnteredDate_Next,StateEnteredDate_Analysing,StateEnteredDate_Implementation,StateEnteredDate_Verification
+ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate
 TZ-001,User authentication system,Done,User Story,AP-001,{-44},{-42},,
 TZ-002,Fix login timeout issue,Done,Bug,AP-001,{-43},{-41},,
 TZ-003,Dashboard performance optimization,Done,User Story,AP-001,{-42},{-41},,
@@ -32,11 +32,11 @@ TZ-030,Fix chart rendering issue,Done,Bug,AP-003,{-15},{-14},,
 TZ-031,Advanced user permissions,Done,User Story,AP-003,{-14},{-11},,
 TZ-032,Mobile app push notifications,Done,User Story,AP-003,{-13},{-11},,
 TZ-033,Fix data synchronization bug,Done,Bug,AP-003,{-12},{-11},,
-TZ-034,Admin dashboard enhancements,Done,User Story,AP-003,{-18},{-8},,,{-18},{-16},{-13},{-10}
-TZ-035,Bulk operations interface,Done,User Story,AP-003,{-16},{-7},,,{-16},{-14},{-11},{-9}
-TZ-036,Fix email template rendering,Done,Bug,AP-003,{-15},{-6},,,{-15},{-13},{-10},{-8}
-TZ-037,Third-party API integration,Done,User Story,AP-003,{-14},{-4},,,{-14},{-12},{-9},{-6}
-TZ-038,Performance testing suite,Done,User Story,,{-12},{-2},,,{-12},{-10},{-7},{-4}
+TZ-034,Admin dashboard enhancements,Done,User Story,AP-003,{-10},{-8},,
+TZ-035,Bulk operations interface,Done,User Story,AP-003,{-9},{-7},,
+TZ-036,Fix email template rendering,Done,Bug,AP-003,{-8},{-6},,
+TZ-037,Third-party API integration,Done,User Story,AP-003,{-7},{-4},,
+TZ-038,Performance testing suite,Done,User Story,,{-6},{-2},,
 TZ-039,Accessibility improvements,Verification,User Story,,{-5},,,{-6}
 TZ-040,Database migration tools,Implementation,User Story,,{-3},,Blocked,{-12}
 TZ-041,Telemetry data ingestion pipeline,Done,User Story,ALT-91,{-84},{-82},,
