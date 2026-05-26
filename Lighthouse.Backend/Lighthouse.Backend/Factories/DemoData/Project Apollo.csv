@@ -1,7 +1,7 @@
-ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate
-AP-001,Lunar Settlement Initiative,Done,Epic,,{-84},{-70},,
-AP-002,Deep Space Communications,Done,Epic,,{-75},{-30},,
-AP-003,Interplanetary Transport Network,Done, Epic,,{-45},{-8},,
+ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate,StateEnteredDate_Next,StateEnteredDate_Analysing,StateEnteredDate_Implementation,StateEnteredDate_Verification
+AP-001,Lunar Settlement Initiative,Done,Epic,,{-84},{-70},,,{-84},{-81},{-77},{-72}
+AP-002,Deep Space Communications,Done,Epic,,{-75},{-30},,,{-75},{-68},{-55},{-40}
+AP-003,Interplanetary Transport Network,Done, Epic,,{-45},{-8},,,{-45},{-40},{-30},{-18}
 AP-004,Stellar Navigation,Analysing,Epic,,{-10},,,{-9}
 AP-005,Mars Colonization,Backlog,Epic,,,,,
 AP-006,Asteroid Mining Program,Backlog,Epic,,,,,

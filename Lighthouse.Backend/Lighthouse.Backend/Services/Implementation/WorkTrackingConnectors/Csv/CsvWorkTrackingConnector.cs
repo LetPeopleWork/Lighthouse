@@ -198,18 +198,91 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 Tags = [.. tags],
                 Url = url,
                 Order = order,
-                SyncedTransitions = BuildStateEnteredTransitions(csv, owner, mappedState, stateCategory),
+                SyncedTransitions = BuildStateEnteredTransitions(csv, owner, mappedState, stateCategory, closedDate),
             };
 
             return workItemBase;
         }
 
         private static IReadOnlyList<WorkItemStateTransition> BuildStateEnteredTransitions(
-            CsvReader csv, IWorkItemQueryOwner owner, string mappedState, StateCategories stateCategory)
+            CsvReader csv, IWorkItemQueryOwner owner, string mappedState, StateCategories stateCategory, DateTime? closedDate)
         {
             var stateEnteredDateColumn = GetStateEnteredDateColumn(owner.WorkTrackingSystemConnection);
 
-            if (string.IsNullOrWhiteSpace(stateEnteredDateColumn) || stateCategory != StateCategories.Doing)
+            if (string.IsNullOrWhiteSpace(stateEnteredDateColumn))
+            {
+                return [];
+            }
+
+            var journey = BuildMultiStateJourney(csv, owner, stateEnteredDateColumn, stateCategory, closedDate);
+
+            if (journey.Count > 0)
+            {
+                return journey;
+            }
+
+            return BuildCurrentStateEnteredTransition(csv, stateEnteredDateColumn, mappedState, stateCategory);
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> BuildMultiStateJourney(
+            CsvReader csv, IWorkItemQueryOwner owner, string stateEnteredDateColumn, StateCategories stateCategory, DateTime? closedDate)
+        {
+            var enteredStates = owner.DoingStates
+                .Select(state => (State: state, EnteredAt: ReadPerStateEnteredDate(csv, stateEnteredDateColumn, state)))
+                .Where(entry => entry.EnteredAt.HasValue)
+                .Select(entry => (entry.State, EnteredAt: entry.EnteredAt!.Value))
+                .ToList();
+
+            if (enteredStates.Count == 0)
+            {
+                return [];
+            }
+
+            var exitTransitions = enteredStates
+                .Zip(enteredStates.Skip(1), (from, to) => new WorkItemStateTransition
+                {
+                    FromState = from.State,
+                    ToState = to.State,
+                    TransitionedAt = to.EnteredAt,
+                });
+
+            if (stateCategory == StateCategories.Done && closedDate.HasValue)
+            {
+                var lastDoingState = enteredStates[^1].State;
+
+                return
+                [
+                    .. exitTransitions,
+                    new WorkItemStateTransition
+                    {
+                        FromState = lastDoingState,
+                        ToState = MappedDoneState(owner),
+                        TransitionedAt = DateTime.SpecifyKind(closedDate.Value, DateTimeKind.Utc),
+                    }
+                ];
+            }
+
+            return [.. exitTransitions];
+        }
+
+        private static string MappedDoneState(IWorkItemQueryOwner owner)
+        {
+            return owner.MapRawStateToMappedName(owner.DoneStates.First());
+        }
+
+        private static DateTime? ReadPerStateEnteredDate(CsvReader csv, string stateEnteredDateColumn, string doingState)
+        {
+            var columnName = $"{stateEnteredDateColumn}{CsvWorkTrackingOptionNames.PerStateEnteredDateColumnSeparator}{doingState}";
+
+            return csv.TryGetField<DateTime?>(columnName, out var enteredDate) && enteredDate.HasValue
+                ? DateTime.SpecifyKind(enteredDate.Value, DateTimeKind.Utc)
+                : null;
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> BuildCurrentStateEnteredTransition(
+            CsvReader csv, string stateEnteredDateColumn, string mappedState, StateCategories stateCategory)
+        {
+            if (stateCategory != StateCategories.Doing)
             {
                 return [];
             }
