@@ -19,6 +19,7 @@ import type {
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
 
@@ -45,6 +46,12 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IPercentileValue[]>;
+
+	getAgeInStatePercentiles(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPerStatePercentileValues[]>;
 
 	getMultiItemForecastPredictabilityScore(
 		id: number,
@@ -255,6 +262,20 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IPercentileValue[]>(
 				`/${this.api}/${id}/metrics/cycleTimePercentiles?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getAgeInStatePercentiles(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPerStatePercentileValues[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IPerStatePercentileValues[]>(
+				`/${this.api}/${id}/metrics/ageInStatePercentiles?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return response.data;

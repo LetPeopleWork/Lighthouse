@@ -18,6 +18,7 @@ import type {
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
 import type { IWorkItem } from "../models/WorkItem";
@@ -36,6 +37,7 @@ export interface MetricsData<T> {
 	inProgressItems: IWorkItem[];
 	cycleTimeData: T[];
 	percentileValues: IPercentileValue[];
+	perStatePercentileValues: IPerStatePercentileValues[];
 	sizePercentileValues: IPercentileValue[];
 	allFeaturesForSizeChart: IFeature[];
 	predictabilityData: IForecastPredictabilityScore | null;
@@ -104,6 +106,9 @@ export function useMetricsData<
 	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
 		[],
 	);
+	const [perStatePercentileValues, setPerStatePercentileValues] = useState<
+		IPerStatePercentileValues[]
+	>([]);
 	const [sizePercentileValues, setSizePercentileValues] = useState<
 		IPercentileValue[]
 	>([]);
@@ -208,12 +213,12 @@ export function useMetricsData<
 				endDate,
 			);
 			setCycleTimeData(data);
-			const percentiles = await metricsService.getCycleTimePercentiles(
-				entity.id,
-				startDate,
-				endDate,
-			);
+			const [percentiles, perStatePercentiles] = await Promise.all([
+				metricsService.getCycleTimePercentiles(entity.id, startDate, endDate),
+				metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate),
+			]);
 			setPercentileValues(percentiles);
+			setPerStatePercentileValues(perStatePercentiles);
 		};
 		fetch().catch((error) =>
 			console.error(`Error fetching ${cycleTimeTerm} data:`, error),
@@ -398,6 +403,7 @@ export function useMetricsData<
 		inProgressItems,
 		cycleTimeData,
 		percentileValues,
+		perStatePercentileValues,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
 		predictabilityData,

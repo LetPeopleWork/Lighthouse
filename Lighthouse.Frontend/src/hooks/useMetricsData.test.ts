@@ -4,6 +4,7 @@ import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { IFeatureOwner } from "../models/IFeatureOwner";
 import { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
 import type {
 	IProjectMetricsService,
@@ -49,6 +50,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 		getInProgressItems: vi.fn().mockResolvedValue([]),
 		getCycleTimeData: vi.fn().mockResolvedValue([]),
 		getCycleTimePercentiles: vi.fn().mockResolvedValue([]),
+		getAgeInStatePercentiles: vi.fn().mockResolvedValue([]),
 		getMultiItemForecastPredictabilityScore: vi
 			.fn()
 			.mockResolvedValue({ probability: 0 }),
@@ -294,6 +296,38 @@ describe("useMetricsData", () => {
 			await waitFor(() => {
 				expect(result.current.totalWorkItemAge).toBe(99);
 			});
+		});
+	});
+
+	describe("Per-state pace percentiles fetch", () => {
+		it("should populate perStatePercentileValues without disturbing cycle time percentiles", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+			const perState: IPerStatePercentileValues[] = [
+				{ state: "In Progress", percentiles: [{ percentile: 50, value: 3 }] },
+			];
+			const cycleTimePercentiles: IPercentileValue[] = [
+				{ percentile: 85, value: 12 },
+			];
+			vi.mocked(service.getAgeInStatePercentiles).mockResolvedValue(perState);
+			vi.mocked(service.getCycleTimePercentiles).mockResolvedValue(
+				cycleTimePercentiles,
+			);
+
+			const { result } = renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate),
+			);
+
+			await waitFor(() => {
+				expect(result.current.perStatePercentileValues).toEqual(perState);
+			});
+
+			expect(service.getAgeInStatePercentiles).toHaveBeenCalledWith(
+				entity.id,
+				startDate,
+				endDate,
+			);
+			expect(result.current.percentileValues).toEqual(cycleTimePercentiles);
 		});
 	});
 

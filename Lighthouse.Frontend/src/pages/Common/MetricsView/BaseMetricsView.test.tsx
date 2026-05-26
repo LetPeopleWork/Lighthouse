@@ -602,6 +602,7 @@ describe("BaseMetricsView component", () => {
 			getInProgressItems: vi.fn().mockResolvedValue(mockInProgressItems),
 			getCycleTimeData: vi.fn().mockResolvedValue(mockCycleTimeData),
 			getCycleTimePercentiles: vi.fn().mockResolvedValue(mockPercentileValues),
+			getAgeInStatePercentiles: vi.fn().mockResolvedValue([]),
 			getMultiItemForecastPredictabilityScore: vi.fn().mockResolvedValue(
 				new ForecastPredictabilityScore(
 					[
@@ -1238,6 +1239,9 @@ describe("BaseMetricsView component", () => {
 			getInProgressItems: vi.fn().mockRejectedValue(new Error("API error")),
 			getCycleTimeData: vi.fn().mockRejectedValue(new Error("API error")),
 			getCycleTimePercentiles: vi
+				.fn()
+				.mockRejectedValue(new Error("API error")),
+			getAgeInStatePercentiles: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
 			getMultiItemForecastPredictabilityScore: vi
@@ -1882,6 +1886,9 @@ describe("BaseMetricsView component", () => {
 				getInProgressItems: vi.fn().mockRejectedValue(new Error("API error")),
 				getCycleTimeData: vi.fn().mockRejectedValue(new Error("API error")),
 				getCycleTimePercentiles: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getAgeInStatePercentiles: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),
 				getMultiItemForecastPredictabilityScore: vi
