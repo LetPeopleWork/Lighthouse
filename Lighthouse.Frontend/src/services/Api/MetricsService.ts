@@ -5,6 +5,7 @@ import {
 	type IForecastPredictabilityScore,
 } from "../../models/Forecasts/ForecastPredictabilityScore";
 import type { ICumulativeStateTimeResponse } from "../../models/Metrics/CumulativeStateTime";
+import type { ICumulativeStateTimeCandidatesResponse } from "../../models/Metrics/CumulativeStateTimeCandidates";
 import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
@@ -77,6 +78,18 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 		itemIds?: number[],
 	): Promise<ICumulativeStateTimeItemsResponse>;
+
+	getCumulativeStateTimeCandidatesForTeam(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICumulativeStateTimeCandidatesResponse>;
+
+	getCumulativeStateTimeCandidatesForPortfolio(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICumulativeStateTimeCandidatesResponse>;
 
 	getMultiItemForecastPredictabilityScore(
 		id: number,
@@ -372,6 +385,37 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			const response =
 				await this.apiService.get<ICumulativeStateTimeItemsResponse>(
 					`/${this.api}/${id}/metrics/cumulativeStateTime/items?${this.getDateFormatString(startDate, endDate)}${stateSuffix}${itemIdsSuffix}`,
+				);
+
+			return response.data;
+		});
+	}
+
+	getCumulativeStateTimeCandidatesForTeam(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICumulativeStateTimeCandidatesResponse> {
+		return this.fetchCumulativeStateTimeCandidates(id, startDate, endDate);
+	}
+
+	getCumulativeStateTimeCandidatesForPortfolio(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICumulativeStateTimeCandidatesResponse> {
+		return this.fetchCumulativeStateTimeCandidates(id, startDate, endDate);
+	}
+
+	private fetchCumulativeStateTimeCandidates(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ICumulativeStateTimeCandidatesResponse> {
+		return this.withErrorHandling(async () => {
+			const response =
+				await this.apiService.get<ICumulativeStateTimeCandidatesResponse>(
+					`/${this.api}/${id}/metrics/cumulativeStateTime/candidates?${this.getDateFormatString(startDate, endDate)}`,
 				);
 
 			return response.data;

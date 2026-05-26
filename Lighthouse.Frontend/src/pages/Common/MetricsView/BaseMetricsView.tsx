@@ -1,9 +1,17 @@
 import { Grid } from "@mui/material";
-import { type ReactNode, useMemo, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
 import CumulativeStateTimeDrillDownDialog from "../../../components/Common/Charts/CumulativeStateTimeDrillDownDialog";
+import CumulativeStateTimeItemPicker from "../../../components/Common/Charts/CumulativeStateTimeItemPicker";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import EstimationVsCycleTimeChart from "../../../components/Common/Charts/EstimationVsCycleTimeChart";
@@ -27,6 +35,7 @@ import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { ICumulativeStateTimeResponse } from "../../../models/Metrics/CumulativeStateTime";
+import type { ICumulativeStateTimeCandidateRow } from "../../../models/Metrics/CumulativeStateTimeCandidates";
 import type { ICumulativeStateTimeItemRow } from "../../../models/Metrics/CumulativeStateTimeItems";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
@@ -746,6 +755,12 @@ function buildWidgetNodes(ctx: {
 	forecastFilterConditions: readonly EvaluatorCondition[];
 	stalenessThresholdDays: number | undefined;
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
+	displayedCumulativeStateTime: ICumulativeStateTimeResponse | null;
+	cumulativeStateTimeCandidates: ICumulativeStateTimeCandidateRow[];
+	cumulativeStateTimeCandidatesLoaded: boolean;
+	cumulativeStateTimeSelectedItemIds: number[];
+	onCumulativeStateTimeSelectionChange: (itemIds: number[]) => void;
+	onCumulativeStateTimePickerOpen: () => void;
 	onCumulativeStateTimeBarClick: (stateName: string) => void;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }): Record<string, ReactNode | null> {
@@ -909,10 +924,19 @@ function buildWidgetNodes(ctx: {
 		featureSizePercentiles: ctx.featureSizePercentilesInfo ? (
 			<FeatureSizePercentilesWidget data={ctx.featureSizePercentilesInfo} />
 		) : null,
-		stateTimeCumulative: ctx.cumulativeStateTime ? (
+		stateTimeCumulative: ctx.displayedCumulativeStateTime ? (
 			<CumulativeStateTimeChart
-				data={ctx.cumulativeStateTime}
+				data={ctx.displayedCumulativeStateTime}
 				onBarClick={ctx.onCumulativeStateTimeBarClick}
+				pickerSlot={
+					<CumulativeStateTimeItemPicker
+						candidates={ctx.cumulativeStateTimeCandidates}
+						candidatesLoaded={ctx.cumulativeStateTimeCandidatesLoaded}
+						selectedItemIds={ctx.cumulativeStateTimeSelectedItemIds}
+						onSelectionChange={ctx.onCumulativeStateTimeSelectionChange}
+						onOpen={ctx.onCumulativeStateTimePickerOpen}
+					/>
+				}
 			/>
 		) : null,
 	};
@@ -1022,7 +1046,82 @@ export const BaseMetricsView = <
 	>([]);
 	const [drillDownOpen, setDrillDownOpen] = useState(false);
 
+	const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+	const [cumulativeCandidates, setCumulativeCandidates] = useState<
+		ICumulativeStateTimeCandidateRow[]
+	>([]);
+	const [cumulativeCandidatesLoaded, setCumulativeCandidatesLoaded] =
+		useState(false);
+	const [narrowedCumulativeStateTime, setNarrowedCumulativeStateTime] =
+		useState<ICumulativeStateTimeResponse | null>(null);
+	const candidatesRequestedRef = useRef(false);
+
+	useEffect(() => {
+		candidatesRequestedRef.current = false;
+		setSelectedItemIds([]);
+		setNarrowedCumulativeStateTime(null);
+		setCumulativeCandidates([]);
+		setCumulativeCandidatesLoaded(false);
+	}, []);
+
+	const fetchCumulativeStateTimeForScope = useCallback(
+		(itemIds?: number[]) =>
+			ownerType === "team"
+				? metricsService.getCumulativeStateTimeForTeam(
+						entity.id,
+						startDate,
+						endDate,
+						itemIds,
+					)
+				: metricsService.getCumulativeStateTimeForTeam(
+						entity.id,
+						startDate,
+						endDate,
+						itemIds,
+					),
+		[ownerType, metricsService, entity.id, startDate, endDate],
+	);
+
+	const handleCumulativeStateTimePickerOpen = useCallback(() => {
+		if (candidatesRequestedRef.current) {
+			return;
+		}
+		candidatesRequestedRef.current = true;
+		const request =
+			ownerType === "team"
+				? metricsService.getCumulativeStateTimeCandidatesForTeam(
+						entity.id,
+						startDate,
+						endDate,
+					)
+				: metricsService.getCumulativeStateTimeCandidatesForPortfolio(
+						entity.id,
+						startDate,
+						endDate,
+					);
+		void request.then((response) => {
+			setCumulativeCandidates(response.items);
+			setCumulativeCandidatesLoaded(true);
+		});
+	}, [ownerType, metricsService, entity.id, startDate, endDate]);
+
+	const handleCumulativeStateTimeSelectionChange = useCallback(
+		(itemIds: number[]) => {
+			setSelectedItemIds(itemIds);
+			if (itemIds.length === 0) {
+				setNarrowedCumulativeStateTime(null);
+				return;
+			}
+			void fetchCumulativeStateTimeForScope(itemIds).then(
+				setNarrowedCumulativeStateTime,
+			);
+		},
+		[fetchCumulativeStateTimeForScope],
+	);
+
 	const handleCumulativeStateTimeBarClick = async (stateName: string) => {
+		const activeItemIds =
+			selectedItemIds.length > 0 ? selectedItemIds : undefined;
 		const response =
 			ownerType === "team"
 				? await metricsService.getCumulativeStateTimeItemsForTeam(
@@ -1030,12 +1129,14 @@ export const BaseMetricsView = <
 						stateName,
 						startDate,
 						endDate,
+						activeItemIds,
 					)
 				: await metricsService.getCumulativeStateTimeItemsForPortfolio(
 						entity.id,
 						stateName,
 						startDate,
 						endDate,
+						activeItemIds,
 					);
 		setDrillDownState(stateName);
 		setDrillDownItems(response.items);
@@ -1152,6 +1253,14 @@ export const BaseMetricsView = <
 		forecastFilterConditions,
 		stalenessThresholdDays,
 		cumulativeStateTime,
+		displayedCumulativeStateTime:
+			narrowedCumulativeStateTime ?? cumulativeStateTime,
+		cumulativeStateTimeCandidates: cumulativeCandidates,
+		cumulativeStateTimeCandidatesLoaded: cumulativeCandidatesLoaded,
+		cumulativeStateTimeSelectedItemIds: selectedItemIds,
+		onCumulativeStateTimeSelectionChange:
+			handleCumulativeStateTimeSelectionChange,
+		onCumulativeStateTimePickerOpen: handleCumulativeStateTimePickerOpen,
 		onCumulativeStateTimeBarClick: (stateName) => {
 			void handleCumulativeStateTimeBarClick(stateName);
 		},

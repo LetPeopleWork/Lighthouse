@@ -110,6 +110,35 @@ vi.mock("../../../components/Common/Charts/CycleTimePercentiles", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/CumulativeStateTimeChart", () => ({
+	default: ({
+		data,
+		onBarClick,
+		pickerSlot,
+	}: {
+		data: { states: { state: string }[] };
+		onBarClick?: (stateName: string) => void;
+		pickerSlot?: ReactNode;
+	}) => (
+		<div data-testid="cumulative-state-time-chart">
+			<div data-testid="cumulative-displayed-state-count">
+				{data.states.length}
+			</div>
+			<div data-testid="cumulative-first-state">
+				{data.states[0]?.state ?? "none"}
+			</div>
+			<button
+				type="button"
+				data-testid="cumulative-bar-click-proxy"
+				onClick={() => onBarClick?.(data.states[0]?.state ?? "Doing")}
+			>
+				bar
+			</button>
+			{pickerSlot}
+		</div>
+	),
+}));
+
 vi.mock(
 	"../../../components/Common/DateRangeSelector/DateRangeSelector",
 	() => ({
@@ -708,6 +737,12 @@ describe("BaseMetricsView component", () => {
 			getCumulativeStateTimeItemsForPortfolio: vi
 				.fn()
 				.mockResolvedValue({ state: "", items: [] }),
+			getCumulativeStateTimeCandidatesForTeam: vi
+				.fn()
+				.mockResolvedValue({ items: [] }),
+			getCumulativeStateTimeCandidatesForPortfolio: vi
+				.fn()
+				.mockResolvedValue({ items: [] }),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1283,6 +1318,12 @@ describe("BaseMetricsView component", () => {
 			getCumulativeStateTimeItemsForPortfolio: vi
 				.fn()
 				.mockResolvedValue({ state: "", items: [] }),
+			getCumulativeStateTimeCandidatesForTeam: vi
+				.fn()
+				.mockResolvedValue({ items: [] }),
+			getCumulativeStateTimeCandidatesForPortfolio: vi
+				.fn()
+				.mockResolvedValue({ items: [] }),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1941,6 +1982,12 @@ describe("BaseMetricsView component", () => {
 				getCumulativeStateTimeItemsForPortfolio: vi
 					.fn()
 					.mockResolvedValue({ state: "", items: [] }),
+				getCumulativeStateTimeCandidatesForTeam: vi
+					.fn()
+					.mockResolvedValue({ items: [] }),
+				getCumulativeStateTimeCandidatesForPortfolio: vi
+					.fn()
+					.mockResolvedValue({ items: [] }),
 			};
 
 			const consoleSpy = vi
@@ -3733,6 +3780,221 @@ describe("BaseMetricsView component", () => {
 				expect(
 					screen.getByTestId("widget-view-data-count-aging"),
 				).toHaveTextContent("2");
+			});
+		});
+	});
+
+	describe("Cumulative state time item picker orchestration", () => {
+		const balancedSystemicStates = {
+			states: [
+				{
+					state: "Backlog",
+					workflowOrder: 0,
+					totalDays: 10,
+					completedContributionDays: 6,
+					ongoingContributionDays: 4,
+					itemCount: 4,
+					completedItemCount: 2,
+					ongoingItemCount: 2,
+					meanDays: 2.5,
+					medianDays: 2,
+				},
+				{
+					state: "Doing",
+					workflowOrder: 1,
+					totalDays: 10,
+					completedContributionDays: 6,
+					ongoingContributionDays: 4,
+					itemCount: 4,
+					completedItemCount: 2,
+					ongoingItemCount: 2,
+					meanDays: 2.5,
+					medianDays: 2,
+				},
+				{
+					state: "Review",
+					workflowOrder: 2,
+					totalDays: 10,
+					completedContributionDays: 7,
+					ongoingContributionDays: 3,
+					itemCount: 4,
+					completedItemCount: 3,
+					ongoingItemCount: 1,
+					meanDays: 2.5,
+					medianDays: 2,
+				},
+			],
+		};
+
+		const lopsidedNarrowedStates = {
+			states: [
+				{
+					state: "Doing",
+					workflowOrder: 0,
+					totalDays: 90,
+					completedContributionDays: 80,
+					ongoingContributionDays: 10,
+					itemCount: 1,
+					completedItemCount: 1,
+					ongoingItemCount: 0,
+					meanDays: 90,
+					medianDays: 90,
+				},
+			],
+		};
+
+		const candidatesResponse = {
+			items: [
+				{
+					workItemId: 42,
+					referenceId: "PICK-42",
+					title: "Pick me",
+					workItemType: "Story",
+					parentReferenceId: null,
+				},
+			],
+		};
+
+		const buildCumulativePickerService = () => {
+			const getCumulativeStateTimeForTeam = vi
+				.fn()
+				.mockImplementation((_id, _start, _end, itemIds?: number[]) =>
+					Promise.resolve(
+						itemIds && itemIds.length > 0
+							? lopsidedNarrowedStates
+							: balancedSystemicStates,
+					),
+				);
+			return {
+				...createMockMetricsService<IWorkItem>(),
+				getCumulativeStateTimeForTeam,
+				getCumulativeStateTimeCandidatesForTeam: vi
+					.fn()
+					.mockResolvedValue(candidatesResponse),
+				getCumulativeStateTimeCandidatesForPortfolio: vi
+					.fn()
+					.mockResolvedValue(candidatesResponse),
+				getCumulativeStateTimeItemsForTeam: vi
+					.fn()
+					.mockResolvedValue({ state: "Doing", items: [] }),
+				getCumulativeStateTimeItemsForPortfolio: vi
+					.fn()
+					.mockResolvedValue({ state: "Doing", items: [] }),
+			};
+		};
+
+		async function selectFirstCandidate(
+			user: ReturnType<typeof userEvent.setup>,
+		) {
+			const combobox = await screen.findByRole("combobox", {
+				name: /select contributing items/i,
+			});
+			await user.click(combobox);
+			await user.click(await screen.findByRole("option", { name: /Pick me/i }));
+		}
+
+		it("keeps the systemic RAG status even when a selection narrows the displayed bars", async () => {
+			const team = new Team();
+			team.name = "Picker Team";
+			team.id = 321;
+			team.systemWIPLimit = 6;
+			team.lastUpdated = new Date();
+
+			const service = buildCumulativePickerService();
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${team.id}:category`,
+				"flow-metrics",
+			);
+
+			const user = userEvent.setup();
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["Doing", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-stateTimeCumulative"),
+				).toHaveTextContent("green");
+			});
+
+			await selectFirstCandidate(user);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("cumulative-displayed-state-count"),
+				).toHaveTextContent("1");
+			});
+
+			expect(service.getCumulativeStateTimeForTeam).toHaveBeenCalledWith(
+				team.id,
+				expect.any(Date),
+				expect.any(Date),
+				[42],
+			);
+			expect(
+				screen.getByTestId("widget-rag-stateTimeCumulative"),
+			).toHaveTextContent("green");
+		});
+
+		it("passes the active selection to the drill-down items fetch", async () => {
+			const team = new Team();
+			team.name = "Drill Team";
+			team.id = 654;
+			team.systemWIPLimit = 6;
+			team.lastUpdated = new Date();
+
+			const service = buildCumulativePickerService();
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${team.id}:category`,
+				"flow-metrics",
+			);
+
+			const user = userEvent.setup();
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["Doing", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-stateTimeCumulative"),
+				).toBeInTheDocument();
+			});
+
+			await selectFirstCandidate(user);
+
+			await waitFor(() => {
+				expect(service.getCumulativeStateTimeForTeam).toHaveBeenCalledWith(
+					team.id,
+					expect.any(Date),
+					expect.any(Date),
+					[42],
+				);
+			});
+
+			await user.click(screen.getByTestId("cumulative-bar-click-proxy"));
+
+			await waitFor(() => {
+				expect(
+					service.getCumulativeStateTimeItemsForPortfolio,
+				).toHaveBeenCalledWith(
+					team.id,
+					expect.any(String),
+					expect.any(Date),
+					expect.any(Date),
+					[42],
+				);
 			});
 		});
 	});
