@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     $"D5: full unclipped Review duration (30 pre-window + 20 in-window = 50d) must be counted, not the 20d clipped portion. Body: {body}");
                 Assert.That(review.CompletedContributionDays, Is.EqualTo(50.0).Within(DaysTolerance),
                     $"The item exited Review, so its full 50d lands in the completed segment. Body: {body}");
-                Assert.That(review.OngoingContributionDays, Is.EqualTo(0.0).Within(DaysTolerance),
+                Assert.That(review.OngoingContributionDays, Is.Zero.Within(DaysTolerance),
                     $"No item is currently in Review, so the ongoing segment is empty. Body: {body}");
             }
         }
@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
                 // Review: three completed visits (10 + 20 + 30 = 60d), no ongoing.
                 Assert.That(review.CompletedContributionDays, Is.EqualTo(60.0).Within(DaysTolerance), $"Review completed segment. Body: {body}");
-                Assert.That(review.OngoingContributionDays, Is.EqualTo(0.0).Within(DaysTolerance), $"Review ongoing segment empty. Body: {body}");
+                Assert.That(review.OngoingContributionDays, Is.Zero.Within(DaysTolerance), $"Review ongoing segment empty. Body: {body}");
                 Assert.That(review.TotalDays, Is.EqualTo(60.0).Within(DaysTolerance), $"Review total. Body: {body}");
 
                 // Test: two completed visits (15 + 15 = 30d) + one item in flight in Test (25d ongoing).
@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     $"A zero-contributing workflow state must still appear as a placeholder bar, not be dropped. Body: {body}");
 
                 var review = StateRow(body, Review);
-                Assert.That(review.TotalDays, Is.EqualTo(0.0).Within(DaysTolerance),
+                Assert.That(review.TotalDays, Is.Zero.Within(DaysTolerance),
                     $"The zero-contributing Review bar has height 0 (DDD-9). Body: {body}");
             }
         }
@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(TotalDaysAcrossAllStates(body), Is.EqualTo(0.0).Within(DaysTolerance),
+                Assert.That(TotalDaysAcrossAllStates(body), Is.Zero.Within(DaysTolerance),
                     $"D12: an item entirely outside the window contributes nothing to any bar. Body: {body}");
             }
         }

@@ -358,18 +358,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 return false;
             }
 
-            var entry = item.StartedDate.Value;
-            foreach (var transition in item.SyncedTransitions.OrderBy(transition => transition.TransitionedAt))
-            {
-                if (entry <= endDate && transition.TransitionedAt >= startDate)
-                {
-                    return true;
-                }
+            var exits = item.SyncedTransitions
+                .OrderBy(transition => transition.TransitionedAt)
+                .Select(transition => transition.TransitionedAt)
+                .ToList();
 
-                entry = transition.TransitionedAt;
-            }
-
-            return false;
+            return exits
+                .Prepend(item.StartedDate.Value)
+                .Zip(exits, (entry, exit) => entry <= endDate && exit >= startDate)
+                .Any(intersects => intersects);
         }
 
         private static bool IsInFlightAtWindowEnd(WorkItem item, DateTime endDate)

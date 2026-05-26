@@ -252,7 +252,7 @@ namespace Lighthouse.Backend.Services.Implementation
             string state,
             int workflowOrder,
             IReadOnlyList<(int ItemId, double Days)> completedVisits,
-            IReadOnlyList<double> ongoingDurations)
+            List<double> ongoingDurations)
         {
             var completedContribution = completedVisits.Sum(visit => visit.Days);
             var ongoingContribution = ongoingDurations.Sum();
