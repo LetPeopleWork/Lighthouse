@@ -589,9 +589,9 @@ The diagram makes four architectural commitments visible:
 
 # C4 Architecture Diagrams — state-time-cumulative-view
 
-Feature: state-time-cumulative-view (Epic 4144 MVP bundle, slice B3 — cumulative time-per-state horizontal-bar widget with stacked completed-vs-ongoing segments, US-03 tooltip enrichment, US-04 per-item drill-down dialog on bar click)
+Feature: state-time-cumulative-view (Epic 4144 MVP bundle, slice B3 — cumulative time-per-state horizontal-bar widget with stacked completed-vs-ongoing segments, US-01 tooltip counts, US-04 per-item drill-down dialog on bar click, US-05 in-chart item picker + adaptive display units)
 Wave: DESIGN
-Date: 2026-05-24
+Date: 2026-05-24 (amended 2026-05-26 — see "C4 Amend" subsection at the end for D13–D18 / ADR-028)
 Architect: Morgan (Solution Architect), interaction mode = PROPOSE
 
 ---
@@ -699,4 +699,69 @@ The diagram makes five architectural commitments visible:
 3. **NEW chart widget, not an extension** - `CumulativeStateTimeChart` is a new component using MUI-X `<BarChart>` with stacked horizontal bars and SVG `<pattern>`-based hatching. Does NOT extend `WorkItemAgingChart` (different data shape, different question). Widget registration follows the established pattern (`categoryMetadata` + `widgetInfoMetadata` + `ragRules` + `BaseMetricsView` dispatch).
 4. **Separate drill-down endpoint and Dialog primitive** - drill-down rows are NOT included in the bar endpoint payload (no `?expand=items` parameter); they are fetched lazily via a separate `/cumulativeStateTime/items?state=X` endpoint on bar click. The dialog is MUI `Dialog` (modal), following the `WorkItemsDialog` precedent for "table-from-chart-click" interactions - no `Drawer` exists in the codebase.
 5. **Sum-equals-bar-height invariant by construction** - the drill-down endpoint's `Sum daysContributed` over rows equals the bar endpoint's `totalDays[state]` within +-0.1d tolerance because both endpoints compute the same per-item formula and sum in different orders. Integration-test-enforced (ADR-022).
+
+---
+
+## C4 Amend (2026-05-26 — D13–D18, ADR-028)
+
+The 2026-05-24 diagrams above remain valid for the math, drill-down, no-shared-service, and chart-widget decisions. The amend (ADR-028) adds the US-05 item picker, the `candidates` endpoint per scope, the optional `itemIds` subset filter on the bar+items endpoints, the adaptive-unit `formatDuration` util, and the US-03→US-01 tooltip reframe. L1 is unchanged (no new actors/systems; the `product-owner` secondary persona is the absorbed-B2 deep-dive actor, a refinement of the existing leadership audience). L2 gains two endpoints (now six) and two FE elements (picker + util). The focused L3 below covers only the amend subsystem.
+
+### C4 Level 2 — Container (amend delta)
+
+```mermaid
+C4Container
+    title Container Diagram - State-Time Cumulative View (2026-05-26 amend over the 2026-05-24 baseline)
+
+    Person(rte, "Delivery Lead / RTE", "Systemic constraint via tallest bar; subset view via the item picker")
+    Person(po, "Product Owner", "Secondary (absorbed B2) - single-item outlier deep-dive via the picker")
+
+    Container(spa, "Frontend SPA", "React 18 + TypeScript + MUI + MUI-X-charts", "ADDS CumulativeStateTimeItemPicker (MUI Autocomplete multiple + Chip, Ref-ID/Name search, parent-expand). ADDS formatDuration util (adaptive minutes->hours->days->weeks). Chart gains picker slot + adaptive unit; tooltip keeps completed/ongoing COUNTS, drops the standalone US-03 explanation line (moved to widgetInfoMetadata). RAG always computed from the systemic (no-itemIds) response held in useMetricsData ctx (D18).")
+    Container(api, "Backend API", "C# .NET 8 ASP.NET Core Web API", "ADDS GET .../metrics/cumulativeStateTime/candidates per scope (D12-included items for the window, projecting parentReferenceId). Bar + items endpoints accept optional [FromQuery] int[]? itemIds, intersected with the D12 set post-inclusion. itemIds intersection + candidate projection live in Team/Portfolio services; base helpers stay subset-agnostic.")
+    ContainerDb(db, "Database", "SQLite (dev/test) / PostgreSQL (prod) via EF Core", "STILL no schema changes. parentReferenceId for the picker reads the EXISTING vendor-neutral WorkItemBase.ParentReferenceId (populated by every connector).")
+
+    Rel(rte, spa, "Reads chart; scopes to a subset via the item picker", "HTTPS")
+    Rel(po, spa, "Selects a single item to see its per-state distribution (absorbed B2)", "HTTPS")
+    Rel(spa, api, "GET .../cumulativeStateTime?itemIds=.., .../items?state=X&itemIds=.., .../candidates", "HTTPS / JSON")
+    Rel(api, db, "Reads WorkItemStateTransition + WorkItem (incl. ParentReferenceId) via", "EF Core")
+```
+
+### C4 Level 3 — Component: Item Picker + Candidate Endpoint + Adaptive Units (amend subsystem)
+
+```mermaid
+C4Component
+    title Component Diagram - US-05 Item Picker, Candidate Endpoint, itemIds Subset, Adaptive Units (ADR-028)
+
+    Container_Boundary(api, "Backend API") {
+        Component(teamSvc, "TeamMetricsService (EXTENDED)", "C# class", "Adds GetCumulativeStateTimeCandidatesForTeam (reuses the D12 query, projects CumulativeStateTimeCandidateRowDto incl. parentReferenceId). Bar + items methods gain IReadOnlyList<int>? itemIds, INTERSECTED with the D12 set post-inclusion (never a bypass). Selection adds a cache-key suffix.")
+        Component(baseSvc, "BaseMetricsService (EXTENDED)", "C# class", "ComputeCumulativeStateTime / ComputeCumulativeStateTimeItems stay subset-AGNOSTIC - they receive the already-narrowed includedItems. No itemIds param on the base helpers (ADR-028 enforcement).")
+        Component(workItemRepo, "IWorkItemRepository (REUSE)", "C# port", "D12 candidate resolution + ParentReferenceId read.")
+        Component(candDto, "CumulativeStateTimeCandidatesDto + CandidateRowDto (NEW)", "C# records", "{ items: [{ workItemId, referenceId, title, workItemType, parentReferenceId? }] } - feeds the picker (D17).")
+    }
+
+    Container_Boundary(spa, "Frontend SPA") {
+        Component(picker, "CumulativeStateTimeItemPicker (NEW)", "React component", "MUI Autocomplete (multiple) + Chip. filterOptions matches referenceId OR title only (D14). Parent-expand: inline 'Select all N children' row action over in-window children. Emits selected itemIds. Keyboard + SR accessible.")
+        Component(chart, "CumulativeStateTimeChart (EXTENDED)", "React component", "Hosts the picker in a chart toolbar; bars/axis/tooltip primary value formatted via formatDuration adaptive unit chosen from the largest bar. Tooltip keeps completed/ongoing counts, no standalone US-03 line.")
+        Component(view, "BaseMetricsView (EXTENDED)", "React component", "Holds picker selection, narrowed bar response, candidate list (lazy), drill-down state. Displays narrowed bars when itemIds present; RAG ALWAYS from ctx.cumulativeStateTime (systemic, D18). Refetches bar+items with itemIds on selection change.")
+        Component(fmt, "formatDuration util (NEW)", "TypeScript pure util", "chooseDurationUnit(maxDays) + formatDuration(valueDays, unit). One uniform unit per render from the largest bar (D16/DDD-21).")
+        Component(metricsTs, "MetricsService.ts (EXTENDED)", "TS HTTP adapter", "+2 candidate methods; bar+items methods append itemIds as repeated query params (DDD-22).")
+        Component(candModels, "ICumulativeStateTimeCandidateRow + CandidatesResponse (NEW)", "TS interfaces", "Mirror the candidate DTO.")
+    }
+
+    Rel(teamSvc, baseSvc, "passes already-narrowed includedItems to the subset-agnostic helpers")
+    Rel(teamSvc, workItemRepo, "candidate resolution + ParentReferenceId via GetAllByPredicate")
+    Rel(teamSvc, candDto, "projects candidate response via")
+    Rel(view, metricsTs, "fetches candidates (lazy) + narrowed bar/items with itemIds via")
+    Rel(view, chart, "renders narrowed bars; RAG from systemic ctx (D18)")
+    Rel(chart, picker, "hosts in chart toolbar; receives selected itemIds from")
+    Rel(chart, fmt, "formats bar labels / axis / tooltip via the adaptive unit")
+    Rel(picker, candModels, "consumes candidate list via props")
+    Rel(metricsTs, candModels, "returns candidate response as")
+```
+
+The amend makes four additional commitments visible:
+
+1. **Subset narrowing is a post-inclusion intersection** — `itemIds` is intersected with the D12 set inside the derived services; the base helpers never see `itemIds` and stay subset-agnostic. An out-of-window selected id is silently ignored (D17 enforced).
+2. **Candidate endpoint reuses the D12 query** — picker candidates and bar contributors are the same population; `parentReferenceId` reads the existing vendor-neutral field (no schema change, parent-expand works across all connectors).
+3. **Units are an FE concern** — the backend contract stays `totalDays` (double); `formatDuration` picks the display unit at render time (D16). Cross-endpoint numeric comparability with sibling F and `cycleTimePercentiles` is preserved.
+4. **RAG is decoupled from the picker** — the FE holds the systemic response as the RAG source; the picker fetch drives only the rendered bars (D18).
 

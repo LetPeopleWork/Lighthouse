@@ -1,0 +1,60 @@
+schema_version: 1
+id: product-owner
+created: 2026-05-26
+created_in_feature: state-time-cumulative-view
+
+display_name: Product Owner
+aliases:
+  - po
+  - product-manager
+  - feature-owner
+
+short_description: >
+  Owns the scope and delivery story of a feature or product area. Uses Lighthouse to deep-dive a
+  specific outlier item (or one feature's stories) when it slipped or got escalated — answering
+  "where did THIS item's time go?" rather than the delivery lead's systemic "which state is the
+  constraint?". Distinct from delivery-lead-rte (systemic, cross-team) and flow-coach (per-item
+  daily triage): the PO's question is per-item or per-feature, on a post-mortem / stakeholder-review
+  cadence.
+
+primary_jobs:
+  - job-po-deep-dive-item-state-time
+
+goals:
+  - Explain where a slipped or escalated item spent its time, per workflow state, without
+    exporting raw history to a spreadsheet
+  - Understand one feature's delivery shape ("where did this feature's stories spend their time?")
+    to tell a credible story in a stakeholder review
+  - Recognise whether a feature's slowness was systemic (a slow state) or item-specific (one
+    outlier) before committing to a process change
+
+frustrations:
+  - The per-item badge (B1) shows only the CURRENT state's age, not where the item's whole life
+    went
+  - Reconstructing an item's state history means reading the work-tracking tool's audit log and
+    pivoting by hand
+  - The systemic cumulative chart answers the team's question but not "scope it to just this item
+    / this feature"
+
+mental_model:
+  - An item's elapsed time is the sum of the time it spent in each state it passed through
+  - The interesting outlier signal is usually one state holding the item far longer than the rest
+  - "Where did the time go?" is a distribution question first; the ORDER it moved through states
+    is a secondary, sometimes-nice-to-have detail (and deliberately not provided here — D15)
+
+vocabulary:
+  - "outlier" — an item whose elapsed time is far above its peers, worth a deep-dive
+  - "deep-dive" — scoping the cumulative chart to one item or one feature to read its distribution
+  - "feature shape" — how a feature's stories distributed their time across states
+  - "where did the time go?" — the per-item distribution question this persona brings to the chart
+
+related_personas:
+  - delivery-lead-rte (different job — systemic constraint across all items; the PO's deep-dive is
+    the narrowed-to-one-item lens of the same chart)
+  - flow-coach (different job — per-item daily triage via the badge + aging chart)
+
+not_this_persona:
+  - System admin (no scope/delivery ownership at this granularity)
+  - Viewer (read-only; can see the chart but does not own the delivery narrative)
+  - Delivery lead asking the systemic question (different cadence and scope — that is
+    delivery-lead-rte)

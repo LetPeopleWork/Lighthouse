@@ -1,6 +1,11 @@
 schema_version: 1
 feature_id: state-time-cumulative-view
-updated: 2026-05-24
+updated: 2026-05-26
+reconciliation_note: >
+  Reconciled 2026-05-26 with feature-delta.md (the authoritative artifact). This file had
+  lagged behind the 2026-05-24 D5 flip (it still described clip-to-window) and predated the
+  2026-05-26 revision (US-03 withdrawn, US-05 item picker added, feature B2 absorbed, adaptive
+  units). D4/D5/D9 below are corrected and decisions D11–D18 + a picker step are added.
 
 journeys:
 
@@ -12,7 +17,7 @@ journeys:
       filter window — including time that in-flight items are still consuming — and uses
       that signal to name the constraint, frame the improvement conversation, and decide
       where to invest the next quarter's process-improvement effort.
-    persona: delivery-lead-rte (also: flow-coach as secondary, for retro facilitation)
+    persona: "delivery-lead-rte (also: flow-coach secondary for retro facilitation; product-owner secondary for the US-05 single-item / per-feature deep-dive absorbed from B2)"
 
     emotional_arc:
       start: Searching — "where is our team / portfolio actually spending its time this
@@ -58,29 +63,31 @@ journeys:
       - id: D4
         question: Unit displayed (total person-days, mean per item, or both)?
         decision: >
-          Total time (in days) as the bar height — this is the cumulative-time-tax
-          framing the persona uses. Tooltip on hover discloses BOTH total and mean-per-item
-          plus the item count contributing to the bar. A toggle is NOT shipped in MVP —
-          one chart, one story; the toggle would add cognitive overhead for a persona that
-          opens the chart maybe weekly. If post-release telemetry shows users wanting the
-          mean view as the primary, fold into a follow-up.
+          Total time as the bar height — the cumulative-time-tax framing the persona uses.
+          Tooltip discloses BOTH total and mean-per-item plus the item count. The DISPLAYED
+          UNIT is adaptive (D16, revised 2026-05-26): computed at full calendar precision,
+          shown in one unit per render chosen from the largest bar (minutes → hours → days →
+          weeks) and applied uniformly to every bar so heights stay comparable. A 100-items-
+          over-a-quarter view reads in days/weeks; a single-item short-window view reads in
+          hours, not "0.3d". A total/mean toggle is NOT shipped in MVP; fold into a follow-up
+          on telemetry signal.
       - id: D5
         question: Date-range semantics for items entering a state BEFORE the filter window?
         decision: >
-          The bar represents ONLY the time-in-state actually spent DURING the filter
-          window (clip-to-window). An item that entered "Review" 30 days before the
-          window starts and left "Review" 10 days into the window contributes 10 days to
-          the Review bar — not 40. An item still in "Review" at window end contributes
-          (windowEnd - max(stateEnteredAt, windowStart)) days. This matches the existing
-          mental model for Lighthouse "throughput in last quarter" (only items closed in
-          the window count) and avoids the surprise where setting "last 30 days" suddenly
-          shows time stretching back years for one stuck item. Tooltip on each bar shows
-          how many items contributed PARTIAL-window time vs FULL-window time, so the
-          user can recognise edge effects without leaving the chart. Alternative considered:
-          full-duration attribution (the entire time the item spent in the state, even if
-          most of it falls outside the window) — rejected because it inflates bars with
-          historical drag that the current window's actions cannot influence; defeats the
-          retro-actionable framing of the persona's job.
+          FULL-DURATION attribution with FRAME-BASED item selection (flipped 2026-05-24 per
+          user redirect; superseded the original clip-to-window default). The filter window
+          selects WHICH ITEMS are included (per the D12 inclusion rule); for every included
+          item the bar counts the FULL time it spent in that state, regardless of whether that
+          time falls inside or outside the window. An item that entered "Review" 30 days before
+          the window and left 10 days in contributes its FULL 40 days to the Review bar — not
+          10. An in-flight item contributes its full `now - currentStateEnteredAt`. Rationale:
+          clipping under-counts the real cycle time of items relevant to the period and conceals
+          the true cost of slow states; for a leadership/retro audience the real-cycle-pattern
+          framing is more actionable. The bars becoming larger when items straddle window
+          boundaries is the intended signal. User verbatim (2026-05-24): "we pick the items that
+          were relevant within the frame, but then look at the full time … if it was in progress
+          40 days before that, we should count the full time." Alternative (clip-to-window) was
+          the initial default, rejected on the redirect.
       - id: D6
         question: Ongoing-items visual treatment?
         decision: >
@@ -115,15 +122,15 @@ journeys:
           The 4 fields shipped by sibling time-in-state-and-staleness slice 01
           (workItemId, fromState, toState, transitionedAt) PLUS the derived
           currentStateEnteredAt field on WorkItem are sufficient. NO schema additions
-          requested. The cumulative-time-per-state computation is:
-          for each item in filter, for each state s,
-            timeInS = sum over (state-enter-event, state-exit-event-or-windowEnd) pairs
-                      of [min(exit, windowEnd) - max(enter, windowStart)],
-                      clipped to >= 0;
-            barHeight[s] += timeInS;
-            if (item still in s at windowEnd) ongoingSegment[s] += timeInS
-            else completedSegment[s] += timeInS.
-          This is computable from the four transition fields + currentStateEnteredAt
+          requested. The cumulative-time-per-state computation (full-duration, per the
+          flipped D5) is: for each item satisfying the D12 inclusion rule, for each state s,
+            completedTimeInS = sum over completed (enter, exit) pairs through s of [exit - enter]  (FULL, unclipped);
+            ongoingTimeInS   = (now - currentStateEnteredAt) if the item is currently in s else 0;
+            completedSegment[s] += completedTimeInS;
+            ongoingSegment[s]   += ongoingTimeInS;
+            barHeight[s]         = completedSegment[s] + ongoingSegment[s].
+          The window only gates which items are included (D12); it does not clip the durations
+          summed. This is computable from the four transition fields + currentStateEnteredAt
           alone. **No upstream coordination with sibling 1 DESIGN required.**
       - id: D10
         question: Cross-feature alignment with sibling F (aging-pace-percentiles)?
@@ -134,6 +141,67 @@ journeys:
           DESIGN-time cross-feature coordination point (see "Cross-MVP DESIGN
           coordination" section); MVP DISCUSS proceeds assuming independent
           computation per feature.
+      - id: D11
+        question: Must in-flight items contribute?
+        decision: >
+          Yes (user-stated requirement). Each in-flight item contributes its FULL
+          `now - currentStateEnteredAt` time to the ongoing segment of its current state,
+          provided it meets the D12 inclusion rule. Visual treatment per D6 (hatched segment).
+      - id: D12
+        question: Which items are included for a given window?
+        decision: >
+          A work item is included if (a) any of its (state-enter, state-exit) intervals
+          intersects the window, OR (b) it is in-flight with currentStateEnteredAt <= windowEnd.
+          Once included, its FULL state-durations contribute (D5). Items entirely outside the
+          window are excluded.
+      - id: D13
+        question: Keep the standalone tooltip "included items" line (former US-03)?
+        decision: >
+          No — US-03 withdrawn (2026-05-26). The per-state drill-down (US-04, click a bar to
+          list contributing items) is the stronger affordance. Completed/ongoing COUNTS remain
+          in the US-01 tooltip; the inclusion+attribution EXPLANATION moves to the widget-info
+          (learn-more) metadata. User verbatim: "US-03 seems like it's not needed - we can click
+          to drill down."
+      - id: D14
+        question: In-chart item filter to scope the bars to specific items?
+        decision: >
+          US-05 (new 2026-05-26): a multi-select item picker on the chart, searchable by
+          Reference ID or Name only, with parent-expand ("select all children of a feature/epic").
+          Default cleared = systemic all-items view; with a selection the bars recompute over just
+          that subset. The transpose of US-04. User verbatim: "a filter on the chart itself to
+          select specific item(s) … General: see all cumulated. Filtered: see it for a single or
+          a set of items."
+      - id: D15
+        question: Relationship to former feature B2 (work-item-state-history-view)?
+        decision: >
+          B2 absorbed (2026-05-26). A single-item picker selection gives that item's per-state
+          time DISTRIBUTION — B2's substantive value. B2's CHRONOLOGY lens (ordered transition
+          timeline, re-entry sequence with dates) is dropped for MVP, revisited only on demand.
+          Adds product-owner as a secondary persona and job-po-deep-dive-item-state-time.
+          User verbatim: "Absorb distribution, drop chronology."
+      - id: D16
+        question: How are time units displayed across scales?
+        decision: >
+          Adaptive uniform unit per render (minutes → hours → days → weeks), chosen from the
+          largest bar and applied to all bars; computed at full calendar precision. Wall-clock
+          time, not business-hours. User verbatim: "display something based on the scale …
+          account for differences in scale."
+      - id: D17
+        question: How does the picker interact with the date window?
+        decision: >
+          The date window (+ ambient filters) gates the picker's candidate set: only D12-included
+          items are selectable. An item not touched in the window is not findable in the picker.
+          Selecting a subset narrows the bars; full-duration (D5) still applies. User verbatim:
+          "The date window will select which items are even available … If the item wasn't touched
+          in the original time window, you won't find it via the filter on the chart."
+      - id: D18
+        question: Does the picker selection change the widget RAG status?
+        decision: >
+          No. RAG is computed over the whole in-scope set and is NOT recomputed when the picker
+          narrows the displayed bars — same as hiding a work-item-type in the cycle-time chart
+          leaving its RAG unchanged. User verbatim: "RAG should only apply to whole set … same
+          behaviour if I would hide a specific work item type in the cycle time chart - it doesnt
+          change the rag."
 
     steps:
 
@@ -175,15 +243,17 @@ journeys:
           Delivery Lead hovers the tallest bar to confirm it represents many items,
           not one outlier dragging the sum
         expected_output: >
-          Tooltip shows:
+          Tooltip shows (unit adaptive per D16 — days here for a quarter-scale chart):
             State: Review
             Total: 184 days
             Items contributing: 47 (38 completed, 9 ongoing)
             Mean per item: 3.9 days
             Median per item: 2.5 days
-            Completed segment: 122 days from items that exited Review during the window
-            Ongoing segment: 62 days from items still in Review at window end
-            (8 items partial-window, 39 items full-window — see D5 semantics)
+            Completed segment: 122 days from items that have exited Review
+            Ongoing segment: 62 days from items still in Review now
+          Full state-durations are counted per D5 (the window selected which items count, not
+          how much of each duration). The completed/ongoing COUNTS remain here (former US-03
+          was withdrawn, D13); the inclusion-rule explanation lives in the widget learn-more.
         emotional_state: Validated — "47 items, not 1. This is systemic, not an
           outlier. Improvement effort here pays off."
         shared_artifacts:
@@ -204,6 +274,24 @@ journeys:
         shared_artifacts:
           - existing filter primitive (date range, type chips)
           - cumulativeStateTimeData (refetched per filter)
+
+      - id: step-scope-to-items-deep-dive
+        action: >
+          (US-05, optional deep-dive) The user opens the item picker, searches by Reference ID
+          or Name — or matches a parent feature and chooses "select all its children" — and
+          selects one item or a small set to see where THOSE items' time went. A Product Owner
+          doing an outlier post-mortem selects the single slipped item.
+        expected_output: >
+          The same bars recompute over only the selected items (full-duration per D5, completed/
+          ongoing segments per D6); the display unit re-adapts to the smaller magnitude (e.g.
+          hours for a single short-lived item, per D16). Only D12-included items for the current
+          window are selectable (D17). The widget RAG status does NOT change — it still reflects
+          the whole in-scope set (D18). Clearing the picker returns to the systemic view.
+        emotional_state: Investigative — "across this feature's 8 stories, Review ate 60%" /
+          "this one item sat in Review 31 of its 44 days — that's the story to tell"
+        shared_artifacts:
+          - selected item-id set (picker → chart, passed as itemIds)
+          - candidate item list (new, from GET .../cumulativeStateTime/candidates)
 
       - id: step-name-the-conversation
         action: >
@@ -233,10 +321,13 @@ journeys:
         bar with the time accumulated WHILE it was active; tooltip notes
         "state removed from workflow on YYYY-MM-DD". Surfaces workflow changes
         as part of the evidence rather than silently hiding them.
-      - Single item in filter: chart renders one item's per-state durations as
-        the bars; mean and total are equal; tooltip notes "1 item — sample
-        size is small". Useful for single-item deep-dive (e.g. an epic post
-        mortem) but flagged as low-sample.
+      - Single item (whether the ambient filter narrows to one, or the US-05
+        picker selects one): chart renders that one item's per-state durations as
+        the bars; mean and total are equal; the display unit adapts to the small
+        magnitude (D16). This is now a FIRST-CLASS deep-dive path (the absorbed-B2
+        distribution lens, D15), reached deliberately via the picker — not only an
+        edge case. The RAG status still reflects the whole in-scope set, not the
+        single item (D18), so it is not misread as "this item is red".
       - Zero transitions data accumulated (sibling slice 01 just shipped, or a
         team has only been using Lighthouse for a few days): the endpoint
         returns an empty array; the widget renders the same "empty state"
@@ -258,3 +349,8 @@ journeys:
         spreadsheets or guesses; ≥30% of team/portfolio detail page sessions
         include a view of the Cumulative Time per State widget within 6 weeks
         of release (OUT-cumulative-state-time-adoption).
+      - The item picker (US-05) is actually used for deep-dives: ≥15% of
+        chart-viewing sessions exercise it within 8 weeks — validating the
+        B2-absorption bet that the per-item/subset distribution lens was the
+        real need, not the dropped chronology lens
+        (OUT-cumulative-state-time-item-filter-usage).

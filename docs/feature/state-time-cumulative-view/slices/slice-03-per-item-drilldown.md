@@ -11,7 +11,7 @@ Make the bar chart from slice 01 *actionable* by letting a delivery lead click a
 
 ## IN scope
 
-- New endpoint `GET /api/teams/{teamId}/metrics/cumulativeStateTime/items?state=X&startDate&endDate` returning `{ state, items: [{ workItemId, title, workItemType, currentState, daysContributed }] }`, ordered `daysContributed` descending. Applies the same D12 inclusion rule and D5 full-duration attribution as slice 01's bar endpoint, scoped to ONE state.
+- New endpoint `GET /api/teams/{teamId}/metrics/cumulativeStateTime/items?state=X&startDate&endDate` returning `{ state, items: [{ workItemId, referenceId, title, workItemType, currentState, daysContributed }] }`, ordered `daysContributed` descending. Applies the same D12 inclusion rule and D5 full-duration attribution as slice 01's bar endpoint, scoped to ONE state. (Slice 04 adds an optional `itemIds` param so the drill-down composes with the US-05 picker selection.)
 - New endpoint `GET /api/portfolios/{portfolioId}/metrics/cumulativeStateTime/items?state=X&startDate&endDate` (same shape, portfolio scope).
 - New service methods `TeamMetricsService.GetCumulativeStateTimeItemsForTeam(team, state, startDate, endDate)` and `PortfolioMetricsService.GetCumulativeStateTimeItemsForPortfolio(portfolio, state, startDate, endDate)` (read `WorkItemStateTransition` rows for items meeting D12 inclusion, sum FULL durations per item in the selected state, return per-item rows).
 - New `MetricsService.ts` client methods: `getCumulativeStateTimeItemsForTeam(teamId, state, startDate, endDate)` and `getCumulativeStateTimeItemsForPortfolio(portfolioId, state, startDate, endDate)`.
@@ -27,7 +27,7 @@ Make the bar chart from slice 01 *actionable* by letting a delivery lead click a
 
 - Inline editing of work items from the panel — out of scope, use the existing work-item detail page.
 - Bulk actions on selected items — out of scope.
-- Per-item state-time history (the per-item view of "all states this item passed through") — that's feature B2 (`work-item-state-history-view`), post-MVP.
+- Per-item state-time CHRONOLOGY (the ordered timeline / re-entry sequence for one item) — dropped from MVP (D15, former feature B2's chronology lens). Note the per-item DISTRIBUTION (where one item's time went, per state) is NOT out of scope — it ships via the US-05 picker single-item selection in slice 04. US-04's drill-down here is the inverse (one state → its items).
 - Exporting the panel data to CSV — out of scope (the user can sort by column and screenshot).
 - Cross-state comparison (e.g. select multiple bars at once) — out of scope.
 - Configurable column visibility — out of scope (D-level decision for a follow-up).

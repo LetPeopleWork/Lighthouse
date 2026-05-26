@@ -500,14 +500,17 @@ jobs:
         any time horizon (sprint, quarter, year) because it composes with the existing
         date-range filter unchanged.
       anxiety: >
-        What if items that entered a state before the date window contribute full or partial
-        time and I can't tell which? (Mitigated by D5 below: bars show only the time-in-state
-        actually spent during the window, matching how throughput is already calculated;
-        tooltip discloses how many items contributed partial-window time vs full-window time.)
+        What if items that entered a state before the date window inflate the bars and I
+        can't tell why? (Addressed by D5 full-duration attribution with D12 frame-based
+        inclusion: the window selects WHICH items count; for each included item the FULL
+        state-duration is counted — this is intentional, since clipping would conceal the
+        real cost of slow states. The per-state drill-down (US-04) and the item picker
+        (US-05) let the user see exactly which items drove a bar.)
         What if the bar chart shows "Review is the constraint" but it's because of one
         outlier item, not a systemic issue? (Mitigated by D6: tooltip shows the count of
         items contributing to each bar AND the mean per item, so a single-outlier bar is
-        visible from the tooltip rather than hidden in the sum.)
+        visible from the tooltip rather than hidden in the sum; the US-04 drill-down names
+        the specific items.)
         What if comparing teams or quarters needs export to a spreadsheet anyway? (Mitigated
         by the cumulative bar being a defensible single number per state — directly
         screenshottable into a deck or compared by eye across two browser tabs.)
@@ -530,3 +533,68 @@ jobs:
         time-in-state job (also gap 3, also zero current satisfaction for the specific
         question); both are foundational Epic 4144 gaps surfaced by the same Productboard +
         Community signal on ADO #4144.
+
+  - id: job-po-deep-dive-item-state-time
+    title: Deep-dive a single outlier item (or one feature's stories) to see where its time went per state
+    persona: product-owner
+    feature_context: state-time-cumulative-view
+    created: 2026-05-26
+    note: >
+      Absorbed from former Epic 4144 feature B2 (work-item-state-history-view) on 2026-05-26
+      (feature-delta D15). Served by the US-05 in-chart item picker narrowed to a single item
+      or one feature's child stories. Distribution lens only — the ordered chronology/timeline
+      lens that B2 also envisioned was deliberately NOT built (out of scope, revisit on demand).
+    job_story: >
+      When a specific work item has clearly taken too long (an outlier surfaced in a retro, a
+      stakeholder escalation, or a feature that slipped), or when I want to understand one
+      feature's delivery shape,
+      I want to scope the cumulative-time-per-state chart down to just that item (or that
+      feature's stories) and see how its time was distributed across the workflow states,
+      so I can tell the specific story — "this item sat in Review 31 of its 44 days" — in a
+      post-mortem or stakeholder conversation, instead of exporting its history to a spreadsheet
+      and pivoting it by hand.
+    dimensions:
+      functional: >
+        Use the chart's item picker (search by Reference ID or Name; parent-expand to select
+        all of a feature's children) to scope the bars to one item or a small set. The same
+        bar geometry (per-state height, completed/ongoing segments, adaptive unit) then shows
+        that selection's distribution. A single-item selection renders one item's per-state
+        durations; re-entries through a state sum into that state's bar (cumulative, not
+        chronological).
+      emotional: >
+        Move from "I know this item was slow but I can't quickly say WHERE the time went" to
+        "Review held it 31 of 44 days — here's the bar". Confidence to name the specific
+        bottleneck for a specific item without spreadsheet archaeology.
+      social: >
+        Be the PO who walks into the post-mortem with the item's actual state-time breakdown
+        rather than a recollection, and who can answer "where did this feature's time go?" on
+        the spot during a stakeholder review.
+    forces:
+      push: >
+        No Lighthouse view today shows a single item's time-per-state distribution; the per-item
+        badge (B1) shows only the CURRENT state's age. Answering "where did this item's whole
+        life go?" means reading raw transition history and summing by hand.
+      pull: >
+        Reuse the cumulative chart the team already knows, scoped to one item or one feature —
+        no new screen to learn, no export. The picker turns the systemic chart into a deep-dive
+        instrument with one selection.
+      anxiety: >
+        Will I lose the ORDER the item moved through states? (Yes — by design, D15: this lens
+        is distribution, not chronology. If the sequence/re-entry order is the actual need, that
+        is the dropped B2 timeline lens, revisited only on explicit demand.)
+        Will the unit read uselessly small for one short-lived item? (No — adaptive units, D16,
+        switch to hours/minutes for small magnitudes.)
+      habit: >
+        POs today reconstruct an item's history from the work-tracking tool's own audit log or a
+        spreadsheet; the picker asks them to adopt the in-chart selection instead. Low cost — it
+        is the same chart, filtered.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — outlier post-mortems and feature-shape questions are recurring but
+        lower-frequency than the systemic retro question (importance 4). Current satisfaction:
+        1 — no per-item distribution view exists today. Gap: 2 — real but secondary to the
+        systemic constraint job; this is why B2 was post-MVP originally and is now absorbed as a
+        secondary lens of B3 rather than a standalone feature.
