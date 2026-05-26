@@ -701,6 +701,7 @@ describe("BaseMetricsView component", () => {
 					metricLabel: "Cycle Time Percentiles",
 				},
 			}),
+			getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1269,6 +1270,7 @@ describe("BaseMetricsView component", () => {
 			getCycleTimePercentilesInfo: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
+			getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1918,6 +1920,9 @@ describe("BaseMetricsView component", () => {
 				getCycleTimePercentilesInfo: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),
+				getCumulativeStateTimeForTeam: vi
+					.fn()
+					.mockResolvedValue({ states: [] }),
 			};
 
 			const consoleSpy = vi

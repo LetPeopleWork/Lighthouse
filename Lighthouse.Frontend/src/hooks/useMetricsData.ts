@@ -3,6 +3,7 @@ import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { IFeature } from "../models/Feature";
 import type { IForecastPredictabilityScore } from "../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../models/IFeatureOwner";
+import type { ICumulativeStateTimeResponse } from "../models/Metrics/CumulativeStateTime";
 import type { IEstimationVsCycleTimeResponse } from "../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../models/Metrics/FeatureSizeEstimationData";
 import type {
@@ -38,6 +39,7 @@ export interface MetricsData<T> {
 	cycleTimeData: T[];
 	percentileValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
+	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	sizePercentileValues: IPercentileValue[];
 	allFeaturesForSizeChart: IFeature[];
 	predictabilityData: IForecastPredictabilityScore | null;
@@ -109,6 +111,8 @@ export function useMetricsData<
 	const [perStatePercentileValues, setPerStatePercentileValues] = useState<
 		IPerStatePercentileValues[]
 	>([]);
+	const [cumulativeStateTime, setCumulativeStateTime] =
+		useState<ICumulativeStateTimeResponse | null>(null);
 	const [sizePercentileValues, setSizePercentileValues] = useState<
 		IPercentileValue[]
 	>([]);
@@ -213,12 +217,18 @@ export function useMetricsData<
 				endDate,
 			);
 			setCycleTimeData(data);
-			const [percentiles, perStatePercentiles] = await Promise.all([
+			const [percentiles, perStatePercentiles, cumulative] = await Promise.all([
 				metricsService.getCycleTimePercentiles(entity.id, startDate, endDate),
 				metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate),
+				metricsService.getCumulativeStateTimeForTeam(
+					entity.id,
+					startDate,
+					endDate,
+				),
 			]);
 			setPercentileValues(percentiles);
 			setPerStatePercentileValues(perStatePercentiles);
+			setCumulativeStateTime(cumulative);
 		};
 		fetch().catch((error) =>
 			console.error(`Error fetching ${cycleTimeTerm} data:`, error),
@@ -404,6 +414,7 @@ export function useMetricsData<
 		cycleTimeData,
 		percentileValues,
 		perStatePercentileValues,
+		cumulativeStateTime,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
 		predictabilityData,

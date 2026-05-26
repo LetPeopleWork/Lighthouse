@@ -4,6 +4,7 @@ import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
 } from "../../models/Forecasts/ForecastPredictabilityScore";
+import type { ICumulativeStateTimeResponse } from "../../models/Metrics/CumulativeStateTime";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type {
@@ -52,6 +53,13 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IPerStatePercentileValues[]>;
+
+	getCumulativeStateTimeForTeam(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeResponse>;
 
 	getMultiItemForecastPredictabilityScore(
 		id: number,
@@ -276,6 +284,24 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IPerStatePercentileValues[]>(
 				`/${this.api}/${id}/metrics/ageInStatePercentiles?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	async getCumulativeStateTimeForTeam(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeResponse> {
+		return this.withErrorHandling(async () => {
+			const itemIdsSuffix = (itemIds ?? [])
+				.map((itemId) => `&itemIds=${itemId}`)
+				.join("");
+			const response = await this.apiService.get<ICumulativeStateTimeResponse>(
+				`/${this.api}/${id}/metrics/cumulativeStateTime?${this.getDateFormatString(startDate, endDate)}${itemIdsSuffix}`,
 			);
 
 			return response.data;

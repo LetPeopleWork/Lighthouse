@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { IFeatureOwner } from "../models/IFeatureOwner";
+import type { ICumulativeStateTimeResponse } from "../models/Metrics/CumulativeStateTime";
 import { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
@@ -105,6 +106,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 				metricLabel: "Cycle Time Percentiles",
 			},
 		}),
+		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
 	};
 }
 
@@ -323,6 +325,53 @@ describe("useMetricsData", () => {
 			});
 
 			expect(service.getAgeInStatePercentiles).toHaveBeenCalledWith(
+				entity.id,
+				startDate,
+				endDate,
+			);
+			expect(result.current.percentileValues).toEqual(cycleTimePercentiles);
+		});
+	});
+
+	describe("Systemic cumulative state time fetch", () => {
+		it("should populate cumulativeStateTime without disturbing cycle time percentiles", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+			const cumulative: ICumulativeStateTimeResponse = {
+				states: [
+					{
+						state: "In Progress",
+						workflowOrder: 0,
+						totalDays: 12.5,
+						completedContributionDays: 8,
+						ongoingContributionDays: 4.5,
+						itemCount: 5,
+						completedItemCount: 3,
+						ongoingItemCount: 2,
+						meanDays: 2.5,
+						medianDays: 2,
+					},
+				],
+			};
+			const cycleTimePercentiles: IPercentileValue[] = [
+				{ percentile: 85, value: 12 },
+			];
+			vi.mocked(service.getCumulativeStateTimeForTeam).mockResolvedValue(
+				cumulative,
+			);
+			vi.mocked(service.getCycleTimePercentiles).mockResolvedValue(
+				cycleTimePercentiles,
+			);
+
+			const { result } = renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate),
+			);
+
+			await waitFor(() => {
+				expect(result.current.cumulativeStateTime).toEqual(cumulative);
+			});
+
+			expect(service.getCumulativeStateTimeForTeam).toHaveBeenCalledWith(
 				entity.id,
 				startDate,
 				endDate,
