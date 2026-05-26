@@ -269,7 +269,7 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 var completedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedFeatures);
-                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(portfolio, completedItemsWithTransitions);
+                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(portfolio.DoingStates, completedItemsWithTransitions);
 
                 return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, DefaultPacePercentiles).ToList();
             }, logger);
@@ -278,14 +278,10 @@ namespace Lighthouse.Backend.Services.Implementation
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)
         {
             var completedFeatureIds = completedFeatures.Select(feature => feature.Id).ToHashSet();
-            var transitionsByFeature = featureStateTransitionRepository
+            var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
                 .GetAllByPredicate(transition => completedFeatureIds.Contains(transition.FeatureId))
                 .ToList()
-                .GroupBy(transition => transition.FeatureId)
-                .ToDictionary(group => group.Key, group => group
-                    .OrderBy(transition => transition.TransitionedAt)
-                    .Select(ToWorkItemStateTransition)
-                    .ToList());
+                .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
 
             return completedFeatures
                 .Select(feature => new WorkItem
@@ -306,28 +302,6 @@ namespace Lighthouse.Backend.Services.Implementation
                 ToState = transition.ToState,
                 TransitionedAt = transition.TransitionedAt,
             };
-        }
-
-        private static List<string> BuildWorkflowStateOrder(Portfolio portfolio, IEnumerable<WorkItem> completedItemsWithTransitions)
-        {
-            var orderedStates = new List<string>(portfolio.DoingStates);
-            var knownStates = new HashSet<string>(orderedStates);
-
-            var observedExitStates = completedItemsWithTransitions
-                .SelectMany(item => item.SyncedTransitions)
-                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
-                .OrderBy(transition => transition.TransitionedAt)
-                .Select(transition => transition.FromState);
-
-            foreach (var state in observedExitStates)
-            {
-                if (knownStates.Add(state))
-                {
-                    orderedStates.Add(state);
-                }
-            }
-
-            return orderedStates;
         }
 
         public IEnumerable<Feature> GetCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)

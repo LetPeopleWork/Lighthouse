@@ -329,7 +329,7 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 var completedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedItems);
-                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(team, completedItemsWithTransitions);
+                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(team.DoingStates, completedItemsWithTransitions);
 
                 return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, DefaultPacePercentiles).ToList();
             }, logger);
@@ -338,11 +338,10 @@ namespace Lighthouse.Backend.Services.Implementation
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)
         {
             var completedItemIds = completedItems.Select(item => item.Id).ToHashSet();
-            var transitionsByItem = workItemStateTransitionRepository
+            var transitionsByItem = GroupTransitionsByItem(workItemStateTransitionRepository
                 .GetAllByPredicate(transition => completedItemIds.Contains(transition.WorkItemId))
                 .ToList()
-                .GroupBy(transition => transition.WorkItemId)
-                .ToDictionary(group => group.Key, group => group.OrderBy(transition => transition.TransitionedAt).ToList());
+                .Select(transition => (transition.WorkItemId, transition)));
 
             return completedItems
                 .Select(item => new WorkItem(item, item.Team)
@@ -351,28 +350,6 @@ namespace Lighthouse.Backend.Services.Implementation
                     SyncedTransitions = transitionsByItem.TryGetValue(item.Id, out var transitions) ? transitions : [],
                 })
                 .ToList();
-        }
-
-        private static List<string> BuildWorkflowStateOrder(Team team, IEnumerable<WorkItem> completedItemsWithTransitions)
-        {
-            var orderedStates = new List<string>(team.DoingStates);
-            var knownStates = new HashSet<string>(orderedStates);
-
-            var observedExitStates = completedItemsWithTransitions
-                .SelectMany(item => item.SyncedTransitions)
-                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
-                .OrderBy(transition => transition.TransitionedAt)
-                .Select(transition => transition.FromState);
-
-            foreach (var state in observedExitStates)
-            {
-                if (knownStates.Add(state))
-                {
-                    orderedStates.Add(state);
-                }
-            }
-
-            return orderedStates;
         }
 
         public EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate)

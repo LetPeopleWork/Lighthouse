@@ -15,6 +15,43 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected record InfoMetric(int Value);
 
+        protected static Dictionary<int, IReadOnlyList<WorkItemStateTransition>> GroupTransitionsByItem(
+            IEnumerable<(int ItemId, WorkItemStateTransition Transition)> transitions)
+        {
+            return transitions
+                .GroupBy(entry => entry.ItemId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<WorkItemStateTransition>)group
+                        .Select(entry => entry.Transition)
+                        .OrderBy(transition => transition.TransitionedAt)
+                        .ToList());
+        }
+
+        protected static List<string> BuildWorkflowStateOrder(
+            IEnumerable<string> doingStates,
+            IEnumerable<WorkItem> completedItemsWithTransitions)
+        {
+            var orderedStates = new List<string>(doingStates);
+            var knownStates = new HashSet<string>(orderedStates);
+
+            var observedExitStates = completedItemsWithTransitions
+                .SelectMany(item => item.SyncedTransitions)
+                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
+                .OrderBy(transition => transition.TransitionedAt)
+                .Select(transition => transition.FromState);
+
+            foreach (var state in observedExitStates)
+            {
+                if (knownStates.Add(state))
+                {
+                    orderedStates.Add(state);
+                }
+            }
+
+            return orderedStates;
+        }
+
         protected IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
             IEnumerable<WorkItem> completedItemsInWindow,
             IEnumerable<string> doingStatesInWorkflowOrder,
