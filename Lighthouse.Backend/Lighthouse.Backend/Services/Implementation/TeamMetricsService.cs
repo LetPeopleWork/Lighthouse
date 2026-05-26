@@ -335,6 +335,87 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
+        {
+            logger.LogDebug("Getting Cumulative State Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(team, startDate, endDate);
+                var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
+
+                var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
+                return new CumulativeStateTimeDto(states);
+            }, logger);
+        }
+
+        private List<WorkItem> ResolveCumulativeStateTimeCandidates(Team team, DateTime startDate, DateTime endDate)
+        {
+            var teamItems = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
+            var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(teamItems);
+
+            return itemsWithTransitions
+                .Where(item => IntersectsWindow(item, startDate, endDate) || IsInFlightAtWindowEnd(item, endDate))
+                .ToList();
+        }
+
+        private List<WorkItem> AssociateSyncedTransitionsPreservingCurrentState(IReadOnlyCollection<WorkItem> items)
+        {
+            var itemIds = items.Select(item => item.Id).ToHashSet();
+            var transitionsByItem = GroupTransitionsByItem(workItemStateTransitionRepository
+                .GetAllByPredicate(transition => itemIds.Contains(transition.WorkItemId))
+                .AsEnumerable()
+                .Select(transition => (transition.WorkItemId, transition)));
+
+            return items
+                .Select(item => new WorkItem(item, item.Team)
+                {
+                    Id = item.Id,
+                    CurrentStateEnteredAt = item.CurrentStateEnteredAt,
+                    SyncedTransitions = transitionsByItem.TryGetValue(item.Id, out var transitions) ? transitions : [],
+                })
+                .ToList();
+        }
+
+        private static bool IntersectsWindow(WorkItem item, DateTime startDate, DateTime endDate)
+        {
+            if (!item.StartedDate.HasValue || item.SyncedTransitions.Count == 0)
+            {
+                return false;
+            }
+
+            var entry = item.StartedDate.Value;
+            foreach (var transition in item.SyncedTransitions.OrderBy(transition => transition.TransitionedAt))
+            {
+                if (entry <= endDate && transition.TransitionedAt >= startDate)
+                {
+                    return true;
+                }
+
+                entry = transition.TransitionedAt;
+            }
+
+            return false;
+        }
+
+        private static bool IsInFlightAtWindowEnd(WorkItem item, DateTime endDate)
+        {
+            return item.StateCategory != StateCategories.Done
+                && item.CurrentStateEnteredAt.HasValue
+                && item.CurrentStateEnteredAt.Value <= endDate;
+        }
+
+        private static List<string> BuildCumulativeWorkflowStateOrder(Team team)
+        {
+            var order = new List<string>(team.DoingStates);
+            if (team.DoneStates.Count > 0)
+            {
+                order.Add(team.DoneStates[0]);
+            }
+
+            return order;
+        }
+
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)
         {
             var completedItemIds = completedItems.Select(item => item.Id).ToHashSet();

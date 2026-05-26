@@ -97,6 +97,161 @@ namespace Lighthouse.Backend.Services.Implementation
             return (int)(exitedAt.Date - startedDate.Date).TotalDays + 1;
         }
 
+        protected static IReadOnlyList<CumulativeStateTimeStateRowDto> ComputeCumulativeStateTime(
+            IEnumerable<WorkItem> includedItems,
+            IReadOnlyList<string> workflowStateOrder,
+            DateTime nowSnapshot)
+        {
+            var items = includedItems.ToList();
+            if (items.Count == 0)
+            {
+                return [];
+            }
+
+            var completedVisitsByState = GroupCompletedVisitDurationsByState(items);
+            var ongoingByState = GroupOngoingContributionsByState(items, nowSnapshot);
+
+            return workflowStateOrder
+                .Select((state, order) => BuildCumulativeStateTimeRow(
+                    state,
+                    order,
+                    completedVisitsByState.TryGetValue(state, out var completed) ? completed : [],
+                    ongoingByState.TryGetValue(state, out var ongoing) ? ongoing : []))
+                .ToList();
+        }
+
+        private static Dictionary<string, List<double>> GroupOngoingContributionsByState(IEnumerable<WorkItem> items, DateTime nowSnapshot)
+        {
+            var byState = new Dictionary<string, List<double>>();
+
+            foreach (var item in items.Where(IsInFlight))
+            {
+                if (!byState.TryGetValue(item.State, out var durations))
+                {
+                    durations = [];
+                    byState[item.State] = durations;
+                }
+
+                durations.Add(OngoingDuration(item, nowSnapshot));
+            }
+
+            return byState;
+        }
+
+        protected static IReadOnlyList<CumulativeStateTimeItemDto> ComputeCumulativeStateTimeItems(
+            IEnumerable<WorkItem> includedItems,
+            string state,
+            DateTime nowSnapshot)
+        {
+            return includedItems
+                .Select(item => (item, days: ContributionForState(item, state, nowSnapshot)))
+                .Where(entry => entry.days > 0)
+                .Select(entry => new CumulativeStateTimeItemDto(
+                    entry.item.ReferenceId,
+                    string.IsNullOrEmpty(entry.item.ParentReferenceId) ? null : entry.item.ParentReferenceId,
+                    entry.days))
+                .ToList();
+        }
+
+        private static Dictionary<string, List<(int ItemId, double Days)>> GroupCompletedVisitDurationsByState(IEnumerable<WorkItem> items)
+        {
+            var byState = new Dictionary<string, List<(int ItemId, double Days)>>();
+
+            foreach (var visit in items.SelectMany(CompletedVisits))
+            {
+                if (!byState.TryGetValue(visit.State, out var visits))
+                {
+                    visits = [];
+                    byState[visit.State] = visits;
+                }
+
+                visits.Add((visit.ItemId, visit.Days));
+            }
+
+            return byState;
+        }
+
+        private static IEnumerable<(string State, int ItemId, double Days)> CompletedVisits(WorkItem item)
+        {
+            var orderedTransitions = item.SyncedTransitions
+                .OrderBy(transition => transition.TransitionedAt)
+                .ToList();
+
+            var entryIntoState = item.StartedDate;
+
+            foreach (var transition in orderedTransitions)
+            {
+                if (entryIntoState.HasValue && !string.IsNullOrEmpty(transition.FromState))
+                {
+                    yield return (transition.FromState, item.Id, (transition.TransitionedAt - entryIntoState.Value).TotalDays);
+                }
+
+                entryIntoState = transition.TransitionedAt;
+            }
+        }
+
+        private static bool IsInFlight(WorkItem item)
+        {
+            return item.StateCategory == StateCategories.Doing && item.CurrentStateEnteredAt.HasValue;
+        }
+
+        private static double OngoingDuration(WorkItem item, DateTime nowSnapshot)
+        {
+            return (nowSnapshot - item.CurrentStateEnteredAt!.Value).TotalDays;
+        }
+
+        private static double ContributionForState(WorkItem item, string state, DateTime nowSnapshot)
+        {
+            var completed = CompletedVisits(item)
+                .Where(visit => visit.State == state)
+                .Sum(visit => visit.Days);
+
+            var ongoing = IsInFlight(item) && item.State == state
+                ? OngoingDuration(item, nowSnapshot)
+                : 0;
+
+            return completed + ongoing;
+        }
+
+        private static CumulativeStateTimeStateRowDto BuildCumulativeStateTimeRow(
+            string state,
+            int workflowOrder,
+            IReadOnlyList<(int ItemId, double Days)> completedVisits,
+            IReadOnlyList<double> ongoingDurations)
+        {
+            var completedContribution = completedVisits.Sum(visit => visit.Days);
+            var ongoingContribution = ongoingDurations.Sum();
+            var completedItemCount = completedVisits.Select(visit => visit.ItemId).Distinct().Count();
+
+            return new CumulativeStateTimeStateRowDto(
+                State: state,
+                WorkflowOrder: workflowOrder,
+                TotalDays: completedContribution + ongoingContribution,
+                CompletedContributionDays: completedContribution,
+                OngoingContributionDays: ongoingContribution,
+                ItemCount: completedItemCount + ongoingDurations.Count,
+                CompletedItemCount: completedItemCount,
+                OngoingItemCount: ongoingDurations.Count,
+                MeanDays: CumulativeMean(completedVisits),
+                MedianDays: CumulativeMedian(completedVisits));
+        }
+
+        private static double CumulativeMean(IReadOnlyList<(int ItemId, double Days)> completedVisits)
+        {
+            return completedVisits.Count == 0 ? 0 : completedVisits.Average(visit => visit.Days);
+        }
+
+        private static double? CumulativeMedian(IReadOnlyList<(int ItemId, double Days)> completedVisits)
+        {
+            if (completedVisits.Count == 0)
+            {
+                return null;
+            }
+
+            var roundedDays = completedVisits.Select(visit => (int)Math.Round(visit.Days)).ToList();
+            return PercentileCalculator.CalculatePercentile(roundedDays, 50);
+        }
+
         protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput)
         {
             var numberOfDays = 30;

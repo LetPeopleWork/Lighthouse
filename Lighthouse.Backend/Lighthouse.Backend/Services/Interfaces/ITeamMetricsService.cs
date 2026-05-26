@@ -56,6 +56,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);
+
         EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate);
 
         int GetTotalWorkItemAge(Team team, DateTime endDate);

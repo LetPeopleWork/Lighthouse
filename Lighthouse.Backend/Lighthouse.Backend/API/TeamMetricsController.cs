@@ -140,6 +140,19 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetAgeInStatePercentilesForTeam(team, startDate, endDate));
         }
 
+        [HttpGet("cumulativeStateTime")]
+        public ActionResult<CumulativeStateTimeDto> GetCumulativeStateTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("cumulativeStateTime", teamId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetCumulativeStateTimeForTeam(team, startDate, endDate, itemIds));
+        }
+
         [HttpGet("cycleTimeData")]
         public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
