@@ -280,7 +280,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var completedFeatureIds = completedFeatures.Select(feature => feature.Id).ToHashSet();
             var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
                 .GetAllByPredicate(transition => completedFeatureIds.Contains(transition.FeatureId))
-                .ToList()
+                .AsEnumerable()
                 .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
 
             return completedFeatures

@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 using var document = JsonDocument.Parse(body);
                 Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array),
                     $"Response must be a (possibly empty) array. Body: {body}");
-                Assert.That(document.RootElement.GetArrayLength(), Is.EqualTo(0),
+                Assert.That(document.RootElement.GetArrayLength(), Is.Zero,
                     $"A team with no completed items in the window yields an empty band array. Body: {body}");
             }
         }
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 using var document = JsonDocument.Parse(body);
-                Assert.That(document.RootElement.GetArrayLength(), Is.EqualTo(0),
+                Assert.That(document.RootElement.GetArrayLength(), Is.Zero,
                     $"Membership rule is ClosedDate within window; an item closed before the window contributes nothing. Body: {body}");
             }
         }

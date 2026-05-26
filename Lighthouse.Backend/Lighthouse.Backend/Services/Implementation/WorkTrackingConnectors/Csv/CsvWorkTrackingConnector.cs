@@ -267,7 +267,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private static string MappedDoneState(IWorkItemQueryOwner owner)
         {
-            return owner.MapRawStateToMappedName(owner.DoneStates.First());
+            return owner.MapRawStateToMappedName(owner.DoneStates[0]);
         }
 
         private static DateTime? ReadPerStateEnteredDate(CsvReader csv, string stateEnteredDateColumn, string doingState)

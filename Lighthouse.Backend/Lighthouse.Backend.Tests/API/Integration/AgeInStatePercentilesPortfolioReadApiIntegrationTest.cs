@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 using var document = JsonDocument.Parse(body);
                 Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array),
                     $"Response must be a (possibly empty) array. Body: {body}");
-                Assert.That(document.RootElement.GetArrayLength(), Is.EqualTo(0),
+                Assert.That(document.RootElement.GetArrayLength(), Is.Zero,
                     $"A portfolio with no completed features in the window yields an empty band array. Body: {body}");
             }
         }

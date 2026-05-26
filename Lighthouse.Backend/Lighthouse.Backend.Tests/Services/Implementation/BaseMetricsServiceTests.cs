@@ -2,7 +2,6 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
-using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -15,6 +14,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static readonly string[] WorkflowOrder = ["In Progress", "Review", "Test"];
 
+        private static readonly string[] InProgressAndReview = ["In Progress", "Review"];
+
         [Test]
         public void ComputeAgeInStatePercentiles_CompletedItemsAcrossThreeStates_ReturnsExactCumulativeAgeAtExitPercentilesPerState()
         {
@@ -22,15 +23,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Select(BuildThreeStateCompletedItem)
                 .ToList();
 
-            var result = Subject().ComputeAgeInStatePercentiles(completedItems, WorkflowOrder, RequestedPercentiles).ToList();
+            var result = TestableBaseMetricsService.Compute(completedItems, WorkflowOrder, RequestedPercentiles).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(StatesInOrder(result), Is.EqualTo(WorkflowOrder));
                 AssertPercentiles(result, "In Progress", (50, 10), (70, 14), (85, 17), (95, 19));
                 AssertPercentiles(result, "Review", (50, 30), (70, 34), (85, 37), (95, 39));
                 AssertPercentiles(result, "Test", (50, 50), (70, 54), (85, 57), (95, 59));
-            });
+            }
         }
 
         [Test]
@@ -40,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Select(BuildThreeStateCompletedItem)
                 .ToList();
 
-            var result = Subject().ComputeAgeInStatePercentiles(completedItems, WorkflowOrder, RequestedPercentiles).ToList();
+            var result = TestableBaseMetricsService.Compute(completedItems, WorkflowOrder, RequestedPercentiles).ToList();
 
             foreach (var percentile in RequestedPercentiles)
             {
@@ -61,9 +62,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Transition("In Progress", "Review", FixtureStart.AddDays(2)),
                 Transition("Review", "Done", FixtureStart.AddDays(5)));
 
-            var result = Subject().ComputeAgeInStatePercentiles([item], WorkflowOrder, RequestedPercentiles).ToList();
+            var result = TestableBaseMetricsService.Compute([item], WorkflowOrder, RequestedPercentiles).ToList();
 
-            Assert.That(StatesInOrder(result), Is.EqualTo(new[] { "In Progress", "Review" }));
+            Assert.That(StatesInOrder(result), Is.EqualTo(InProgressAndReview));
         }
 
         [Test]
@@ -74,7 +75,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Transition("To Do", "In Progress", FixtureStart),
                 Transition("In Progress", "Done", FixtureStart.AddDays(6)));
 
-            var result = Subject().ComputeAgeInStatePercentiles([item], WorkflowOrder, RequestedPercentiles).ToList();
+            var result = TestableBaseMetricsService.Compute([item], WorkflowOrder, RequestedPercentiles).ToList();
 
             AssertPercentiles(result, "In Progress", (50, 7), (70, 7), (85, 7), (95, 7));
         }
@@ -92,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Transition("In Progress", "Review", FixtureStart.AddDays(7)),
                 Transition("Review", "Done", FixtureStart.AddDays(8)));
 
-            var result = Subject().ComputeAgeInStatePercentiles([item], WorkflowOrder, RequestedPercentiles).ToList();
+            var result = TestableBaseMetricsService.Compute([item], WorkflowOrder, RequestedPercentiles).ToList();
 
             AssertPercentiles(result, "Review", (50, 3), (70, 6), (85, 6), (95, 6));
         }
@@ -165,20 +166,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             };
         }
 
-        private static TestableBaseMetricsService Subject()
-        {
-            return new TestableBaseMetricsService(new Mock<IServiceProvider>().Object);
-        }
-
         private sealed class TestableBaseMetricsService(IServiceProvider serviceProvider)
             : BaseMetricsService(1, serviceProvider)
         {
-            public new IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
+            public static IEnumerable<AgeInStatePercentilesDto> Compute(
                 IEnumerable<WorkItem> completedItemsInWindow,
                 IEnumerable<string> doingStatesInWorkflowOrder,
                 IReadOnlyList<int> requestedPercentiles)
             {
-                return base.ComputeAgeInStatePercentiles(completedItemsInWindow, doingStatesInWorkflowOrder, requestedPercentiles);
+                return ComputeAgeInStatePercentiles(completedItemsInWindow, doingStatesInWorkflowOrder, requestedPercentiles);
             }
         }
     }

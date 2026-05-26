@@ -41,18 +41,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 .OrderBy(transition => transition.TransitionedAt)
                 .Select(transition => transition.FromState);
 
-            foreach (var state in observedExitStates)
-            {
-                if (knownStates.Add(state))
-                {
-                    orderedStates.Add(state);
-                }
-            }
+            orderedStates.AddRange(observedExitStates.Where(state => knownStates.Add(state)));
 
             return orderedStates;
         }
 
-        protected IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
+        protected static IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
             IEnumerable<WorkItem> completedItemsInWindow,
             IEnumerable<string> doingStatesInWorkflowOrder,
             IReadOnlyList<int> requestedPercentiles)

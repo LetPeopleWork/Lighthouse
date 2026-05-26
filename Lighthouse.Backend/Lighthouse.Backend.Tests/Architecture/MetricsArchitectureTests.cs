@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var computeHelper = typeof(BaseMetricsService).GetMethod(
                 "ComputeAgeInStatePercentiles",
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
             using (Assert.EnterMultipleScope())
             {
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        private static IEnumerable<string> PublicPerStateAggregationMembers()
+        private static List<string> PublicPerStateAggregationMembers()
         {
             return PublicMembersDeclaredOn(typeof(BaseMetricsService))
                 .Where(member => member.Name.Contains("PerStateAggregation", StringComparison.Ordinal)
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
         }
 
-        private static IEnumerable<MemberInfo> PublicMembersDeclaredOn(Type type)
+        private static MemberInfo[] PublicMembersDeclaredOn(Type type)
         {
             return type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
         }

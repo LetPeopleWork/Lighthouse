@@ -35,9 +35,13 @@ test("flow coach toggles per-state pace bands on and off on the team Work Item A
 	await expect(agingWidget.Widget).toBeVisible();
 
 	const agingChart = new WorkItemAgingChart(page, AGING_CHART_WIDGET_ID);
+
+	await expect
+		.poll(() => agingChart.countCycleTimePercentileChips())
+		.toBeGreaterThan(0);
 	const cycleTimeChipsBefore = await agingChart.countCycleTimePercentileChips();
 
-	expect(await agingChart.countPaceBands()).toBe(0);
+	await expect.poll(() => agingChart.countPaceBands()).toBe(0);
 
 	await agingChart.togglePacePercentiles();
 	await expect.poll(() => agingChart.countPaceBands()).toBeGreaterThan(0);
@@ -45,9 +49,9 @@ test("flow coach toggles per-state pace bands on and off on the team Work Item A
 	await agingChart.togglePacePercentiles();
 	await expect.poll(() => agingChart.countPaceBands()).toBe(0);
 
-	expect(await agingChart.countCycleTimePercentileChips()).toBe(
-		cycleTimeChipsBefore,
-	);
+	await expect
+		.poll(() => agingChart.countCycleTimePercentileChips())
+		.toBe(cycleTimeChipsBefore);
 });
 
 test("flow coach toggles per-state pace bands on the portfolio Work Item Aging chart", async ({
@@ -72,7 +76,7 @@ test("flow coach toggles per-state pace bands on the portfolio Work Item Aging c
 
 	const agingChart = new WorkItemAgingChart(page, AGING_CHART_WIDGET_ID);
 
-	expect(await agingChart.countPaceBands()).toBe(0);
+	await expect.poll(() => agingChart.countPaceBands()).toBe(0);
 
 	await agingChart.togglePacePercentiles();
 	await expect.poll(() => agingChart.countPaceBands()).toBeGreaterThan(0);
