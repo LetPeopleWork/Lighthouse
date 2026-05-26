@@ -33,13 +33,28 @@ const matchesQuery = (
 	);
 };
 
-const childIdsOf = (
-	parent: ICumulativeStateTimeCandidateRow,
+interface ParentExpandGroup {
+	parentReferenceId: string;
+	childIds: number[];
+}
+
+const groupByParentReference = (
 	candidates: ICumulativeStateTimeCandidateRow[],
-): number[] =>
-	candidates
-		.filter((candidate) => candidate.parentReferenceId === parent.referenceId)
-		.map((candidate) => candidate.workItemId);
+): ParentExpandGroup[] => {
+	const grouped = new Map<string, number[]>();
+	for (const candidate of candidates) {
+		const parentReferenceId = candidate.parentReferenceId;
+		if (parentReferenceId === null) {
+			continue;
+		}
+		const existing = grouped.get(parentReferenceId) ?? [];
+		grouped.set(parentReferenceId, [...existing, candidate.workItemId]);
+	}
+	return Array.from(grouped, ([parentReferenceId, childIds]) => ({
+		parentReferenceId,
+		childIds,
+	}));
+};
 
 const CumulativeStateTimeItemPicker: React.FC<
 	CumulativeStateTimeItemPickerProps
@@ -68,13 +83,7 @@ const CumulativeStateTimeItemPicker: React.FC<
 	);
 
 	const expandableParents = useMemo(
-		() =>
-			candidates
-				.map((candidate) => ({
-					parent: candidate,
-					childIds: childIdsOf(candidate, candidates),
-				}))
-				.filter((entry) => entry.childIds.length > 0),
+		() => groupByParentReference(candidates),
 		[candidates],
 	);
 
@@ -161,12 +170,12 @@ const CumulativeStateTimeItemPicker: React.FC<
 			/>
 			{expandableParents.map((entry) => (
 				<Button
-					key={entry.parent.workItemId}
+					key={entry.parentReferenceId}
 					size="small"
 					variant="text"
 					onClick={() => handleExpand(entry.childIds)}
 				>
-					{`Select all ${entry.childIds.length} children of ${entry.parent.referenceId}`}
+					{`Select all ${entry.childIds.length} children of ${entry.parentReferenceId}`}
 				</Button>
 			))}
 		</Stack>

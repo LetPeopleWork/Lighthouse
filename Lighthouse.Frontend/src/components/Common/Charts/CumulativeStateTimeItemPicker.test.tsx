@@ -139,37 +139,32 @@ describe("CumulativeStateTimeItemPicker", () => {
 		expect(onSelectionChange).toHaveBeenCalledWith([2]);
 	});
 
-	it("offers a parent-expand action that adds every in-window child in one selection", async () => {
+	it("offers a parent-expand action keyed off a feature parent that is not itself a candidate", async () => {
 		const user = userEvent.setup();
 		const onSelectionChange = vi.fn();
-		const parentWithChildren: ICumulativeStateTimeCandidateRow[] = [
-			getMockCandidate({
-				workItemId: 10,
-				referenceId: "EPIC-1",
-				title: "Big epic",
-			}),
+		const featureParentedChildren: ICumulativeStateTimeCandidateRow[] = [
 			getMockCandidate({
 				workItemId: 11,
-				referenceId: "CHILD-1",
+				referenceId: "TZ-101",
 				title: "First child",
-				parentReferenceId: "EPIC-1",
+				parentReferenceId: "AP-001",
 			}),
 			getMockCandidate({
 				workItemId: 12,
-				referenceId: "CHILD-2",
+				referenceId: "TZ-102",
 				title: "Second child",
-				parentReferenceId: "EPIC-1",
+				parentReferenceId: "AP-001",
 			}),
 			getMockCandidate({
 				workItemId: 99,
-				referenceId: "ORPHAN-9",
-				title: "Unrelated",
-				parentReferenceId: "EPIC-OUT-OF-WINDOW",
+				referenceId: "TZ-200",
+				title: "Different feature",
+				parentReferenceId: "AP-999",
 			}),
 		];
 		render(
 			<CumulativeStateTimeItemPicker
-				candidates={parentWithChildren}
+				candidates={featureParentedChildren}
 				selectedItemIds={[]}
 				onSelectionChange={onSelectionChange}
 				onOpen={vi.fn()}
@@ -178,7 +173,7 @@ describe("CumulativeStateTimeItemPicker", () => {
 
 		await openPicker(user);
 		const expandAction = screen.getByRole("button", {
-			name: /select all 2 children/i,
+			name: /select all 2 children of AP-001/i,
 		});
 		await user.click(expandAction);
 
