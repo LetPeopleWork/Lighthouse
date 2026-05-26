@@ -361,7 +361,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		endDate: Date,
 		itemIds?: number[],
 	): Promise<ICumulativeStateTimeItemsResponse> {
-		return this.fetchCumulativeStateTimeItems(
+		return this.getCumulativeStateTimeItemsForTeam(
 			id,
 			state,
 			startDate,
@@ -404,7 +404,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		startDate: Date,
 		endDate: Date,
 	): Promise<ICumulativeStateTimeCandidatesResponse> {
-		return this.fetchCumulativeStateTimeCandidates(id, startDate, endDate);
+		return this.getCumulativeStateTimeCandidatesForTeam(id, startDate, endDate);
 	}
 
 	private fetchCumulativeStateTimeCandidates(

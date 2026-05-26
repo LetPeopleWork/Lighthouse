@@ -1066,20 +1066,13 @@ export const BaseMetricsView = <
 
 	const fetchCumulativeStateTimeForScope = useCallback(
 		(itemIds?: number[]) =>
-			ownerType === "team"
-				? metricsService.getCumulativeStateTimeForTeam(
-						entity.id,
-						startDate,
-						endDate,
-						itemIds,
-					)
-				: metricsService.getCumulativeStateTimeForTeam(
-						entity.id,
-						startDate,
-						endDate,
-						itemIds,
-					),
-		[ownerType, metricsService, entity.id, startDate, endDate],
+			metricsService.getCumulativeStateTimeForTeam(
+				entity.id,
+				startDate,
+				endDate,
+				itemIds,
+			),
+		[metricsService, entity.id, startDate, endDate],
 	);
 
 	const handleCumulativeStateTimePickerOpen = useCallback(() => {

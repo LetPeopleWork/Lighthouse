@@ -733,7 +733,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return total;
         }
 
-        private static IReadOnlyList<ItemRowView> ItemRows(string itemsBody)
+        private static List<ItemRowView> ItemRows(string itemsBody)
         {
             using var document = JsonDocument.Parse(itemsBody);
             var rows = new List<ItemRowView>();
