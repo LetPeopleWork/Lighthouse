@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForPortfolio(Portfolio portfolio, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);
 
+        CumulativeStateTimeCandidatesDto GetCumulativeStateTimeCandidatesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
         IEnumerable<Feature> GetCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetSizePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);

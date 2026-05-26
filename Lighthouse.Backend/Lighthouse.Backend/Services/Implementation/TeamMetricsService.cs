@@ -339,9 +339,9 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cumulative State Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(team, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}", () =>
             {
-                var candidateItems = ResolveCumulativeStateTimeCandidates(team, startDate, endDate);
+                var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(team, startDate, endDate), itemIds);
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
 
                 var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
@@ -353,14 +353,25 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cumulative State Time Items for Team {TeamName} in state {State} between {StartDate} and {EndDate}", team.Name, state, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(team, $"CumulativeStateTime_Items_{state}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"CumulativeStateTime_Items_{state}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}", () =>
             {
-                var candidateItems = ResolveCumulativeStateTimeCandidates(team, startDate, endDate);
+                var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(team, startDate, endDate), itemIds);
                 var items = ComputeCumulativeStateTimeItems(candidateItems, state, endDate)
                     .OrderByDescending(item => item.DaysContributed)
                     .ToList();
 
                 return new CumulativeStateTimeItemsDto(state, items);
+            }, logger);
+        }
+
+        public CumulativeStateTimeCandidatesDto GetCumulativeStateTimeCandidatesForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cumulative State Time Candidates for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"CumulativeStateTime_Candidates_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(team, startDate, endDate);
+                return new CumulativeStateTimeCandidatesDto(ProjectCumulativeStateTimeCandidates(candidateItems));
             }, logger);
         }
 

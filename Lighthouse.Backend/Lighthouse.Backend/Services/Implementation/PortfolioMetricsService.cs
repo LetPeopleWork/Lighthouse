@@ -279,9 +279,9 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cumulative State Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}", () =>
             {
-                var candidateItems = ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate);
+                var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate), itemIds);
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
 
                 var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
@@ -293,14 +293,25 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cumulative State Time Items for Portfolio {PortfolioName} in state {State} between {StartDate} and {EndDate}", portfolio.Name, state, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_Items_{state}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_Items_{state}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}", () =>
             {
-                var candidateItems = ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate);
+                var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate), itemIds);
                 var items = ComputeCumulativeStateTimeItems(candidateItems, state, endDate)
                     .OrderByDescending(item => item.DaysContributed)
                     .ToList();
 
                 return new CumulativeStateTimeItemsDto(state, items);
+            }, logger);
+        }
+
+        public CumulativeStateTimeCandidatesDto GetCumulativeStateTimeCandidatesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cumulative State Time Candidates for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_Candidates_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate);
+                return new CumulativeStateTimeCandidatesDto(ProjectCumulativeStateTimeCandidates(candidateItems));
             }, logger);
         }
 

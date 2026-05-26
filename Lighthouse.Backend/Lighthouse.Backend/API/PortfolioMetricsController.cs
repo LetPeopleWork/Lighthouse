@@ -155,6 +155,19 @@ namespace Lighthouse.Backend.API
                 portfolioMetricsService.GetCumulativeStateTimeItemsForPortfolio(portfolio, state, startDate, endDate, itemIds));
         }
 
+        [HttpGet("cumulativeStateTime/candidates")]
+        public ActionResult<CumulativeStateTimeCandidatesDto> GetCumulativeStateTimeCandidates(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("cumulativeStateTime/candidates", portfolioId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetCumulativeStateTimeCandidatesForPortfolio(portfolio, startDate, endDate));
+        }
+
         [HttpGet("cycleTimeData")]
         public ActionResult<IEnumerable<FeatureDto>> GetCycleTimeData(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

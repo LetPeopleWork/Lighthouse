@@ -331,7 +331,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-05 picker candidates endpoint)")]
         public async Task GetCumulativeStateTimeCandidates_Window_ReturnsExactlyTheIncludedItemsAndExcludesOutOfWindowItem()
         {
             // D17: candidates are exactly the D12-included items for the window. An item outside
@@ -355,7 +354,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-05 picker candidates endpoint)")]
         public async Task GetCumulativeStateTimeCandidates_Window_ExposesParentReferenceIdForParentExpand()
         {
             var teamId = SeedTeamWithChildItemsUnderOneParent(out var parentReferenceId);
@@ -373,7 +371,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-05 itemIds narrowing)")]
         public async Task GetCumulativeStateTime_WithItemIdsSubset_SumsOverOnlySelectedItemsWithFullDurations()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
@@ -395,7 +392,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-05 itemIds narrowing)")]
         public async Task GetCumulativeStateTime_RagSourceUnaffectedByItemIds_SystemicTotalsIdenticalWithAndWithoutSelection()
         {
             // D18: RAG reflects the whole in-scope set. The systemic (no-itemIds) response is the RAG

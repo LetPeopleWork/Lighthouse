@@ -60,6 +60,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForTeam(Team team, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);
 
+        CumulativeStateTimeCandidatesDto GetCumulativeStateTimeCandidatesForTeam(Team team, DateTime startDate, DateTime endDate);
+
         EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate);
 
         int GetTotalWorkItemAge(Team team, DateTime endDate);

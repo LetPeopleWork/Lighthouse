@@ -148,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — DELIVER step 02-03 (portfolio candidates endpoint)")]
         public async Task GetCumulativeStateTimeCandidates_PortfolioWindow_ReturnsIncludedFeaturesWithParentReferences()
         {
             var portfolioId = SeedPortfolioWithKnownVisitsAndInFlightFeatures();

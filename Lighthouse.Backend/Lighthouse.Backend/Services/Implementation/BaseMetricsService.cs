@@ -155,6 +155,39 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
+        protected static IReadOnlyList<CumulativeStateTimeCandidateRowDto> ProjectCumulativeStateTimeCandidates(IEnumerable<WorkItem> includedItems)
+        {
+            return includedItems
+                .Select(item => new CumulativeStateTimeCandidateRowDto(
+                    item.Id,
+                    item.ReferenceId,
+                    item.Name,
+                    item.Type,
+                    string.IsNullOrEmpty(item.ParentReferenceId) ? null : item.ParentReferenceId))
+                .ToList();
+        }
+
+        protected static List<WorkItem> NarrowToSelectedItems(List<WorkItem> includedItems, IReadOnlyList<int>? itemIds)
+        {
+            if (itemIds is not { Count: > 0 })
+            {
+                return includedItems;
+            }
+
+            var selection = itemIds.ToHashSet();
+            return includedItems.Where(item => selection.Contains(item.Id)).ToList();
+        }
+
+        protected static string SelectionCacheSuffix(IReadOnlyList<int>? itemIds)
+        {
+            if (itemIds is not { Count: > 0 })
+            {
+                return string.Empty;
+            }
+
+            return $"_Selection_{string.Join("-", itemIds.OrderBy(id => id))}";
+        }
+
         private static Dictionary<string, List<(int ItemId, double Days)>> GroupCompletedVisitDurationsByState(IEnumerable<WorkItem> items)
         {
             var byState = new Dictionary<string, List<(int ItemId, double Days)>>();

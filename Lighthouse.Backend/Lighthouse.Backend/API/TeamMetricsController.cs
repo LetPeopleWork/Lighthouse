@@ -172,6 +172,19 @@ namespace Lighthouse.Backend.API
                 teamMetricsService.GetCumulativeStateTimeItemsForTeam(team, state, startDate, endDate, itemIds));
         }
 
+        [HttpGet("cumulativeStateTime/candidates")]
+        public ActionResult<CumulativeStateTimeCandidatesDto> GetCumulativeStateTimeCandidates(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("cumulativeStateTime/candidates", teamId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetCumulativeStateTimeCandidatesForTeam(team, startDate, endDate));
+        }
+
         [HttpGet("cycleTimeData")]
         public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
