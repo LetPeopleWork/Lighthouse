@@ -14,11 +14,10 @@ describe("PercentileLegend", () => {
 		value,
 	});
 
-	const renderWithTheme = (component: React.ReactElement) => {
+	const withTheme = (component: React.ReactElement) => {
 		const theme = createTheme({
 			palette: { mode: "light" },
 		});
-		// Add custom theme extensions
 		const extendedTheme = {
 			...theme,
 			opacity: {
@@ -28,10 +27,11 @@ describe("PercentileLegend", () => {
 				opaque: 1,
 			},
 		};
-		return render(
-			<ThemeProvider theme={extendedTheme}>{component}</ThemeProvider>,
-		);
+		return <ThemeProvider theme={extendedTheme}>{component}</ThemeProvider>;
 	};
+
+	const renderWithTheme = (component: React.ReactElement) =>
+		render(withTheme(component));
 
 	describe("Percentile Chips", () => {
 		it("should render a chip for each percentile", () => {
@@ -277,6 +277,112 @@ describe("PercentileLegend", () => {
 			expect(screen.getByText("50%")).toBeInTheDocument();
 			expect(screen.getByText("85%")).toBeInTheDocument();
 			expect(screen.getByText("SLE")).toBeInTheDocument();
+		});
+	});
+
+	describe("Pace Percentiles Chip", () => {
+		it("should render an off-by-default Pace percentiles chip when band data is available", () => {
+			renderWithTheme(
+				<PercentileLegend
+					percentiles={[]}
+					visiblePercentiles={{}}
+					onTogglePercentile={vi.fn()}
+					paceBandsAvailable={true}
+					showPaceBands={false}
+					onTogglePaceBands={vi.fn()}
+				/>,
+			);
+
+			const chip = screen
+				.getByText("Pace percentiles")
+				.closest(".MuiChip-root");
+			expect(chip).toBeInTheDocument();
+			expect(chip).toHaveClass("MuiChip-outlined");
+		});
+
+		it("should not render the Pace percentiles chip when no band data is available", () => {
+			renderWithTheme(
+				<PercentileLegend
+					percentiles={[]}
+					visiblePercentiles={{}}
+					onTogglePercentile={vi.fn()}
+					paceBandsAvailable={false}
+					showPaceBands={false}
+					onTogglePaceBands={vi.fn()}
+				/>,
+			);
+
+			expect(screen.queryByText("Pace percentiles")).not.toBeInTheDocument();
+		});
+
+		it("should toggle the overlay on then off across successive clicks", async () => {
+			const user = userEvent.setup();
+			const onTogglePaceBands = vi.fn();
+
+			const { rerender } = renderWithTheme(
+				<PercentileLegend
+					percentiles={[]}
+					visiblePercentiles={{}}
+					onTogglePercentile={vi.fn()}
+					paceBandsAvailable={true}
+					showPaceBands={false}
+					onTogglePaceBands={onTogglePaceBands}
+				/>,
+			);
+
+			await user.click(screen.getByText("Pace percentiles"));
+			expect(onTogglePaceBands).toHaveBeenCalledTimes(1);
+
+			rerender(
+				withTheme(
+					<PercentileLegend
+						percentiles={[]}
+						visiblePercentiles={{}}
+						onTogglePercentile={vi.fn()}
+						paceBandsAvailable={true}
+						showPaceBands={true}
+						onTogglePaceBands={onTogglePaceBands}
+					/>,
+				),
+			);
+			expect(
+				screen.getByText("Pace percentiles").closest(".MuiChip-root"),
+			).toHaveClass("MuiChip-filled");
+
+			await user.click(screen.getByText("Pace percentiles"));
+			expect(onTogglePaceBands).toHaveBeenCalledTimes(2);
+		});
+
+		it("should leave the percentile and SLE chips unaffected by the Pace percentiles chip", async () => {
+			const user = userEvent.setup();
+			const onTogglePercentile = vi.fn();
+			const onToggleSle = vi.fn();
+			const onTogglePaceBands = vi.fn();
+			const percentiles = [createPercentile(50, 10), createPercentile(85, 20)];
+			const sle = createPercentile(90, 14);
+
+			renderWithTheme(
+				<PercentileLegend
+					percentiles={percentiles}
+					visiblePercentiles={{ 50: true, 85: false }}
+					onTogglePercentile={onTogglePercentile}
+					serviceLevelExpectation={sle}
+					onToggleSle={onToggleSle}
+					paceBandsAvailable={true}
+					showPaceBands={false}
+					onTogglePaceBands={onTogglePaceBands}
+				/>,
+			);
+
+			expect(screen.getByText("50%")).toBeInTheDocument();
+			expect(screen.getByText("85%")).toBeInTheDocument();
+			expect(screen.getByText("SLE")).toBeInTheDocument();
+
+			await user.click(screen.getByText("Pace percentiles"));
+
+			expect(onTogglePaceBands).toHaveBeenCalledTimes(1);
+			expect(onTogglePercentile).not.toHaveBeenCalled();
+			expect(onToggleSle).not.toHaveBeenCalled();
 		});
 	});
 });

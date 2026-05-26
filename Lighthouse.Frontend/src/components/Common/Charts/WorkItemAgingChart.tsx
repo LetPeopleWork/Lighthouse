@@ -287,7 +287,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	>([]);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
-	const [showPaceBands] = useState<boolean>(false);
+	const [showPaceBands, setShowPaceBands] = useState<boolean>(false);
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
@@ -384,6 +384,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							serviceLevelExpectationLabel={serviceLevelExpectationTerm}
 							sleVisible={sleVisible}
 							onToggleSle={toggleSleVisibility}
+							paceBandsAvailable={perStatePercentileValues.length > 0}
+							showPaceBands={showPaceBands}
+							onTogglePaceBands={() => setShowPaceBands((v) => !v)}
 						/>
 					</Stack>
 					<Stack
