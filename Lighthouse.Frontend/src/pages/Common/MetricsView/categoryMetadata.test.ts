@@ -212,6 +212,7 @@ describe("categoryMetadata", () => {
 				"arrivals",
 				"stacked",
 				"loadBalanceMatrix",
+				"stateTimeCumulative",
 			]);
 		});
 
@@ -299,6 +300,7 @@ describe("categoryMetadata", () => {
 				"featureSize",
 				"aging",
 				"estimationVsCycleTime",
+				"stateTimeCumulative",
 			];
 			for (const widgetKey of noTrendWidgets) {
 				expect(getTrendPolicy(widgetKey), `${widgetKey} should be none`).toBe(

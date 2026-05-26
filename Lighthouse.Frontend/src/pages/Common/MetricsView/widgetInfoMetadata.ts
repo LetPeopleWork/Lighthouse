@@ -328,6 +328,16 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "At least one active feature exceeds the 85th percentile size. Look to split or close it as soon as possible.",
 		},
 	},
+	stateTimeCumulative: {
+		description:
+			"How much total time work spends in each workflow state, split into time from items that have since completed and time still accumulating on ongoing items. Every item that contributed time within the selected range is included — items completed in the range count their full time in each state, and items still in progress count the time accumulated so far. The chart reveals where work waits and where bottlenecks form.",
+		learnMoreUrl: `${DOCS_BASE}#cumulative-time-per-state`,
+		statusGuidance: {
+			sustain: "No single state holds 40% or more of the total time.",
+			observe: "One state holds between 40% and 60% of the total time.",
+			act: "One state holds more than 60% of the total time, or no time is in scope. Investigate the bottleneck or widen the filter.",
+		},
+	},
 };
 
 export function getWidgetInfo(widgetKey: string): WidgetInfoEntry | undefined {

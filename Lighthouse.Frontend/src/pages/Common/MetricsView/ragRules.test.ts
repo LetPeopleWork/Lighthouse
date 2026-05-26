@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	computeArrivalsRunChartRag,
 	computeBlockedOverviewRag,
+	computeCumulativeStateTimeRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
 	computeEstimationVsCycleTimeRag,
@@ -1097,6 +1098,50 @@ describe("ragRules", () => {
 			const values = [0, 0, 0, 0, 0, 0, 0];
 			const result = computeArrivalsRunChartRag(values, [], 20, 5, 5, terms);
 			expect(result.ragStatus).toBe("red");
+		});
+	});
+
+	describe("computeCumulativeStateTimeRag", () => {
+		it.each([
+			{
+				scenario: "no state reaches 40% of the total",
+				dominant: 30,
+				expected: "green",
+			},
+			{
+				scenario: "one state holds exactly 40%",
+				dominant: 40,
+				expected: "amber",
+			},
+			{ scenario: "one state holds 55%", dominant: 55, expected: "amber" },
+			{
+				scenario: "one state holds exactly 60%",
+				dominant: 60,
+				expected: "amber",
+			},
+			{
+				scenario: "one state holds more than 60%",
+				dominant: 80,
+				expected: "red",
+			},
+		])("returns $expected when $scenario", ({ dominant, expected }) => {
+			const remainder = 100 - dominant;
+			const states = [
+				{ state: "Doing", totalDays: dominant },
+				{ state: "Review", totalDays: remainder / 2 },
+				{ state: "Test", totalDays: remainder / 2 },
+			];
+
+			const result = computeCumulativeStateTimeRag(states, terms);
+
+			expect(result.ragStatus).toBe(expected);
+		});
+
+		it("returns red with a filter-adjustment tip when there are no states", () => {
+			const result = computeCumulativeStateTimeRag([], terms);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText.toLowerCase()).toContain("filter");
 		});
 	});
 });

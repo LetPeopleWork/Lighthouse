@@ -2,6 +2,7 @@ import { Grid } from "@mui/material";
 import { type ReactNode, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
+import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import EstimationVsCycleTimeChart from "../../../components/Common/Charts/EstimationVsCycleTimeChart";
@@ -24,6 +25,7 @@ import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import type { ICumulativeStateTimeResponse } from "../../../models/Metrics/CumulativeStateTime";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type {
@@ -57,6 +59,7 @@ import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidg
 import {
 	computeArrivalsRunChartRag,
 	computeBlockedOverviewRag,
+	computeCumulativeStateTimeRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
 	computeEstimationVsCycleTimeRag,
@@ -220,6 +223,7 @@ type RagInputs = {
 	readonly loadBalanceBaselineAvailable: boolean;
 	readonly loadBalanceAverageWip: number | null;
 	readonly loadBalanceAverageTotalWorkItemAge: number | null;
+	readonly cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	readonly terms: RagTerms;
 };
 
@@ -368,6 +372,10 @@ function buildWidgetFooters(
 			inputs.totalWorkItemAge ?? 0,
 			inputs.loadBalanceAverageWip,
 			inputs.loadBalanceAverageTotalWorkItemAge,
+			inputs.terms,
+		),
+		stateTimeCumulative: computeCumulativeStateTimeRag(
+			inputs.cumulativeStateTime?.states ?? [],
 			inputs.terms,
 		),
 	};
@@ -735,6 +743,7 @@ function buildWidgetNodes(ctx: {
 	hasForecastFilter: boolean;
 	forecastFilterConditions: readonly EvaluatorCondition[];
 	stalenessThresholdDays: number | undefined;
+	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
@@ -897,6 +906,9 @@ function buildWidgetNodes(ctx: {
 		featureSizePercentiles: ctx.featureSizePercentilesInfo ? (
 			<FeatureSizePercentilesWidget data={ctx.featureSizePercentilesInfo} />
 		) : null,
+		stateTimeCumulative: ctx.cumulativeStateTime ? (
+			<CumulativeStateTimeChart data={ctx.cumulativeStateTime} />
+		) : null,
 	};
 
 	Object.assign(nodes, buildPbcNodes(ctx));
@@ -983,6 +995,7 @@ export const BaseMetricsView = <
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
+		cumulativeStateTime,
 		refetchThroughputPbc,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
@@ -1105,6 +1118,7 @@ export const BaseMetricsView = <
 		hasForecastFilter,
 		forecastFilterConditions,
 		stalenessThresholdDays,
+		cumulativeStateTime,
 		refetchThroughputPbc,
 	});
 
@@ -1195,6 +1209,7 @@ export const BaseMetricsView = <
 		loadBalanceBaselineAvailable: loadBalanceData.baselineAvailable,
 		loadBalanceAverageWip: loadBalanceData.averageWip,
 		loadBalanceAverageTotalWorkItemAge: loadBalanceData.averageTotalWorkItemAge,
+		cumulativeStateTime,
 	});
 
 	const widgetViewData = buildViewData({

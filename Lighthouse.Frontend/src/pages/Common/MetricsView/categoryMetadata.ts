@@ -76,6 +76,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "arrivals", size: "large" },
 		{ widgetKey: "stacked", size: "large" },
 		{ widgetKey: "loadBalanceMatrix", size: "large" },
+		{ widgetKey: "stateTimeCumulative", size: "large" },
 	],
 	predictability: [
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
@@ -126,6 +127,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	featureSizePbc: "none",
 	stacked: "none",
 	estimationVsCycleTime: "none",
+	stateTimeCumulative: "none",
 };
 
 const DEFAULT_CATEGORY: CategoryKey = "flow-overview";

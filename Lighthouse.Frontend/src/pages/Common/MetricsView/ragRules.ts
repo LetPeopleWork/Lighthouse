@@ -848,3 +848,45 @@ export function computePbcRag(data: PbcInput): RagResult {
 			"Process behaviour is within expected limits. No signals detected.",
 	};
 }
+
+const CUMULATIVE_STATE_AMBER_SHARE = 0.4;
+const CUMULATIVE_STATE_RED_SHARE = 0.6;
+
+export function computeCumulativeStateTimeRag(
+	states: ReadonlyArray<{ state: string; totalDays: number }>,
+	terms: RagTerms,
+): RagResult {
+	const total = states.reduce((sum, state) => sum + state.totalDays, 0);
+
+	if (states.length === 0 || total <= 0) {
+		return {
+			ragStatus: "red",
+			tipText: `No ${terms.workItems} contribute time across states. Adjust the date range or filter to bring data into scope.`,
+		};
+	}
+
+	const dominant = states.reduce((max, state) =>
+		state.totalDays > max.totalDays ? state : max,
+	);
+	const dominantShare = dominant.totalDays / total;
+	const dominantPercent = (dominantShare * 100).toFixed(1);
+
+	if (dominantShare > CUMULATIVE_STATE_RED_SHARE) {
+		return {
+			ragStatus: "red",
+			tipText: `${dominant.state} holds ${dominantPercent}% of total time across states (above 60%). Investigate this bottleneck.`,
+		};
+	}
+
+	if (dominantShare >= CUMULATIVE_STATE_AMBER_SHARE) {
+		return {
+			ragStatus: "amber",
+			tipText: `${dominant.state} holds ${dominantPercent}% of total time across states (40–60%). Watch this state for a forming bottleneck.`,
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: `Time is balanced across states; no state holds 40% or more of the total.`,
+	};
+}
