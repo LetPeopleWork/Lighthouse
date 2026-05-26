@@ -349,6 +349,21 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForTeam(Team team, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
+        {
+            logger.LogDebug("Getting Cumulative State Time Items for Team {TeamName} in state {State} between {StartDate} and {EndDate}", team.Name, state, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"CumulativeStateTime_Items_{state}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(team, startDate, endDate);
+                var items = ComputeCumulativeStateTimeItems(candidateItems, state, endDate)
+                    .OrderByDescending(item => item.DaysContributed)
+                    .ToList();
+
+                return new CumulativeStateTimeItemsDto(state, items);
+            }, logger);
+        }
+
         private List<WorkItem> ResolveCumulativeStateTimeCandidates(Team team, DateTime startDate, DateTime endDate)
         {
             var teamItems = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();

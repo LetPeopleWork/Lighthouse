@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string Done = "Done";
 
         private const double DaysTolerance = 0.1;
+        private const int PortfolioWindowDisjointShiftDays = 10000;
 
         private static readonly string[] WorkflowDoingStates = [Analyzing, Building, Validating];
 
@@ -35,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [SetUp]
         public void Init()
         {
-            var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset) * 400;
+            var offsetDays = (System.Threading.Interlocked.Increment(ref testDateOffset) * 400) + PortfolioWindowDisjointShiftDays;
             windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
             windowStart = windowEnd.AddDays(-180);
 
@@ -115,7 +116,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — DELIVER step 02-02 (portfolio items drill-down endpoint)")]
         public async Task GetCumulativeStateTimeItems_PortfolioPerItemDaysContributed_SumsToBarTotalForThatState()
         {
             var portfolioId = SeedPortfolioWithKnownVisitsAndInFlightFeatures();

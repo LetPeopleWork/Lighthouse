@@ -263,7 +263,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-04 drill-down items endpoint)")]
         public async Task GetCumulativeStateTimeItems_KnownState_ReturnsPerItemRowsWithReferenceId()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
@@ -290,7 +289,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-04 drill-down items endpoint)")]
         public async Task GetCumulativeStateTimeItems_PerItemDaysContributed_SumsToBarTotalForThatState()
         {
             // US-04 AC: Σ daysContributed across drill-down rows == the bar's totalDays within ±0.1d.
@@ -316,7 +314,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending — later slice (US-04 drill-down items endpoint)")]
         public async Task GetCumulativeStateTimeItems_MissingState_ReturnsBadRequest()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();

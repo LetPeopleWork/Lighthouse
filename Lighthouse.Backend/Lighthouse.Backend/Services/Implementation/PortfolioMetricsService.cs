@@ -289,6 +289,21 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForPortfolio(Portfolio portfolio, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
+        {
+            logger.LogDebug("Getting Cumulative State Time Items for Portfolio {PortfolioName} in state {State} between {StartDate} and {EndDate}", portfolio.Name, state, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_Items_{state}_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate);
+                var items = ComputeCumulativeStateTimeItems(candidateItems, state, endDate)
+                    .OrderByDescending(item => item.DaysContributed)
+                    .ToList();
+
+                return new CumulativeStateTimeItemsDto(state, items);
+            }, logger);
+        }
+
         private List<WorkItem> ResolveCumulativeStateTimeCandidates(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             var portfolioFeatures = featureRepository.GetAllByPredicate(f => f.Portfolios.Any(p => p.Id == portfolio.Id)).ToList();

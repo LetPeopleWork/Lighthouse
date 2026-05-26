@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
+        private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
 
         [HttpGet("throughput")]
         public ActionResult<RunChartData> GetThroughput(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
@@ -134,6 +135,24 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cumulativeStateTime", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 portfolioMetricsService.GetCumulativeStateTimeForPortfolio(portfolio, startDate, endDate, itemIds));
+        }
+
+        [HttpGet("cumulativeStateTime/items")]
+        public ActionResult<CumulativeStateTimeItemsDto> GetCumulativeStateTimeItems(int portfolioId, [FromQuery] string? state, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null)
+        {
+            if (string.IsNullOrWhiteSpace(state))
+            {
+                return BadRequest(StateMustNotBeEmptyErrorMessage);
+            }
+
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("cumulativeStateTime/items", portfolioId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetCumulativeStateTimeItemsForPortfolio(portfolio, state, startDate, endDate, itemIds));
         }
 
         [HttpGet("cycleTimeData")]

@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API
     public class TeamMetricsController : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
+        private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
@@ -151,6 +152,24 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cumulativeStateTime", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 teamMetricsService.GetCumulativeStateTimeForTeam(team, startDate, endDate, itemIds));
+        }
+
+        [HttpGet("cumulativeStateTime/items")]
+        public ActionResult<CumulativeStateTimeItemsDto> GetCumulativeStateTimeItems(int teamId, [FromQuery] string? state, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null)
+        {
+            if (string.IsNullOrWhiteSpace(state))
+            {
+                return BadRequest(StateMustNotBeEmptyErrorMessage);
+            }
+
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("cumulativeStateTime/items", teamId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetCumulativeStateTimeItemsForTeam(team, state, startDate, endDate, itemIds));
         }
 
         [HttpGet("cycleTimeData")]
