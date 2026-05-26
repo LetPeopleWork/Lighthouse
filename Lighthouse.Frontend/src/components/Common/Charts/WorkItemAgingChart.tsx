@@ -132,6 +132,9 @@ export const computePaceBandRects = ({
 		];
 
 		let lowerValue = axisMin;
+		const topPosition = upperBoundaries.length - 1;
+		const reddest =
+			PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1];
 		return upperBoundaries.flatMap((boundary, position) => {
 			const lowerPixel = yScale(lowerValue);
 			const upperPixel = yScale(boundary.upperValue);
@@ -147,7 +150,10 @@ export const computePaceBandRects = ({
 					y: Math.min(lowerPixel, upperPixel),
 					width: bandWidth,
 					height,
-					fill: paceBandColorForPosition(position),
+					fill:
+						position === topPosition
+							? reddest
+							: paceBandColorForPosition(position),
 				},
 			];
 		});

@@ -1019,6 +1019,30 @@ describe("WorkItemAgingChart component", () => {
 			expect(topBand.fill).toBe(errorColor);
 		});
 
+		it("paints the top band red even when fewer than four percentiles are returned", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 95, value: 8 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
+			});
+
+			const topBand = [...rects].sort((a, b) => a.y - b.y)[rects.length - 1];
+
+			expect(topBand.y + topBand.height).toBe(30);
+			expect(topBand.fill).toBe(errorColor);
+		});
+
 		it("leaves states before the first populated one bare while carrying it forward to the right", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
@@ -1259,7 +1283,13 @@ describe("WorkItemAgingChart component", () => {
 			expect(bandsFor(1)).toEqual([
 				[1, 3, PACE_BAND_COLORS_LOW_TO_HIGH[0]],
 				[3, 5, PACE_BAND_COLORS_LOW_TO_HIGH[1]],
-				[5, 30, PACE_BAND_COLORS_LOW_TO_HIGH[2]],
+				[
+					5,
+					30,
+					PACE_BAND_COLORS_LOW_TO_HIGH[
+						PACE_BAND_COLORS_LOW_TO_HIGH.length - 1
+					],
+				],
 			]);
 		});
 
