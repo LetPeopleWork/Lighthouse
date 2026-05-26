@@ -10,10 +10,13 @@ namespace Lighthouse.Backend.Services.Implementation
         ILogger<PortfolioMetricsService> logger,
         IRepository<Feature> featureRepository,
         IAppSettingService appSettingService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IFeatureStateTransitionRepository featureStateTransitionRepository)
         : BaseMetricsService(appSettingService.GetFeatureRefreshSettings().Interval, serviceProvider),
             IPortfolioMetricsService
     {
+        private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
+
         public RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Throughput for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
@@ -256,6 +259,75 @@ namespace Lighthouse.Backend.Services.Implementation
                     new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
                 ];
             }, logger);
+        }
+
+        public IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Age In State Percentiles for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"AgeInStatePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var completedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
+                var completedItemsWithTransitions = AssociateSyncedTransitions(completedFeatures);
+                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(portfolio, completedItemsWithTransitions);
+
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, DefaultPacePercentiles).ToList();
+            }, logger);
+        }
+
+        private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)
+        {
+            var completedFeatureIds = completedFeatures.Select(feature => feature.Id).ToHashSet();
+            var transitionsByFeature = featureStateTransitionRepository
+                .GetAllByPredicate(transition => completedFeatureIds.Contains(transition.FeatureId))
+                .ToList()
+                .GroupBy(transition => transition.FeatureId)
+                .ToDictionary(group => group.Key, group => group
+                    .OrderBy(transition => transition.TransitionedAt)
+                    .Select(ToWorkItemStateTransition)
+                    .ToList());
+
+            return completedFeatures
+                .Select(feature => new WorkItem
+                {
+                    Id = feature.Id,
+                    StartedDate = feature.StartedDate,
+                    SyncedTransitions = transitionsByFeature.TryGetValue(feature.Id, out var transitions) ? transitions : [],
+                })
+                .ToList();
+        }
+
+        private static WorkItemStateTransition ToWorkItemStateTransition(FeatureStateTransition transition)
+        {
+            return new WorkItemStateTransition
+            {
+                WorkItemId = transition.FeatureId,
+                FromState = transition.FromState,
+                ToState = transition.ToState,
+                TransitionedAt = transition.TransitionedAt,
+            };
+        }
+
+        private static List<string> BuildWorkflowStateOrder(Portfolio portfolio, IEnumerable<WorkItem> completedItemsWithTransitions)
+        {
+            var orderedStates = new List<string>(portfolio.DoingStates);
+            var knownStates = new HashSet<string>(orderedStates);
+
+            var observedExitStates = completedItemsWithTransitions
+                .SelectMany(item => item.SyncedTransitions)
+                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
+                .OrderBy(transition => transition.TransitionedAt)
+                .Select(transition => transition.FromState);
+
+            foreach (var state in observedExitStates)
+            {
+                if (knownStates.Add(state))
+                {
+                    orderedStates.Add(state);
+                }
+            }
+
+            return orderedStates;
         }
 
         public IEnumerable<Feature> GetCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)

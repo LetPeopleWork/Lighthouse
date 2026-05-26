@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IRepository<Feature>> featureRepository;
         private Mock<IAppSettingService> appSettingService;
         private Mock<IForecastService> forecastServiceMock;
+        private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepository;
 
         private PortfolioMetricsService subject;
         private Portfolio portfolio;
@@ -40,7 +41,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
 
-            subject = new PortfolioMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object);
+            featureStateTransitionRepository = new Mock<IFeatureStateTransitionRepository>();
+
+            subject = new PortfolioMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object, featureStateTransitionRepository.Object);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                     It.IsAny<Expression<Func<Feature, bool>>>()))

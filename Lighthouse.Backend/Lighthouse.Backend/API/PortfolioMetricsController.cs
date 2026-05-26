@@ -110,6 +110,19 @@ namespace Lighthouse.Backend.API
                 portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate));
         }
 
+        [HttpGet("ageInStatePercentiles")]
+        public ActionResult<IEnumerable<AgeInStatePercentilesDto>> GetAgeInStatePercentiles(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("ageInStatePercentiles", portfolioId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetAgeInStatePercentilesForPortfolio(portfolio, startDate, endDate));
+        }
+
         [HttpGet("cycleTimeData")]
         public ActionResult<IEnumerable<FeatureDto>> GetCycleTimeData(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
