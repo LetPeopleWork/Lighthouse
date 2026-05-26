@@ -681,3 +681,116 @@ CODEBASE GREP FOR OVERLAP CANDIDATES THAT MIGHT JUSTIFY CREATE-NEW BUT WERE REJE
 
 `nwave-ai outcomes check-delta docs/feature/state-time-cumulative-view/feature-delta.md` was re-attempted at the 2026-05-26 amend and again NOT executed: the tool (`nwave-ai`) is not installed in this repository and the canonical outcomes registry at `docs/product/outcomes/registry.yaml` does not exist. Per skill ("skip-and-document"): documented here, deferred to DEVOPS handoff for KPI / outcomes registration alongside the DISCUSS-defined `OUT-cumulative-state-time-adoption`, `OUT-cumulative-state-time-leadership-share`, `OUT-cumulative-state-time-constraint-naming`, and `OUT-cumulative-state-time-item-filter-usage` (the US-05 picker-adoption KPI added in the 2026-05-26 revision). No collision possible to detect without the registry; flagged for the user.
 
+## Wave: DISTILL / [REF] Inherited commitments
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D5 | Bar heights count FULL unclipped state-durations; window selects WHICH items, never clips duration | DDD-2, DDD-3 | A straddling-item AT (`ItemEnteredStateBeforeWindow_CountsFullUnclippedDuration`) pins 50d full vs 20d clipped — locks the most-mis-implementable rule in the feature |
+| DISCUSS#D6 | Each bar splits into completed (solid) + ongoing (hatched) segments | DDD-4 | The known-fixture AT asserts exact `completedContributionDays` AND `ongoingContributionDays` per state, not just totals |
+| DISCUSS#D12 | Item-inclusion = transition-intersects-window OR in-flight-at-windowEnd; entirely-outside items excluded | DDD-1 | `ItemEntirelyOutsideWindow_IsExcluded` AT pins the exclusion; candidate-set AT pins the inclusion |
+| DISCUSS#D17 | Picker candidate set = exactly the D12-included items for the window | DDD-19 | `Candidates_ReturnsExactlyTheIncludedItemsAndExcludesOutOfWindowItem` asserts the out-of-window item is absent |
+| DISCUSS#D18 | RAG reflects the WHOLE in-scope set; the `itemIds` selection never changes it | DDD-23 | `RagSourceUnaffectedByItemIds` asserts the systemic Review total is identical with/without selection (the RAG source invariant) |
+| DISCUSS#US-04 | `Σ daysContributed` over drill-down rows = bar height within ±0.1d | DDD-5 | `PerItemDaysContributed_SumsToBarTotalForThatState` AT, both scopes |
+| DESIGN#DDD-16 | Endpoint validation mirrors `cycleTimePercentiles` (400 on inverted dates, 400 on missing `state`) | DDD-16 | Two error-path ATs (`StartDateAfterEndDate`, `MissingState`) pin the 400s |
+| DESIGN#DDD-17 | All six endpoints inherit class-level `RbacGuard` (TeamRead / PortfolioRead) | DDD-17 | Anonymous-caller ATs on both scopes |
+
+### [REF] Scenario list with tags
+
+Backend ATs are black-box example-based via `WebApplicationFactory<Program>` (C#/TS polyglot row — NUnit `[Ignore]` is the skip marker; no Hypothesis/PBT, no `state_delta` Universe — those are the Python pilot and explicitly do NOT apply here per `docs/architecture/atdd-infrastructure-policy.md`). Frontend Vitest component/unit tests are DELIVER's job (sibling precedent), NOT authored in DISTILL.
+
+| # | Scenario (test method) | File | AC | Tags |
+|---|---|---|---|---|
+| 1 | `GetCumulativeStateTime_TeamWithKnownVisits_ReturnsOneBarPerWorkflowStateInWorkflowOrder` | team AT | US-01 | `@US-01 @real-io @happy` |
+| 2 | `GetCumulativeStateTime_ItemEnteredStateBeforeWindow_CountsFullUnclippedDuration` | team AT | US-01 (D5) | `@US-01 @real-io @boundary` |
+| 3 | `GetCumulativeStateTime_KnownFixture_ReturnsExactTotalsAndCompletedOngoingSegmentHeightsPerState` | team AT | US-01 (D5/D6/D11) | `@US-01 @real-io @happy` |
+| 4 | `GetCumulativeStateTime_KnownFixture_TooltipCountFieldsPresentPerState` | team AT | US-01 (D13 counts) | `@US-01 @real-io @happy` |
+| 5 | `GetCumulativeStateTime_NoItemsMatchFilter_ReturnsEmptyStatesArray` | team AT | US-01 (empty) | `@US-01 @real-io @error` |
+| 6 | `GetCumulativeStateTime_StateWithZeroContributingItems_RendersPlaceholderBarWithZeroHeight` | team AT | US-01 (zero-state) | `@US-01 @real-io @edge` |
+| 7 | `GetCumulativeStateTime_ItemEntirelyOutsideWindow_IsExcluded` | team AT | US-01 (D12) | `@US-01 @real-io @boundary` |
+| 8 | `GetCumulativeStateTime_StartDateAfterEndDate_ReturnsBadRequest` | team AT | DDD-16 | `@US-01 @real-io @error` |
+| 9 | `GetCumulativeStateTime_AnonymousCaller_IsRejected` | team AT | DDD-17 | `@US-01 @real-io @error` |
+| 10 | `GetCumulativeStateTimeItems_KnownState_ReturnsPerItemRowsWithReferenceId` | team AT | US-04 | `@US-04 @real-io @happy` |
+| 11 | `GetCumulativeStateTimeItems_PerItemDaysContributed_SumsToBarTotalForThatState` | team AT | US-04 (sum invariant) | `@US-04 @real-io @happy` |
+| 12 | `GetCumulativeStateTimeItems_MissingState_ReturnsBadRequest` | team AT | DDD-16 | `@US-04 @real-io @error` |
+| 13 | `GetCumulativeStateTimeCandidates_Window_ReturnsExactlyTheIncludedItemsAndExcludesOutOfWindowItem` | team AT | US-05 (D17) | `@US-05 @real-io @boundary` |
+| 14 | `GetCumulativeStateTimeCandidates_Window_ExposesParentReferenceIdForParentExpand` | team AT | US-05 (D14 parent-expand) | `@US-05 @real-io @happy` |
+| 15 | `GetCumulativeStateTime_WithItemIdsSubset_SumsOverOnlySelectedItemsWithFullDurations` | team AT | US-05 (DDD-20) | `@US-05 @real-io @happy` |
+| 16 | `GetCumulativeStateTime_RagSourceUnaffectedByItemIds_SystemicTotalsIdenticalWithAndWithoutSelection` | team AT | US-05 (D18) | `@US-05 @real-io @boundary` |
+| 17 | `GetCumulativeStateTime_PortfolioWithKnownVisits_ReturnsSameShapeAsTeamScope` | portfolio AT | US-02 | `@US-02 @real-io @happy` |
+| 18 | `GetCumulativeStateTime_PortfolioWithNoFeatures_ReturnsEmptyStatesArray` | portfolio AT | US-02 (empty) | `@US-02 @real-io @error` |
+| 19 | `GetCumulativeStateTimeItems_PortfolioPerItemDaysContributed_SumsToBarTotalForThatState` | portfolio AT | US-04 parity | `@US-04 @real-io @happy` |
+| 20 | `GetCumulativeStateTimeCandidates_PortfolioWindow_ReturnsIncludedFeaturesWithParentReferences` | portfolio AT | US-05 parity | `@US-05 @real-io @happy` |
+| 21 | `GetCumulativeStateTime_PortfolioAnonymousCaller_IsRejected` | portfolio AT | DDD-17 | `@US-02 @real-io @error` |
+| 22 | `@walking_skeleton @US-01 …chart renders bars with completed/ongoing segments` | E2E spec | US-01 | `@walking_skeleton @US-01 @real-io` |
+| 23 | `@US-04 …clicks the constraint bar and reads contributing items` | E2E spec | US-04 | `@US-04 @real-io` |
+| 24 | `@US-05 …scopes via parent-expand then clears to systemic` | E2E spec | US-05 | `@US-05 @real-io` |
+| 25 | `@US-05 …single-item deep-dive reads adaptive unit not fractional days` | E2E spec | US-05 (D16/D15) | `@US-05 @real-io` |
+
+**Error/edge ratio**: of the 21 backend ATs, 9 are `@error`/`@edge`/`@boundary` (empty filter, zero-contributing state, item-outside-window, straddling-item, inverted dates ×1, missing state, anonymous ×2, out-of-window candidate, RAG-invariant) = **43%** — clears the ≥40% mandate. US-01 spans all three of success / error / boundary.
+
+### [REF] WS strategy
+
+**Type A (additive), per DISCUSS D8 / DESIGN.** The walking skeleton is ONE E2E scenario (`@walking_skeleton @US-01`): open team detail → Flow Metrics → the `stateTimeCumulative` widget renders bars with visible completed + ongoing segments. It closes the end-to-end loop through the production composition root (real React app → real HTTP endpoint → real EF read of sibling-1 transitions) on seeded demo data (Team Zenith, scenario 0), demo-able to a Delivery Lead. No contract change to existing endpoints; if the endpoint is absent the slot is empty (no regression). Per the C#/TS Architecture-of-Reference rows, backend ATs use the real `WebApplicationFactory<Program>` host with real EF (driving + driven-internal both real); the only faked ports are `ILicenseService` and the connector boundary (driven-external), neither of which this read-only feature exercises.
+
+### [REF] Adapter coverage table
+
+Driven adapters are all REUSE-AS-IS (no NEW driven adapter in this feature — it is a pure downstream reader, per DESIGN "Driven ports + adapters"). Each is exercised with real I/O (real EF context via the test factory) by the ATs below.
+
+| Adapter / read path | Real-I/O coverage | Covered by |
+|---|---|---|
+| `IWorkItemStateTransitionRepository` (transitions read path) | YES | team ATs seed real `WorkItemStateTransition` rows; every bar/items/candidates assertion round-trips through the real repo |
+| `IFeatureStateTransitionRepository` (portfolio transitions) | YES | portfolio ATs seed real `FeatureStateTransition` rows |
+| `IWorkItemRepository` / `IRepository<Feature>` (D12 candidate resolution) | YES | inclusion/exclusion + candidate ATs |
+| `WorkItem.CurrentStateEnteredAt` / `State` / `StateCategory` read | YES | in-flight ongoing-segment ATs (seed real in-flight items) |
+| `WorkItemBase.ParentReferenceId` read (parent-expand) | YES | `Candidates_…ExposesParentReferenceIdForParentExpand` |
+| `BaseMetricsService.GetFromCacheIfExists` (cache) | indirect | exercised transitively on every endpoint call; cache-key shape is unit-tested in DELIVER's NUnit service tests (DESIGN component table), not re-asserted black-box |
+| MUI-X `<BarChart>` + picker + drill-down dialog (driving UI) | YES (deferred) | the `@walking_skeleton` + 3 E2E `test.fixme` scenarios — locators validated when un-fixme'd in DELIVER |
+
+Per Mandate 11, all layer-3+ sad paths above are example-based (empty/zero/out-of-window/inverted-date/missing-state/anonymous) — never PBT-generated.
+
+### [REF] Driving Adapter coverage (every endpoint → ≥1 scenario)
+
+| Driving port (endpoint) | Covered by |
+|---|---|
+| `GET /api/latest/teams/{id}/metrics/cumulativeStateTime` (+`itemIds`) | ATs 1-9, 15, 16 |
+| `GET /api/latest/teams/{id}/metrics/cumulativeStateTime/items` (+`itemIds`) | ATs 10-12 |
+| `GET /api/latest/teams/{id}/metrics/cumulativeStateTime/candidates` | ATs 13-14 |
+| `GET /api/latest/portfolios/{id}/metrics/cumulativeStateTime` | ATs 17-18, 21 |
+| `GET /api/latest/portfolios/{id}/metrics/cumulativeStateTime/items` | AT 19 |
+| `GET /api/latest/portfolios/{id}/metrics/cumulativeStateTime/candidates` | AT 20 |
+
+All six new endpoints have at least one black-box HTTP scenario invoking them via their real protocol (HTTP through `WebApplicationFactory`). Route prefix is `/api/latest/...` per the live codebase (the DISCUSS/DESIGN tables show `/api/...` shorthand; the ATs use the versioned `/api/latest/...` that `cycleTimePercentiles` / `ageInStatePercentiles` actually serve).
+
+### [REF] Test files / scaffolds
+
+DISTILL writes ONLY tests + scaffold-by-skip-marker + docs. NO production code (no controllers/services/endpoints/components). The endpoints do not exist yet, so the backend ATs are `[Ignore]` (compile-green, skipped) and the E2E scenarios are `test.fixme` (the production endpoints/widget land in DELIVER, at which point the ATs are un-ignored one slice at a time and the E2E is un-fixme'd + locator-validated).
+
+| File | Status | Note |
+|---|---|---|
+| `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs` | NEW | 16 team-scope ATs (bar + items + candidates + `itemIds`), `[Ignore("pending — DELIVER (state-time-cumulative-view)")]` |
+| `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimePortfolioReadApiIntegrationTest.cs` | NEW | 5 portfolio-scope shape-parity ATs, same `[Ignore]` |
+| `Lighthouse.EndToEndTests/tests/models/metrics/CumulativeStateTimeChart.ts` | NEW | POM: bars, completed/ongoing segments, tooltip, item picker, parent-expand, drill-down dialog (pinned `data-testid`s) |
+| `Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts` | EXTEND | added `CumulativeStateTime` widget name + `["Cumulative Time per State", "stateTimeCumulative"]` to the `flow-metrics` category list |
+| `Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts` | NEW | 4 `test.fixme` scenarios (WS + drill-down + picker-scope + single-item deep-dive), POM-only, seeded demo data |
+
+**Scaffold marker convention** (C#/TS polyglot, NOT the Python `__SCAFFOLD__`): NUnit `[Ignore("pending — DELIVER (state-time-cumulative-view)")]` and Playwright `test.fixme(...)` are the skip markers. DELIVER un-ignores one backend AT class / un-fixmes one E2E scenario at a time per the slice plan (01 team bar → 02 portfolio → 03 drill-down → 04 picker), and per the green-before-push rule each story is pushed CI-green by re-skipping any not-yet-passing AT.
+
+### [REF] Test placement
+
+- Backend ATs → `Lighthouse.Backend.Tests/API/Integration/` — the exact directory and pattern of the sibling-F `AgeInStatePercentilesReadApiIntegrationTest` / `…PortfolioReadApiIntegrationTest` and sibling-1 `TimeInStateReadApiIntegrationTest`. Black-box `WebApplicationFactory<Program>` + `WithTestAuthentication`, EF-real, `[NonParallelizable]` (per ci-learnings 2026-05-18 — fixtures that build their own WAF + EF context must serialise), per-fixture `testDateOffset` windows to avoid cross-fixture date collisions.
+- E2E spec → `Lighthouse.EndToEndTests/tests/specs/flow/` next to `AgingPacePercentiles.spec.ts`; POM → `tests/models/metrics/` next to `WorkItemAgingChart.ts`. All element access through the POM (project rule: no inline `page.locator` in specs).
+- Frontend Vitest tests are NOT authored here — they are DELIVER's responsibility per the established sibling precedent (DESIGN's component table already enumerates the DELIVER-owned `.test.tsx`/`.test.ts` files).
+
+### [REF] Pre-requisites
+
+- **DESIGN driving ports**: the six endpoints + their DTO shapes (DDD-16, Component decomposition) — the ATs assert against the DDD-defined JSON contract (`states[]` with `totalDays`/`completedContributionDays`/`ongoingContributionDays`/`completedItemCount`/`ongoingItemCount`/`meanDays`/`medianDays`; `items[]` with `referenceId`/`daysContributed`; `candidates.items[]` with `referenceId`/`parentReferenceId`).
+- **DEVOPS environment matrix**: **ABSENT (WARN)** — no `docs/feature/state-time-cumulative-view/devops/` directory exists. Default infra applied per the Project Infrastructure Policy (`docs/architecture/atdd-infrastructure-policy.md`, inherited): backend ATs use `WebApplicationFactory<Program>` + EF real (Sqlite+Postgres lockstep in CI); E2E uses Playwright POM against the locally-started app on seeded demo data. The existing `ci_verifysqlite.yml` / `ci_verifypostgres.yml` gates cover the new code; no new CI workflow needed (DESIGN handoff readiness note). No new EF migration (D9: zero schema change).
+- **Outcome registry**: **SKIPPED** — no `nwave-ai` CLI and no `docs/product/outcomes/registry.yaml` in this repo (documented in the DESIGN Outcome Collision Check); KPIs deferred to DEVOPS handoff. C#/TS polyglot row of the matrix governs — the Python-pilot `tests/common/state_delta.<ext>` port is **not bootstrapped** (correctly absent; it does not apply to this stack).
+
+### [REF] Reconciliation result + warnings
+
+- **Wave-Decision Reconciliation HARD GATE: PASSED — 0 contradictions.** DISCUSS (D1–D18) and DESIGN (DDD-1–DDD-24 + ADR-028) were reconciled 2026-05-26 (the RECONCILED banner at the DDD list lifts the prior STALE banner); no separate `wave-decisions.md` files exist in this project (the unified `## Wave:` sections in this file are the SSOT). Cross-checked: D5 full-duration ↔ DDD-2/DDD-3 (consistent); D6 segments ↔ DDD-4 (consistent); D13 US-03-withdrawal ↔ DDD-6 (counts retained in US-01, explanation moved to widget-info — consistent); D17 candidates=windowed-set ↔ DDD-19 (consistent); D18 RAG-ignores-selection ↔ DDD-23 (consistent). No DISCUSS commitment is contradicted by DESIGN.
+- **WARN — DEVOPS artifacts absent**: default infrastructure applied (see Pre-requisites). Not a blocker (graceful-degradation matrix: DEVOPS missing → WARN).
+- **WARN — KPI contracts / outcome registry**: `docs/product/kpi-contracts.yaml` carries the four `OUT-cumulative-state-time-*` KPIs at the product level but the per-feature DEVOPS append + `nwave-ai` registry are absent; no `@kpi` black-box scenario authored (observability is endpoint-counter-based per the DISCUSS Outcome KPIs table, validated at the DELIVER post-merge gate by the PO-reviewer, not by DISTILL ATs — Sentinel scope boundary).
+- **Pre-DELIVER fail-for-right-reason gate**: the 21 backend ATs currently report **Skipped** (NUnit `[Ignore]`), not Failed — they are RED-by-skip-marker scaffolds. When DELIVER un-ignores AT class N, the gate expectation is `MISSING_FUNCTIONALITY` (404/no-route until the endpoint is wired), not a fixture/import error. The fixtures set only PRECONDITIONS (seeded transitions + in-flight items + workflow-state config), never the expected output — no Fixture Theater.
+
