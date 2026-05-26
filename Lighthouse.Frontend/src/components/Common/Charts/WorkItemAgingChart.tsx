@@ -30,13 +30,27 @@ import {
 } from "../../../utils/charts/scatterMarkerUtils";
 import { getWorkItemName } from "../../../utils/featureName";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
-import { getColorMapForKeys } from "../../../utils/theme/colors";
+import {
+	certainColor,
+	confidentColor,
+	errorColor,
+	getColorMapForKeys,
+	realisticColor,
+} from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
 
 export const STATE_BAND_HALF_WIDTH = 0.4;
+
+export const PACE_BAND_COLORS_LOW_TO_HIGH = [
+	certainColor,
+	confidentColor,
+	"#fbc02d",
+	realisticColor,
+	errorColor,
+] as const;
 
 export interface IPaceBandRect {
 	key: string;
@@ -52,13 +66,23 @@ interface PaceBandGeometryConfig {
 	doingStates: string[];
 	xScale: (value: number) => number;
 	yScale: (value: number) => number;
+	axisMin: number;
+	axisMax: number;
 }
+
+const paceBandColorForPosition = (position: number): string => {
+	const lastIndex = PACE_BAND_COLORS_LOW_TO_HIGH.length - 1;
+	const clamped = Math.min(position, lastIndex);
+	return PACE_BAND_COLORS_LOW_TO_HIGH[clamped];
+};
 
 export const computePaceBandRects = ({
 	perStatePercentileValues,
 	doingStates,
 	xScale,
 	yScale,
+	axisMin,
+	axisMax,
 }: PaceBandGeometryConfig): IPaceBandRect[] => {
 	const stateIndexMap: Record<string, number> = {};
 	for (let index = 0; index < doingStates.length; index++) {
@@ -78,20 +102,35 @@ export const computePaceBandRects = ({
 		const leftX = xScale(stateIndex - STATE_BAND_HALF_WIDTH);
 		const rightX = xScale(stateIndex + STATE_BAND_HALF_WIDTH);
 		const bandWidth = Math.abs(rightX - leftX);
+		const x = Math.min(leftX, rightX);
 
-		let lowerValue = 0;
-		return sortedPercentiles.map((percentile) => {
-			const lowerPixel = yScale(lowerValue);
-			const upperPixel = yScale(percentile.value);
-			lowerValue = percentile.value;
-			return {
+		const upperBoundaries = [
+			...sortedPercentiles.map((percentile) => ({
+				upperValue: percentile.value,
 				key: `${perState.state}-${percentile.percentile}`,
-				x: Math.min(leftX, rightX),
-				y: Math.min(lowerPixel, upperPixel),
-				width: bandWidth,
-				height: Math.abs(upperPixel - lowerPixel),
-				fill: new ForecastLevel(percentile.percentile).color,
-			};
+			})),
+			{ upperValue: axisMax, key: `${perState.state}-top` },
+		];
+
+		let lowerValue = axisMin;
+		return upperBoundaries.flatMap((boundary, position) => {
+			const lowerPixel = yScale(lowerValue);
+			const upperPixel = yScale(boundary.upperValue);
+			lowerValue = boundary.upperValue;
+			const height = Math.abs(upperPixel - lowerPixel);
+			if (height === 0) {
+				return [];
+			}
+			return [
+				{
+					key: boundary.key,
+					x,
+					y: Math.min(lowerPixel, upperPixel),
+					width: bandWidth,
+					height,
+					fill: paceBandColorForPosition(position),
+				},
+			];
 		});
 	});
 };
@@ -101,13 +140,20 @@ export const PaceBandOverlay: React.FC<{
 	doingStates: string[];
 }> = ({ perStatePercentileValues, doingStates }) => {
 	const xScale = useXScale("stateAxis") as (value: number) => number;
-	const yScale = useYScale("ageAxis") as (value: number) => number;
+	const yScale = useYScale("ageAxis") as unknown as {
+		(value: number): number;
+		domain: () => [number, number];
+	};
+
+	const [axisMin, axisMax] = yScale.domain();
 
 	const rects = computePaceBandRects({
 		perStatePercentileValues,
 		doingStates,
 		xScale,
 		yScale,
+		axisMin,
+		axisMax,
 	});
 
 	return (

@@ -6,17 +6,26 @@ import type { IPerStatePercentileValues } from "../../../models/PerStatePercenti
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
 import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
-import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemAgingChart, {
 	computePaceBandRects,
+	PACE_BAND_COLORS_LOW_TO_HIGH,
 	PaceBandOverlay,
 	STATE_BAND_HALF_WIDTH,
 } from "./WorkItemAgingChart";
 
-vi.mock("@mui/x-charts/hooks", () => ({
-	useXScale: () => (value: number) => value,
-	useYScale: () => (value: number) => value,
-}));
+vi.mock("@mui/x-charts/hooks", () => {
+	const identity = (value: number) => value;
+	const xScale = Object.assign(identity, {
+		domain: () => [-0.5, 2.5] as [number, number],
+	});
+	const yScale = Object.assign(identity, {
+		domain: () => [1, 30] as [number, number],
+	});
+	return {
+		useXScale: () => xScale,
+		useYScale: () => yScale,
+	};
+});
 
 const getMockPerStatePercentileValues = (
 	overrides?: Partial<IPerStatePercentileValues>,
@@ -835,6 +844,8 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["To Do", "In Progress", "Review"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
 			expect(rects.length).toBeGreaterThan(0);
@@ -845,7 +856,7 @@ describe("WorkItemAgingChart component", () => {
 			}
 		});
 
-		it("stacks rect y-boundaries across consecutive percentile values from the baseline", () => {
+		it("anchors the bottom band at the axis minimum and caps the top band at the axis maximum", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
 					getMockPerStatePercentileValues({
@@ -861,6 +872,8 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["In Progress"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
 			const boundaries = rects
@@ -868,14 +881,15 @@ describe("WorkItemAgingChart component", () => {
 				.sort((a, b) => a[0] - b[0]);
 
 			expect(boundaries).toEqual([
-				[0, 3],
+				[1, 3],
 				[3, 5],
 				[5, 8],
 				[8, 12],
+				[12, 30],
 			]);
 		});
 
-		it("fills zones green-to-red using the ForecastLevel palette per percentile boundary", () => {
+		it("colours the stack from greenest at the floor to red at the top by band position", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
 					getMockPerStatePercentileValues({
@@ -891,16 +905,45 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["In Progress"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
-			const fillByUpperBoundary = new Map(
-				rects.map((rect) => [rect.y + rect.height, rect.fill]),
-			);
+			const fillsBottomToTop = [...rects]
+				.sort((a, b) => a.y - b.y)
+				.map((rect) => rect.fill);
 
-			expect(fillByUpperBoundary.get(3)).toBe(new ForecastLevel(50).color);
-			expect(fillByUpperBoundary.get(5)).toBe(new ForecastLevel(70).color);
-			expect(fillByUpperBoundary.get(8)).toBe(new ForecastLevel(85).color);
-			expect(fillByUpperBoundary.get(12)).toBe(new ForecastLevel(95).color);
+			expect(fillsBottomToTop).toEqual(PACE_BAND_COLORS_LOW_TO_HIGH);
+		});
+
+		it("paints the floor band the greenest colour and the top band red", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+							{ percentile: 85, value: 8 },
+							{ percentile: 95, value: 12 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
+			});
+
+			const sortedBottomToTop = [...rects].sort((a, b) => a.y - b.y);
+			const floorBand = sortedBottomToTop[0];
+			const topBand = sortedBottomToTop[sortedBottomToTop.length - 1];
+
+			expect(floorBand.y).toBe(1);
+			expect(floorBand.fill).toBe(PACE_BAND_COLORS_LOW_TO_HIGH[0]);
+			expect(topBand.y + topBand.height).toBe(30);
+			expect(topBand.fill).toBe(errorColor);
 		});
 
 		it("emits no rects for a state absent from perStatePercentileValues", () => {
@@ -911,6 +954,8 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["To Do", "In Progress", "Review"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
 			const stateIndicesWithRects = new Set(
@@ -933,7 +978,7 @@ describe("WorkItemAgingChart component", () => {
 			);
 
 			const bands = screen.getAllByTestId("pace-band");
-			expect(bands).toHaveLength(4);
+			expect(bands).toHaveLength(5);
 
 			const group = bands[0].parentElement;
 			expect(group?.tagName.toLowerCase()).toBe("g");
@@ -953,14 +998,16 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["In Progress"],
 				xScale: (value: number) => value * 100,
 				yScale: (value: number) => value * 10,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
-			expect(rects).toHaveLength(1);
-			const [rect] = rects;
-			expect(rect.x).toBe((0 - STATE_BAND_HALF_WIDTH) * 100);
-			expect(rect.width).toBe(2 * STATE_BAND_HALF_WIDTH * 100);
-			expect(rect.y).toBe(0);
-			expect(rect.height).toBe(40);
+			expect(rects).toHaveLength(2);
+			const floorBand = [...rects].sort((a, b) => a.y - b.y)[0];
+			expect(floorBand.x).toBe((0 - STATE_BAND_HALF_WIDTH) * 100);
+			expect(floorBand.width).toBe(2 * STATE_BAND_HALF_WIDTH * 100);
+			expect(floorBand.y).toBe(10);
+			expect(floorBand.height).toBe(30);
 		});
 
 		it("emits no rects for a mapped state whose percentile set is empty", () => {
@@ -974,6 +1021,8 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["To Do", "In Progress", "Review"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
 			expect(rects).toHaveLength(0);
@@ -993,12 +1042,14 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["To Do", "In Progress", "Review"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
 			expect(rects).toHaveLength(0);
 		});
 
-		it("renders one band per percentile for a mapped state that has observations", () => {
+		it("emits a full-column stack of five bands when all four percentiles are present and distinct", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
 					getMockPerStatePercentileValues({
@@ -1006,15 +1057,19 @@ describe("WorkItemAgingChart component", () => {
 						percentiles: [
 							{ percentile: 50, value: 3 },
 							{ percentile: 70, value: 5 },
+							{ percentile: 85, value: 8 },
+							{ percentile: 95, value: 12 },
 						],
 					}),
 				],
 				doingStates: ["In Progress"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
-			expect(rects).toHaveLength(2);
+			expect(rects).toHaveLength(5);
 		});
 
 		it("orders the stacked bands by ascending percentile value regardless of input order", () => {
@@ -1033,17 +1088,20 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["In Progress"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
 			expect(rects.map((rect) => [rect.y, rect.y + rect.height])).toEqual([
-				[0, 3],
+				[1, 3],
 				[3, 5],
 				[5, 8],
 				[8, 12],
+				[12, 30],
 			]);
 		});
 
-		it("keys each rect by its state and percentile so React reconciles them stably", () => {
+		it("keys each rect by its state and percentile boundary so React reconciles them stably", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
 					getMockPerStatePercentileValues({
@@ -1057,9 +1115,15 @@ describe("WorkItemAgingChart component", () => {
 				doingStates: ["In Progress", "Review"],
 				xScale: identityScale,
 				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
 			});
 
-			expect(rects.map((rect) => rect.key)).toEqual(["Review-50", "Review-70"]);
+			expect(rects.map((rect) => rect.key)).toEqual([
+				"Review-50",
+				"Review-70",
+				"Review-top",
+			]);
 		});
 	});
 });
