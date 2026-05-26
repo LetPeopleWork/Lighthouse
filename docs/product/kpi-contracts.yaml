@@ -294,3 +294,47 @@ outcomes:
       deliveries test suite protects behaviour parity; Stryker kill rate
       protects mutation regression. All three are hard CI gates.
     alerting: []
+
+  - id: OUT-aging-pace-bands-rendered
+    feature: aging-pace-percentiles
+    title: Per-state pace bands actually render for teams/portfolios
+    target: ">= 30% of teams have >=1 state returning a non-empty band array within 6 weeks of sibling slice-01 transition-capture shipping"
+    measurement_scope: per_instance
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs
+        scenario: "GetAgeInStatePercentiles_TeamWithCompletedItemsAcrossThreeStates_ReturnsExactCumulativeAgeAtExitPercentilesPerState"
+        gate_type: hard
+    instrumentation_status: >
+      PENDING. No backend counter is emitted yet. Bands depend on forward-only
+      WorkItemStateTransition accumulation; sparse until history builds. Cross-instance
+      measurement blocked on Epic 5015 (opt-in telemetry); per_instance only.
+    alerting: []
+
+  - id: OUT-aging-pace-legend-toggled
+    feature: aging-pace-percentiles
+    title: Users engage the Pace percentiles toggle
+    target: ">= 15% of users who view a team or portfolio detail page toggle the pace-bands control at least once within 4 weeks of release"
+    measurement_scope: per_instance
+    acceptance_scenarios:
+      - file: Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts
+        scenario: "flow coach toggles per-state pace bands on and off on the team Work Item Aging chart"
+        gate_type: hard
+    instrumentation_status: >
+      PENDING. The DISCUSS-era `aging.pace.bands.toggled` event is NOT emitted; the toggle
+      now persists in localStorage (useShowPaceBands) but fires no telemetry. Add a click event
+      if/when opt-in telemetry (Epic 5015) exists. Not measurable today beyond manual per-instance.
+    alerting: []
+
+  - id: OUT-aging-pace-parity-claim
+    feature: aging-pace-percentiles
+    title: ActionableAgile per-state-bands parity claim is defensible
+    target: "Zero customer/community reports within 8 weeks of release of 'Lighthouse aging chart lacks ActionableAgile-style per-state bands'"
+    measurement_scope: vendor_demo_only
+    acceptance_scenarios:
+      - file: Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts
+        scenario: "flow coach toggles per-state pace bands on the portfolio Work Item Aging chart"
+        gate_type: soft
+    instrumentation_status: >
+      Tracked via issue-tracker label `feature-request-aging-pace` + community Slack mentions.
+      Directional only (vendor_demo_only); no automated measurement.
+    alerting: []
