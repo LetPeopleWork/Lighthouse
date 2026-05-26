@@ -23,7 +23,9 @@ See `docs/product/architecture/brief.md` for full architecture documentation.
 
 ## CI Learnings
 
-Before writing or changing code in any area, consult `docs/ci-learnings.md`. It captures durable rules harvested from prior CI / SonarCloud failures (formatting quirks, Sonar rule keys, recurring foot-guns). The `/clean-ci` command maintains this file — apply every rule it lists.
+**Before writing or changing ANY code — every agent, and the @nw-software-crafter in DELIVER above all — consult `docs/ci-learnings.md` and pre-apply every rule it lists.** It captures durable rules harvested from prior CI / SonarCloud failures (formatting quirks, Sonar rule keys, recurring foot-guns). The `/clean-ci` command maintains this file.
+
+This is non-negotiable, because **a clean local `dotnet build` / `pnpm build` does NOT mean the CI quality gate will pass.** SonarCloud's `new_violations = 0` gate plus many Roslyn `CAxxxx`, NUnit-analyzer, and Biome rules sit *below build-warning severity* — they surface only in CI, never in a local build. Re-introducing a rule already in the ledger is a process failure that burns a whole CI cycle. So before writing C#/TS, grep the ledger for the recurring rule families (`NUnit4002`, `NUnit2056`, `CA1859`, `CA1861`, `S2325`, `S107`, `S3267`, `S2971`, `S6608`) and apply its rules to any surrounding lines you touch.
 
 ## ADO Work-Item Sync
 
