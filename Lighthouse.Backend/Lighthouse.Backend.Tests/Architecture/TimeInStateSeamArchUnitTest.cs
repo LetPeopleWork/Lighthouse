@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -13,7 +14,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly HashSet<Type> TransitionRepositoryConsumers =
         [
             typeof(WorkItemService),
-            typeof(WorkItemStateTransitionRepository)
+            typeof(WorkItemStateTransitionRepository),
+            typeof(TeamMetricsService)
         ];
 
         [Test]
@@ -66,12 +68,14 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(unauthorisedConsumers, Is.Empty,
                 "DDD-6 / ADR-016 / ADR-017 architectural enforcement: WorkItemService is the sole writer " +
                 "of WorkItemStateTransition rows and the sole mutator of WorkItem.CurrentStateEnteredAt. " +
-                "Only WorkItemService may take a constructor or field dependency on " +
-                "IWorkItemStateTransitionRepository (the repository adapter that implements it is exempt). " +
-                "The following types depend on the transition write path: " +
+                "Only the sanctioned consumers may take a constructor or field dependency on " +
+                "IWorkItemStateTransitionRepository: WorkItemService (the writer), the repository adapter " +
+                "that implements it, and the metrics-service readers sanctioned per ADR-019/DDD-9 " +
+                "(TeamMetricsService reads transitions to compute per-state age-in-state percentiles). " +
+                "The following types depend on the transition repository without sanction: " +
                 string.Join(", ", unauthorisedConsumers) + ". " +
                 "Route transition writes through WorkItemService.UpdateWorkItemsForTeam instead. If a new " +
-                "writer is genuinely required, update the architectural decision record first and amend this test.");
+                "writer or reader is genuinely required, update the architectural decision record first and amend this test.");
         }
 
         private static IEnumerable<MemberInfo> WorkItemPersistedMembers()

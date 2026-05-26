@@ -71,7 +71,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 appSettingsServiceMock.Object,
                 serviceProvider.Object,
                 blackoutPeriodRepositoryMock.Object,
-                forecastFilterRuleService);
+                forecastFilterRuleService,
+                Mock.Of<IWorkItemStateTransitionRepository>());
         }
 
         [TearDown]

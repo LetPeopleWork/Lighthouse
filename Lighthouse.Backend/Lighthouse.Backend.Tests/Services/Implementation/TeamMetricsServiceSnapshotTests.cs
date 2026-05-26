@@ -61,7 +61,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 appSettingsServiceMock.Object,
                 serviceProvider.Object,
                 blackoutPeriodRepositoryMock.Object,
-                forecastFilterRuleServiceMock.Object);
+                forecastFilterRuleServiceMock.Object,
+                Mock.Of<IWorkItemStateTransitionRepository>());
 
             workItems = new List<WorkItem>();
             features = new List<Feature>();

@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodRepositoryMock.Object, forecastFilterRuleServiceMock.Object);
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodRepositoryMock.Object, forecastFilterRuleServiceMock.Object, Mock.Of<IWorkItemStateTransitionRepository>());
 
             workItems = new List<WorkItem>();
 

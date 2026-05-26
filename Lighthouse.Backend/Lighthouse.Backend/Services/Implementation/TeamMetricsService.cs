@@ -14,12 +14,14 @@ namespace Lighthouse.Backend.Services.Implementation
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
-        IForecastFilterRuleService forecastFilterRuleService)
+        IForecastFilterRuleService forecastFilterRuleService,
+        IWorkItemStateTransitionRepository workItemStateTransitionRepository)
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
             ITeamMetricsService
     {
         private const string ForecastStatusMetricIdentifier = "ForecastThroughputStatus";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
+        private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
         internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate)
@@ -317,6 +319,60 @@ namespace Lighthouse.Backend.Services.Implementation
                     new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
                 ];
             }, logger);
+        }
+
+        public IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Age In State Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"AgeInStatePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var completedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
+                var completedItemsWithTransitions = AssociateSyncedTransitions(completedItems);
+                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(team, completedItemsWithTransitions);
+
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, DefaultPacePercentiles).ToList();
+            }, logger);
+        }
+
+        private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)
+        {
+            var completedItemIds = completedItems.Select(item => item.Id).ToHashSet();
+            var transitionsByItem = workItemStateTransitionRepository
+                .GetAllByPredicate(transition => completedItemIds.Contains(transition.WorkItemId))
+                .ToList()
+                .GroupBy(transition => transition.WorkItemId)
+                .ToDictionary(group => group.Key, group => group.OrderBy(transition => transition.TransitionedAt).ToList());
+
+            return completedItems
+                .Select(item => new WorkItem(item, item.Team)
+                {
+                    Id = item.Id,
+                    SyncedTransitions = transitionsByItem.TryGetValue(item.Id, out var transitions) ? transitions : [],
+                })
+                .ToList();
+        }
+
+        private static List<string> BuildWorkflowStateOrder(Team team, IEnumerable<WorkItem> completedItemsWithTransitions)
+        {
+            var orderedStates = new List<string>(team.DoingStates);
+            var knownStates = new HashSet<string>(orderedStates);
+
+            var observedExitStates = completedItemsWithTransitions
+                .SelectMany(item => item.SyncedTransitions)
+                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
+                .OrderBy(transition => transition.TransitionedAt)
+                .Select(transition => transition.FromState);
+
+            foreach (var state in observedExitStates)
+            {
+                if (knownStates.Add(state))
+                {
+                    orderedStates.Add(state);
+                }
+            }
+
+            return orderedStates;
         }
 
         public EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate)

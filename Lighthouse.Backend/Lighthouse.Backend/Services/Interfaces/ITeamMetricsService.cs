@@ -54,6 +54,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
+
         EstimationVsCycleTimeResponse GetEstimationVsCycleTimeData(Team team, DateTime startDate, DateTime endDate);
 
         int GetTotalWorkItemAge(Team team, DateTime endDate);
