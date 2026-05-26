@@ -477,3 +477,152 @@ CODEBASE GREP FOR OVERLAP CANDIDATES THAT MIGHT JUSTIFY CREATE-NEW BUT WERE REJE
 
 `nwave-ai outcomes check-delta docs/feature/aging-pace-percentiles/feature-delta.md` was NOT executed: the tool (`nwave-ai`) is not installed in this repository and the canonical outcomes registry at `docs/product/outcomes/registry.yaml` does not exist. Per skill ("skip-and-document"): documented here, deferred to DEVOPS handoff for KPI / outcomes registration alongside the DISCUSS-defined `OUT-aging-pace-bands-rendered`, `OUT-aging-pace-legend-toggled`, `OUT-aging-pace-parity-claim`.
 
+## Wave: DISTILL / [REF] Inherited commitments
+
+Scope: **the single delivery slice** (slice 01 — US-01 + US-02, team **and** portfolio together; slice 02 was folded in). US-03 is CUT (no tooltip annotation, no per-band hover, no low-sample messaging, no `sampleSize`). This pass authors the backend black-box read-API ATs (NUnit + `WebApplicationFactory<Program>`) and the E2E walking-skeleton (Playwright, POM-only, `test.fixme`). All FE component units (Vitest/RTL), the `MetricsService`/`useMetricsData` TS units, the ArchUnitNET rule additions, and all production code are DEFERRED to DELIVER.
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#US-01 | Per-state cumulative-total-age-at-state-exit percentile bands (50/70/85/95) render on the Work Item Aging chart, team + portfolio | n/a | Backend core-math ATs assert exact per-state percentiles; E2E walking-skeleton asserts the band overlay renders behind the dots on both scopes |
+| DISCUSS#US-01 / D12 | Band metric = `exitTransition.TransitionedAt − StartedDate` (cumulative total age at exit), so values rise monotonically left→right in workflow order | DDD-1 | A dedicated AT asserts states are returned in workflow order AND each percentile rises In Progress < Review < Test (team) / Analyzing < Building < Validating (portfolio) |
+| DISCUSS#US-01 / D5 | A state with zero completed-item observations is omitted (no empty band); no `sampleSize` field | DDD-4 | Omitted-state AT asserts the zero-observation state is absent while other states remain; empty-team AT asserts an empty array |
+| DISCUSS#US-02 | A single **Pace percentiles** chip toggles the whole overlay on/off, OFF by default; existing percentile / SLE chips unchanged | DDD-8 | E2E walking-skeleton asserts: no bands by default → toggle on → bands appear → toggle off → bands gone, with the cycle-time percentile chip count unchanged throughout |
+| DISCUSS#D8 | Team-level AND portfolio-level chart simultaneously (shared `BaseMetricsView` / `WorkItemAgingChart`) | DDD-9 | Portfolio parity ATs (core math + empty) mirror the team file; E2E covers both scopes |
+| DESIGN#DDD-12 | New endpoints `GET /api/latest/{teams|portfolios}/{id}/metrics/ageInStatePercentiles?startDate&endDate`; validation `startDate.Date <= endDate.Date` (HTTP 400 otherwise), mirroring `cycleTimePercentiles` | DDD-12 | All backend ATs drive the `/api/latest/...` routes; an inverted-range AT asserts HTTP 400 |
+| DESIGN#DDD-2 | Item-membership rule = `ClosedDate ∈ [startDate, endDate]` (mirrors `cycleTimePercentiles`) | DDD-2 | A membership AT asserts an item closed before the window contributes no observations |
+| DESIGN#DDD-12 | Auth via the existing class-level `[RbacGuard(TeamRead)]` / `[RbacGuard(PortfolioRead)]` | DDD-12 | An anonymous-caller regression guard asserts 401/403 (inherited guard) |
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+| # | Scenario | Tier / Layer | Tags | AC covered |
+|---|---|---|---|---|
+| 1 | flow coach toggles per-state pace bands on/off on the **team** aging chart (E2E, Playwright `test.fixme`) | Tier A — E2E (layer 6) | `@walking_skeleton` `@driving_port` `@real-io` `@US-01` `@US-02` | The demo proof: no bands by default → toggle on → bands behind dots → toggle off → gone; cycle-time chips unchanged |
+| 2 | flow coach toggles per-state pace bands on the **portfolio** aging chart (E2E, Playwright `test.fixme`) | Tier A — E2E (layer 6) | `@walking_skeleton` `@driving_port` `@real-io` `@US-01` `@US-02` `@D8` | Portfolio parity (D8) for the toggle + band overlay |
+| 3 | `GetAgeInStatePercentiles_TeamWithCompletedItemsAcrossThreeStates_ReturnsExactCumulativeAgeAtExitPercentilesPerState` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` | Exact hand-computed 50/70/85/95 cumulative-age-at-exit per state (D12/DDD-1) |
+| 4 | `GetAgeInStatePercentiles_TeamWithCompletedItems_BandValuesRiseAcrossStatesInWorkflowOrder` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` | Workflow order + monotonic rise left→right (D12) |
+| 5 | `GetAgeInStatePercentiles_StateWithNoObservations_IsOmittedWhileOtherStatesRemain` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` `@error` (zero-observation edge) | Zero-observation state omitted; others remain (DDD-4) |
+| 6 | `GetAgeInStatePercentiles_TeamWithNoCompletedItemsInWindow_ReturnsEmptyArray` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` `@error` (empty edge) | Empty team → HTTP 200 empty array |
+| 7 | `GetAgeInStatePercentiles_StartDateAfterEndDate_ReturnsBadRequest` | Tier A — integration (layer 4) | `@driving_port` `@US-01` `@error` | Inverted date range → HTTP 400 (DDD-12) |
+| 8 | `GetAgeInStatePercentiles_ItemClosedOutsideWindow_ContributesNoObservations` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` `@error` (membership edge) | Membership rule `ClosedDate ∈ window` (DDD-2) |
+| 9 | `GetAgeInStatePercentiles_AnonymousCaller_IsRejected` | Tier A — integration (layer 4) | `@driving_port` `@US-01` `@error` `@rbac` | RBAC guard 401/403 (inherited TeamRead regression guard) |
+| 10 | `GetAgeInStatePercentiles_PortfolioWithCompletedFeaturesAcrossThreeStates_ReturnsExactRisingPercentilesPerState` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` `@D8` | Portfolio parity core math + workflow order + rise (D8/DDD-1) |
+| 11 | `GetAgeInStatePercentiles_PortfolioWithNoCompletedFeaturesInWindow_ReturnsEmptyArray` | Tier A — integration (layer 4) | `@driving_port` `@real-io` `@US-01` `@D8` `@error` (empty edge) | Portfolio empty → HTTP 200 empty array |
+
+Error/edge ratio (backend ATs #3–11, the layer that carries the negative-path coverage): 5 of 9 (#5 zero-observation, #6 empty, #7 inverted-range, #8 membership, #9 RBAC) = **56%**, comfortably over the 40% target. Across all 11 scenarios the edge/error count is 5 = **45%**.
+
+**Tier B (state-machine PBT) is correctly SKIPPED** per Mandate 10 "skip when": this is a read-projection feature exercised at layers 4 (real EF + `WebApplicationFactory`) and 6 (Playwright). There is no chained ≥3-scenario in-memory journey with a rich command/precondition state machine — the percentile computation is a pure aggregation read, and the toggle is a single boolean. Tier A example-based ATs cover the space. Per the project Infrastructure Policy this is a C#/.NET + React/Playwright project, not the Python/Hypothesis pilot, so `RuleBasedStateMachine` / `InMemoryComposition` / `assert_state_delta` Universe assertions do not apply (the C#-row of the polyglot matrix governs).
+
+## Wave: DISTILL / [REF] WS strategy
+
+Inherits DISCUSS "Type A (additive walking skeleton)". Under the project Architecture of Reference: **Driving port** = real HTTP via `WebApplicationFactory<Program>` (backend ATs) and the production React app via Playwright (E2E); **Driven internal** (EF `LighthouseAppContext`, `IRepository<T>`, `IWorkItemStateTransitionRepository`) = real adapter through the test factory (`EnsureCreated`/`EnsureDeleted` per `[SetUp]`, mirroring `ForecastFilter*IntegrationTest`); **Driven external** (Jira/ADO/Linear connectors) = NOT touched — this feature is a pure downstream reader of already-persisted transition + work-item data, so the E2E walking-skeleton drives **seeded demo data** (`loadDemoScenario(0)` + `waitForBackgroundUpdates`), never live connector syncs (per project memory: live syncs flake on 0-WIP + overview Search hidden during active syncs). The two walking-skeleton scenarios (#1 team, #2 portfolio) close the loop end-to-end through the production composition root.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | Covered by | Real-IO scenario? |
+|---|---|---|
+| `IWorkItemStateTransitionRepository` / `WorkItemStateTransition` rows (EF) | Backend core-math ATs (#3, #4, #10) seed transitions via the real repository and read the percentiles back through the endpoint over the real EF context | YES — real EF round-trip through `WebApplicationFactory` |
+| `IWorkItemRepository` / `IRepository<Feature>` "completed items in window" (`ClosedDate ∈ window`) | Membership AT (#8) + empty ATs (#6, #11) seed completed/in-flight/out-of-window items via the real repositories | YES — real EF query through `WebApplicationFactory` |
+| `BaseMetricsService.GetFromCacheIfExists` (existing in-process cache, new `AgeInStatePercentiles_...` key namespace) | Exercised transitively by every backend AT (the endpoint wraps the computation in the cache per DDD-5); no dedicated cache-key AT here — the cache-key-shape unit test is a DELIVER `BaseMetricsServiceTests` concern (DESIGN component table) | Transitive (real cache) |
+| Production React app + `WorkItemAgingChart` overlay + `PercentileLegend` chip (driving adapter, FE) | E2E walking-skeletons (#1, #2) drive the real chart through the real app against seeded demo data | YES — real app via Playwright |
+
+No external integration is introduced by this feature (DESIGN "Driven ports + adapters": "No contract tests recommended"). The Jira/ADO/Linear connector capture machinery that populates the transitions table belongs to the sibling `time-in-state-and-staleness`; this feature reads only Lighthouse-internal persisted data.
+
+## Wave: DISTILL / [REF] Test placement + precedent justification
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Team backend read-API ATs (7) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs` | Mirrors `TimeInStateReadApiIntegrationTest` (sibling DISTILL black-box AT precedent) + `ForecastFilterThroughputChartIntegrationTest` (seed Team + WorkItem via repositories, drive `/metrics/*` over `WebApplicationFactory`, `JsonDocument.Parse` dynamic assertions, `client.AsTeamAdmin` / `AsAnonymous`) |
+| Portfolio backend read-API ATs (2) | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesPortfolioReadApiIntegrationTest.cs` | Mirrors the sibling's split convention (`TimeInStateReadApiIntegrationTest` vs `PortfolioTimeInStateReadApiIntegrationTest`); seeds a `Portfolio` + completed `Feature`s with `feature.Portfolios.Add(portfolio)`, `client.AsPortfolioAdmin`, same `/api/latest/portfolios/{id}/metrics/...` shape |
+| E2E walking-skeleton spec (2) | `Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts` (new file, DESIGN component table) | Mirrors `TimeInStateAndStaleness.spec.ts` (`loadDemoScenario` + `waitForBackgroundUpdates` → `goToTeam`/`goToPortfolio` → `goToMetrics` → `switchCategory(FlowMetrics)` → `getWidgetByName(WorkItemAgingChart)`); all scenarios `test.fixme` (held for the user's live run) |
+| E2E POM (new) | `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemAgingChart.ts` | POM-only rule (project memory): no inline `page.locator` in the spec. New focused POM for the aging-chart surface (chip toggle + `<rect data-testid="pace-band">` readers + cycle-time chip count). DELIVER must honor the `data-testid="pace-band"` convention and the **Pace percentiles** chip label |
+
+**Black-box / compile-safety note**: NO not-yet-existing C# symbol is referenced. The endpoint is driven over HTTP and the response read entirely from JSON dynamically (`JsonDocument.Parse`, `EnumerateArray`, `GetProperty("state"|"percentiles"|"percentile"|"value")`). Seeding uses only already-shipped types — `WorkItem`, `Feature`, `Portfolio`, `Team`, `WorkItemStateTransition` (sibling slice 01), `StartedDate`/`ClosedDate`/`StateCategory` on `WorkItemBase`, `IWorkItemStateTransitionRepository` (extends `IRepository<WorkItemStateTransition>` with `Add`/`Save`). `dotnet build` is clean (verified: 0 warnings) and all 9 backend ATs report **Skipped** (verified) via `[Ignore(...)]`, so `dotnet test` stays green this DISTILL pass. The E2E spec + POM `tsc --noEmit` clean (verified, exit 0) and Biome clean (verified); the live Playwright run is held for the user (`test.fixme`, never committed un-fixme'd/unrun per project rule).
+
+## Wave: DISTILL / [REF] AT files created
+
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs` — NEW, 7 tests, each `[Ignore("pending DELIVER: US-01 …")]` (NUnit skip marker per the C#-row of the polyglot matrix).
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesPortfolioReadApiIntegrationTest.cs` — NEW, 2 tests, each `[Ignore("pending DELIVER: US-01 portfolio parity …")]`.
+- `Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts` — NEW, 2 walking-skeleton scenarios, all `test.fixme` (Playwright skip marker).
+- `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemAgingChart.ts` — NEW POM (chip toggle + band-rect + cycle-time-chip readers).
+
+No production code, no scaffold stubs, no `.feature`/Python artifacts. DELIVER is the sole author of production code.
+
+**DEFERRED to DELIVER** (would red the build now): all FE component unit tests (Vitest/RTL for the `<rect>` band rendering, the **Pace percentiles** chip, the no-regression default-off snapshot — reference `perStatePercentileValues`, `showPaceBands`, the new chip, none of which exist yet); the `MetricsService.getAgeInStatePercentiles` / `useMetricsData` TS unit tests; the `BaseMetricsService.ComputeAgeInStatePercentiles` NUnit unit tests (visit-level sampling, single-observation, multi-visit re-work, cache-key shape — DESIGN component table); the ArchUnitNET rule additions (no `*PerStateAggregation*` class; transitions read only via `IWorkItemStateTransitionRepository`; the helper is `protected`, per ADR-021). Per the sibling precedent FE units + service units are DELIVER's Outside-In inner loop.
+
+## Wave: DISTILL / [REF] Pre-DELIVER fail-for-the-right-reason gate
+
+Before writing any production code, DELIVER MUST un-ignore each AT one at a time (per ADR-025: RED phase only unskips DISTILL scaffolds) and confirm it fails because functionality is missing — not because of a setup, compile, or fixture error. Per-AT RED-reason classification:
+
+| # | Correct RED (MISSING_FUNCTIONALITY) | WRONG RED (BLOCK + fix test first) |
+|---|---|---|
+| 3 (team core math) | Endpoint route absent → 404, OR returns 200 with no/empty body → `PercentilesForState` Assert.Fail "state absent" → assertion fires | `JsonDocument.Parse` throws on an error page; seed fails (transition rows not saved); 500 |
+| 4 (rise / order) | Route absent → 404; or once the endpoint exists but order/sign is wrong, the monotonic-rise assertions fire | Parse throws; empty array (seed/membership mismatch) |
+| 5 (omitted state) | Route absent → 404; or Review present despite zero observations | Parse throws; In Progress/Test also absent (seed mismatch) |
+| 6 (empty team) | Route absent → 404. NOTE: once the endpoint exists, this may PASS for the right reason (no completed items → empty array) even before the math is correct — keep as a guard; confirm at GREEN it stays green because the array is genuinely empty, not because of a serialization quirk | 500; non-array body |
+| 7 (inverted range 400) | Route absent → 404 (≠ 400) → assertion fires. Once the endpoint exists with the `cycleTimePercentiles`-style validation this PASSES — that is EXPECTED (validation mirrored from precedent); keep as a guard | 500 on the bad range; 200 |
+| 8 (membership) | Route absent → 404; or item-closed-before-window leaks into the result (non-empty array) | Parse throws; 500 |
+| 9 (RBAC) | Inherited class-level `[RbacGuard(TeamRead)]` — this likely PASSES the moment the route exists (guard is inherited, not new). If it PASSES un-ignored that is EXPECTED; keep as a regression guard. WRONG only if it returns 200 to an anonymous caller | 500 |
+| 10 (portfolio core math) | Same as #3 against the portfolio route | same as #3 |
+| 11 (portfolio empty) | Same as #6 against the portfolio route | same as #6 |
+
+**Fixture Theater check (Mandate / project rule):** when each AT flips to GREEN, `git diff --stat` MUST show production files changed (the new `AgeInStatePercentilesDto`, the controller endpoints, the `BaseMetricsService.ComputeAgeInStatePercentiles` helper + the two service methods). An AT that goes green with only test-file changes means the percentiles are being echoed by the seed rather than computed — BLOCK.
+
+**E2E (#1, #2) un-fixme LAST**, start a local app, load demo scenario 0, run live, and confirm RED (no **Pace percentiles** chip / no `pace-band` rects render), then drive green. Per project rule + memory, never commit a Playwright spec not RUN locally against a started app. Also confirm the `aging` widget id and the chip label/`data-testid="pace-band"` convention match what DELIVER ships (the POM pins both).
+
+## Wave: DISTILL / [REF] Reconciliation + infrastructure policy notes
+
+- **Wave-decision reconciliation: PASSED — 0 contradictions.** This feature uses the unified `feature-delta.md` model (no separate `discuss/`, `design/`, `devops/` `wave-decisions.md` files). The DISCUSS and DESIGN sections inside the feature-delta are internally consistent across the whole chain: the US-03 cut is reflected in both the DISCUSS D-list (US-03 REMOVED note) AND DDD-11 (REMOVED); the filled colored zones in both D6 AND DDD-6; the single toggle chip in both US-02 AND DDD-8; the cumulative-total-age-at-exit metric in both D12 AND DDD-1. No `docs/feature/aging-pace-percentiles/devops/` delta exists — default environment assumptions apply (warn, not block; the existing `ci_verifysqlite.yml` + `ci_verifypostgres.yml` cover the no-new-migration case per DESIGN).
+- **Journey YAML is STALE — superseded, recorded (applied reconciliation, NOT a live contradiction).** `docs/product/journeys/aging-pace-percentiles.yaml` (dated 2026-05-24) describes the **pre-2026-05-25** design: dashed line segments (`step-scan-bands`), TWO chip groups with a "Cycle Time %iles" toggle group (`step-toggle-pace-lens-if-needed`, journey D6), and a tooltip pace annotation (`step-confirm-via-tooltip` = the removed US-03), plus low-sample messaging (`error_paths_summary`: "<10 samples … legend chip tooltip warns", "per-band hover tooltip shows the actual N"). The `feature-delta.md` (2026-05-25) SUPERSEDES it: **filled colored background zones** (green→red, D6/DDD-6), a **SINGLE** "Pace percentiles" toggle chip off by default (US-02/DDD-8), **US-03 CUT** (no tooltip annotation, no per-band hover, no low-sample messaging, no `sampleSize` field — Out of scope + DDD-4/DDD-11). ALL scenarios in this pass are written against the feature-delta, NOT the journey YAML. Mirrors how the sibling recorded its `source="csv-fallback"` applied reconciliation: DISCUSS/DESIGN in the feature-delta are the authority and are internally consistent; the journey YAML is a stale pre-simplification artifact. The journey YAML is NOT edited here (DISTILL does not own the product journey SSOT); this note IS the modification record, to be back-propagated by the journey owner.
+- **Infrastructure policy:** applied from `docs/architecture/atdd-infrastructure-policy.md` (`--policy=inherit`, present): Driving = `WebApplicationFactory<Program>` (`WithTestAuthentication`, routes `/api/latest/...`, `client.AsTeamAdmin`/`AsPortfolioAdmin`/`AsAnonymous`) for backend + production React app via Playwright POM for E2E; Driven internal = real EF `LighthouseAppContext` via the factory with `EnsureDeleted`/`EnsureCreated` per `[SetUp]`; Driven external = none introduced (this feature is a downstream reader; E2E uses seeded demo data, not live connector syncs). NUnit `[Ignore]` and Playwright `test.fixme` are the C#-row / TS-row skip markers per the polyglot matrix. The Python-pilot artifacts (`tests/common/state_delta.<ext>`, `assert_state_delta` Universe assertions, Hypothesis/PBT harnesses, `__SCAFFOLD__` stubs, Mandate 8/9 state-delta + layer-dependent PBT) do NOT apply and were NOT bootstrapped — the policy file already records this for the audit trail.
+
+## Wave: DISTILL / [REF] Review-gate carry-forward (DELIVER scope)
+
+Final Wave Review Gate (2026-05-26): three reviewers APPROVED (product-owner DISCUSS, solution-architect DESIGN, acceptance-designer DISTILL; platform-architect N/A — no DEVOPS wave). Zero blockers. Items to honour during DELIVER:
+
+- **(resolved at gate, no action)** The date-range validation reuses the existing in-class `private const StartDateMustBeBeforeEndDateErrorMessage` — verified present at `TeamMetricsController.cs:19` and used by `cycleTimePercentiles` (line 122-124). `PortfolioMetricsController` has its own equivalent for its existing endpoints. The new endpoints mirror the `startDate.Date > endDate.Date → BadRequest(...)` pattern; no new constant.
+- **(L) Magic-number extraction:** the per-state band X-span half-width `0.4` (ADR-020 / DDD-6) is a visual-tuning constant — extract to a named `const STATE_BAND_HALF_WIDTH = 0.4` in `WorkItemAgingChart.tsx` at GREEN so it is discoverable; ADR-020 Consequences warns it may need re-tuning if column spacing changes.
+- **(L) Release-notes framing:** the D12/DDD-1 metric is *cumulative total age at state exit* (not time-in-state); a one-line release-note explanation of why (Y-axis comparability, monotonic bands) helps flow coaches reading the notes. Defer to the release-notes pass, not a code task.
+
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Shipped per-state pace-percentile bands on the Work Item Aging chart (team + portfolio) across 11 commits (`bdeaf29a`→`7a989fc9`). Backend: `AgeInStatePercentilesDto` + a `protected BaseMetricsService.ComputeAgeInStatePercentiles` helper (cumulative total-age-at-state-exit per D12, visit-level, percentiles via the existing `PercentileCalculator`), `GetAgeInStatePercentilesForTeam`/`…ForPortfolio` service methods, and two new `GET …/metrics/ageInStatePercentiles` endpoints mirroring `cycleTimePercentiles`. Frontend: `IPerStatePercentileValues` model + `MetricsService.getAgeInStatePercentiles`, a parallel fetch in `useMetricsData`, a filled green→red SVG `<rect>` overlay (`computePaceBandRects` + `PaceBandOverlay`) drawn behind the dots inside `<ChartsContainer>` via MUI-X `useXScale`/`useYScale`, gated by a single off-by-default **Pace percentiles** chip in `PercentileLegend`. A mid-wave blocker (step 04-04) — CSV demo data carried no multi-state journey, so bands were empty on the demo instance — was resolved by extending `CsvWorkTrackingConnector` to synthesize an ordered From→To journey from per-state `StateEnteredDate_<state>` columns and enriching the scenario-0 demo data (Team Zenith + Project Apollo). NO `sampleSize`, NO tooltip/hover, NO low-sample messaging, single chip (US-03 + per-band hover cut 2026-05-25). `useChartVisibility` unchanged. No new persistence, no migration, no external integration, no premium gate.
+
+## Wave: DELIVER / [REF] Files modified
+
+Backend production: `API/DTO/AgeInStatePercentilesDto.cs` (new), `Services/Implementation/BaseMetricsService.cs` (helper + shared `GroupTransitionsByItem`/`BuildWorkflowStateOrder`), `TeamMetricsService.cs` + `PortfolioMetricsService.cs` (+ interfaces), `API/TeamMetricsController.cs` + `PortfolioMetricsController.cs` (endpoints), `WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs` + `CsvWorkTrackingOptionNames.cs` (multi-state journey synthesis).
+Backend tests: `API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs` (7 team ATs) + `…PortfolioReadApiIntegrationTest.cs` (2 portfolio ATs), `Architecture/MetricsArchitectureTests.cs` (3 ADR-021 rules) + `TimeInStateSeamArchUnitTest.cs` (sanctioned-reader allow-list), `Services/Implementation/BaseMetricsServiceTests.cs`, `…/WorkItems/DemoDataStateEnteredSeamIntegrationTest.cs`, plus DI-ctor updates to `TeamMetricsServiceTests`/`…SnapshotTests`/`PortfolioMetricsServiceTests`/`ForecastFilterFeatureForecastIntegrationTest`.
+Frontend production: `models/PerStatePercentileValues.ts` (new), `services/Api/MetricsService.ts`, `hooks/useMetricsData.ts`, `components/Common/Charts/WorkItemAgingChart.tsx`, `PercentileLegend.tsx`, `pages/Common/MetricsView/BaseMetricsView.tsx`.
+Frontend tests: `MetricsService.test.ts`, `useMetricsData.test.ts`, `WorkItemAgingChart.test.tsx`, `PercentileLegend.test.tsx`, `BaseMetricsView.test.tsx`, `TotalWorkItemAgeWidget.test.tsx`, `tests/MockApiServiceProvider.ts`.
+E2E: `Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts` + `tests/models/metrics/WorkItemAgingChart.ts` (POM).
+Mutation: `stryker-config.aging-pace-percentiles.json`, `stryker.config.aging-pace-percentiles.mjs`, `vitest.stryker.aging-pace-percentiles.config.ts` + reports under `deliver/mutation/`.
+
+## Wave: DELIVER / [REF] Scenarios green count
+
+9 of 9 NUnit acceptance tests green (7 team + 2 portfolio, `WebApplicationFactory` black-box). 2 of 2 Playwright walking-skeleton scenarios green live (team + portfolio toggle, demo scenario 0, run 2026-05-26). Full suites: backend 2789 passed / 1 pre-existing skip / 0 failed; frontend 3028 passed (234 files).
+
+## Wave: DELIVER / [REF] DoD check (against DISCUSS Definition of Done)
+
+1. Both stories pass ACs via integration tests (NUnit + WebApplicationFactory; Vitest + RTL) — PASS.
+2. Per-state percentile math verified against a hand-computed fixture (exact 50/70/85/95 cumulative-age-at-exit per state) — PASS (`BaseMetricsServiceTests` + the read-API ATs).
+3. No regression in existing `WorkItemAgingChart` tests; overlay-off renders identically — PASS (default-off no-regression snapshot).
+4. Empty-distribution-per-state omitted; single/multi-visit handled; no low-sample messaging — PASS.
+5. Portfolio-scope parity (team + portfolio via shared `BaseMetricsView`) — PASS.
+6. `dotnet build` zero-warning; `pnpm build` clean — PASS.
+7. SonarCloud quality gate — pending CI (push).
+8. Mutation ≥80% (Stryker.NET + Stryker) — PASS (backend 85.7%, frontend 89.58%).
+9. Docs screenshot of the overlay toggled on — deferred to the docs/update-docs pass (post-merge).
+
+## Wave: DELIVER / [REF] Demo evidence
+
+US-01 + US-02 (both user-facing, non-`@infrastructure`) demo = the live Playwright walking skeleton, run 2026-05-26 against a locally-started app + demo scenario 0: `2 passed (8.2s)`. Team Zenith and Project Apollo Work Item Aging charts: no bands by default → toggling the **Pace percentiles** chip renders `data-testid="pace-band"` rects behind the dots, rising left→right → toggling off removes them; existing cycle-time/SLE chips unaffected throughout.
+
+## Wave: DELIVER / [REF] Quality gates
+
+Post-merge integration gate: PASS (full backend + frontend suites + builds + Biome + live E2E). L1-L6 refactor: deduped the transition-bridging into `BaseMetricsService` (`4e95ddcf`, net −12 LOC), ArchUnit + suites green. Adversarial review (Sonnet): APPROVED, 0 blockers / 0 high / 1 non-blocking low; all 8 high-risk items (incl. the AT oracle reconciliation and fixture-theater checks) verified clean. Mutation: backend 85.7% (math 100%, CSV journey 86.4%), frontend 89.58% (geometry 97%, service/hook 100%). DES integrity: all 9 steps complete traces.
+
+## Wave: DELIVER / [WHY] Upstream issues (back-propagation)
+
+- **`docs/product/architecture/brief.md` aging-pace section + `docs/product/journeys/aging-pace-percentiles.yaml` were stale** (pre-2026-05-25 simplification: described a `sampleSize` field, a per-bucket tooltip annotation, a chip *group* with sub-headers, low-sample messaging, and a `useChartVisibility` extension). Corrected during finalize to match the shipped design (filled green→red zones, single off-by-default chip, no `sampleSize`, no tooltip, `useChartVisibility` unchanged).
+- **DESIGN idealized a single transition repository**; the shipped reality uses `IWorkItemStateTransitionRepository` (team `WorkItem`s) AND `IFeatureStateTransitionRepository` (portfolio `Feature`s have their own transition type, FK'd to the Features table). The shared `ComputeAgeInStatePercentiles` helper takes pre-loaded transitions; each leaf service loads via its own repo (keeps `BaseMetricsService` repo-free, ArchUnit-clean).
+- **DISTILL/DESIGN assumed demo data carried per-state journeys** — it did not (CSV synthesized one FromState-empty "entered" transition). Surfaced by the live E2E; resolved by step 04-04 (CSV multi-state journey synthesis + scenario-0 enrichment).

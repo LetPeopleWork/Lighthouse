@@ -1,0 +1,260 @@
+{
+  "roadmap": {
+    "project_id": "aging-pace-percentiles",
+    "created_at": "2026-05-26T00:00:00Z",
+    "total_steps": 9
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Backend team foundation",
+      "description": "AgeInStatePercentilesDto + BaseMetricsService.ComputeAgeInStatePercentiles helper (D12 cumulative-total-age-at-exit, visit-level) + TeamMetricsService method + team endpoint mirroring cycleTimePercentiles. Drives the 7 team read-API ATs.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "AgeInStatePercentilesDto + ComputeAgeInStatePercentiles helper + unit tests",
+          "criteria": [
+            "AgeInStatePercentilesDto is a record (string State, IReadOnlyList<PercentileValue> Percentiles); no SampleSize field per DDD-4",
+            "ComputeAgeInStatePercentiles is protected on BaseMetricsService; buckets each completed visit by state using exitTransition.TransitionedAt minus item.StartedDate per DDD-1/D12",
+            "Percentiles 50/70/85/95 computed via existing PercentileCalculator; values rise across states in workflow order; band values are visit-level not item-level",
+            "A state with zero observations is omitted; a multi-visit (re-work) item contributes one observation per state exit",
+            "NUnit unit tests assert exact hand-computed per-state percentiles on a 20-item 3-state fixture plus empty/single/multi-visit boundaries"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs",
+          "scenario_name": "ComputeAgeInStatePercentiles_CompletedItemsAcrossThreeStates_ReturnsExactCumulativeAgeAtExitPercentilesPerState",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/AgeInStatePercentilesDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks (quantified preconditions + invariant outcomes) where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example - they verify wiring, not invariants. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). Bug-prone legacy code = Stage 1 first (state-delta migration captures hidden mutations, 33-75% yield), THEN Stage 2 PBT amplification (low yield by design - surface is debt-paid). Don't expect high hit rate on Stage-1-completed surfaces; that's healthy. See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: this is a C#/.NET + NUnit project (the C#-row of the polyglot matrix governs, not the Python/Hypothesis pilot per the DISTILL Infrastructure Policy note) - Hypothesis/assert_state_delta do NOT apply. Compensate with exact-value example-based NUnit unit tests on a hand-computed fixture (the strongest available oracle for the percentile math) and the visit-level/rise-left-to-right invariant assertions. NEW AgeInStatePercentilesDto (WHY-NEW-FILE: zero existing overlap per the Reuse-Analysis grep for AgeInState|PerStatePercentile; CLOSEST-EXISTING the existing metrics DTOs reuse PercentileValue but none carry a per-state shape). EXTEND BaseMetricsService with the protected ComputeAgeInStatePercentiles helper per DDD-9 (intra-inheritance, NOT an interface - ADR-021 forbids IPerStateAggregationService). Algorithm per ADR-019 + D12: for the supplied completed-items-in-window, walk transitions via IWorkItemStateTransitionRepository.GetAllByPredicate(t => completedItemIds.Contains(t.WorkItemId)) (or an EF-friendly composition; crafter chooses at GREEN), record cumulative total age at exit = exitTransition.TransitionedAt - item.StartedDate for each Doing-category state the item left, bucket by state in workflow order, compute via PercentileCalculator.CalculatePercentile per 50/70/85/95. REUSE-AS-IS PercentileCalculator, PercentileValue, IWorkItemStateTransitionRepository (no change). Mind the slice-01 mapped-state lesson: compare/bucket on the mapped ToState. NEW BaseMetricsServiceTests methods (or alongside TeamMetricsServiceTests): exact 50/70/85/95 per state on a 20-completed-item 3-state fixture (In Progress/Review/Test) with known StartedDate + transition timestamps; assert monotonic rise left-to-right; boundary: empty state omitted, single-observation state, multi-visit re-work yields one observation per exit; visit-level (not item-level) sampling assertion per the ADR-019 enforcement table. Immutability (ImmutableList/record, no mutable List<T> state), <=2 nesting, no else chains, switch expressions, no comments. Nullable enabled, TreatWarningsAsErrors - zero-warning build."
+        },
+        {
+          "id": "01-02",
+          "name": "TeamMetricsService method + cache wrap + team endpoint",
+          "criteria": [
+            "ITeamMetricsService declares GetAgeInStatePercentilesForTeam(Team, DateTime startDate, DateTime endDate); TeamMetricsService implements it",
+            "Implementation uses existing GetWorkItemsClosedInDateRange (DDD-2 membership) then ComputeAgeInStatePercentiles, wrapped in GetFromCacheIfExists with key AgeInStatePercentiles_{start:yyyy-MM-dd}_{end:yyyy-MM-dd}",
+            "TeamMetricsController exposes GET ageInStatePercentiles; startDate.Date > endDate.Date returns 400 with StartDateMustBeBeforeEndDateErrorMessage",
+            "Workflow state order comes from the team's existing doingStates; default percentiles 50/70/85/95",
+            "All 7 team ATs in AgeInStatePercentilesReadApiIntegrationTest are un-ignored and go green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs",
+          "scenario_name": "GetAgeInStatePercentiles_TeamWithCompletedItemsAcrossThreeStates_ReturnsExactCumulativeAgeAtExitPercentilesPerState",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks (quantified preconditions + invariant outcomes) where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example - they verify wiring, not invariants. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). Bug-prone legacy code = Stage 1 first (state-delta migration captures hidden mutations, 33-75% yield), THEN Stage 2 PBT amplification (low yield by design - surface is debt-paid). Don't expect high hit rate on Stage-1-completed surfaces; that's healthy. See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: the un-ignored ATs are layer-4 read-API integration tests (WebApplicationFactory + real EF) that verify wiring, not invariants - they REMAIN single-example per the mandate. The invariant coverage (exact math, rise, visit-level) lives in the 01-01 unit tests on the adjacent ComputeAgeInStatePercentiles helper. EXTEND ITeamMetricsService + TeamMetricsService mirroring GetCycleTimePercentilesForTeam (TeamMetricsService.cs:303-320): (1) GetWorkItemsClosedInDateRange(team, startDate, endDate) - same predicate the existing CT path uses per DDD-2; (2) call the 01-01 ComputeAgeInStatePercentiles helper passing the team's doingStates as the workflow order and [50,70,85,95]; (3) wrap in GetFromCacheIfExists(team, $\"AgeInStatePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}\", () => ..., logger) per DDD-5 (REUSE-AS-IS cache, new key namespace alongside CycleTimePercentiles_). EXTEND TeamMetricsController mirroring GetCycleTimePercentilesForTeam (line 119-129): [HttpGet(\"ageInStatePercentiles\")] returning ActionResult<IEnumerable<AgeInStatePercentilesDto>>, validation startDate.Date > endDate.Date => BadRequest(StartDateMustBeBeforeEndDateErrorMessage) reusing the existing in-class const (verified at TeamMetricsController.cs:19), dispatch via GetEntityByIdAnExecuteAction(teamRepository, teamId, team => teamMetricsService.GetAgeInStatePercentilesForTeam(team, startDate, endDate)). Auth via the existing class-level [RbacGuard(TeamRead)] - inherited, do NOT add a new guard; verify presence at GREEN. RED handoff from DISTILL (ADR-025: RED only unskips DISTILL scaffolds): un-ignore the 7 ATs in AgeInStatePercentilesReadApiIntegrationTest ONE at a time and confirm RED-for-right-reason per the DISTILL Pre-DELIVER gate table - #3/#4/#5/#8 fail because the route is absent (404) or the body is empty/wrong; #6 (empty team) and #7 (inverted-range 400) and #9 (RBAC) may PASS the moment the route+validation+inherited guard exist - that is EXPECTED, keep them as regression guards. WRONG RED = JsonDocument.Parse throws on an error page / 500 / seed not saved -> BLOCK and fix the setup, not the production gap. Post-GREEN Fixture-Theater check: git diff --stat MUST show AgeInStatePercentilesDto.cs + BaseMetricsService.cs + TeamMetricsService.cs + TeamMetricsController.cs changed - if only the test file changed the percentiles are echoed by the seed not computed; BLOCK. Immutability, <=2 nesting, no else, switch expressions, no comments. Async all the way (CancellationToken through). Zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Portfolio parity",
+      "description": "PortfolioMetricsService method + PortfolioMetricsController endpoint mirroring the team path, scoped to the portfolio's completed-features-in-window (D8). Drives the 2 portfolio read-API ATs.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "PortfolioMetricsService method + portfolio endpoint",
+          "criteria": [
+            "IPortfolioMetricsService declares GetAgeInStatePercentilesForPortfolio(Portfolio, DateTime startDate, DateTime endDate); PortfolioMetricsService implements it via the same pattern as Team",
+            "Completed items in window come from the portfolio's existing closed-in-range query; delegates to the shared ComputeAgeInStatePercentiles helper with the same cache-key shape",
+            "PortfolioMetricsController exposes GET ageInStatePercentiles mirroring the team endpoint validation and dispatch; auth via inherited RbacGuard(PortfolioRead)",
+            "Band values rise across the portfolio workflow states (Analyzing/Building/Validating) per D12",
+            "Both portfolio ATs in AgeInStatePercentilesPortfolioReadApiIntegrationTest are un-ignored and go green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesPortfolioReadApiIntegrationTest.cs",
+          "scenario_name": "GetAgeInStatePercentiles_PortfolioWithCompletedFeaturesAcrossThreeStates_ReturnsExactRisingPercentilesPerState",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/AgeInStatePercentilesPortfolioReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks (quantified preconditions + invariant outcomes) where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example - they verify wiring, not invariants. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). Bug-prone legacy code = Stage 1 first (state-delta migration captures hidden mutations, 33-75% yield), THEN Stage 2 PBT amplification (low yield by design - surface is debt-paid). Don't expect high hit rate on Stage-1-completed surfaces; that's healthy. See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row of the polyglot matrix), and the un-ignored ATs are layer-4 integration tests that verify wiring - single-example per the mandate. The percentile-math invariants are already covered by the 01-01 helper unit tests (the helper is shared via inheritance, so portfolio reuses the same proven computation). EXTEND IPortfolioMetricsService + PortfolioMetricsService mirroring GetCycleTimePercentilesForPortfolio: source the portfolio's completed-features-in-window via the existing per-portfolio equivalent of GetWorkItemsClosedInDateRange, delegate to the inherited BaseMetricsService.ComputeAgeInStatePercentiles (DDD-9 - same protected helper, no duplication; ADR-021 enforces no parallel aggregation service), wrap in GetFromCacheIfExists with the SAME AgeInStatePercentiles_{start}_{end} key namespace per DDD-5, default percentiles [50,70,85,95], workflow order from the portfolio's doingStates. EXTEND PortfolioMetricsController mirroring its existing cycleTimePercentiles endpoint (PortfolioMetricsController.cs:100-114): [HttpGet(\"ageInStatePercentiles\")], same startDate.Date > endDate.Date => BadRequest validation (PortfolioMetricsController has its own equivalent error const for its existing endpoints - reuse it, no new const), GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, ...). Auth via the inherited class-level [RbacGuard(PortfolioRead)] - verify at GREEN, do NOT add a new guard. RED handoff: un-ignore the 2 portfolio ATs (#10 core math + rise, #11 empty) and confirm RED-for-right-reason per the DISTILL gate (#10 like #3 against the portfolio route; #11 like #6 - may PASS once the route exists because the array is genuinely empty, keep as guard). WRONG RED = Parse throws / 500 -> BLOCK. Post-GREEN Fixture-Theater check: PortfolioMetricsService.cs + PortfolioMetricsController.cs MUST appear in git diff; AgeInStatePercentilesDto + BaseMetricsService already shipped in phase 01 (do NOT re-add). Immutability, <=2 nesting, no else, switch expressions, async with CancellationToken, no comments. Zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Architecture enforcement rules",
+      "description": "ArchUnitNET rules per ADR-021: no *PerStateAggregation* type exists; metrics services read transitions only via IWorkItemStateTransitionRepository never DbSet directly; ComputeAgeInStatePercentiles is protected (intra-inheritance only).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "ArchUnitNET rules for the per-state aggregation seam",
+          "criteria": [
+            "An ArchUnitNET rule asserts no class or interface named *PerStateAggregation* exists in the assembly (ADR-021 / DDD-10 upheld)",
+            "A rule asserts the metrics-service classes read WorkItemStateTransition only via IWorkItemStateTransitionRepository, never via DbSet<WorkItemStateTransition> (extends the ADR-015 rule)",
+            "A rule asserts BaseMetricsService.ComputeAgeInStatePercentiles is protected (not public, not an interface member), preventing accidental promotion to a shared service",
+            "The new rules are added to the existing architecture test suite and pass",
+            "dotnet build stays zero-warning and the full backend suite stays green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs",
+          "scenario_name": "NoPerStateAggregationServiceExists_AndComputeHelperIsProtected_AndTransitionsReadOnlyViaRepository",
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks (quantified preconditions + invariant outcomes) where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example - they verify wiring, not invariants. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: ArchUnitNET rules are structural assertions over the type graph (the C#-row equivalent of import-linter contracts); they are inherently invariant-style (the rule IS the universal-quantifier over all types) but expressed in the ArchUnitNET fluent API, not Hypothesis. Compensate: each rule is itself the property (\"for all types T, NOT named *PerStateAggregation*\"; \"for all metrics services, transitions accessed only via the repository port\"; \"ComputeAgeInStatePercentiles has protected visibility\"). EXTEND the existing architecture suite (find the existing ArchUnitNET test class - the slice-01 TimeInStateSeamArchUnitTest established the pattern; if a metrics-specific class is the better home create MetricsArchitectureTests, else add methods to the existing suite - WHY-NEW-FILE only if no metrics architecture class exists, CLOSEST-EXISTING the slice-01 seam ArchUnit class). Three rules per ADR-021: (1) Types().That().HaveNameContaining(\"PerStateAggregation\") => Should().NotExist() (upholds ADR-018/DDD-10 - the repository IS the shared seam, no aggregation service); (2) the metrics-service classes (BaseMetricsService/TeamMetricsService/PortfolioMetricsService) depend on IWorkItemStateTransitionRepository and do NOT depend on DbSet<WorkItemStateTransition> directly (extends the ADR-015 transitions-via-repository-only rule to the new readers); (3) ComputeAgeInStatePercentiles is protected - assert via reflection/ArchUnitNET member visibility that the method is not public and BaseMetricsService exposes no public per-state aggregation member (intra-inheritance only per DDD-9). This is a pure architecture-rule step - no production code changes; if any rule fails at first run, the FIX is in the production code from phases 01/02 (e.g. accidental public helper), not a rule relaxation. Sonar: keep cognitive complexity low (one assert per rule, EnterMultipleScope if grouped per NUnit2045). No comments. Zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Frontend data plumbing + chart overlay + toggle chip",
+      "description": "IPerStatePercentileValues model, MetricsService.getAgeInStatePercentiles, useMetricsData parallel fetch + new ctx field, BaseMetricsView prop, WorkItemAgingChart <rect> band overlay (off by default, behind dots), PercentileLegend single Pace percentiles chip. Vitest authored here. PLUS 04-04: extend CsvWorkTrackingConnector to synthesize a multi-state per-state journey + enrich scenario-0 demo CSVs so the live walking skeleton renders bands.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "TS model + MetricsService.getAgeInStatePercentiles + useMetricsData ctx",
+          "criteria": [
+            "IPerStatePercentileValues { state: string; percentiles: IPercentileValue[] } mirrors the backend DTO; no sampleSize field per DDD-4",
+            "IMetricsService and MetricsService gain getAgeInStatePercentiles(id, startDate, endDate) mirroring getCycleTimePercentiles GET shape",
+            "useMetricsData fetches it in parallel in the same effect as getCycleTimePercentiles and returns perStatePercentileValues (default [])",
+            "Vitest covers MetricsService resolving the new endpoint and useMetricsData populating ctx.perStatePercentileValues alongside the existing fetch",
+            "pnpm build is clean and Biome reports zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+          "scenario_name": "getAgeInStatePercentiles fetches per-state percentile values for an entity and window",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/PerStatePercentileValues.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks (quantified preconditions + invariant outcomes) where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example - they verify wiring, not invariants. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (the TS-row of the polyglot matrix governs, not the Python/Hypothesis pilot); Hypothesis/assert_state_delta do NOT apply. These are service-fetch + hook-wiring unit tests that verify wiring, not invariants - single-example per the mandate. NEW IPerStatePercentileValues (PerStatePercentileValues.ts) composing the existing IPercentileValue (REUSE-AS-IS, no change to PercentileValue.ts); WHY-NEW-FILE: zero existing overlap per the Reuse-Analysis grep; no sampleSize (DDD-4). EXTEND IMetricsService + MetricsService.getAgeInStatePercentiles mirroring getCycleTimePercentiles (MetricsService.ts:247-260): GET `/${this.api}/${id}/metrics/ageInStatePercentiles?${this.getDateFormatString(startDate, endDate)}` returning Promise<IPerStatePercentileValues[]>. Mock only abstractions you own - do NOT mock fetch/axios directly (CLAUDE.md); test through the service's own seam as the existing MetricsService tests do. EXTEND useMetricsData (useMetricsData.ts ~line 211): add the parallel metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate) call in the SAME effect that calls getCycleTimePercentiles (Promise.all shape - crafter chooses), add perStatePercentileValues: IPerStatePercentileValues[] to the returned ctx defaulting to []. CRITICAL (project memory project_react185_loop_unstable_useeffect_dep): do NOT introduce a new inline new Date() / unstable object into a useEffect dependency array - reuse the existing window state deps; if a derived value feeds a dep, useMemo-stabilise it. Schema-first at the trust boundary: if MetricsService deserialises responses via a Zod schema, extend that schema and derive the type via z.infer (do NOT as-cast). Vitest: factory getMockX(overrides?) for the per-state payload validated against IPerStatePercentileValues; assert the service resolves the parsed shape and the hook surfaces ctx.perStatePercentileValues; assert the existing percentileValues fetch is unaffected (no regression). Strict TS, no any (narrow unknown with a guard). Biome clean. pnpm build zero warnings."
+        },
+        {
+          "id": "04-02",
+          "name": "WorkItemAgingChart rect band overlay + BaseMetricsView wiring",
+          "criteria": [
+            "WorkItemAgingChart accepts optional perStatePercentileValues prop; absent/empty renders today-identical, guarded by the no-regression default-off snapshot",
+            "When showPaceBands is on, each state with data renders stacked SVG <rect> zones spanning x in [stateIndex-0.4, stateIndex+0.4] across consecutive percentile boundaries, green to red, behind the dots",
+            "showPaceBands is a single local boolean state off by default; useChartVisibility is unchanged; the existing CT lines and SLE line are unaffected",
+            "BaseMetricsView passes perStatePercentileValues={ctx.perStatePercentileValues} to the chart in both team and portfolio scope",
+            "Vitest covers default-off no-rect snapshot, overlay-on rect x-span/y-boundary/green-to-red fill, and z-order behind the dots"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx",
+          "scenario_name": "renders per-state pace band rects behind the dots only when the overlay is toggled on",
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row of the polyglot matrix); Hypothesis does NOT apply. SVG-rendering + snapshot + toggle behaviours are example-based RTL assertions (golden-snapshot diff + DOM presence), not quantified invariants. Compensate: the no-regression default-off SNAPSHOT is the golden-file oracle; the band-rendering test asserts exact x-span/y-boundary geometry. DELIVER SPIKE FIRST (~30 min, DESIGN open question): confirm an SVG <rect> child of <ChartsContainer> receives data-space coordinates (like <ChartsReferenceLine>) so x in [stateIndex-0.4, stateIndex+0.4] and percentile-value Y boundaries place correctly; if false, fall back to a getBoundingClientRect()-positioned <svg> overlay (heavier, still feasible) - no DESIGN blocker. EXTEND WorkItemAgingChart per ADR-020 + DDD-6: add optional perStatePercentileValues?: IPerStatePercentileValues[] prop; render the <rect> filled-zone overlay as a child of the existing <ChartsContainer> BEFORE the dots (z-order = drawn first = behind); for each state with data, one stacked set of rects at the consecutive percentile boundaries (0->p50->p70->p85->p95->top) filled from the green->red ForecastLevel(percentile).color palette (REUSE-AS-IS ForecastLevel.ts, already imported). Extract the half-width as `const STATE_BAND_HALF_WIDTH = 0.4` (Review-gate carry-forward L: magic-number extraction). Gate the whole overlay on a single showPaceBands boolean - a trivial local useState in WorkItemAgingChart, off by default (DDD-8); do NOT touch useChartVisibility (DDD-8/Reuse-Analysis NO CHANGE) and do NOT add a per-percentile visibility map, tooltip annotation, or per-band hover (US-03 + per-band hover CUT). EXTEND BaseMetricsView (line 788-794) to pass perStatePercentileValues={ctx.perStatePercentileValues} to the <WorkItemAgingChart> - this single shared edit covers BOTH team and portfolio routes (do NOT special-case scope). Vitest + RTL: (a) no-regression: render with perStatePercentileValues present but overlay off -> assert NO band rects, DOM matches the existing snapshot (DoD #3 no-regression); (b) band rendering: 2-state fixture + overlay on -> assert the expected <rect>s at expected x-span/y-boundaries with green->red fills; (c) z-order: assert the rect group precedes the dot series in DOM order. Skip framework renders-without-crashing tests (CLAUDE.md). Factory getMockX(overrides?) for the per-state fixture. Strict TS, no any. Biome clean. pnpm build zero warnings."
+        },
+        {
+          "id": "04-03",
+          "name": "PercentileLegend single Pace percentiles toggle chip",
+          "criteria": [
+            "PercentileLegend gains optional showPaceBands, onTogglePaceBands, and paceBandsAvailable props and renders one chip labelled Pace percentiles when band data exists",
+            "The chip is off by default; clicking it toggles the overlay; clicking again hides it; the existing CT percentile chips and SLE chip are unaffected",
+            "No second chip group, no sub-headers, no low-sample notice; the chip is hidden when no state has band data (paceBandsAvailable false)",
+            "Vitest covers chip-off-by-default, click-on then click-off, the existing chips unaffected, and chip absent when no band data",
+            "pnpm build is clean and Biome reports zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/PercentileLegend.test.tsx",
+          "scenario_name": "renders one off-by-default Pace percentiles chip that toggles the overlay without affecting existing chips",
+          "deps": [
+            "04-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/PercentileLegend.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/PercentileLegend.test.tsx"
+          ],
+          "implementation_notes": "TEST PARADIGM (mandatory): Unit tests for this step MUST be written as property-based tests using Hypothesis @given strategies + state-delta matchers (assert_state_delta over a declared universe with strict=True). Single-example unit tests are FALLBACK only - document why in a `# bypass:` comment if used. Acceptance scenarios MUST be framed as Property: blocks where the contract supports it; classic Scenario: is fallback. Integration and E2E tests REMAIN single-example. Universe declaration is mandatory even when only one slot is checked: the unchanged() predicate covers the rest. STAGE CONTEXT (cascade): NEW code = Stage 0 (paradigm-from-day-zero, no debt accumulates). See nw-tdd-methodology::Paradigm Mandate for the full debt-payoff framing. EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row of the polyglot matrix); Hypothesis does NOT apply. Chip presence/toggle/independence are example-based RTL interaction assertions (click -> DOM delta), not quantified invariants. Compensate: parametrise the (initial-state, click-count) -> expected-overlay-state cases. EXTEND PercentileLegend per DDD-8 + Reuse-Analysis (net ~8 LOC): add optional showPaceBands?: boolean, onTogglePaceBands?: () => void, paceBandsAvailable?: boolean; render ONE chip labelled exactly 'Pace percentiles' (the E2E POM pins this label) styled consistently with the existing chips, rendered only when paceBandsAvailable is true (>=1 state has band data per DDD-4/the omitted-state rule). No second chip group, no sub-headers, no low-sample notice (all CUT 2026-05-25). EXTEND WorkItemAgingChart to wire the legend chip to the 04-02 showPaceBands local state (pass showPaceBands + onTogglePaceBands={() => setShowPaceBands(v => !v)} + paceBandsAvailable={perStatePercentileValues.length > 0} into <PercentileLegend>) - this is the small follow-on edit to the same chart file from 04-02 (kept in a separate step so the legend chip is its own RED->GREEN cycle; the chart file appears in both 04-02 and 04-03 files_to_modify by design). Do NOT touch useChartVisibility (DDD-8 NO CHANGE) - the existing percentile/SLE wiring stays untouched and the new chip is purely additive/independent (US-02 AC). Vitest + RTL: chip off by default (no overlay-on signal); click -> onTogglePaceBands fires / overlay-on; click again -> off; assert the existing CT percentile chips + SLE chip count and behaviour are unchanged throughout (US-02 AC); chip ABSENT when paceBandsAvailable is false. Skip renders-without-crashing framework tests. Strict TS, no any. Biome clean. pnpm build zero warnings."
+        },
+        {
+          "id": "04-04",
+          "name": "Demo data per-state journey (CSV multi-state transitions)",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/DemoDataStateEnteredSeamIntegrationTest.cs",
+          "scenario_name": "DemoScenarioZero_CompletedItems_ExposeMultiStateExitTransitions_SoAgeInStatePercentilesReturnsNonEmptyBands",
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingOptionNames.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/*.csv (the scenario-0 team + portfolio files)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/DemoDataStateEnteredSeamIntegrationTest.cs"
+          ],
+          "criteria": [
+            "CsvWorkTrackingConnector synthesizes an ordered From->To transition chain from per-state entered-date columns (workflow order), not just a single FromState-empty entered transition",
+            "The existing single state-entered-date behaviour (time-in-state CurrentStateEnteredAt) is preserved with zero regression when only one column is present",
+            "Demo CSVs for scenario-0's team and portfolio carry per-state entered dates so completed items have a multi-state journey",
+            "An integration test seeded from the enriched demo data asserts GET ageInStatePercentiles returns >=1 state with a non-empty rising band for the demo team and portfolio",
+            "dotnet build zero-warning; full backend suite green"
+          ],
+          "implementation_notes": "BLOCKER RESOLUTION for 05-01 (live walking skeleton returned empty bands on demo data). Root cause: CsvWorkTrackingConnector.BuildStateEnteredTransitions (CsvWorkTrackingConnector.cs:207-230) emits at most ONE synthetic transition per item with FromState=string.Empty (only for Doing-category items with a state-entered-date column) - sufficient for time-in-state's CurrentStateEnteredAt but NOT for the pace-band metric which buckets age-at-exit by the transition FromState across a multi-state journey. EXTEND the connector to read per-state entered-date columns and synthesize the ordered From->To chain (e.g. entered IP at T0, Review at T1, Test at T2 -> transitions (empty->IP,T0),(IP->Review,T1),(Review->Test,T2); the exit of the last doing state is the Done/Closed date). Choose a clean column-naming convention (mirror/extend the existing single StateEnteredDateHeader option via CsvWorkTrackingOptionNames; the sibling slice-03 added the single state-since column - this generalises it to per-state). PRESERVE the single-column path (regression: time-in-state demo still derives CurrentStateEnteredAt). ENRICH the demo CSVs that scenario 0 uses (the team + the portfolio the E2E navigates to) with per-state entered dates for completed items so bands render; other demo files MAY follow but scenario-0 coverage is the bar. Verify via an integration test in the DemoDataStateEnteredSeamIntegrationTest style (real DemoDataFactory/DemoDataService + the ageInStatePercentiles read path) asserting non-empty rising bands. Immutability, <=2 nesting, switch expressions, no comments, zero-warning build. This is a NEW TDD cycle (RED a failing demo-data integration test that wants non-empty bands -> GREEN the connector + CSV enrichment). After this step, re-dispatch 05-01 (the live E2E) - it should then render the chip + bands and pass."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Walking skeletons (live Playwright)",
+      "description": "Un-fixme the 2 held E2E walking-skeleton scenarios (team + portfolio toggle), run each live against a locally-started app per the project rule using the existing POM, and drive them green. Confirm the pace-band data-testid and Pace percentiles chip label match what was shipped.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Un-fixme and run the 2 walking-skeleton scenarios live",
+          "criteria": [
+            "Both test.fixme markers in AgingPacePercentiles.spec.ts (team + portfolio) are removed and the scenarios run in the E2E suite",
+            "On the team aging chart: no bands by default, toggle the Pace percentiles chip on, pace-band rects appear behind the dots, toggle off, bands gone; cycle-time chips unchanged",
+            "The same toggle and band behaviour holds on the portfolio aging chart (D8 parity) via the shared chart",
+            "The widget id aging, chip label Pace percentiles, and data-testid pace-band match what DELIVER shipped; all element access stays in the POM",
+            "Each scenario was run against a locally-started app loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts",
+          "scenario_name": "flow coach toggles per-state pace bands on and off on the team aging chart",
+          "deps": [
+            "02-01",
+            "03-01",
+            "04-03",
+            "04-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemAgingChart.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking-skeleton (single-shot UI flow over the production app); the mandate keeps E2E single-example - they verify wiring, not invariants. The per-state percentile-math invariants live in the 01-01 backend unit tests and the 01-02/02-01 read-API ATs (faster, deterministic) per the established sibling pattern. WS strategy Type A (additive). The 2 scenarios + the POM are already committed (test.fixme): the spec drives demo data via loadDemoScenario(0) + waitForBackgroundUpdates -> goToTeam/goToPortfolio -> goToMetrics -> switchCategory(FlowMetrics) -> getWidgetByName(aging) and uses the POM WorkItemAgingChart.ts which pins data-testid=\"pace-band\", the 'Pace percentiles' chip label, and the cycle-time chip count reader (all present). USER/AGENT RUNS LIVE per project memory (feedback_e2e_run_locally_by_user: Claude runs the live Playwright itself - creds in env, do NOT punt to the user; feedback_run_playwright_before_commit: never commit a spec/POM not RUN against a locally-started app, pnpm build only type-checks; feedback_e2e_page_object_model: POM-only, no inline page.locator; feedback_e2e_use_demo_data: drive from seeded demo data, never live connector syncs). Procedure: un-fixme ONE scenario at a time, start the app locally (dotnet run backend + frontend), load demo scenario 0, run that scenario, confirm it FIRST fails for the right reason (no 'Pace percentiles' chip / no pace-band rects render before the 01-04 production code is in place - though by this step phases 01-04 are done, so confirm green) then green; only adjust a POM if a real accessible name / testid differs from what DELIVER shipped (POM-only - never inline page.locator). The portfolio scenario hits the portfolio metrics read path (no LicenseGuard on a GET metrics endpoint, but if the running app gates any portfolio premium surface apply the premium-license dev seed per memory reference_premium_license_dev_seed: dotnet run + POST /api/v1/license/import with valid_not_expired_license.json + verify canUsePremiumFeatures). ORCHESTRATOR NOTE: this step REQUIRES A RUNNING APP - it cannot be self-certified from a type-check; the agent runs the live Playwright and reports the live-run result. Biome/lint clean on the E2E project. Confirm at GREEN the widget id 'aging', chip label 'Pace percentiles', and data-testid 'pace-band' match exactly what 04-02/04-03 shipped (the POM pins all three)."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests",
+      "Lighthouse.Frontend/src",
+      "Lighthouse.EndToEndTests/tests"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "approved_at": "pending",
+    "verdict": "conditionally_approved",
+    "blocker_count": 0,
+    "reviewed_at": "2026-05-26T09:20:00Z",
+    "note": "1 low: scenario_name is singular while 01-02 (7 team ATs), 02-01 (2 portfolio ATs), 05-01 (2 E2E) each drive multiple scenarios. Auditability nicety, not a blocker. All 11 DISTILL scenarios covered."
+  }
+}

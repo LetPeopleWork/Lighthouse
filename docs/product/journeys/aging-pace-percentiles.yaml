@@ -1,6 +1,18 @@
 schema_version: 1
 feature_id: aging-pace-percentiles
-updated: 2026-05-24
+updated: 2026-05-26
+
+# CORRECTION (2026-05-26, post-DELIVER): this journey was authored 2026-05-24 BEFORE the
+# 2026-05-25 scope simplification. The SHIPPED design (authoritative: docs/feature/aging-pace-percentiles/feature-delta.md)
+# differs from the narrative below — apply these corrections when reading:
+#   * Bands render as FILLED green→red background zones per state column (NOT dashed line segments).
+#   * ONE off-by-default "Pace percentiles" toggle chip controls the whole overlay (NOT two chip
+#     groups with per-percentile sub-toggles and a "Cycle Time %iles" group). The existing
+#     cycle-time/SLE chips are untouched.
+#   * The in-flight dot tooltip pace annotation (step-confirm-via-tooltip, old US-03) was CUT —
+#     the colored column background carries the signal; there is no per-dot text and no per-band hover.
+#   * No low-sample messaging and no sampleSize (states with zero observations simply render no band).
+# The D6 decision and the tooltip/two-chip steps below are retained for history but are SUPERSEDED.
 
 journeys:
 
