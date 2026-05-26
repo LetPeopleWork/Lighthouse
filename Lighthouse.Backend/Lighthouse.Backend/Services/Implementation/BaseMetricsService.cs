@@ -15,6 +15,57 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected record InfoMetric(int Value);
 
+        protected IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
+            IEnumerable<WorkItem> completedItemsInWindow,
+            IEnumerable<string> doingStatesInWorkflowOrder,
+            IReadOnlyList<int> requestedPercentiles)
+        {
+            var observationsByState = GroupAgeAtExitObservationsByState(completedItemsInWindow);
+
+            return doingStatesInWorkflowOrder
+                .Where(state => observationsByState.ContainsKey(state))
+                .Select(state => BuildAgeInStatePercentilesDto(state, observationsByState[state], requestedPercentiles))
+                .ToList();
+        }
+
+        private static Dictionary<string, List<int>> GroupAgeAtExitObservationsByState(IEnumerable<WorkItem> completedItemsInWindow)
+        {
+            var observationsByState = new Dictionary<string, List<int>>();
+
+            var exits = completedItemsInWindow
+                .Where(item => item.StartedDate.HasValue)
+                .SelectMany(item => item.SyncedTransitions
+                    .Where(transition => !string.IsNullOrEmpty(transition.FromState))
+                    .Select(transition => (transition.FromState, Age: CumulativeAgeAtExit(item.StartedDate!.Value, transition.TransitionedAt))));
+
+            foreach (var (state, age) in exits)
+            {
+                if (!observationsByState.TryGetValue(state, out var ages))
+                {
+                    ages = [];
+                    observationsByState[state] = ages;
+                }
+
+                ages.Add(age);
+            }
+
+            return observationsByState;
+        }
+
+        private static AgeInStatePercentilesDto BuildAgeInStatePercentilesDto(string state, List<int> observations, IReadOnlyList<int> requestedPercentiles)
+        {
+            var percentiles = requestedPercentiles
+                .Select(percentile => new PercentileValue(percentile, PercentileCalculator.CalculatePercentile(observations, percentile)))
+                .ToList();
+
+            return new AgeInStatePercentilesDto(state, percentiles);
+        }
+
+        private static int CumulativeAgeAtExit(DateTime startedDate, DateTime exitedAt)
+        {
+            return (int)(exitedAt.Date - startedDate.Date).TotalDays + 1;
+        }
+
         protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput)
         {
             var numberOfDays = 30;
