@@ -328,6 +328,8 @@ namespace Lighthouse.Backend.Services.Implementation
                     Id = feature.Id,
                     ReferenceId = feature.ReferenceId,
                     ParentReferenceId = feature.ParentReferenceId,
+                    Name = feature.Name,
+                    Type = feature.Type,
                     State = feature.State,
                     StateCategory = feature.StateCategory,
                     StartedDate = feature.StartedDate,

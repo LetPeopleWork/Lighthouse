@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.API.DTO
 
     public sealed record CumulativeStateTimeItemDto(
         string ReferenceId,
-        string? ParentReferenceId,
+        string Title,
+        string Type,
+        string State,
         double DaysContributed);
 }

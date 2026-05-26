@@ -132,9 +132,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(itemsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), itemsBody);
 
                 var barTotal = StateRow(barBody, Building).TotalDays;
-                var perItemSum = SumDaysContributed(itemsBody);
+                var rows = ItemRows(itemsBody);
+                var perItemSum = rows.Sum(row => row.DaysContributed);
                 Assert.That(perItemSum, Is.EqualTo(barTotal).Within(DaysTolerance),
                     $"US-04 parity: portfolio drill-down rows sum to the Building bar height ({barTotal}d) within ±{DaysTolerance}d. Bar: {barBody} Items: {itemsBody}");
+
+                var epic1 = rows.Single(row => row.ReferenceId == "EPIC-1");
+                Assert.That(epic1.Title, Is.EqualTo("Epic EPIC-1"),
+                    $"US-04 parity: portfolio drill-down 'Title' carries the feature Name. Items: {itemsBody}");
+                Assert.That(epic1.Type, Is.EqualTo("Epic"),
+                    $"US-04 parity: portfolio drill-down 'Work-Item Type' carries the feature Type. Items: {itemsBody}");
+                Assert.That(epic1.State, Is.EqualTo(Done),
+                    $"US-04 parity: portfolio drill-down 'Current State' carries the feature's current State. Items: {itemsBody}");
             }
         }
 
@@ -318,15 +327,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return states.ToArray();
         }
 
-        private static double SumDaysContributed(string itemsBody)
+        private static IReadOnlyList<ItemRowView> ItemRows(string itemsBody)
         {
             using var document = JsonDocument.Parse(itemsBody);
-            var total = 0.0;
+            var rows = new List<ItemRowView>();
             foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
             {
-                total += item.GetProperty("daysContributed").GetDouble();
+                rows.Add(new ItemRowView(
+                    ReferenceId: item.GetProperty("referenceId").GetString() ?? string.Empty,
+                    Title: item.GetProperty("title").GetString() ?? string.Empty,
+                    Type: item.GetProperty("type").GetString() ?? string.Empty,
+                    State: item.GetProperty("state").GetString() ?? string.Empty,
+                    DaysContributed: item.GetProperty("daysContributed").GetDouble()));
             }
-            return total;
+            return rows;
         }
 
         private static StateRowView StateRow(string body, string state)
@@ -355,5 +369,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             double CompletedContributionDays,
             double OngoingContributionDays,
             bool HasMedianDays);
+
+        private readonly record struct ItemRowView(
+            string ReferenceId,
+            string Title,
+            string Type,
+            string State,
+            double DaysContributed);
     }
 }

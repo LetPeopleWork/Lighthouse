@@ -148,7 +148,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Where(entry => entry.days > 0)
                 .Select(entry => new CumulativeStateTimeItemDto(
                     entry.item.ReferenceId,
-                    string.IsNullOrEmpty(entry.item.ParentReferenceId) ? null : entry.item.ParentReferenceId,
+                    entry.item.Name,
+                    entry.item.Type,
+                    entry.item.State,
                     entry.days))
                 .ToList();
         }

@@ -263,7 +263,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetCumulativeStateTimeItems_KnownState_ReturnsPerItemRowsWithReferenceId()
+        public async Task GetCumulativeStateTimeItems_KnownState_ReturnsPerItemRowsWithAllFiveColumns()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
 
@@ -275,16 +275,19 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
-                using var document = JsonDocument.Parse(body);
-                var items = document.RootElement.GetProperty("items");
-                Assert.That(items.GetArrayLength(), Is.GreaterThan(0),
+                var rows = ItemRows(body);
+                Assert.That(rows, Is.Not.Empty,
                     $"US-04 drill-down lists the items that contributed to Review. Body: {body}");
 
-                var first = items[0];
-                Assert.That(first.TryGetProperty("referenceId", out _), Is.True,
-                    $"US-04 per-item row must carry referenceId. Body: {body}");
-                Assert.That(first.TryGetProperty("daysContributed", out _), Is.True,
-                    $"US-04 per-item row must carry daysContributed. Body: {body}");
+                var done1 = rows.Single(row => row.ReferenceId == "DONE-1");
+                Assert.That(done1.Title, Is.EqualTo("Story DONE-1"),
+                    $"US-04 column 'Title' must carry the work item Name. Body: {body}");
+                Assert.That(done1.Type, Is.EqualTo("Story"),
+                    $"US-04 column 'Work-Item Type' must carry the work item Type. Body: {body}");
+                Assert.That(done1.State, Is.EqualTo(Done),
+                    $"US-04 column 'Current State' must carry the work item's current State. Body: {body}");
+                Assert.That(done1.DaysContributed, Is.GreaterThan(0.0),
+                    $"US-04 column 'Days Contributed' must carry the contribution. Body: {body}");
             }
         }
 
@@ -734,6 +737,22 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return total;
         }
 
+        private static IReadOnlyList<ItemRowView> ItemRows(string itemsBody)
+        {
+            using var document = JsonDocument.Parse(itemsBody);
+            var rows = new List<ItemRowView>();
+            foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
+            {
+                rows.Add(new ItemRowView(
+                    ReferenceId: item.GetProperty("referenceId").GetString() ?? string.Empty,
+                    Title: item.GetProperty("title").GetString() ?? string.Empty,
+                    Type: item.GetProperty("type").GetString() ?? string.Empty,
+                    State: item.GetProperty("state").GetString() ?? string.Empty,
+                    DaysContributed: item.GetProperty("daysContributed").GetDouble()));
+            }
+            return rows;
+        }
+
         private static string[] CandidateReferenceIds(string body)
         {
             using var document = JsonDocument.Parse(body);
@@ -793,5 +812,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             int OngoingItemCount,
             double MeanDays,
             bool HasMedianDays);
+
+        private readonly record struct ItemRowView(
+            string ReferenceId,
+            string Title,
+            string Type,
+            string State,
+            double DaysContributed);
     }
 }
