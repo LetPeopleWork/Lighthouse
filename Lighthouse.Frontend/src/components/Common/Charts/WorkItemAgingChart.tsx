@@ -52,7 +52,7 @@ import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
 
-export const STATE_BAND_HALF_WIDTH = 0.4;
+export const STATE_BAND_HALF_WIDTH = 0.5;
 
 export const PACE_BAND_COLORS_LOW_TO_HIGH = [
 	certainColor,
