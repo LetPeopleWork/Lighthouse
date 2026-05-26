@@ -251,6 +251,7 @@ describe("WorkItemAgingChart component", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		localStorage.clear();
 	});
 
 	it("renders correctly with in-progress items", () => {

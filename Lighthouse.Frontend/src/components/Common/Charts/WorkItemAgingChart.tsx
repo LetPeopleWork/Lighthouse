@@ -22,6 +22,7 @@ import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
+import { useShowPaceBands } from "../../../hooks/useShowPaceBands";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -351,7 +352,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	>([]);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
-	const [showPaceBands, setShowPaceBands] = useState<boolean>(false);
+	const { showPaceBands, togglePaceBands } = useShowPaceBands();
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
@@ -448,7 +449,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									size="small"
 									aria-pressed={showPaceBands}
 									color={showPaceBands ? "primary" : "default"}
-									onClick={() => setShowPaceBands((v) => !v)}
+									onClick={togglePaceBands}
 								>
 									<StackedBarChartOutlinedIcon fontSize="small" />
 								</IconButton>
