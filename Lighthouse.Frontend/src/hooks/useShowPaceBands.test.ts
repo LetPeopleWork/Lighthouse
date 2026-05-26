@@ -27,6 +27,14 @@ describe("useShowPaceBands", () => {
 		expect(result.current.showPaceBands).toBe(true);
 	});
 
+	it("treats any stored value other than the literal true as disabled", () => {
+		localStorage.setItem(PACE_BANDS_STORAGE_KEY, "false");
+
+		const { result } = renderHook(() => useShowPaceBands());
+
+		expect(result.current.showPaceBands).toBe(false);
+	});
+
 	it("persists the preference globally when toggled on", () => {
 		const { result } = renderHook(() => useShowPaceBands());
 

@@ -1019,6 +1019,36 @@ describe("WorkItemAgingChart component", () => {
 			expect(topBand.fill).toBe(errorColor);
 		});
 
+		it("clamps the colour of bands beyond the palette to the reddest non-top colour", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 60, value: 5 },
+							{ percentile: 70, value: 8 },
+							{ percentile: 80, value: 12 },
+							{ percentile: 90, value: 16 },
+							{ percentile: 95, value: 20 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
+			});
+
+			const sortedBottomToTop = [...rects].sort((a, b) => a.y - b.y);
+			const lastColouredBand = sortedBottomToTop[sortedBottomToTop.length - 2];
+
+			expect(lastColouredBand.fill).toBe(
+				PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1],
+			);
+		});
+
 		it("paints the top band red even when fewer than four percentiles are returned", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
@@ -1286,9 +1316,7 @@ describe("WorkItemAgingChart component", () => {
 				[
 					5,
 					30,
-					PACE_BAND_COLORS_LOW_TO_HIGH[
-						PACE_BAND_COLORS_LOW_TO_HIGH.length - 1
-					],
+					PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1],
 				],
 			]);
 		});

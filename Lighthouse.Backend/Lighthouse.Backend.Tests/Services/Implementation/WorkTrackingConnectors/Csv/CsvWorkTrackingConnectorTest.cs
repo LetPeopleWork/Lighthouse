@@ -376,8 +376,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(transitions[0].FromState, Is.EqualTo("In Progress"));
                 Assert.That(transitions[0].ToState, Is.EqualTo("Review"));
+                Assert.That(transitions[0].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 14, 0, 0, 0, DateTimeKind.Utc)),
+                    "First exit lands one even split (12-day span / 3 states = 4 days) after StartedDate.");
                 Assert.That(transitions[1].FromState, Is.EqualTo("Review"));
                 Assert.That(transitions[1].ToState, Is.EqualTo("Test"));
+                Assert.That(transitions[1].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 18, 0, 0, 0, DateTimeKind.Utc)),
+                    "Second exit lands two even splits (8 days) after StartedDate, proving the index-scaled tick math.");
 
                 Assert.That(transitions[2].FromState, Is.EqualTo("Test"),
                     "The closing transition leaves the last Doing state.");
@@ -408,6 +412,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(done.SyncedTransitions, Is.Empty,
                     "With journey synthesis off, a Done item gets no synthesized journey - real CSV imports must never receive fabricated transitions.");
             }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_StateEnteredColumnUnconfigured_NeverSynthesizesJourney_EvenWhenSynthesisFlagOn()
+        {
+            var subject = CreateSubject();
+            var team = CreateInterpolatedDemoJourneyTeam();
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, string.Empty);
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var done = workItems.Single(w => w.ReferenceId == "DONE-1");
+
+            Assert.That(done.SyncedTransitions, Is.Empty,
+                "Without a StateEnteredDate column, transition history is unsupported, so no journey may be synthesized regardless of the demo flag.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_SynthesisFlagOptionAbsentEntirely_DefaultsToNoSynthesis()
+        {
+            var subject = CreateSubject();
+            var team = CreateInterpolatedDemoJourneyTeam();
+            team.WorkTrackingSystemConnection.Options.RemoveAll(o => o.Key == CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo);
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var done = workItems.Single(w => w.ReferenceId == "DONE-1");
+
+            Assert.That(done.SyncedTransitions, Is.Empty,
+                "A connection that never declares the synthesis option must default to no synthesis rather than failing.");
         }
 
         private Team CreateInterpolatedDemoJourneyTeam()

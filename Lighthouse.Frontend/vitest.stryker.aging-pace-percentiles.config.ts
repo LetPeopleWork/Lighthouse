@@ -15,9 +15,7 @@ export default defineConfig({
 		},
 		include: [
 			"src/components/Common/Charts/WorkItemAgingChart.test.tsx",
-			"src/components/Common/Charts/PercentileLegend.test.tsx",
-			"src/services/Api/MetricsService.test.ts",
-			"src/hooks/useMetricsData.test.ts",
+			"src/hooks/useShowPaceBands.test.ts",
 		],
 		server: {
 			deps: {

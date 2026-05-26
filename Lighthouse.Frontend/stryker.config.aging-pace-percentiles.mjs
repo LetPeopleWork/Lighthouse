@@ -16,12 +16,8 @@ const config = {
 	disableTypeChecks: true,
 	thresholds: { high: 80, low: 70, break: 0 },
 	mutate: [
-		"src/components/Common/Charts/WorkItemAgingChart.tsx:39",
-		"src/components/Common/Charts/WorkItemAgingChart.tsx:57-129",
-		"src/components/Common/Charts/PercentileLegend.tsx:20",
-		"src/components/Common/Charts/PercentileLegend.tsx:93-117",
-		"src/services/Api/MetricsService.ts:271-282",
-		"src/hooks/useMetricsData.ts:216-221",
+		"src/components/Common/Charts/WorkItemAgingChart.tsx:58-200",
+		"src/hooks/useShowPaceBands.ts:10-29",
 	],
 	ignorePatterns: [
 		"src-tauri",
