@@ -544,6 +544,67 @@ describe("ragRules", () => {
 			expect(result.ragStatus).toBe("red");
 		});
 
+		it("escalates to red when a stale item is above SLE even though the above-percentage stays within tolerance", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 15, isBlocked: false, isStale: true },
+				...new Array(9).fill({
+					workItemAge: 5,
+					isBlocked: false,
+					isStale: false,
+				}),
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Blocked or stale");
+			expect(result.tipText).toContain("Resolve immediately");
+		});
+
+		it("stays amber and omits the flagged suffix when items exceed the SLE without any blocked or stale flag", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 15, isBlocked: false, isStale: false },
+				...new Array(9).fill({
+					workItemAge: 5,
+					isBlocked: false,
+					isStale: false,
+				}),
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).not.toContain("Blocked or stale");
+			expect(result.tipText).toContain("14 days. Monitor closely.");
+		});
+
+		it("describes blocked-or-stale items in the amber tip when a stale item is within the SLE", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				{ workItemAge: 5, isBlocked: false, isStale: true },
+				{ workItemAge: 3, isBlocked: false, isStale: false },
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Blocked or stale");
+		});
+
+		it("stays amber when the above-SLE percentage exactly equals the allowed tolerance", () => {
+			const sle = { percentile: 85, value: 14 };
+			const items = [
+				...new Array(3).fill({
+					workItemAge: 15,
+					isBlocked: false,
+					isStale: false,
+				}),
+				...new Array(17).fill({
+					workItemAge: 5,
+					isBlocked: false,
+					isStale: false,
+				}),
+			];
+			const result = computeWorkItemAgeChartRag(sle, true, items, terms);
+			expect(result.ragStatus).toBe("amber");
+		});
+
 		it("returns green when no blockers and all below SLE", () => {
 			const sle = { percentile: 85, value: 14 };
 			const items = [

@@ -72,6 +72,132 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_HistoryNodeMissingOneEndpoint_DropsThatTransitionAndKeepsTheComplete()
+        {
+            var handler = HandlerReturning(_ => IssuesResponseWithPartialAndCompleteHistory());
+
+            var subject = CreateSubject(handler);
+            var team = CreateTeam();
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var issue = workItems.Single(w => w.ReferenceId == "lig-1");
+            var transition = issue.SyncedTransitions.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(issue.SyncedTransitions, Has.Count.EqualTo(1));
+                Assert.That(transition.FromState, Is.EqualTo("To Do"));
+                Assert.That(transition.ToState, Is.EqualTo("In Progress"));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_HistoryNodesNull_YieldsFeatureWithoutTransitions()
+        {
+            var handler = HandlerReturning(_ => ProjectsResponseWithNullHistoryNodes());
+
+            var subject = CreateSubject(handler);
+            var portfolio = CreatePortfolio();
+
+            var features = await subject.GetFeaturesForProject(portfolio);
+
+            var feature = features.Single(f => f.ReferenceId == "project-1");
+
+            Assert.That(feature.SyncedTransitions, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_HistoryNodeEntriesNull_YieldsFeatureWithoutTransitions()
+        {
+            var handler = HandlerReturning(_ => ProjectsResponseWithNullEntries());
+
+            var subject = CreateSubject(handler);
+            var portfolio = CreatePortfolio();
+
+            var features = await subject.GetFeaturesForProject(portfolio);
+
+            var feature = features.Single(f => f.ReferenceId == "project-1");
+
+            Assert.That(feature.SyncedTransitions, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_StatusEntryMissingOneEndpoint_DropsThatTransition()
+        {
+            var handler = HandlerReturning(_ => ProjectsResponseWithPartialAndCompleteStatusEntries());
+
+            var subject = CreateSubject(handler);
+            var portfolio = CreatePortfolio();
+
+            var features = await subject.GetFeaturesForProject(portfolio);
+
+            var feature = features.Single(f => f.ReferenceId == "project-1");
+            var transition = feature.SyncedTransitions.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.SyncedTransitions, Has.Count.EqualTo(1));
+                Assert.That(transition.FromState, Is.EqualTo("To Do"));
+                Assert.That(transition.ToState, Is.EqualTo("In Progress"));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_ProjectHistoryQueryRejected_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions()
+        {
+            var requestBodies = new List<string>();
+            var handler = HandlerReturning(body =>
+            {
+                requestBodies.Add(body);
+                return body.Contains("history", StringComparison.Ordinal)
+                    ? HistoryFieldValidationError()
+                    : ProjectsResponseWithoutHistory();
+            });
+
+            var subject = CreateSubject(handler);
+            var portfolio = CreatePortfolio();
+
+            var features = (await subject.GetFeaturesForProject(portfolio)).ToList();
+
+            var feature = features.Single(f => f.ReferenceId == "project-1");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Has.Count.EqualTo(1),
+                    "A rejected project-history query must re-query without history so features still sync.");
+                Assert.That(feature.SyncedTransitions, Is.Empty,
+                    "After the per-connection downgrade, projects must yield no synced transitions.");
+                Assert.That(requestBodies.Any(b => b.Contains("history", StringComparison.Ordinal)), Is.True);
+                Assert.That(requestBodies.Any(b => b.Contains("projects", StringComparison.Ordinal) && !b.Contains("history", StringComparison.Ordinal)), Is.True);
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_HistorySupplied_RequestsHistoryConnectionWithExpectedFields()
+        {
+            var requestBodies = new List<string>();
+            var handler = HandlerReturning(body =>
+            {
+                requestBodies.Add(body);
+                return IssuesResponseWithHistory();
+            });
+
+            var subject = CreateSubject(handler);
+
+            await subject.GetWorkItemsForTeam(CreateTeam());
+
+            var issueQuery = requestBodies.Single(b => b.Contains("issues", StringComparison.Ordinal));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(issueQuery, Does.Contain("history(first:"));
+                Assert.That(issueQuery, Does.Contain("fromState"));
+                Assert.That(issueQuery, Does.Contain("toState"));
+            }
+        }
+
+        [Test]
         [TestCaseSource(nameof(HistoryRejectionErrors))]
         public async Task GetWorkItemsForTeam_HistoryQueryRejected_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions(string historyErrorResponse)
         {
@@ -157,6 +283,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     ]
                 }} ], ""pageInfo"": {{ ""hasNextPage"": false, ""endCursor"": null }} }}
             }} ], ""pageInfo"": {{ ""hasNextPage"": false, ""endCursor"": null }} }} }} }}";
+        }
+
+        private static string ProjectsResponseWithNullHistoryNodes()
+        {
+            return ProjectsResponseWithHistoryBlock(@"""history"": { ""nodes"": null },");
+        }
+
+        private static string ProjectsResponseWithNullEntries()
+        {
+            return ProjectsResponseWithHistoryBlock(@"""history"": { ""nodes"": [ { ""entries"": null } ] },");
+        }
+
+        private static string ProjectsResponseWithoutHistory()
+        {
+            return ProjectsResponseWithHistoryBlock(string.Empty);
+        }
+
+        private static string ProjectsResponseWithPartialAndCompleteStatusEntries()
+        {
+            return ProjectsResponseWithHistoryBlock(@"""history"": { ""nodes"": [ { ""entries"": [
+                        { ""at"": 1779267600000, ""type"": ""status"", ""fromStatus"": { ""name"": ""New"" }, ""toStatus"": null },
+                        { ""at"": 1779267600000, ""type"": ""status"", ""fromStatus"": { ""name"": ""New"" }, ""toStatus"": { ""name"": ""Active"" } }
+                    ] } ] },");
+        }
+
+        private static string ProjectsResponseWithHistoryBlock(string historyBlock)
+        {
+            return $@"{{ ""data"": {{ ""projects"": {{ ""nodes"": [ {{
+                ""id"": ""project-1"",
+                ""name"": ""Portfolio Project"",
+                ""status"": {{ ""id"": ""s-active"", ""name"": ""Active"", ""type"": ""started"", ""color"": ""#000"" }},
+                ""url"": ""https://linear.app/demo/project/project-1"",
+                ""sortOrder"": 1.0,
+                ""createdAt"": ""2026-05-19T00:00:00.000Z"",
+                ""startDate"": ""2026-05-19T00:00:00.000Z"",
+                ""completedAt"": null,
+                ""initiatives"": {{ ""nodes"": [] }},
+                {historyBlock}
+            }} ], ""pageInfo"": {{ ""hasNextPage"": false, ""endCursor"": null }} }} }} }}";
+        }
+
+        private static string IssuesResponseWithPartialAndCompleteHistory()
+        {
+            return $@"{{ ""data"": {{ ""team"": {{ ""id"": ""{TeamId}"", ""name"": ""{TeamName}"", ""issues"": {{ ""nodes"": [ {{
+                ""id"": ""issue-1"",
+                ""title"": ""First Issue"",
+                ""identifier"": ""LIG-1"",
+                ""url"": ""https://linear.app/demo/issue/LIG-1"",
+                ""number"": ""1"",
+                ""sortOrder"": 1.0,
+                ""createdAt"": ""2026-05-19T00:00:00.000Z"",
+                ""startedAt"": ""{EnteredActiveAtIso}"",
+                ""completedAt"": null,
+                ""state"": {{ ""id"": ""s-active"", ""name"": ""Active"" }},
+                ""history"": {{ ""nodes"": [
+                    {{ ""createdAt"": ""{EnteredActiveAtIso}"", ""fromState"": {{ ""name"": ""New"" }}, ""toState"": null }},
+                    {{ ""createdAt"": ""{EnteredActiveAtIso}"", ""fromState"": {{ ""name"": ""New"" }}, ""toState"": {{ ""name"": ""Active"" }} }}
+                ] }}
+            }} ], ""pageInfo"": {{ ""hasNextPage"": false, ""endCursor"": null }} }} }} }} }}";
         }
 
         private static string TeamsResponse()

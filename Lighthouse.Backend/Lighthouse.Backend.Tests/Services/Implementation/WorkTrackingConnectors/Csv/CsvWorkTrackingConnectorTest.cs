@@ -334,13 +334,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var inProgressItem = workItems.Single(w => w.ReferenceId == "ITEM-001");
             var doneItem = workItems.Single(w => w.ReferenceId == "ITEM-002");
+            var inProgressWithoutDate = workItems.Single(w => w.ReferenceId == "ITEM-005");
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(inProgressItem.SyncedTransitions, Has.Count.EqualTo(1));
+                Assert.That(inProgressItem.SyncedTransitions[0].FromState, Is.Empty);
                 Assert.That(inProgressItem.SyncedTransitions[0].ToState, Is.EqualTo("Doing"));
                 Assert.That(inProgressItem.SyncedTransitions[0].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 22, 0, 0, 0, DateTimeKind.Utc)));
                 Assert.That(doneItem.SyncedTransitions, Is.Empty);
+                Assert.That(inProgressWithoutDate.SyncedTransitions, Is.Empty);
             }
         }
 

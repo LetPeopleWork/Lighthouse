@@ -67,6 +67,7 @@ describe("TimeInStateBadge", () => {
 		if (expectsStale) {
 			expect(stale).toBeInTheDocument();
 			expect(stale).toHaveTextContent("3d in In Progress");
+			expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
 		} else {
 			expect(stale).not.toBeInTheDocument();
 			expect(screen.getByText("3d in In Progress")).toBeInTheDocument();
