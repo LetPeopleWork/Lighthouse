@@ -6,8 +6,7 @@ const EMPTY_PLACEHOLDER_TEST_ID = "cumulative-state-time-empty";
 const ZERO_PLACEHOLDER_TEST_ID = "cumulative-state-time-zero";
 const ITEM_PICKER_TEST_ID = "cumulative-state-time-item-picker";
 const PARENT_EXPAND_TEST_ID = "cumulative-state-time-parent-expand";
-const DRILL_DOWN_DIALOG_TEST_ID = "cumulative-state-time-drilldown-dialog";
-const DRILL_DOWN_ROW_TEST_ID = "cumulative-state-time-drilldown-row";
+const DATA_GRID_ROW_CLASS = "MuiDataGrid-row";
 
 export class CumulativeStateTimeChart {
 	private readonly widget: Locator;
@@ -76,22 +75,26 @@ export class CumulativeStateTimeChart {
 		return this.widget.getByTestId(ZERO_PLACEHOLDER_TEST_ID);
 	}
 
-	barForState(stateName: string): Locator {
-		return this.stateBars.filter({ hasText: stateName });
+	private async tallestBar(): Promise<Locator> {
+		const bars = this.completedSegments;
+		const count = await bars.count();
+		let tallest = bars.first();
+		let tallestHeight = 0;
+		for (let index = 0; index < count; index++) {
+			const bar = bars.nth(index);
+			const box = await bar.boundingBox();
+			const height = box?.height ?? 0;
+			if (height > tallestHeight) {
+				tallestHeight = height;
+				tallest = bar;
+			}
+		}
+		return tallest;
 	}
 
-	async hoverBarForState(stateName: string): Promise<void> {
-		await this.barForState(stateName).hover();
-	}
-
-	get barTooltip(): Locator {
-		return this.page.getByTestId(/^cumulative-state-tooltip-/);
-	}
-
-	async clickBarForState(
-		stateName: string,
-	): Promise<CumulativeStateTimeDrillDownDialog> {
-		await this.barForState(stateName).click();
+	async clickConstraintBar(): Promise<CumulativeStateTimeDrillDownDialog> {
+		const bar = await this.tallestBar();
+		await bar.click({ force: true });
 		return new CumulativeStateTimeDrillDownDialog(this.page);
 	}
 
@@ -129,7 +132,7 @@ export class CumulativeStateTimeDrillDownDialog {
 	private readonly dialog: Locator;
 
 	constructor(public readonly page: Page) {
-		this.dialog = page.getByTestId(DRILL_DOWN_DIALOG_TEST_ID);
+		this.dialog = page.getByRole("dialog");
 	}
 
 	get container(): Locator {
@@ -137,7 +140,7 @@ export class CumulativeStateTimeDrillDownDialog {
 	}
 
 	get rows(): Locator {
-		return this.dialog.getByTestId(DRILL_DOWN_ROW_TEST_ID);
+		return this.dialog.locator(`.${DATA_GRID_ROW_CLASS}`);
 	}
 
 	async countRows(): Promise<number> {

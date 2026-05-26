@@ -43,7 +43,7 @@ test("@walking_skeleton @US-01 delivery lead opens the team cumulative time per 
 	await expect.poll(() => chart.countOngoingSegments()).toBeGreaterThan(0);
 });
 
-test.fixme("@US-04 delivery lead clicks the constraint bar and reads the contributing items, then closes the panel", async ({
+test("@US-04 delivery lead clicks the constraint bar and reads the contributing items, then closes the panel", async ({
 	page,
 	request,
 	overviewPage,
@@ -69,10 +69,7 @@ test.fixme("@US-04 delivery lead clicks the constraint bar and reads the contrib
 	);
 	await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
 
-	await chart.hoverBarForState("In Progress");
-	await expect(chart.barTooltip).toBeVisible();
-
-	const drillDown = await chart.clickBarForState("In Progress");
+	const drillDown = await chart.clickConstraintBar();
 	await expect(drillDown.container).toBeVisible();
 	await expect.poll(() => drillDown.countRows()).toBeGreaterThan(0);
 
