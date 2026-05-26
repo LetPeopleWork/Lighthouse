@@ -1257,6 +1257,110 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         #endregion
 
+        #region CumulativeStateTime
+
+        [Test]
+        public void GetCumulativeStateTimeForPortfolio_FeaturesWalkingWorkflowWithOneInFlight_ProducesShapeIdenticalToTeamScope()
+        {
+            const string analyzing = "Analyzing";
+            const string building = "Building";
+            const string validating = "Validating";
+            const string done = "Done";
+            const double daysTolerance = 0.1;
+
+            var windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc);
+            var windowStart = windowEnd.AddDays(-180);
+            var inWindow = windowStart.AddDays(20);
+
+            var cumulativePortfolio = new Portfolio
+            {
+                Id = 7,
+                Name = "Cumulative Portfolio",
+                DoingStates = [analyzing, building, validating],
+                DoneStates = [done],
+            };
+
+            var transitions = new List<FeatureStateTransition>();
+            var cumulativeFeatures = new List<Feature>
+            {
+                CompletedFeature(cumulativePortfolio, transitions, id: 101, referenceId: "EPIC-1", startedDate: inWindow, analyzingDays: 5, buildingDays: 10, validatingDays: 15),
+                CompletedFeature(cumulativePortfolio, transitions, id: 102, referenceId: "EPIC-2", startedDate: inWindow.AddDays(2), analyzingDays: 5, buildingDays: 20, validatingDays: 15),
+                CompletedFeature(cumulativePortfolio, transitions, id: 103, referenceId: "EPIC-3", startedDate: inWindow.AddDays(4), analyzingDays: 10, buildingDays: 30, validatingDays: 0),
+                InFlightFeature(cumulativePortfolio, id: 104, referenceId: "EPIC-WIP", state: building, currentStateEnteredAt: windowEnd.AddDays(-40)),
+            };
+
+            featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => cumulativeFeatures.Where(predicate.Compile()).AsQueryable());
+            featureStateTransitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+
+            var result = subject.GetCumulativeStateTimeForPortfolio(cumulativePortfolio, windowStart, windowEnd, null);
+
+            var buildingRow = result.States.Single(row => row.State == building);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.States.Select(row => row.State), Is.EqualTo(new[] { analyzing, building, validating, done }));
+                Assert.That(buildingRow.CompletedContributionDays, Is.EqualTo(60.0).Within(daysTolerance));
+                Assert.That(buildingRow.OngoingContributionDays, Is.EqualTo(40.0).Within(daysTolerance));
+                Assert.That(buildingRow.MedianDays, Is.Not.Null);
+            }
+        }
+
+        private static Feature CompletedFeature(
+            Portfolio portfolio,
+            List<FeatureStateTransition> transitions,
+            int id,
+            string referenceId,
+            DateTime startedDate,
+            int analyzingDays,
+            int buildingDays,
+            int validatingDays)
+        {
+            var analyzingExit = startedDate.AddDays(analyzingDays);
+            var buildingExit = analyzingExit.AddDays(buildingDays);
+            var validatingExit = buildingExit.AddDays(validatingDays);
+
+            var feature = new Feature
+            {
+                Id = id,
+                ReferenceId = referenceId,
+                Name = $"Epic {referenceId}",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                CreatedDate = startedDate.AddDays(-1),
+                StartedDate = startedDate,
+                ClosedDate = validatingExit,
+            };
+            feature.Portfolios.Add(portfolio);
+
+            transitions.Add(new FeatureStateTransition { FeatureId = id, FromState = "Analyzing", ToState = "Building", TransitionedAt = analyzingExit });
+            transitions.Add(new FeatureStateTransition { FeatureId = id, FromState = "Building", ToState = "Validating", TransitionedAt = buildingExit });
+            transitions.Add(validatingDays > 0
+                ? new FeatureStateTransition { FeatureId = id, FromState = "Validating", ToState = "Done", TransitionedAt = validatingExit }
+                : new FeatureStateTransition { FeatureId = id, FromState = "Building", ToState = "Done", TransitionedAt = buildingExit });
+
+            return feature;
+        }
+
+        private static Feature InFlightFeature(Portfolio portfolio, int id, string referenceId, string state, DateTime currentStateEnteredAt)
+        {
+            var feature = new Feature
+            {
+                Id = id,
+                ReferenceId = referenceId,
+                Name = $"Epic {referenceId}",
+                State = state,
+                StateCategory = StateCategories.Doing,
+                CreatedDate = currentStateEnteredAt.AddDays(-1),
+                StartedDate = currentStateEnteredAt,
+                CurrentStateEnteredAt = currentStateEnteredAt,
+            };
+            feature.Portfolios.Add(portfolio);
+            return feature;
+        }
+
+        #endregion
+
         private void SetupTestData()
         {
             portfolio = new Portfolio

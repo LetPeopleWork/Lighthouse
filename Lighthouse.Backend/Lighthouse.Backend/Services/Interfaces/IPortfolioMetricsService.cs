@@ -34,6 +34,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
+        CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);
+
         IEnumerable<Feature> GetCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetSizePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);

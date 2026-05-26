@@ -275,6 +275,93 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
+        {
+            logger.LogDebug("Getting Cumulative State Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate);
+                var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
+
+                var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
+                return new CumulativeStateTimeDto(states);
+            }, logger);
+        }
+
+        private List<WorkItem> ResolveCumulativeStateTimeCandidates(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            var portfolioFeatures = featureRepository.GetAllByPredicate(f => f.Portfolios.Any(p => p.Id == portfolio.Id)).ToList();
+            var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(portfolioFeatures);
+
+            return itemsWithTransitions
+                .Where(item => IntersectsWindow(item, startDate, endDate) || IsInFlightAtWindowEnd(item, endDate))
+                .ToList();
+        }
+
+        private List<WorkItem> AssociateSyncedTransitionsPreservingCurrentState(IReadOnlyCollection<Feature> features)
+        {
+            var featureIds = features.Select(feature => feature.Id).ToHashSet();
+            var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
+                .GetAllByPredicate(transition => featureIds.Contains(transition.FeatureId))
+                .AsEnumerable()
+                .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
+
+            return features
+                .Select(feature => new WorkItem
+                {
+                    Id = feature.Id,
+                    ReferenceId = feature.ReferenceId,
+                    ParentReferenceId = feature.ParentReferenceId,
+                    State = feature.State,
+                    StateCategory = feature.StateCategory,
+                    StartedDate = feature.StartedDate,
+                    ClosedDate = feature.ClosedDate,
+                    CurrentStateEnteredAt = feature.CurrentStateEnteredAt,
+                    SyncedTransitions = transitionsByFeature.TryGetValue(feature.Id, out var transitions) ? transitions : [],
+                })
+                .ToList();
+        }
+
+        private static bool IntersectsWindow(WorkItem item, DateTime startDate, DateTime endDate)
+        {
+            if (!item.StartedDate.HasValue || item.SyncedTransitions.Count == 0)
+            {
+                return false;
+            }
+
+            var entry = item.StartedDate.Value;
+            foreach (var transition in item.SyncedTransitions.OrderBy(transition => transition.TransitionedAt))
+            {
+                if (entry <= endDate && transition.TransitionedAt >= startDate)
+                {
+                    return true;
+                }
+
+                entry = transition.TransitionedAt;
+            }
+
+            return false;
+        }
+
+        private static bool IsInFlightAtWindowEnd(WorkItem item, DateTime endDate)
+        {
+            return item.StateCategory != StateCategories.Done
+                && item.CurrentStateEnteredAt.HasValue
+                && item.CurrentStateEnteredAt.Value <= endDate;
+        }
+
+        private static List<string> BuildCumulativeWorkflowStateOrder(Portfolio portfolio)
+        {
+            var order = new List<string>(portfolio.DoingStates);
+            if (portfolio.DoneStates.Count > 0)
+            {
+                order.Add(portfolio.DoneStates[0]);
+            }
+
+            return order;
+        }
+
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)
         {
             var completedFeatureIds = completedFeatures.Select(feature => feature.Id).ToHashSet();
