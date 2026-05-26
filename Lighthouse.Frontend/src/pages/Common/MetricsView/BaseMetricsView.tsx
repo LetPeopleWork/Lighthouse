@@ -3,6 +3,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
+import CumulativeStateTimeDrillDownDialog from "../../../components/Common/Charts/CumulativeStateTimeDrillDownDialog";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import EstimationVsCycleTimeChart from "../../../components/Common/Charts/EstimationVsCycleTimeChart";
@@ -26,6 +27,7 @@ import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { ICumulativeStateTimeResponse } from "../../../models/Metrics/CumulativeStateTime";
+import type { ICumulativeStateTimeItemRow } from "../../../models/Metrics/CumulativeStateTimeItems";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type {
@@ -744,6 +746,7 @@ function buildWidgetNodes(ctx: {
 	forecastFilterConditions: readonly EvaluatorCondition[];
 	stalenessThresholdDays: number | undefined;
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
+	onCumulativeStateTimeBarClick: (stateName: string) => void;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
@@ -907,7 +910,10 @@ function buildWidgetNodes(ctx: {
 			<FeatureSizePercentilesWidget data={ctx.featureSizePercentilesInfo} />
 		) : null,
 		stateTimeCumulative: ctx.cumulativeStateTime ? (
-			<CumulativeStateTimeChart data={ctx.cumulativeStateTime} />
+			<CumulativeStateTimeChart
+				data={ctx.cumulativeStateTime}
+				onBarClick={ctx.onCumulativeStateTimeBarClick}
+			/>
 		) : null,
 	};
 
@@ -1009,6 +1015,33 @@ export const BaseMetricsView = <
 
 	const ownerType: "team" | "portfolio" =
 		"getFeaturesInProgress" in metricsService ? "team" : "portfolio";
+
+	const [drillDownState, setDrillDownState] = useState<string | null>(null);
+	const [drillDownItems, setDrillDownItems] = useState<
+		ICumulativeStateTimeItemRow[]
+	>([]);
+	const [drillDownOpen, setDrillDownOpen] = useState(false);
+
+	const handleCumulativeStateTimeBarClick = async (stateName: string) => {
+		const response =
+			ownerType === "team"
+				? await metricsService.getCumulativeStateTimeItemsForTeam(
+						entity.id,
+						stateName,
+						startDate,
+						endDate,
+					)
+				: await metricsService.getCumulativeStateTimeItemsForPortfolio(
+						entity.id,
+						stateName,
+						startDate,
+						endDate,
+					);
+		setDrillDownState(stateName);
+		setDrillDownItems(response.items);
+		setDrillDownOpen(true);
+	};
+
 	const { selectedCategory, setSelectedCategory } = useCategorySelection(
 		ownerType,
 		entity.id,
@@ -1119,6 +1152,9 @@ export const BaseMetricsView = <
 		forecastFilterConditions,
 		stalenessThresholdDays,
 		cumulativeStateTime,
+		onCumulativeStateTimeBarClick: (stateName) => {
+			void handleCumulativeStateTimeBarClick(stateName);
+		},
 		refetchThroughputPbc,
 	});
 
@@ -1288,6 +1324,13 @@ export const BaseMetricsView = <
 			/>
 
 			<Dashboard items={dashboardItems} />
+
+			<CumulativeStateTimeDrillDownDialog
+				open={drillDownOpen}
+				state={drillDownState ?? ""}
+				items={drillDownItems}
+				onClose={() => setDrillDownOpen(false)}
+			/>
 		</Grid>
 	);
 };

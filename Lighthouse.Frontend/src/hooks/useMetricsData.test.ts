@@ -107,6 +107,12 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 			},
 		}),
 		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
+		getCumulativeStateTimeItemsForTeam: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
+		getCumulativeStateTimeItemsForPortfolio: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
 	};
 }
 

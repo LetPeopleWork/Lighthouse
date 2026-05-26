@@ -702,6 +702,12 @@ describe("BaseMetricsView component", () => {
 				},
 			}),
 			getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
+			getCumulativeStateTimeItemsForTeam: vi
+				.fn()
+				.mockResolvedValue({ state: "", items: [] }),
+			getCumulativeStateTimeItemsForPortfolio: vi
+				.fn()
+				.mockResolvedValue({ state: "", items: [] }),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1271,6 +1277,12 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockRejectedValue(new Error("API error")),
 			getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
+			getCumulativeStateTimeItemsForTeam: vi
+				.fn()
+				.mockResolvedValue({ state: "", items: [] }),
+			getCumulativeStateTimeItemsForPortfolio: vi
+				.fn()
+				.mockResolvedValue({ state: "", items: [] }),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1923,6 +1935,12 @@ describe("BaseMetricsView component", () => {
 				getCumulativeStateTimeForTeam: vi
 					.fn()
 					.mockResolvedValue({ states: [] }),
+				getCumulativeStateTimeItemsForTeam: vi
+					.fn()
+					.mockResolvedValue({ state: "", items: [] }),
+				getCumulativeStateTimeItemsForPortfolio: vi
+					.fn()
+					.mockResolvedValue({ state: "", items: [] }),
 			};
 
 			const consoleSpy = vi

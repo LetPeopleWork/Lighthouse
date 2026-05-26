@@ -46,6 +46,12 @@ describe("TotalWorkItemAgeWidget", () => {
 		getPredictabilityScoreInfo: vi.fn(),
 		getCycleTimePercentilesInfo: vi.fn(),
 		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
+		getCumulativeStateTimeItemsForTeam: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
+		getCumulativeStateTimeItemsForPortfolio: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
 	});
 
 	it("renders loading state initially", () => {

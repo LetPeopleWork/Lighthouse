@@ -186,6 +186,12 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getPredictabilityScoreInfo: vi.fn(),
 		getCycleTimePercentilesInfo: vi.fn(),
 		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
+		getCumulativeStateTimeItemsForTeam: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
+		getCumulativeStateTimeItemsForPortfolio: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
 	};
 };
 
@@ -220,6 +226,12 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getPredictabilityScoreInfo: vi.fn(),
 		getCycleTimePercentilesInfo: vi.fn(),
 		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
+		getCumulativeStateTimeItemsForTeam: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
+		getCumulativeStateTimeItemsForPortfolio: vi
+			.fn()
+			.mockResolvedValue({ state: "", items: [] }),
 	};
 };
 

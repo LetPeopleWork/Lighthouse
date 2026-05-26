@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ICumulativeStateTimeResponse } from "../../models/Metrics/CumulativeStateTime";
+import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
 import { TeamMetricsService } from "./TeamMetricsService";
 
@@ -114,6 +115,101 @@ describe("MetricsService getCumulativeStateTimeForTeam", () => {
 		expect(result).toEqual(response);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/teams/7/metrics/cumulativeStateTime?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+});
+
+function getMockCumulativeStateTimeItemsResponse(
+	overrides?: Partial<ICumulativeStateTimeItemsResponse>,
+): ICumulativeStateTimeItemsResponse {
+	return {
+		state: "Review",
+		items: [
+			{
+				referenceId: "ITEM-1",
+				parentReferenceId: null,
+				daysContributed: 4,
+			},
+		],
+		...overrides,
+	};
+}
+
+describe("MetricsService getCumulativeStateTimeItemsForTeam", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("fetches the contributing items for a state, team and window", async () => {
+		const response = getMockCumulativeStateTimeItemsResponse();
+		mockedAxios.get.mockResolvedValueOnce({ data: response });
+
+		const result = await metricsService.getCumulativeStateTimeItemsForTeam(
+			7,
+			"Review",
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result).toEqual(response);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cumulativeStateTime/items?startDate=2023-01-01&endDate=2023-01-31&state=Review",
+		);
+	});
+
+	it("appends each selected itemId as a repeated query parameter", async () => {
+		const response = getMockCumulativeStateTimeItemsResponse();
+		mockedAxios.get.mockResolvedValueOnce({ data: response });
+
+		await metricsService.getCumulativeStateTimeItemsForTeam(
+			7,
+			"In Review",
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+			[11, 22],
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cumulativeStateTime/items?startDate=2023-01-01&endDate=2023-01-31&state=In%20Review&itemIds=11&itemIds=22",
+		);
+	});
+});
+
+describe("MetricsService getCumulativeStateTimeItemsForPortfolio", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("fetches the contributing items for a state, portfolio and window", async () => {
+		const response = getMockCumulativeStateTimeItemsResponse({
+			state: "Testing",
+		});
+		mockedAxios.get.mockResolvedValueOnce({ data: response });
+
+		const result = await metricsService.getCumulativeStateTimeItemsForPortfolio(
+			9,
+			"Testing",
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result).toEqual(response);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/9/metrics/cumulativeStateTime/items?startDate=2023-01-01&endDate=2023-01-31&state=Testing",
 		);
 	});
 });

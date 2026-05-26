@@ -5,6 +5,7 @@ import {
 	type IForecastPredictabilityScore,
 } from "../../models/Forecasts/ForecastPredictabilityScore";
 import type { ICumulativeStateTimeResponse } from "../../models/Metrics/CumulativeStateTime";
+import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type {
@@ -60,6 +61,22 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 		itemIds?: number[],
 	): Promise<ICumulativeStateTimeResponse>;
+
+	getCumulativeStateTimeItemsForTeam(
+		id: number,
+		state: string,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeItemsResponse>;
+
+	getCumulativeStateTimeItemsForPortfolio(
+		id: number,
+		state: string,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeItemsResponse>;
 
 	getMultiItemForecastPredictabilityScore(
 		id: number,
@@ -303,6 +320,59 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			const response = await this.apiService.get<ICumulativeStateTimeResponse>(
 				`/${this.api}/${id}/metrics/cumulativeStateTime?${this.getDateFormatString(startDate, endDate)}${itemIdsSuffix}`,
 			);
+
+			return response.data;
+		});
+	}
+
+	getCumulativeStateTimeItemsForTeam(
+		id: number,
+		state: string,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeItemsResponse> {
+		return this.fetchCumulativeStateTimeItems(
+			id,
+			state,
+			startDate,
+			endDate,
+			itemIds,
+		);
+	}
+
+	getCumulativeStateTimeItemsForPortfolio(
+		id: number,
+		state: string,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeItemsResponse> {
+		return this.fetchCumulativeStateTimeItems(
+			id,
+			state,
+			startDate,
+			endDate,
+			itemIds,
+		);
+	}
+
+	private fetchCumulativeStateTimeItems(
+		id: number,
+		state: string,
+		startDate: Date,
+		endDate: Date,
+		itemIds?: number[],
+	): Promise<ICumulativeStateTimeItemsResponse> {
+		return this.withErrorHandling(async () => {
+			const itemIdsSuffix = (itemIds ?? [])
+				.map((itemId) => `&itemIds=${itemId}`)
+				.join("");
+			const stateSuffix = `&state=${encodeURIComponent(state)}`;
+			const response =
+				await this.apiService.get<ICumulativeStateTimeItemsResponse>(
+					`/${this.api}/${id}/metrics/cumulativeStateTime/items?${this.getDateFormatString(startDate, endDate)}${stateSuffix}${itemIdsSuffix}`,
+				);
 
 			return response.data;
 		});
