@@ -12,12 +12,7 @@ interface PercentileLegendProps {
 	serviceLevelExpectationLabel?: string;
 	sleVisible?: boolean;
 	onToggleSle?: () => void;
-	paceBandsAvailable?: boolean;
-	showPaceBands?: boolean;
-	onTogglePaceBands?: () => void;
 }
-
-const PACE_PERCENTILES_LABEL = "Pace percentiles";
 
 const PercentileLegend: React.FC<PercentileLegendProps> = ({
 	percentiles,
@@ -27,9 +22,6 @@ const PercentileLegend: React.FC<PercentileLegendProps> = ({
 	serviceLevelExpectationLabel = "SLE",
 	sleVisible = false,
 	onToggleSle,
-	paceBandsAvailable = false,
-	showPaceBands = false,
-	onTogglePaceBands,
 }) => {
 	const theme = useTheme();
 
@@ -88,31 +80,6 @@ const PercentileLegend: React.FC<PercentileLegendProps> = ({
 					}}
 					variant={sleVisible ? "filled" : "outlined"}
 					onClick={onToggleSle}
-				/>
-			)}
-			{paceBandsAvailable && onTogglePaceBands && (
-				<Chip
-					key="legend-pace-bands"
-					label={PACE_PERCENTILES_LABEL}
-					sx={{
-						borderColor: theme.palette.secondary.main,
-						borderWidth: showPaceBands ? 2 : 1,
-						borderStyle: "dashed",
-						opacity: showPaceBands ? 1 : 0.7,
-						backgroundColor: showPaceBands
-							? hexToRgba(theme.palette.secondary.main, theme.opacity.medium)
-							: "transparent",
-						"&:hover": {
-							borderColor: theme.palette.secondary.main,
-							borderWidth: 2,
-							backgroundColor: hexToRgba(
-								theme.palette.secondary.main,
-								theme.opacity.high,
-							),
-						},
-					}}
-					variant={showPaceBands ? "filled" : "outlined"}
-					onClick={onTogglePaceBands}
 				/>
 			)}
 		</Stack>

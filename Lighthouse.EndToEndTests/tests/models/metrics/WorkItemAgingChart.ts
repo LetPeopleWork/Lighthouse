@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
-const PACE_PERCENTILES_CHIP_LABEL = "Pace percentiles";
+const PACE_BANDS_TOGGLE_TEST_ID = "pace-bands-toggle";
 const PACE_BAND_TEST_ID = "pace-band";
 
 export class WorkItemAgingChart {
@@ -17,10 +17,8 @@ export class WorkItemAgingChart {
 		return this.widget;
 	}
 
-	get pacePercentilesChip(): Locator {
-		return this.widget.locator(".MuiChip-root", {
-			hasText: PACE_PERCENTILES_CHIP_LABEL,
-		});
+	get pacePercentilesToggle(): Locator {
+		return this.widget.getByTestId(PACE_BANDS_TOGGLE_TEST_ID);
 	}
 
 	get paceBands(): Locator {
@@ -32,7 +30,7 @@ export class WorkItemAgingChart {
 	}
 
 	async togglePacePercentiles(): Promise<void> {
-		await this.pacePercentilesChip.click();
+		await this.pacePercentilesToggle.click();
 	}
 
 	get cycleTimePercentileChips(): Locator {

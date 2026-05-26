@@ -1,4 +1,14 @@
-import { Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
+import StackedBarChartOutlinedIcon from "@mui/icons-material/StackedBarChartOutlined";
+import {
+	Box,
+	Card,
+	CardContent,
+	IconButton,
+	Stack,
+	Tooltip,
+	Typography,
+	useTheme,
+} from "@mui/material";
 import type { Theme } from "@mui/material/styles";
 import {
 	ChartsContainer,
@@ -84,18 +94,26 @@ export const computePaceBandRects = ({
 	axisMin,
 	axisMax,
 }: PaceBandGeometryConfig): IPaceBandRect[] => {
-	const stateIndexMap: Record<string, number> = {};
-	for (let index = 0; index < doingStates.length; index++) {
-		stateIndexMap[doingStates[index].toLowerCase()] = index;
+	const percentilesByState: Record<string, IPercentileValue[]> = {};
+	for (const perState of perStatePercentileValues) {
+		if (perState.percentiles.length > 0) {
+			percentilesByState[perState.state.toLowerCase()] = perState.percentiles;
+		}
 	}
 
-	return perStatePercentileValues.flatMap((perState) => {
-		const stateIndex = stateIndexMap[perState.state.toLowerCase()];
-		if (stateIndex === undefined || perState.percentiles.length === 0) {
+	let carriedPercentiles: IPercentileValue[] | undefined;
+	return doingStates.flatMap((stateName, stateIndex) => {
+		const ownPercentiles = percentilesByState[stateName.toLowerCase()];
+		if (ownPercentiles) {
+			carriedPercentiles = ownPercentiles;
+		}
+
+		const percentiles = carriedPercentiles;
+		if (!percentiles) {
 			return [];
 		}
 
-		const sortedPercentiles = [...perState.percentiles].sort(
+		const sortedPercentiles = [...percentiles].sort(
 			(a, b) => a.value - b.value,
 		);
 
@@ -107,9 +125,9 @@ export const computePaceBandRects = ({
 		const upperBoundaries = [
 			...sortedPercentiles.map((percentile) => ({
 				upperValue: percentile.value,
-				key: `${perState.state}-${percentile.percentile}`,
+				key: `${stateName}-${percentile.percentile}`,
 			})),
-			{ upperValue: axisMax, key: `${perState.state}-top` },
+			{ upperValue: axisMax, key: `${stateName}-top` },
 		];
 
 		let lowerValue = axisMin;
@@ -167,7 +185,7 @@ export const PaceBandOverlay: React.FC<{
 					width={rect.width}
 					height={rect.height}
 					fill={rect.fill}
-					fillOpacity={0.15}
+					fillOpacity={0.28}
 				/>
 			))}
 		</g>
@@ -415,7 +433,28 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				<CardContent
 					sx={{ display: "flex", flexDirection: "column", height: "100%" }}
 				>
-					<Typography variant="h6">{workItemTerm} Aging</Typography>
+					<Box
+						sx={{
+							display: "flex",
+							alignItems: "flex-start",
+							justifyContent: "space-between",
+						}}
+					>
+						<Typography variant="h6">{workItemTerm} Aging</Typography>
+						{perStatePercentileValues.length > 0 && (
+							<Tooltip title="Toggle pace percentiles">
+								<IconButton
+									data-testid="pace-bands-toggle"
+									size="small"
+									aria-pressed={showPaceBands}
+									color={showPaceBands ? "primary" : "default"}
+									onClick={() => setShowPaceBands((v) => !v)}
+								>
+									<StackedBarChartOutlinedIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
+						)}
+					</Box>
 
 					<Stack
 						direction="row"
@@ -430,9 +469,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							serviceLevelExpectationLabel={serviceLevelExpectationTerm}
 							sleVisible={sleVisible}
 							onToggleSle={toggleSleVisibility}
-							paceBandsAvailable={perStatePercentileValues.length > 0}
-							showPaceBands={showPaceBands}
-							onTogglePaceBands={() => setShowPaceBands((v) => !v)}
 						/>
 					</Stack>
 					<Stack

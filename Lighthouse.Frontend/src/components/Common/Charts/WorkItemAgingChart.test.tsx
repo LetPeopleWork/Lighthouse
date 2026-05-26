@@ -5,7 +5,11 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
-import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
+import {
+	confidentColor,
+	errorColor,
+	getColorMapForKeys,
+} from "../../../utils/theme/colors";
 import WorkItemAgingChart, {
 	computePaceBandRects,
 	PACE_BAND_COLORS_LOW_TO_HIGH,
@@ -836,6 +840,74 @@ describe("WorkItemAgingChart component", () => {
 			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
 		});
 
+		it("shows the pace-bands toggle only when band data is available", () => {
+			const { rerender } = render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			expect(screen.queryByTestId("pace-bands-toggle")).not.toBeInTheDocument();
+
+			rerender(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+				/>,
+			);
+
+			expect(screen.getByTestId("pace-bands-toggle")).toBeInTheDocument();
+		});
+
+		it("toggles the pace bands on then off through the top-right icon button", () => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+				/>,
+			);
+
+			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
+
+			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			expect(screen.getAllByTestId("pace-band").length).toBeGreaterThan(0);
+
+			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
+		});
+
+		it("keeps the work item type chips and percentile chips untouched by the toggle", () => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+				/>,
+			);
+
+			const typeChipsBefore = screen.getAllByText(/^(Story|Task)$/).length;
+
+			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+
+			expect(screen.getAllByText("50%").length).toBeGreaterThan(0);
+			expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+			expect(screen.getAllByText(/^(Story|Task)$/).length).toBe(
+				typeChipsBefore,
+			);
+			expect(screen.queryByText("Pace percentiles")).not.toBeInTheDocument();
+		});
+
 		it("spans each state band rect across x in [stateIndex - HALF_WIDTH, stateIndex + HALF_WIDTH]", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
@@ -946,7 +1018,7 @@ describe("WorkItemAgingChart component", () => {
 			expect(topBand.fill).toBe(errorColor);
 		});
 
-		it("emits no rects for a state absent from perStatePercentileValues", () => {
+		it("leaves states before the first populated one bare while carrying it forward to the right", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [
 					getMockPerStatePercentileValues({ state: "In Progress" }),
@@ -961,7 +1033,7 @@ describe("WorkItemAgingChart component", () => {
 			const stateIndicesWithRects = new Set(
 				rects.map((rect) => rect.x + STATE_BAND_HALF_WIDTH),
 			);
-			expect(stateIndicesWithRects).toEqual(new Set([1]));
+			expect(stateIndicesWithRects).toEqual(new Set([1, 2]));
 		});
 
 		it("collects all pace-band rects into a single svg group so the overlay is one z-layer", () => {
@@ -978,7 +1050,7 @@ describe("WorkItemAgingChart component", () => {
 			);
 
 			const bands = screen.getAllByTestId("pace-band");
-			expect(bands).toHaveLength(5);
+			expect(bands).toHaveLength(10);
 
 			const group = bands[0].parentElement;
 			expect(group?.tagName.toLowerCase()).toBe("g");
@@ -1124,6 +1196,109 @@ describe("WorkItemAgingChart component", () => {
 				"Review-70",
 				"Review-top",
 			]);
+		});
+
+		it("collapses zero-height bands and keeps the surviving 50-70 band green when upper percentiles coincide", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 1 },
+							{ percentile: 70, value: 2 },
+							{ percentile: 85, value: 2 },
+							{ percentile: 95, value: 2 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 6,
+			});
+
+			expect(
+				rects.map((rect) => [rect.y, rect.y + rect.height, rect.fill]),
+			).toEqual([
+				[1, 2, confidentColor],
+				[2, 6, errorColor],
+			]);
+		});
+
+		it("repeats the nearest populated left neighbour's bands for an empty state at the empty state's x position", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "A",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+						],
+					}),
+					getMockPerStatePercentileValues({
+						state: "C",
+						percentiles: [{ percentile: 50, value: 4 }],
+					}),
+				],
+				doingStates: ["A", "B", "C"],
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
+			});
+
+			const bandsFor = (centerIndex: number) =>
+				rects
+					.filter((rect) => rect.x === centerIndex - STATE_BAND_HALF_WIDTH)
+					.sort((a, b) => a.y - b.y)
+					.map((rect) => [rect.y, rect.y + rect.height, rect.fill]);
+
+			expect(bandsFor(1)).toEqual(bandsFor(0));
+			expect(bandsFor(1)).toEqual([
+				[1, 3, PACE_BAND_COLORS_LOW_TO_HIGH[0]],
+				[3, 5, PACE_BAND_COLORS_LOW_TO_HIGH[1]],
+				[5, 30, PACE_BAND_COLORS_LOW_TO_HIGH[2]],
+			]);
+		});
+
+		it("renders nothing for a leading empty state with no populated state to its left", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "B",
+						percentiles: [{ percentile: 50, value: 4 }],
+					}),
+				],
+				doingStates: ["A", "B"],
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin: 1,
+				axisMax: 30,
+			});
+
+			const leadingStateRects = rects.filter(
+				(rect) => rect.x === 0 - STATE_BAND_HALF_WIDTH,
+			);
+			expect(leadingStateRects).toHaveLength(0);
+		});
+
+		it("renders pace bands at a readable fill opacity", () => {
+			render(
+				<svg aria-label="opacity-host">
+					<title>opacity-host</title>
+					<PaceBandOverlay
+						perStatePercentileValues={[
+							getMockPerStatePercentileValues({ state: "In Progress" }),
+						]}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</svg>,
+			);
+
+			for (const band of screen.getAllByTestId("pace-band")) {
+				expect(band.getAttribute("fill-opacity")).toBe("0.28");
+			}
 		});
 	});
 });
