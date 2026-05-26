@@ -1,261 +1,288 @@
 {
   "roadmap": {
     "project_id": "time-in-state-and-staleness",
-    "created_at": "2026-05-25T06:47:18Z",
+    "created_at": "2026-05-25T11:34:58Z",
     "total_steps": 11
   },
   "phases": [
     {
       "id": "01",
-      "name": "Persistence foundation",
-      "description": "WorkItemStateTransition entity + WorkItem.CurrentStateEnteredAt column + LighthouseAppContext mapping + lockstep EF migration; repository port and adapter for transition rows. No capture, no read-API change yet.",
+      "name": "Threshold persistence foundation",
+      "description": "StalenessThresholdDays on the shared WorkTrackingSystemOptionsOwner base (entity-initialiser defaults 7 Team / 14 Portfolio per DDD-5) + a lockstep Sqlite/Postgres EF migration via Create-Migration.ps1. No DTO, controller, capture or read-API change yet.",
       "steps": [
         {
           "id": "01-01",
-          "name": "WorkItemStateTransition entity + CurrentStateEnteredAt column + EF mapping + migration",
+          "name": "StalenessThresholdDays column on WorkTrackingSystemOptionsOwner + Team/Portfolio default initialisers + EF migration",
           "criteria": [
-            "WorkItemStateTransition is a standalone entity implementing IEntity with WorkItemId (FK), FromState, ToState, TransitionedAt (DDD-1/ADR-015)",
-            "WorkItemBase exposes a nullable DateTime? CurrentStateEnteredAt persisted column (DDD-2/ADR-016)",
-            "LighthouseAppContext exposes DbSet<WorkItemStateTransition> and configures FK->WorkItem with cascade delete plus a composite index (WorkItemId, TransitionedAt)",
-            "EnsureCreated against the test LighthouseAppContext materialises the WorkItemStateTransitions table and the WorkItems.CurrentStateEnteredAt column without error",
-            "Persisting a WorkItem with one WorkItemStateTransition row and re-reading it returns the same FromState, ToState, TransitionedAt and a non-null CurrentStateEnteredAt",
-            "EF migration AddWorkItemStateTransitions is generated for BOTH Sqlite and Postgres via Create-Migration.ps1 and dotnet build is zero-warning"
+            "WorkTrackingSystemOptionsOwner exposes int StalenessThresholdDays { get; set; } persisted on both Team and Portfolio (shared base, DDD-5)",
+            "A newly-constructed Team initialises StalenessThresholdDays to 7 and a newly-constructed Portfolio initialises it to 14 (entity-initialiser defaults per DISCUSS D8)",
+            "EnsureCreated against the test LighthouseAppContext materialises the StalenessThresholdDays column on the Teams and Portfolios tables without error and seeded entities round-trip their default value",
+            "EF migration AddStalenessThresholdDays is generated for BOTH Sqlite and Postgres via Create-Migration.ps1 and seeds the non-null column with the per-owner default; dotnet build is zero-warning"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs",
-          "scenario_name": "PersistsWorkItemStateTransition_AndCurrentStateEnteredAt_RoundTripsThroughContext",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/StalenessThresholdPersistenceTest.cs",
+          "scenario_name": "PersistsStalenessThresholdDays_DefaultsSevenForTeamFourteenForPortfolio_RoundTripsThroughContext",
+          "deps": [],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemStateTransition.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
             "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations",
             "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/StalenessThresholdPersistenceTest.cs"
           ],
-          "implementation_notes": "NEW entity WorkItemStateTransition.cs: implements IEntity (int Id), int WorkItemId FK, string FromState, string ToState, DateTime TransitionedAt. Keep slice 01 to four columns; do NOT add StalenessThresholdDays here (slice 02). EXTEND WorkItemBase with public DateTime? CurrentStateEnteredAt { get; set; } only (the [NotMapped] SyncedTransitions transport lands in 02-01, not here). EXTEND LighthouseAppContext: add DbSet<WorkItemStateTransition>; in OnModelCreating add one entity config block: HasOne(WorkItem).WithMany().HasForeignKey(WorkItemId).OnDelete(Cascade) and HasIndex(WorkItemId, TransitionedAt). Generate the migration via Create-Migration.ps1 ONLY (CLAUDE.md hard rule) so Sqlite + Postgres stay in lockstep; never call dotnet ef migrations add directly. The migration adds the WorkItemStateTransitions table and the nullable WorkItems.CurrentStateEnteredAt column. Test is a real EF round-trip through the test LighthouseAppContext (EnsureDeleted/EnsureCreated, mirroring the existing LighthouseAppContextUtcTest precedent at the Tests project root) - exercises the driven persistence port with real I/O, not a mock. Immutable C#: nullable enabled, no mutable public collections. No comments per CLAUDE.md."
-        },
-        {
-          "id": "01-02",
-          "name": "IWorkItemStateTransitionRepository port + EF repository adapter",
-          "criteria": [
-            "IWorkItemStateTransitionRepository extends IRepository<WorkItemStateTransition> with no additional methods at MVP",
-            "WorkItemStateTransitionRepository extends RepositoryBase<WorkItemStateTransition> following the existing repository pattern and is registered in DI",
-            "Adding a WorkItemStateTransition via the repository and calling Save() persists the row; GetAll() returns it after a fresh scope",
-            "Removing the parent WorkItem cascades and the transition row is gone (FK cascade verified through the adapter)"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/WorkItemStateTransitionRepositoryTest.cs",
-          "scenario_name": "AddAndSave_PersistsTransitionRow_AndGetAllReturnsIt",
-          "deps": ["01-01"],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/WorkItemStateTransitionRepositoryTest.cs"
-          ],
-          "implementation_notes": "NEW port + adapter mirroring the existing WorkItemRepository pair (closest sibling). IWorkItemStateTransitionRepository : IRepository<WorkItemStateTransition> - empty body at MVP; sibling consumer DESIGNs may add methods later. WorkItemStateTransitionRepository : RepositoryBase<WorkItemStateTransition> - constructor takes LighthouseAppContext + ILogger like the existing repos; rely on the base for Add/GetAll/Save/Remove. Register in Program.cs DI alongside the other IRepository<> registrations (confirm the exact registration block at GREEN). Integration test is a real EF round-trip through RepositoryBase against the test context (adapter-to-port contract, per Mandate 4 adapters get integration tests only - no mocking the DB). Confirm cascade behaviour configured in 01-01 actually deletes children. Zero-warning build."
+          "implementation_notes": "EXTEND WorkTrackingSystemOptionsOwner (the shared base that already houses ToDoStates/DoingStates/SystemWIPLimit/StateMappings) with public int StalenessThresholdDays { get; set; }. Do NOT default it on the base (a base default of 0 would mask the Team/Portfolio split). Apply the defaults via the two concrete entity initialisers per DDD-5/DISCUSS D8: in Team.cs add `public int StalenessThresholdDays { get; set; } = 7;`-equivalent by setting the inherited property's initial value through the Team initialiser (Team is the closest sibling that already overrides DoneItemsCutoffDays = 365 and initialises WorkItemTypes/ThroughputHistory); in Portfolio.cs initialise it to 14. Slice 01 already shipped WorkItem.CurrentStateEnteredAt + the WorkItemStateTransitions table; this step adds ONLY the threshold column. NEW test file at the Tests project root mirroring the slice-01 WorkItemStateTransitionPersistenceTest / LighthouseAppContextUtcTest precedent: a real EF round-trip through the test LighthouseAppContext (EnsureDeleted/EnsureCreated) seeding a Team and a Portfolio via their repositories and re-reading the persisted threshold (drives the driven persistence port with real I/O, no mock). EXTENSION-JUSTIFICATION not required: column added to existing base, test mirrors a recorded sibling. Generate the migration via Create-Migration.ps1 ONLY (CLAUDE.md hard rule) so Sqlite + Postgres stay in lockstep; never call dotnet ef migrations add directly; the migration adds a non-null StalenessThresholdDays with the default seeded so existing rows are valid. Sonar: use Assert.EnterMultipleScope for the 2+ consecutive asserts (NUnit2045). Nullable enabled, immutable style, no comments. Zero-warning build."
         }
       ]
     },
     {
       "id": "02",
-      "name": "Capture + derivation seam",
-      "description": "Connector capability flag + SyncedTransitions transport; the single WorkItemService.RefreshWorkItems seam that persists transition rows and derives CurrentStateEnteredAt idempotently; Jira and ADO connector-layer transition extraction.",
+      "name": "Settings round-trip + range validation",
+      "description": "StalenessThresholdDays bubbles through SettingsOwnerDtoBase to both TeamSettingDto and PortfolioSettingDto; the Team/Portfolio settings-sync extensions persist it; TeamController.UpdateTeam and PortfolioController.UpdatePortfolio reject values outside [0,365] with 400. Un-ignores the two settings integration tests (12 ATs).",
       "steps": [
         {
           "id": "02-01",
-          "name": "SupportsTransitionHistory capability flag + SyncedTransitions transport",
+          "name": "Team settings carry + persist + validate StalenessThresholdDays [0,365]",
           "criteria": [
-            "IWorkTrackingConnector exposes bool SupportsTransitionHistory { get; } (DDD-3/ADR-017)",
-            "WorkItemBase exposes a transient [NotMapped] IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } defaulting to an empty list, never persisted by EF",
-            "JiraWorkTrackingConnector.SupportsTransitionHistory returns true",
-            "AzureDevOpsWorkTrackingConnector.SupportsTransitionHistory returns true",
-            "CsvWorkTrackingConnector.SupportsTransitionHistory returns false",
-            "A WorkItem persisted through the context does not create a SyncedTransitions column (transport remains transient)"
+            "SettingsOwnerDtoBase projects int StalenessThresholdDays from the WorkTrackingSystemOptionsOwner so TeamSettingDto exposes it on GET /api/latest/teams/{teamId}/settings",
+            "A newly-created team's settings payload reports stalenessThresholdDays = 7 (default flows through the DTO)",
+            "PUT /api/latest/teams/{teamId} accepts stalenessThresholdDays and persists it; a subsequent GET settings round-trips the saved value (14 and 0 both persist; 0 disables highlighting)",
+            "PUT with stalenessThresholdDays < 0 or > 365 returns 400 BadRequest before persistence",
+            "PUT by a non-team-admin returns 403 (inherited RbacGuard(TeamWrite), regression guard)",
+            "All 6 tests in TeamStalenessThresholdSettingsIntegrationTest are un-ignored and go green"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs",
-          "scenario_name": "SyncedTransitions_IsTransient_AndNotPersisted",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamStalenessThresholdSettingsIntegrationTest.cs",
+          "scenario_name": "GetTeamSettings_NewlyCreatedTeam_ExposesDefaultStalenessThresholdOfSevenDays",
           "deps": ["01-01"],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/WorkItemStateTransitionPersistenceTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamStalenessThresholdSettingsIntegrationTest.cs"
           ],
-          "implementation_notes": "EXTEND the existing IWorkTrackingConnector port with one read-only bool member; every existing implementation must declare it - Jira true, ADO true, CSV false. Linear is OUT of slice 01 (slice 02); if the LinearWorkTrackingConnector already implements IWorkTrackingConnector, give it the minimum SupportsTransitionHistory => true (or false) needed to compile but do NOT add its history GraphQL query here. EXTEND WorkItemBase with [NotMapped] IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = []; - immutable init-only transport consumed and detached by RefreshWorkItems in 02-02. The [NotMapped] attribute keeps EF from mapping it; the test asserts no column is generated (extend the 01-01 persistence test rather than create a parallel file). No SaveChanges side effect. Zero-warning build."
+          "implementation_notes": "EXTEND SettingsOwnerDtoBase (closest existing file - it already round-trips shared settings for both Team and Portfolio): add public int StalenessThresholdDays { get; set; } and copy it in the WorkTrackingSystemOptionsOwner constructor (StalenessThresholdDays = owner.StalenessThresholdDays) so BOTH TeamSettingDto and PortfolioSettingDto inherit GET-side exposure without touching either subclass DTO. EXTEND TeamExtensions.SyncTeamWithTeamSettings (the extension(Team) block, line 32) to add `team.StalenessThresholdDays = teamSetting.StalenessThresholdDays;` so PUT persists it. EXTEND TeamController.UpdateTeam (line 105): add a range guard returning BadRequest when stalenessThresholdDays is outside [0,365], placed alongside the existing BaselineValidationService / StateMappingValidator BadRequest checks and BEFORE GetEntityByIdAnExecuteAction (so the 400 fires before persistence); follow the existing `return BadRequest(<message>)` pattern. RED handoff from DISTILL: remove the class-level [Ignore] from TeamStalenessThresholdSettingsIntegrationTest and confirm RED-for-right-reason first - GET defaults fail because stalenessThresholdDays is absent from the settings JSON (TryGetInt false); the @error 400 tests fail because the controller returns 200 instead of 400; the @rbac 403 test likely PASSES immediately (RbacGuard(TeamWrite) is inherited, not new) - keep it as a regression guard, that is EXPECTED per the DISTILL gate. The test injects stalenessThresholdDays into a serialized TeamSettingDto JsonObject and reads it back from the GET payload, so it compiles before the property exists. Post-GREEN Fixture-Theater check: git diff must show SettingsOwnerDtoBase.cs + TeamExtensions.cs + TeamController.cs changed when the ATs flip green - if only the test file changed, the PUT body is being echoed by the seed not persisted; BLOCK. Getters/setters acceptable on a DTO (Rule 9 relaxation). Sonar NUnit2045 on multi-asserts. Immutability, <=2 nesting, no else, no comments. Zero-warning build."
         },
         {
           "id": "02-02",
-          "name": "WorkItemService.RefreshWorkItems persists transitions + derives CurrentStateEnteredAt idempotently",
+          "name": "Portfolio settings carry + persist + validate StalenessThresholdDays [0,365]",
           "criteria": [
-            "RefreshWorkItems is the single seam that persists WorkItemStateTransition rows from SyncedTransitions and derives WorkItem.CurrentStateEnteredAt, flushing in one SaveChangesAsync (DDD-6)",
-            "CurrentStateEnteredAt is set to the TransitionedAt of the latest transition whose ToState equals the item's current State (within 1 day of the source timestamp per US-01 AC line 2)",
-            "Re-running the same sync does not duplicate rows: dedup is by (WorkItemId, ToState, TransitionedAt) and the derived CurrentStateEnteredAt is unchanged across re-sync (DDD-7)",
-            "An item with no prior transition data leaves CurrentStateEnteredAt null (first-observation)",
-            "DISTILL AT #3 GetWip_TeamSyncedWithTransitionHistory_CurrentStateEnteredAtMatchesLastTransitionWithinOneDay is un-ignored and goes green",
-            "DISTILL AT #4 GetWip_SameTeamReadTwice_CurrentStateEnteredAtIsStableAcrossReads is un-ignored and goes green"
+            "PortfolioSettingDto exposes stalenessThresholdDays on GET /api/latest/portfolios/{portfolioId}/settings (inherited from SettingsOwnerDtoBase)",
+            "A newly-created portfolio's settings payload reports stalenessThresholdDays = 14",
+            "PUT /api/latest/portfolios/{portfolioId} accepts stalenessThresholdDays and persists it; GET settings round-trips it (30 and 0 both persist)",
+            "PUT with stalenessThresholdDays < 0 or > 365 returns 400 BadRequest before persistence",
+            "PUT by a non-portfolio-admin returns 403 (inherited RbacGuard(PortfolioWrite))",
+            "All 6 tests in PortfolioStalenessThresholdSettingsIntegrationTest are un-ignored and go green"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs",
-          "scenario_name": "GetWip_TeamSyncedWithTransitionHistory_CurrentStateEnteredAtMatchesLastTransitionWithinOneDay",
-          "deps": ["01-02", "02-01"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioStalenessThresholdSettingsIntegrationTest.cs",
+          "scenario_name": "GetPortfolioSettings_NewlyCreatedPortfolio_ExposesDefaultStalenessThresholdOfFourteenDays",
+          "deps": ["01-01"],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioStalenessThresholdSettingsIntegrationTest.cs"
           ],
-          "implementation_notes": "EXTEND RefreshWorkItems (WorkItemService.cs:51) - the existing single per-item sync loop. For each incoming WorkItemBase: read its transient SyncedTransitions, upsert transition rows via IWorkItemStateTransitionRepository deduping by (WorkItemId, ToState, TransitionedAt), then derive CurrentStateEnteredAt = MAX(TransitionedAt WHERE ToState == item.State) or null when none. All writes flush in ONE SaveChangesAsync per the existing loop's single-save invariant. Inject IWorkItemStateTransitionRepository into the WorkItemService constructor (primary-constructor style at line 12). Use the project's existing GetDateDifference day-rounding convention (WorkItemBase WorkItemAge precedent) so the badge stays consistent with WorkItemAge - the within-1-day AC falls out of this. RED handoff from DISTILL: in this step REMOVE the [Ignore] from AT #3 and AT #4 and FIRST confirm each fails for the right reason (functionality missing - derived value absent/unstable), not a setup error (empty wip array, 403, Parse throw). Replace the test's reflection seed (ApplyCurrentStateEnteredAt no-op) with seeding WorkItemStateTransition rows and letting RefreshWorkItems derive the value - this exercises the real seam per the pre-DELIVER gate and avoids Fixture Theater; confirm git diff shows WorkItemService.cs changed when the ATs flip green. WorkItemServiceTest gets the focused unit coverage (derivation picks the latest ToState-matching transition; idempotent re-sync; null when no history) through the WorkItemService driving port with in-memory repositories. The ArchUnit sole-writer rule is authored in 05-01, not here. Immutability, <=2 nesting, no else, no comments. Zero-warning build."
-        },
-        {
-          "id": "02-03",
-          "name": "Jira IssueFactory.GetAllStateTransitions + connector populates SyncedTransitions",
-          "criteria": [
-            "IssueFactory.GetAllStateTransitions(JsonElement) returns every status transition as (fromState, toState, transitionedAt) by walking the same changelog.histories array the existing GetTransitionDate walker uses",
-            "Existing GetStartedAndClosedDate behaviour is unchanged (DISCUSS D9 invariant - existing IssueFactory tests stay green)",
-            "Given a changelog with >=3 status transitions, the derived current-state-entered timestamp equals the last matching transition's date",
-            "JiraWorkTrackingConnector populates WorkItemBase.SyncedTransitions from GetAllStateTransitions when building each work item"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
-          "scenario_name": "GetAllStateTransitions_ChangelogWithThreeStatusTransitions_ReturnsAllTransitionsInOrder",
-          "deps": ["02-02"],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs"
-          ],
-          "implementation_notes": "EXTEND IssueFactory (closest existing file - do NOT create a parallel Jira parser). Add GetAllStateTransitions next to GetTransitionDate/ExtractDateOfStateTransitionFromHistory (IssueFactory.cs:171-223) reusing the same changelog.histories enumeration and the field == 'status' detection; emit every (fromString, toString, createdDate) instead of keeping only the last matching one. Do NOT touch GetStartedAndClosedDate (D9 invariant) - the existing tests guard it. JiraWorkTrackingConnector: in CreateWorkItemFromJiraIssue / the issue-to-workitem mapping, set SyncedTransitions = GetAllStateTransitions(...).Select(map to WorkItemStateTransition). Connector-layer correctness test follows the existing IssueFactoryTest changelog-template style (the jsonTemplate string with a histories array of >=3 status transitions; assert the parsed transitions and that the latest-into-current-state timestamp matches). This is the US-01 AC line 2 'verified against recorded API responses' coverage for Jira. No comments; immutability (LINQ over loops where natural)."
-        },
-        {
-          "id": "02-04",
-          "name": "ADO GetAllStateTransitionsThrottled + connector populates SyncedTransitions",
-          "criteria": [
-            "AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, workItemId) returns every state transition from the work item's revisions",
-            "Existing GetStateTransitionDateThrottled (Started/Closed derivation) behaviour is unchanged",
-            "Given a captured GetRevisionsAsync payload with >=3 state changes, the derived current-state-entered timestamp equals the last matching revision's changed date",
-            "AzureDevOpsWorkTrackingConnector populates WorkItemBase.SyncedTransitions during ConvertAdoWorkItemToLighthouseWorkItem"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
-          "scenario_name": "GetAllStateTransitions_RevisionsWithThreeStateChanges_ReturnsAllTransitions",
-          "deps": ["02-02"],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs"
-          ],
-          "implementation_notes": "EXTEND AzureDevOpsWorkTrackingConnector (closest existing file). Add GetAllStateTransitionsThrottled next to GetStateTransitionDateThrottled (AzureDevOpsWorkTrackingConnector.cs:758-778) reusing the throttled witClient.GetRevisionsAsync fetch and the existing RevisionWasChangingState detection; emit every (fromState, toState, changedDate) instead of keeping only the last boundary. Do NOT change GetStateTransitionDateThrottled. In ConvertAdoWorkItemToLighthouseWorkItem (line 693) set SyncedTransitions from the new method. FIXTURE GAP - the existing ADO connector tests drive live GetWorkItemsForTeam against a configured instance and no captured-revisions template helper exists yet: DELIVER must capture a small real GetRevisionsAsync payload (one ADO item with >=3 state changes) and assert the parser against it (US-01 AC line 2 for ADO). Add the capture as a test fixture/resource; keep it minimal. No comments; immutability."
+          "implementation_notes": "The DTO GET-side exposure is ALREADY delivered by 02-01 (SettingsOwnerDtoBase carries StalenessThresholdDays and PortfolioSettingDto inherits it) - so this step does NOT touch SettingsOwnerDtoBase; it only adds the portfolio PUT persistence + validation. EXTEND PortfolioExtensions.SyncWithPortfolioSettings (the extension(Portfolio) block invoked from PortfolioController.UpdatePortfolio line 105) to add `portfolio.StalenessThresholdDays = portfolioSetting.StalenessThresholdDays;` mirroring the team sync. EXTEND PortfolioController.UpdatePortfolio (line 85): add the same [0,365] range guard returning BadRequest, alongside the existing BadRequest checks and before persistence. Note PortfolioController.UpdatePortfolio carries [LicenseGuard(CheckPortfolioConstraint = true)] - the AT mocks ILicenseService.CanUsePremiumFeatures()=>true (already in the scaffold SetUp) so the guard passes. RED handoff: remove the [Ignore] and confirm RED-for-right-reason (default absent => TryGetInt false; out-of-range returns 200 not 400; 403 passes by inheritance - keep as guard). Post-GREEN Fixture-Theater check: PortfolioExtensions.cs + PortfolioController.cs must appear in git diff. Reuse the team validation message/shape verbatim only if it is genuinely the same knowledge (range bounds) - a small shared range-check helper is acceptable, but do NOT introduce a parallel validator class. Sonar NUnit2045. Immutability, no comments. Zero-warning build."
         }
       ]
     },
     {
       "id": "03",
-      "name": "Read API",
-      "description": "WorkItemDto carries currentStateEnteredAt and approximate; the /metrics/wip read endpoint exposes the field, including null for first-observation items.",
+      "name": "CSV sync-delta fallback capture",
+      "description": "WorkItemService.RefreshWorkItems synthesises a sync-delta WorkItemStateTransition when a no-history connector reports a changed mapped State vs the persisted row, derives CurrentStateEnteredAt from the sync timestamp, sets the approximate path, and stays idempotent (no duplicate on an unchanged re-sync). Un-ignores the CSV cases of the fallback seam test.",
       "steps": [
         {
           "id": "03-01",
-          "name": "WorkItemDto exposes currentStateEnteredAt + approximate on the read endpoint",
+          "name": "RefreshWorkItems sync-delta fallback for connectors without transition history",
           "criteria": [
-            "WorkItemDto projects DateTime? CurrentStateEnteredAt and bool Approximate from WorkItemBase (DDD-9)",
-            "GET /api/latest/teams/{teamId}/metrics/wip serialises currentStateEnteredAt per item (ISO8601 string, or JSON null)",
-            "For Jira/ADO source-of-truth history, Approximate is false in slice 01",
-            "DISTILL AT #2 GetWip_JiraTeamWithInProgressItem_ExposesCurrentStateEnteredAtPerItem is un-ignored and goes green",
-            "DISTILL AT #5 GetWip_ItemFirstObservedThisSync_CurrentStateEnteredAtIsNull is un-ignored and goes green (property present, value JSON null)"
+            "When the team's connector reports SupportsTransitionHistory == false and an item's incoming mapped State differs from the persisted row's State, RefreshWorkItems synthesises a WorkItemStateTransition into the new mapped State with TransitionedAt = sync time and derives CurrentStateEnteredAt from it (DDD-1/DDD-3)",
+            "A first-ever-observed item from a no-history connector leaves CurrentStateEnteredAt null until a later sync detects a change (no synthetic transition fabricated for the first observation)",
+            "Re-syncing the SAME unchanged item does not synthesise a duplicate transition into the mapped state (DDD-7 idempotency), reusing the existing (WorkItemId, ToState, TransitionedAt) dedup",
+            "UpdateWorkItemsForTeam_CsvConnectorWithoutHistory_StateChangesAcrossSyncs_DerivesCurrentStateEnteredAtFromSyncDelta is un-ignored and goes green",
+            "UpdateWorkItemsForTeam_CsvConnectorWithoutHistory_StateUnchangedAcrossSyncs_DoesNotSynthesiseTransition is un-ignored and goes green"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs",
-          "scenario_name": "GetWip_JiraTeamWithInProgressItem_ExposesCurrentStateEnteredAtPerItem",
-          "deps": ["02-02"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs",
+          "scenario_name": "UpdateWorkItemsForTeam_CsvConnectorWithoutHistory_StateChangesAcrossSyncs_DerivesCurrentStateEnteredAtFromSyncDelta",
+          "deps": ["02-01", "02-02"],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TimeInStateReadApiIntegrationTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs"
           ],
-          "implementation_notes": "EXTEND WorkItemDto (closest existing file - it already projects WorkItemBase for the work-item table). Add DateTime? CurrentStateEnteredAt and bool Approximate, populated in the existing WorkItemDto constructor/projection from the WorkItemBase. CurrentStateEnteredAt serialises null naturally when the column is null (first-observation). For slice 01 Jira/ADO always have history so Approximate = false; the sync-delta path that would set it true is slice 02 (CSV/Linear) - keep the field but do not branch on it yet beyond a constant false derivation tied to source-of-truth capture. No controller change needed: the existing /metrics/wip handler returns WorkItemDto and the new fields auto-flow (DDD-11). RED handoff from DISTILL: in this step REMOVE the [Ignore] from AT #2 and AT #5; confirm each first fails for the right reason (field absent from JSON -> TryGetDateTime false for #2; property absent or non-null for #5) before implementing. ATs #3/#4 (02-02) plus #2/#5 (here) cover the whole read contract. Confirm git diff shows WorkItemDto.cs changed when the ATs flip green (no Fixture Theater). Getters acceptable on a DTO (Rule 9 relaxation). Zero-warning build."
+          "implementation_notes": "EXTEND WorkItemService.RefreshWorkItems (line 52) - the single per-item sync seam slice 01 established. Today SyncStateTransitions (line 104) only persists item.SyncedTransitions; CsvWorkTrackingConnector.SupportsTransitionHistory is already false and yields SyncedTransitions = []. Add the sync-delta branch: resolve the connector's SupportsTransitionHistory via the workTrackingConnector already fetched at line 56; when it is false AND a state change is detected, synthesise the transition. CRITICAL ordering (slice-01 lessons): the change detection must compare the INCOMING item's mapped State against the EXISTING persisted row's State captured BEFORE SyncWorkItem.Update overwrites it - capture the prior State alongside existingItem in the line 63 loop (existingItem?.State) and pass it into the transition synthesis, because Update(item) at line 98 mutates existingItem.State in place. Synthesise via `new WorkItemStateTransition { FromState = priorState, ToState = persistedItem.State, TransitionedAt = <syncTime> }` and route it through the SAME SyncStateTransitions dedup path (existing (WorkItemId, ToState, TransitionedAt) guard gives DDD-7 idempotency for free - an unchanged re-sync detects no change so emits nothing). WorkItemId is valid here because SyncWorkItem returns persistedItem AFTER the line 78 Save() stamps the Id (slice-01 WorkItemId=0 fix - rely on it, do not re-order). Use a single sync timestamp (DateTime.UtcNow once at the top of RefreshWorkItems) so the within-1-day badge convention holds. For the approximate flag: capture transitions through WorkItemStateTransitionMapper.MapToMappedStates so stored ToState matches the mapped State the derivation compares against; the synthesised transition's ToState IS already mapped (persistedItem.State) so no extra mapping for the synthetic row. CsvWorkTrackingConnector needs no behavioural change beyond confirming SupportsTransitionHistory => false (already shipped slice 01) - it is in files_to_modify only if a confirmation/no-op touch is needed; if untouched at GREEN, remove it from the diff expectation. WorkItemDto.Approximate currently hardcodes false - the true derivation (latest transition synthesised via fallback) is a FE/read concern surfaced in 06-01; this step delivers the persisted observable contract (transition row + CurrentStateEnteredAt), which is what the seam ATs assert (no source field per the DISTILL source->Approximate reconciliation). RED handoff: the test class has a class-level [Ignore] covering all three cases - this step un-ignores the class but the Linear case (#17) is owned by 04-01; confirm the CSV #15/#16 fail for the right reason (CurrentStateEnteredAt stays null after a change-detecting sync; Is.Not.Null fires) and the Linear #17 may stay red until 04-01 - if so, keep the class un-ignored and let 04-01 close #17 (sequence 03-01 then 04-01 on the same file). If preferred, leave [Ignore] on the single Linear test method until 04-01 to keep the bar green between commits. Post-GREEN: WorkItemService.cs must be in git diff. Immutability, <=2 nesting, no else, no comments. Zero-warning build."
         }
       ]
     },
     {
       "id": "04",
-      "name": "Frontend",
-      "description": "IWorkItem TS model gains the new fields; a new pure TimeInStateBadge component renders the days-in-state text; WorkItemsDialog gains an optional sortable Time-in-State column wired through the Team detail WIP view.",
+      "name": "Linear source-of-truth capture",
+      "description": "LinearWorkTrackingConnector flips SupportsTransitionHistory to true, extends the GraphQL issue query with the history connection, maps it onto WorkItemBase.SyncedTransitions via WorkItemStateTransitionMapper, and downgrades per-connection to the sync-delta fallback when the history field is unavailable at runtime (DDD-10). Un-ignores the Linear case of the fallback seam test.",
       "steps": [
         {
           "id": "04-01",
-          "name": "IWorkItem model fields + TimeInStateBadge component",
+          "name": "Linear history GraphQL connection + per-connection runtime downgrade",
           "criteria": [
-            "IWorkItem includes currentStateEnteredAt: Date | null and approximate: boolean",
-            "TimeInStateBadge renders '<N>d in <stateName>' where N is whole days from currentStateEnteredAt to now",
-            "TimeInStateBadge renders an em dash placeholder when currentStateEnteredAt is null",
-            "No red/warning emphasis is applied (staleness colour is slice 02)",
-            "Vitest + RTL tests cover the populated, null, and pluralisation/rounding cases via parametrisation"
+            "LinearWorkTrackingConnector.SupportsTransitionHistory returns true",
+            "The issue GraphQL query requests the history connection (fromState/toState/createdAt) and CreateWorkItemFromIssue populates WorkItemBase.SyncedTransitions mapped to mapped states via WorkItemStateTransitionMapper",
+            "When the connector supplies real history, CurrentStateEnteredAt derives from the real transition timestamp (not the sync time) through the existing RefreshWorkItems source-of-truth path",
+            "If the history field is unsupported at runtime for a connection, the connector logs once, flips a per-connection in-memory flag, and returns SyncedTransitions = [] for that connection thereafter so RefreshWorkItems falls through to the 03-01 sync-delta path (DDD-10)",
+            "UpdateWorkItemsForTeam_LinearConnectorWithHistory_PersistsRealTransitionsAndDerivesCurrentStateEnteredAt is un-ignored and goes green"
           ],
-          "test_file": "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx",
-          "scenario_name": "renders N days in current state and an em dash when no entered date",
-          "deps": [],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs",
+          "scenario_name": "UpdateWorkItemsForTeam_LinearConnectorWithHistory_PersistsRealTransitionsAndDerivesCurrentStateEnteredAt",
+          "deps": ["03-01"],
           "files_to_modify": [
-            "Lighthouse.Frontend/src/models/WorkItem.ts",
-            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx",
-            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearResponses.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs"
           ],
-          "implementation_notes": "EXTEND IWorkItem (WorkItem.ts) with currentStateEnteredAt: Date | null and approximate: boolean; if the model is parsed via a deserialiser/Zod schema, extend that schema (do not as-cast). NEW pure component TimeInStateBadge.tsx (Common/ has sibling components but none renders a days-in-state badge - this is a genuinely new concern per the DESIGN grep: zero TimeInState matches). Props: { currentStateEnteredAt: Date | null, currentStateName: string, now?: Date } - inject now (default to a clock) for deterministic tests. Compute whole-day difference; render `${days}d in ${currentStateName}`; render the em dash placeholder when currentStateEnteredAt is null. Do NOT take stalenessThresholdDays or apply red emphasis here - that prop and treatment are slice 02. Vitest + RTL: parametrise day counts (Mandate 5) plus the null case; assert rendered text, not internal state. Skip any 'renders without crashing' framework test (CLAUDE.md). Strict TS, no any. Biome clean."
-        },
-        {
-          "id": "04-02",
-          "name": "WorkItemsDialog Time-in-State column wired through Team detail",
-          "criteria": [
-            "WorkItemsDialog accepts an optional timeInStateColumn prop (structurally parallel to the existing highlightColumn)",
-            "When timeInStateColumn is provided, the dialog renders a 'Time in State' column using TimeInStateBadge",
-            "The Time-in-State column is sortable (longest first)",
-            "ItemsInProgress on the Team detail WIP view passes timeInStateColumn so the column appears for team work items",
-            "Portfolio wiring is NOT added (slice 02)"
-          ],
-          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
-          "scenario_name": "renders sortable Time in State column with badges when timeInStateColumn provided",
-          "deps": ["04-01", "03-01"],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
-            "Lighthouse.Frontend/src/pages/Teams/Detail/ItemsInProgress.tsx",
-            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx"
-          ],
-          "implementation_notes": "EXTEND WorkItemsDialog (closest existing file - mirror the existing HighlightColumnDefinition prop pattern at WorkItemsDialog.tsx:31-40). Add an optional timeInStateColumn prop; for slice 01 it carries no threshold (just a presence flag / minimal shape) since staleness colour is slice 02 - keep the shape minimal and additive so slice 02 can extend it with stalenessThresholdDays. When present, push a DataGrid column (headerName 'Time in State', sortable - reuse the existing sortComparator approach) whose renderCell returns <TimeInStateBadge currentStateEnteredAt={row.currentStateEnteredAt} currentStateName={row.state} />; valueGetter returns the day count so the column sorts longest-first. EXTEND ItemsInProgress (Teams/Detail/ItemsInProgress.tsx:181 already renders WorkItemsDialog with highlightColumn) to also pass timeInStateColumn for team work items. TeamMetricsView renders the WIP widget that opens this dialog and needs no change beyond what ItemsInProgress passes; only touch it if a prop must thread through (confirm at GREEN). Do NOT wire PortfolioDetail/portfolio ItemsInProgress (slice 02). Vitest + RTL: assert the column header is present and a badge renders when timeInStateColumn is supplied, and absent when it is not. The Playwright POM (WorkItemsDialog.ts) already targets the 'Time in State' columnheader and gridcells matching /d in / - render real <th>/<td> with that accessible name and text so 05-02's locators resolve. Strict TS; Biome clean."
+          "implementation_notes": "EXTEND the existing LinearWorkTrackingConnector (closest file - do NOT create a parallel Linear history service, which would re-implement the GraphQL transport). Flip SupportsTransitionHistory from false (line 25) to true. EXTEND GetIssuesQueryTemplate (line 532) to add a history connection on the issue node per Linear's public schema: `history(first: N) { nodes { createdAt fromState { name } toState { name } } }`. EXTEND LinearResponses.IssueNode (line 171) with an IssueHistoryConnection/IssueHistoryNode mapping (createdAt, fromState.name, toState.name) mirroring the existing StateNode shape. In CreateWorkItemFromIssue (line 308) build the raw transitions from issue.History.Nodes and set SyncedTransitions = WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, team) so stored states match the mapped State the derivation compares against (slice-01 mapped-state lesson) - this makes the source-of-truth path derive CurrentStateEnteredAt from the real createdAt timestamp via the unchanged RefreshWorkItems/DeriveCurrentStateEnteredAt path. Per-connection runtime downgrade (DDD-10): the connector instance is per-connection in DI; on a GraphQL error whose message indicates the history field is unsupported (inspect response.Errors in SendQuery), log once at warning, set a private bool field (e.g. historyUnavailable) and from then on return SyncedTransitions = [] for issues on that connection - RefreshWorkItems then hits the 03-01 fallback (which sets approximate semantics). Open question (DESIGN, deferred to DELIVER): Linear history field plan/quota availability - the downgrade IS the validation; the seam test #17 supplies pre-mapped SyncedTransitions directly so it exercises the source-of-truth derivation without a live Linear call. Add a focused connector-layer NUnit test (NEW LinearWorkTrackingConnectorTest case or extend the existing Linear connector test) parsing a captured history payload into transitions - this is the US-02/D1 Linear correctness coverage; keep it example-based at the connector layer (Mandate 11 - no PBT at layer 4). RED handoff: un-ignore the Linear method #17 (if 03-01 left it method-ignored) and confirm it derives enteredCurrentState from the supplied transition timestamp. Post-GREEN: LinearWorkTrackingConnector.cs + LinearResponses.cs must appear in git diff. Immutability, no comments. Zero-warning build."
         }
       ]
     },
     {
       "id": "05",
-      "name": "Cross-cutting + walking skeleton",
-      "description": "ArchUnitNET rules enforcing the single-seam architectural invariants; the Playwright walking-skeleton scenario un-fixmed, run against a locally-started app, and driven green.",
+      "name": "Feature-level time-in-state capture + read projection",
+      "description": "Mirror the WorkItem transition seam onto Feature so portfolio-level items carry CurrentStateEnteredAt, wired through WorkItemService.UpdateFeaturesForPortfolio; the field then auto-flows on the portfolio /metrics/wip via the inherited FeatureDto projection. Un-ignores the two portfolio read ATs.",
       "steps": [
         {
           "id": "05-01",
-          "name": "ArchUnitNET rules for the single-seam invariants",
+          "name": "Feature CurrentStateEnteredAt capture wired through UpdateFeaturesForPortfolio",
           "criteria": [
-            "An ArchUnitNET rule asserts WorkItem has no navigation property to WorkItemStateTransition (ADR-015 - FK-only, not an owned collection)",
-            "An ArchUnitNET rule asserts WorkItemService is the only type that writes WorkItemStateTransition rows / mutates WorkItem.CurrentStateEnteredAt (DDD-6/ADR-016/017 sole-writer invariant)",
-            "The new rules pass on the current implementation and the existing architecture suite stays green"
+            "Feature-level state transitions are captured and Feature.CurrentStateEnteredAt is derived at sync time through WorkItemService.UpdateFeaturesForPortfolio, mirroring the WorkItem seam (latest transition whose ToState equals the Feature's current mapped State, else null)",
+            "The capture is idempotent: re-running UpdateFeaturesForPortfolio for an unchanged Feature does not duplicate transition rows nor change the derived CurrentStateEnteredAt (DDD-7)",
+            "A first-observed Feature with no prior transition data leaves CurrentStateEnteredAt null",
+            "Feature : WorkItemBase inherits the slice-01 copy-ctor that already carries SyncedTransitions and the CurrentStateEnteredAt column - no re-drop; the entity-vs-reuse decision for Feature transition rows is made and justified here",
+            "Existing feature-refresh and portfolio-metrics tests stay green (no regression to RefreshFeatures / extrapolation behaviour)"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs",
-          "scenario_name": "WorkItemService_IsSoleWriter_OfTransitionsAndCurrentStateEnteredAt",
-          "deps": ["02-02"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceFeatureTransitionIntegrationTest.cs",
+          "scenario_name": "UpdateFeaturesForPortfolio_FeatureWithStateHistory_DerivesCurrentStateEnteredAtFromLatestMatchingTransition",
+          "deps": ["01-01"],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureStateTransition.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureStateTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureStateTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceFeatureTransitionIntegrationTest.cs"
           ],
-          "implementation_notes": "NEW test file in the existing Architecture suite, modelled on the sibling ForecastFilterSeamArchUnitTest.cs (same suite, same single-seam intent). Rules: (1) WorkItem must not declare a member of type IEnumerable/ICollection/List of WorkItemStateTransition (no navigation property - FK lives on the child per ADR-015); (2) only WorkItemService may depend-on-and-write the transition repository / set CurrentStateEnteredAt - express as ArchUnitNET 'types that ... should be WorkItemService' on the dependency to IWorkItemStateTransitionRepository write path. Note ADR-018's 'no *PerStateAggregation* class' rule is slice-02/sibling-DESIGN scope and not required for US-01; keep this file to the ADR-015/016/017 rules that the slice-01 code actually establishes. This is a test-only step (no production change) - it pins the invariants the 02-02 seam already satisfies, so it should pass immediately; if it fails, a real architecture violation was introduced in phase 02. Zero-warning build."
+          "implementation_notes": "DELIVER decision (DESIGN open-question 'Feature entity transitions', explicitly flagged as a DELIVER choice, not a DESIGN blocker): RECOMMENDED = NEW FeatureStateTransition entity (FK -> Feature) rather than overloading WorkItemStateTransition. RATIONALE/EXTENSION-JUSTIFICATION: WorkItemStateTransition.WorkItemId is a hard int FK to the WorkItems table and the slice-01 ArchUnit rule pins WorkItem with no transition navigation; Feature is a distinct entity/table, so reusing WorkItemStateTransition would require a nullable/polymorphic FK that breaks the cascade and the FK-only invariant. A sibling FeatureStateTransition { Id, FeatureId, FromState, ToState, TransitionedAt } keeps the same architectural shape (FK-only child, cascade delete, composite index (FeatureId, TransitionedAt)) with a clean per-parent FK - WHY-NEW-FILE FeatureStateTransition.cs; CLOSEST-EXISTING WorkItemStateTransition.cs; EXTENSION-COST a polymorphic owner FK + discriminator that the cascade config and the ADR-015 FK-only rule forbid; PARALLEL-RATIONALE distinct table/lifecycle and an incompatible FK target. Mirror the repository pair on the WorkItemStateTransitionRepository/IWorkItemStateTransitionRepository sibling (RepositoryBase, register in Program.cs DI). EXTEND LighthouseAppContext with the DbSet + one OnModelCreating config block (HasOne Feature WithMany HasForeignKey(FeatureId) OnDelete Cascade + HasIndex(FeatureId, TransitionedAt)); generate the migration via Create-Migration.ps1 ONLY (Sqlite+Postgres lockstep). EXTEND WorkItemService.UpdateFeaturesForPortfolio (line 24) / RefreshFeatures (line 324): Feature : WorkItemBase already inherits SyncedTransitions (slice-01 copy-ctor at WorkItemBase.cs:12-16 carries it; the Feature(WorkItemBase) ctor at Feature.cs:12 chains base) so connectors can populate it - derive Feature.CurrentStateEnteredAt with the SAME seam logic as the WorkItem path (capture transitions via WorkItemStateTransitionMapper.MapToMappedStates, dedup by (FeatureId, ToState, TransitionedAt), derive MAX(TransitionedAt WHERE ToState == Feature.State) or null). FeatureId/WorkItemId=0-on-first-sync lesson: persist the Feature (featureRepository.Save at line 340) BEFORE stamping child transition FKs, mirroring the slice-01 RefreshWorkItems ordering - do NOT stamp FeatureId before the feature row has an Id. This step does NOT add the connector-side history extraction for Features (out of slice scope - portfolio connectors populate SyncedTransitions where available; the read AT seeds the column directly); the seam derivation + idempotency is what is exercised. NEW integration test mirroring WorkItemServiceTransitionSyncIntegrationTest (IntegrationTestBase, real repositories, mocked IWorkTrackingConnector driving the real UpdateFeaturesForPortfolio): assert derivation picks the latest ToState-matching transition, idempotent re-sync, null when no history. Consider extending the existing TimeInStateSeamArchUnitTest with a Feature sole-writer rule (WorkItemService is the only writer of FeatureStateTransition / Feature.CurrentStateEnteredAt) - optional in this step, the WorkItem rule already exists. Immutability, <=2 nesting, no else, no comments. Zero-warning build."
         },
         {
           "id": "05-02",
-          "name": "Walking-skeleton Playwright scenario green end-to-end",
+          "name": "Portfolio /metrics/wip exposes Feature CurrentStateEnteredAt",
           "criteria": [
-            "The TimeInStateAndStaleness walking-skeleton spec is un-fixmed (test.fixme removed) and runs in the E2E suite",
-            "Opening the ADO-backed team's WIP dialog shows the 'Time in State' column with at least one '<N>d in <state>' badge",
-            "Clicking the column header sorts it; the column header stays visible",
-            "The POM locators in WorkItemsDialog.ts resolve against the real rendered column",
-            "The spec was run against a locally-started app before commit (project rule) and passes"
+            "GET /api/latest/portfolios/{portfolioId}/metrics/wip serialises currentStateEnteredAt per in-progress Feature (ISO8601 string within 1 day of the persisted value, or JSON null for a first-observed Feature)",
+            "The field flows through the inherited FeatureDto : WorkItemDto projection with no new controller branch",
+            "GetWip_PortfolioFeatureWithStateHistory_ExposesCurrentStateEnteredAtWithinOneDay is un-ignored and goes green",
+            "GetWip_FeatureFirstObservedThisSync_CurrentStateEnteredAtIsNull is un-ignored and goes green (property present, value JSON null)"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioTimeInStateReadApiIntegrationTest.cs",
+          "scenario_name": "GetWip_PortfolioFeatureWithStateHistory_ExposesCurrentStateEnteredAtWithinOneDay",
+          "deps": ["05-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioTimeInStateReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "FeatureDto : WorkItemDto ALREADY inherits CurrentStateEnteredAt + Approximate from the slice-01 WorkItemDto base ctor (WorkItemDto.cs:22-23 set them from WorkItemBase) - so the field auto-flows once 05-01 persists Feature.CurrentStateEnteredAt and the portfolio /metrics/wip handler returns FeatureDto. Confirm at GREEN that the portfolio wip endpoint actually projects FeatureDto for in-progress features (it does per slice-01 read contract); the most likely no-op-or-tiny change is verifying the serialisation flows - if the inherited property already serialises, FeatureDto.cs may need NO change and should be dropped from the diff expectation (the genuine production work is in 05-01). RED handoff from DISTILL: the scaffold seeds a Feature with CurrentStateEnteredAt set directly via the real property setter (the column shipped slice 01) - so #13 asserts the persisted value renders within 1 day and #14 asserts a null Feature surfaces JSON null. Per the DISTILL gate, #14 (first-observed null) may PASS today because the seeded value is null; at GREEN confirm it passes for the RIGHT reason (Feature has no transition rows so 05-01 derives null), not merely because capture is absent. If both ATs go green with ONLY test-file changes, that is CORRECT here ONLY because 05-01 already delivered the production capture and FeatureDto inherits the projection - verify via the deletion test (revert 05-01 -> #13 fails). This is NOT Fixture Theater because the seed sets a PRECONDITION (persisted column) and the production projection serialises it; but document the no-production-change in the commit body if FeatureDto.cs is untouched. Getters acceptable on a DTO (Rule 9). Sonar NUnit2045. No comments. Zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Frontend staleness highlight + settings forms + portfolio column",
+      "description": "TimeInStateBadge gains red treatment past the threshold; Team and Portfolio settings forms gain the RBAC-gated Flow Signals numeric field; the timeInStateColumn threads stalenessThresholdDays into both the team and portfolio WIP views so the portfolio Time-in-State column renders with data.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "TimeInStateBadge red/warning treatment past the staleness threshold",
+          "criteria": [
+            "TimeInStateBadge accepts an optional stalenessThresholdDays number prop and renders the warning (red) treatment when daysInState > stalenessThresholdDays",
+            "A threshold of 0 disables highlighting (no badge ever rendered red)",
+            "The day count reuses the existing getAgeInDaysFromStart +1 convention already in daysInState so the badge stays consistent with WorkItemAge",
+            "The stale badge is identifiable for the E2E POM via data-testid=\"time-in-state-stale\" (parallel to the existing warning-testid convention)",
+            "Vitest + RTL tests cover below-threshold (neutral), above-threshold (red), the threshold=0 disabled case, and the null em-dash case via parametrisation"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx",
+          "scenario_name": "applies the stale warning treatment only when days in state exceed a non-zero threshold",
+          "deps": ["02-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.tsx",
+            "Lighthouse.Frontend/src/components/Common/TimeInStateBadge/TimeInStateBadge.test.tsx"
+          ],
+          "implementation_notes": "EXTEND the existing TimeInStateBadge (slice-01 pure component, TimeInStateBadge.tsx). Add stalenessThresholdDays?: number to TimeInStateBadgeProps. Compute days via the existing exported daysInState(currentStateEnteredAt, now) (already uses getAgeInDaysFromStart with the +1 convention) - reuse it, do NOT duplicate the day math (DRY of knowledge). Apply the red/warning treatment when stalenessThresholdDays is defined, > 0, and days > stalenessThresholdDays (US-02 AC: >= threshold+1, i.e. strictly greater than the threshold). When stalenessThresholdDays is 0 or undefined, render neutral (0 disables highlighting per US-02). Match the existing blocked/warning red emphasis the codebase already uses (find the blocked-style colour/sx the WorkItemsDialog or feature warning uses - reuse that token, do not hardcode a hex). Mark the stale span with data-testid=\"time-in-state-stale\" so the E2E POM staleTimeInStateBadgeFor/countStaleTimeInStateBadges (already in WorkItemsDialog.ts) resolve. Keep the null -> em-dash branch unchanged. Vitest + RTL: parametrise (days, threshold) -> expected neutral/red plus the null case and threshold=0 (Mandate 5); assert rendered text + presence/absence of the testid, never internal state. Skip any renders-without-crashing framework test (CLAUDE.md). Inject now for deterministic day counts. Strict TS, no any. Biome clean."
+        },
+        {
+          "id": "06-02",
+          "name": "Team + Portfolio settings forms: RBAC-gated Flow Signals threshold field",
+          "criteria": [
+            "ITeamSettings and IPortfolioSettings TS models include stalenessThresholdDays: number",
+            "The team settings form (ForecastSettingsComponent) renders a Flow Signals InputGroup with a numeric Staleness Threshold (days) field bound to stalenessThresholdDays, visible only when useRbac().isTeamAdmin(teamId) is true",
+            "The portfolio settings form (EditPortfolio) renders the same Flow Signals field, visible only when useRbac().isPortfolioAdmin(portfolioId) is true",
+            "The field accepts integers in [0,365] and round-trips the saved value on reopen",
+            "Vitest + RTL tests cover admin-visible vs non-admin-hidden gating and the value round-trip for both team and portfolio scope via parametrisation"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.test.tsx",
+          "scenario_name": "shows the Flow Signals staleness threshold field only to scope admins and round-trips the value",
+          "deps": ["02-01", "02-02"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Team/TeamSettings.ts",
+            "Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts",
+            "Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.test.tsx"
+          ],
+          "implementation_notes": "EXTEND ITeamSettings (TeamSettings.ts) and IPortfolioSettings (PortfolioSettings.ts) with stalenessThresholdDays: number; if either is parsed via a Zod schema / deserialiser, extend that schema (do NOT as-cast). EXTEND ForecastSettingsComponent (closest existing team settings form - it already hosts setting InputGroup sections with numeric fields): add a Flow Signals InputGroup adjacent to the existing groups with a numeric TextField labelled exactly 'Staleness Threshold (days)' (the E2E POM TeamEditPage.stalenessThresholdField uses getByLabel with that exact text) bound to stalenessThresholdDays, with min 0 / max 365. Gate visibility with the existing useRbac() pattern: render the field only when isTeamAdmin(teamId) (the project invariant routes all gating through useRbac - never fetch authorization directly per CLAUDE.md). EXTEND EditPortfolio (closest existing portfolio settings form) with the same labelled field gated by isPortfolioAdmin(portfolioId). Reuse the existing InputGroup/TextField components the forms already import; do NOT introduce a new settings form component. Vitest + RTL: render with a mocked useRbac returning admin true/false, assert the labelled field is present for admins and absent for non-admins, and that setting+reading round-trips; parametrise team vs portfolio where the assertions are structurally identical (Mandate 5), but keep them as distinct behaviours if the gating predicate differs. A portfolio settings test file may be added alongside the team one if the portfolio form needs its own coverage. Strict TS, no any. Biome clean."
+        },
+        {
+          "id": "06-03",
+          "name": "Thread stalenessThresholdDays into the timeInStateColumn for team + portfolio WIP",
+          "criteria": [
+            "TimeInStateColumnDefinition carries stalenessThresholdDays?: number and WorkItemsDialog passes it into TimeInStateBadge so the rendered badge applies the red treatment",
+            "BaseMetricsView.buildViewData populates timeInStateColumn.stalenessThresholdDays from the viewed entity's threshold for the wipOverview widget in BOTH team and portfolio scope (slice 01 set timeInStateColumn: {} on team wipOverview only)",
+            "The portfolio WIP work-item dialog now renders the Time in State column with badges (data present via 05-02), matching the team behaviour",
+            "Vitest + RTL tests assert the threshold reaches the badge (a stale row renders the warning treatment) for the WIP column in both scopes",
+            "Existing WorkItemsDialog / BaseMetricsView tests stay green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+          "scenario_name": "renders the Time in State column with stale treatment when a threshold is provided in both team and portfolio scope",
+          "deps": ["05-02", "06-01", "06-02"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx"
+          ],
+          "implementation_notes": "EXTEND TimeInStateColumnDefinition (WorkItemsDialog.tsx:50 - currently only { now?: Date }) with stalenessThresholdDays?: number. In the renderCell that builds the Time in State column (WorkItemsDialog.tsx:228-240) pass stalenessThresholdDays={timeInStateColumn.stalenessThresholdDays} into <TimeInStateBadge> so the 06-01 red treatment fires; keep the existing daysInState valueGetter for sorting unchanged. EXTEND BaseMetricsView.buildViewData (BaseMetricsView.tsx:385/443-448): set timeInStateColumn: { stalenessThresholdDays: <entity threshold> } on wipOverview. buildViewData is the SHARED view builder for both TeamMetricsView and PortfolioMetricsView (both render <BaseMetricsView entity={...}> - TeamMetricsView.tsx:111, PortfolioMetricsView.tsx:43), so the threshold must come from the entity/inputs already threaded into buildViewData - confirm the ViewDataInputs/BaseMetricsViewProps carry the entity's stalenessThresholdDays (the entity prop already flows; add stalenessThresholdDays to the ViewDataInputs shape and read entity.stalenessThresholdDays). This single change covers BOTH scopes (team WIP gains the red treatment, portfolio WIP gains the column WITH data now that 05-02 serves currentStateEnteredAt for Features). Do NOT special-case team vs portfolio - the shared builder + shared dialog is the point. Vitest + RTL: render the dialog with timeInStateColumn carrying a low threshold and a stale row -> assert the time-in-state-stale testid appears; render with threshold 0 -> assert none; cover both scopes by parametrising the items shape (work items vs features) if the rendering differs, otherwise one parametrised test. Strict TS, no any. Biome clean."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Walking skeletons (live Playwright)",
+      "description": "Un-fixme the 4 held slice-02 E2E scenarios (US-02 red-on-threshold-change, US-03 team threshold settings, US-04 portfolio threshold settings, US-04 portfolio Time-in-State column), run each live against a locally-started app per the project rule, and drive them green through the existing POMs.",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "Un-fixme and drive the 4 slice-02 walking-skeleton scenarios green",
+          "criteria": [
+            "All four test.fixme markers in TimeInStateAndStaleness.spec.ts (stale-turn-red, team threshold settings, portfolio threshold settings, portfolio Time-in-State column) are removed and the scenarios run in the E2E suite",
+            "Lowering the team threshold via the settings form re-colours a stale badge red on next render without a re-sync (US-02 / DDD-8)",
+            "A team admin and a portfolio admin can set and re-read the threshold from the settings forms (US-03 / US-04), and the field is RBAC-gated",
+            "The portfolio WIP dialog shows the Time in State column with at least one '<N>d in <state>' badge (US-04)",
+            "Each scenario was run against a locally-started app before commit (project rule) and passes; all element access stays in the POMs"
           ],
           "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts",
-          "scenario_name": "flow coach sees how long each in-progress item has been in its current state",
-          "deps": ["04-02"],
+          "scenario_name": "flow coach sees stale items turn red after lowering the team threshold without re-syncing",
+          "deps": ["06-03"],
           "files_to_modify": [
             "Lighthouse.EndToEndTests/tests/specs/flow/TimeInStateAndStaleness.spec.ts",
-            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts"
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts",
+            "Lighthouse.EndToEndTests/tests/models/teams/TeamEditPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/portfolios/PortfolioEditPage.ts"
           ],
-          "implementation_notes": "WS strategy Type A (DISCUSS/DESIGN): one scenario closes the loop connector -> persistence -> /metrics/wip -> Team detail badge through the production composition root against the ADO-backed testData.teams[0] via testWithUpdatedTeams([0]). Remove the .fixme so the scenario runs. Per the project rule (memory: never commit an unrun Playwright spec), start the app locally, run the spec once, and confirm it first fails because the column/badge does not render, then drive green; validate the existing POM locators (timeInStateColumnHeader by columnheader name 'Time in State', getTimeInStateBadges by gridcells matching /d in /) against the real rendered DOM and adjust the POM only if the accessible names differ - all element access stays in WorkItemsDialog.ts (POM-only rule), never inline page.locator in the spec. This is the single E2E for the slice; per-connector parsing correctness is covered by the NUnit connector tests (02-03/02-04), not Playwright. Enable only this one scenario. Biome/lint clean on the E2E project."
+          "implementation_notes": "WS strategy Type A (additive). The 4 scenarios + their POM accessors are already committed (test.fixme): the spec uses workItemsDialog.timeInStateColumnHeader / getTimeInStateBadges / countStaleTimeInStateBadges (WorkItemsDialog.ts), teamEditPage.stalenessThresholdField / setStalenessThreshold / getStalenessThreshold (TeamEditPage.ts), and portfolioEditPage equivalents (PortfolioEditPage.ts) - all present. USER RUNS LIVE per the project rule (memory feedback_run_playwright_before_commit + feedback_e2e_page_object_model): never commit a Playwright spec/locator not RUN against a locally-started app; pnpm build only type-checks. Remove test.fixme ONE scenario at a time, start the app locally, run that scenario, confirm it first fails because the field/column/red-badge is absent, then confirm green after the 02/05/06 production code is in place; only adjust a POM if a real accessible name differs from what the locator expects (POM-only - never inline page.locator in the spec). The portfolio PUT path hits [LicenseGuard]; if the running app gates it, apply the premium-license dev seed (memory reference_premium_license_dev_seed: dotnet run + POST /api/v1/license/import with valid_not_expired_license.json + verify canUsePremiumFeatures) before running the portfolio scenarios. Per-connector parsing correctness is covered by the NUnit connector tests (03-01/04-01), not Playwright. Enable only the slice-02 scenarios here; the slice-01 scenario is already green and unchanged. Biome/lint clean on the E2E project. NOTE: this step's green confirmation depends on the user's live run; the agent prepares the spec/POMs and documents the live-run requirement in the step output rather than self-certifying a Playwright pass."
         }
       ]
     }
