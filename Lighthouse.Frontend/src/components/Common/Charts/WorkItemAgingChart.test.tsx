@@ -962,5 +962,104 @@ describe("WorkItemAgingChart component", () => {
 			expect(rect.y).toBe(0);
 			expect(rect.height).toBe(40);
 		});
+
+		it("emits no rects for a mapped state whose percentile set is empty", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [],
+					}),
+				],
+				doingStates: ["To Do", "In Progress", "Review"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			expect(rects).toHaveLength(0);
+		});
+
+		it("emits no rects for a state that carries observations but is not in the workflow order", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "Archived",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+						],
+					}),
+				],
+				doingStates: ["To Do", "In Progress", "Review"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			expect(rects).toHaveLength(0);
+		});
+
+		it("renders one band per percentile for a mapped state that has observations", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			expect(rects).toHaveLength(2);
+		});
+
+		it("orders the stacked bands by ascending percentile value regardless of input order", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "In Progress",
+						percentiles: [
+							{ percentile: 95, value: 12 },
+							{ percentile: 50, value: 3 },
+							{ percentile: 85, value: 8 },
+							{ percentile: 70, value: 5 },
+						],
+					}),
+				],
+				doingStates: ["In Progress"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			expect(rects.map((rect) => [rect.y, rect.y + rect.height])).toEqual([
+				[0, 3],
+				[3, 5],
+				[5, 8],
+				[8, 12],
+			]);
+		});
+
+		it("keys each rect by its state and percentile so React reconciles them stably", () => {
+			const rects = computePaceBandRects({
+				perStatePercentileValues: [
+					getMockPerStatePercentileValues({
+						state: "Review",
+						percentiles: [
+							{ percentile: 50, value: 3 },
+							{ percentile: 70, value: 5 },
+						],
+					}),
+				],
+				doingStates: ["In Progress", "Review"],
+				xScale: identityScale,
+				yScale: identityScale,
+			});
+
+			expect(rects.map((rect) => rect.key)).toEqual(["Review-50", "Review-70"]);
+		});
 	});
 });

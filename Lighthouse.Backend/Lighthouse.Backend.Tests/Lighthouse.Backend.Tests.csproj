@@ -76,6 +76,9 @@
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-state-since.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-multi-state-journey.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\project-valid-with-optional.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

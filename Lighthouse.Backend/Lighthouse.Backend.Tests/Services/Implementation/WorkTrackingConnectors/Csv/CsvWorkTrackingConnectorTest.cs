@@ -359,6 +359,114 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_CompletedItemWithPerStateEnteredDates_SynthesizesExitChainAndClosingDoneTransition()
+        {
+            var subject = CreateSubject();
+            var team = CreateMultiStateJourneyTeam();
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var done = workItems.Single(w => w.ReferenceId == "DONE-1");
+            var transitions = done.SyncedTransitions;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(3),
+                    "Three entered Doing states yield two exit transitions plus the closing Done transition.");
+
+                Assert.That(transitions[0].FromState, Is.EqualTo("In Progress"));
+                Assert.That(transitions[0].ToState, Is.EqualTo("Review"));
+                Assert.That(transitions[0].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 14, 0, 0, 0, DateTimeKind.Utc)),
+                    "Exit-into-Review is timestamped when Review was entered.");
+
+                Assert.That(transitions[1].FromState, Is.EqualTo("Review"));
+                Assert.That(transitions[1].ToState, Is.EqualTo("Test"));
+                Assert.That(transitions[1].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 19, 0, 0, 0, DateTimeKind.Utc)),
+                    "Exit-into-Test is timestamped when Test was entered.");
+
+                Assert.That(transitions[2].FromState, Is.EqualTo("Test"),
+                    "The closing transition leaves the last entered Doing state.");
+                Assert.That(transitions[2].ToState, Is.EqualTo("Done"),
+                    "The closing transition lands on the mapped Done state from DoneStates.");
+                Assert.That(transitions[2].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 22, 0, 0, 0, DateTimeKind.Utc)),
+                    "The closing transition is timestamped at the item's Closed Date.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_InProgressItemWithPerStateEnteredDates_SynthesizesExitChainWithoutAClosingDoneTransition()
+        {
+            var subject = CreateSubject();
+            var team = CreateMultiStateJourneyTeam();
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var inProgress = workItems.Single(w => w.ReferenceId == "WIP-1");
+            var transitions = inProgress.SyncedTransitions;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(1),
+                    "Two entered Doing states yield exactly one exit transition; an open item gets no closing Done transition.");
+                Assert.That(transitions[0].FromState, Is.EqualTo("In Progress"));
+                Assert.That(transitions[0].ToState, Is.EqualTo("Review"));
+                Assert.That(transitions[0].TransitionedAt, Is.EqualTo(new DateTime(2025, 01, 14, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(transitions.Any(t => t.ToState == "Done"), Is.False,
+                    "An item that is still in progress must not receive a closing Done transition.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_PerStateColumnsPresentButStateEnteredColumnNotConfigured_EmitsNoTransitions()
+        {
+            var subject = CreateSubject();
+            var team = CreateMultiStateJourneyTeam();
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, string.Empty);
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            Assert.That(workItems.SelectMany(w => w.SyncedTransitions), Is.Empty,
+                "With no state-entered column configured, per-state journey columns must be ignored entirely.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_DoneItemMissingClosedDate_SynthesizesExitChainWithoutAClosingDoneTransition()
+        {
+            var subject = CreateSubject();
+            var team = CreateMultiStateJourneyTeam();
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            var doneWithoutClose = workItems.Single(w => w.ReferenceId == "DONE-NOCLOSE");
+            var transitions = doneWithoutClose.SyncedTransitions;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(2),
+                    "Three entered Doing states give two exit transitions; a Done item with no Closed Date gets no closing transition.");
+                Assert.That(transitions.Any(t => t.ToState == "Done"), Is.False,
+                    "Without a Closed Date there is no timestamp for the closing transition, so it must be omitted rather than fabricated.");
+                Assert.That(transitions[^1].FromState, Is.EqualTo("Review"));
+                Assert.That(transitions[^1].ToState, Is.EqualTo("Test"));
+            }
+        }
+
+        private Team CreateMultiStateJourneyTeam()
+        {
+            var team = CreateTeam("team-valid-multi-state-journey.csv");
+            team.ToDoStates = ["To Do"];
+            team.DoingStates = ["In Progress", "Review", "Test"];
+            team.DoneStates = ["done"];
+            team.StateMappings =
+            [
+                new StateMapping { Name = "Done", States = ["done"] },
+            ];
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, "StateSince");
+
+            return team;
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_WrongType_Ignores()
         {
             var subject = CreateSubject();
