@@ -63,13 +63,9 @@ describe("CumulativeStateTimeChart", () => {
 		render(<CumulativeStateTimeChart data={{ states: threeStatesInOrder }} />);
 
 		const chart = screen.getByTestId("mock-bar-chart");
-		const dataset = JSON.parse(chart.getAttribute("data-dataset") ?? "[]");
+		const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
 
-		expect(dataset.map((row: { state: string }) => row.state)).toEqual([
-			"Backlog",
-			"Review",
-			"Doing",
-		]);
+		expect(xAxis[0].data).toEqual(["Backlog", "Review", "Doing"]);
 	});
 
 	it("stacks a completed segment and an ongoing segment per bar", () => {
@@ -88,16 +84,13 @@ describe("CumulativeStateTimeChart", () => {
 
 		const chart = screen.getByTestId("mock-bar-chart");
 		const series = JSON.parse(chart.getAttribute("data-series") ?? "[]");
-		const dataset = JSON.parse(chart.getAttribute("data-dataset") ?? "[]");
 
 		const stackIds = new Set(series.map((s: { stack?: string }) => s.stack));
 		expect(stackIds.size).toBe(1);
 		expect(series).toHaveLength(2);
 
-		const completedKey = series[0].dataKey;
-		const ongoingKey = series[1].dataKey;
-		expect(dataset[0][completedKey]).toBe(8);
-		expect(dataset[0][ongoingKey]).toBe(4);
+		expect(series[0].data[0]).toBe(8);
+		expect(series[1].data[0]).toBe(4);
 	});
 
 	it("renders an SVG hatch pattern for the ongoing segment", () => {

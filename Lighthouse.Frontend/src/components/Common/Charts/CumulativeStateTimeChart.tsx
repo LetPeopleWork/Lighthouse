@@ -19,8 +19,6 @@ import {
 	formatDuration,
 } from "../../../utils/date/formatDuration";
 
-const COMPLETED_KEY = "completedContributionDays";
-const ONGOING_KEY = "ongoingContributionDays";
 const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
 
 interface CumulativeStateTimeChartProps {
@@ -126,11 +124,11 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	const unit = chooseDurationUnit(maxTotalDays);
 	const unitLabel = formatDuration(maxTotalDays, unit).split(" ")[1];
 
-	const dataset = orderedStates.map((row) => ({
-		state: row.state,
-		[COMPLETED_KEY]: row.completedContributionDays,
-		[ONGOING_KEY]: row.ongoingContributionDays,
-	}));
+	const stateLabels = orderedStates.map((row) => row.state);
+	const completedData = orderedStates.map(
+		(row) => row.completedContributionDays,
+	);
+	const ongoingData = orderedStates.map((row) => row.ongoingContributionDays);
 
 	const handleBarClick = (dataIndex: number) => {
 		const row = orderedStates[dataIndex];
@@ -163,28 +161,33 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 				<Box sx={{ flex: 1, minHeight: 0 }}>
 					<BarChart
 						style={{ height: "100%", width: "100%" }}
-						dataset={dataset}
 						onItemClick={(_event, params) =>
 							handleBarClick(params?.dataIndex ?? -1)
 						}
 						xAxis={[
 							{
 								scaleType: "band",
-								dataKey: "state",
+								data: stateLabels,
 								label: `Time per state (${unitLabel})`,
+								height: 64,
+								tickLabelInterval: () => true,
+								tickLabelStyle: {
+									angle: -25,
+									textAnchor: "end",
+								},
 							},
 						]}
 						yAxis={[{ valueFormatter, label: unitLabel }]}
 						series={[
 							{
-								dataKey: COMPLETED_KEY,
+								data: completedData,
 								label: `Completed (${unitLabel})`,
 								stack: "stateTime",
 								color: theme.palette.primary.main,
 								valueFormatter,
 							},
 							{
-								dataKey: ONGOING_KEY,
+								data: ongoingData,
 								label: `Ongoing (${unitLabel})`,
 								stack: "stateTime",
 								color: `url(#${HATCH_PATTERN_ID})`,
