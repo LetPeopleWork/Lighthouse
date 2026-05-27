@@ -4,8 +4,7 @@ const BAR_ELEMENT_CLASS = "MuiBarChart-element";
 const ONGOING_HATCH_FILL = "url(#cumulative-state-time-ongoing-hatch)";
 const EMPTY_PLACEHOLDER_TEST_ID = "cumulative-state-time-empty";
 const ZERO_PLACEHOLDER_TEST_ID = "cumulative-state-time-zero";
-const ITEM_PICKER_TEST_ID = "cumulative-state-time-item-picker";
-const PARENT_EXPAND_TEST_ID = "cumulative-state-time-parent-expand";
+const CHIP_CLASS = "MuiChip-root";
 const DATA_GRID_ROW_CLASS = "MuiDataGrid-row";
 
 export class CumulativeStateTimeChart {
@@ -98,33 +97,27 @@ export class CumulativeStateTimeChart {
 		return new CumulativeStateTimeDrillDownDialog(this.page);
 	}
 
-	get itemPicker(): Locator {
-		return this.widget.getByTestId(ITEM_PICKER_TEST_ID);
+	get itemPickerCombobox(): Locator {
+		return this.widget.getByRole("combobox", {
+			name: /select contributing/i,
+		});
 	}
 
 	async searchPicker(query: string): Promise<void> {
-		await this.itemPicker.click();
-		await this.itemPicker.getByRole("combobox").fill(query);
+		await this.itemPickerCombobox.click();
+		await this.itemPickerCombobox.fill(query);
 	}
 
-	async selectPickerOption(label: string): Promise<void> {
-		await this.page.getByRole("option", { name: label, exact: false }).click();
+	async selectFirstPickerOption(): Promise<void> {
+		await this.page.getByRole("option").first().click();
 	}
 
-	get parentExpandAction(): Locator {
-		return this.page.getByTestId(PARENT_EXPAND_TEST_ID);
-	}
-
-	async expandParentChildren(): Promise<void> {
-		await this.parentExpandAction.click();
-	}
-
-	async clearPicker(): Promise<void> {
-		await this.itemPicker.getByLabel("Clear").click();
+	get selectedPickerChips(): Locator {
+		return this.widget.locator(`.MuiAutocomplete-root .${CHIP_CLASS}`);
 	}
 
 	async countSelectedPickerChips(): Promise<number> {
-		return this.itemPicker.getByRole("button").count();
+		return this.selectedPickerChips.count();
 	}
 }
 

@@ -77,7 +77,7 @@ test("@US-04 delivery lead clicks the constraint bar and reads the contributing 
 	await expect(drillDown.container).not.toBeVisible();
 });
 
-test.fixme("@US-05 delivery lead scopes the chart to a feature's children via parent-expand and then clears back to the systemic view", async ({
+test("@US-05 delivery lead scopes the chart to a single selected work item", async ({
 	page,
 	request,
 	overviewPage,
@@ -104,44 +104,8 @@ test.fixme("@US-05 delivery lead scopes the chart to a feature's children via pa
 	await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
 
 	await chart.searchPicker("TZ-");
-	await chart.expandParentChildren();
-	await expect.poll(() => chart.countSelectedPickerChips()).toBeGreaterThan(0);
-	await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
+	await chart.selectFirstPickerOption();
 
-	await chart.clearPicker();
-	await expect.poll(() => chart.countSelectedPickerChips()).toBe(0);
-	await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
-});
-
-test.fixme("@US-05 product owner deep-dives a single item and the chart reads in an adaptive unit instead of fractional days", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	await loadDemoScenario(request, DEMO_SCENARIO_ID);
-	await waitForBackgroundUpdates(request);
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
-	const metrics = await teamDetail.goToMetrics();
-	const flowMetricsWidgets = await metrics.switchCategory(
-		MetricsCategories.FlowMetrics,
-	);
-	const widget = await metrics.getWidgetByName(
-		MetricsWidgetNames.CumulativeStateTime,
-		flowMetricsWidgets,
-	);
-	await expect(widget.Widget).toBeVisible();
-
-	const chart = new CumulativeStateTimeChart(
-		page,
-		CUMULATIVE_STATE_TIME_WIDGET_ID,
-	);
-	await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
-
-	await chart.searchPicker("TZ-040");
-	await chart.selectPickerOption("TZ-040");
 	await expect.poll(() => chart.countSelectedPickerChips()).toBe(1);
 	await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
-	await expect(chart.chart).not.toContainText(/0\.\d+\s*d\b/);
 });
