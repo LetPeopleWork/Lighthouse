@@ -1143,5 +1143,15 @@ describe("ragRules", () => {
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText.toLowerCase()).toContain("filter");
 		});
+
+		it("returns red when a single state holds 100% of the total time", () => {
+			const result = computeCumulativeStateTimeRag(
+				[{ state: "Doing", totalDays: 42 }],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Doing");
+		});
 	});
 });

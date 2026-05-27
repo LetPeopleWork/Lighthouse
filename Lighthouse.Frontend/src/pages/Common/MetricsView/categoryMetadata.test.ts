@@ -216,6 +216,18 @@ describe("categoryMetadata", () => {
 			]);
 		});
 
+		it("stateTimeCumulative appears in flow-metrics for both team and portfolio owners", () => {
+			const teamWidgets = getWidgetsForCategory("flow-metrics", "team").map(
+				(w) => w.widgetKey,
+			);
+			const portfolioWidgets = getWidgetsForCategory(
+				"flow-metrics",
+				"portfolio",
+			).map((w) => w.widgetKey);
+			expect(teamWidgets).toContain("stateTimeCumulative");
+			expect(portfolioWidgets).toContain("stateTimeCumulative");
+		});
+
 		it("predictability contains expected widgets in order for team", () => {
 			const widgets = getWidgetsForCategory("predictability", "team");
 			expect(widgets.map((w) => w.widgetKey)).toEqual([

@@ -70,6 +70,22 @@ describe("widgetInfoMetadata", () => {
 		expect(getWidgetInfo("nonexistent")).toBeUndefined();
 	});
 
+	it("stateTimeCumulative has a description, a cumulative-time-per-state learn-more URL, and sustain/observe/act guidance", () => {
+		const info = getWidgetInfo("stateTimeCumulative");
+		expect(info).toBeDefined();
+		expect(info?.description.length).toBeGreaterThan(0);
+		expect(info?.learnMoreUrl).toBe(`${DOCS_BASE}#cumulative-time-per-state`);
+		expect(info?.statusGuidance.sustain).toBe(
+			"No single state holds 40% or more of the total time.",
+		);
+		expect(info?.statusGuidance.observe).toBe(
+			"One state holds between 40% and 60% of the total time.",
+		);
+		expect(info?.statusGuidance.act).toBe(
+			"One state holds more than 60% of the total time, or no time is in scope. Investigate the bottleneck or widen the filter.",
+		);
+	});
+
 	it("no two widgets share the same description", () => {
 		const descriptions = Object.values(widgetInfoMetadata).map(
 			(e: WidgetInfoEntry) => e.description,
