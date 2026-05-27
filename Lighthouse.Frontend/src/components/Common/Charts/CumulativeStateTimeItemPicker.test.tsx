@@ -11,7 +11,6 @@ const getMockCandidate = (
 	referenceId: "ITEM-1",
 	title: "Build the thing",
 	workItemType: "Story",
-	parentReferenceId: null,
 	...overrides,
 });
 
@@ -35,7 +34,7 @@ const threeCandidates: ICumulativeStateTimeCandidateRow[] = [
 
 async function openPicker(user: ReturnType<typeof userEvent.setup>) {
 	const combobox = screen.getByRole("combobox", {
-		name: /select contributing items/i,
+		name: /select contributing work items/i,
 	});
 	await user.click(combobox);
 	return combobox;
@@ -139,47 +138,6 @@ describe("CumulativeStateTimeItemPicker", () => {
 		expect(onSelectionChange).toHaveBeenCalledWith([2]);
 	});
 
-	it("offers a parent-expand action keyed off a feature parent that is not itself a candidate", async () => {
-		const user = userEvent.setup();
-		const onSelectionChange = vi.fn();
-		const featureParentedChildren: ICumulativeStateTimeCandidateRow[] = [
-			getMockCandidate({
-				workItemId: 11,
-				referenceId: "TZ-101",
-				title: "First child",
-				parentReferenceId: "AP-001",
-			}),
-			getMockCandidate({
-				workItemId: 12,
-				referenceId: "TZ-102",
-				title: "Second child",
-				parentReferenceId: "AP-001",
-			}),
-			getMockCandidate({
-				workItemId: 99,
-				referenceId: "TZ-200",
-				title: "Different feature",
-				parentReferenceId: "AP-999",
-			}),
-		];
-		render(
-			<CumulativeStateTimeItemPicker
-				candidates={featureParentedChildren}
-				selectedItemIds={[]}
-				onSelectionChange={onSelectionChange}
-				onOpen={vi.fn()}
-			/>,
-		);
-
-		await openPicker(user);
-		const expandAction = screen.getByRole("button", {
-			name: /select all 2 children of AP-001/i,
-		});
-		await user.click(expandAction);
-
-		expect(onSelectionChange).toHaveBeenCalledWith([11, 12]);
-	});
-
 	it("shows a disabled empty state when there are no candidates", async () => {
 		render(
 			<CumulativeStateTimeItemPicker
@@ -192,11 +150,11 @@ describe("CumulativeStateTimeItemPicker", () => {
 		);
 
 		const combobox = screen.getByRole("combobox", {
-			name: /select contributing items/i,
+			name: /select contributing work items/i,
 		});
 		expect(combobox).toBeDisabled();
 		expect(
-			screen.getByText(/no contributing items in this window/i),
+			screen.getByText(/no contributing work items in this window/i),
 		).toBeInTheDocument();
 	});
 
@@ -243,7 +201,7 @@ describe("CumulativeStateTimeItemPicker", () => {
 
 		await user.tab();
 		const combobox = screen.getByRole("combobox", {
-			name: /select contributing items/i,
+			name: /select contributing work items/i,
 		});
 		expect(combobox).toHaveFocus();
 

@@ -3850,7 +3850,6 @@ describe("BaseMetricsView component", () => {
 					referenceId: "PICK-42",
 					title: "Pick me",
 					workItemType: "Story",
-					parentReferenceId: null,
 				},
 			],
 		};
@@ -3887,7 +3886,7 @@ describe("BaseMetricsView component", () => {
 			user: ReturnType<typeof userEvent.setup>,
 		) {
 			const combobox = await screen.findByRole("combobox", {
-				name: /select contributing items/i,
+				name: /select contributing/i,
 			});
 			await user.click(combobox);
 			await user.click(await screen.findByRole("option", { name: /Pick me/i }));

@@ -127,8 +127,13 @@ function getMockCumulativeStateTimeItemsResponse(
 		state: "Review",
 		items: [
 			{
+				workItemId: 1,
 				referenceId: "ITEM-1",
-				parentReferenceId: null,
+				title: "Item one",
+				type: "Story",
+				state: "Review",
+				stateCategory: "Doing",
+				url: null,
 				daysContributed: 4,
 			},
 		],
@@ -225,7 +230,6 @@ function getMockCumulativeStateTimeCandidatesResponse(
 				referenceId: "ITEM-11",
 				title: "Build the thing",
 				workItemType: "Story",
-				parentReferenceId: null,
 			},
 		],
 		...overrides,

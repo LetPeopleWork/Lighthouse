@@ -84,8 +84,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
                 var orderedStates = OrderedStateNames(body);
-                Assert.That(orderedStates, Is.EqualTo(new[] { Analyzing, Building, Validating, Done }),
-                    $"US-02: portfolio bars must come back one-per-state in workflow order, identical shape to the team scope. Body: {body}");
+                Assert.That(orderedStates, Is.EqualTo(WorkflowDoingStates),
+                    $"D19/US-02: portfolio bars must come back one-per-Doing-state in workflow order, no Done-category bar, identical shape to the team scope. Body: {body}");
 
                 var building = StateRow(body, Building);
                 Assert.That(building.CompletedContributionDays, Is.EqualTo(60.0).Within(DaysTolerance),
@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetCumulativeStateTimeCandidates_PortfolioWindow_ReturnsIncludedFeaturesWithParentReferences()
+        public async Task GetCumulativeStateTimeCandidates_PortfolioWindow_ReturnsIncludedFeaturesWithoutParentReferenceId()
         {
             var portfolioId = SeedPortfolioWithKnownVisitsAndInFlightFeatures();
 
@@ -162,6 +162,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 using var document = JsonDocument.Parse(body);
                 Assert.That(document.RootElement.GetProperty("items").GetArrayLength(), Is.GreaterThan(0),
                     $"US-05 parity: portfolio candidate set is the D12-included features for the window. Body: {body}");
+                Assert.That(CandidateRowsHaveParentReferenceId(body), Is.False,
+                    $"D21 parity: portfolio candidate rows no longer expose a parentReferenceId field. Body: {body}");
             }
         }
 
@@ -324,6 +326,19 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 states.Add(entry.GetProperty("state").GetString() ?? string.Empty);
             }
             return states.ToArray();
+        }
+
+        private static bool CandidateRowsHaveParentReferenceId(string body)
+        {
+            using var document = JsonDocument.Parse(body);
+            foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
+            {
+                if (item.TryGetProperty("parentReferenceId", out _))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static List<ItemRowView> ItemRows(string itemsBody)

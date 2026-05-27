@@ -321,6 +321,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(portfolioFeatures);
 
             return itemsWithTransitions
+                .Where(item => item.StateCategory != StateCategories.ToDo)
                 .Where(item => IntersectsWindow(item, startDate, endDate) || IsInFlightAtWindowEnd(item, endDate))
                 .ToList();
         }
@@ -343,6 +344,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     Type = feature.Type,
                     State = feature.State,
                     StateCategory = feature.StateCategory,
+                    Url = feature.Url,
                     StartedDate = feature.StartedDate,
                     ClosedDate = feature.ClosedDate,
                     CurrentStateEnteredAt = feature.CurrentStateEnteredAt,
@@ -378,13 +380,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static List<string> BuildCumulativeWorkflowStateOrder(Portfolio portfolio)
         {
-            var order = new List<string>(portfolio.DoingStates);
-            if (portfolio.DoneStates.Count > 0)
-            {
-                order.Add(portfolio.DoneStates[0]);
-            }
-
-            return order;
+            return [.. portfolio.DoingStates];
         }
 
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)

@@ -151,7 +151,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 					direction="row"
 					sx={{
 						justifyContent: "space-between",
-						alignItems: "center",
+						alignItems: "flex-start",
+						minHeight: 56,
 						mb: 1,
 					}}
 				>

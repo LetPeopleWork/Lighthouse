@@ -83,8 +83,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
                 var orderedStates = OrderedStateNames(body);
-                Assert.That(orderedStates, Is.EqualTo(new[] { InProgress, Review, Test, Done }),
-                    $"Bars must be returned one-per-state in workflow order (ToDo→Doing→Done), matching the chart X axis (DDD-8). Body: {body}");
+                Assert.That(orderedStates, Is.EqualTo(WorkflowDoingStates),
+                    $"D19: bars must be returned one-per-Doing-state in workflow order; no Done-category state (e.g. {Done}) appears as a bar. Body: {body}");
             }
         }
 
@@ -235,6 +235,46 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetCumulativeStateTime_ItemCurrentlyInToDoWithEarlierDoingVisit_IsExcludedWhileDoneItemRemains()
+        {
+            // D20: an item that bounced back into a To Do-category state is excluded entirely — even though
+            // it had a Doing visit inside the window — and contributes to no bar. An item currently in a
+            // Done-category state stays included and its historical Doing time still contributes.
+            var teamId = SeedTeamWithBouncedBackToDoItemAndOneDoneItem(out var doneReferenceId, out var bouncedReferenceId);
+
+            client.AsTeamAdmin(teamId);
+            var barResponse = await client.GetAsync(BarUrl(teamId));
+            var candidatesResponse = await client.GetAsync(CandidatesUrl(teamId));
+            var itemsResponse = await client.GetAsync(ItemsUrl(teamId, Review));
+
+            var barBody = await barResponse.Content.ReadAsStringAsync();
+            var candidatesBody = await candidatesResponse.Content.ReadAsStringAsync();
+            var itemsBody = await itemsResponse.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(barResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), barBody);
+                Assert.That(candidatesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), candidatesBody);
+                Assert.That(itemsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), itemsBody);
+
+                var candidateReferenceIds = CandidateReferenceIds(candidatesBody);
+                Assert.That(candidateReferenceIds, Does.Not.Contain(bouncedReferenceId),
+                    $"D20: an item currently in a To Do-category state must be absent from the candidate set. Body: {candidatesBody}");
+                Assert.That(candidateReferenceIds, Does.Contain(doneReferenceId),
+                    $"D20: a Done-category item stays included. Body: {candidatesBody}");
+
+                var itemReferenceIds = ItemRows(itemsBody).Select(row => row.ReferenceId).ToArray();
+                Assert.That(itemReferenceIds, Does.Not.Contain(bouncedReferenceId),
+                    $"D20: the bounced-back-to-To Do item contributes to no drill-down row. Body: {itemsBody}");
+                Assert.That(itemReferenceIds, Does.Contain(doneReferenceId),
+                    $"D20: the Done item's historical Review time still contributes. Body: {itemsBody}");
+
+                var review = StateRow(barBody, Review);
+                Assert.That(review.TotalDays, Is.EqualTo(10.0).Within(DaysTolerance),
+                    $"D20: the Review bar counts only the Done item's 10d, never the excluded item's earlier Doing time. Body: {barBody}");
+            }
+        }
+
+        [Test]
         public async Task GetCumulativeStateTime_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
@@ -263,7 +303,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetCumulativeStateTimeItems_KnownState_ReturnsPerItemRowsWithAllFiveColumns()
+        public async Task GetCumulativeStateTimeItems_KnownState_ReturnsPerItemRowsWithSharedDialogColumns()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
 
@@ -280,12 +320,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     $"US-04 drill-down lists the items that contributed to Review. Body: {body}");
 
                 var done1 = rows.Single(row => row.ReferenceId == "DONE-1");
+                Assert.That(done1.WorkItemId, Is.GreaterThan(0),
+                    $"D22: the items payload carries workItemId so the frontend can build IWorkItem rows. Body: {body}");
                 Assert.That(done1.Title, Is.EqualTo("Story DONE-1"),
                     $"US-04 column 'Title' must carry the work item Name. Body: {body}");
                 Assert.That(done1.Type, Is.EqualTo("Story"),
                     $"US-04 column 'Work-Item Type' must carry the work item Type. Body: {body}");
                 Assert.That(done1.State, Is.EqualTo(Done),
                     $"US-04 column 'Current State' must carry the work item's current State. Body: {body}");
+                Assert.That(done1.StateCategory, Is.EqualTo(nameof(StateCategories.Done)),
+                    $"D22: the items payload carries the stateCategory name ('Done') for the colored chip. Body: {body}");
+                Assert.That(done1.Url, Is.EqualTo(UrlFor("DONE-1")),
+                    $"D22: the items payload carries the work item Url for the clickable name link. Body: {body}");
                 Assert.That(done1.DaysContributed, Is.GreaterThan(0.0),
                     $"US-04 column 'Days Contributed' must carry the contribution. Body: {body}");
             }
@@ -354,9 +400,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetCumulativeStateTimeCandidates_Window_ExposesParentReferenceIdForParentExpand()
+        public async Task GetCumulativeStateTimeCandidates_Window_DoesNotExposeParentReferenceId()
         {
-            var teamId = SeedTeamWithChildItemsUnderOneParent(out var parentReferenceId);
+            // D21: parent-expand was dropped; the picker selects raw work items only, so the candidate
+            // row no longer carries a parentReferenceId field.
+            var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
 
             client.AsTeamAdmin(teamId);
             var response = await client.GetAsync(CandidatesUrl(teamId));
@@ -365,8 +413,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(CandidateParentReferenceIds(body), Does.Contain(parentReferenceId),
-                    $"US-05 parent-expand reads parentReferenceId off each candidate (DDD-19). Body: {body}");
+                Assert.That(CandidateRowsHaveParentReferenceId(body), Is.False,
+                    $"D21: no candidate row exposes a parentReferenceId field. Body: {body}");
             }
         }
 
@@ -563,7 +611,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return teamId;
         }
 
-        private int SeedTeamWithChildItemsUnderOneParent(out string parentReferenceId)
+        private int SeedTeamWithBouncedBackToDoItemAndOneDoneItem(out string doneReferenceId, out string bouncedReferenceId)
         {
             using var scope = factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -571,20 +619,26 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
             var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
 
-            parentReferenceId = "FEAT-100";
+            doneReferenceId = "DONE-KEEP";
+            bouncedReferenceId = "BOUNCED-TODO";
+
             var inWindow = windowStart.AddDays(20);
 
-            for (var i = 0; i < 3; i++)
-            {
-                var child = NewWorkItem(team, $"CHILD-{i}", state: Done, category: StateCategories.Done,
-                    startedDate: inWindow, closedDate: inWindow.AddDays(8 + i), currentStateEnteredAt: null);
-                child.ParentReferenceId = parentReferenceId;
-                workItemRepository.Add(child);
-                workItemRepository.Save().GetAwaiter().GetResult();
+            // A Done item with a single 10-day Review visit (In Progress → Review → Done).
+            var doneItem = NewWorkItem(team, doneReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: inWindow, closedDate: inWindow.AddDays(10), currentStateEnteredAt: null);
+            workItemRepository.Add(doneItem);
+            workItemRepository.Save().GetAwaiter().GetResult();
+            AddTransition(transitionRepository, doneItem, InProgress, Review, inWindow);
+            AddTransition(transitionRepository, doneItem, Review, Done, inWindow.AddDays(10));
 
-                AddTransition(transitionRepository, child, InProgress, Review, inWindow.AddDays(3));
-                AddTransition(transitionRepository, child, Review, Done, inWindow.AddDays(8 + i));
-            }
+            // An item that spent time in Review inside the window but is CURRENTLY back in a To Do-category state.
+            var bouncedItem = NewWorkItem(team, bouncedReferenceId, state: "To Do", category: StateCategories.ToDo,
+                startedDate: inWindow, closedDate: null, currentStateEnteredAt: inWindow.AddDays(15));
+            workItemRepository.Add(bouncedItem);
+            workItemRepository.Save().GetAwaiter().GetResult();
+            AddTransition(transitionRepository, bouncedItem, InProgress, Review, inWindow.AddDays(5));
+            AddTransition(transitionRepository, bouncedItem, Review, "To Do", inWindow.AddDays(15));
 
             transitionRepository.Save().GetAwaiter().GetResult();
 
@@ -650,6 +704,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Type = "Story",
                 State = state,
                 StateCategory = category,
+                Url = UrlFor(referenceId),
                 CreatedDate = startedDate.AddDays(-1),
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
@@ -657,6 +712,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Order = referenceId,
             };
         }
+
+        private static string UrlFor(string referenceId) => $"https://example.test/items/{referenceId}";
 
         private static void AddTransition(IWorkItemStateTransitionRepository repository, WorkItem item, string fromState, string toState, DateTime transitionedAt)
         {
@@ -740,10 +797,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
             {
                 rows.Add(new ItemRowView(
+                    WorkItemId: item.GetProperty("workItemId").GetInt32(),
                     ReferenceId: item.GetProperty("referenceId").GetString() ?? string.Empty,
                     Title: item.GetProperty("title").GetString() ?? string.Empty,
                     Type: item.GetProperty("type").GetString() ?? string.Empty,
                     State: item.GetProperty("state").GetString() ?? string.Empty,
+                    StateCategory: item.GetProperty("stateCategory").GetString() ?? string.Empty,
+                    Url: item.TryGetProperty("url", out var url) && url.ValueKind == JsonValueKind.String ? url.GetString() : null,
                     DaysContributed: item.GetProperty("daysContributed").GetDouble()));
             }
             return rows;
@@ -760,18 +820,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return referenceIds.ToArray();
         }
 
-        private static string[] CandidateParentReferenceIds(string body)
+        private static bool CandidateRowsHaveParentReferenceId(string body)
         {
             using var document = JsonDocument.Parse(body);
-            var parents = new List<string>();
             foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
             {
-                if (item.TryGetProperty("parentReferenceId", out var parent) && parent.ValueKind == JsonValueKind.String)
+                if (item.TryGetProperty("parentReferenceId", out _))
                 {
-                    parents.Add(parent.GetString() ?? string.Empty);
+                    return true;
                 }
             }
-            return parents.ToArray();
+            return false;
         }
 
         private static StateRowView StateRow(string body, string state)
@@ -810,10 +869,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             bool HasMedianDays);
 
         private readonly record struct ItemRowView(
+            int WorkItemId,
             string ReferenceId,
             string Title,
             string Type,
             string State,
+            string StateCategory,
+            string? Url,
             double DaysContributed);
     }
 }

@@ -1,11 +1,14 @@
+import type { StateCategory } from "../WorkItem";
+
 export interface ICumulativeStateTimeItemRow {
+	workItemId: number;
 	referenceId: string;
-	parentReferenceId: string | null;
+	title: string;
+	type: string;
+	state: string;
+	stateCategory: StateCategory;
+	url: string | null;
 	daysContributed: number;
-	title?: string;
-	type?: string;
-	state?: string;
-	url?: string | null;
 }
 
 export interface ICumulativeStateTimeItemsResponse {

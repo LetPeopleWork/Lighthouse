@@ -1299,7 +1299,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var buildingRow = result.States.Single(row => row.State == building);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.States.Select(row => row.State), Is.EqualTo(new[] { analyzing, building, validating, done }));
+                Assert.That(result.States.Select(row => row.State), Is.EqualTo(new[] { analyzing, building, validating }));
                 Assert.That(buildingRow.CompletedContributionDays, Is.EqualTo(60.0).Within(daysTolerance));
                 Assert.That(buildingRow.OngoingContributionDays, Is.EqualTo(40.0).Within(daysTolerance));
                 Assert.That(buildingRow.MedianDays, Is.Not.Null);

@@ -10,7 +10,6 @@ import {
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
-import CumulativeStateTimeDrillDownDialog from "../../../components/Common/Charts/CumulativeStateTimeDrillDownDialog";
 import CumulativeStateTimeItemPicker from "../../../components/Common/Charts/CumulativeStateTimeItemPicker";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
@@ -28,6 +27,7 @@ import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWor
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
+import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
@@ -1136,6 +1136,37 @@ export const BaseMetricsView = <
 		setDrillDownOpen(true);
 	};
 
+	const drillDownWorkItems = useMemo<IWorkItem[]>(
+		() =>
+			drillDownItems.map((item) => ({
+				id: item.workItemId,
+				referenceId: item.referenceId,
+				name: item.title,
+				type: item.type,
+				state: item.state,
+				stateCategory: item.stateCategory,
+				url: item.url,
+				startedDate: new Date(0),
+				closedDate: new Date(0),
+				cycleTime: 0,
+				workItemAge: 0,
+				parentWorkItemReference: "",
+				isBlocked: false,
+			})),
+		[drillDownItems],
+	);
+
+	const drillDownDaysById = useMemo(
+		() =>
+			new Map(
+				drillDownItems.map((item) => [
+					item.workItemId,
+					Math.round(item.daysContributed * 10) / 10,
+				]),
+			),
+		[drillDownItems],
+	);
+
 	const { selectedCategory, setSelectedCategory } = useCategorySelection(
 		ownerType,
 		entity.id,
@@ -1427,10 +1458,15 @@ export const BaseMetricsView = <
 
 			<Dashboard items={dashboardItems} />
 
-			<CumulativeStateTimeDrillDownDialog
+			<WorkItemsDialog
 				open={drillDownOpen}
-				state={drillDownState ?? ""}
-				items={drillDownItems}
+				title={`${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} contributing to ${drillDownState ?? ""}`}
+				items={drillDownWorkItems}
+				highlightColumn={{
+					title: "Days Contributed",
+					description: "days",
+					valueGetter: (workItem) => drillDownDaysById.get(workItem.id) ?? 0,
+				}}
 				onClose={() => setDrillDownOpen(false)}
 			/>
 		</Grid>

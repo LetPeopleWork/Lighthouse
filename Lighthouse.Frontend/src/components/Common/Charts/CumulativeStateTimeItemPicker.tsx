@@ -1,7 +1,6 @@
 import {
 	Autocomplete,
 	Box,
-	Button,
 	Chip,
 	Stack,
 	TextField,
@@ -10,6 +9,8 @@ import {
 import type React from "react";
 import { useCallback, useMemo } from "react";
 import type { ICumulativeStateTimeCandidateRow } from "../../../models/Metrics/CumulativeStateTimeCandidates";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface CumulativeStateTimeItemPickerProps {
 	candidates: ICumulativeStateTimeCandidateRow[];
@@ -18,6 +19,8 @@ interface CumulativeStateTimeItemPickerProps {
 	onOpen: () => void;
 	candidatesLoaded?: boolean;
 }
+
+const PICKER_WIDTH = 280;
 
 const matchesQuery = (
 	candidate: ICumulativeStateTimeCandidateRow,
@@ -33,29 +36,6 @@ const matchesQuery = (
 	);
 };
 
-interface ParentExpandGroup {
-	parentReferenceId: string;
-	childIds: number[];
-}
-
-const groupByParentReference = (
-	candidates: ICumulativeStateTimeCandidateRow[],
-): ParentExpandGroup[] => {
-	const grouped = new Map<string, number[]>();
-	for (const candidate of candidates) {
-		const parentReferenceId = candidate.parentReferenceId;
-		if (parentReferenceId === null) {
-			continue;
-		}
-		const existing = grouped.get(parentReferenceId) ?? [];
-		grouped.set(parentReferenceId, [...existing, candidate.workItemId]);
-	}
-	return Array.from(grouped, ([parentReferenceId, childIds]) => ({
-		parentReferenceId,
-		childIds,
-	}));
-};
-
 const CumulativeStateTimeItemPicker: React.FC<
 	CumulativeStateTimeItemPickerProps
 > = ({
@@ -65,6 +45,9 @@ const CumulativeStateTimeItemPicker: React.FC<
 	onOpen,
 	candidatesLoaded = false,
 }) => {
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const label = `Select contributing ${workItemsTerm}`;
 	const isEmpty = candidatesLoaded && candidates.length === 0;
 
 	const selectedCandidates = useMemo(
@@ -82,103 +65,72 @@ const CumulativeStateTimeItemPicker: React.FC<
 		[onSelectionChange],
 	);
 
-	const expandableParents = useMemo(
-		() => groupByParentReference(candidates),
-		[candidates],
-	);
-
-	const handleExpand = useCallback(
-		(childIds: number[]) => {
-			const merged = Array.from(new Set([...selectedItemIds, ...childIds]));
-			onSelectionChange(merged);
-		},
-		[onSelectionChange, selectedItemIds],
-	);
-
 	if (isEmpty) {
 		return (
-			<Stack spacing={1} sx={{ minWidth: 280 }}>
+			<Stack spacing={1} sx={{ width: PICKER_WIDTH }}>
 				<Autocomplete
 					multiple
 					disabled
 					options={[]}
 					value={[]}
 					renderInput={(params) => (
-						<TextField
-							{...params}
-							size="small"
-							label="Select contributing items"
-						/>
+						<TextField {...params} size="small" label={label} />
 					)}
 				/>
 				<Typography variant="caption" color="text.secondary">
-					No contributing items in this window.
+					No contributing {workItemsTerm.toLowerCase()} in this window.
 				</Typography>
 			</Stack>
 		);
 	}
 
 	return (
-		<Stack spacing={1} sx={{ minWidth: 280 }}>
-			<Autocomplete
-				multiple
-				openOnFocus
-				options={candidates}
-				value={selectedCandidates}
-				getOptionLabel={(option) => `${option.referenceId} — ${option.title}`}
-				isOptionEqualToValue={(option, selected) =>
-					option.workItemId === selected.workItemId
-				}
-				filterOptions={(options, state) =>
-					options.filter((option) => matchesQuery(option, state.inputValue))
-				}
-				onOpen={onOpen}
-				onChange={(_event, selected) => handleChange(selected)}
-				renderOption={(props, option) => {
-					const { key, ...optionProps } = props;
+		<Autocomplete
+			multiple
+			openOnFocus
+			limitTags={1}
+			sx={{ width: PICKER_WIDTH }}
+			options={candidates}
+			value={selectedCandidates}
+			getOptionLabel={(option) => `${option.referenceId} — ${option.title}`}
+			isOptionEqualToValue={(option, selected) =>
+				option.workItemId === selected.workItemId
+			}
+			filterOptions={(options, state) =>
+				options.filter((option) => matchesQuery(option, state.inputValue))
+			}
+			onOpen={onOpen}
+			onChange={(_event, selected) => handleChange(selected)}
+			renderOption={(props, option) => {
+				const { key, ...optionProps } = props;
+				return (
+					<Box component="li" key={key} {...optionProps}>
+						<Stack>
+							<Typography variant="body2">{option.title}</Typography>
+							<Typography variant="caption" color="text.secondary">
+								{option.referenceId}
+							</Typography>
+						</Stack>
+					</Box>
+				);
+			}}
+			renderValue={(value, getItemProps) =>
+				value.map((option, index) => {
+					const { key, ...itemProps } = getItemProps({ index });
 					return (
-						<Box component="li" key={key} {...optionProps}>
-							<Stack>
-								<Typography variant="body2">{option.title}</Typography>
-								<Typography variant="caption" color="text.secondary">
-									{option.referenceId}
-								</Typography>
-							</Stack>
-						</Box>
+						<Chip
+							key={key}
+							{...itemProps}
+							size="small"
+							label={option.referenceId}
+						/>
 					);
-				}}
-				renderValue={(value, getItemProps) =>
-					value.map((option, index) => {
-						const { key, ...itemProps } = getItemProps({ index });
-						return (
-							<Chip
-								key={key}
-								{...itemProps}
-								size="small"
-								label={option.referenceId}
-							/>
-						);
-					})
-				}
-				renderInput={(params) => (
-					<TextField
-						{...params}
-						size="small"
-						label="Select contributing items"
-					/>
-				)}
-			/>
-			{expandableParents.map((entry) => (
-				<Button
-					key={entry.parentReferenceId}
-					size="small"
-					variant="text"
-					onClick={() => handleExpand(entry.childIds)}
-				>
-					{`Select all ${entry.childIds.length} children of ${entry.parentReferenceId}`}
-				</Button>
-			))}
-		</Stack>
+				})
+			}
+			renderInput={(params) => (
+				<TextField {...params} size="small" label={label} />
+			)}
+		/>
 	);
 };
 

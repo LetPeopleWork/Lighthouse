@@ -3,7 +3,6 @@ export interface ICumulativeStateTimeCandidateRow {
 	referenceId: string;
 	title: string;
 	workItemType: string;
-	parentReferenceId: string | null;
 }
 
 export interface ICumulativeStateTimeCandidatesResponse {

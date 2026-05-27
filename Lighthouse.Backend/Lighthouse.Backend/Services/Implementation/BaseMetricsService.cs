@@ -146,24 +146,24 @@ namespace Lighthouse.Backend.Services.Implementation
             return includedItems
                 .Select(item => (item, days: ContributionForState(item, state, nowSnapshot)))
                 .Where(entry => entry.days > 0)
-                .Select(entry => new CumulativeStateTimeItemDto(
-                    entry.item.ReferenceId,
-                    entry.item.Name,
-                    entry.item.Type,
-                    entry.item.State,
-                    entry.days))
+                .Select(entry => new CumulativeStateTimeItemDto
+                {
+                    WorkItemId = entry.item.Id,
+                    ReferenceId = entry.item.ReferenceId,
+                    Title = entry.item.Name,
+                    Type = entry.item.Type,
+                    State = entry.item.State,
+                    StateCategory = entry.item.StateCategory.ToString(),
+                    Url = entry.item.Url,
+                    DaysContributed = entry.days,
+                })
                 .ToList();
         }
 
         protected static IReadOnlyList<CumulativeStateTimeCandidateRowDto> ProjectCumulativeStateTimeCandidates(IEnumerable<WorkItem> includedItems)
         {
             return includedItems
-                .Select(item => new CumulativeStateTimeCandidateRowDto(
-                    item.Id,
-                    item.ReferenceId,
-                    item.Name,
-                    item.Type,
-                    string.IsNullOrEmpty(item.ParentReferenceId) ? null : item.ParentReferenceId))
+                .Select(item => new CumulativeStateTimeCandidateRowDto(item.Id, item.ReferenceId, item.Name, item.Type))
                 .ToList();
         }
 

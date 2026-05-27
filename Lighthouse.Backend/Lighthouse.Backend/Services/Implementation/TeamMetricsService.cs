@@ -381,6 +381,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(teamItems);
 
             return itemsWithTransitions
+                .Where(item => item.StateCategory != StateCategories.ToDo)
                 .Where(item => IntersectsWindow(item, startDate, endDate) || IsInFlightAtWindowEnd(item, endDate))
                 .ToList();
         }
@@ -430,13 +431,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static List<string> BuildCumulativeWorkflowStateOrder(Team team)
         {
-            var order = new List<string>(team.DoingStates);
-            if (team.DoneStates.Count > 0)
-            {
-                order.Add(team.DoneStates[0]);
-            }
-
-            return order;
+            return [.. team.DoingStates];
         }
 
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)

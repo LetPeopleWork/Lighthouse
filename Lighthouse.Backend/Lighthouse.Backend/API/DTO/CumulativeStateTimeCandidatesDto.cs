@@ -4,8 +4,7 @@ namespace Lighthouse.Backend.API.DTO
         int WorkItemId,
         string ReferenceId,
         string Title,
-        string WorkItemType,
-        string? ParentReferenceId);
+        string WorkItemType);
 
     public sealed record CumulativeStateTimeCandidatesDto(IReadOnlyList<CumulativeStateTimeCandidateRowDto> Items);
 }
