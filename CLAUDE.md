@@ -31,6 +31,14 @@ This is non-negotiable, because **a clean local `dotnet build` / `pnpm build` do
 
 This project's source of truth for "what's in flight" is the Azure DevOps board at `dev.azure.com/letpeoplework` (project `Lighthouse`). Mirror nWave work onto the board as it happens — Epic → child Stories/Bugs — and auto-transition states (`New` → `Active` → `Resolved` → `Closed`/`Done`). Pause before every `git push` so the user can review. The `/ado-sync` slash command encodes the full workflow; apply its rules proactively, not only when invoked. Confirm before any create / remove / `Release Notes` tag — never silently.
 
+## DISCUSS Wave — Cross-Cutting Impact Checklist
+
+Every feature run through `nw-discuss` MUST explicitly address these three impact surfaces. **Even when the answer is "no change needed," record it as an explicit "N/A, because…" — never leave them implicit.** They belong in the requirements/journey output of the DISCUSS wave so DESIGN inherits them. **These extend DoR Item 7 (technical notes / constraints) as a hard gate: a story is not Ready until all three are answered with evidence.**
+
+- **RBAC** — State how the operation interacts with authorization: which roles/permissions gate it, and that it flows through `IRbacAdministrationService` with UI gating derived from `useRbac()` (per Architecture above). If the operation has no authorization effect, say so explicitly and why.
+- **Lighthouse-Clients (CLI + MCP)** — Decide whether the change needs a matching update to the CLI and MCP clients. Any new or changed API contract usually means the clients follow; call out the required client change or explain why they're unaffected.
+- **Website** — Decide whether the public website needs an update — e.g. a new premium feature should be surfaced/marketed there. Note the required website change or explicitly mark it N/A.
+
 ## Coding Conventions
 
 Synthesized from `.github/instructions/*.md`. Rules below extend (don't restate) the paradigm/architecture/test-framework choices above.
