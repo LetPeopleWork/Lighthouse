@@ -1,0 +1,384 @@
+{
+  "roadmap": {
+    "project_id": "state-time-cumulative-view",
+    "created_at": "2026-05-26T00:00:00Z",
+    "total_steps": 13
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Team cumulative-state-time walking skeleton (US-01)",
+      "description": "Slice 01. New CumulativeStateTimeDto + two protected BaseMetricsService helpers (D5 full-duration / D6 segment-split / D12 inclusion) + TeamMetricsService bar method + team bar endpoint, then the frontend data plumbing, the new CumulativeStateTimeChart widget with the formatDuration adaptive unit + computeCumulativeStateTimeRag + metadata + BaseMetricsView dispatch, then the live walking-skeleton E2E. Drives the 9 team bar ATs (1-9) and the @walking_skeleton E2E (22).",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "CumulativeStateTimeDto + ComputeCumulativeStateTime/Items helpers + TeamMetricsService bar method + team bar endpoint",
+          "criteria": [
+            "CumulativeStateTimeDto is a record (IReadOnlyList<CumulativeStateTimeStateRowDto> States); CumulativeStateTimeStateRowDto carries State, WorkflowOrder, TotalDays, CompletedContributionDays, OngoingContributionDays, ItemCount, CompletedItemCount, OngoingItemCount, MeanDays, MedianDays per DDD-6/the bar response shape",
+            "Two protected helpers on BaseMetricsService: ComputeCumulativeStateTime (per-visit FULL duration D5/DDD-2, in-flight FULL now-currentStateEnteredAt D5/DDD-3, segment split D6/DDD-4, counts DDD-6, mean+median via PercentileCalculator DDD-7) and ComputeCumulativeStateTimeItems; both intra-inheritance only (ADR-024), receive already-narrowed includedItems plus a transition-fetcher delegate and a single nowSnapshot",
+            "TeamMetricsService.GetCumulativeStateTimeForTeam resolves the D12 candidate items (transition-intersects-window UNION in-flight-at-windowEnd, DDD-1), calls the helper with the team's WorkflowStates order (DDD-8), wraps in GetFromCacheIfExists with key CumulativeStateTime_{start:yyyy-MM-dd}_{end:yyyy-MM-dd} (DDD-10); itemIds param accepted but unused this slice (systemic only)",
+            "TeamMetricsController exposes GET /api/latest/teams/{teamId:int}/metrics/cumulativeStateTime; startDate.Date > endDate.Date returns 400 with StartDateMustBeBeforeEndDateErrorMessage (DDD-16); auth via inherited class-level RbacGuard(TeamRead) (DDD-17)",
+            "Full unclipped attribution holds: an item entering a state before the window and exiting inside it counts its FULL duration (AT 2); items entirely outside the window are excluded (AT 7); zero-contributing workflow states still emit a totalDays:0 placeholder bar and an empty filter yields states:[] (DDD-9)",
+            "Team bar ATs 1-9 in CumulativeStateTimeReadApiIntegrationTest are un-ignored and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs",
+          "scenario_name": "GetCumulativeStateTime_KnownFixture_ReturnsExactTotalsAndCompletedOngoingSegmentHeightsPerState (+ ATs 1,2,4,5,6,7,8,9 in the same fixture)",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CumulativeStateTimeDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (the C#-row of the polyglot matrix governs, not the Python/Hypothesis pilot per the DISTILL Infrastructure Policy note) - Hypothesis/assert_state_delta do NOT apply. The un-ignored ATs are layer-4 read-API integration tests (WebApplicationFactory + real EF) that verify wiring, single-example per the mandate. Compensate with exact hand-computed NUnit unit tests on the two ComputeCumulativeStateTime* helpers (the strongest oracle for the segment-split arithmetic) plus the D5/D12 invariant assertions (full-unclipped, exclude-outside-window, zero-state-placeholder). NEW CumulativeStateTimeDto.cs (one file, two records; WHY-NEW-FILE: zero existing CumulativeStateTime|PerState match per the Reuse-Analysis greps; CLOSEST-EXISTING the metrics DTOs reuse PercentileValue but none carry the per-state cumulative shape). EXTEND BaseMetricsService with the two protected helpers per DDD-15/ADR-024 (intra-inheritance, NOT an interface - ADR-021/ADR-024 forbid IPerStateAggregationService; do NOT call sibling F's ComputeAgeInStatePercentiles). Algorithm per ADR-022: per-visit duration = exitTransition.TransitionedAt - entryTransition.TransitionedAt (FULL, DDD-2); in-flight = nowSnapshot - CurrentStateEnteredAt (FULL, DDD-3); completedContribution[S]=Sum completed visits, ongoingContribution[S]=Sum in-flight currents (DDD-4); mean+median via REUSE-AS-IS PercentileCalculator.CalculatePercentile (DDD-7); workflow order from the team's WorkflowStates, Done aggregated into doneStates.First() (DDD-8). The nowSnapshot is a single per-request parameter for determinism (DDD-3) - required for the US-04 sum-equals-bar-height invariant later. D12 inclusion (DDD-1) lives in TeamMetricsService, not the helper: resolve via IWorkItemRepository.GetAllByPredicate + IWorkItemStateTransitionRepository.GetAllByPredicate (REUSE-AS-IS, no new repo methods - ADR-015 deferred them); the two-step C# union is the documented baseline, single-LINQ shape acceptable if it translates under Sqlite+Postgres lockstep (DESIGN open question, crafter picks at GREEN). EXTEND TeamMetricsController mirroring GetCycleTimePercentilesForTeam: [HttpGet(\"cumulativeStateTime\")], validation startDate.Date > endDate.Date => BadRequest(StartDateMustBeBeforeEndDateErrorMessage) reusing the existing in-class const, LogDateBoundaries(\"cumulativeStateTime\",...), GetEntityByIdAnExecuteAction(teamRepository, teamId, ...). itemIds is [FromQuery] int[]? - NULLABLE to avoid the model-binder required-by-default 400 (ci-learnings 2026-05-16), wired through but unused this slice. Auth via the inherited class-level [RbacGuard(TeamRead)] - do NOT add a new guard. CI-LEARNINGS PRE-APPLY (grep the ledger before writing): NUnit4002 (Is.Zero not Is.EqualTo(0)); NUnit2045/2056 (two+ consecutive Assert.That at one scope => wrap in using (Assert.EnterMultipleScope()), even in seed/helper blocks); S107 (helpers >7 params => options/record or narrow pragma); S4136 (a NEW overload sits adjacent to its sibling overloads); CA2016 (forward CancellationToken to token-accepting calls); demo/test ReferenceIds unique per team (2026-05-25). RED handoff per ADR-025: un-ignore ATs 1-9 ONE at a time and confirm RED-for-right-reason (route absent => 404 / empty body) - WRONG RED = JsonDocument.Parse throws on a 500/error page => BLOCK and fix setup, not the production gap. The fixture sets only preconditions (seeded transitions + in-flight items + workflow config), never the expected output. Post-GREEN Fixture-Theater check: git diff --stat MUST show CumulativeStateTimeDto.cs + BaseMetricsService.cs + TeamMetricsService.cs + TeamMetricsController.cs changed; if only the test file changed the numbers are echoed not computed => BLOCK. Immutability (record/ImmutableList, no mutable List<T> state), <=2 nesting, no else chains, switch expressions, async with CancellationToken, no comments, nullable enabled, TreatWarningsAsErrors - zero-warning build."
+        },
+        {
+          "id": "01-02",
+          "name": "TS model + MetricsService.getCumulativeStateTimeForTeam + useMetricsData ctx (systemic fetch)",
+          "criteria": [
+            "ICumulativeStateTimeStateRow + ICumulativeStateTimeResponse mirror the backend DTO (state, workflowOrder, totalDays, completedContributionDays, ongoingContributionDays, itemCount, completedItemCount, ongoingItemCount, meanDays, medianDays)",
+            "IMetricsService + MetricsService gain getCumulativeStateTimeForTeam(teamId, startDate, endDate, itemIds?) mirroring getCycleTimePercentiles GET shape; itemIds appended as repeated query params when present (DDD-22) but unused this slice",
+            "useMetricsData fetches the SYSTEMIC bar data (no itemIds) in parallel in the same effect as getCycleTimePercentiles and returns cumulativeStateTime: ICumulativeStateTimeResponse | null (initial null) - this is the RAG source per DDD-23",
+            "Vitest covers MetricsService resolving the new endpoint (URL + parsed shape) and useMetricsData populating ctx.cumulativeStateTime alongside the existing fetch with no regression to percentileValues",
+            "pnpm build clean; Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+          "scenario_name": "getCumulativeStateTimeForTeam fetches the systemic per-state cumulative bar data for a team and window",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Metrics/CumulativeStateTime.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (the TS-row of the polyglot matrix governs, not the Python/Hypothesis pilot); Hypothesis/assert_state_delta do NOT apply. These are service-fetch + hook-wiring unit tests that verify wiring, not invariants - single-example per the mandate. NEW CumulativeStateTime.ts model (WHY-NEW-FILE: zero existing overlap per the Reuse-Analysis greps; mirrors the backend record). EXTEND IMetricsService + MetricsService.getCumulativeStateTimeForTeam mirroring getCycleTimePercentiles (MetricsService.ts:247): GET /${this.api}/${id}/metrics/cumulativeStateTime?${this.getDateFormatString(startDate, endDate)} returning Promise<ICumulativeStateTimeResponse>; when itemIds is present append &itemIds=<id> repeated (DDD-22) - but this slice always calls WITHOUT itemIds. Mock only abstractions you own - do NOT mock fetch/axios directly (CLAUDE.md); test through the service's own seam like the existing MetricsService tests. EXTEND useMetricsData: add the parallel metricsService.getCumulativeStateTimeForTeam(entity.id, startDate, endDate) call in the SAME effect that calls getCycleTimePercentiles (Promise.all shape - crafter chooses), add cumulativeStateTime: ICumulativeStateTimeResponse | null to the returned ctx defaulting to null. CRITICAL (project memory project_react185_loop_unstable_useeffect_dep + ci-learnings 2026-05-25): do NOT introduce a new inline new Date()/[]/{} into a useEffect dependency array - reuse the existing window-state deps; useMemo-stabilise any derived dep. Schema-first at the trust boundary: if MetricsService deserialises via a Zod schema, extend that schema and z.infer the type - do NOT as-cast. Vitest: factory getMockX(overrides?) for the response validated against ICumulativeStateTimeResponse; assert the service resolves the parsed shape and the URL query params; assert the hook surfaces ctx.cumulativeStateTime and the existing percentileValues fetch is unaffected. Strict TS, no any (narrow unknown with a guard); type for data, interface only for behaviour contracts. Biome clean; pnpm build zero warnings."
+        },
+        {
+          "id": "01-03",
+          "name": "CumulativeStateTimeChart widget + formatDuration util + computeCumulativeStateTimeRag + metadata + BaseMetricsView dispatch",
+          "criteria": [
+            "formatDuration util (utils/date/formatDuration.ts) chooses ONE display unit (minutes -> hours -> days -> weeks) from the largest-bar magnitude and formats every value uniformly; a sub-day single-item magnitude reads in hours/minutes, not 0.x d (DDD-21/D16)",
+            "computeCumulativeStateTimeRag in ragRules.ts returns green (no state >= 40% of total), amber (one state 40-60%), red (one state > 60%); empty-states returns red with a filter-adjustment tip; computed on the whole in-scope set (D18); existing RAG rules and ragRules.test.ts pass unchanged",
+            "categoryMetadata.ts adds { widgetKey: 'stateTimeCumulative', size: 'large' } to flow-metrics (no ownerFilter, both scopes) + trendPolicies stateTimeCumulative: 'none'; widgetInfoMetadata.ts adds the stateTimeCumulative entry with title 'Cumulative Time per State', description, learn-more URL, and the D5/D12 inclusion explanation (replacing the withdrawn US-03 line, D13)",
+            "CumulativeStateTimeChart.tsx renders one bar per state in workflow order via MUI-X <BarChart> with stacked completed (solid) + ongoing (SVG <pattern> hatch) segments; tooltip shows the 10 fields + completed/ongoing counts (US-01) with NO standalone US-03 explanation line; bar labels/axis use the adaptive unit; empty-state + zero-contributing placeholder per AC; exposes onBarClick + a picker render-slot (unused this slice)",
+            "BaseMetricsView dispatches widgetKey 'stateTimeCumulative' to the chart in both team and portfolio scope; RAG always computed from ctx.cumulativeStateTime (DDD-23)",
+            "Vitest covers bar-per-state-in-order, segment heights, hatch element present, tooltip fields+counts (no US-03 line), empty + zero-state, adaptive unit, picker-slot render; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+          "scenario_name": "renders one stacked completed/ongoing bar per workflow state with an adaptive unit and a counts tooltip",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/date/formatDuration.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/utils/date/formatDuration.test.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (the TS-row of the polyglot matrix); Hypothesis does NOT apply. SVG-render + tooltip + RAG-threshold + unit-laddering are example-based RTL/unit assertions, not quantified invariants; compensate by parametrising the formatDuration boundary cases (each unit threshold) and the three RAG thresholds + empty + single-state-100% edge. NEW formatDuration.ts (WHY-NEW-FILE / amend-choice-E: no existing util ladders minutes->hours->days->weeks - age.ts returns day-counts, chartAxisUtils.ts formats raw numbers; co-locate beside utils/date/age.ts; pure, mutation-tested; shape chooseDurationUnit(maxDays)->unit + formatDuration(valueDays, unit)->string, exact signature a GREEN detail). NEW CumulativeStateTimeChart.tsx per DDD-13/ADR-025: MUI-X <BarChart> (REUSE-AS-IS, already used by BarRunChart.tsx) with stacked completed/ongoing series + SVG <defs><pattern> hatch for the ongoing segment (colour-blind-safe per D6 - hatch not shade); custom <ChartsTooltip> slot rendering the 10 fields PLUS completed/ongoing counts (US-01) and explicitly NO US-03 'included items' line (D13 - that text lives in widgetInfoMetadata). Bar labels + value axis + tooltip primary value all via formatDuration with one unit chosen from the largest bar (DDD-21). Wrap in REUSE-AS-IS WidgetShell for loading/empty. Bar onClick fires props.onBarClick(stateName); accept a picker render-slot prop (placed in a chart toolbar) - both unused until slices 03/04. MUI-X per-bar onClick API name varies by version (onItemClick/onBarClick/slotProps) - a DELIVER slice-03 spike resolves it; this slice only needs the slot+handler plumbed (no live click wiring yet). EXTEND ragRules.ts adding computeCumulativeStateTimeRag (same { ragStatus, tipText } shape as computeWipOverviewRag etc.) with 40%/60% thresholds on the whole set (D18); do NOT touch the other RAG functions. EXTEND categoryMetadata.ts (flow-metrics already has 8 entries with this shape) + widgetInfoMetadata.ts (the inclusion-rule explanation goes in learn-more text per D13). EXTEND BaseMetricsView with one widgetKey dispatch entry; RAG ALWAYS reads ctx.cumulativeStateTime (the systemic set) per DDD-23 (matters once the picker lands in slice 04 - establish the pattern now). CI-LEARNINGS PRE-APPLY: typescript:S6582 (collapse x !== null && x.method() to x?.method() ?? false in any predicate); MUI <Select> if any is added needs paired InputLabel id + Select labelId (useId()) - not relevant unless a select is introduced. Skip framework renders-without-crashing tests (CLAUDE.md). Factory getMockX(overrides?) validated against ICumulativeStateTimeResponse. Strict TS, no any; immutable (spread/map/filter, no push/sort-in-place). Biome clean; pnpm build zero warnings."
+        },
+        {
+          "id": "01-04",
+          "name": "Un-fixme and run the @walking_skeleton E2E live (team chart renders bars with segments)",
+          "criteria": [
+            "The @walking_skeleton @US-01 test.fixme in CumulativeStateTime.spec.ts is un-fixme'd and runs in the E2E suite",
+            "Driving demo scenario 0: open team detail -> Flow Metrics -> the stateTimeCumulative widget renders bars with visible completed + ongoing (hatched) segments; tooltip shows the fields + counts",
+            "The widget name 'Cumulative Time per State' / key 'stateTimeCumulative', and the chart POM data-testids match exactly what 01-03 shipped; all element access stays in the POM (no inline page.locator)",
+            "The scenario was RUN against a locally-started app loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+          "scenario_name": "@walking_skeleton @US-01 delivery lead opens the team cumulative time per state chart and sees bars with completed and ongoing segments",
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/CumulativeStateTimeChart.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking-skeleton (single-shot UI flow over the production app); the mandate keeps E2E single-example - they verify wiring, not invariants. The per-state arithmetic invariants live in the 01-01 backend ATs + helper unit tests (faster, deterministic) per the established sibling-1/sibling-F pattern. WS strategy Type A (additive). The scenario + POM are already committed (test.fixme); the spec drives demo data via the seeded scenario-0 path -> goToTeam -> goToMetrics -> switchCategory(FlowMetrics) -> getWidgetByName('Cumulative Time per State') and uses the POM CumulativeStateTimeChart.ts (pins bars, completed/ongoing segments, tooltip data-testids). USER/AGENT RUNS LIVE per project memory (feedback_e2e_run_locally_by_user: Claude runs the live Playwright itself - creds in env, do NOT punt to the user; feedback_run_playwright_before_commit: never commit a spec/POM not RUN against a locally-started app, pnpm build only type-checks locators; feedback_e2e_page_object_model: POM-only, no inline page.locator; feedback_e2e_use_demo_data: drive from seeded demo data, never live connector syncs). PRODUCTION-DATA NOTE: like sibling F's slice-01 the chart may render empty if the demo CSVs lack multi-state transition history for completed items - the demo CSV state-since column (project memory project_demo_data_time_in_state_via_csv_column) plus sibling F's per-state CSV journey enrichment should now give scenario-0 items a multi-state journey; if bars are empty live, a demo-data enrichment cycle (parallel to sibling F's 04-04) precedes green - confirm before committing. CI-LEARNINGS PRE-APPLY: Playwright getByRole({name}) is case-insensitive substring - pass exact:true for single-verb button labels (2026-05-16); a POM action that triggers a client-side redirect MUST waitForURL the settled pattern (2026-05-25); for any async-loaded widget count/value use expect.poll, never a one-shot expect(await getX()) (2026-05-25). Procedure: un-fixme, start the app locally (dotnet run backend + frontend), load demo scenario 0, run the scenario, confirm green; adjust the POM ONLY if a real accessible name/testid differs from what 01-03 shipped (POM-only, never inline page.locator). ORCHESTRATOR NOTE: this step REQUIRES A RUNNING APP - it cannot be self-certified from a type-check; the agent runs the live Playwright and reports the live-run result. Biome/lint clean on the E2E project."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Portfolio parity (US-02)",
+      "description": "Slice 02. PortfolioMetricsService bar method + PortfolioMetricsController bar endpoint mirroring the team path, scoped to the portfolio's features (US-03 withdrawn per D13 - portfolio parity only). Drives the 3 portfolio bar ATs (17 shape-parity, 18 empty, 21 anonymous).",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "PortfolioMetricsService bar method + portfolio bar endpoint (shape parity with team)",
+          "criteria": [
+            "IPortfolioMetricsService declares GetCumulativeStateTimeForPortfolio(Portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds); PortfolioMetricsService implements it via the same pattern as Team (D12 candidate resolution scoped to the portfolio's features, delegate to the inherited ComputeCumulativeStateTime helper, cache wrap with the same CumulativeStateTime_ key namespace)",
+            "PortfolioMetricsController exposes GET /api/latest/portfolios/{portfolioId:int}/metrics/cumulativeStateTime mirroring the team endpoint validation and dispatch; auth via inherited RbacGuard(PortfolioRead) (DDD-17)",
+            "The portfolio response is shape-identical to the team response for the same underlying items (same states[] schema, only the route prefix differs) per US-02 AC",
+            "An empty portfolio returns states:[] (DDD-9); an anonymous caller is rejected (DDD-17)",
+            "Portfolio bar ATs 17, 18, 21 in CumulativeStateTimePortfolioReadApiIntegrationTest are un-ignored and green; no regression in the rest of the portfolio Flow Metrics category"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimePortfolioReadApiIntegrationTest.cs",
+          "scenario_name": "GetCumulativeStateTime_PortfolioWithKnownVisits_ReturnsSameShapeAsTeamScope (+ ATs 18 empty, 21 anonymous)",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimePortfolioReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row), and the un-ignored ATs are layer-4 integration tests that verify wiring - single-example per the mandate. The segment-split/full-duration invariants are already covered by the 01-01 helper unit tests (the helper is shared via inheritance, so portfolio reuses the same proven computation - this is the point of ADR-024). EXTEND IPortfolioMetricsService + PortfolioMetricsService mirroring GetCycleTimePercentilesForPortfolio AND the new GetCumulativeStateTimeForTeam from 01-01: source the portfolio's features-in-window via the existing portfolio item-resolution query, apply the D12 inclusion rule (DDD-1) over the portfolio's transitions (IFeatureStateTransitionRepository / the portfolio transitions read path), delegate to the inherited BaseMetricsService.ComputeCumulativeStateTime (DDD-15 - same protected helper, no duplication; ADR-024 enforces no parallel aggregation service and do NOT call sibling F's helper), wrap in GetFromCacheIfExists with the SAME CumulativeStateTime_{start}_{end} key namespace (DDD-10), workflow order from the portfolio's WorkflowStates. EXTEND PortfolioMetricsController mirroring its existing cycleTimePercentiles endpoint: [HttpGet(\"cumulativeStateTime\")], same startDate.Date > endDate.Date => BadRequest validation reusing the existing error const, itemIds [FromQuery] int[]? (nullable, ci-learnings 2026-05-16; unused this slice), GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, ...). Auth via the inherited class-level [RbacGuard(PortfolioRead)] - do NOT add a new guard. CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero), NUnit2045/2056 (wrap consecutive Assert.That), S4136 (new overload adjacent to siblings), CA2016 (forward CancellationToken). RED handoff per ADR-025: un-ignore ATs 17/18/21 one at a time, confirm RED-for-right-reason (404/empty until the portfolio route exists) - WRONG RED = Parse throws on 500 => BLOCK. Post-GREEN Fixture-Theater check: PortfolioMetricsService.cs + PortfolioMetricsController.cs MUST appear in git diff; CumulativeStateTimeDto + BaseMetricsService helpers already shipped in 01-01 (do NOT re-add). Cross-scope parity: a NUnit service test asserts identical fixtures across team and portfolio produce shape-identical responses. Immutability, <=2 nesting, no else, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Per-item drill-down on bar click (US-04)",
+      "description": "Slice 03. Items DTO + TeamMetricsService/PortfolioMetricsService items methods + items endpoints both scopes (sum-equals-bar-height invariant, DDD-5), the CumulativeStateTimeDrillDownDialog (MUI Dialog + DataGridBase), and the bar-click wiring in BaseMetricsView, then the drill-down E2E. Drives team items ATs 10-12, portfolio items AT 19, the sum-invariant integration test, and E2E (23).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "CumulativeStateTimeItemsDto + items methods + items endpoints (team + portfolio) with sum-equals-bar invariant",
+          "criteria": [
+            "CumulativeStateTimeItemsDto is a record (string State, IReadOnlyList<CumulativeStateTimeItemRowDto> Items); CumulativeStateTimeItemRowDto carries WorkItemId, Title, WorkItemType, CurrentState, DaysContributed (per-item portion = full-duration per D5/DDD-5)",
+            "ITeamMetricsService + IPortfolioMetricsService declare GetCumulativeStateTimeItemsFor{Team|Portfolio}(scope, string state, startDate, endDate, IReadOnlyList<int>? itemIds); implemented via ComputeCumulativeStateTimeItems, items ordered by daysContributed desc, cache key CumulativeStateTime_Items_{state}_{start}_{end}",
+            "Both controllers expose GET .../metrics/cumulativeStateTime/items?state=X with non-empty state validation (HTTP 400 missing/empty state, DDD-16); unknown state returns HTTP 200 with items:[] (DDD-9); inherited RbacGuard",
+            "Sum invariant holds: Σ daysContributed across the items rows for a state == that state's bar totalDays within ±0.1d (DDD-5), asserted by a WebApplicationFactory integration test calling both endpoints against the same fixture",
+            "Team items ATs 10, 11, 12 and portfolio items AT 19 are un-ignored and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs",
+          "scenario_name": "GetCumulativeStateTimeItems_PerItemDaysContributed_SumsToBarTotalForThatState (+ ATs 10 rows-with-referenceId, 12 missing-state, 19 portfolio parity)",
+          "deps": [
+            "01-01",
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CumulativeStateTimeItemsDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimePortfolioReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs + the sum-invariant test are layer-4 integration tests (WebApplicationFactory + real EF) that verify wiring - single-example per the mandate. The drill-down arithmetic identity (Σ daysContributed == totalDays) holds by FORMULA per DDD-5 (daysContributed(W,S) = Σ visits through S + in-flight-if-current) - the helper computes both from the same per-visit primitive, so the invariant is by construction not coincidence; the ±0.1d tolerance is the rounding guard. NEW CumulativeStateTimeItemsDto.cs (WHY-NEW-FILE: drill-down response shape, zero existing overlap). EXTEND BaseMetricsService.ComputeCumulativeStateTimeItems was authored in 01-01 (the helper exists) - this step EXTENDS the two services + two controllers to expose it. SEPARATE endpoint per DDD-11/ADR-023 (NOT ?expand=items on the bar endpoint - keeps the bar payload slim for the 80%-glance case). Controller: [HttpGet(\"cumulativeStateTime/items\")], additional state presence validation => BadRequest if empty/missing (DDD-16), unknown state => 200 + items:[] (DDD-9 graceful, supports clicking a zero-contributing placeholder bar), itemIds [FromQuery] int[]? nullable (ci-learnings 2026-05-16; wired through but the active-selection composition is exercised in slice 04). Items ordered by daysContributed desc (matches the panel default sort). NEW sum-invariant integration test calls BOTH endpoints against the same fixture+window and asserts the per-state sum within ±0.1d (the AT 11 / AT 19 scenarios). CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero), NUnit2045/2056 (wrap consecutive Assert.That, incl. helpers), S4136 (the items endpoint method adjacent to the bar endpoint method; the items service method adjacent to the bar service method), S107 (items helper >7 params => options/record or pragma), CA2016 (forward CancellationToken). RED handoff per ADR-025: un-ignore ATs 10/12/19 + the AT 11 sum-invariant one at a time, confirm RED-for-right-reason (404/empty until the items route exists) - WRONG RED = Parse throws on 500 => BLOCK. Post-GREEN Fixture-Theater check: CumulativeStateTimeItemsDto.cs + both services + both controllers in git diff. Immutability (record/IReadOnlyList), <=2 nesting, no else, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        },
+        {
+          "id": "03-02",
+          "name": "CumulativeStateTimeDrillDownDialog + items model/service methods + bar-click wiring",
+          "criteria": [
+            "ICumulativeStateTimeItemRow + ICumulativeStateTimeItemsResponse mirror the backend DTO; MetricsService gains getCumulativeStateTimeItemsForTeam/...ForPortfolio(scope, state, startDate, endDate, itemIds?)",
+            "CumulativeStateTimeDrillDownDialog.tsx (MUI Dialog + DialogTitle + DialogContent wrapping DataGridBase) renders columns Work Item ID (linkable), Title, Type, Current State, Days Contributed; default sort daysContributed desc; column-sort toggling works; role='dialog' + aria-labelledby 'Items contributing to {state}'; Escape + outside-click + close control all close; empty case shows 'No items contributed to this state in the selected window.'",
+            "BaseMetricsView holds drill-down state (selected state + resolved items + open flag); handleBarClick(stateName) fetches the items endpoint and opens the dialog; closing returns to the chart with the filter intact; CumulativeStateTimeChart bar onClick is wired to handleBarClick",
+            "The dialog takes its data via props and does NOT call any data-fetch hook itself (fetch lives in the chart-parent)",
+            "Vitest covers open/Escape/outside-click close, row rendering + default sort + sort toggling, linkable Work Item ID + Enter activation, ARIA, empty case; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeDrillDownDialog.test.tsx",
+          "scenario_name": "opens from a bar click, lists contributing items sorted by days descending, and closes on Escape with ARIA dialog labelling",
+          "deps": [
+            "01-03",
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Metrics/CumulativeStateTimeItems.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeDrillDownDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeDrillDownDialog.test.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Dialog open/close/sort/ARIA/empty are example-based RTL interaction assertions, not quantified invariants; compensate by parametrising the (column, click-count) -> sort-direction cases. NEW CumulativeStateTimeItems.ts model (mirror the backend DTO). EXTEND MetricsService with getCumulativeStateTimeItemsForTeam/...ForPortfolio mirroring the bar methods' GET shape, appending state + (optional) repeated itemIds query params (DDD-22). NEW CumulativeStateTimeDrillDownDialog.tsx per DDD-12/ADR-023: MUI Dialog + DialogTitle + DialogContent (REUSE-AS-IS, the WorkItemsDialog precedent - 11 existing dialog files) wrapping REUSE-AS-IS DataGridBase (supplies sorting + keyboard nav + ARIA roles). Columns + default-sort + empty message per US-04 AC; role='dialog', aria-labelledby the title 'Items contributing to {state}', Escape + outside-click close (Dialog supplies these), Work Item ID as a <Link> with Enter activation. The dialog is PROPS-ONLY (no data-fetch hook inside) - the fetch lives in BaseMetricsView so the dialog stays a pure presentational component (testable without mocking hooks). EXTEND BaseMetricsView: add drill-down local state (selectedState, resolvedItems, open), handleBarClick(stateName) => fetch getCumulativeStateTimeItemsFor{Team|Portfolio}(...) then open the dialog (pass the active itemIds selection too - the field exists for slice 04, empty this slice); on close keep the filter state intact (do not reset window/type chips). EXTEND CumulativeStateTimeChart bar onClick => props.onBarClick(stateName) (the slot was plumbed in 01-03). MUI-X per-bar onClick API: run the slice-03 ~30min spike to confirm the correct event handler shape for the pinned MUI-X version (onItemClick/onBarClick/slotProps.bar.onClick); if absent, wrap each bar's SVG <rect> in an invisible click-target child (ADR-020 overlay technique) - documented fallback, no DESIGN blocker. CRITICAL (ci-learnings 2026-05-25 + project_react185): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chain in predicates). MUI <Select> (if any sort control uses one) pairs InputLabel id + Select labelId via useId(). Skip framework renders-without-crashing tests. Factory getMockX(overrides?). Strict TS, no any; immutable. Biome clean; pnpm build zero warnings. NOTE: the drill-down E2E is the NEXT step (03-03) - do not un-fixme it here."
+        },
+        {
+          "id": "03-03",
+          "name": "Un-fixme and run the drill-down E2E live (click constraint bar, read items, close)",
+          "criteria": [
+            "The @US-04 test.fixme in CumulativeStateTime.spec.ts is un-fixme'd and runs in the E2E suite",
+            "Driving demo scenario 0: open the chart -> click the tallest (constraint) bar -> the drill-down dialog opens with a contributing-items table -> Escape closes the dialog and returns to the chart",
+            "All element access (bar, dialog, item rows, close) stays in the CumulativeStateTimeChart POM; the dialog data-testids/labels match what 03-02 shipped",
+            "The scenario was RUN against a locally-started app loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+          "scenario_name": "@US-04 delivery lead clicks the constraint bar and reads the contributing items, then closes the panel",
+          "deps": [
+            "03-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/CumulativeStateTimeChart.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E single-shot UI flow; the mandate keeps E2E single-example. The sum-equals-bar-height and per-item arithmetic invariants live in the 03-01 backend ATs (faster, deterministic). The scenario + POM are already committed (test.fixme); the spec drives demo scenario 0 -> goToTeam -> goToMetrics -> getWidgetByName -> clickBar(tallest) -> assert the drill-down dialog + items table -> Escape closes. USER/AGENT RUNS LIVE per project memory (feedback_e2e_run_locally_by_user; feedback_run_playwright_before_commit; feedback_e2e_page_object_model: POM-only; feedback_e2e_use_demo_data). CI-LEARNINGS PRE-APPLY: getByRole({name}) substring default -> exact:true for single-verb buttons (Close, etc.) (2026-05-16); MUI Dialog close button accessible name; for any async-loaded dialog content use expect.poll / toBeVisible auto-retry, never one-shot snapshots (2026-05-25); a MUI <Select> sort control is targeted via getByRole('combobox',{name}) not getByLabel (2026-05-17). Procedure: un-fixme, start the app locally, load demo scenario 0, run the scenario, confirm green; adjust the POM ONLY if a real accessible name/testid differs from 03-02 (POM-only, never inline page.locator). ORCHESTRATOR NOTE: REQUIRES A RUNNING APP - the agent runs the live Playwright and reports the live-run result; cannot be self-certified from a type-check. Biome/lint clean on the E2E project."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "In-chart item picker + itemIds subset (US-05)",
+      "description": "Slice 04. Candidates DTO + candidates methods/endpoints both scopes (D17), the itemIds subset threaded through the bar + items service/controller logic (DDD-20), the CumulativeStateTimeItemPicker (Autocomplete+Chip, Ref-ID/Name search, parent-expand), parent-expand + chart wiring (RAG stays systemic per D18, single-item distribution per D15/DDD-24), then the two picker E2E scenarios. Drives candidate/itemIds ATs 13-16, portfolio candidates AT 20, and E2E (24, 25).",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "CumulativeStateTimeCandidatesDto + candidates methods/endpoints + itemIds subset intersection (team + portfolio)",
+          "criteria": [
+            "CumulativeStateTimeCandidatesDto is a record (IReadOnlyList<CumulativeStateTimeCandidateRowDto> Items); CumulativeStateTimeCandidateRowDto carries WorkItemId (numeric DB id), ReferenceId, Title, WorkItemType, string? ParentReferenceId (DDD-19; ReferenceId+Title are search keys, ParentReferenceId drives parent-expand)",
+            "GetCumulativeStateTimeCandidatesFor{Team|Portfolio}(scope, startDate, endDate) runs the SAME D12 query as the bar endpoint and projects each included item to a candidate row; cache key CumulativeStateTime_Candidates_{start}_{end}; both controllers expose GET .../metrics/cumulativeStateTime/candidates (no state, no itemIds); inherited RbacGuard",
+            "Candidates are EXACTLY the D12-included items for the window: an item not touched in the window is absent (D17, AT 13); each candidate exposes parentReferenceId for parent-expand (AT 14, AT 20 portfolio)",
+            "The bar + items endpoints honour the optional itemIds subset: run the D12 query then INTERSECT with itemIds before the per-state walk (DDD-20 - post-inclusion narrowing, never a bypass; a selected id not in the D12 set is silently ignored); full-duration + segment-split apply to the narrowed set; a non-empty selection produces a DISTINCT cache key (selection-hash suffix) so systemic and narrowed responses cache independently",
+            "The systemic (no-itemIds) bar totals are identical with and without a selection - the selection narrows the VIEW only, never the systemic RAG source (D18, AT 16); a two-item selection sums only those items' full durations (AT 15)",
+            "Team candidate/itemIds ATs 13, 14, 15, 16 and portfolio candidates AT 20 are un-ignored and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs",
+          "scenario_name": "GetCumulativeStateTimeCandidates_Window_ReturnsExactlyTheIncludedItemsAndExcludesOutOfWindowItem (+ ATs 14 parent-ref, 15 itemIds-subset, 16 RAG-source-invariant, 20 portfolio)",
+          "deps": [
+            "01-01",
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CumulativeStateTimeCandidatesDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CumulativeStateTimePortfolioReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 integration tests that verify wiring - single-example. NEW CumulativeStateTimeCandidatesDto.cs (WHY-NEW-FILE: picker candidate response, zero existing overlap; WorkItemId is the numeric DB id echoed back as itemIds; ParentReferenceId reads the REUSE-AS-IS vendor-neutral WorkItemBase.ParentReferenceId - populated by every connector + DemoDataFactory, so parent-expand is free across Jira/ADO/Linear/CSV with no schema change). EXTEND both services: GetCumulativeStateTimeCandidatesFor{Team|Portfolio} REUSES the SAME D12 query the bar method already runs (DDD-19 - guarantees picker candidates == bar contributors), projects to the candidate row, caches under CumulativeStateTime_Candidates_{start}_{end} (no itemIds variance - it has no itemIds param). EXTEND the bar + items methods from 01-01/02-01/03-01 to honour itemIds (DDD-20): after the D12 query, if itemIds non-empty INTERSECT the candidate set with it (set membership) BEFORE the per-state walk - the intersection guarantees a selected-but-out-of-window id cannot smuggle an excluded item in; the helper stays subset-agnostic (it receives the already-narrowed includedItems). Cache key gets a selection-hash suffix when itemIds is present so systemic and narrowed cache independently (DDD-10+DDD-20). The systemic call (no itemIds) MUST be unchanged - AT 16 asserts the systemic Review total stays 60d regardless of selection (the RAG-source invariant, D18). EXTEND both controllers: [HttpGet(\"cumulativeStateTime/candidates\")] (no state, no itemIds); the bar+items endpoints already declare itemIds [FromQuery] int[]? nullable (ci-learnings 2026-05-16) - this step makes the previously-ignored param functional. itemIds transport = REPEATED query params bound int[]? (DDD-22; GET stays cacheable; the AT helper builds &itemIds=a&itemIds=b). CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero), NUnit2045/2056 (wrap consecutive Assert.That), S4136 (candidates method adjacent to its bar/items siblings), S107 (>7 params => options/record or pragma), CA2016 (forward CancellationToken), S3267/S6608 if LINQ/index patterns are flagged - grep the ledger families. RED handoff per ADR-025: un-ignore ATs 13/14/15/16/20 one at a time, confirm RED-for-right-reason (404/empty / un-narrowed totals until the candidates route + itemIds intersection exist) - WRONG RED = Parse throws on 500 => BLOCK. Post-GREEN Fixture-Theater check: CumulativeStateTimeCandidatesDto.cs + both services + both controllers in git diff; AT 16 in particular must show the systemic path computes the whole set independently of the narrowed path (not echoed). Immutability, <=2 nesting, no else, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        },
+        {
+          "id": "04-02",
+          "name": "CumulativeStateTimeItemPicker + candidates model/service + parent-expand + chart wiring (RAG stays systemic)",
+          "criteria": [
+            "ICumulativeStateTimeCandidateRow + ICumulativeStateTimeCandidatesResponse mirror the backend DTO; MetricsService gains getCumulativeStateTimeCandidatesForTeam/...ForPortfolio(scope, startDate, endDate)",
+            "CumulativeStateTimeItemPicker.tsx (MUI Autocomplete multiple + Chip selected-tags, the ManualForecaster idiom) lists candidates; search filters by Reference ID OR Name only (D14, custom filterOptions - no other attributes match); selecting items emits onSelectionChange with the ids; cleared selection = systemic view (default)",
+            "Parent-expand (D14): a candidate whose referenceId is referenced by other candidates' parentReferenceId shows an inline 'Select all N children' action adding those child ids in one action (children drawn from the in-window candidate set only)",
+            "BaseMetricsView holds the selected itemIds, lazily fetches candidates on picker open, refetches the narrowed bar data on selection change, and renders displayedStates = narrowed response when itemIds non-empty else ctx.cumulativeStateTime; RAG is ALWAYS computed from ctx.cumulativeStateTime (the systemic set) regardless of selection (D18/DDD-23); a single-item selection renders that item's per-state distribution via the same arithmetic (DDD-24/D15); the drill-down items fetch passes the active itemIds so the dialog lists only selected contributors",
+            "Picker is keyboard + SR accessible (Autocomplete combobox ARIA; parent-expand a focusable labelled control); empty candidate set renders a disabled/empty state; picker state is local to the chart view and resets on navigation away",
+            "Vitest covers list/search-by-ref/search-by-name/negative-attribute, selection emit, parent-expand, cleared=systemic, keyboard+ARIA, empty candidates, AND that RAG is unchanged by selection (BaseMetricsView.test.tsx); pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeItemPicker.test.tsx",
+          "scenario_name": "filters candidates by reference id or name, selects a feature's children via parent-expand, and clears back to the systemic view",
+          "deps": [
+            "01-03",
+            "03-02",
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Metrics/CumulativeStateTimeCandidates.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeItemPicker.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeItemPicker.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Picker search/select/parent-expand/RAG-invariance are example-based RTL assertions; compensate by parametrising the search-key cases (ref-match, name-match, negative-attribute-no-match) and the (selection -> displayed bars, RAG unchanged) pair. NEW CumulativeStateTimeCandidates.ts model. EXTEND MetricsService with getCumulativeStateTimeCandidatesForTeam/...ForPortfolio (GET, no itemIds). NEW CumulativeStateTimeItemPicker.tsx per DDD-18/ADR-028 reusing the ManualForecaster.tsx Autocomplete(multiple)+Chip idiom (REUSE the IDIOM, do NOT extend ManualForecaster - it is single-select/forecast-coupled, wrong concern). Custom filterOptions matches referenceId OR title only (D14 - NOT other attributes; the negative test pins this). Parent-expand as an inline 'Select all N children' row action (NOT a tree control) over candidates whose parentReferenceId == a matched candidate's referenceId, adding only in-window child ids (DESIGN open question resolved by DDD-19: children come from the same candidate set; show the count it will actually add). Chart-toolbar placement via the picker render-slot the chart exposed in 01-03. EXTEND BaseMetricsView (this is the most load-bearing edit): selected itemIds local state, lazy candidate fetch on picker open, narrowed bar refetch on selection change, displayedStates = narrowed ?? systemic; RAG ALWAYS from ctx.cumulativeStateTime (DDD-23/D18 - the systemic response is kept as the RAG source even while displaying a narrowed set; the BaseMetricsView.test.tsx assertion pins that RAG does not change with selection); single-item selection just sets itemIds=[oneId] and renders the n=1 distribution (DDD-24 - no new rendering path); handleBarClick passes the active itemIds to the items fetch so the drill-down lists only selected contributors (US-05 AC). Picker state is view-local and resets on navigation away (do NOT mutate the page-level ambient filters). CRITICAL (ci-learnings 2026-05-25 + project_react185): no inline new Date()/[]/{} into a useEffect/useMemo dep (the selection array is a classic offender - useMemo/useCallback-stabilise it and the candidate fetch dep). CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chain); MUI Autocomplete renders a combobox - target via getByRole('combobox',{name}) in any future POM, and if an InputLabel is used pair id+labelId via useId() (2026-05-17). Skip framework renders-without-crashing tests. Factory getMockX(overrides?) for candidates. Strict TS, no any; immutable (spread for selection updates, never push/splice). Biome clean; pnpm build zero warnings. NOTE: the two picker E2E scenarios are the NEXT step (04-03)."
+        },
+        {
+          "id": "04-03",
+          "name": "Un-fixme and run the two picker E2E scenarios live (parent-expand scope + single-item adaptive unit)",
+          "criteria": [
+            "Both @US-05 test.fixme scenarios in CumulativeStateTime.spec.ts are un-fixme'd and run in the E2E suite",
+            "Parent-expand scope: open the picker, select a feature's children via parent-expand, the bars recompute over the subset and the chart still renders; clear the picker, the systemic view returns",
+            "Single-item deep-dive: select one item, the chart reads in an adaptive unit (hours/minutes) rather than fractional days for a small magnitude (D16/D15)",
+            "All element access (picker, parent-expand action, chips, bars, adaptive-unit label) stays in the CumulativeStateTimeChart POM; testids/labels match what 04-02 shipped",
+            "Each scenario was RUN against a locally-started app loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+          "scenario_name": "@US-05 delivery lead scopes the chart to a feature's children via parent-expand and then clears back to the systemic view (+ @US-05 single-item adaptive-unit deep-dive)",
+          "deps": [
+            "04-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/CumulativeStateTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/CumulativeStateTimeChart.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E single-shot UI flow; the mandate keeps E2E single-example. The itemIds-subset arithmetic, candidate-set, and adaptive-unit invariants live in the 04-01 backend ATs + the 01-03/04-02 Vitest (faster, deterministic). Both scenarios + the POM are already committed (test.fixme); the specs drive demo scenario 0 -> goToTeam -> goToMetrics -> getWidgetByName -> open the item picker -> (a) parent-expand a feature, assert bars recompute over the subset, clear, assert systemic returns; (b) select one item, assert the adaptive-unit axis/label reads in hours/minutes not 0.x d. USER/AGENT RUNS LIVE per project memory (feedback_e2e_run_locally_by_user; feedback_run_playwright_before_commit; feedback_e2e_page_object_model: POM-only; feedback_e2e_use_demo_data). The demo scenario-0 team needs items under a shared parent for parent-expand AND at least one short-duration item for the adaptive-unit assertion - confirm the seeded data supports both before committing; if not, a small demo-data enrichment cycle precedes green (parallel to sibling F's 04-04 pattern). CI-LEARNINGS PRE-APPLY: getByRole('combobox',{name}) for the Autocomplete picker, NOT getByLabel (2026-05-17); getByRole({name}) substring default -> exact:true for single-verb actions (2026-05-16); for the recomputed-bar / adaptive-label reads use expect.poll / toHaveText auto-retry, never one-shot snapshots (2026-05-25); a POM action triggering navigation waits the settled URL (2026-05-25). Procedure: un-fixme ONE scenario at a time, start the app locally, load demo scenario 0, run each, confirm green; adjust the POM ONLY if a real accessible name/testid differs from 04-02 (POM-only, never inline page.locator). ORCHESTRATOR NOTE: REQUIRES A RUNNING APP - the agent runs the live Playwright and reports the live-run result; cannot be self-certified from a type-check. Biome/lint clean on the E2E project."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Architecture enforcement + frontend metadata/RAG cross-cutting tests",
+      "description": "Cross-cutting close-out (mirrors sibling F's final FE-units phase). ArchUnitNET rules per ADR-024 (no *PerStateAggregation* type; transitions read only via the repository port; the two new helpers are protected and not interface-exposed; this feature does not call sibling F's helper) and the frontend metadata/RAG cross-cutting Vitest assertions (widget visible in flow-metrics for both scopes; widgetInfoMetadata entry shape). No new DISTILL scenario - guards the locked design invariants.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "ArchUnitNET rules for the per-state cumulative seam (ADR-024)",
+          "criteria": [
+            "An ArchUnitNET rule asserts no class or interface named *PerStateAggregation* exists in the assembly (ADR-021/ADR-024 upheld; the rule's covered scope now includes this feature's commit set)",
+            "A rule asserts the metrics-service classes read WorkItemStateTransition only via IWorkItemStateTransitionRepository (and the portfolio transitions via its repository port), never via DbSet<WorkItemStateTransition> directly (extends the ADR-015 rule)",
+            "A rule asserts the two new BaseMetricsService helpers (ComputeCumulativeStateTime, ComputeCumulativeStateTimeItems) are protected (not public, not interface members), preventing accidental promotion to a shared service",
+            "A rule asserts this feature's services do NOT call sibling F's ComputeAgeInStatePercentiles (semantic divergence enforced, ADR-024)",
+            "The rules are added to the existing architecture suite and pass; dotnet build zero-warning; full backend suite green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs",
+          "scenario_name": "NoPerStateAggregationServiceExists_AndCumulativeHelpersAreProtected_AndTransitionsReadOnlyViaRepository_AndNoSiblingHelperCall",
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: ArchUnitNET rules are structural assertions over the type graph (the C#-row equivalent of import-linter contracts) - inherently invariant-style (the rule IS the universal quantifier over all types) but expressed in the ArchUnitNET fluent API, not Hypothesis. Each rule is itself the property ('for all types T, NOT named *PerStateAggregation*'; 'for all metrics services, transitions accessed only via the repository port'; 'the two cumulative helpers have protected visibility'; 'no call edge from this feature's services to ComputeAgeInStatePercentiles'). EXTEND the existing architecture suite (sibling F established the metrics-architecture pattern - if MetricsArchitectureTests exists, add methods to it; WHY-NEW-FILE only if no metrics architecture class exists, CLOSEST-EXISTING the sibling-F/slice-01 seam ArchUnit class). Four rules per ADR-024: (1) Types().That().HaveNameContaining(\"PerStateAggregation\") => Should().NotExist() (the repository IS the shared seam, no aggregation service - ADR-018/021/024); (2) BaseMetricsService/TeamMetricsService/PortfolioMetricsService depend on IWorkItemStateTransitionRepository and do NOT depend on DbSet<WorkItemStateTransition> directly (extends the ADR-015 transitions-via-repository-only rule to the new readers); (3) ComputeCumulativeStateTime + ComputeCumulativeStateTimeItems are protected (assert via ArchUnitNET/reflection member visibility - not public, no interface exposes them - intra-inheritance only per DDD-15); (4) assert no call edge / dependency from this feature's service methods to sibling F's ComputeAgeInStatePercentiles (the divergence is enforced not just documented). Pure architecture-rule step - NO production code changes; if any rule fails at first run the FIX is in the production code from phases 01-04 (e.g. an accidental public helper), not a rule relaxation. CI-LEARNINGS PRE-APPLY: NUnit2045/2056 (one assert per rule, or EnterMultipleScope if grouped); keep cognitive complexity low. No comments. Zero-warning build."
+        },
+        {
+          "id": "05-02",
+          "name": "Frontend metadata + RAG cross-cutting Vitest assertions",
+          "criteria": [
+            "getWidgetsForCategory('flow-metrics', 'team') and getWidgetsForCategory('flow-metrics', 'portfolio') both include stateTimeCumulative (no ownerFilter, both scopes)",
+            "widgetInfoMetadata.stateTimeCumulative has the expected fields (title 'Cumulative Time per State', description, learn-more URL, status guidance keyed on the three computeCumulativeStateTimeRag values) and carries the D5/D12 inclusion explanation (the withdrawn-US-03 text, D13)",
+            "computeCumulativeStateTimeRag tests cover all three thresholds + empty-states + single-state-100% edge (extending ragRules.test.ts) and the existing RAG-rule tests pass unchanged",
+            "pnpm build clean; Biome zero warnings on ./src; no regression in existing Flow Metrics widget tests"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts",
+          "scenario_name": "the stateTimeCumulative widget is registered in flow-metrics for both team and portfolio scopes with the expected widget-info and RAG metadata",
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (TS-row); Hypothesis does NOT apply. Metadata-registration + RAG-threshold are example/parametrised assertions, not quantified invariants; parametrise the three RAG thresholds + empty + single-state-100% and the (scope -> widget present) cases. EXTEND the colocated metadata test files - these are pure registration/shape assertions over categoryMetadata/widgetInfoMetadata/ragRules (the production entries shipped in 01-03; this step adds the regression guards that the entries are present and correctly shaped). Assert getWidgetsForCategory includes stateTimeCumulative for BOTH 'team' and 'portfolio' (no ownerFilter); assert the widgetInfoMetadata entry's fields incl. the inclusion-explanation learn-more text (D13). The ragRules.test.ts additions for computeCumulativeStateTimeRag may already exist from 01-03 - if so this step only ensures the empty + single-state-100% edges are covered and de-duplicates (do NOT duplicate a test 01-03 already wrote; consolidate). CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chain). Strict TS, no any; no any-cast to silence the compiler. Skip framework renders-without-crashing tests. Biome clean; pnpm build zero warnings."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests",
+      "Lighthouse.Frontend/src",
+      "Lighthouse.EndToEndTests/tests"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "verdict": "approved",
+    "blocker_count": 0,
+    "reviewed_at": "2026-05-26",
+    "automated_quality_gate": "passed 6/6 (no private-method ACs; ratio 13 steps/42 files; no identical-pattern batch; no validation-only steps; all IDs NN-NN; all steps have test_file+scenario_name)",
+    "integrity_check": "des-verify-integrity --roadmap-only exit 0",
+    "note": "13 steps across 5 phases (slice 01 team WS, slice 02 portfolio parity, slice 03 drill-down, slice 04 item picker, plus a cross-cutting ArchUnit + FE-metadata close-out phase mirroring sibling aging-pace-percentiles). All 25 DISTILL scenarios mapped: 21 backend ATs (CumulativeStateTimeReadApiIntegrationTest ATs 1-16 + CumulativeStateTimePortfolioReadApiIntegrationTest ATs 17-21) + 4 E2E scenarios (1 @walking_skeleton, 1 drill-down, 2 picker). scenario_name is singular per the schema while several backend steps drive multiple ATs (01-01 drives 9, 03-01 drives 4, 04-01 drives 5, 02-01 drives 3) - the representative AT is named with the co-driven ATs listed in parentheses. Step decomposition ratio <=2.5 steps/file-family. Locked design choices respected: itemIds repeated [FromQuery] int[]? nullable (DDD-22/ci-learnings 2026-05-16); RAG on whole set ignoring itemIds (D18/DDD-23); candidates=D12 windowed set (D17/DDD-19); itemIds post-inclusion intersection never a bypass (DDD-20); MUI Dialog drill-down (ADR-023); MUI Autocomplete+Chip picker (DDD-18); formatDuration new adaptive-unit util (D16/DDD-21); NO shared per-state aggregation service - extend TeamMetricsService/PortfolioMetricsService, helpers protected/inheritance-only (ADR-024). Routes /api/latest/... Awaiting orchestrator quality gate + reviewer."
+  }
+}
