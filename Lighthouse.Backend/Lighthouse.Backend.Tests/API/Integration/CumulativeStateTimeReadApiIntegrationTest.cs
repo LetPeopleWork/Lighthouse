@@ -292,6 +292,19 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetCumulativeStateTime_TeamViewer_CanReadTheData()
+        {
+            var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
+
+            client.AsTeamViewer(teamId);
+            var response = await client.GetAsync(BarUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"A team Viewer (read role, not admin) must be able to read the cumulative state time chart (TeamRead guard). Body: {body}");
+        }
+
+        [Test]
         public async Task GetCumulativeStateTime_AnonymousCaller_IsRejected()
         {
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();

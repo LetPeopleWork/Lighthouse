@@ -16,6 +16,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static HttpClient AsViewer(this HttpClient client, string subject = "test-viewer")
             => ApplyTestIdentity(client, subject, roles: null);
 
+        public static HttpClient AsTeamViewer(this HttpClient client, int teamId, string subject = "test-team-viewer")
+            => ApplyTestIdentity(client, subject, $"{ClaimsDrivenRbacAdministrationService.ViewerTeamGrantPrefix}{teamId}");
+
+        public static HttpClient AsPortfolioViewer(this HttpClient client, int portfolioId, string subject = "test-portfolio-viewer")
+            => ApplyTestIdentity(client, subject, $"{ClaimsDrivenRbacAdministrationService.ViewerPortfolioGrantPrefix}{portfolioId}");
+
         public static HttpClient AsAnonymous(this HttpClient client)
         {
             client.DefaultRequestHeaders.Remove(TestAuthHandler.SubjectHeader);

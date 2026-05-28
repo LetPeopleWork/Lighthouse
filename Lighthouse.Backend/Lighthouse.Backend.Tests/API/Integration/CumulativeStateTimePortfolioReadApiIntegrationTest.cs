@@ -169,6 +169,19 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetCumulativeStateTime_PortfolioViewer_CanReadTheData()
+        {
+            var portfolioId = SeedPortfolioWithKnownVisitsAndInFlightFeatures();
+
+            client.AsPortfolioViewer(portfolioId);
+            var response = await client.GetAsync(BarUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"A portfolio Viewer (read role, not admin) must be able to read the cumulative state time chart (PortfolioRead guard). Body: {body}");
+        }
+
+        [Test]
         public async Task GetCumulativeStateTime_PortfolioAnonymousCaller_IsRejected()
         {
             var portfolioId = SeedPortfolioWithKnownVisitsAndInFlightFeatures();
