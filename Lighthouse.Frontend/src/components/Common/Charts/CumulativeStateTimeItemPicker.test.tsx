@@ -94,6 +94,32 @@ describe("CumulativeStateTimeItemPicker", () => {
 		expect(within(options[0]).getByText(expectedTitle)).toBeInTheDocument();
 	});
 
+	it.each([
+		{
+			name: "lowercase query against an uppercase reference id",
+			query: "beta",
+		},
+		{ name: "uppercase query against a lowercase title", query: "INDEXING" },
+		{ name: "query padded with surrounding whitespace", query: "  indexing  " },
+	])("matches case-insensitively and trims the query ($name)", async ({
+		query,
+	}) => {
+		const user = userEvent.setup();
+		render(
+			<CumulativeStateTimeItemPicker
+				candidates={threeCandidates}
+				selectedItemIds={[]}
+				onSelectionChange={vi.fn()}
+				onOpen={vi.fn()}
+			/>,
+		);
+
+		const combobox = await openPicker(user);
+		await user.type(combobox, query);
+
+		expect(screen.getAllByRole("option")).toHaveLength(1);
+	});
+
 	it("does not match candidates by non-reference, non-title attributes", async () => {
 		const user = userEvent.setup();
 		render(
@@ -154,8 +180,51 @@ describe("CumulativeStateTimeItemPicker", () => {
 		});
 		expect(combobox).toBeDisabled();
 		expect(
-			screen.getByText(/no contributing work items in this window/i),
+			screen.getByText("No contributing work items in this window."),
 		).toBeInTheDocument();
+	});
+
+	it("does not show the disabled empty state while candidates are still loading", () => {
+		render(
+			<CumulativeStateTimeItemPicker
+				candidates={[]}
+				selectedItemIds={[]}
+				onSelectionChange={vi.fn()}
+				onOpen={vi.fn()}
+			/>,
+		);
+
+		const combobox = screen.getByRole("combobox", {
+			name: /select contributing work items/i,
+		});
+		expect(combobox).not.toBeDisabled();
+		expect(
+			screen.queryByText(/no contributing work items in this window/i),
+		).not.toBeInTheDocument();
+	});
+
+	it("stays interactive (no empty state) when candidates are loaded and present", async () => {
+		const user = userEvent.setup();
+		render(
+			<CumulativeStateTimeItemPicker
+				candidates={threeCandidates}
+				selectedItemIds={[]}
+				onSelectionChange={vi.fn()}
+				onOpen={vi.fn()}
+				candidatesLoaded={true}
+			/>,
+		);
+
+		const combobox = screen.getByRole("combobox", {
+			name: /select contributing work items/i,
+		});
+		expect(combobox).not.toBeDisabled();
+		expect(
+			screen.queryByText(/no contributing work items in this window/i),
+		).not.toBeInTheDocument();
+
+		await user.click(combobox);
+		expect(screen.getAllByRole("option")).toHaveLength(3);
 	});
 
 	it("renders the current selection as removable chips", async () => {

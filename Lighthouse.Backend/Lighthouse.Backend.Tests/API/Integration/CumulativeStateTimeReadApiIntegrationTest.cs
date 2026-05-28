@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const double DaysTolerance = 0.1;
 
         private static readonly string[] WorkflowDoingStates = [InProgress, Review, Test];
+        private static readonly double[] ReviewDrillDownDaysDescending = [30.0, 20.0, 10.0];
 
         private static int testDateOffset;
 
@@ -213,6 +214,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 var review = StateRow(body, Review);
                 Assert.That(review.TotalDays, Is.Zero.Within(DaysTolerance),
                     $"The zero-contributing Review bar has height 0 (DDD-9). Body: {body}");
+                Assert.That(review.MedianDays, Is.Null,
+                    $"A state with no completed visits has a null median (the empty-visit guard returns null). Body: {body}");
             }
         }
 
@@ -468,6 +471,153 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_ItemEnteredFirstStateExactlyAtWindowEnd_IsIncluded()
+        {
+            // Boundary: an item whose only visit-entry lands exactly on windowEnd still intersects the window.
+            // The inclusivity is `entry <= endDate`; a strict `<` (or pairing the entry against the wrong exit)
+            // would drop the item.
+            var teamId = SeedTeamWithSingleItemEnteringAtWindowEnd(out var boundaryReferenceId);
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(CandidatesUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(boundaryReferenceId),
+                    $"An item entering its first state exactly at windowEnd must intersect the window (entry <= endDate is inclusive). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_ItemExitedFirstStateExactlyAtWindowStart_IsIncluded()
+        {
+            // Boundary: an item whose only visit-exit lands exactly on windowStart still intersects the window.
+            // The inclusivity is `exit >= startDate`; a strict `>` would drop the item.
+            var teamId = SeedTeamWithSingleItemExitingAtWindowStart(out var boundaryReferenceId);
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(CandidatesUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(boundaryReferenceId),
+                    $"An item exiting its first state exactly at windowStart must intersect the window (exit >= startDate is inclusive). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_InFlightItemEnteredCurrentStateExactlyAtWindowEnd_IsIncluded()
+        {
+            // Boundary: an in-flight item with no transitions is included via the in-flight-at-window-end gate
+            // when it entered its current state exactly on windowEnd (`CurrentStateEnteredAt <= endDate` is inclusive).
+            var teamId = SeedTeamWithInFlightItemEnteringCurrentStateAtWindowEnd(out var boundaryReferenceId);
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(CandidatesUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(boundaryReferenceId),
+                    $"An in-flight item entering its current state exactly at windowEnd must be in-flight-at-window-end (inclusive boundary). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_DoneItemWithCurrentTimestampButNoWindowOverlap_IsExcluded()
+        {
+            // The in-flight-at-window-end gate must AND together (a) not-Done, (b) has a current timestamp,
+            // (c) timestamp <= endDate. A Done item carrying a current timestamp but no window-overlapping
+            // transitions must be excluded — flipping the first conjunct to OR, or defaulting the no-overlap
+            // path to "included", would wrongly surface it.
+            var teamId = SeedTeamWithExcludedDoneItemCarryingCurrentTimestamp(out var excludedReferenceId, out var includedReferenceId);
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(CandidatesUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            var candidateReferenceIds = CandidateReferenceIds(body);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(candidateReferenceIds, Does.Contain(includedReferenceId),
+                    $"The normal in-window item stays a candidate. Body: {body}");
+                Assert.That(candidateReferenceIds, Does.Not.Contain(excludedReferenceId),
+                    $"A Done item with a current timestamp but no window-overlapping transitions is not in-flight-at-window-end and must be excluded. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTime_ItemsWithSyncedTransitionsButMissingTimestamps_DoNotCrashTheEndpoints()
+        {
+            // Robustness: malformed items (synced transitions but no StartedDate; in-flight but no
+            // CurrentStateEnteredAt) must be handled without throwing. A short-circuit relaxed to a
+            // non-short-circuiting operator would dereference a null timestamp and 500 the request.
+            var teamId = SeedTeamWithMalformedButRecoverableItems(out var healthyReferenceId);
+
+            client.AsTeamAdmin(teamId);
+            var barResponse = await client.GetAsync(BarUrl(teamId));
+            var candidatesResponse = await client.GetAsync(CandidatesUrl(teamId));
+
+            var barBody = await barResponse.Content.ReadAsStringAsync();
+            var candidatesBody = await candidatesResponse.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(barResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), barBody);
+                Assert.That(candidatesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), candidatesBody);
+                Assert.That(CandidateReferenceIds(candidatesBody), Does.Contain(healthyReferenceId),
+                    $"The healthy item is still resolved alongside the malformed ones. Body: {candidatesBody}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeItems_ReviewDrillDown_OrdersRowsByDaysContributedDescendingAndOmitsZeroContributors()
+        {
+            var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(ItemsUrl(teamId, Review));
+
+            var body = await response.Content.ReadAsStringAsync();
+            var rows = ItemRows(body);
+            var contributions = rows.Select(row => row.DaysContributed).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(rows, Has.Count.EqualTo(3),
+                    $"Only the three items that actually contributed to Review appear — zero-contribution items are filtered out (strict > 0). Body: {body}");
+                Assert.That(contributions, Is.EqualTo(ReviewDrillDownDaysDescending).Within(DaysTolerance),
+                    $"US-04 drill-down rows are ordered by daysContributed descending. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTime_KnownFixture_MeanDaysIsArithmeticMeanNotAnotherAggregate()
+        {
+            var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(BarUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+                // Review completed visits are 10, 20, 30 and a 0-day same-timestamp exit → arithmetic mean 15
+                // (min would be 0, max 30, median 10).
+                var review = StateRow(body, Review);
+                Assert.That(review.MeanDays, Is.EqualTo(15.0).Within(DaysTolerance),
+                    $"meanDays must be the arithmetic mean of completed-visit durations, not the min/max/median. Body: {body}");
+            }
+        }
+
         private string BarUrl(int teamId)
             => $"/api/latest/teams/{teamId}/metrics/cumulativeStateTime?startDate={windowStart:O}&endDate={windowEnd:O}";
 
@@ -640,6 +790,125 @@ namespace Lighthouse.Backend.Tests.API.Integration
             AddTransition(transitionRepository, bouncedItem, InProgress, Review, inWindow.AddDays(5));
             AddTransition(transitionRepository, bouncedItem, Review, "To Do", inWindow.AddDays(15));
 
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private int SeedTeamWithSingleItemEnteringAtWindowEnd(out string boundaryReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp);
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            boundaryReferenceId = "ENTER-AT-END";
+            var item = NewWorkItem(team, boundaryReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowEnd, closedDate: windowEnd.AddDays(5), currentStateEnteredAt: null);
+            workItemRepository.Add(item);
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, item, InProgress, Done, windowEnd.AddDays(5));
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private int SeedTeamWithSingleItemExitingAtWindowStart(out string boundaryReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp);
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            boundaryReferenceId = "EXIT-AT-START";
+            var item = NewWorkItem(team, boundaryReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowStart.AddDays(-10), closedDate: windowStart, currentStateEnteredAt: null);
+            workItemRepository.Add(item);
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, item, InProgress, Done, windowStart);
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private int SeedTeamWithInFlightItemEnteringCurrentStateAtWindowEnd(out string boundaryReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp);
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+
+            boundaryReferenceId = "INFLIGHT-AT-END";
+            var item = NewWorkItem(team, boundaryReferenceId, state: InProgress, category: StateCategories.Doing,
+                startedDate: windowEnd, closedDate: null, currentStateEnteredAt: windowEnd);
+            workItemRepository.Add(item);
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private int SeedTeamWithExcludedDoneItemCarryingCurrentTimestamp(out string excludedReferenceId, out string includedReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp);
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            includedReferenceId = "DONE-INWINDOW";
+            excludedReferenceId = "DONE-NO-OVERLAP";
+
+            var inWindow = windowStart.AddDays(20);
+            AddCompletedItem(workItemRepository, transitionRepository, team, includedReferenceId, inWindow,
+                inProgressDays: 5, reviewDays: 10, testDays: 0);
+
+            var noOverlap = NewWorkItem(team, excludedReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowStart.AddDays(-1), closedDate: null, currentStateEnteredAt: inWindow);
+            noOverlap.StartedDate = null;
+            workItemRepository.Add(noOverlap);
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private int SeedTeamWithMalformedButRecoverableItems(out string healthyReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp);
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            healthyReferenceId = "HEALTHY-1";
+            var inWindow = windowStart.AddDays(20);
+            AddCompletedItem(workItemRepository, transitionRepository, team, healthyReferenceId, inWindow,
+                inProgressDays: 5, reviewDays: 10, testDays: 0);
+
+            var nullStartDone = NewWorkItem(team, "NULLSTART-DONE", state: Done, category: StateCategories.Done,
+                startedDate: inWindow, closedDate: inWindow.AddDays(5), currentStateEnteredAt: null);
+            nullStartDone.StartedDate = null;
+            workItemRepository.Add(nullStartDone);
+
+            var nullStartDoing = NewWorkItem(team, "NULLSTART-DOING", state: InProgress, category: StateCategories.Doing,
+                startedDate: inWindow, closedDate: null, currentStateEnteredAt: inWindow);
+            nullStartDoing.StartedDate = null;
+            workItemRepository.Add(nullStartDoing);
+
+            var noCurrentDoing = NewWorkItem(team, "NOCURRENT-DOING", state: InProgress, category: StateCategories.Doing,
+                startedDate: inWindow, closedDate: null, currentStateEnteredAt: null);
+            workItemRepository.Add(noCurrentDoing);
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, nullStartDone, InProgress, Done, inWindow.AddDays(5));
+            AddTransition(transitionRepository, nullStartDoing, "To Do", InProgress, inWindow);
+            AddTransition(transitionRepository, noCurrentDoing, "To Do", InProgress, inWindow);
             transitionRepository.Save().GetAwaiter().GetResult();
 
             return team.Id;
@@ -843,6 +1112,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     continue;
                 }
 
+                var hasMedian = entry.TryGetProperty("medianDays", out var medianElement);
                 return new StateRowView(
                     TotalDays: entry.GetProperty("totalDays").GetDouble(),
                     CompletedContributionDays: entry.GetProperty("completedContributionDays").GetDouble(),
@@ -851,7 +1121,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     CompletedItemCount: entry.GetProperty("completedItemCount").GetInt32(),
                     OngoingItemCount: entry.GetProperty("ongoingItemCount").GetInt32(),
                     MeanDays: entry.GetProperty("meanDays").GetDouble(),
-                    HasMedianDays: entry.TryGetProperty("medianDays", out _));
+                    HasMedianDays: hasMedian,
+                    MedianDays: hasMedian && medianElement.ValueKind == JsonValueKind.Number ? medianElement.GetDouble() : null);
             }
 
             Assert.Fail($"State '{state}' was expected in the response but was absent. Body: {body}");
@@ -866,7 +1137,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             int CompletedItemCount,
             int OngoingItemCount,
             double MeanDays,
-            bool HasMedianDays);
+            bool HasMedianDays,
+            double? MedianDays);
 
         private readonly record struct ItemRowView(
             int WorkItemId,

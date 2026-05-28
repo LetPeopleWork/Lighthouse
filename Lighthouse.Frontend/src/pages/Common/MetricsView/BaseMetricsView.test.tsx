@@ -3996,5 +3996,74 @@ describe("BaseMetricsView component", () => {
 				);
 			});
 		});
+
+		it("maps the drill-down payload into rows with a linked name and rounded days contributed", async () => {
+			const team = new Team();
+			team.name = "Drill Fields Team";
+			team.id = 777;
+			team.systemWIPLimit = 6;
+			team.lastUpdated = new Date();
+
+			const itemsResponse = {
+				state: "Doing",
+				items: [
+					{
+						workItemId: 1001,
+						referenceId: "DRILL-1",
+						title: "Investigate flow",
+						type: "Story",
+						state: "Doing",
+						stateCategory: "Doing",
+						url: "https://example.test/items/DRILL-1",
+						daysContributed: 10.174160150462964,
+					},
+				],
+			};
+
+			const service = {
+				...buildCumulativePickerService(),
+				getCumulativeStateTimeItemsForTeam: vi
+					.fn()
+					.mockResolvedValue(itemsResponse),
+				getCumulativeStateTimeItemsForPortfolio: vi
+					.fn()
+					.mockResolvedValue(itemsResponse),
+			};
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${team.id}:category`,
+				"flow-metrics",
+			);
+
+			const user = userEvent.setup();
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["Doing", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-stateTimeCumulative"),
+				).toBeInTheDocument();
+			});
+
+			await user.click(screen.getByTestId("cumulative-bar-click-proxy"));
+
+			const nameLink = await screen.findByRole("link", {
+				name: "Investigate flow",
+			});
+			expect(nameLink).toHaveAttribute(
+				"href",
+				"https://example.test/items/DRILL-1",
+			);
+			expect(screen.getByText("DRILL-1")).toBeInTheDocument();
+			expect(screen.getByTestId("additionalColumnContent")).toHaveTextContent(
+				"10.2",
+			);
+		});
 	});
 });

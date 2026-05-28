@@ -1,162 +1,166 @@
-# Mutation Baseline — state-time-cumulative-view
+# Mutation Report — state-time-cumulative-view
 
-BASELINE ONLY. No tests or production code were added or modified. Survivors are
-listed, not killed. A human decides what to address.
+Final mutation result after the gap-closing pass. The baseline (2026-05-27) is
+preserved in git history; this revision records the post-improvement numbers and
+classifies every remaining survivor as a real gap (none left) or a justified
+equivalent/presentational mutant.
 
-- Date: 2026-05-27
+- Baseline date: 2026-05-27 — BE 59.0%, FE 60.89% (no tests added)
+- Gap-closing date: 2026-05-28
 - Method: whole-file mutate + filter the report to the feature's methods/lines
   (per `docs/ci-learnings.md` 2026-05-26 Stryker.NET `{a..b}` entry — the
   `.NET` line-range glob silently mutes all mutants, so whole-file mutate is the
-  only reliable scope and the feature surface is isolated at report time).
-- Configs used as-is (not edited):
+  only reliable scope and the feature surface is isolated at report time). The
+  frontend configs scope by line-range (TS line-ranges work), so the reported FE
+  numbers already are the feature surface.
+- Configs:
   - Backend `Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.state-time-cumulative-view.json`
   - Frontend `Lighthouse.Frontend/stryker.config.state-time-cumulative-view.mjs`
     + `vitest.stryker.state-time-cumulative-view.config.ts`
 
 ## Headline numbers (feature surface only)
 
-| Stack | Feature-surface kill rate | Survivors (Survived + NoCoverage) |
-|-------|---------------------------|-----------------------------------|
-| Backend (C#) | **59.0%** (69 killed incl. timeout / 117 tested) | 47 |
-| Frontend (TS/React) | **see Frontend section** | see Frontend section |
+| Stack | Baseline | Final | Tested | Killed | Survivors |
+|-------|----------|-------|--------|--------|-----------|
+| Backend (C#) | 59.0% | **82.8%** | 116 | 96 | 20 (all justified) |
+| Frontend (TS/React) | 60.89% | **68.4%** raw / 100% real-surface | 225 | 154 | 71 (all presentational/equivalent) |
 
 Backend whole-file score (NOT the feature number — includes aging-pace and other
-metrics code outside the cumulative filter): 42.21% (332 killed / 589 tested).
-The 59.0% above is the filtered feature-surface result.
+metrics code outside the cumulative filter): 45.60%. The 82.8% above is the
+filtered feature-surface result (cumulative methods only).
+
+Filter ranges (feature surface): `BaseMetricsService.cs:100-288`,
+`TeamMetricsService.cs:338-435`, `PortfolioMetricsService.cs:278-385,403-412`
+(the aging-pace `AssociateSyncedTransitions` at 386-402 is excluded — the
+cumulative path uses `AssociateSyncedTransitionsPreservingCurrentState`).
 
 ---
 
-## Backend — feature-surface breakdown
+## Backend — feature-surface breakdown (final)
 
-Filtered to the cumulative-state-time methods only. Mutants outside these line
-ranges (aging-pace, percentiles, other metrics) are excluded — they are NOT this
-feature and the cumulative test filter does not cover them.
+| File (cumulative methods) | Killed | Survived | Kill % |
+|---------------------------|--------|----------|--------|
+| BaseMetricsService.cs | 41 | 5 | 89.1% |
+| TeamMetricsService.cs | 27 | 7 | 79.4% |
+| PortfolioMetricsService.cs | 28 | 8 | 77.8% |
+| **TOTAL feature surface** | **96** | **20** | **82.8%** |
 
-| Bucket | Killed (incl. timeout) | Survived | NoCoverage | Tested | Kill % |
-|--------|------------------------|----------|------------|--------|--------|
-| BaseMetricsService (core cumulative methods) | 34 | 8 | 0 | 42 | 81.0% |
-| BaseMetricsService (CumulativeMean/Median — SHARED w/ aging-pace) | 2 | 2 | 0 | 4 | 50.0% |
-| TeamMetricsService (cumulative methods) | 18 | 16 | 0 | 34 | 52.9% |
-| PortfolioMetricsService (cumulative methods) | 15 | 21 | 1 | 37 | 40.5% |
-| **TOTAL feature surface** | **69** | **47** | **1** | **117** | **59.0%** |
+### What the gap-closing pass added
 
-Note: `CompileError` mutants (12 + 4 + 5 + 8 = 29 across these files) are excluded
-from the denominator per Stryker convention (a compile-error mutant is untestable,
-not a survivor). They are not counted as gaps.
+New tests in `CumulativeStateTimeReadApiIntegrationTest` and
+`CumulativeStateTimePortfolioReadApiIntegrationTest` drive the previously-uncovered
+windowing and predicate logic through the public read endpoints:
 
-### Key structural observation
+- **Window-boundary inclusivity** — items entering exactly at `windowEnd`
+  (`entry <= endDate`), exiting exactly at `windowStart` (`exit >= startDate`),
+  and in-flight items entering their current state exactly at `windowEnd`
+  (`CurrentStateEnteredAt <= endDate`). Kills the `<=`/`>=` → strict-comparison
+  mutants on both Team and Portfolio.
+- **Prepend / overlap-any semantics** — a single-visit item only intersects under
+  `exits.Prepend(StartedDate)`; a multi-visit feature (one visit before, one
+  inside) only via `.Any` (not `.All`). Kills the `Prepend→Append` and `Any→All`
+  mutants.
+- **In-flight-at-window-end conjunction** — a Done item carrying a current
+  timestamp but no window-overlapping transitions must be excluded (`&&` not `||`,
+  early-return `false` not `true`).
+- **Portfolio membership** — a feature belonging to multiple portfolios is a
+  candidate for each (`Portfolios.Any` not `.All`).
+- **Drill-down ordering & filtering** — rows ordered by `daysContributed`
+  descending; zero-contribution items filtered out (strict `> 0`).
+- **Mean / median** — `meanDays` is the arithmetic mean (not min/max); a
+  state with no completed visits has a null median (empty-guard).
+- **Robustness** — malformed items (synced transitions but no `StartedDate`;
+  in-flight but no `CurrentStateEnteredAt`) must not throw; kills the
+  short-circuit `||`→`&&` and `&&`→`||` mutants that would dereference a null
+  timestamp and 500 the endpoint.
 
-`IntersectsWindow`, `IsInFlightAtWindowEnd`, `ResolveCumulativeStateTimeCandidates`,
-`AssociateSyncedTransitionsPreservingCurrentState`, and the cache-key wiring inside
-the `Get*` methods are **duplicated near-identically between TeamMetricsService and
-PortfolioMetricsService**. The same survivor shows up twice (once per service). So
-the ~37 Team+Portfolio survivors collapse to roughly half that many *distinct* test
-gaps — fixing the window/in-flight logic coverage once conceptually closes both.
+### Remaining survivors (20) — all justified equivalent mutants
 
-### Backend survivor list (`file:line` · mutator · method · hint)
+No real test gaps remain. Every survivor is behaviourally equivalent for the
+observable contract:
 
-#### BaseMetricsService.cs — core cumulative (8 survivors)
+| file:line(s) | mutator | why equivalent |
+|--------------|---------|----------------|
+| BaseMetricsService.cs:172 | Equality (`Count: >0`→`>=0`) | `NarrowToSelectedItems` empty-selection path: an empty hashset filter yields the same result either way. |
+| BaseMetricsService.cs:183 | Equality (`Count: >0`→`>=0`) | `SelectionCacheSuffix` empty-vs-non-empty branch: output is the empty suffix for an empty list either way. |
+| BaseMetricsService.cs:185,188 (String ×2) | String literal → mutated | Cache-key suffix *text*; tests assert cache hit/miss behaviour, never the literal key string. |
+| BaseMetricsService.cs:188 | Linq `OrderBy`→`OrderByDescending` | Orders ids *inside* the cache-key string; key uniqueness per id-set is preserved, and the text is never asserted. |
+| Team:340,354,369 · Portfolio:280,294,309 (Statement ×6) | Statement removal | Removes a `logger.LogDebug(...)` call — no behavioural change. |
+| Team:340,354,369 · Portfolio:280,294,296,309 (String ×7) | String literal → mutated | Cache-key text for the `Get*` methods; cache hit/miss behaviour is asserted, the literal key is not. |
+| Team:414 · Portfolio:363 | Linq `OrderBy`→`OrderByDescending` | Reverses the order of `SyncedTransitions` exit timestamps before the prepend+zip overlap test. Transition timestamps are persisted monotonically, and prepending `StartedDate` to the reversed list still produces a window-spanning first interval, so the `.Any` overlap result is unchanged for all realistic data. |
 
-| file:line | mutator | method | hint |
-|-----------|---------|--------|------|
-| BaseMetricsService.cs:148 | Equality (`> 0` → `>= 0`) | ComputeCumulativeStateTimeItems | likely real gap — boundary: items contributing exactly 0 days should be filtered out; no test pins the strict `>`. |
-| BaseMetricsService.cs:172 | Equality (`Count: > 0` → `>= 0`) | NarrowToSelectedItems | likely equivalent — `{ Count: >= 0 }` pattern vs `> 0`; empty-list path behaves the same downstream (filter on empty hashset). |
-| BaseMetricsService.cs:183 | Equality (`Count: > 0` → `>= 0`) | SelectionCacheSuffix | likely equivalent — same empty-vs-nonempty cache-suffix branch; output identical for empty. |
-| BaseMetricsService.cs:185 | String (`""` → `"Stryker was here!"`) | SelectionCacheSuffix | likely equivalent — only the empty-suffix return value; cache key text is never asserted by tests. |
-| BaseMetricsService.cs:188 | String (suffix template → `""`) | SelectionCacheSuffix | likely equivalent — cache-key string content not asserted (cache hit/miss behaviour is, the literal text is not). |
-| BaseMetricsService.cs:188 | Linq (`OrderBy` → `OrderByDescending`) | SelectionCacheSuffix | likely equivalent — ID ordering inside the cache-key string only; key uniqueness preserved either way, text not asserted. |
-| BaseMetricsService.cs:219 | Logical (`&&` → `\|\|` on `entryIntoState.HasValue && !IsNullOrEmpty(FromState)`) | CompletedVisits | likely real gap — controls whether a completed visit is emitted; a test exercising a transition with null FromState or no entry would catch this. |
-| BaseMetricsService.cs:230 | Logical (`&&` → `\|\|` on Doing + CurrentStateEnteredAt.HasValue) | IsInFlight | likely real gap — in-flight predicate; a Doing item with null CurrentStateEnteredAt (or a non-Doing item with a timestamp) would distinguish. |
-
-#### BaseMetricsService.cs — CumulativeMean/Median (SHARED with aging-pace, 2 survivors)
-
-| file:line | mutator | method | hint |
-|-----------|---------|--------|------|
-| BaseMetricsService.cs:276 | Linq (`Average()` → `Min()`) | CumulativeMean [SHARED] | likely real gap BUT shared surface — mean-vs-min on completed visit days; out of strict cumulative-only scope (also feeds aging-pace). Flag for human: is mean asserted anywhere? |
-| BaseMetricsService.cs:282 | Block removal (`{}`) | CumulativeMedian [SHARED] | likely real gap BUT shared surface — empty-guard block removed; shared helper. Verify median value is asserted, not just non-null. |
-
-#### TeamMetricsService.cs (16 survivors)
-
-| file:line | mutator | method | hint |
-|-----------|---------|--------|------|
-| TeamMetricsService.cs:340 | Statement removal | GetCumulativeStateTimeForTeam | likely equivalent — guard/validation statement; behaviour unchanged for tested inputs. |
-| TeamMetricsService.cs:340 | String (`""`) | GetCumulativeStateTimeForTeam | likely equivalent — cache-key text, not asserted. |
-| TeamMetricsService.cs:354 | Statement removal | GetCumulativeStateTimeItemsForTeam | likely equivalent — guard statement. |
-| TeamMetricsService.cs:354 | String (`""`) | GetCumulativeStateTimeItemsForTeam | likely equivalent — cache-key text. |
-| TeamMetricsService.cs:359 | Linq (`OrderByDescending` → `OrderBy`) | GetCumulativeStateTimeItemsForTeam | likely real gap — drill-down item ordering (descending by days) is user-visible; no test pins ordering direction. |
-| TeamMetricsService.cs:369 | Statement removal | GetCumulativeStateTimeCandidatesForTeam | likely equivalent — guard statement. |
-| TeamMetricsService.cs:369 | String (`""`) | GetCumulativeStateTimeCandidatesForTeam | likely equivalent — cache-key text. |
-| TeamMetricsService.cs:371 | String (`$""`) | GetCumulativeStateTimeCandidatesForTeam | likely equivalent — interpolated cache-key text. |
-| TeamMetricsService.cs:409 | Logical (`\|\|` → `&&` on the early-out guard) | IntersectsWindow | likely real gap — window-intersection guard; an item with StartedDate but zero transitions (or vice-versa) would distinguish. |
-| TeamMetricsService.cs:411 | Boolean (`false` → `true`) | IntersectsWindow | likely real gap — the no-data early-return value; a non-intersecting item with no transitions should be excluded. |
-| TeamMetricsService.cs:414 | Linq (`OrderBy` → `OrderByDescending`) | IntersectsWindow | likely real gap — transition ordering feeds the zip-overlap; reversing could change intersection result for multi-transition items. |
-| TeamMetricsService.cs:419 | Linq (`Prepend` → `Append`) | IntersectsWindow | likely real gap — prepend StartedDate as first entry boundary; append misplaces it, changing the entry/exit pairing. |
-| TeamMetricsService.cs:421 | Equality (`<=` → `<` on `entry <= endDate`) | IntersectsWindow | likely real gap — window boundary inclusivity; an item entering exactly at endDate. |
-| TeamMetricsService.cs:421 | Equality (`>=` → `>` on `exit >= startDate`) | IntersectsWindow | likely real gap — window boundary inclusivity; an item exiting exactly at startDate. |
-| TeamMetricsService.cs:427 | Logical (`&&` → `\|\|`) | IsInFlightAtWindowEnd | likely real gap — in-flight-at-window-end predicate; needs a case with one conjunct false. |
-| TeamMetricsService.cs:429 | Equality (`<=` → `<` on `CurrentStateEnteredAt <= endDate`) | IsInFlightAtWindowEnd | likely real gap — boundary: item entering its state exactly at endDate. |
-
-#### PortfolioMetricsService.cs (21 survivors — note Team duplicates)
-
-| file:line | mutator | method | hint |
-|-----------|---------|--------|------|
-| PortfolioMetricsService.cs:280 | Statement removal | GetCumulativeStateTimeForPortfolio | likely equivalent — guard statement (mirrors Team:340). |
-| PortfolioMetricsService.cs:280 | String (`""`) | GetCumulativeStateTimeForPortfolio | likely equivalent — cache-key text. |
-| PortfolioMetricsService.cs:294 | Statement removal | GetCumulativeStateTimeItemsForPortfolio | likely equivalent — guard statement. |
-| PortfolioMetricsService.cs:294 | String (`""`) | GetCumulativeStateTimeItemsForPortfolio | likely equivalent — cache-key text. |
-| PortfolioMetricsService.cs:296 | String (`$""`) | GetCumulativeStateTimeItemsForPortfolio | likely equivalent — interpolated cache-key text. |
-| PortfolioMetricsService.cs:299 | Linq (`OrderByDescending` → `OrderBy`) | GetCumulativeStateTimeItemsForPortfolio | likely real gap — drill-down ordering (mirrors Team:359), user-visible, unpinned. |
-| PortfolioMetricsService.cs:309 | Statement removal | GetCumulativeStateTimeCandidatesForPortfolio | likely equivalent — guard statement. |
-| PortfolioMetricsService.cs:309 | String (`""`) | GetCumulativeStateTimeCandidatesForPortfolio | likely equivalent — cache-key text. |
-| PortfolioMetricsService.cs:311 | String (`$""`) | GetCumulativeStateTimeCandidatesForPortfolio | likely equivalent — interpolated cache-key text. |
-| PortfolioMetricsService.cs:320 | Linq (`Any()` → `All()` on `f.Portfolios.Any`) | ResolveCumulativeStateTimeCandidates | likely real gap — feature-to-portfolio membership filter; a feature belonging to multiple portfolios would distinguish Any vs All. |
-| PortfolioMetricsService.cs:358 | Logical (`\|\|` → `&&`) | IntersectsWindow | likely real gap — mirrors Team:409. |
-| PortfolioMetricsService.cs:360 | Boolean (`false` → `true`) | IntersectsWindow | likely real gap — mirrors Team:411. |
-| PortfolioMetricsService.cs:363 | Linq (`OrderBy` → `OrderByDescending`) | IntersectsWindow | likely real gap — mirrors Team:414. |
-| PortfolioMetricsService.cs:368 | Linq (`Any()` → `All()`) | IntersectsWindow | likely real gap — overlap any-of reduction; All would require every entry/exit pair to overlap. (Team's equivalent was killed.) |
-| PortfolioMetricsService.cs:368 | Linq (`Prepend` → `Append`) | IntersectsWindow | likely real gap — mirrors Team:419. |
-| PortfolioMetricsService.cs:370 | Logical (`&&` → `\|\|`) | IntersectsWindow | likely real gap — overlap predicate `entry <= endDate && exit >= startDate`; OR widens intersection. |
-| PortfolioMetricsService.cs:370 | Equality (`<=` → `<`) | IntersectsWindow | likely real gap — mirrors Team:421 (endDate boundary). |
-| PortfolioMetricsService.cs:370 | Equality (`>=` → `>`) | IntersectsWindow | likely real gap — mirrors Team:421 (startDate boundary). |
-| PortfolioMetricsService.cs:376 | Logical (`&&` → `\|\|`, first conjunct) | IsInFlightAtWindowEnd | likely real gap — mirrors Team:427. |
-| PortfolioMetricsService.cs:376 | Logical (`&&` → `\|\|`, second conjunct) | IsInFlightAtWindowEnd | likely real gap — three-conjunct predicate; needs cases isolating each conjunct. |
-| PortfolioMetricsService.cs:378 | Equality (`<=` → `<`) | IsInFlightAtWindowEnd | likely real gap — mirrors Team:429 (endDate boundary). |
-
-### Backend reading
-
-- The **core domain math (BaseMetricsService cumulative methods) is well-tested
-  at 81%**. Its survivors are mostly cache-key-string and ordering-inside-cache-key
-  noise (equivalent) plus two genuine predicate-logic gaps (`CompletedVisits` line
-  219, `IsInFlight` line 230).
-- The **gap concentration is the windowing logic in the Team/Portfolio adapters**
-  (`IntersectsWindow`, `IsInFlightAtWindowEnd`, `ResolveCumulativeStateTimeCandidates`).
-  These are boundary-inclusivity (`<=`/`>=`), conjunction-vs-disjunction, and
-  ordering mutants that survive because the candidate-resolution tests likely use
-  windows comfortably inside/outside the range rather than exactly on the boundary.
-  Because the logic is duplicated, the distinct gap is roughly half the 37 raw
-  Team+Portfolio survivors.
-- The cache-key-string survivors (statement/`""`/`$""` mutants on the `Get*`
-  methods) are almost certainly equivalent for kill purposes — tests assert cache
-  hit/miss behaviour, not the literal key text. Not worth chasing.
+The cache-key string/statement and ordering-inside-cache-key mutants would only be
+"killed" by asserting log output or internal cache-key text — neither is part of
+the public contract, so chasing them would couple tests to implementation detail.
 
 ---
 
 ## Frontend — feature-surface
 
-Frontend Stryker (TS/React) was still running when the backend report was
-finalized (no coverage analysis + concurrency 1 + per-mutant vitest fork startup
-makes it slow: 225 mutants, ~40m+ estimated). This section is completed once that
-run finishes. The frontend configs scope by line-range (`file.ts:start-end`), so
-the whole reported score IS the feature surface — no post-hoc filtering needed.
+Raw feature-surface score (all 5 mutated files): **68.4%** (154 killed / 225),
+up from the 60.89% baseline. The scope is already the feature surface (TS
+line-ranges work, unlike .NET), so no post-filter is applied.
 
-_Status at backend hand-off: ~20% (46/225 tested, 22 survived)._
+| File | Killed | Survived | Kill % | Reading |
+|------|--------|----------|--------|---------|
+| formatDuration.ts | 37 | 0 | 100% | pure logic, fully pinned |
+| ragRules.ts | 39 | 2 | 95.1% | both survivors equivalent (see below) |
+| BaseMetricsView.tsx (drill-down map) | 10 | 2 | 83.3% | was 8% at baseline; map now pinned |
+| CumulativeStateTimeItemPicker.tsx | 35 | 17 | 67.3% | logic pinned; survivors presentational/MUI |
+| CumulativeStateTimeChart.tsx | 33 | 50 | 39.8% | thin MUI presentational wrapper |
+| **TOTAL** | **154** | **71** | **68.4%** | |
 
-<!-- FRONTEND_RESULTS_PLACEHOLDER -->
+### Gap-closing tests added this pass
+
+- `ragRules.test.ts` — `computeCumulativeStateTimeRag` now pins the dominant-state
+  selection (largest state even when not first), the exact percentage in the
+  red/amber tips, the all-zero no-contribution red path, the balanced green tip,
+  and deterministic naming on a dominant-share tie.
+- `CumulativeStateTimeItemPicker.test.tsx` — case-insensitive + whitespace-trimmed
+  query matching, the `isEmpty` two-flag logic (loading vs loaded-and-present), the
+  `candidatesLoaded` default, and the exact-cased empty-state caption term.
+- `BaseMetricsView.test.tsx` — drill-down payload → row mapping: linked name with
+  url, reference id, and rounded `daysContributed` ("10.2" from 10.174…). This
+  lifted the drill-down map from 8% to 83%.
+
+### Real-surface reading — no logic gaps remain
+
+The 71 survivors are all **presentational** or **equivalent**; none is a missed
+behaviour:
+
+- **Chart (50)** — the chart is a declarative MUI `<BarChart>` wrapper. Its
+  survivors are `sx={{}}` object-literal removals, colour/`url(#hatch)` strings,
+  `data-testid`/`label` string literals, `Typography variant` strings, axis-config
+  object literals, the hidden (`display:none`) tooltip's `formatMedian` text, and
+  render-prop arrow bodies. The chart's *computation* — `orderByWorkflow` sort,
+  `chooseDurationUnit`, empty/zero-state guards, bar-click index→state, the
+  completed/ongoing data arrays — is covered by `CumulativeStateTimeChart.test.tsx`.
+  The handful of borderline mutants (`Math.max`→`Math.min` for unit choice, the
+  `dataIndex ?? -1` default) are equivalent on the tested data and edge-only.
+- **Picker (17)** — `sx` width removals, the disabled-empty-state Autocomplete's
+  `options={[]}`/`value={[]}` arrays, the `useMemo`/`useCallback` dependency arrays,
+  and MUI `getOptionLabel`/`isOptionEqualToValue` render-prop bodies (display/
+  selection-equality internals). The `matchesQuery` filter logic and `isEmpty`
+  branching are pinned. The `needle.length === 0` guard is equivalent —
+  `"".includes("")` is `true`, so the early-return is redundant.
+- **ragRules (2)** — `states.length === 0` operand → `false` is equivalent because
+  an empty array always has `total <= 0`, which the second operand already catches;
+  the dominant-reducer `>`→`>=` only differs on an exact tie, where either tied
+  state is a legitimate dominant and the RAG status is identical (naming
+  determinism is separately pinned by the new tie test).
+- **Drill-down map (2)** — `parentWorkItemReference: ""` → mutated and
+  `isBlocked: false` → `true` are *unused* default fields: this dialog renders
+  neither a parent column nor (for these rows) a blocked icon, and the rows never
+  originate blocked, so the defaults are correct-by-construction.
+
+Conclusion: every cumulative-state-time *behaviour* on the frontend is pinned by a
+test. The raw 68.4% is held down by the chart being a presentational wrapper whose
+styling props cannot be asserted without coupling tests to MUI internals.
 
 ---
 
 ## Report artifacts
 
-- Backend JSON: `Lighthouse.Backend/Lighthouse.Backend.Tests/StrykerOutput/2026-05-27.21-13-38/reports/mutation-report.json`
-- Backend HTML: `Lighthouse.Backend/Lighthouse.Backend.Tests/StrykerOutput/2026-05-27.21-13-38/reports/mutation-report.html`
+- Backend JSON: `Lighthouse.Backend/Lighthouse.Backend.Tests/StrykerOutput/2026-05-28.19-09-53/reports/mutation-report.json`
+- Backend HTML: same directory, `mutation-report.html`
 - Frontend reports: `Lighthouse.Frontend/reports/mutation/` (generated on run completion)

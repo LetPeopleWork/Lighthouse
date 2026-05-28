@@ -1153,5 +1153,91 @@ describe("ragRules", () => {
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("Doing");
 		});
+
+		it("names the dominant state and its exact percentage in the red tip", () => {
+			const result = computeCumulativeStateTimeRag(
+				[
+					{ state: "Doing", totalDays: 80 },
+					{ state: "Review", totalDays: 10 },
+					{ state: "Test", totalDays: 10 },
+				],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Doing");
+			expect(result.tipText).toContain("80.0%");
+		});
+
+		it("names the dominant state and its exact percentage in the amber tip", () => {
+			const result = computeCumulativeStateTimeRag(
+				[
+					{ state: "Review", totalDays: 50 },
+					{ state: "Doing", totalDays: 30 },
+					{ state: "Test", totalDays: 20 },
+				],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("Review");
+			expect(result.tipText).toContain("50.0%");
+		});
+
+		it("selects the largest state as dominant even when it is not first in the array", () => {
+			const result = computeCumulativeStateTimeRag(
+				[
+					{ state: "First", totalDays: 5 },
+					{ state: "Biggest", totalDays: 90 },
+					{ state: "Last", totalDays: 5 },
+				],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Biggest");
+			expect(result.tipText).toContain("90.0%");
+		});
+
+		it("returns the no-contribution red tip when every state has zero recorded time", () => {
+			const result = computeCumulativeStateTimeRag(
+				[
+					{ state: "Doing", totalDays: 0 },
+					{ state: "Review", totalDays: 0 },
+				],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText.toLowerCase()).toContain("contribute");
+		});
+
+		it("names the first of two equally-dominant states deterministically", () => {
+			const result = computeCumulativeStateTimeRag(
+				[
+					{ state: "First", totalDays: 50 },
+					{ state: "Second", totalDays: 50 },
+				],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("First");
+			expect(result.tipText).not.toContain("Second");
+		});
+
+		it("describes balanced states in the green tip", () => {
+			const result = computeCumulativeStateTimeRag(
+				[
+					{ state: "Doing", totalDays: 30 },
+					{ state: "Review", totalDays: 35 },
+					{ state: "Test", totalDays: 35 },
+				],
+				terms,
+			);
+
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText.toLowerCase()).toContain("balanced");
+		});
 	});
 });

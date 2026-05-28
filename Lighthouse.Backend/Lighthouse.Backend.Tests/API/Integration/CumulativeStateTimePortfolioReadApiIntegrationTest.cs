@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const int PortfolioWindowDisjointShiftDays = 10000;
 
         private static readonly string[] WorkflowDoingStates = [Analyzing, Building, Validating];
+        private static readonly double[] BuildingDrillDownDaysDescending = [40.0, 30.0, 20.0, 10.0];
 
         private static int testDateOffset;
 
@@ -181,6 +182,169 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 $"An unauthenticated caller must not read portfolio cumulative state time (RbacGuard PortfolioRead, DDD-17). Status: {response.StatusCode}");
         }
 
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_FeatureEnteringFirstStateExactlyAtWindowEnd_IsIncluded()
+        {
+            var portfolioId = SeedPortfolioWithSingleFeatureEnteringAtWindowEnd(out var boundaryReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(boundaryReferenceId),
+                    $"A feature entering its first state exactly at windowEnd intersects the window (entry <= endDate inclusive). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_FeatureExitingFirstStateExactlyAtWindowStart_IsIncluded()
+        {
+            var portfolioId = SeedPortfolioWithSingleFeatureExitingAtWindowStart(out var boundaryReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(boundaryReferenceId),
+                    $"A feature exiting its first state exactly at windowStart intersects the window (exit >= startDate inclusive). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_FeatureStartedAfterWindowEnd_IsExcluded()
+        {
+            var portfolioId = SeedPortfolioWithFeatureStartedAfterWindow(out var excludedReferenceId, out var includedReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            var candidateReferenceIds = CandidateReferenceIds(body);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(candidateReferenceIds, Does.Contain(includedReferenceId),
+                    $"The in-window feature stays a candidate. Body: {body}");
+                Assert.That(candidateReferenceIds, Does.Not.Contain(excludedReferenceId),
+                    $"A feature whose only visit starts after windowEnd has no overlap (entry <= endDate AND exit >= startDate both required). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_FeatureWithOneVisitBeforeAndOneInsideWindow_IsIncluded()
+        {
+            var portfolioId = SeedPortfolioWithFeatureSpanningIntoWindow(out var spanningReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(spanningReferenceId),
+                    $"A feature with one visit before the window and one visit overlapping it must be included (any overlapping visit, not all). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_InFlightFeatureEnteredCurrentStateExactlyAtWindowEnd_IsIncluded()
+        {
+            var portfolioId = SeedPortfolioWithInFlightFeatureEnteringCurrentStateAtWindowEnd(out var boundaryReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(boundaryReferenceId),
+                    $"An in-flight feature entering its current state exactly at windowEnd is in-flight-at-window-end (inclusive boundary). Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_DoneFeatureWithCurrentTimestampButNoWindowOverlap_IsExcluded()
+        {
+            var portfolioId = SeedPortfolioWithExcludedDoneFeatureCarryingCurrentTimestamp(out var excludedReferenceId, out var includedReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            var candidateReferenceIds = CandidateReferenceIds(body);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(candidateReferenceIds, Does.Contain(includedReferenceId),
+                    $"The normal in-window feature stays a candidate. Body: {body}");
+                Assert.That(candidateReferenceIds, Does.Not.Contain(excludedReferenceId),
+                    $"A Done feature with a current timestamp but no window-overlapping transitions is not in-flight-at-window-end. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeCandidates_FeatureBelongingToMultiplePortfolios_IsIncludedForEachPortfolio()
+        {
+            var portfolioId = SeedPortfolioWithFeatureSharedWithAnotherPortfolio(out var sharedReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(CandidateReferenceIds(body), Does.Contain(sharedReferenceId),
+                    $"Portfolio membership is satisfied when the feature belongs to ANY matching portfolio, not only when all its portfolios match. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTime_FeaturesWithSyncedTransitionsButMissingTimestamps_DoNotCrashTheEndpoints()
+        {
+            var portfolioId = SeedPortfolioWithMalformedButRecoverableFeatures(out var healthyReferenceId);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var barResponse = await client.GetAsync(BarUrl(portfolioId));
+            var candidatesResponse = await client.GetAsync(CandidatesUrl(portfolioId));
+
+            var barBody = await barResponse.Content.ReadAsStringAsync();
+            var candidatesBody = await candidatesResponse.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(barResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), barBody);
+                Assert.That(candidatesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), candidatesBody);
+                Assert.That(CandidateReferenceIds(candidatesBody), Does.Contain(healthyReferenceId),
+                    $"The healthy feature is still resolved alongside the malformed ones. Body: {candidatesBody}");
+            }
+        }
+
+        [Test]
+        public async Task GetCumulativeStateTimeItems_PortfolioBuildingDrillDown_OrdersRowsByDaysContributedDescending()
+        {
+            var portfolioId = SeedPortfolioWithKnownVisitsAndInFlightFeatures();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var response = await client.GetAsync(ItemsUrl(portfolioId, Building));
+
+            var body = await response.Content.ReadAsStringAsync();
+            var contributions = ItemRows(body).Select(row => row.DaysContributed).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(contributions, Is.EqualTo(BuildingDrillDownDaysDescending).Within(DaysTolerance),
+                    $"US-04 parity: portfolio drill-down rows are ordered by daysContributed descending. Body: {body}");
+            }
+        }
+
         private string BarUrl(int portfolioId)
             => $"/api/latest/portfolios/{portfolioId}/metrics/cumulativeStateTime?startDate={windowStart:O}&endDate={windowEnd:O}";
 
@@ -315,6 +479,199 @@ namespace Lighthouse.Backend.Tests.API.Integration
             portfolioRepository.Save().GetAwaiter().GetResult();
 
             return portfolio;
+        }
+
+        private int SeedPortfolioWithSingleFeatureEnteringAtWindowEnd(out string boundaryReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            boundaryReferenceId = "ENTER-AT-END";
+            var feature = NewFeature(portfolio, boundaryReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowEnd, closedDate: windowEnd.AddDays(5), currentStateEnteredAt: null);
+            featureRepository.Add(feature);
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, feature, Analyzing, Done, windowEnd.AddDays(5));
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithSingleFeatureExitingAtWindowStart(out string boundaryReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            boundaryReferenceId = "EXIT-AT-START";
+            var feature = NewFeature(portfolio, boundaryReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowStart.AddDays(-10), closedDate: windowStart, currentStateEnteredAt: null);
+            featureRepository.Add(feature);
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, feature, Analyzing, Done, windowStart);
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithFeatureStartedAfterWindow(out string excludedReferenceId, out string includedReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            includedReferenceId = "IN-WINDOW";
+            excludedReferenceId = "AFTER-WINDOW";
+
+            AddCompletedFeature(featureRepository, transitionRepository, portfolio, includedReferenceId, windowStart.AddDays(20),
+                analyzingDays: 5, buildingDays: 10, validatingDays: 0);
+
+            var afterWindow = NewFeature(portfolio, excludedReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowEnd.AddDays(10), closedDate: windowEnd.AddDays(20), currentStateEnteredAt: null);
+            featureRepository.Add(afterWindow);
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, afterWindow, Analyzing, Done, windowEnd.AddDays(20));
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithFeatureSpanningIntoWindow(out string spanningReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            spanningReferenceId = "SPANNING";
+            var feature = NewFeature(portfolio, spanningReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowStart.AddDays(-100), closedDate: windowStart.AddDays(10), currentStateEnteredAt: null);
+            featureRepository.Add(feature);
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, feature, Analyzing, Building, windowStart.AddDays(-50));
+            AddTransition(transitionRepository, feature, Building, Done, windowStart.AddDays(10));
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithInFlightFeatureEnteringCurrentStateAtWindowEnd(out string boundaryReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+
+            boundaryReferenceId = "INFLIGHT-AT-END";
+            var feature = NewFeature(portfolio, boundaryReferenceId, state: Building, category: StateCategories.Doing,
+                startedDate: windowEnd, closedDate: null, currentStateEnteredAt: windowEnd);
+            featureRepository.Add(feature);
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithExcludedDoneFeatureCarryingCurrentTimestamp(out string excludedReferenceId, out string includedReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            includedReferenceId = "DONE-INWINDOW";
+            excludedReferenceId = "DONE-NO-OVERLAP";
+
+            var inWindow = windowStart.AddDays(20);
+            AddCompletedFeature(featureRepository, transitionRepository, portfolio, includedReferenceId, inWindow,
+                analyzingDays: 5, buildingDays: 10, validatingDays: 0);
+
+            var noOverlap = NewFeature(portfolio, excludedReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: windowStart.AddDays(-1), closedDate: null, currentStateEnteredAt: inWindow);
+            noOverlap.StartedDate = null;
+            featureRepository.Add(noOverlap);
+
+            featureRepository.Save().GetAwaiter().GetResult();
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithFeatureSharedWithAnotherPortfolio(out string sharedReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var otherPortfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            sharedReferenceId = "SHARED-EPIC";
+            var inWindow = windowStart.AddDays(20);
+            var feature = NewFeature(portfolio, sharedReferenceId, state: Done, category: StateCategories.Done,
+                startedDate: inWindow, closedDate: inWindow.AddDays(15), currentStateEnteredAt: null);
+            feature.Portfolios.Add(otherPortfolio);
+            featureRepository.Add(feature);
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, feature, Analyzing, Building, inWindow.AddDays(5));
+            AddTransition(transitionRepository, feature, Building, Done, inWindow.AddDays(15));
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithMalformedButRecoverableFeatures(out string healthyReferenceId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var portfolio = AddPortfolio(sp);
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var transitionRepository = sp.GetRequiredService<IFeatureStateTransitionRepository>();
+
+            healthyReferenceId = "HEALTHY-1";
+            var inWindow = windowStart.AddDays(20);
+            AddCompletedFeature(featureRepository, transitionRepository, portfolio, healthyReferenceId, inWindow,
+                analyzingDays: 5, buildingDays: 10, validatingDays: 0);
+
+            var nullStartDone = NewFeature(portfolio, "NULLSTART-DONE", state: Done, category: StateCategories.Done,
+                startedDate: inWindow, closedDate: inWindow.AddDays(5), currentStateEnteredAt: null);
+            nullStartDone.StartedDate = null;
+            featureRepository.Add(nullStartDone);
+
+            var doingNoCurrent = NewFeature(portfolio, "DOING-NO-CURRENT", state: Building, category: StateCategories.Doing,
+                startedDate: inWindow, closedDate: null, currentStateEnteredAt: null);
+            featureRepository.Add(doingNoCurrent);
+
+            featureRepository.Save().GetAwaiter().GetResult();
+
+            AddTransition(transitionRepository, nullStartDone, Analyzing, Done, inWindow.AddDays(5));
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        private static string[] CandidateReferenceIds(string body)
+        {
+            using var document = JsonDocument.Parse(body);
+            var referenceIds = new List<string>();
+            foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
+            {
+                referenceIds.Add(item.GetProperty("referenceId").GetString() ?? string.Empty);
+            }
+            return referenceIds.ToArray();
         }
 
         private static string[] OrderedStateNames(string body)
