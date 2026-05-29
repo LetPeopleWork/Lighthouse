@@ -6,7 +6,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useModifySettings } from "../../../hooks/useModifySettings";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
@@ -14,6 +14,7 @@ import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSett
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -22,7 +23,7 @@ import EstimationFieldComponent from "../EstimationField/EstimationFieldComponen
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
-import ValidationActions from "../ValidationActions/ValidationActions";
+import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
@@ -47,25 +48,33 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	modifyDefaultSettings = false,
 }) => {
 	const [teams, setTeams] = useState<ITeam[]>([]);
-	const { canUpdatePortfolioData, maxPortfoliosWithoutPremium } =
-		useLicenseRestrictions();
+	const { canUpdatePortfolioData } = useLicenseRestrictions();
+	const { portfolioService } = useContext(ApiServiceContext);
+	const portfolioIdRef = useRef(0);
 
-	const fetchTeams = useCallback(async () => {
+	const refreshDependentData = useCallback(async () => {
 		const fetchedTeams = await getAllTeams();
 		setTeams(fetchedTeams);
-	}, [getAllTeams]);
+		if (portfolioIdRef.current > 0) {
+			await portfolioService.refreshFeaturesForPortfolio(
+				portfolioIdRef.current,
+			);
+		}
+	}, [getAllTeams, portfolioService]);
 
 	const {
 		loading,
 		settings: projectSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
-		formValid,
 		validationError,
 		validationTechnicalDetails,
+		saveState,
+		refreshFailed,
+		reloadDependentData,
+		retry,
 		updateSettings,
 		handleWorkTrackingSystemChange,
-		handleSave,
 		workItemTypeHandlers,
 		toDoHandlers,
 		doingHandlers,
@@ -77,6 +86,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		validateSettings: validateProjectSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultPortfolioSchema,
+		autoSave: {
+			enabled: true,
+			canSave: canUpdatePortfolioData,
+			refreshOnSave: true,
+		},
 		validateForm: (s, system, isDefault) => {
 			if (!s) return false;
 			const schema = s.dataRetrievalSchema;
@@ -97,8 +111,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							(s.dataRetrievalValue ?? "") !== "")))
 			);
 		},
-		additionalFetch: fetchTeams,
+		additionalFetch: refreshDependentData,
 	});
+
+	portfolioIdRef.current = projectSettings?.id ?? 0;
 
 	const stateMappingErrors = useMemo(() => {
 		if (!projectSettings) return [];
@@ -175,6 +191,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								updateSettings("doingStates", reconciledDoing);
 							}}
 							validationErrors={stateMappingErrors}
+							refreshFailed={refreshFailed}
+							onReloadDependentData={reloadDependentData}
 						/>
 
 						<FeatureSizeComponent
@@ -270,11 +288,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							size={{ xs: 12 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
-							<ValidationActions
-								onSave={handleSave}
-								inputsValid={formValid}
-								disableSave={!canUpdatePortfolioData}
-								saveTooltip={`Free users can only update portfolio data for up to ${maxPortfoliosWithoutPremium} portfolio`}
+							<SaveStateIndicator
+								saveState={saveState}
+								canSave={canUpdatePortfolioData}
+								onRetry={retry}
 							/>
 						</Grid>
 					</Grid>

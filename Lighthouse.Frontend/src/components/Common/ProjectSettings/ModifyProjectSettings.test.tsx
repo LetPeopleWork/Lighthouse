@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -173,6 +172,52 @@ vi.mock("../Tags/TagsComponent", () => ({
 	),
 }));
 
+vi.mock("../StateMappings/StateMappingsEditor", () => ({
+	__esModule: true,
+	default: ({
+		onChange,
+		refreshFailed,
+		onReloadDependentData,
+	}: {
+		onChange: (mappings: { name: string; states: string[] }[]) => void;
+		refreshFailed?: boolean;
+		onReloadDependentData?: () => void;
+	}) => (
+		<div>
+			<div>StateMappingsEditor</div>
+			<button
+				type="button"
+				onClick={() => onChange([{ name: "Group", states: ["Active"] }])}
+			>
+				Change State Mapping
+			</button>
+			{refreshFailed && (
+				<button type="button" onClick={() => onReloadDependentData?.()}>
+					Reload now
+				</button>
+			)}
+		</div>
+	),
+}));
+
+const mockCanUpdatePortfolioData = vi.fn(() => true);
+
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		canCreateTeam: true,
+		canUpdateTeamData: true,
+		canCreatePortfolio: true,
+		canUpdatePortfolioData: mockCanUpdatePortfolioData(),
+		licenseStatus: {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: true,
+		},
+		maxTeamsWithoutPremium: 1,
+		maxPortfoliosWithoutPremium: 1,
+	}),
+}));
+
 const mockIsPortfolioAdmin = vi.fn(() => true);
 
 vi.mock("../../../hooks/useRbac", () => ({
@@ -323,6 +368,11 @@ describe("ModifyProjectSettings", () => {
 		mockGetWorkTrackingSystems.mockResolvedValue(workTrackingSystems);
 		mockGetProjectSettings.mockResolvedValue(projectSettings);
 		mockGetAllTeams.mockResolvedValue(teams);
+		mockCanUpdatePortfolioData.mockReturnValue(true);
+		mockSaveProjectSettings.mockResolvedValue(undefined);
+		mockPortfolioService.refreshFeaturesForPortfolio = vi
+			.fn()
+			.mockResolvedValue(undefined);
 	});
 
 	it("renders loading state initially", () => {
@@ -453,7 +503,7 @@ describe("ModifyProjectSettings", () => {
 		expect(screen.getByText("GeneralSettingsComponent")).toBeInTheDocument();
 	});
 
-	it("handles save action with validate-on-save", async () => {
+	it("auto-saves a valid portfolio field change after the debounce window", async () => {
 		render(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
@@ -464,66 +514,17 @@ describe("ModifyProjectSettings", () => {
 				validateProjectSettings={mockValidateProjectSettings}
 			/>,
 		);
-		mockValidateProjectSettings.mockResolvedValue(true);
 
 		await waitFor(() =>
 			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 		);
 
-		fireEvent.click(screen.getByText("Save"));
-		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
+		fireEvent.click(screen.getByText("Change General"));
+
 		await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
 	});
 
-	it("does not save when validation fails", async () => {
-		render(
-			<ModifyProjectSettings
-				title="Modify Project Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getProjectSettings={mockGetProjectSettings}
-				getAllTeams={mockGetAllTeams}
-				saveProjectSettings={mockSaveProjectSettings}
-				validateProjectSettings={mockValidateProjectSettings}
-			/>,
-		);
-		mockValidateProjectSettings.mockResolvedValue(false);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
-
-		fireEvent.click(screen.getByText("Save"));
-		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
-		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
-	});
-
-	it("shows validation message and details when validate throws ApiError", async () => {
-		render(
-			<ModifyProjectSettings
-				title="Modify Project Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getProjectSettings={mockGetProjectSettings}
-				getAllTeams={mockGetAllTeams}
-				saveProjectSettings={mockSaveProjectSettings}
-				validateProjectSettings={mockValidateProjectSettings}
-			/>,
-		);
-		mockValidateProjectSettings.mockRejectedValue(
-			new ApiError(400, "No features were found.", "Check your query."),
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
-
-		fireEvent.click(screen.getByText("Save"));
-		await waitFor(() => expect(mockValidateProjectSettings).toHaveBeenCalled());
-		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
-		expect(screen.getByText("No features were found.")).toBeInTheDocument();
-		expect(screen.getByText("Check your query.")).toBeInTheDocument();
-	});
-
-	it("does not render a standalone Validate button", async () => {
+	it("does not render a Save button", async () => {
 		render(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
@@ -540,9 +541,14 @@ describe("ModifyProjectSettings", () => {
 		);
 
 		expect(screen.queryByText("Validate")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Save" }),
+		).not.toBeInTheDocument();
 	});
 
-	it("sets formValid to true when all inputs are valid", async () => {
+	it("suppresses auto-save when portfolio data updates are not permitted", async () => {
+		mockCanUpdatePortfolioData.mockReturnValue(false);
+
 		render(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
@@ -558,7 +564,36 @@ describe("ModifyProjectSettings", () => {
 			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 		);
 
-		expect(screen.getByText("Save")).not.toBeDisabled();
+		fireEvent.click(screen.getByText("Change General"));
+		await new Promise((resolve) => setTimeout(resolve, 500));
+
+		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+	});
+
+	it("refreshes dependent portfolio data after a valid state-mapping change", async () => {
+		renderWithProvider(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.click(screen.getByText("Change State Mapping"));
+
+		await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+		await waitFor(() =>
+			expect(
+				mockPortfolioService.refreshFeaturesForPortfolio,
+			).toHaveBeenCalledWith(projectSettings.id),
+		);
 	});
 
 	const scenarios = [
@@ -587,7 +622,7 @@ describe("ModifyProjectSettings", () => {
 	];
 
 	for (const scenario of scenarios) {
-		it(`sets formValid to false when ${scenario.invalidValue} is invalid`, async () => {
+		it(`does not auto-save when ${scenario.invalidValue} is invalid`, async () => {
 			const invalidProjectSettings = {
 				...projectSettings,
 				...scenario,
@@ -611,7 +646,10 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			expect(screen.getByText("Save")).toBeDisabled();
+			fireEvent.click(screen.getByText("Remove ToDo"));
+			await new Promise((resolve) => setTimeout(resolve, 500));
+
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 	}
 
@@ -684,7 +722,9 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			expect(screen.getByText("Save")).not.toBeDisabled();
+			fireEvent.click(screen.getByText("Change General"));
+
+			await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
 		});
 	});
 

@@ -451,9 +451,9 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 	});
 });
 
-describe.skip("@US-04 @in-memory auto-save portfolio settings", () => {
+describe("@US-04 @in-memory auto-save portfolio settings", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
