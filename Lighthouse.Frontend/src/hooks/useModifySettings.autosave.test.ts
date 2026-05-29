@@ -282,9 +282,9 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
 	});
 });
 
-describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pending)", () => {
+describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity gate)", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -294,22 +294,38 @@ describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pend
 
 	it("@US-02 @error fires no save when a mapping group name is left empty", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const additionalFetch = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{
 				saveSettings,
+				additionalFetch,
 				validateForm: vi.fn().mockReturnValue(false),
 			},
-			teamAdminCanSave,
+			teamAdminCanSaveAndRefresh,
 		);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		additionalFetch.mockClear();
 
-		act(() => result.current.updateSettings("name", "Atlas Train"));
+		act(() => result.current.doingHandlers.onAdd("Review"));
 		await act(async () => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
 		expect(saveSettings).not.toHaveBeenCalled();
+		expect(additionalFetch).not.toHaveBeenCalled();
+		expect(result.current.formValid).toBe(false);
+	});
+});
+
+describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pending)", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
 	});
 
 	it("@US-02 @error offers a one-click reload when the automatic refresh fails", async () => {
