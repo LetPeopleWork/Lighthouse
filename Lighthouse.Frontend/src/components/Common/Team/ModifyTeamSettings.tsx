@@ -33,7 +33,6 @@ interface ModifyTeamSettingsProps {
 	validateTeamSettings: (settings: ITeamSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
 	disableSave?: boolean;
-	saveTooltip?: string;
 }
 
 const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({

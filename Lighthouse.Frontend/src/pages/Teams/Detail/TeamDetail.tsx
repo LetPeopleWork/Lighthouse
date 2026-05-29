@@ -541,7 +541,6 @@ const TeamDetail: React.FC = () => {
 											teamService.validateTeamSettings(settings)
 										}
 										disableSave={!canUpdateTeamData}
-										saveTooltip={`Free users can only update team settings for up to ${maxTeamsWithoutPremium} teams`}
 									/>
 								)}
 
