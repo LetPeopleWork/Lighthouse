@@ -165,15 +165,17 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 		expect(forecastService.runItemPrediction).not.toHaveBeenCalled();
 	});
 
-	it.skip("@US-05 @error fires no run when the inputs become incomplete", async () => {
+	it("@US-05 @error fires no run when the inputs become incomplete", async () => {
 		renderForecastView();
-		await screen.findByTestId("new-item-forecaster");
+		await act(async () => {
+			await vi.runAllTimersAsync();
+		});
 		forecastService.runItemPrediction.mockClear();
 
 		act(() => {
 			screen.getByTestId("clear-new-item-types").click();
 		});
-		await act(async () => {
+		act(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
