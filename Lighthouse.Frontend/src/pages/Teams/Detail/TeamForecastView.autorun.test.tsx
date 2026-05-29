@@ -182,22 +182,27 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 		expect(forecastService.runItemPrediction).not.toHaveBeenCalled();
 	});
 
-	it.skip("@US-05 @error shows only the latest run when input changes arrive in rapid succession", async () => {
+	it("@US-05 @error shows only the latest run when input changes arrive in rapid succession", async () => {
 		renderForecastView();
-		await screen.findByTestId("new-item-forecaster");
+		await act(async () => {
+			await vi.runAllTimersAsync();
+		});
 		forecastService.runItemPrediction.mockClear();
 
 		act(() => {
 			screen.getByTestId("widen-new-item-window").click();
+		});
+		act(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS - 1);
+		});
+		act(() => {
 			screen.getByTestId("widen-new-item-window").click();
 		});
-		await act(async () => {
+		act(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
-		await waitFor(() =>
-			expect(forecastService.runItemPrediction).toHaveBeenCalledTimes(1),
-		);
+		expect(forecastService.runItemPrediction).toHaveBeenCalledTimes(1);
 	});
 });
 
