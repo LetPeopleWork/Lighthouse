@@ -160,7 +160,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
 	});
 
-	it.skip("@US-01 @error never auto-saves for a viewer who lacks the right to save", async () => {
+	it("@US-01 @error never auto-saves for a viewer who lacks the right to save", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
