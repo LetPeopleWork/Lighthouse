@@ -122,7 +122,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
 	});
 
-	it.skip("@US-01 @error holds back an invalid edit so the inline error is the only feedback", async () => {
+	it("@US-01 @error holds back an invalid edit so the inline error is the only feedback", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -135,6 +135,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 
 		expect(saveSettings).not.toHaveBeenCalled();
 		expect(result.current.formValid).toBe(false);
+		expect(result.current.saveState).toBe("idle");
 	});
 
 	it.skip("@US-01 @error keeps the edit and offers a retry when the save fails", async () => {
