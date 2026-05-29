@@ -27,6 +27,17 @@ import NewItemForecaster from "./NewItemForecaster";
 
 const DEBOUNCE_MS = 300;
 
+function useDebouncedRevisionRun(revision: number, run: () => void) {
+	useEffect(() => {
+		if (revision === 0) {
+			return;
+		}
+
+		const timer = setTimeout(run, DEBOUNCE_MS);
+		return () => clearTimeout(timer);
+	}, [revision, run]);
+}
+
 interface TeamForecastViewProps {
 	team: Team;
 }
@@ -84,9 +95,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [backtestForecastRevision, setBacktestForecastRevision] = useState(0);
 	const backtestRequestSeqRef = useRef(0);
 
-	// Track whether the user has made at least one change (auto-run does NOT fire on mount)
 	const hasInteractedRef = useRef(false);
-	// Sequence counter to guard against stale responses
 	const requestSeqRef = useRef(0);
 
 	const [newItemStartDate, setNewItemStartDate] = useState<dayjs.Dayjs | null>(
@@ -157,7 +166,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				setBacktestHistoricalWindowDays(rollingThroughputWindow);
 			}
 		} catch {
-			// Keep default values on error
+			// Defaults already initialise the backtest window; nothing to recover.
 		}
 	}, [team]);
 
@@ -165,7 +174,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
-	// Fetch quick-selection candidates once on mount
 	useEffect(() => {
 		if (!team?.id || !teamMetricsService) {
 			return;
@@ -175,7 +183,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			.getForecastInputCandidates(team.id)
 			.then(setForecastInputCandidates)
 			.catch(() => {
-				// Non-fatal: quick picks simply won't be shown
+				// Non-fatal: quick picks simply won't be shown.
 			});
 	}, [team?.id, teamMetricsService]);
 
@@ -209,7 +217,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					filterOverride,
 				);
 
-				// Discard stale responses
 				if (seq === requestSeqRef.current) {
 					setManualForecastResult(result);
 				}
@@ -319,17 +326,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		newItemWorkItemTypes,
 	]);
 
-	useEffect(() => {
-		if (newItemForecastRevision === 0) {
-			return;
-		}
-
-		const timer = setTimeout(() => {
-			runNewItemForecast();
-		}, DEBOUNCE_MS);
-
-		return () => clearTimeout(timer);
-	}, [newItemForecastRevision, runNewItemForecast]);
+	useDebouncedRevisionRun(newItemForecastRevision, runNewItemForecast);
 
 	const handleNewItemInputChange = useCallback((complete: boolean) => {
 		if (!complete) {
@@ -407,17 +404,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		applyBacktestFilterOverride,
 	]);
 
-	useEffect(() => {
-		if (backtestForecastRevision === 0) {
-			return;
-		}
-
-		const timer = setTimeout(() => {
-			runBacktest();
-		}, DEBOUNCE_MS);
-
-		return () => clearTimeout(timer);
-	}, [backtestForecastRevision, runBacktest]);
+	useDebouncedRevisionRun(backtestForecastRevision, runBacktest);
 
 	const handleBacktestInputChange = useCallback((complete: boolean) => {
 		if (!complete) {

@@ -101,7 +101,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	const filterToggleLabel = `Use filtered ${throughputTerm}`;
 	const [activeTab, setActiveTab] = useState<number>(0);
 
-	// Historical Throughput state
 	const [historicalThroughput, setHistoricalThroughput] =
 		useState<RunChartData | null>(null);
 	const [isLoadingHistorical, setIsLoadingHistorical] =
@@ -111,7 +110,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 		null,
 	);
 
-	// Actual Period Throughput state
 	const [actualPeriodThroughput, setActualPeriodThroughput] =
 		useState<RunChartData | null>(null);
 	const [isLoadingActual, setIsLoadingActual] = useState<boolean>(false);
@@ -209,7 +207,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 		);
 	};
 
-	// Fetch historical and actual period data when backtest result changes
 	useEffect(() => {
 		if (!backtestResult) {
 			setHistoricalThroughput(null);

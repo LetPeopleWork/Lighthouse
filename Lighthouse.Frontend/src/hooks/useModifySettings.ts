@@ -232,8 +232,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			}
 		};
 		fetchData();
-		// Intentionally empty: load once on mount.
-		// Callbacks are always current via refs; no re-fetch on identity changes.
+		// Load once on mount; callbacks stay current via refs, so identity changes must not re-fetch.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
