@@ -109,3 +109,41 @@ The story strongly prefers step-by-step-alongside-other-work. The seam is design
 - Supersedes nothing; complements the existing hexagonal invariants (ADR-001 RBAC port boundary, brief.md core Application Architecture).
 - Full propose-mode analysis backing this ADR: `docs/product/architecture/brief.md` sections `## System Architecture / ## Domain Model / ## Application Architecture — target-architecture-4618 (analysis)`.
 - Related work items: #4778 (motivating bug, Closed), #4599 (k8s example, New).
+
+---
+
+## Addendum (2026-05-29): Event-Family Taxonomy & the Transport-vs-Store Guardrail
+
+A follow-up DISCUSS pass on the implementation backlog (#5098–#5101) asked *where else the dispatcher pays off* and surfaced a recurring conflation between two different meanings of "event". This addendum records the answer as SSOT for every future slice. Implementation backlog now hangs off Epic **#5121** (*Target Architecture: Domain Events, CQRS-lite & Concurrency*).
+
+### Two orthogonal axes — never collapse them
+
+| Axis | Mechanism | Lifetime | Owner |
+|---|---|---|---|
+| **Transport** | the ADR-027 `IDomainEventDispatcher` (#5098) | transient, in-process, after-commit, recovered via next re-sync | this ADR |
+| **Persistence / observability** | a persisted, queryable event store (#5017, today OAuth-scoped) | durable rows + retention policy + PII rules | #5017 |
+
+The dispatcher **must not persist** (D2: thin router, recovery via re-sync — no outbox). The store is **a subscriber/sink**, opt-in *per event type* — never an automatic write for every domain event. Neither axis is **Event Sourcing** (D7 stands): persisted history is an observability projection, not the system of record. A producer (e.g. a connectivity probe) emits one domain event onto the transport; persisting it, pushing it over SignalR, and notifying are each *independent handlers*.
+
+### Where events apply — the five families
+
+| Family | Source evidence | Event(s) | Nature | Backlog |
+|---|---|---|---|---|
+| **A — Refresh-completed pipelines** | `PortfolioUpdater.Update` (6-step hand-wired pipeline + service-locator); symmetric `TeamUpdater.Update` | `PortfolioFeaturesRefreshed`, `TeamDataRefreshed` | refactor (decouple reactions) | #5098 (1 reaction), #5099 (rest) |
+| **B — Lifecycle (Created/Deleted)** | 6 delete paths (Team/Portfolio/Delivery/Connection/User/ApiKey/BlackoutPeriod) + create paths; only Team+Portfolio clean up refresh logs today | `*Deleted`, `*Created` | refactor + fixes a cleanup-gap | #5099 (may carpaccio-split) |
+| **C — Cross-aggregate triggers** | `TeamDataService` → `forecastUpdater.TriggerUpdate(portfolio.Id)` across module lines | (handler on `TeamDataRefreshed`) | refactor (cross-module decoupling) | #5099 |
+| **D — Work-item state transitions** | `WorkItemService.SyncStateTransitions` sync delta | `WorkItemTransitioned`, `WorkItemBecameStale`, `WorkItemBlocked` | net-new capability (proactive push) | #5122 — **guardrail: not ES (D7); persistence is a separate sink** |
+| **E — Connection / credential health** | OAuth slice-02 bespoke `OAuthCredential.Status`; generalised by #5019 | `ConnectionHealthChanged`, `CredentialExpiringSoon` | net-new capability; unifies #5019 (producer) + #5098 (transport) + #5017 (sink) + #4754/#4755 (reactions) | #5019 (build event-first) |
+
+Family E is the slice where the dispatcher graduates from OAuth-only plumbing to a general spine — it is the *precedent* #5017 anticipated when it deferred "a broader event-log abstraction… can come later if precedent shows value."
+
+**Lower value / leave alone:** SignalR `GlobalUpdateNotification` (`UpdateQueueService`) is already centralised in the queue — no decoupling win from eventising it.
+
+### Confirming (non-bug) asymmetry
+
+Portfolio refresh scatters `InvalidatePortfolioMetrics` into the *updater* (the #4778 smell); team refresh encapsulates invalidation inside `TeamMetricsService.UpdateTeamMetrics` (the cleaner shape). Family A makes portfolio match team — invalidation becomes a reaction, not a remembered imperative call.
+
+### Cross-reference (addendum)
+
+- Architecture epic: **#5121**. Children: #5098, #5099, #5100, #5101, #5122.
+- Persistence sink: **#5017** (Event Store & Health KPI Completeness). Producer for Family E: **#5019**. Reaction sinks (future): #4754 / #4755 (notifications), #5102 (Track Actions / audit).
