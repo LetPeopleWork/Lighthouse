@@ -247,12 +247,11 @@ describe("@US-06 @in-memory auto-run backtest", () => {
 		expect(forecastService.runBacktest).not.toHaveBeenCalled();
 	});
 
-	it.skip("@US-06 @error fires no backtest run on page load until an input changes", async () => {
+	it("@US-06 @error fires no backtest run on page load until an input changes", async () => {
 		renderForecastView();
-		await screen.findByTestId("backtest-forecaster");
 
 		await act(async () => {
-			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+			await vi.advanceTimersByTimeAsync(DEBOUNCE_MS * 2);
 		});
 
 		expect(forecastService.runBacktest).not.toHaveBeenCalled();
