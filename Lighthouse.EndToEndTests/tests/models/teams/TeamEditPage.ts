@@ -13,7 +13,7 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	override async save(): Promise<TeamDetailPage> {
-		await this.saveButton.click();
+		await this.waitForChangesSaved();
 		return new TeamDetailPage(this.page);
 	}
 

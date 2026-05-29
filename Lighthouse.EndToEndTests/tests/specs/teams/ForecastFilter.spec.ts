@@ -24,7 +24,6 @@ test("forecast filter: configure exclude-bugs rule on team settings, see quick-s
 
 	const teamEdit = await teamDetail.editTeam();
 	await teamEdit.forecastFilterEditor.addExcludeByTypeRule("Bug");
-	await expect(teamEdit.forecastFilterEditor.takeEffectHint).toBeVisible();
 	const teamDetailAfterSave = await teamEdit.save();
 
 	await teamDetailAfterSave.updateTeamData();

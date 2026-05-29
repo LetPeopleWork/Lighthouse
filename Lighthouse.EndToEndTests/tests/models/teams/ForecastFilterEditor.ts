@@ -19,10 +19,6 @@ export class ForecastFilterEditor {
 		return this.page.getByTestId("rule-group-mode-toggle");
 	}
 
-	get takeEffectHint(): Locator {
-		return this.page.getByTestId("forecast-filter-takeeffect-hint");
-	}
-
 	fieldSelect(ruleIndex: number): Locator {
 		return this.page.getByTestId(`rule-field-select-${ruleIndex}`);
 	}
